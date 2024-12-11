@@ -1,0 +1,1 @@
+# @mcs/microsoft-copilot-protocol
