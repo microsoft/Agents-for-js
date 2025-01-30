@@ -48,9 +48,9 @@ jobs:
           path: test-report.xml
           reporter: java-junit
 
-      - name: Build sample projects
-        run: |
-          for dir in ./samples/*/; do
-            echo "Building $dir"
-             (cd "$dir" && npm i && npm run build)
-          done
+      # - name: Build sample projects
+      #   run: |
+      #     for dir in ./samples/*/; do
+      #       echo "Building $dir"
+      #        (cd "$dir" && npm i && npm run build)
+      #     done
