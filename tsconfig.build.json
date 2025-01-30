@@ -2,7 +2,7 @@
     "files": [],
     "references": [
       {
-        "path": "packages/microsoft-activity-schema"
+        "path": "packages/agents-activity-schema"
       }
     ]
   }

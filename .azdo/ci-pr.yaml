@@ -1,0 +1,41 @@
+pr:
+- main
+- dev
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+- task: UseNode@1
+  inputs:
+    version: '22.x'
+  displayName: 'Install Node.js'
+
+- script: npm install
+  displayName: npm ci
+
+- script: npm run build
+  displayName: build
+
+- script: node setVersion.js
+  displayName: set version
+
+- script: npm run test
+  displayName: tests
+
+- task: PublishTestResults@2
+  displayName: 'Publish Unit Test Results'
+  condition: succeededOrFailed()
+  inputs:
+      testResultsFormat: 'JUnit'
+      testResultsFiles: 'test-report.xml'
+      mergeTestResults: true
+      failTaskOnFailedTests: true
+      testRunTitle: 'Node Tests'
+      
+- script: |
+    for dir in ./samples/*/; do
+      echo "Building $dir"
+      (cd "$dir" && npm i && npm run build)
+    done
+  displayName: 'Build sample projects'
