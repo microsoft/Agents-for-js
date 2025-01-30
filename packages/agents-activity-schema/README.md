@@ -1,0 +1,1 @@
+# @microsoft/agents-activity-schema
