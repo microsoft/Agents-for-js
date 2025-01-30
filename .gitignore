@@ -1,3 +1,7 @@
 node_modules/
 dist/
 *.env
+*.key
+*.pem
+test-report.xml
+tsconfig.tsbuildinfo
