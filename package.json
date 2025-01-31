@@ -34,10 +34,11 @@
     "packages/*"
   ],
   "dependencies": {
-    "uuid": "^11.0.5",
-    "zod": "^3.24.1",
+    "@azure/msal-node": "^3.1.0",
     "axios": "^1.7.8",
-    "debug": "^4.3.7"
+    "debug": "^4.3.7",
+    "uuid": "^11.0.5",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@types/debug": "^4.1.12",

@@ -7,155 +7,16 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "echo-bot",
+            "name": "copilotstudio-console",
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/samples/echo-bot/src/index.ts",
-            "outFiles": [
-                "${workspaceFolder}/**/dist/**/*.js"
-            ],
-            "preLaunchTask": "build_echo",
-            "envFile": "${workspaceFolder}/samples/echo-bot/.env",
-            "console": "integratedTerminal",
-            "internalConsoleOptions": "openOnSessionStart"
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "adaptive-bot",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "program": "${workspaceFolder}/samples/adaptive-bot/src/index.ts",
-            "outFiles": [
-                "${workspaceFolder}/**/dist/**/*.js"
-            ],
-            "preLaunchTask": "build_adaptive",
-            "envFile": "${workspaceFolder}/samples/adaptive-bot/.env",
-            "console": "integratedTerminal",
-            "internalConsoleOptions": "openOnSessionStart"
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "state-bot",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "program": "${workspaceFolder}/samples/state-bot/src/index.ts",
-            "outFiles": [
-                "${workspaceFolder}/**/dist/**/*.js"
-            ],
-            "preLaunchTask": "build_state",
-            "envFile": "${workspaceFolder}/samples/state-bot/.env",
-            "console": "integratedTerminal",
-            "internalConsoleOptions": "openOnSessionStart"
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "multi-bot",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "program": "${workspaceFolder}/samples/multi-feature-bot/src/index.ts",
-            "outFiles": [
-                "${workspaceFolder}/**/dist/**/*.js"
-            ],
-            "preLaunchTask": "build_multi",
-            "envFile": "${workspaceFolder}/samples/multi-feature-bot/.env",
-            "console": "integratedTerminal"
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "sso-bot",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "program": "${workspaceFolder}/samples/sso-bot/src/index.ts",
-            "outFiles": [
-                "${workspaceFolder}/**/dist/**/*.js"
-            ],
-            "preLaunchTask": "build_sso",
-            "envFile": "${workspaceFolder}/samples/sso-bot/.env",
-            "console": "integratedTerminal"
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "factory-bot",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "program": "${workspaceFolder}/samples/card-factory-bot/src/index.ts",
-            "outFiles": [
-                "${workspaceFolder}/**/dist/**/*.js"
-            ],
-            "preLaunchTask": "build_factory",
-            "envFile": "${workspaceFolder}/samples/card-factory-bot/.env",
-            "console": "integratedTerminal",
-            "internalConsoleOptions": "openOnSessionStart"
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "teams-multi-feature-bot",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "program": "${workspaceFolder}/samples/teams-multi-feature-bot/src/index.ts",
-            "outFiles": [
-                "${workspaceFolder}/**/dist/**/*.js"
-            ],
-            "preLaunchTask": "build_teams_multi",
-            "envFile": "${workspaceFolder}/samples/teams-multi-feature-bot/.env",
-            "console": "integratedTerminal"
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "teams-js-bot",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "program": "${workspaceFolder}/samples/teams-js-bot/src/index.ts",
-            "outFiles": [
-                "${workspaceFolder}/**/dist/**/*.js"
-            ],
-            "preLaunchTask": "build_teams_js_bot",
-            "envFile": "${workspaceFolder}/samples/teams-js-bot/.env",
-            "console": "integratedTerminal"
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "teams-sso-bot",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "program": "${workspaceFolder}/samples/teams-sso-bot/src/index.ts",
-            "outFiles": [
-                "${workspaceFolder}/**/dist/**/*.js"
-            ],
-            "preLaunchTask": "build_teams_sso",
-            "envFile": "${workspaceFolder}/samples/teams-sso-bot/.env",
-            "console": "integratedTerminal"
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "copilot-studio-client",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "program": "${workspaceFolder}/samples/copilot-studio/src/index.ts",
+            "program": "${workspaceFolder}/samples/copilotstudio-console/src/index.ts",
             "outFiles": [
                 "${workspaceFolder}/**/dist/**/*.js"
             ],
             "preLaunchTask": "build_copilot_client_sample",
-            "envFile": "${workspaceFolder}/samples/copilot-studio/.env",
+            "envFile": "${workspaceFolder}/samples/copilotstudio-console/.env",
             "console": "integratedTerminal"
         }
     ]
