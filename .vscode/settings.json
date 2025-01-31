@@ -1,0 +1,16 @@
+{
+    "nodejs-testing.extensions": [
+        {
+            "extensions": [
+                "ts"
+            ],
+            "parameters": [
+                "--import",
+                "tsx"
+            ]
+        }
+    ],
+    "nodejs-testing.include": [
+        "packages/*/test/"
+    ]
+}

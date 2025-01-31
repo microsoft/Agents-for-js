@@ -3,6 +3,9 @@
     "references": [
       {
         "path": "packages/agents-activity-schema"
+      },
+      {
+        "path": "packages/agents-copilotstudio-client"
       }
     ]
   }

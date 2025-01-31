@@ -1,0 +1,42 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "build_packages",
+			"type": "npm",
+			"script": "build",
+			"group": {
+				"kind": "build",
+				"isDefault": false
+			},
+			"problemMatcher": [],
+			"detail": "tsc --build --verbose tsconfig.build.json"
+		},
+		{
+			"label": "build_copilot_client_sample",
+			"type": "npm",
+			"script": "build",
+			"group": {
+				"kind": "build",
+				"isDefault": false
+			},
+			"problemMatcher": [],
+			"dependsOn": [
+				"build_packages"
+			],
+			"path": "samples/copilotstudio-console"
+		},
+		{
+			"label": "build_all",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"problemMatcher": [],
+			"dependsOrder": "sequence",
+			"dependsOn": [
+				"build_copilot_client_sample"
+			]
+		}
+	]
+}

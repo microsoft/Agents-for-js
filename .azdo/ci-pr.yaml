@@ -33,9 +33,9 @@ steps:
       failTaskOnFailedTests: true
       testRunTitle: 'Node Tests'
       
-# - script: |
-#     for dir in ./samples/*/; do
-#       echo "Building $dir"
-#       (cd "$dir" && npm i && npm run build)
-#     done
-#   displayName: 'Build sample projects'
+- script: |
+    for dir in ./samples/*/; do
+      echo "Building $dir"
+      (cd "$dir" && npm i && npm run build)
+    done
+  displayName: 'Build sample projects'

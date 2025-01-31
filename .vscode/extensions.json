@@ -1,0 +1,7 @@
+{
+    "recommendations": [
+        "github.copilot",
+        "connor4312.nodejs-testing",
+        "dbaeumer.vscode-eslint"
+    ]
+}
