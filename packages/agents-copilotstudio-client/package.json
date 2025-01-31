@@ -22,9 +22,6 @@
     "powerplatform"
   ],
   "main": "dist/src/index.js",
-  "devDependencies": {
-    "@types/express": "^5.0.0"
-  },
   "dependencies": {
     "@microsoft/agents-activity-schema": "file:../agents-activity-schema",
     "axios": "^1.7.8",
