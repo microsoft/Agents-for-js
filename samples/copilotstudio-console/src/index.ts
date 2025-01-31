@@ -5,7 +5,7 @@
 
 import * as msal from '@azure/msal-node'
 import { Activity, ActivityTypes, CardAction } from '@microsoft/agents-activity-schema'
-import { CopilotStudioClient, loadCopilotStudioConnectionSettingsFromEnv } from '@microsoft/agents-copilot-studio'
+import { ConnectionSettings, CopilotStudioClient, loadCopilotStudioConnectionSettingsFromEnv } from '@microsoft/agents-copilotstudio-client'
 import readline from 'readline'
 import open from 'open'
 import os from 'os'
@@ -13,11 +13,11 @@ import path from 'path'
 
 import { MsalCachePlugin } from './msalCachePlugin.js'
 
-async function acquireToken (): Promise<string> {
+async function acquireToken (settings: ConnectionSettings): Promise<string> {
   const msalConfig = {
     auth: {
-      clientId: process.env.appClientId || '',
-      authority: `https://login.microsoftonline.com/${process.env.tenantId}`
+      clientId: settings.appClientId,
+      authority: `https://login.microsoftonline.com/${settings.tenantId}`,
     },
     cache: {
       cachePlugin: new MsalCachePlugin(path.join(os.tmpdir(), 'msal.usercache.json'))
@@ -60,7 +60,7 @@ async function acquireToken (): Promise<string> {
 
 const createClient = async (): Promise<CopilotStudioClient> => {
   const settings = loadCopilotStudioConnectionSettingsFromEnv()
-  const token = await acquireToken()
+  const token = await acquireToken(settings)
   const copilotClient = new CopilotStudioClient(settings, token)
   return copilotClient
 }

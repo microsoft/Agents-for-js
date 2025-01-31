@@ -7,8 +7,10 @@ import { BotType } from './botType'
 import { PowerPlatformCloud } from './powerPlatformCloud'
 
 export class ConnectionSettings {
-  public environmentId?: string
-  public cloud?: PowerPlatformCloud
+  public appClientId: string = ''
+  public tenantId: string = ''
+  public environmentId: string = ''
+  public cloud?: PowerPlatformCloud = PowerPlatformCloud.Unknown
   public customPowerPlatformCloud?: string
   public botIdentifier?: string
   public copilotBotType?: BotType
@@ -20,6 +22,7 @@ export const loadCopilotStudioConnectionSettingsFromEnv: () => ConnectionSetting
     cloud: process.env.cloud,
     customPowerPlatformCloud: process.env.customPowerPlatformCloud,
     botIdentifier: process.env.botIdentifier,
-    copilotBotType: process.env.copilotBotType
+    copilotBotType: process.env.copilotBotType,
+    appClientId: process.env.appClientId
   } as ConnectionSettings
 }
