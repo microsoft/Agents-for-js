@@ -30,7 +30,9 @@
   "license": "MIT",
   "files": [
     "README.md",
-    "dist/src/*"
+    "LICENSE.md",
+    "dist/src/*",
+    "src/*"
   ],
   "exports": {
     ".": {
