@@ -29,7 +29,6 @@ Create an Entra ID app registration with permissions in the PowerPlatform API: `
 
 > Note: If you do not see `Power Platform API` in the list of API's your organization uses, you need to add the Power Platform API to your tenant. To do that, goto [Power Platform API Authentication](https://learn.microsoft.com/power-platform/admin/programmability-authentication-v2#step-2-configure-api-permissions) and follow the instructions on Step 2 to add the Power Platform Admin API to your Tenant
 
-
 ## Usage
 
 The client requires the `connectionSettings` and a the `jwt token` to authenticate in the service.
