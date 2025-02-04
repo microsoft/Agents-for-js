@@ -25,7 +25,6 @@
     "prebuild": "npm run lint",
     "build": "tsc --build --verbose tsconfig.build.json",
     "test": "node --test  --test-reporter=spec  --import tsx  --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=test-report.xml './packages/*/test/**/*.test.ts'",
-    "predocs": "npm run build",
     "docs": "typedoc"
   },
   "license": "MIT",
