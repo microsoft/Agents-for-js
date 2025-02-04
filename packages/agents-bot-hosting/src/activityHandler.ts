@@ -434,7 +434,7 @@ export class ActivityHandler {
         }
       }
     }
-    logger.info(`Handler ${type} called`)
+    logger.info(`${type} handler called`)
     const handlers = this.handlers[type] || []
     await runHandler(0)
     return returnValue
