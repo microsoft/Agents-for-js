@@ -1,0 +1,14 @@
+{
+    "entryPoints": [
+      "./packages/agents-activity-schema/index.ts",
+      "./packages/agents-copilotstudio-client/index.ts"
+    ],
+    "out": "docs",
+    "exclude": ["**/node_modules/**", "**/test/**"],
+    "excludeExternals": true,
+    "excludePrivate": true,
+    "excludeProtected": false,
+    "excludeNotDocumented": false,
+    "includeVersion": true,
+    "readme": "none"
+  }

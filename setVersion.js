@@ -4,7 +4,9 @@ import fs from 'fs'
 const upddateLocalDeps = (folder, version) => {
   const packageJsonPath = `${folder}/package.json`
   console.log(packageJsonPath)
-  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'))
+  const packageJsonContent = fs.readFileSync(packageJsonPath, 'utf8')
+  console.log('readed ', packageJsonPath, packageJsonContent.length)
+  const packageJson = JSON.parse(packageJsonContent)
   const dependencies = packageJson.dependencies
   Object.keys(dependencies).forEach(dep => {
     if (dep.startsWith('@microsoft/agents')) {
@@ -15,9 +17,9 @@ const upddateLocalDeps = (folder, version) => {
   })
 }
 
-const setPackageVersionAndBuildNumber = versionInfo => {
+const setPackageVersionAndBuildNumber = async versionInfo => {
   console.log('##vso[task.setvariable variable=CUSTOM_VERSION;]' + versionInfo.npmPackageVersion)
-
+  await nbgv.setPackageVersion('.')
   fs.readdir('packages', { withFileTypes: true }, (err, files) => {
     if (err) {
       console.error('Failed to read the packages directory: ' + err)
@@ -26,8 +28,10 @@ const setPackageVersionAndBuildNumber = versionInfo => {
     const folders = files
       .filter(file => file.isDirectory())
       .map(folder => `${folder.parentPath}/${folder.name}`)
-    folders.forEach(f => {
-      nbgv.setPackageVersion(f)
+
+    folders.forEach(async f => {
+      console.log(`Setting version number in ${f}`)
+      await nbgv.setPackageVersion(f)
       upddateLocalDeps(f, versionInfo.npmPackageVersion)
     })
   })

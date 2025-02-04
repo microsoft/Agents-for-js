@@ -27,7 +27,8 @@
     "postclean": "npm ci",
     "prebuild": "npm run lint",
     "build": "tsc --build --verbose tsconfig.build.json",
-    "test": "node --test  --test-reporter=spec  --import tsx  --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=test-report.xml './packages/*/test/**/*.test.ts'"
+    "test": "node --test  --test-reporter=spec  --import tsx  --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=test-report.xml './packages/*/test/**/*.test.ts'",
+    "docs": "typedoc"
   },
   "license": "MIT",
   "workspaces": [
@@ -53,7 +54,8 @@
     "nerdbank-gitversioning": "^3.7.115",
     "sinon": "^19.0.2",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "typedoc": "^0.27.6"
   },
   "ts-standard": {
     "ignore": [

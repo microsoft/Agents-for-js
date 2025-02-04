@@ -1,0 +1,64 @@
+name: api-docs
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+       - main
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies with CI
+        run: npm ci
+
+      - name: Build TS
+        run: npm run build
+
+      - name: Build sample projects
+        run: |
+          for dir in ./samples/*/; do
+            echo "Building $dir"
+             (cd "$dir" && npm i && npm run build)
+          done
+
+      - name: Set Version
+        run: node setVersion.js
+
+      - name: Generate documentation
+        run: npm run docs
+
+      - name: Upload static files as artifact
+        id: deployment
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/
+          retention-days: 7
+
+  deploy-pages:
+    runs-on: ubuntu-latest
+    environment:
+          name: github-pages
+          url: ${{ steps.deployment.outputs.page_url }}
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
