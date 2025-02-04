@@ -20,7 +20,7 @@ const verifyToken = async (raw: string, config: AuthConfiguration): Promise<JwtP
       ? 'https://login.botframework.com/v1/.well-known/keys'
       : `https://login.microsoftonline.com/${config.tenantId}/discovery/v2.0/keys`
 
-    logger.info(`fetching keys from ${jwksUri}`)  
+    logger.info(`fetching keys from ${jwksUri}`)
     const jwksClient: JwksClient = jwksRsa({ jwksUri })
 
     jwksClient.getSigningKey(header.kid, (err: Error | null, key: SigningKey | undefined): void => {
@@ -53,7 +53,6 @@ const verifyToken = async (raw: string, config: AuthConfiguration): Promise<JwtP
         logger.error(`token audience ${tokenClaims.aud} does not match client id ${config.clientId}`)
         reject(new Error('token audience does not match client id'))
       }
-      logger.info(`token verified for ${tokenClaims.aud}`)
       resolve(tokenClaims)
     })
   })
@@ -68,7 +67,7 @@ export const authorizeJWT = (authConfig: AuthConfiguration) => {
       const token: string = authHeader.split(' ')[1] // Extract the token from the Bearer string
       try {
         const user = await verifyToken(token, authConfig)
-        logger.info(`token verified for ${user}`)
+        logger.info('token verified for ', user)
         req.user = user
       } catch (err: Error | any) {
         failed = true
