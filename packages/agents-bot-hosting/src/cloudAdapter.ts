@@ -146,18 +146,6 @@ export class CloudAdapter extends BotAdapter {
 
     logger.info('Received activity: ', activity)
 
-    let scope = 'https://api.botframework.com'
-
-    if (request.user?.azp) {
-      logger.info('Setting scope to azp', request.user?.azp)
-      scope = request.user?.azp!
-    }
-
-    if (request.user?.appid) {
-      logger.info('Setting scope to appid', request.user?.appid)
-      scope = request.user?.azp!
-    }
-
     if (
       activity?.type === ActivityTypes.InvokeResponse ||
       activity?.type === ActivityTypes.Invoke ||
@@ -169,6 +157,17 @@ export class CloudAdapter extends BotAdapter {
       return end(invokeResponse?.status ?? StatusCodes.OK, JSON.stringify(invokeResponse?.body), true)
     }
 
+    let scope = 'https://api.botframework.com'
+
+    if (request.user?.azp) {
+      logger.info('Setting scope to azp', request.user?.azp)
+      scope = request.user?.azp!
+    }
+
+    if (request.user?.appid) {
+      logger.info('Setting scope to appid', request.user?.appid)
+      scope = request.user?.azp!
+    }
     this.connectorClient = await ConnectorClient.createClientWithAuthAsync(activity.serviceUrl!, this.authConfig, this.authProvider, scope)
 
     const context = this.createTurnContext(activity, logic)
