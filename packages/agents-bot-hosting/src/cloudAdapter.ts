@@ -149,6 +149,12 @@ export class CloudAdapter extends BotAdapter {
     let scope = 'https://api.botframework.com'
 
     if (request.user?.azp) {
+      logger.info('Setting scope to azp', request.user?.azp)
+      scope = request.user?.azp!
+    }
+
+    if (request.user?.appid) {
+      logger.info('Setting scope to appid', request.user?.appid)
       scope = request.user?.azp!
     }
 
