@@ -14,10 +14,6 @@
     "prebundle": "npm run build",
     "bundle": "esbuild dist/index.js --bundle --platform=node --metafile=dist/meta.json --outfile=dist/bundle.js --tree-shaking=true --keep-names"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com"
-  },
   "dependencies": {
     "@microsoft/agents-activity-schema": "file:../../packages/agents-activity-schema",
     "@microsoft/agents-copilot-studio": "file:../../packages/agents-copilot-studio"
