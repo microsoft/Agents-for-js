@@ -166,7 +166,7 @@ export class CloudAdapter extends BotAdapter {
 
     if (request.user?.appid) {
       logger.info('Setting scope to appid', request.user?.appid)
-      scope = request.user?.azp!
+      scope = request.user?.appid!
     }
     this.connectorClient = await ConnectorClient.createClientWithAuthAsync(activity.serviceUrl!, this.authConfig, this.authProvider, scope)
 
