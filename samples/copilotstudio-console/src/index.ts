@@ -5,19 +5,32 @@
 
 import * as msal from '@azure/msal-node'
 import { Activity, ActivityTypes, CardAction } from '@microsoft/agents-activity-schema'
-import { ConnectionSettings, CopilotStudioClient, loadCopilotStudioConnectionSettingsFromEnv } from '@microsoft/agents-copilotstudio-client'
+import { CopilotStudioClient, loadCopilotStudioConnectionSettingsFromEnv } from '@microsoft/agents-copilot-studio'
 import readline from 'readline'
-import open from 'open'
 import os from 'os'
 import path from 'path'
-
 import { MsalCachePlugin } from './msalCachePlugin.js'
+import { exec } from 'child_process'
 
-async function acquireToken (settings: ConnectionSettings): Promise<string> {
+const openBrowser = async (url: string) => {
+  const command = process.platform === 'win32'
+    ? `start "" "${url}"`  // Windows
+    : process.platform === 'darwin'
+      ? `open "${url}"`    // macOS
+      : `xdg-open "${url}"`  // Linux
+
+  exec(command, (error) => {
+    if (error) {
+      console.error('Error opening browser:', error)
+    }
+  })
+}
+
+async function acquireToken (): Promise<string> {
   const msalConfig = {
     auth: {
-      clientId: settings.appClientId,
-      authority: `https://login.microsoftonline.com/${settings.tenantId}`,
+      clientId: process.env.appClientId || '',
+      authority: `https://login.microsoftonline.com/${process.env.tenantId}`
     },
     cache: {
       cachePlugin: new MsalCachePlugin(path.join(os.tmpdir(), 'msal.usercache.json'))
@@ -36,9 +49,7 @@ async function acquireToken (settings: ConnectionSettings): Promise<string> {
   const tokenRequest = {
     scopes: ['https://api.powerplatform.com/.default'],
     redirectUri: 'http://localhost',
-    openBrowser: async (url: string) => {
-      await open(url)
-    }
+    openBrowser
   }
   let token
   try {
@@ -60,22 +71,22 @@ async function acquireToken (settings: ConnectionSettings): Promise<string> {
 
 const createClient = async (): Promise<CopilotStudioClient> => {
   const settings = loadCopilotStudioConnectionSettingsFromEnv()
-  const token = await acquireToken(settings)
+  const token = await acquireToken()
   const copilotClient = new CopilotStudioClient(settings, token)
   return copilotClient
 }
 
-const askQuestion = () => {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-  })
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+})
 
+const askQuestion = (copilotClient: CopilotStudioClient, conversationId: string) => {
   rl.question('\n>>>: ', async (answer) => {
     if (answer.toLowerCase() === 'exit') {
       rl.close()
     } else {
-      const replies = await copilotClient.askQuestionAsync(answer)
+      const replies = await copilotClient.askQuestionAsync(answer, conversationId)
       replies.forEach((act: Activity) => {
         if (act.type === ActivityTypes.Message) {
           console.log(`\n${act.text}`)
@@ -85,21 +96,16 @@ const askQuestion = () => {
           rl.close()
         }
       })
-      askQuestion()
+      askQuestion(copilotClient, conversationId)
     }
   })
 }
 
-const copilotClient = await createClient()
-
-const replies = await copilotClient.startConversationAsync(true)
-
-replies.forEach((act: Activity) => {
-  if (act.type === 'message') {
-    console.log(act.text)
-    console.log('\nSuggested Actions: ')
-    act.suggestedActions?.actions.forEach((action: CardAction) => console.log(action.value))
-  }
-})
-
-askQuestion()
+(async () => {
+  const copilotClient = await createClient()
+  const act: Activity = await copilotClient.startConversationAsync(true)
+  console.log(act.text)
+  console.log('\nSuggested Actions: ')
+  act.suggestedActions?.actions.forEach((action: CardAction) => console.log(action.value))
+  askQuestion(copilotClient, act.conversation?.id!)
+})()

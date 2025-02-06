@@ -6,7 +6,6 @@
   "author": "Microsoft",
   "license": "MIT",
   "main": "./dist/index.js",
-  "type": "module",
   "scripts": {
     "prebuild": "npm i",
     "build": "tsc --build",
@@ -18,8 +17,7 @@
   "dependencies": {
     "@microsoft/agents-activity-schema": "file:../../packages/agents-activity-schema",
     "@microsoft/agents-copilot-studio": "file:../../packages/agents-copilotstudio-client",
-    "@azure/msal-node": "^3.1.0",
-    "open": "^10.1.0"
+    "@azure/msal-node": "^3.1.0"
   },
   "devDependencies": {
     "typescript": "^5.7.2"
