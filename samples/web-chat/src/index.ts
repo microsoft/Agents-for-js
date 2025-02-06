@@ -4,12 +4,13 @@
 import express, { Response } from 'express'
 import rateLimit from 'express-rate-limit'
 
-import { Request, CloudAdapter, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv } from '@microsoft/agents-bot-hosting'
+import { Request, CloudAdapter, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv, MemoryStorage, ConversationState, UserState } from '@microsoft/agents-bot-hosting'
 import { ConversationReference } from '@microsoft/agents-activity-schema'
 
 import { AdaptiveCardBot } from './01.adaptiveCardsBot'
 import { CardFactoryBot } from './02.cardFactoryBot'
 import { MultiFeatureBot } from './03.multiFeatureBot'
+import { StateManagementBot } from './04.stateBot'
 
 const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
 const conversationReferences: { [key: string]: ConversationReference } = {}
@@ -22,6 +23,31 @@ const createBot = (botName: string) => {
       return new CardFactoryBot()
     case 'MultiFeatureBot':
       return new MultiFeatureBot(conversationReferences)
+    case 'StateManagementBot': {
+      /* AZURE BLOB STORAGE - Uncomment the code in this section to use Azure blob storage */
+      // const blobStorage = new AzureBlobStorage(process.env.BLOB_STORAGE_CONNECTION_STRING!, process.env.BLOB_CONTAINER_ID!)
+      // const conversationState = new ConversationState(blobStorage)
+      // const userState = new UserState(blobStorage)
+      /* END AZURE BLOB STORAGE */
+
+      /* COSMOSDB STORAGE - Uncomment the code in this section to use CosmosDB storage */
+      // const cosmosDbStorageOptions = {
+      //   databaseId: process.env.COSMOS_DATABASE_ID || 'botsDB',
+      //   containerId: process.env.COSMOS_CONTAINER_ID || 'botState',
+      //   cosmosClientOptions: {
+      //     endpoint: process.env.COSMOS_ENDPOINT!,
+      //     key: process.env.COSMOS_KEY!,
+      //   }
+      // } as CosmosDbPartitionedStorageOptions
+      // const cosmosStorage = new CosmosDbPartitionedStorage(cosmosDbStorageOptions)
+      // const conversationState = new ConversationState(cosmosStorage)
+      // const userState = new UserState(cosmosStorage)
+      /* END COSMOSDB STORAGE */
+      const memoryStorage = new MemoryStorage()
+      const conversationState = new ConversationState(memoryStorage)
+      const userState = new UserState(memoryStorage)
+      return new StateManagementBot(conversationState, userState)
+    }
     default:
       throw new Error(`Bot with name ${botName} is not recognized.`)
   }
