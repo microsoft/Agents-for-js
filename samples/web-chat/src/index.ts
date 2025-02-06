@@ -5,12 +5,26 @@ import express, { Response } from 'express'
 
 import rateLimit from 'express-rate-limit'
 import { Request, CloudAdapter, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv } from '@microsoft/agents-bot-hosting'
-import { MultiFeatureBot } from './multiFeatureBot'
+import { AdaptiveCardBot } from './01.adaptiveCardsBot'
+import { CardFactoryBot } from './02.cardFactoryBot'
 
 const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
 
+const createBot = (botName: string) => {
+  switch (botName) {
+    case 'AdaptiveCardBot':
+      return new AdaptiveCardBot()
+    case 'CardFactoryBot':
+      return new CardFactoryBot()
+    default:
+      throw new Error(`Bot with name ${botName} is not recognized.`)
+  }
+}
+
 const adapter = new CloudAdapter(authConfig)
-const myBot = new MultiFeatureBot()
+
+const botName = process.env.botName || 'MultiFeatureBot'
+const myBot = createBot(botName)
 
 const app = express()
 
