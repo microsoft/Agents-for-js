@@ -13,6 +13,20 @@
 			"detail": "tsc --build --verbose tsconfig.build.json"
 		},
 		{
+			"label": "build_echo",
+			"type": "npm",
+			"script": "build",
+			"group": {
+				"kind": "build",
+				"isDefault": false
+			},
+			"dependsOn": [
+				"build_packages"
+			],
+			"problemMatcher": [],
+			"path": "samples/echo-bot"
+		},
+		{
 			"label": "build_copilot_client_sample",
 			"type": "npm",
 			"script": "build",
@@ -35,6 +49,7 @@
 			"problemMatcher": [],
 			"dependsOrder": "sequence",
 			"dependsOn": [
+				"build_echo",
 				"build_copilot_client_sample"
 			]
 		}

@@ -1,0 +1,35 @@
+ 
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "name": "@microsoft/agents-bot-hosting-storage-cosmos",
+  "version": "0.1.0",
+  "homepage": "https://github.com/microsoft/Agents-for-js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/microsoft/Agents-for-js"
+  },
+  "author": {
+    "name": "Microsoft",
+    "email": "agentssdk@microsoft.com",
+    "url": "https://aka.ms/Agents"
+  },
+  "description": "Microsoft 365 Agents SDK State Cosmos Storage support.",
+  "main": "dist/index.js",
+  "types" : "dist/src/index.d.ts",
+  "dependencies": {
+    "@azure/cosmos": "^4.2.0",
+    "@microsoft/agents-bot-hosting": "file:../../packages/agents-bot-hosting"
+  },
+  "license": "MIT",
+  "files": [
+    "README.md",
+    "dist",
+    "src"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/src/index.js",
+      "require": "./dist/src/index.js"
+    }
+  }
+}

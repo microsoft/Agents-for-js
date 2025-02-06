@@ -7,6 +7,22 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "echo-bot",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/samples/echo-bot/src/index.ts",
+            "outFiles": [
+                "${workspaceFolder}/**/dist/**/*.js"
+            ],
+            "preLaunchTask": "build_echo",
+            "envFile": "${workspaceFolder}/samples/echo-bot/.env",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "copilotstudio-console",
             "skipFiles": [
                 "<node_internals>/**"

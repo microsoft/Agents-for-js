@@ -23,6 +23,7 @@ export const loadCopilotStudioConnectionSettingsFromEnv: () => ConnectionSetting
     customPowerPlatformCloud: process.env.customPowerPlatformCloud,
     botIdentifier: process.env.botIdentifier,
     copilotBotType: process.env.copilotBotType,
-    appClientId: process.env.appClientId
+    appClientId: process.env.appClientId,
+    tenantId: process.env.tenantId
   } as ConnectionSettings
 }

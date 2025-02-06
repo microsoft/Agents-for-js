@@ -26,7 +26,7 @@ import { Channels } from './conversation/channels'
 import { Mention } from './entity/mention'
 import { TeamsChannelData, teamsChannelDataZodSchema } from './teams/teamsChannelData'
 
-const activityZodSchema = z.object({
+export const activityZodSchema = z.object({
   type: z.union([activityTypesZodSchema, z.string().min(1)]),
   text: z.string().min(1).optional(),
   id: z.string().min(1).optional(),

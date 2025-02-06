@@ -9,6 +9,8 @@ export { SemanticAction } from './action/semanticAction'
 export { SemanticActionStateTypes } from './action/semanticActionStateTypes'
 export { SuggestedActions } from './action/suggestedActions'
 
+export { AdaptiveCardsSearchParams } from './adaptive-cards/adaptiveCardsSearchParams'
+
 export { Attachment } from './attachment/attachment'
 export { AttachmentLayoutTypes } from './attachment/attachmentLayoutTypes'
 
@@ -24,6 +26,12 @@ export { Mention } from './entity/mention'
 export { GeoCoordinates } from './entity/geoCoordinates'
 export { Place } from './entity/place'
 export { Thing } from './entity/thing'
+
+export { AdaptiveCardInvokeAction } from './invoke/adaptiveCardInvokeAction'
+
+export { MessagingExtensionParameter } from './messaging-extension/messagingExtensionParameter'
+export { MessagingExtensionQuery } from './messaging-extension/messagingExtensionQuery'
+export { MessagingExtensionQueryOptions } from './messaging-extension/messagingExtensionQueryOptions'
 
 export { ChannelInfo } from './teams/channelInfo'
 export { NotificationInfo } from './teams/notificationInfo'
@@ -46,3 +54,4 @@ export { MessageReaction } from './messageReaction'
 export { MessageReactionTypes } from './messageReactionTypes'
 export { TextFormatTypes } from './textFormatTypes'
 export { TextHighlight } from './textHighlight'
+export * from './activityValueValidators'

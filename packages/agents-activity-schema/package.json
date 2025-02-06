@@ -14,24 +14,21 @@
   },
   "description": "Microsoft 365 Agents SDK for JavaScript",
   "keywords": [
-    "js",
-    "ts",
-    "node",
     "Agents",
     "bot"
   ],
   "main": "dist/src/index.js",
-  "devDependencies": {
-    "@types/express": "^5.0.0"
-  },
+  "types" : "dist/src/index.d.ts",
   "dependencies": {
     "uuid": "^11.0.5",
     "zod": "^3.24.1"
   },
+  "devDependencies": {
+    "@types/express": "^5.0.0"
+  },
   "license": "MIT",
   "files": [
     "README.md",
-    "LICENSE.md",
     "dist/src/*",
     "src/*"
   ],
@@ -40,8 +37,5 @@
       "import": "./dist/src/index.js",
       "require": "./dist/src/index.js"
     }
-  },
-  "engines": {
-    "node": ">=18"
   }
 }
