@@ -7,14 +7,15 @@ const upddateLocalDeps = (folder, version) => {
   const packageJsonContent = fs.readFileSync(packageJsonPath, 'utf8')
   console.log('readed ', packageJsonPath, packageJsonContent.length)
   const packageJson = JSON.parse(packageJsonContent)
+  packageJson.version = version
   const dependencies = packageJson.dependencies
   Object.keys(dependencies).forEach(dep => {
     if (dep.startsWith('@microsoft/agents')) {
       packageJson.dependencies[dep] = version
-      fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2))
       console.log(`Updated ${dep} to ${version} in ${packageJsonPath}`)
     }
   })
+  fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2))
 }
 
 const setPackageVersionAndBuildNumber = async versionInfo => {
@@ -32,7 +33,6 @@ const setPackageVersionAndBuildNumber = async versionInfo => {
 
     for (const f of folders) {
       console.log(`Setting version number in ${f}`)
-      nbgv.setPackageVersion(f)
       upddateLocalDeps(f, versionInfo.npmPackageVersion)
     }
   })
