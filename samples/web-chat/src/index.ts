@@ -11,6 +11,7 @@ import { AdaptiveCardBot } from './01.adaptiveCardsBot'
 import { CardFactoryBot } from './02.cardFactoryBot'
 import { MultiFeatureBot } from './03.multiFeatureBot'
 import { StateManagementBot } from './04.stateBot'
+import { WebChatSsoBot } from './05.webChatSSOBot'
 
 const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
 const conversationReferences: { [key: string]: ConversationReference } = {}
@@ -23,6 +24,11 @@ const createBot = (botName: string) => {
       return new CardFactoryBot()
     case 'MultiFeatureBot':
       return new MultiFeatureBot(conversationReferences)
+    case 'WebChatSsoBot': {
+      const memoryStorage = new MemoryStorage()
+      const userState = new UserState(memoryStorage)
+      return new WebChatSsoBot(userState)
+    }
     case 'StateManagementBot': {
       /* AZURE BLOB STORAGE - Uncomment the code in this section to use Azure blob storage */
       // const blobStorage = new AzureBlobStorage(process.env.BLOB_STORAGE_CONNECTION_STRING!, process.env.BLOB_CONTAINER_ID!)
