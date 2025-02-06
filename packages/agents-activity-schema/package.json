@@ -37,8 +37,5 @@
       "import": "./dist/src/index.js",
       "require": "./dist/src/index.js"
     }
-  },
-  "engines": {
-    "node": ">=18"
   }
 }
