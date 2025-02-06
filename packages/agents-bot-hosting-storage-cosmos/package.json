@@ -23,7 +23,7 @@
   "license": "MIT",
   "files": [
     "README.md",
-    "dist",
+    "dist/src",
     "src"
   ],
   "exports": {

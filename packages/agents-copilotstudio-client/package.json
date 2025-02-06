@@ -13,11 +13,7 @@
   },
   "description": "Microsoft Copilot Studio Client for JavaScript",
   "keywords": [
-    "js",
-    "ts",
-    "node",
     "Agents",
-    "bot",
     "copilotstudio",
     "powerplatform"
   ],
@@ -31,8 +27,7 @@
   "license": "MIT",
   "files": [
     "README.md",
-    "LICENSE.md",
-    "dist",
+    "dist/src",
     "src"
   ],
   "exports": {
