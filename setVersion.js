@@ -39,6 +39,9 @@ const setPackageVersionAndBuildNumber = async versionInfo => {
 
 const handleError = err => console.error('Failed to update the package version number. nerdbank-gitversion failed: ' + err)
 
-nbgv.getVersion('.')
-  .then(setPackageVersionAndBuildNumber)
-  .catch(handleError)
+const v = await nbgv.getVersion('.')
+try {
+  setPackageVersionAndBuildNumber(v)
+} catch (err) {
+  handleError(err)
+}
