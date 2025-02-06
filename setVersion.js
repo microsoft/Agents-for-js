@@ -25,15 +25,16 @@ const setPackageVersionAndBuildNumber = async versionInfo => {
       console.error('Failed to read the packages directory: ' + err)
       return
     }
+
     const folders = files
       .filter(file => file.isDirectory())
       .map(folder => `${folder.parentPath}/${folder.name}`)
 
-    folders.forEach(async f => {
+    for (const f of folders) {
       console.log(`Setting version number in ${f}`)
-      await nbgv.setPackageVersion(f)
+      nbgv.setPackageVersion(f)
       upddateLocalDeps(f, versionInfo.npmPackageVersion)
-    })
+    }
   })
 }
 
