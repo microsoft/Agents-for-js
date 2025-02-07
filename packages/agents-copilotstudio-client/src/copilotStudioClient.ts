@@ -6,7 +6,7 @@
 import { ConnectionSettings } from './connectionSettings'
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios'
 import { getCopilotStudioConnectionUrl } from './powerPlatformEnvironment'
-import { Activity, ConversationAccount } from '@microsoft/agents-activity-schema'
+import { Activity, ActivityTypes, ConversationAccount } from '@microsoft/agents-activity-schema'
 import { ExecuteTurnRequest } from './executeTurnRequest'
 import createDebug, { Debugger } from 'debug'
 
@@ -35,7 +35,7 @@ export class CopilotStudioClient {
     let result: string = ''
     const results: string[] = []
 
-    const processEvents = ({ done, value }: streamRead): string[] => {
+    const processEvents = async ({ done, value }: streamRead): Promise<string[]> => {
       if (done) {
         this.logger('Stream complete')
         result += value
@@ -45,7 +45,7 @@ export class CopilotStudioClient {
       this.logger('Bot is typing...')
       result += value
 
-      return reader.read().then(processEvents)
+      return processEvents(await reader.read())
     }
 
     const events: string[] = await reader.read().then(processEvents)
@@ -55,11 +55,13 @@ export class CopilotStudioClient {
       const validEvents = values.filter(e => e.substring(0, 4) === 'data' && e !== 'data: end\r')
       validEvents.forEach(ve => {
         const actobj = JSON.parse(ve.substring(5, ve.length))
-        if (actobj.type === 'message') {
+        if (actobj.type === ActivityTypes.Message) {
           const validTimestamp = new Date(actobj.timestamp)
           actobj.timestamp = validTimestamp.toISOString()
           const act = Activity.fromObject(actobj)
           activities.push(act)
+        } else {
+          this.logger(actobj.type)
         }
       })
     })

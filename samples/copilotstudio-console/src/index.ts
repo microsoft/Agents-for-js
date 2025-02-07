@@ -5,7 +5,7 @@
 
 import * as msal from '@azure/msal-node'
 import { Activity, ActivityTypes, CardAction } from '@microsoft/agents-activity-schema'
-import { CopilotStudioClient, loadCopilotStudioConnectionSettingsFromEnv } from '@microsoft/agents-copilotstudio-client'
+import { ConnectionSettings, CopilotStudioClient, loadCopilotStudioConnectionSettingsFromEnv } from '@microsoft/agents-copilotstudio-client'
 import readline from 'readline'
 import os from 'os'
 import path from 'path'
@@ -26,11 +26,11 @@ const openBrowser = async (url: string) => {
   })
 }
 
-async function acquireToken (): Promise<string> {
+async function acquireToken (settings: ConnectionSettings): Promise<string> {
   const msalConfig = {
     auth: {
-      clientId: process.env.appClientId || '',
-      authority: `https://login.microsoftonline.com/${process.env.tenantId}`
+      clientId: settings.appClientId,
+      authority: `https://login.microsoftonline.com/${settings.tenantId}`
     },
     cache: {
       cachePlugin: new MsalCachePlugin(path.join(os.tmpdir(), 'msal.usercache.json'))
@@ -71,7 +71,7 @@ async function acquireToken (): Promise<string> {
 
 const createClient = async (): Promise<CopilotStudioClient> => {
   const settings = loadCopilotStudioConnectionSettingsFromEnv()
-  const token = await acquireToken()
+  const token = await acquireToken(settings)
   const copilotClient = new CopilotStudioClient(settings, token)
   return copilotClient
 }
@@ -101,11 +101,13 @@ const askQuestion = (copilotClient: CopilotStudioClient, conversationId: string)
   })
 }
 
-(async () => {
+async function main () {
   const copilotClient = await createClient()
   const act: Activity = await copilotClient.startConversationAsync(true)
   console.log(act.text)
   console.log('\nSuggested Actions: ')
   act.suggestedActions?.actions.forEach((action: CardAction) => console.log(action.value))
   askQuestion(copilotClient, act.conversation?.id!)
-})()
+}
+
+main()
