@@ -59,19 +59,24 @@ async function acquireToken (settings: ConnectionSettings): Promise<string> {
   return token
 }
 
-let copilotClient: CopilotStudioClient
+const createClient = async (): Promise<CopilotStudioClient> => {
+  const settings = loadCopilotStudioConnectionSettingsFromEnv()
+  const token = await acquireToken(settings)
+  const copilotClient = new CopilotStudioClient(settings, token)
+  return copilotClient
+}
 
-const askQuestion = async () => {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-  })
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+})
 
+const askQuestion = async (copilotClient: CopilotStudioClient, conversationId: string) => {
   rl.question('\n>>>: ', async (answer) => {
     if (answer.toLowerCase() === 'exit') {
       rl.close()
     } else {
-      const replies = await copilotClient.askQuestionAsync(answer)
+      const replies = await copilotClient.askQuestionAsync(answer, conversationId)
       replies.forEach((act: Activity) => {
         if (act.type === ActivityTypes.Message) {
           console.log(`\n${act.text}`)
@@ -81,12 +86,18 @@ const askQuestion = async () => {
           rl.close()
         }
       })
-      await askQuestion()
+      await askQuestion(copilotClient, conversationId)
     }
   })
 }
 
 const main = async () => {
+  const copilotClient = await createClient()
+  const act: Activity = await copilotClient.startConversationAsync(true)
+  console.log(act.text)
+  console.log('\nSuggested Actions: ')
+  act.suggestedActions?.actions.forEach((action: CardAction) => console.log(action.value))
+  await askQuestion(copilotClient, act.conversation?.id!)
   const settings = loadCopilotStudioConnectionSettingsFromEnv()
   console.log(`Copilot Studio Client Version: ${pkg.version}, running with settings: ${JSON.stringify(settings)}`)
   const token = await acquireToken(settings)
