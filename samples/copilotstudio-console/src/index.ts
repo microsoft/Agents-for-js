@@ -6,6 +6,7 @@
 import * as msal from '@azure/msal-node'
 import { Activity, ActivityTypes, CardAction } from '@microsoft/agents-activity-schema'
 import { ConnectionSettings, CopilotStudioClient, loadCopilotStudioConnectionSettingsFromEnv } from '@microsoft/agents-copilotstudio-client'
+import pkg from '@microsoft/agents-copilotstudio-client/package.json' with { type: 'json' }
 import readline from 'readline'
 import open from 'open'
 import os from 'os'
@@ -87,6 +88,7 @@ const askQuestion = async () => {
 
 const main = async () => {
   const settings = loadCopilotStudioConnectionSettingsFromEnv()
+  console.log(`Copilot Studio Client Version: ${pkg.version}, running with settings: ${JSON.stringify(settings)}`)
   const token = await acquireToken(settings)
   copilotClient = new CopilotStudioClient(settings, token)
   const replies = await copilotClient.startConversationAsync(true)
