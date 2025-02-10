@@ -81,7 +81,7 @@ const rl = readline.createInterface({
   output: process.stdout
 })
 
-const askQuestion = (copilotClient: CopilotStudioClient, conversationId: string) => {
+const askQuestion = async (copilotClient: CopilotStudioClient, conversationId: string) => {
   rl.question('\n>>>: ', async (answer) => {
     if (answer.toLowerCase() === 'exit') {
       rl.close()
@@ -96,7 +96,7 @@ const askQuestion = (copilotClient: CopilotStudioClient, conversationId: string)
           rl.close()
         }
       })
-      askQuestion(copilotClient, conversationId)
+      await askQuestion(copilotClient, conversationId)
     }
   })
 }
@@ -107,7 +107,7 @@ async function main () {
   console.log(act.text)
   console.log('\nSuggested Actions: ')
   act.suggestedActions?.actions.forEach((action: CardAction) => console.log(action.value))
-  askQuestion(copilotClient, act.conversation?.id!)
+  await askQuestion(copilotClient, act.conversation?.id!)
 }
 
-main()
+main().then().catch((e: any) => console.log('Error: ', e))

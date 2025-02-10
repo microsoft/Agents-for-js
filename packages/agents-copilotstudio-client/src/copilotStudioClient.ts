@@ -45,7 +45,7 @@ export class CopilotStudioClient {
       this.logger('Bot is typing...')
       result += value
 
-      return processEvents(await reader.read())
+      return await processEvents(await reader.read())
     }
 
     const events: string[] = await reader.read().then(processEvents)
@@ -54,14 +54,16 @@ export class CopilotStudioClient {
       const values: string[] = event.toString().split('\n')
       const validEvents = values.filter(e => e.substring(0, 4) === 'data' && e !== 'data: end\r')
       validEvents.forEach(ve => {
-        const actobj = JSON.parse(ve.substring(5, ve.length))
-        if (actobj.type === ActivityTypes.Message) {
-          const validTimestamp = new Date(actobj.timestamp)
-          actobj.timestamp = validTimestamp.toISOString()
-          const act = Activity.fromObject(actobj)
-          activities.push(act)
-        } else {
-          this.logger(actobj.type)
+        try {
+          const act = Activity.fromJson(ve.substring(5, ve.length))
+          if (act.type === ActivityTypes.Message) {
+            activities.push(act)
+          } else {
+            this.logger('Activity type: ', act.type)
+          }
+        } catch (e) {
+          this.logger('Error: ', e)
+          throw e
         }
       })
     })
