@@ -8,8 +8,7 @@ For more information please see the parent project information here [Microsoft 3
 
 ## Packages Overview
 
-We offer the next NPM packages to create conversational experiences based on bots:
-
+We offer the following NPM packages to create conversational experiences based on bots:
 
 | Package Name | Description | Replaces|
 |--------------|-------------|---------|
