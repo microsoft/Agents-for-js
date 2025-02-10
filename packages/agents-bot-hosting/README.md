@@ -36,7 +36,7 @@ Host the bot with express
 
 ```ts
 // index.ts
-import exaspress, { Response } from 'express'
+import express, { Response } from 'express'
 import { Request, CloudAdapter, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv } from '@microsoft/agents-bot-hosting'
 import { EchoBot } from './bot'
 
