@@ -11,16 +11,15 @@ const ApiVersion: string = '2022-03-01-preview'
 
 export function getCopilotStudioConnectionUrl (
   settings: ConnectionSettings,
-  conversationId?: string,
-  botType: BotType = BotType.Published,
-  cloud: PowerPlatformCloud = PowerPlatformCloud.Prod,
-  cloudBaseAddress?: string
+  conversationId?: string
 ): string {
-  if (cloud === PowerPlatformCloud.Other && (!cloudBaseAddress || !cloudBaseAddress.trim())) {
+  let cloudBaseAddress: string = ''
+  let cloudValue: number = PowerPlatformCloud.Prod
+  if (settings.cloud === PowerPlatformCloud.Other && cloudBaseAddress.trim() === '') {
     throw new Error('cloudBaseAddress must be provided when PowerPlatformCloud is Other')
   }
 
-  if (!settings.environmentId || settings.environmentId.trim() === '') {
+  if (settings.environmentId.trim() === '') {
     throw new Error('EnvironmentId must be provided')
   }
 
@@ -29,13 +28,15 @@ export function getCopilotStudioConnectionUrl (
   }
 
   if (settings.cloud && settings.cloud !== PowerPlatformCloud.Unknown) {
-    cloud = settings.cloud
+    const powerPlatformCloudValue = Number(PowerPlatformCloud[settings.cloud])
+    cloudValue = powerPlatformCloudValue
   }
 
-  if (cloud === PowerPlatformCloud.Other) {
+  if (settings.cloud === PowerPlatformCloud.Other) {
     if (cloudBaseAddress && isValidUri(cloudBaseAddress)) {
-      cloud = PowerPlatformCloud.Other
-    } else if (settings.customPowerPlatformCloud && isValidUri(settings.customPowerPlatformCloud)) {
+      cloudValue = PowerPlatformCloud.Other
+    } else if (settings.customPowerPlatformCloud && settings.customPowerPlatformCloud.trim() !== '' && isValidUri(settings.customPowerPlatformCloud)) {
+      cloudValue = PowerPlatformCloud.Other
       cloudBaseAddress = settings.customPowerPlatformCloud
     } else {
       throw new Error(
@@ -44,13 +45,11 @@ export function getCopilotStudioConnectionUrl (
     }
   }
 
-  if (settings.copilotBotType) {
-    botType = settings.copilotBotType
-  }
+  const botType = (settings.copilotBotType && settings.copilotBotType.trim() !== '') ? BotType[settings.copilotBotType as keyof typeof BotType] : BotType.Published
 
   cloudBaseAddress = cloudBaseAddress ?? 'api.unknown.powerplatform.com'
 
-  const host = getEnvironmentEndpoint(cloud, settings.environmentId, cloudBaseAddress)
+  const host = getEnvironmentEndpoint(cloudValue, settings.environmentId, cloudBaseAddress)
   return createUri(settings.botIdentifier, host, botType, conversationId)
 }
 
