@@ -4,7 +4,7 @@
 import axios, { AxiosInstance } from 'axios'
 import { SigningResource } from './signingResource'
 import { TokenExchangeRequest } from './tokenExchangeRequest'
-import { Activity } from '@microsoft/agents-activity-schema'
+import { Activity } from '../../../agents-bot-activity/dist/src'
 import { debug } from '../logger'
 
 const logger = debug('agents:userTokenClient')

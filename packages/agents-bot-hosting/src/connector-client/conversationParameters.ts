@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { Activity, ChannelAccount } from '@microsoft/agents-activity-schema'
+import { Activity, ChannelAccount } from '../../../agents-bot-activity/dist/src'
 
 export interface ConversationParameters {
   isGroup: boolean

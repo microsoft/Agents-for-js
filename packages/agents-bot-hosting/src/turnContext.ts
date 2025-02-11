@@ -1,7 +1,7 @@
 /** * Copyright (c) Microsoft Corporation. All rights reserved. * Licensed under the MIT License. */
 import { INVOKE_RESPONSE_KEY } from './activityHandler'
 import { BotAdapter } from './botAdapter'
-import { Activity, ActivityTypes, ConversationReference, DeliveryModes, InputHints } from '@microsoft/agents-activity-schema'
+import { Activity, ActivityTypes, ConversationReference, DeliveryModes, InputHints } from '../../agents-bot-activity/dist/src'
 import { ResourceResponse } from './connector-client/resourceResponse'
 import { TurnContextStateCollection } from './turnContextStateCollection'
 import { AttachmentInfo } from './connector-client/attachmentInfo'

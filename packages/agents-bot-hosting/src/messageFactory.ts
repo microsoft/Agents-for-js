@@ -1,5 +1,5 @@
 /** * Copyright (c) Microsoft Corporation. All rights reserved. * Licensed under the MIT License. */
-import { ActionTypes, Activity, ActivityTypes, Attachment, AttachmentLayoutTypes, CardAction, InputHints, SuggestedActions } from '@microsoft/agents-activity-schema'
+import { ActionTypes, Activity, ActivityTypes, Attachment, AttachmentLayoutTypes, CardAction, InputHints, SuggestedActions } from '../../agents-bot-activity/dist/src'
 
 /**
  * A factory class for creating various types of message activities.

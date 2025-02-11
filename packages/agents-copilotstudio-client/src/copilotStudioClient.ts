@@ -6,7 +6,7 @@
 import { ConnectionSettings } from './connectionSettings'
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios'
 import { getCopilotStudioConnectionUrl } from './powerPlatformEnvironment'
-import { Activity, ActivityTypes, ConversationAccount } from '@microsoft/agents-activity-schema'
+import { Activity, ActivityTypes, ConversationAccount } from '../../agents-bot-activity/dist/src'
 import { ExecuteTurnRequest } from './executeTurnRequest'
 import createDebug, { Debugger } from 'debug'
 

@@ -2,7 +2,7 @@
 import { strict as assert } from 'assert'
 import { afterEach, describe, it } from 'node:test'
 import { ActivityHandler, TurnContext } from '../../../src'
-import { Activity, ActivityTypes } from '@microsoft/agents-activity-schema'
+import { Activity, ActivityTypes } from '../../../../agents-bot-activity/dist/src'
 import { BotAdapter } from '../../../src/botAdapter'
 
 // @ts-expect-error

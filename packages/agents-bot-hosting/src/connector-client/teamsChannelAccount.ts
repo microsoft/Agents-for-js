@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { ChannelAccount } from '@microsoft/agents-activity-schema'
+import { ChannelAccount } from '../../../agents-bot-activity/dist/src'
 
 export interface TeamsChannelAccount extends ChannelAccount {
   givenName?: string

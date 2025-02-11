@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { Attachment } from '@microsoft/agents-activity-schema'
+import { Attachment } from '../../../../agents-bot-activity/dist/src'
 
 export interface MessagingExtensionAttachment extends Attachment {
   preview?: Attachment

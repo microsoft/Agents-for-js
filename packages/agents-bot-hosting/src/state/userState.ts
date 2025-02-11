@@ -6,7 +6,7 @@
 import { BotState } from './botState'
 import { Storage } from '../storage/storage'
 import { TurnContext } from '../turnContext'
-import { Activity } from '@microsoft/agents-activity-schema'
+import { Activity } from '../../../agents-bot-activity/dist/src'
 
 /**
  * Manages the state of a user.

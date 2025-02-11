@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { CardAction } from '@microsoft/agents-activity-schema'
+import { CardAction } from '../../../agents-bot-activity/dist/src'
 import { Fact } from './fact'
 import { ReceiptItem } from './receiptItem'
 

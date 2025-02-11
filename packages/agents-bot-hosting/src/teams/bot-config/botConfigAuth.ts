@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { SuggestedActions } from '@microsoft/agents-activity-schema'
+import { SuggestedActions } from '../../../../agents-bot-activity/dist/src'
 
 export interface BotConfigAuth {
   suggestedActions?: SuggestedActions

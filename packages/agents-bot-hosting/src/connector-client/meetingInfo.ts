@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { ConversationAccount } from '@microsoft/agents-activity-schema'
+import { ConversationAccount } from '../../../agents-bot-activity/dist/src'
 import { MeetingDetails } from '../teams/meeting/meetingDetails'
 import { TeamsChannelAccount } from './teamsChannelAccount'
 

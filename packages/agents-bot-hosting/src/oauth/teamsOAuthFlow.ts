@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { Activity, ActivityTypes, Attachment } from '@microsoft/agents-activity-schema'
+import { Activity, ActivityTypes, Attachment } from '../../../agents-bot-activity/dist/src'
 import { SigningResource } from './signingResource'
 import { TokenExchangeRequest } from './tokenExchangeRequest'
 import { UserTokenClient } from './userTokenClient'

@@ -20,7 +20,7 @@
   "main": "dist/src/index.js",
   "types" : "dist/src/index.d.ts",
   "dependencies": {
-    "@microsoft/agents-activity-schema" : "file:../agents-activity-schema",
+    "@microsoft/agents-bot-activity" : "file:../agents-bot-activity",
     "@azure/msal-node": "^3.2.1",
     "jsonwebtoken": "^9.0.2",
     "jwks-rsa": "^3.1.0",
