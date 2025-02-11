@@ -6,6 +6,25 @@ The M365 Agent SDK is a comprehensive framework for building enterprise-grade ag
 
 For more information please see the parent project information here [Microsoft 365 Agents SDK](https://aka.ms/agents)
 
+## Packages Overview
+
+We offer the following NPM packages to create conversational experiences based on bots:
+
+| Package Name | Description | Replaces|
+|--------------|-------------|---------|
+| `@microsoft/agents-activity-schema` | Types and validators implementing the Activity protocol spec. | `botframework-schema` |
+| `@microsoft/agents-bot-hosting` | Provides classes to host a bot in express.  | `botbuilder` |
+| `@microsoft/agents-bot-hosting-storage-blob` | Extension to use Azure Blob as storage.  | `botbuilder-azure` |
+| `@microsoft/agents-bot-hosting-storage-cosmos` | Extension to use CosmosDB as storage.  | `botbuilder-azure` |
+
+
+Additionally we provide a Copilot Studio Client, to interact with Agents created in CopilotStudio
+
+| Package Name | Description |
+|--------------|-------------|
+| `@microsoft/agents-copilotstudio-client`| Direct to Engine client to interact with Agents created in CopilotStudio
+
+
 ## Contributing
 
 This project welcomes contributions and suggestions.  Most contributions require you to agree to a
