@@ -1,7 +1,6 @@
 import * as z from 'zod'
 import StreamConsumers from 'stream/consumers'
 import { Activity } from '@microsoft/agents-activity-schema'
-import { PagedResult, TranscriptInfo } from '../transcript/transcriptLogger'
 
 import {
   AnonymousCredential,
@@ -11,7 +10,8 @@ import {
   StoragePipelineOptions,
   StorageSharedKeyCredential,
 } from '@azure/storage-blob'
-import { TranscriptStore } from '../transcript/transcriptStore'
+import { TranscriptStore, PagedResult, TranscriptInfo } from '@microsoft/agents-bot-hosting'
+
 // import { isTokenCredential, TokenCredential } from '@azure/core-http';
 
 function formatTicks (timestamp: Date): string {

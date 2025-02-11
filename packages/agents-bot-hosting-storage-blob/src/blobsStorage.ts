@@ -6,8 +6,8 @@ import {
   StoragePipelineOptions,
   StorageSharedKeyCredential,
 } from '@azure/storage-blob'
-import { Storage, StoreItems, sanitizeBlobKey } from '@microsoft/agents-bot-hosting'
-
+import { Storage, StoreItems } from '@microsoft/agents-bot-hosting'
+import { sanitizeBlobKey } from './blobsTranscriptStore'
 import { ignoreError, isStatusCodeError } from './ignoreError'
 // import { TokenCredential, isTokenCredential } from '@azure/core-http';
 
