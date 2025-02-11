@@ -34,7 +34,7 @@ function getBlobKey (activity: Activity, options?: BlobsTranscriptStoreOptions):
 
   const { timestamp } = z
     .object({ timestamp: z.instanceof(Date) })
-    .nonstrict()
+    .passthrough()
     .parse(activity)
   return sanitizeBlobKey(
     [activity.channelId, activity.conversation?.id, `${formatTicks(timestamp)}-${activity.id}.json`].join('/'),
