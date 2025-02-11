@@ -35,7 +35,9 @@ export class WebChatSsoBot extends ActivityHandler {
     const template = new Template(userTemplate)
     const userInfo = await getUserInfo(token)
     const card = template.expand(userInfo)
-    await context.sendActivity(MessageFactory.attachment(CardFactory.adaptiveCard(card)))
+    // await context.sendActivity(JSON.stringify(userInfo))
+    const activity = MessageFactory.attachment(CardFactory.adaptiveCard(card))
+    await context.sendActivity(activity)
   }
 
   async run (context: TurnContext) {

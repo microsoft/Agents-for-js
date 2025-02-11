@@ -11,7 +11,7 @@ import { AdaptiveCardBot } from './01.adaptiveCardsBot'
 import { CardFactoryBot } from './02.cardFactoryBot'
 import { MultiFeatureBot } from './03.multiFeatureBot'
 import { StateManagementBot } from './04.stateBot'
-import { WebChatSsoBot } from './05.webChatSSOBot'
+import { WebChatSsoBot } from './webChatSsoBot'
 
 const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
 const conversationReferences: { [key: string]: ConversationReference } = {}
