@@ -9,17 +9,10 @@ import {
 import { Storage, StoreItems } from '@microsoft/agents-bot-hosting'
 import { sanitizeBlobKey } from './blobsTranscriptStore'
 import { ignoreError, isStatusCodeError } from './ignoreError'
-// import { TokenCredential, isTokenCredential } from '@azure/core-http';
 
 export interface BlobsStorageOptions {
   storagePipelineOptions?: StoragePipelineOptions;
 }
-
-// function isCredentialType(value: any): value is TokenCredential {
-//     return (
-//         isTokenCredential(value) || value instanceof StorageSharedKeyCredential || value instanceof AnonymousCredential
-//     );
-// }
 
 export class BlobsStorage implements Storage {
   private readonly _containerClient: ContainerClient
@@ -31,7 +24,7 @@ export class BlobsStorage implements Storage {
     containerName: string,
     options?: BlobsStorageOptions,
     url = '',
-    credential?: StorageSharedKeyCredential | AnonymousCredential // | TokenCredential,
+    credential?: StorageSharedKeyCredential | AnonymousCredential
   ) {
     if (url !== '' && credential != null) {
       z.object({ url: z.string() }).parse({

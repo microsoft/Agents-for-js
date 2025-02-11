@@ -12,8 +12,6 @@ import {
 } from '@azure/storage-blob'
 import { TranscriptStore, PagedResult, TranscriptInfo } from '@microsoft/agents-bot-hosting'
 
-// import { isTokenCredential, TokenCredential } from '@azure/core-http';
-
 function formatTicks (timestamp: Date): string {
   const epochTicks = 621355968000000000
   const ticksPerMillisecond = 10000
@@ -27,12 +25,9 @@ function getChannelPrefix (channelId: string): string {
 
 function getConversationPrefix (channelId: string, conversationId: string): string {
   return sanitizeBlobKey(`${channelId}/${conversationId}`)
-  // const output = sanitizeBlobKey(`${channelId}/conversations/${conversationId}/`)
-  // return output
 }
 
 function getBlobKey (activity: Activity, options?: BlobsTranscriptStoreOptions): string {
-  // Check if the timestamp is a valid Date
   if (!(activity.timestamp instanceof Date)) {
     throw new Error('Invalid timestamp: must be an instance of Date')
   }
@@ -56,7 +51,6 @@ export function sanitizeBlobKey (key: string, options?: BlobsTranscriptStoreOpti
     return part ? `${acc}/${part}` : acc
   }, '').substr(0, 1024)
 
-  // Encode the sanitized key to ensure slashes are converted to %2F
   const encodedKey = encodeURIComponent(sanitized).substr(0, 1024)
 
   if (options?.decodeTranscriptKey) {
@@ -72,12 +66,6 @@ export function maybeCast<T> (value: unknown, ctor?: { new (...args: any[]): T }
 
   return value as T
 }
-
-// function isCredentialType(value: any): value is TokenCredential {
-//     return (
-//         isTokenCredential(value) || value instanceof StorageSharedKeyCredential || value instanceof AnonymousCredential
-//     );
-// }
 
 const MAX_PAGE_SIZE = 20
 
@@ -97,16 +85,12 @@ export class BlobsTranscriptStore implements TranscriptStore {
     containerName: string,
     options?: BlobsTranscriptStoreOptions,
     blobServiceUri = '',
-    tokenCredential?: StorageSharedKeyCredential | AnonymousCredential // | TokenCredential,
+    tokenCredential?: StorageSharedKeyCredential | AnonymousCredential
   ) {
     if (blobServiceUri !== '' && tokenCredential !== null) {
       z.object({ blobServiceUri: z.string() }).parse({
         blobServiceUri,
       })
-
-      // if (typeof tokenCredential != 'object' || !isCredentialType(tokenCredential)) {
-      //     throw new ReferenceError('Invalid credential type.');
-      // }
 
       this._containerClient = new ContainerClient(
         blobServiceUri,
@@ -135,10 +119,6 @@ export class BlobsTranscriptStore implements TranscriptStore {
     }
 
     this._isDecodeTranscriptKey = options?.decodeTranscriptKey
-  }
-
-  private toJSON (): unknown {
-    return { name: 'BlobsTranscriptStore' }
   }
 
   private _initialize (): Promise<unknown> {
@@ -287,9 +267,8 @@ export class BlobsTranscriptStore implements TranscriptStore {
   async logActivity (activity: Activity, options?: BlobsTranscriptStoreOptions): Promise<void> {
     z.object({ activity: z.record(z.unknown()) }).parse({ activity })
 
-    // Ensure the timestamp is a valid Date
     if (!(activity.timestamp instanceof Date)) {
-      activity.timestamp = activity.timestamp ? new Date(activity.timestamp) : new Date() // Convert to Date if necessary
+      activity.timestamp = activity.timestamp ? new Date(activity.timestamp) : new Date()
     }
 
     await this._initialize()
@@ -311,7 +290,3 @@ export class BlobsTranscriptStore implements TranscriptStore {
     await blob.upload(serialized, serialized.length, { metadata })
   }
 }
-
-// function encodeConversationPath (path: string): string {
-//   return encodeURIComponent(path)
-// }

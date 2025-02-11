@@ -10,7 +10,6 @@ import { BlobsStorage, BlobsTranscriptStore } from '@microsoft/agents-bot-hostin
 import { StateManagementBot } from './bot'
 
 /* AZURE BLOB STORAGE - Uncomment the code in this section to use Azure blob storage */
-// const blobStorage = new AzureBlobStorage(process.env.BLOB_STORAGE_CONNECTION_STRING!, process.env.BLOB_CONTAINER_ID!)
 const blobStorage = new BlobsStorage(process.env.BLOB_STORAGE_CONNECTION_STRING!, process.env.BLOB_CONTAINER_ID!)
 const blobTranscriptStore = new BlobsTranscriptStore(process.env.BLOB_STORAGE_CONNECTION_STRING!, process.env.BLOB_CONTAINER_ID!)
 const conversationState = new ConversationState(blobStorage)
