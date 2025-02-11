@@ -6,7 +6,7 @@
 import { BotState } from './botState'
 import { Storage } from '../storage/storage'
 import { TurnContext } from '../turnContext'
-import { Activity } from '../../../agents-bot-activity/dist/src'
+import { Activity } from '../../../agents-bot-activity'
 
 /**
  * Manages the state of a conversation.

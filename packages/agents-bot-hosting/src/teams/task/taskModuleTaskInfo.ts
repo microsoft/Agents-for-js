@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { Attachment } from '../../../../agents-bot-activity/dist/src'
+import { Attachment } from '../../../../agents-bot-activity'
 
 export interface TaskModuleTaskInfo {
   title?: string

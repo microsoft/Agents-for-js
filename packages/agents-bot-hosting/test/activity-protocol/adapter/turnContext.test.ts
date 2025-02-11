@@ -1,7 +1,7 @@
 import { strict as assert } from 'assert'
 import { describe, it } from 'node:test'
 import { AttachmentData, AttachmentInfo, MessageFactory, ResourceResponse, TurnContext } from '../../../src'
-import { Activity, ActivityTypes, ConversationReference, DeliveryModes } from '../../../../agents-bot-activity/dist/src'
+import { Activity, ActivityTypes, ConversationReference, DeliveryModes } from '../../../../agents-bot-activity'
 import { BotAdapter } from '../../../src/botAdapter'
 
 const activityId = 'activity ID'

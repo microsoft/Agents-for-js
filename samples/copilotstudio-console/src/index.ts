@@ -4,7 +4,7 @@
  */
 
 import * as msal from '@azure/msal-node'
-import { Activity, ActivityTypes, CardAction } from '../../../packages/agents-bot-activity/dist/src/index.js'
+import { Activity, ActivityTypes, CardAction } from '../../../packages/agents-bot-activity/index.js'
 import { ConnectionSettings, CopilotStudioClient, loadCopilotStudioConnectionSettingsFromEnv } from '@microsoft/agents-copilotstudio-client'
 import pkg from '@microsoft/agents-copilotstudio-client/package.json' with { type: 'json' }
 import readline from 'readline'

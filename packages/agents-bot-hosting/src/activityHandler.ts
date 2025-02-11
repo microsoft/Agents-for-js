@@ -4,7 +4,7 @@
  */
 import { debug } from './logger'
 import { TurnContext } from './turnContext'
-import { Activity, ActivityTypes, Channels } from '../../agents-bot-activity/dist/src'
+import { Activity, ActivityTypes, Channels } from '../../agents-bot-activity'
 import { StatusCodes } from './statusCodes'
 import { InvokeResponse } from './invoke/invokeResponse'
 import { InvokeException } from './invoke/invokeException'

@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { AdaptiveCardInvokeAction } from '../../../agents-bot-activity/dist/src'
+import { AdaptiveCardInvokeAction } from '../../../agents-bot-activity'
 import { AdaptiveCardAuthentication } from './adaptiveCardAuthentication'
 
 export interface AdaptiveCardInvokeValue {

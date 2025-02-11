@@ -1,7 +1,7 @@
 import { strict as assert } from 'assert'
 import { describe, it } from 'node:test'
 import { TurnContext } from '../../../src'
-import { Activity } from '../../../../agents-bot-activity/dist/src'
+import { Activity } from '../../../../agents-bot-activity'
 import { BotAdapter } from '../../../src/botAdapter'
 import { MiddlewareSet } from '../../../src/middlewareSet'
 

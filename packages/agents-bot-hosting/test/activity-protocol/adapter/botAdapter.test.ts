@@ -2,7 +2,7 @@ import { strict as assert } from 'assert'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 import { createSandbox, SinonSandbox, fake, SinonSpy } from 'sinon'
 import { TurnContext } from '../../../src'
-import { Activity } from '../../../../agents-bot-activity/dist/src'
+import { Activity } from '../../../../agents-bot-activity'
 import { BotAdapter } from '../../../src/botAdapter'
 
 const testMessage: Activity = Activity.fromObject({ text: 'test', type: 'message' })

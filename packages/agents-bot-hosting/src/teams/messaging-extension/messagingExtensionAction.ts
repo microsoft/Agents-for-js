@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { Activity } from '../../../../agents-bot-activity/dist/src'
+import { Activity } from '../../../../agents-bot-activity'
 import { TaskModuleRequest } from '../task/taskModuleRequest'
 import { MessageActionsPayload } from '../message-actions-payload/messageActionsPayload'
 

@@ -1,7 +1,7 @@
 import { strict as assert } from 'assert'
 import { describe, it } from 'node:test'
 import { MessageFactory } from '../../src'
-import { Activity, AttachmentLayoutTypes, CardAction, InputHints } from '../../../agents-bot-activity/dist/src'
+import { Activity, AttachmentLayoutTypes, CardAction, InputHints } from '../../../agents-bot-activity'
 
 function assertMessage (activity: Activity) {
   assert(typeof activity === 'object', 'invalid activity returned.')

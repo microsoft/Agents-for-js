@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { Attachment } from '../../../agents-bot-activity/dist/src'
+import { Attachment } from '../../../agents-bot-activity'
 import { UserTokenClient } from './userTokenClient'
 import { CloudAdapter } from '../cloudAdapter'
 import { CardFactory } from '../cards/cardFactory'
