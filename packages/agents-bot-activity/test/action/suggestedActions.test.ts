@@ -1,6 +1,6 @@
 import { strict as assert } from 'assert'
 import { describe, it } from 'node:test'
-import { ActionTypes, CardAction, SuggestedActions } from '..'
+import { ActionTypes, CardAction, SuggestedActions } from '../'
 import { suggestedActionsZodSchema } from './suggestedActions'
 
 describe('SuggestedActions', () => {

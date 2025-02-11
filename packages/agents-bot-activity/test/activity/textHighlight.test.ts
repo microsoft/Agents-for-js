@@ -1,6 +1,6 @@
 import { strict as assert } from 'assert'
 import { describe, it } from 'node:test'
-import { TextHighlight } from '..'
+import { TextHighlight } from '../'
 import { textHighlightZodSchema } from '../textHighlight'
 
 describe('TextHighlight', () => {

@@ -1,6 +1,6 @@
 import assert from 'assert'
 import { describe, it } from 'node:test'
-import { CallerIdConstants } from '..'
+import { CallerIdConstants } from '../'
 
 describe('CallerIdConstants', function () {
   // For ensuring that the defined CallerIdConstants match the values defined in the botframework activity spec as of:

@@ -1,6 +1,6 @@
 import { strict as assert } from 'assert'
 import { describe, it } from 'node:test'
-import { ChannelAccount, RoleTypes } from '..'
+import { ChannelAccount, RoleTypes } from '../'
 import { channelAccountZodSchema } from './channelAccount'
 
 describe('ChannelAccount', () => {

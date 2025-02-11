@@ -1,8 +1,8 @@
 {
-  "name": "echobot",
+  "name": "echo-bot",
   "version": "1.0.0",
   "private": true,
-  "description": "Bot Builder v4 echo bot sample",
+  "description": "Agents SDK echo bot sample",
   "author": "Microsoft",
   "license": "MIT",
   "main": "./dist/index.js",

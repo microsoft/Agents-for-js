@@ -1,6 +1,6 @@
 import assert from 'assert'
 import { describe, it } from 'node:test'
-import { Activity, ActivityTypes } from '..'
+import { Activity, ActivityTypes } from '../'
 
 describe('Activity with timestamp', () => {
   it('Default ctor sets timestamps as undefined', () => {

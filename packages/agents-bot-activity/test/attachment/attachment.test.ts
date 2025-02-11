@@ -1,6 +1,6 @@
 import { strict as assert } from 'assert'
 import { describe, it } from 'node:test'
-import { Attachment } from '..'
+import { Attachment } from '../'
 import { attachmentZodSchema } from './attachment'
 
 describe('Attachment', () => {

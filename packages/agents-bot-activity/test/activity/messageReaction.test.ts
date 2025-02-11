@@ -1,6 +1,6 @@
 import { strict as assert } from 'assert'
 import { describe, it } from 'node:test'
-import { MessageReaction, MessageReactionTypes } from '..'
+import { MessageReaction, MessageReactionTypes } from '../'
 import { messageReactionZodSchema } from '../messageReaction'
 
 describe('MessageReaction', () => {

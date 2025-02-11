@@ -1,6 +1,6 @@
 import { strict as assert } from 'assert'
 import { describe, it } from 'node:test'
-import { Entity } from '..'
+import { Entity } from '../'
 import { entityZodSchema } from './entity'
 
 describe('Entity', () => {
