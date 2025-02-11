@@ -41,6 +41,20 @@
 			"path": "samples/copilotstudio-console"
 		},
 		{
+			"label": "build_state",
+			"type": "npm",
+			"script": "build",
+			"group": {
+				"kind": "build",
+				"isDefault": false
+			},
+			"problemMatcher": [],
+			"dependsOn": [
+				"build_packages"
+			],
+			"path": "samples/state-bot"
+		},
+		{
 			"label": "build_all",
 			"group": {
 				"kind": "build",
