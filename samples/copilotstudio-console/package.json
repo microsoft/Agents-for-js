@@ -18,7 +18,7 @@
   "dependencies": {
     "@microsoft/agents-activity-schema": "file:../../packages/agents-activity-schema",
     "@microsoft/agents-copilot-studio": "file:../../packages/agents-copilotstudio-client",
-    "@azure/msal-node": "^3.2.0",
+    "@azure/msal-node": "^3.2.1",
     "open": "^10.1.0"
   },
   "devDependencies": {
