@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { strict as assert } from 'assert'
 import { afterEach, describe, it } from 'node:test'
-import { ActivityHandler, TurnContext } from '../../../src'
-import { Activity, ActivityTypes } from '../../../../agents-bot-activity/dist/src'
+import { ActivityHandler, TurnContext, Activity, ActivityTypes } from '../../../src'
 import { BotAdapter } from '../../../src/botAdapter'
 
 // @ts-expect-error
