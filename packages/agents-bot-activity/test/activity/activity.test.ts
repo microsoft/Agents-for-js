@@ -2,7 +2,7 @@
 import assert from 'assert'
 import { describe, it, beforeEach } from 'node:test'
 import { ZodError } from 'zod'
-import { Activity, ActivityEventNames, ActivityImportance, ActivityTypes, AttachmentLayoutTypes, DeliveryModes, EndOfConversationCodes, ChannelAccount, InputHints, RoleTypes, TextFormatTypes, ConversationReference, Mention, Entity } from '../'
+import { Activity, ActivityEventNames, ActivityImportance, ActivityTypes, AttachmentLayoutTypes, DeliveryModes, EndOfConversationCodes, ChannelAccount, InputHints, RoleTypes, TextFormatTypes, ConversationReference, Mention, Entity } from '../../src'
 
 describe('Activity type instances', () => {
   beforeEach(() => {

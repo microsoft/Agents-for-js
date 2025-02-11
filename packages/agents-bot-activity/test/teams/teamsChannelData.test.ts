@@ -1,6 +1,6 @@
 import assert from 'assert'
 import { describe, it } from 'node:test'
-import { Activity, ActivityTypes, ChannelInfo } from '../'
+import { Activity, ActivityTypes, ChannelInfo } from '../../src'
 
 describe('TeamsChannelData Zod Validation', () => {
   it('Validate with no properties defined', () => {

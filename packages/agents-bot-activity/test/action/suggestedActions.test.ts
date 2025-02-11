@@ -1,7 +1,7 @@
 import { strict as assert } from 'assert'
 import { describe, it } from 'node:test'
-import { ActionTypes, CardAction, SuggestedActions } from '../'
-import { suggestedActionsZodSchema } from './suggestedActions'
+import { ActionTypes, CardAction, SuggestedActions } from '../../'
+import { suggestedActionsZodSchema } from './../../src/action/suggestedActions'
 
 describe('SuggestedActions', () => {
   it('should create a SuggestedActions with valid properties', () => {

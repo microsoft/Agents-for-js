@@ -1,6 +1,6 @@
 import assert from 'assert'
 import { describe, it } from 'node:test'
-import { validateValueMessagingExtensionQuery } from '../../activityValueValidators'
+import { validateValueMessagingExtensionQuery } from '../../../src/activityValueValidators'
 import { ZodError } from 'zod'
 
 describe('validateValueMessagingExtensionQuery Zod Validation', () => {

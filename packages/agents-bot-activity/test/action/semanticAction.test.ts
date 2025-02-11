@@ -1,7 +1,7 @@
 import { strict as assert } from 'assert'
 import { describe, it } from 'node:test'
-import { Entity, SemanticAction, SemanticActionStateTypes } from '../'
-import { semanticActionZodSchema } from './semanticAction'
+import { Entity, SemanticAction, SemanticActionStateTypes } from '../../'
+import { semanticActionZodSchema } from './../../src/action/semanticAction'
 
 describe('SemanticAction', () => {
   it('should create a SemanticAction with valid properties', () => {

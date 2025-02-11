@@ -1,7 +1,7 @@
 import assert from 'assert'
 import { describe, it } from 'node:test'
 import { ZodError } from 'zod'
-import { validateValueActionName } from '../../activityValueValidators'
+import { validateValueActionName } from '../../../src/activityValueValidators'
 
 describe('validateValueActionName test', () => {
   it('Validate with all properties', () => {

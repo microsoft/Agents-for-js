@@ -1,7 +1,7 @@
 import assert from 'assert'
 import { describe, it } from 'node:test'
 import { ZodError } from 'zod'
-import { validateValueContinuation } from '../../activityValueValidators'
+import { validateValueContinuation } from '../../../src/activityValueValidators'
 
 describe('validateValueContinuation test', () => {
   it('Validate with all properties', () => {

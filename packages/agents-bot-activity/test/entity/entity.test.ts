@@ -1,7 +1,7 @@
 import { strict as assert } from 'assert'
 import { describe, it } from 'node:test'
-import { Entity } from '../'
-import { entityZodSchema } from './entity'
+import { Entity } from '../../src'
+import { entityZodSchema } from '../../src/entity/entity'
 
 describe('Entity', () => {
   it('should create a Entity with valid properties', () => {

@@ -2,7 +2,7 @@
 import assert from 'assert'
 import { describe, it } from 'node:test'
 import { ZodError } from 'zod'
-import { Activity, ActivityTypes } from '../'
+import { Activity, ActivityTypes } from '../../src/'
 
 describe('ActivityType enum validation', () => {
   Object.values(ActivityTypes).forEach(type => {

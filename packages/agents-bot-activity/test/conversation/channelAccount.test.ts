@@ -1,7 +1,7 @@
 import { strict as assert } from 'assert'
 import { describe, it } from 'node:test'
-import { ChannelAccount, RoleTypes } from '../'
-import { channelAccountZodSchema } from './channelAccount'
+import { ChannelAccount, RoleTypes } from '../../src'
+import { channelAccountZodSchema } from '../../src/conversation/channelAccount'
 
 describe('ChannelAccount', () => {
   it('should create a ChannelAccount with valid properties', () => {

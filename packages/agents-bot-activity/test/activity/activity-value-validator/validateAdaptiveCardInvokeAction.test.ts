@@ -1,7 +1,7 @@
 import assert from 'assert'
 import { describe, it } from 'node:test'
 import { ZodError } from 'zod'
-import { validateAdaptiveCardInvokeAction } from '../../activityValueValidators'
+import { validateAdaptiveCardInvokeAction } from '../../../src/activityValueValidators'
 
 describe('AdaptiveCardInvokeAction Zod Validation', () => {
   it('Validate with all properties', () => {

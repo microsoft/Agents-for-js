@@ -1,7 +1,7 @@
 import { strict as assert } from 'assert'
 import { describe, it } from 'node:test'
-import { ChannelAccount, ConversationAccount, ConversationReference, RoleTypes } from '../'
-import { conversationReferenceZodSchema } from './conversationReference'
+import { ChannelAccount, ConversationAccount, ConversationReference, RoleTypes } from '../../src'
+import { conversationReferenceZodSchema } from '../../src/conversation/conversationReference'
 
 describe('ConversationReference', () => {
   it('should create a ConversationReference with valid properties', () => {

@@ -1,7 +1,7 @@
 import { strict as assert } from 'assert'
 import { describe, it } from 'node:test'
-import { Attachment } from '../'
-import { attachmentZodSchema } from './attachment'
+import { Attachment } from '../../src'
+import { attachmentZodSchema } from '../../src/attachment/attachment'
 
 describe('Attachment', () => {
   it('should create a Attachment with valid properties', () => {

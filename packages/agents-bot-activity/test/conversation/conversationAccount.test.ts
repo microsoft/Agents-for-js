@@ -1,7 +1,7 @@
 import { strict as assert } from 'assert'
 import { describe, it } from 'node:test'
-import { ConversationAccount, RoleTypes } from '../'
-import { conversationAccountZodSchema } from './conversationAccount'
+import { ConversationAccount, RoleTypes } from '../../src'
+import { conversationAccountZodSchema } from '../../src/conversation/conversationAccount'
 
 describe('ConversationAccount', () => {
   it('should create a ConversationAccount with valid properties', () => {
