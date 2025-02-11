@@ -1,8 +1,8 @@
-# @microsoft/agents-activity-schema
+# @microsoft/agents-bot-activity
 
 ## Overview
 
-The `@microsoft/agents-activity-schema` implements the Activity Protocol Specification https://github.com/microsoft/Agents/blob/main/specs/activity/protocol-activity.md. 
+The `@microsoft/agents-bot-activity` implements the Activity Protocol Specification https://github.com/microsoft/Agents/blob/main/specs/activity/protocol-activity.md. 
 
 It provides declaration files defined with TypeScript and validators based on `zod`.
 
@@ -11,7 +11,7 @@ It provides declaration files defined with TypeScript and validators based on `z
 To install the package, use npm:
 
 ```sh
-npm install @microsoft/agents-activity-schema
+npm install @microsoft/agents-bot-activity
 ```
 
 ## Usage

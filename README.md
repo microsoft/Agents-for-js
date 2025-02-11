@@ -12,7 +12,7 @@ We offer the following NPM packages to create conversational experiences based o
 
 | Package Name | Description | Replaces|
 |--------------|-------------|---------|
-| `@microsoft/agents-activity-schema` | Types and validators implementing the Activity protocol spec. | `botframework-schema` |
+| `@microsoft/agents-bot-activity` | Types and validators implementing the Activity protocol spec. | `botframework-schema` |
 | `@microsoft/agents-bot-hosting` | Provides classes to host a bot in express.  | `botbuilder` |
 | `@microsoft/agents-bot-hosting-storage-blob` | Extension to use Azure Blob as storage.  | `botbuilder-azure` |
 | `@microsoft/agents-bot-hosting-storage-cosmos` | Extension to use CosmosDB as storage.  | `botbuilder-azure` |

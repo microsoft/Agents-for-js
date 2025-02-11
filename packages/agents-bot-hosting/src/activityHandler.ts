@@ -4,7 +4,7 @@
  */
 import { debug } from './logger'
 import { TurnContext } from './turnContext'
-import { Activity, ActivityTypes, Channels } from '@microsoft/agents-activity-schema'
+import { Activity, ActivityTypes, Channels } from '@microsoft/agents-bot-activity'
 import { StatusCodes } from './statusCodes'
 import { InvokeResponse } from './invoke/invokeResponse'
 import { InvokeException } from './invoke/invokeException'

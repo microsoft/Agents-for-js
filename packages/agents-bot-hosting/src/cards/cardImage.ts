@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { CardAction } from '@microsoft/agents-activity-schema'
+import { CardAction } from '@microsoft/agents-bot-activity'
 
 export interface CardImage {
   url: string

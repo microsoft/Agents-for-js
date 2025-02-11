@@ -4,7 +4,7 @@
  */
 
 import { TurnContext } from '../turnContext'
-import { Activity, Channels, ConversationReference, ChannelInfo } from '@microsoft/agents-activity-schema'
+import { Activity, Channels, ConversationReference, ChannelInfo } from '@microsoft/agents-bot-activity'
 import { CloudAdapter } from '../cloudAdapter'
 import { ConversationParameters } from '../connector-client/conversationParameters'
 import { TeamsChannelAccount } from '../connector-client/teamsChannelAccount'

@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { ActionTypes, Attachment, CardAction } from '@microsoft/agents-activity-schema'
+import { ActionTypes, Attachment, CardAction } from '@microsoft/agents-bot-activity'
 import { MediaUrl } from './mediaUrl'
 import { AnimationCard } from './animationCard'
 import { AudioCard } from './audioCard'
