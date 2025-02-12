@@ -36,7 +36,7 @@ export class CardMessages {
 
   static async sendAnimationCard (context: TurnContext): Promise<void> {
     const card = CardFactory.animationCard(
-      'Microsoft Bot Framework',
+      'Agents SDK',
       [
         { url: 'https://i.giphy.com/Ki55RUbOV5njy.gif' }
       ],
