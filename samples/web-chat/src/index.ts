@@ -7,10 +7,10 @@ import rateLimit from 'express-rate-limit'
 import { Request, CloudAdapter, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv, MemoryStorage, ConversationState, UserState } from '@microsoft/agents-bot-hosting'
 import { ConversationReference } from '@microsoft/agents-activity-schema'
 
-import { AdaptiveCardBot } from './01.adaptiveCardsBot'
-import { CardFactoryBot } from './02.cardFactoryBot'
-import { MultiFeatureBot } from './03.multiFeatureBot'
-import { StateManagementBot } from './04.stateBot'
+import { AdaptiveCardBot } from './adaptiveCardsBot'
+import { CardFactoryBot } from './cardFactoryBot'
+import { MultiFeatureBot } from './multiFeatureBot'
+import { StateManagementBot } from './stateBot'
 import { WebChatSsoBot } from './webChatSsoBot'
 
 const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
