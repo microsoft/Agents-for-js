@@ -32,7 +32,6 @@ const setPackageVersionAndBuildNumber = async versionInfo => {
       .filter(file => file.isDirectory())
       .map(folder => `${folder.parentPath}/${folder.name}`)
 
-
     for (const f of folders) {
       console.log(`Setting version number in ${f}`)
       upddateLocalDeps(f, versionInfo.npmPackageVersion)
@@ -41,7 +40,6 @@ const setPackageVersionAndBuildNumber = async versionInfo => {
 }
 
 const handleError = err => console.error('Failed to update the package version number. nerdbank-gitversion failed: ' + err)
-
 
 const v = await nbgv.getVersion('.')
 try {
