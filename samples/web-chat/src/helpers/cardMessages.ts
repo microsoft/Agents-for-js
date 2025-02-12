@@ -15,9 +15,9 @@ export class CardMessages {
       { type: ActionTypes.ImBack, title: '3. Audio Card', value: '3' },
       { type: ActionTypes.ImBack, title: '4. Hero Card', value: '4' },
       { type: ActionTypes.ImBack, title: '5. Receipt Card', value: '5' },
-      { type: ActionTypes.ImBack, title: '6. oAuth Card [NotImplemented]', value: '6' }, // TODO still pending
+      // { type: ActionTypes.ImBack, title: '6. oAuth Card [NotImplemented]', value: '6' }, // TODO still pending
       { type: ActionTypes.ImBack, title: '7. o365Connector Card', value: '7' },
-      { type: ActionTypes.ImBack, title: '8. Signin Card [NotImplemented]', value: '8' }, // TODO still pending
+      // { type: ActionTypes.ImBack, title: '8. Signin Card [NotImplemented]', value: '8' }, // TODO still pending
       { type: ActionTypes.ImBack, title: '9. Thumbnail Card', value: '9' },
       { type: ActionTypes.ImBack, title: '10. Video Card', value: '10' },
     ]
