@@ -2,7 +2,7 @@
   "name": "copilotstudio-client",
   "version": "1.0.0",
   "private": true,
-  "description": "Copilot Studio client sample",
+  "description": "Agents SKD copilot studio bot for testing and development",
   "author": "Microsoft",
   "license": "MIT",
   "main": "./dist/index.js",

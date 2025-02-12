@@ -1,8 +1,8 @@
 {
-  "name": "echobot",
+  "name": "teams-bots",
   "version": "1.0.0",
   "private": true,
-  "description": "Bot Builder v4 echo bot sample",
+  "description": "Agents SKD teams bots for testing and development",
   "author": "Microsoft",
   "license": "MIT",
   "main": "./dist/index.js",

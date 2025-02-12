@@ -2,7 +2,7 @@
   "name": "echobot",
   "version": "1.0.0",
   "private": true,
-  "description": "Bot Builder v4 echo bot sample",
+  "description": "Agents SKD echobot for testing and development",
   "author": "Microsoft",
   "license": "MIT",
   "main": "./dist/index.js",
