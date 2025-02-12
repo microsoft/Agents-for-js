@@ -22,7 +22,7 @@ export class MsalTokenProvider implements AuthProvider {
     }
 
     if (authConfig.ficClientId !== undefined) {
-      return await this.acquireAccessTokenViaFIC(authConfig)
+      return await this.acquireAccessTokenViaFIC(authConfig, scope)
     } else if (authConfig.clientSecret !== undefined) {
       return await this.acquireAccessTokenViaSecret(authConfig, scope)
     } else if (authConfig.certPemFile !== undefined &&
@@ -123,8 +123,8 @@ export class MsalTokenProvider implements AuthProvider {
     return token?.accessToken as string
   }
 
-  private async acquireAccessTokenViaFIC (authConfig: AuthConfiguration) : Promise<string> {
-    const scope = `${audience}/.default`
+  private async acquireAccessTokenViaFIC (authConfig: AuthConfiguration, scope: string) : Promise<string> {
+    const scopes = [`${scope}/.default`]
     const clientAssertion = await this.fetchExternalToken()
     const cca = new ConfidentialClientApplication({
       auth: {
@@ -133,10 +133,7 @@ export class MsalTokenProvider implements AuthProvider {
         clientAssertion
       }
     })
-    const token = await cca.acquireTokenByClientCredential({
-      scopes: [scope],
-
-    })
+    const token = await cca.acquireTokenByClientCredential({ scopes })
     logger.info('got token using FIC client assertion')
     return token?.accessToken!
   }
