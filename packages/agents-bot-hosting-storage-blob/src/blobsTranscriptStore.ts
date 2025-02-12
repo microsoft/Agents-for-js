@@ -1,6 +1,6 @@
 import * as z from 'zod'
 import StreamConsumers from 'stream/consumers'
-import { Activity } from '@microsoft/agents-activity-schema'
+import { Activity } from '@microsoft/agents-bot-activity'
 
 import {
   AnonymousCredential,

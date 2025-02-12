@@ -16,7 +16,7 @@
     "bundle": "esbuild dist/index.js --bundle --platform=node --metafile=dist/meta.json --outfile=dist/bundle.js --tree-shaking=true --keep-names"
   },
   "dependencies": {
-    "@microsoft/agents-activity-schema": "file:../../packages/agents-activity-schema",
+    "@microsoft/agents-bot-activity": "file:../../packages/agents-bot-activity",
     "@microsoft/agents-copilot-studio": "file:../../packages/agents-copilotstudio-client",
     "@azure/msal-node": "^3.2.1",
     "open": "^10.1.0"

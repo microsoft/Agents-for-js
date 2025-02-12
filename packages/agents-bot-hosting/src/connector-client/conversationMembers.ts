@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { ChannelAccount } from '@microsoft/agents-activity-schema'
+import { ChannelAccount } from '@microsoft/agents-bot-activity'
 
 export interface ConversationMembers {
   id: string

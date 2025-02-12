@@ -20,7 +20,7 @@
   "main": "dist/src/index.js",
   "types" : "dist/src/index.d.ts",
   "dependencies": {
-    "@microsoft/agents-activity-schema": "file:../agents-activity-schema",
+    "@microsoft/agents-bot-activity": "file:../agents-bot-activity",
     "axios": "^1.7.8",
     "debug": "^4.3.7"
   },

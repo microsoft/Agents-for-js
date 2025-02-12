@@ -1,6 +1,6 @@
 {
     "entryPoints": [
-      "./packages/agents-activity-schema/index.ts",
+      "./packages/agents-bot-activity/index.ts",
       "./packages/agents-copilotstudio-client/index.ts",
       "./packages/agents-bot-hosting/index.ts",
       "./packages/agents-bot-hosting-storage-blob/index.ts",

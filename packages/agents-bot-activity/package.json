@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "name": "@microsoft/agents-activity-schema",
+  "name": "@microsoft/agents-bot-activity",
   "version": "0.1.0",
   "homepage": "https://github.com/microsoft/Agents-for-js",
   "repository": {

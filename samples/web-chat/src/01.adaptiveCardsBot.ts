@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { Attachment } from '@microsoft/agents-activity-schema'
+import { Attachment } from '@microsoft/agents-bot-activity'
 import { ActivityHandler, MessageFactory, TurnContext } from '@microsoft/agents-bot-hosting'
 import * as AdaptiveCardsTemplating from 'adaptivecards-templating'
 import AdaptiveCardActions from '../resources/AdaptiveCardActions.json'

@@ -1,4 +1,4 @@
-import { Activity } from '@microsoft/agents-activity-schema'
+import { Activity } from '@microsoft/agents-bot-activity'
 import { PagedResult, TranscriptInfo, TranscriptLogger } from './transcriptLogger'
 
 export interface TranscriptStore extends TranscriptLogger {

@@ -2,7 +2,7 @@ import { TurnContext } from '../turnContext'
 import { ResourceResponse } from '../connector-client'
 import { Middleware } from '../middlewareSet'
 import { TranscriptLogger } from './transcriptLogger'
-import { Activity, ActivityEventNames, ActivityTypes, ConversationReference, RoleTypes } from '@microsoft/agents-activity-schema'
+import { Activity, ActivityEventNames, ActivityTypes, ConversationReference, RoleTypes } from '@microsoft/agents-bot-activity'
 
 export class TranscriptLoggerMiddleware implements Middleware {
   private logger: TranscriptLogger
