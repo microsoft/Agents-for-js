@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { ActionTypes, Activity, ActivityTypes, Attachment } from '@microsoft/agents-activity-schema'
+import { ActionTypes, Activity, ActivityTypes, Attachment } from '@microsoft/agents-bot-activity'
 import { CardFactory, TurnContext } from '@microsoft/agents-bot-hosting'
 
 export class CardMessages {

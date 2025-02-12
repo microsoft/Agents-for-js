@@ -1,4 +1,4 @@
-import { Activity } from '@microsoft/agents-activity-schema'
+import { Activity } from '@microsoft/agents-bot-activity'
 
 export interface TranscriptLogger {
   logActivity(activity: Activity): void | Promise<void>;

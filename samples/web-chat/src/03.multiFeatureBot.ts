@@ -5,7 +5,7 @@ import { ActivityHandler, CardFactory, MessageFactory, TurnContext } from '@micr
 import path from 'path'
 import fs from 'fs'
 import axios from 'axios'
-import { ActionTypes, Activity, ActivityTypes, Attachment, ConversationReference, EndOfConversationCodes } from '@microsoft/agents-activity-schema'
+import { ActionTypes, Activity, ActivityTypes, Attachment, ConversationReference, EndOfConversationCodes } from '@microsoft/agents-bot-activity'
 
 export class MultiFeatureBot extends ActivityHandler {
   conversationReferences: { [key: string]: ConversationReference }

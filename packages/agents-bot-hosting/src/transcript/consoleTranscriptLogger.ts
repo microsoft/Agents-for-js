@@ -1,4 +1,4 @@
-import { Activity } from '@microsoft/agents-activity-schema'
+import { Activity } from '@microsoft/agents-bot-activity'
 import { TranscriptLogger } from './transcriptLogger'
 
 export class ConsoleTranscriptLogger implements TranscriptLogger {

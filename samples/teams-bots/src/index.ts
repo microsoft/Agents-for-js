@@ -5,7 +5,7 @@ import express, { Response } from 'express'
 import rateLimit from 'express-rate-limit'
 
 import { Request, CloudAdapter, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv, /* MemoryStorage, ConversationState, UserState */ } from '@microsoft/agents-bot-hosting'
-import { ConversationReference } from '@microsoft/agents-activity-schema'
+import { ConversationReference } from '@microsoft/agents-bot-activity'
 
 import { TeamsJsBot } from './teamsJsBot'
 
