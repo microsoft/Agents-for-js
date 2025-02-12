@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `@microsoft/agents-bot-hosting` package provides the necessary tools and components to host and manage Microsoft Agents as Bots. This package includes a compative API to migrate from `botbuilder` from the BotFramework SDK.
+The `@microsoft/agents-bot-hosting` package provides the necessary tools and components to host and manage Microsoft Agents as Bots. This package includes a compatible API to migrate a bot using `botbuilder` from the BotFramework SDK.
 
 ## Installation
 
@@ -14,7 +14,7 @@ npm install @microsoft/agents-bot-hosting
 
 ## Example Usage
 
-Create the Echo bot using the ActivityHandler
+Create an Echo bot using the ActivityHandler
 
 ```ts
 // bot.ts

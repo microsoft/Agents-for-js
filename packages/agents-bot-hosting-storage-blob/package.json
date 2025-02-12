@@ -24,16 +24,14 @@
   "license": "MIT",
   "files": [
     "README.md",
-    "dist/src/*",
-    "src/*"
+    "dist/src",
+    "src"
   ],
   "exports": {
     ".": {
       "import": "./dist/src/index.js",
       "require": "./dist/src/index.js"
-    }
-  },
-  "engines": {
-    "node": ">=18"
+    },
+    "./package.json": "./package.json"
   }
 }

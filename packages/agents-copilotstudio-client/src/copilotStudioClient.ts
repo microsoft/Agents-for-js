@@ -6,9 +6,14 @@
 import { ConnectionSettings } from './connectionSettings'
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios'
 import { getCopilotStudioConnectionUrl } from './powerPlatformEnvironment'
-import { Activity, ConversationAccount } from '@microsoft/agents-activity-schema'
+import { Activity, ActivityTypes, ConversationAccount } from '@microsoft/agents-activity-schema'
 import { ExecuteTurnRequest } from './executeTurnRequest'
 import createDebug, { Debugger } from 'debug'
+
+interface streamRead {
+  done: boolean,
+  value: string
+}
 
 export class CopilotStudioClient {
   private conversationId: string = ''
@@ -27,35 +32,45 @@ export class CopilotStudioClient {
     const response = await this.client(axiosConfig)
     const stream = response.data
     const reader = stream.pipeThrough(new TextDecoderStream()).getReader()
-    while (true) {
-      const { value, done } = await reader.read()
+    let result: string = ''
+    const results: string[] = []
+
+    const processEvents = async ({ done, value }: streamRead): Promise<string[]> => {
       if (done) {
         this.logger('Stream complete')
-        break
+        result += value
+        results.push(result)
+        return results
       }
-      this.logger(value)
-      const values: string[] = value.toString().split('\n')
-      const event = values[0]
-      const data = values[1]
-      const eventType = event.split(' ')[1].replace(/\r/g, '')
-      if (eventType === 'activity') {
-        const actobj = JSON.parse(data.substring(5, data.length))
-        if (actobj.type === 'message') {
-          const validTimestamp = new Date(actobj.timestamp)
-          actobj.timestamp = validTimestamp.toISOString()
-          const act = Activity.fromObject(actobj)
-          this.conversationId = act.conversation!.id
-          activities.push(act)
-        }
-        if (actobj.type === 'typing') {
-          this.logger('Bot is typing...')
-        }
-      }
+      this.logger('Bot is typing...')
+      result += value
+
+      return await processEvents(await reader.read())
     }
+
+    const events: string[] = await reader.read().then(processEvents)
+
+    events.forEach(event => {
+      const values: string[] = event.toString().split('\n')
+      const validEvents = values.filter(e => e.substring(0, 4) === 'data' && e !== 'data: end\r')
+      validEvents.forEach(ve => {
+        try {
+          const act = Activity.fromJson(ve.substring(5, ve.length))
+          if (act.type === ActivityTypes.Message) {
+            activities.push(act)
+          } else {
+            this.logger('Activity type: ', act.type)
+          }
+        } catch (e) {
+          this.logger('Error: ', e)
+          throw e
+        }
+      })
+    })
     return activities
   }
 
-  public async startConversationAsync (emitStartConversationEvent: boolean = true): Promise<Activity[]> {
+  public async startConversationAsync (emitStartConversationEvent: boolean = true): Promise<Activity> {
     const uriStart: string = getCopilotStudioConnectionUrl(this.settings)
     const body = { emitStartConversationEvent }
 
@@ -72,8 +87,9 @@ export class CopilotStudioClient {
     }
 
     const values = await this.postRequestAsync(config)
-
-    return values
+    const act = values[0]
+    this.conversationId = act.conversation?.id!
+    return act
   }
 
   public async askQuestionAsync (question: string, conversationId: string = this.conversationId) {

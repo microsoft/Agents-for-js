@@ -49,6 +49,22 @@
             "preLaunchTask": "build_webchat",
             "envFile": "${workspaceFolder}/samples/web-chat/.env",
             "console": "integratedTerminal"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "state-bot",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/samples/state-bot/src/index.ts",
+            "outFiles": [
+                "${workspaceFolder}/**/dist/**/*.js"
+            ],
+            "preLaunchTask": "build_state",
+            "envFile": "${workspaceFolder}/samples/state-bot/.env",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "openOnSessionStart"
         }
     ]
 }
