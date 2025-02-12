@@ -27,6 +27,20 @@
 			"path": "samples/echo-bot"
 		},
 		{
+			"label": "build_webchat",
+			"type": "npm",
+			"script": "build",
+			"group": {
+				"kind": "build",
+				"isDefault": false
+			},
+			"dependsOn": [
+				"build_packages"
+			],
+			"problemMatcher": [],
+			"path": "samples/web-chat"
+		},
+		{
 			"label": "build_copilot_client_sample",
 			"type": "npm",
 			"script": "build",
@@ -64,6 +78,7 @@
 			"dependsOrder": "sequence",
 			"dependsOn": [
 				"build_echo",
+				"build_webchat",
 				"build_copilot_client_sample"
 			]
 		}
