@@ -7,6 +7,7 @@ const upddateLocalDeps = (folder, version) => {
   const packageJsonContent = fs.readFileSync(packageJsonPath, 'utf8')
   console.log('readed ', packageJsonPath, packageJsonContent.length)
   const packageJson = JSON.parse(packageJsonContent)
+
   packageJson.version = version
   const dependencies = packageJson.dependencies
   Object.keys(dependencies).forEach(dep => {
@@ -31,6 +32,7 @@ const setPackageVersionAndBuildNumber = async versionInfo => {
       .filter(file => file.isDirectory())
       .map(folder => `${folder.parentPath}/${folder.name}`)
 
+
     for (const f of folders) {
       console.log(`Setting version number in ${f}`)
       upddateLocalDeps(f, versionInfo.npmPackageVersion)
@@ -39,6 +41,7 @@ const setPackageVersionAndBuildNumber = async versionInfo => {
 }
 
 const handleError = err => console.error('Failed to update the package version number. nerdbank-gitversion failed: ' + err)
+
 
 const v = await nbgv.getVersion('.')
 try {
