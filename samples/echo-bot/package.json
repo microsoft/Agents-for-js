@@ -15,10 +15,6 @@
     "bundle": "esbuild dist/index.js --bundle --platform=node --metafile=dist/meta.json --outfile=dist/bundle.js --tree-shaking=true --keep-names",
     "docker": "docker build -t botimages.azurecr.io/node-echo-bot:latest ."
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com"
-  },
   "dependencies": {
     "@microsoft/agents-bot-hosting": "file:../../packages/agents-bot-hosting",
     "express": "^5.0.1",

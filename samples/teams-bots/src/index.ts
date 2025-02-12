@@ -4,18 +4,23 @@
 import express, { Response } from 'express'
 import rateLimit from 'express-rate-limit'
 
-import { Request, CloudAdapter, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv, /* MemoryStorage, ConversationState, UserState */ } from '@microsoft/agents-bot-hosting'
-import { ConversationReference } from '@microsoft/agents-activity-schema'
+import { Request, CloudAdapter, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv, UserState, MemoryStorage, /* MemoryStorage, ConversationState, UserState */ } from '@microsoft/agents-bot-hosting'
 
 import { TeamsJsBot } from './teamsJsBot'
+import { TeamsSsoBot } from './teamsSsoBot'
 
 const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
-const conversationReferences: { [key: string]: ConversationReference } = {}
 
 const createBot = (botName: string) => {
   switch (botName) {
     case 'TeamsJsBot':
       return new TeamsJsBot()
+    case 'TeamsSsoBot':
+      {
+        const memoryStorage = new MemoryStorage()
+        const userState = new UserState(memoryStorage)
+        return new TeamsSsoBot(userState)
+      }
     default:
       throw new Error(`Bot with name ${botName} is not recognized.`)
   }
@@ -23,7 +28,7 @@ const createBot = (botName: string) => {
 
 const adapter = new CloudAdapter(authConfig)
 
-const botName = process.env.botName || 'MultiFeatureBot'
+const botName = process.env.botName || 'TeamsJsBot'
 const myBot = createBot(botName)
 
 const app = express()
@@ -31,19 +36,6 @@ const app = express()
 app.use(rateLimit({ validate: { xForwardedForHeader: false } }))
 app.use(express.json())
 app.use(authorizeJWT(authConfig))
-
-app.get('/api/notify', async (_req: Request, res: Response) => {
-  for (const conversationReference of Object.values(conversationReferences)) {
-    await adapter.continueConversation(conversationReference, async context => {
-      await context.sendActivity('proactive hello')
-    })
-  }
-
-  res.setHeader('Content-Type', 'text/html')
-  res.writeHead(200)
-  res.write('<html><body><h1>Proactive messages have been sent.</h1></body></html>')
-  res.end()
-})
 
 app.post('/api/messages', async (req: Request, res: Response) => {
   await adapter.process(req, res, async (context) => await myBot.run(context))
