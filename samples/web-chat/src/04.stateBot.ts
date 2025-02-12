@@ -29,10 +29,10 @@ export class StateManagementBot extends ActivityHandler {
 
     this.onMessage(async (turnContext, next) => {
       try {
-        const userProfile = await this.userProfileAccessor.getAsync(turnContext, {})
+        const userProfile = await this.userProfileAccessor.get(turnContext, {})
         console.log('User Profile:', userProfile)
 
-        const conversationData = await this.conversationDataAccessor.getAsync(turnContext, { promptedForUserName: false })
+        const conversationData = await this.conversationDataAccessor.get(turnContext, { promptedForUserName: false })
         console.log('Conversation Data:', conversationData)
 
         if (!userProfile.name) {
@@ -53,8 +53,8 @@ export class StateManagementBot extends ActivityHandler {
           await turnContext.sendActivity(`${userProfile.name} sent: ${turnContext.activity.text}`)
 
           if (turnContext.activity.text === '/reset') {
-            await this.conversationDataAccessor.deleteAsync(turnContext)
-            await this.userProfileAccessor.deleteAsync(turnContext)
+            await this.conversationDataAccessor.delete(turnContext)
+            await this.userProfileAccessor.delete(turnContext)
           }
         }
       } catch (error) {
@@ -80,7 +80,7 @@ export class StateManagementBot extends ActivityHandler {
   async run (context: TurnContext) {
     await super.run(context)
 
-    await this.conversationState.saveChangesAsync(context, false)
-    await this.userState.saveChangesAsync(context, false)
+    await this.conversationState.saveChanges(context, false)
+    await this.userState.saveChanges(context, false)
   }
 }

@@ -42,6 +42,6 @@ export class WebChatSsoBot extends ActivityHandler {
 
   async run (context: TurnContext) {
     await super.run(context)
-    await this.userState.saveChangesAsync(context, false)
+    await this.userState.saveChanges(context, false)
   }
 }
