@@ -1,0 +1,20 @@
+{
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "type": "AdaptiveCard",
+  "version": "1.0",
+  "body": [
+    {
+      "type": "TextBlock",
+      "text": "**Welcome to the Multi Feature sample**"
+    },
+    {
+      "type": "TextBlock",
+      "text": "Please choose wich feature you would like to try out"
+    },
+    {
+      "type": "TextBlock",
+      "text": "- Adaptive Card \r- Card Factory \r - State \r - SSO \r - Attachments",
+      "wrap": true
+    }
+  ]
+}

@@ -38,6 +38,21 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "web-chat",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/samples/web-chat/src/index.ts",
+            "outFiles": [
+                "${workspaceFolder}/**/dist/**/*.js"
+            ],
+            "preLaunchTask": "build_webchat",
+            "envFile": "${workspaceFolder}/samples/web-chat/.env",
+            "console": "integratedTerminal"
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "state-bot",
             "skipFiles": [
                 "<node_internals>/**"
