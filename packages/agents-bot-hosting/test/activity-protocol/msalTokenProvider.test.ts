@@ -3,6 +3,8 @@ import { describe, it, beforeEach } from 'node:test'
 import sinon from 'sinon'
 import { ConfidentialClientApplication, ManagedIdentityApplication } from '@azure/msal-node'
 import { MsalTokenProvider, AuthConfiguration } from '../../src'
+import fs from 'fs'
+import crypto from 'crypto'
 
 describe('MsalTokenProvider', () => {
   let msalTokenProvider: MsalTokenProvider
@@ -34,16 +36,18 @@ describe('MsalTokenProvider', () => {
     acquireTokenStub.restore()
   })
 
-  // it('should acquire token with certificate', async () => {
-  //     authConfig.clientSecret = undefined;
-  //     // @ts-ignore
-  //     const acquireTokenStub = sinon.stub(ConfidentialClientApplication.prototype, 'acquireTokenByClientCredential').resolves({ accessToken: 'test-token' });
-  //     const readPemStub = sinon.stub(fs, 'readFileSync').returns('test-cert');
-
-  //     const token = await msalTokenProvider.getAccessToken(authConfig);
-  //     assert.strictEqual(token, 'test-token');
-  //     acquireTokenStub.restore();
-  // });
+  it('should acquire token with certificate', async () => {
+    authConfig.clientSecret = undefined
+    // @ts-ignore
+    const acquireTokenStub = sinon.stub(ConfidentialClientApplication.prototype, 'acquireTokenByClientCredential').resolves({ accessToken: 'test-token' })
+    sinon.stub(fs, 'readFileSync').returns('test-cert')
+    // @ts-ignore
+    sinon.stub(crypto, 'createPrivateKey').returns({export: () => 'test-key' })
+    sinon.stub(crypto, 'X509Certificate').returns({ fingerprint: 'test-fingerprint' })
+    const token = await msalTokenProvider.getAccessToken(authConfig, 'scope')
+    assert.strictEqual(token, 'test-token')
+    acquireTokenStub.restore()
+  })
 
   it('should acquire token with user assigned identity', async () => {
     authConfig.clientSecret = undefined
@@ -51,6 +55,20 @@ describe('MsalTokenProvider', () => {
     authConfig.certKeyFile = undefined
     // @ts-ignore
     const acquireTokenStub = sinon.stub(ManagedIdentityApplication.prototype, 'acquireToken').resolves({ accessToken: 'test-token' })
+    const token = await msalTokenProvider.getAccessToken(authConfig, 'scope')
+    assert.strictEqual(token, 'test-token')
+    acquireTokenStub.restore()
+  })
+
+  it('should acquire token with Fic', async () => {
+    authConfig.clientSecret = undefined
+    authConfig.certPemFile = undefined
+    authConfig.certKeyFile = undefined
+    authConfig.ficClientId = 'test-fic-client-id'
+    // @ts-ignore
+    sinon.stub(ManagedIdentityApplication.prototype, 'acquireToken').resolves({ accessToken: 'test-token' })
+    // @ts-ignore
+    const acquireTokenStub = sinon.stub(ConfidentialClientApplication.prototype, 'acquireTokenByClientCredential').resolves({ accessToken: 'test-token' })
     const token = await msalTokenProvider.getAccessToken(authConfig, 'scope')
     assert.strictEqual(token, 'test-token')
     acquireTokenStub.restore()
