@@ -4,7 +4,7 @@
 import { ActivityHandler } from '@microsoft/agents-bot-hosting'
 import { CardMessages } from './helpers/cardMessages'
 import { Activity, ActivityTypes } from '@microsoft/agents-activity-schema'
-import CardFactoryCard from '../resources/CardFactoryCard.json'
+import CardFactoryCard from '../cards/CardFactoryCard.json'
 
 export class CardFactoryBot extends ActivityHandler {
   constructor () {

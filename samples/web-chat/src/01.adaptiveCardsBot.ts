@@ -4,9 +4,9 @@
 import { Attachment } from '@microsoft/agents-activity-schema'
 import { ActivityHandler, MessageFactory, TurnContext } from '@microsoft/agents-bot-hosting'
 import * as AdaptiveCardsTemplating from 'adaptivecards-templating'
-import AdaptiveCardActions from '../resources/AdaptiveCardActions.json'
-import SuggestedActions from '../resources/SuggestedActions.json'
-import ToggleVisible from '../resources/ToggleVisibleCard.json'
+import AdaptiveCardActions from '../cards/AdaptiveCardActions.json'
+import SuggestedActions from '../cards/SuggestedActions.json'
+import ToggleVisible from '../cards/ToggleVisibleCard.json'
 
 const commandString = 'Please use one of these commands: **Card Actions** for Adaptive Card actions, **Suggested Actions** for bot suggested actions, and **ToggleVisibility** for toggling the visibility of the card.'
 
