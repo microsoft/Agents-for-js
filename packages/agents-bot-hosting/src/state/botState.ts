@@ -34,7 +34,7 @@ export class BotState {
     return prop
   }
 
-  public async loadAsync (context: TurnContext, force = false): Promise<any> {
+  public async load (context: TurnContext, force = false): Promise<any> {
     const cached: CachedBotState = context.turnState.get(this.stateKey)
 
     if (force || !cached || !cached.state) {
@@ -52,7 +52,7 @@ export class BotState {
     return cached.state
   }
 
-  public async saveChangesAsync (context: TurnContext, force = false): Promise<void> {
+  public async saveChanges (context: TurnContext, force = false): Promise<void> {
     let cached: CachedBotState = context.turnState.get(this.stateKey)
     if (force || (cached && cached.hash !== this.calculateChangeHash(cached?.state))) {
       if (!cached) {
@@ -71,12 +71,12 @@ export class BotState {
     }
   }
 
-  public async clearAsync (context: TurnContext): Promise<void> {
+  public async clear (context: TurnContext): Promise<void> {
     const emptyObjectToForceSave = { state: {}, hash: '' }
     context.turnState.set(this.stateKey, emptyObjectToForceSave)
   }
 
-  public async deleteAsync (context: TurnContext): Promise<void> {
+  public async delete (context: TurnContext): Promise<void> {
     if (context.turnState.has(this.stateKey)) {
       context.turnState.delete(this.stateKey)
     }

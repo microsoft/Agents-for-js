@@ -20,12 +20,12 @@ describe('BotState', () => {
     } as unknown as TurnContext
   })
 
-  describe('loadAsync', () => {
+  describe('load', () => {
     test('loads state from storage if not cached', async () => {
       const initialData: StoreItem = { mockKey: { test: 'value', eTag: '1' } }
       await storage.write(initialData)
 
-      const state = await botState.loadAsync(mockContext)
+      const state = await botState.load(mockContext)
 
       assert.deepStrictEqual(state, { test: 'value', eTag: '1' })
     })
@@ -36,20 +36,20 @@ describe('BotState', () => {
         hash: 'mockHash',
       })
 
-      const state = await botState.loadAsync(mockContext)
+      const state = await botState.load(mockContext)
 
       assert.deepStrictEqual(state, { cachedKey: 'cachedValue' })
     })
   })
 
-  describe('saveChangesAsync', () => {
+  describe('saveChanges', () => {
     test('saves changes to storage when force is true', async () => {
       mockContext.turnState.set(botState['stateKey'], {
         state: { newKey: 'newValue' },
         hash: 'oldHash',
       })
 
-      await botState.saveChangesAsync(mockContext, true)
+      await botState.saveChanges(mockContext, true)
 
       const storedItem = await storage.read(['mockKey'])
       assert.deepStrictEqual(storedItem.mockKey, {
@@ -59,25 +59,25 @@ describe('BotState', () => {
     })
   })
 
-  describe('clearAsync', () => {
+  describe('clear', () => {
     test('clears cached state', async () => {
       mockContext.turnState.set(botState['stateKey'], { state: { key: 'value' }, hash: 'hash' })
 
-      await botState.clearAsync(mockContext)
+      await botState.clear(mockContext)
 
       const cachedState = mockContext.turnState.get(botState['stateKey'])
       assert.deepStrictEqual(cachedState, { state: {}, hash: '' })
     })
   })
 
-  describe('deleteAsync', () => {
+  describe('delete', () => {
     test('deletes state from storage and turnState', async () => {
       const initialData: StoreItem = { mockKey: { test: 'value' } }
       await storage.write(initialData)
 
       mockContext.turnState.set(botState['stateKey'], { state: { test: 'value' }, hash: 'hash' })
 
-      await botState.deleteAsync(mockContext)
+      await botState.delete(mockContext)
 
       const storedItem = await storage.read(['mockKey'])
       assert.strictEqual(Object.keys(storedItem).length, 0)

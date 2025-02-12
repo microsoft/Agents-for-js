@@ -13,6 +13,7 @@ export * from './oauth'
 export * from './state'
 export * from './storage'
 export * from './teams'
+export * from './transcript'
 
 export * from './activityHandler'
 export * from './cloudAdapter'

@@ -59,7 +59,7 @@ export class WebChatOAuthFlow {
       await context.sendActivity(MessageFactory.attachment(oCard))
       this.state!.flowStarted = true
     }
-    this.flowStateAccessor.setAsync(context, this.state)
+    this.flowStateAccessor.set(context, this.state)
     return retVal
   }
 
@@ -67,11 +67,11 @@ export class WebChatOAuthFlow {
     await this.userTokenClient!.signOut(context.activity.from?.id!, context.adapter.authConfig.connectionName!, context.activity.channelId!)
     this.state!.flowStarted = false
     this.state!.userToken = ''
-    this.flowStateAccessor.setAsync(context, this.state)
+    this.flowStateAccessor.set(context, this.state)
   }
 
   private async getUserState (context: TurnContext) {
-    let userProfile: FlowState | null = await this.flowStateAccessor.getAsync(context, null)
+    let userProfile: FlowState | null = await this.flowStateAccessor.get(context, null)
     if (userProfile === null) {
       userProfile = new FlowState()
     }

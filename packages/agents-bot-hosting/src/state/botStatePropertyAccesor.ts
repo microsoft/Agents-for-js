@@ -17,15 +17,15 @@ export class BotStatePropertyAccessor<T = any> {
    */
   constructor (protected readonly state: BotState, public readonly name: string) { }
 
-  async deleteAsync (context: TurnContext): Promise<void> {
-    const obj: any = await this.state.loadAsync(context)
+  async delete (context: TurnContext): Promise<void> {
+    const obj: any = await this.state.load(context)
     if (Object.prototype.hasOwnProperty.call(obj, this.name)) {
       delete obj[this.name]
     }
   }
 
-  async getAsync (context: TurnContext, defaultValue?: T): Promise<T> {
-    const obj: any = await this.state.loadAsync(context)
+  async get (context: TurnContext, defaultValue?: T): Promise<T> {
+    const obj: any = await this.state.load(context)
     if (!Object.prototype.hasOwnProperty.call(obj, this.name) && defaultValue !== undefined) {
       const clone: any =
         typeof defaultValue === 'object' || Array.isArray(defaultValue)
@@ -37,8 +37,8 @@ export class BotStatePropertyAccessor<T = any> {
     return obj[this.name]
   }
 
-  async setAsync (context: TurnContext, value: T): Promise<void> {
-    const obj: any = await this.state.loadAsync(context)
+  async set (context: TurnContext, value: T): Promise<void> {
+    const obj: any = await this.state.load(context)
     obj[this.name] = value
   }
 }

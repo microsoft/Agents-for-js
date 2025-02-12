@@ -45,7 +45,7 @@ export class TeamsOAuthFlow {
     const oCard: Attachment = CardFactory.oauthCard(authConfig.connectionName as string, 'Sign in', '', signingResource)
     await context.sendActivity(MessageFactory.attachment(oCard))
     this.state.flowStarted = true
-    await this.flowStateAccessor.setAsync(context, this.state)
+    await this.flowStateAccessor.set(context, this.state)
     return retVal
   }
 
@@ -62,7 +62,7 @@ export class TeamsOAuthFlow {
     this.state!.userToken = userTokenReq.token
     this.state!.flowStarted = false
     await context.sendActivity(MessageFactory.text('User signed in' + new Date().toISOString()))
-    await this.flowStateAccessor.setAsync(context, this.state)
+    await this.flowStateAccessor.set(context, this.state)
     return this.state?.userToken!
   }
 
@@ -70,11 +70,11 @@ export class TeamsOAuthFlow {
     await this.userTokenClient?.signOut(context.activity.from?.id as string, context.adapter.authConfig.connectionName as string, context.activity.channelId as string)
     await context.sendActivity(MessageFactory.text('User signed out'))
     this.state!.userToken = ''
-    await this.flowStateAccessor.setAsync(context, this.state)
+    await this.flowStateAccessor.set(context, this.state)
   }
 
   private async getUserState (context: TurnContext) {
-    let userProfile: FlowState | null = await this.flowStateAccessor.getAsync(context, null)
+    let userProfile: FlowState | null = await this.flowStateAccessor.get(context, null)
     if (userProfile === null) {
       userProfile = new FlowState()
     }
