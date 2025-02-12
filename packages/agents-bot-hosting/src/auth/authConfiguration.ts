@@ -10,7 +10,8 @@ export interface AuthConfiguration {
   certPemFile?: string
   certKeyFile?: string
   issuers: string[]
-  connectionName?: string
+  connectionName?: string,
+  ficClientId?: string
 }
 
 export const loadAuthConfigFromEnv: () => AuthConfiguration = () => {
@@ -24,6 +25,7 @@ export const loadAuthConfigFromEnv: () => AuthConfiguration = () => {
     certPemFile: process.env.certPemFile,
     certKeyFile: process.env.certKeyFile,
     connectionName: process.env.connectionName,
+    ficClientId: process.env.ficClientId,
     issuers: [
       'https://api.botframework.com',
       `https://sts.windows.net/${process.env.tenantId}/`,
@@ -43,6 +45,7 @@ export const loadBotAuthConfigFromEnv: () => AuthConfiguration = () => {
     certPemFile: process.env.certPemFile,
     certKeyFile: process.env.certKeyFile,
     connectionName: process.env.connectionName,
+    ficClientId: process.env.MicrosoftAppClientId,
     issuers: [
       'https://api.botframework.com',
         `https://sts.windows.net/${process.env.tenantId}/`,

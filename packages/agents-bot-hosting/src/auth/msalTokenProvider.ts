@@ -12,6 +12,7 @@ import { v4 } from 'uuid'
 import fs from 'fs'
 import crypto from 'crypto'
 
+const audience = 'api://AzureADTokenExchange'
 const logger = debug('agents:msal-token-provider')
 
 export class MsalTokenProvider implements AuthProvider {
@@ -20,14 +21,16 @@ export class MsalTokenProvider implements AuthProvider {
       return ''
     }
 
-    if (authConfig.clientSecret !== undefined) {
+    if (authConfig.ficClientId !== undefined) {
+      return await this.acquireAccessTokenViaFIC(authConfig)
+    } else if (authConfig.clientSecret !== undefined) {
       return await this.acquireAccessTokenViaSecret(authConfig, scope)
     } else if (authConfig.certPemFile !== undefined &&
-                    authConfig.certKeyFile !== undefined) {
+      authConfig.certKeyFile !== undefined) {
       return await this.acquireTokenWithCertificate(authConfig, scope)
     } else if (authConfig.clientSecret === undefined &&
-                    authConfig.certPemFile === undefined &&
-                    authConfig.certKeyFile === undefined) {
+      authConfig.certPemFile === undefined &&
+      authConfig.certKeyFile === undefined) {
       return await this.acquireTokenWithUserAssignedIdentity(authConfig, scope)
     } else {
       throw new Error('Invalid authConfig. ')
@@ -118,5 +121,38 @@ export class MsalTokenProvider implements AuthProvider {
       correlationId: v4()
     })
     return token?.accessToken as string
+  }
+
+  private async acquireAccessTokenViaFIC (authConfig: AuthConfiguration) : Promise<string> {
+    const scope = `${audience}/.default`
+    const clientAssertion = await this.fetchExternalToken()
+    const cca = new ConfidentialClientApplication({
+      auth: {
+        clientId: authConfig.clientId!,
+        authority: `https://login.microsoftonline.com/${authConfig.tenantId}`,
+        clientAssertion
+      }
+    })
+    const token = await cca.acquireTokenByClientCredential({
+      scopes: [scope],
+
+    })
+    logger.info('got token using FIC client assertion')
+    return token?.accessToken!
+  }
+
+  private async fetchExternalToken () : Promise<string> {
+    const managedIdentityClientAssertion = new ManagedIdentityApplication({
+      managedIdentityIdParams: {
+        userAssignedClientId: process.env.MicrosoftAppClientId
+      }
+    }
+    )
+    const response = await managedIdentityClientAssertion.acquireToken({
+      resource: audience,
+      forceRefresh: true
+    })
+    logger.info('got token for FIC')
+    return response.accessToken
   }
 }

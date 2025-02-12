@@ -4,10 +4,10 @@
 import express, { Response } from 'express'
 
 import rateLimit from 'express-rate-limit'
-import { Request, CloudAdapter, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv } from '@microsoft/agents-bot-hosting'
+import { Request, CloudAdapter, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv, loadBotAuthConfigFromEnv } from '@microsoft/agents-bot-hosting'
 import { EchoBot } from './bot'
 
-const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
+const authConfig: AuthConfiguration = loadBotAuthConfigFromEnv()
 
 const adapter = new CloudAdapter(authConfig)
 const myBot = new EchoBot()
