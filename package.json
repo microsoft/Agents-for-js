@@ -49,7 +49,7 @@
     "@types/node": "^22.13.0",
     "@types/sinon": "^17.0.3",
     "@types/uuid": "^10.0.0",
-    "eslint": "^9.20.0",
+    "eslint": "^9.20.1",
     "global": "4.4.0",
     "neostandard": "^0.12.1",
     "nerdbank-gitversioning": "^3.7.115",
