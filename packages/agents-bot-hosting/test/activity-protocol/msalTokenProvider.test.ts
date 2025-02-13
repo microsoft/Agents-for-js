@@ -64,7 +64,7 @@ describe('MsalTokenProvider', () => {
     authConfig.clientSecret = undefined
     authConfig.certPemFile = undefined
     authConfig.certKeyFile = undefined
-    authConfig.ficClientId = 'test-fic-client-id'
+    authConfig.FICClientId = 'test-fic-client-id'
     // @ts-ignore
     sinon.stub(ManagedIdentityApplication.prototype, 'acquireToken').resolves({ accessToken: 'test-token' })
     // @ts-ignore

@@ -21,7 +21,7 @@ export class MsalTokenProvider implements AuthProvider {
       return ''
     }
 
-    if (authConfig.ficClientId !== undefined) {
+    if (authConfig.FICClientId !== undefined) {
       return await this.acquireAccessTokenViaFIC(authConfig, scope)
     } else if (authConfig.clientSecret !== undefined) {
       return await this.acquireAccessTokenViaSecret(authConfig, scope)
@@ -125,23 +125,23 @@ export class MsalTokenProvider implements AuthProvider {
 
   private async acquireAccessTokenViaFIC (authConfig: AuthConfiguration, scope: string) : Promise<string> {
     const scopes = [`${scope}/.default`]
-    const clientAssertion = await this.fetchExternalToken()
+    const clientAssertion = await this.fetchExternalToken(authConfig.FICClientId as string)
     const cca = new ConfidentialClientApplication({
       auth: {
-        clientId: authConfig.clientId!,
+        clientId: authConfig.clientId as string,
         authority: `https://login.microsoftonline.com/${authConfig.tenantId}`,
         clientAssertion
       }
     })
     const token = await cca.acquireTokenByClientCredential({ scopes })
     logger.info('got token using FIC client assertion')
-    return token?.accessToken!
+    return token?.accessToken as string
   }
 
-  private async fetchExternalToken () : Promise<string> {
+  private async fetchExternalToken (FICClientId: string) : Promise<string> {
     const managedIdentityClientAssertion = new ManagedIdentityApplication({
       managedIdentityIdParams: {
-        userAssignedClientId: process.env.MicrosoftAppClientId
+        userAssignedClientId: FICClientId
       }
     }
     )
