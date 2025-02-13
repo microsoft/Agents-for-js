@@ -131,7 +131,8 @@ export class MsalTokenProvider implements AuthProvider {
         clientId: authConfig.clientId as string,
         authority: `https://login.microsoftonline.com/${authConfig.tenantId}`,
         clientAssertion
-      }
+      },
+      system: this.sysOptions
     })
     const token = await cca.acquireTokenByClientCredential({ scopes })
     logger.info('got token using FIC client assertion')
@@ -142,7 +143,8 @@ export class MsalTokenProvider implements AuthProvider {
     const managedIdentityClientAssertion = new ManagedIdentityApplication({
       managedIdentityIdParams: {
         userAssignedClientId: FICClientId
-      }
+      },
+      system: this.sysOptions
     }
     )
     const response = await managedIdentityClientAssertion.acquireToken({
