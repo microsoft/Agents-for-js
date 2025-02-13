@@ -25,7 +25,7 @@ export const loadAuthConfigFromEnv: () => AuthConfiguration = () => {
     certPemFile: process.env.certPemFile,
     certKeyFile: process.env.certKeyFile,
     connectionName: process.env.connectionName,
-    FICClientId: process.env.ficClientId,
+    FICClientId: process.env.FICClientId,
     issuers: [
       'https://api.botframework.com',
       `https://sts.windows.net/${process.env.tenantId}/`,
@@ -48,8 +48,8 @@ export const loadBotAuthConfigFromEnv: () => AuthConfiguration = () => {
     FICClientId: process.env.MicrosoftAppClientId,
     issuers: [
       'https://api.botframework.com',
-        `https://sts.windows.net/${process.env.tenantId}/`,
-        `https://login.microsoftonline.com/${process.env.tenantId}/v2.0`
+        `https://sts.windows.net/${process.env.MicrosoftAppTenantId}/`,
+        `https://login.microsoftonline.com/${process.env.MicrosoftAppTenantId}/v2.0`
     ]
   }
 }

@@ -42,7 +42,7 @@ describe('MsalTokenProvider', () => {
     const acquireTokenStub = sinon.stub(ConfidentialClientApplication.prototype, 'acquireTokenByClientCredential').resolves({ accessToken: 'test-token' })
     sinon.stub(fs, 'readFileSync').returns('test-cert')
     // @ts-ignore
-    sinon.stub(crypto, 'createPrivateKey').returns({export: () => 'test-key' })
+    sinon.stub(crypto, 'createPrivateKey').returns({ export: () => 'test-key' })
     sinon.stub(crypto, 'X509Certificate').returns({ fingerprint: 'test-fingerprint' })
     const token = await msalTokenProvider.getAccessToken(authConfig, 'scope')
     assert.strictEqual(token, 'test-token')
