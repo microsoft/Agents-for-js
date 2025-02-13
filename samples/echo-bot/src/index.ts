@@ -4,10 +4,11 @@
 import express, { Response } from 'express'
 
 import rateLimit from 'express-rate-limit'
-import { Request, CloudAdapter, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv, loadBotAuthConfigFromEnv } from '@microsoft/agents-bot-hosting'
+import { Request, CloudAdapter, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv } from '@microsoft/agents-bot-hosting'
+import { version as sdkVersion } from '@microsoft/agents-bot-hosting/package.json'
 import { EchoBot } from './bot'
 
-const authConfig: AuthConfiguration = loadBotAuthConfigFromEnv()
+const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
 
 const adapter = new CloudAdapter(authConfig)
 const myBot = new EchoBot()
@@ -26,5 +27,5 @@ app.post('/api/messages', async (req: Request, res: Response) => {
 
 const port = process.env.PORT || 3978
 app.listen(port, () => {
-  console.log(`\nServer listening to port ${port} for appId ${authConfig.clientId} debug ${process.env.DEBUG}`)
+  console.log(`\nServer listening to port ${port} on sdk ${sdkVersion} for appId ${authConfig.clientId} debug ${process.env.DEBUG}`)
 })

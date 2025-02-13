@@ -13,7 +13,7 @@
     "start": "node --env-file .env ./dist/index.js",
     "prebundle": "npm run build",
     "bundle": "esbuild dist/index.js --bundle --platform=node --metafile=dist/meta.json --outfile=dist/bundle.js --tree-shaking=true --keep-names",
-    "docker": "docker build -t botimages.azurecr.io/node-echo-bot:latest ."
+    "docker": "docker build -t botagents.azurecr.io/node-echo-bot:latest ."
   },
   "repository": {
     "type": "git",
