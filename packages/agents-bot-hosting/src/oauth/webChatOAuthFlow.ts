@@ -16,6 +16,7 @@ const logger = debug('agents:web-chat-oauth-flow')
 class FlowState {
   public flowStarted: boolean = false
   public userToken: string = ''
+  public flowExpires: number = 0
 }
 
 export class WebChatOAuthFlow {
@@ -30,9 +31,17 @@ export class WebChatOAuthFlow {
 
   public async getOAuthToken (context: TurnContext) : Promise<string> {
     this.state = await this.getUserState(context)
-    if (this.state!.userToken !== '') {
-      return this.state.userToken
+    if (this.state?.flowExpires && this.state?.flowExpires !== 0 && Date.now() > this.state.flowExpires) {
+      if (this.state!.userToken !== '') {
+        return this.state.userToken
+      } else {
+        logger.info('Sign-in flow expired')
+        this.state.flowStarted = false
+        this.state.userToken = ''
+        await context.sendActivity(MessageFactory.text('Sign-in session expired. Please try again.'))
+      }
     }
+
     let retVal: string = ''
     const authConfig = context.adapter.authConfig
     const adapter = context.adapter as CloudAdapter
@@ -64,6 +73,7 @@ export class WebChatOAuthFlow {
       const oCard: Attachment = CardFactory.oauthCard(authConfig.connectionName!, 'Sign in', '', signingResource)
       await context.sendActivity(MessageFactory.attachment(oCard))
       this.state!.flowStarted = true
+      this.state.flowExpires = Date.now() + 30000
       logger.info('OAuth flow started')
     }
     this.flowStateAccessor.set(context, this.state)
@@ -74,6 +84,7 @@ export class WebChatOAuthFlow {
     await this.userTokenClient!.signOut(context.activity.from?.id!, context.adapter.authConfig.connectionName!, context.activity.channelId!)
     this.state!.flowStarted = false
     this.state!.userToken = ''
+    this.state!.flowExpires = 0
     this.flowStateAccessor.set(context, this.state)
     logger.info('User signed out successfully')
   }
