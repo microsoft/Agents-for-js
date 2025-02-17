@@ -4,7 +4,7 @@
 import { ActivityHandler, CardFactory, MessageFactory, TeamsOAuthFlow, TurnContext, UserState } from '@microsoft/agents-bot-hosting'
 
 import { Template } from 'adaptivecards-templating'
-import * as userTemplate from './userProfileCard.json'
+import * as userTemplate from '../cards/UserProfileCard.json'
 import { getUserInfo } from './userGraphClient'
 
 export class TeamsSsoBot extends ActivityHandler {
@@ -54,6 +54,6 @@ export class TeamsSsoBot extends ActivityHandler {
 
   async run (context: TurnContext) {
     await super.run(context)
-    await this.userState.saveChangesAsync(context, false)
+    await this.userState.saveChanges(context, false)
   }
 }
