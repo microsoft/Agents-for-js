@@ -31,15 +31,14 @@ export class WebChatOAuthFlow {
 
   public async getOAuthToken (context: TurnContext) : Promise<string> {
     this.state = await this.getUserState(context)
-    if (this.state?.flowExpires && this.state?.flowExpires !== 0 && Date.now() > this.state.flowExpires) {
-      if (this.state!.userToken !== '') {
-        return this.state.userToken
-      } else {
-        logger.info('Sign-in flow expired')
-        this.state.flowStarted = false
-        this.state.userToken = ''
-        await context.sendActivity(MessageFactory.text('Sign-in session expired. Please try again.'))
-      }
+    if (this.state!.userToken !== '') {
+      return this.state.userToken
+    }
+    if (this.state?.flowExpires !== 0 && Date.now() > this.state.flowExpires) {
+      logger.warn('Sign-in flow expired')
+      this.state.flowStarted = false
+      this.state.userToken = ''
+      await context.sendActivity(MessageFactory.text('Sign-in session expired. Please try again.'))
     }
 
     let retVal: string = ''
