@@ -3,8 +3,8 @@
 
 import { ActivityHandler, CardFactory, MessageFactory, TurnContext, UserState, WebChatOAuthFlow } from '@microsoft/agents-bot-hosting'
 import { Template } from 'adaptivecards-templating'
-import * as userTemplate from '../resources/UserProfileCard.json'
-import { getUserInfo } from './helpers/userGraphClient'
+import * as userTemplate from '../cards/UserProfileCard.json'
+import { getUserInfo } from './userGraphClient'
 
 export class WebChatSsoBot extends ActivityHandler {
   webChatOAuthFlow: WebChatOAuthFlow

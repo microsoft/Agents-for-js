@@ -1,0 +1,78 @@
+{
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.17/MicrosoftTeams.schema.json",
+  "version": "1.0.0",
+  "manifestVersion": "1.17",
+  "id": "44854737-5b02-4283-baaf-9400b0b6058e",
+  "name": {
+    "short": "teamsinfo",
+    "full": "teamsinfo teamsinfo"
+  },
+  "developer": {
+    "name": "sdkteam",
+    "mpnId": "",
+    "websiteUrl": "https://copilot.sdk/",
+    "privacyUrl": "https://copilot.sdk/p",
+    "termsOfUseUrl": "https://copilot.sdk/tou"
+  },
+  "description": {
+    "short": "teamsinfo",
+    "full": "teamsinfo teamsinfo teamsinfo"
+  },
+  "icons": {
+    "outline": "outline.png",
+    "color": "color.png"
+  },
+  "accentColor": "#FFFFFF",
+  "bots": [
+    {
+      "botId": "8688cafc-167b-4b60-ab37-112a11a345ea",
+      "scopes": [
+        "personal",
+        "team",
+        "groupChat"
+      ],
+      "isNotificationOnly": false,
+      "supportsCalling": false,
+      "supportsVideo": false,
+      "supportsFiles": true
+    }
+  ],
+  "validDomains": [],
+  "webApplicationInfo": {
+    "id": "8688cafc-167b-4b60-ab37-112a11a345ea",
+    "resource": ""
+  },
+  "devicePermissions": [
+    "notifications"
+  ],
+  "authorization": {
+    "permissions": {
+      "resourceSpecific": [
+        {
+          "name": "Member.Read.Group",
+          "type": "Application"
+        },
+        {
+          "name": "ChannelSettings.Read.Group",
+          "type": "Application"
+        },
+        {
+          "name": "TeamMember.Read.Group",
+          "type": "Application"
+        },
+        {
+          "name": "TeamSettings.ReadWrite.Group",
+          "type": "Application"
+        },
+        {
+          "name": "ChatMessage.Read.Chat",
+          "type": "Application"
+        },
+        {
+          "name": "TeamsActivity.Send.User",
+          "type": "Application"
+        }
+      ]
+    }
+  }
+}

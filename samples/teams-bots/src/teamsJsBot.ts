@@ -6,7 +6,7 @@ import { CloudAdapter, ConversationParameters, MeetingNotification, MessageFacto
 export class TeamsJsBot extends TeamsActivityHandler {
   constructor () {
     super()
-    this.onMessage(async (context, next) => {
+    this.onMessage(async (context) => {
       const text = context.activity.text!.trim()
       if (text.includes('getMeetingParticipant')) {
         const meetingParticipant = await TeamsInfo.getMeetingParticipant(context)
@@ -127,9 +127,6 @@ export class TeamsJsBot extends TeamsActivityHandler {
             ref,
             async (context) => {
               await context.sendActivity(message)
-              // const messageId = await context.sendActivity(message)
-              // member.messageId = messageId.id
-              // teamMemberDetails.push(member)
             })
         })
     }))

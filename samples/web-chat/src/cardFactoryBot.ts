@@ -2,9 +2,9 @@
 // Licensed under the MIT License.
 
 import { ActivityHandler } from '@microsoft/agents-bot-hosting'
-import { CardMessages } from './helpers/cardMessages'
+import { CardMessages } from './cardMessages'
+import CardFactoryCard from '../cards/CardFactoryCard.json'
 import { Activity, ActivityTypes } from '@microsoft/agents-bot-activity'
-import CardFactoryCard from '../resources/CardFactoryCard.json'
 
 export class CardFactoryBot extends ActivityHandler {
   constructor () {

@@ -68,7 +68,7 @@ export class MultiFeatureBot extends ActivityHandler {
         }
       } else {
         if ((context.activity.attachments != null) && context.activity.attachments.length > 0) {
-          const validAttachments = context.activity.attachments.filter(a => a.contentType !== 'text/html')
+          const validAttachments = context.activity.attachments.filter((a: { contentType: string }) => a.contentType !== 'text/html')
           if (validAttachments.length > 0) {
             // The user sent an attachment and the bot should handle the incoming attachment.
             await this.handleIncomingAttachment(context, validAttachments)
@@ -85,7 +85,7 @@ export class MultiFeatureBot extends ActivityHandler {
     })
 
     this.onReactionsAdded(async (context) => {
-      await Promise.all((context.activity.reactionsAdded ?? []).map(async (reaction) => {
+      await Promise.all((context.activity.reactionsAdded ?? []).map(async (reaction: { type: any }) => {
         if (context.activity.replyToId !== undefined) {
           const newReaction = `You reacted with '${reaction.type}' to the following message: '${context.activity.replyToId}'`
           await context.sendActivity(newReaction)
@@ -94,7 +94,7 @@ export class MultiFeatureBot extends ActivityHandler {
     })
 
     this.onReactionsRemoved(async (context) => {
-      await Promise.all((context.activity.reactionsRemoved ?? []).map(async (reaction) => {
+      await Promise.all((context.activity.reactionsRemoved ?? []).map(async (reaction: { type: any }) => {
         if (context.activity.replyToId !== undefined) {
           const newReaction = `You removed the reaction '${reaction.type}' from the message: '${context.activity.replyToId}'`
           await context.sendActivity(newReaction)
