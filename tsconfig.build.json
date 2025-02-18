@@ -2,10 +2,19 @@
     "files": [],
     "references": [
       {
-        "path": "packages/agents-activity-schema"
+        "path": "packages/agents-bot-activity"
+      },
+      {
+        "path": "packages/agents-bot-hosting"
       },
       {
         "path": "packages/agents-copilotstudio-client"
+      },
+      {
+        "path": "packages/agents-bot-hosting-storage-blob"
+      },
+      {
+        "path": "packages/agents-bot-hosting-storage-cosmos"
       }
     ]
   }

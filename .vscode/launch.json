@@ -7,6 +7,22 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "echo-bot",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/samples/echo-bot/src/index.ts",
+            "outFiles": [
+                "${workspaceFolder}/**/dist/**/*.js"
+            ],
+            "preLaunchTask": "build_echo",
+            "envFile": "${workspaceFolder}/samples/echo-bot/.env",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "copilotstudio-console",
             "skipFiles": [
                 "<node_internals>/**"
@@ -18,6 +34,37 @@
             "preLaunchTask": "build_copilot_client_sample",
             "envFile": "${workspaceFolder}/samples/copilotstudio-console/.env",
             "console": "integratedTerminal"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "web-chat",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/samples/web-chat/src/index.ts",
+            "outFiles": [
+                "${workspaceFolder}/**/dist/**/*.js"
+            ],
+            "preLaunchTask": "build_webchat",
+            "envFile": "${workspaceFolder}/samples/web-chat/.env",
+            "console": "integratedTerminal"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "state-bot",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/samples/state-bot/src/index.ts",
+            "outFiles": [
+                "${workspaceFolder}/**/dist/**/*.js"
+            ],
+            "preLaunchTask": "build_state",
+            "envFile": "${workspaceFolder}/samples/state-bot/.env",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "openOnSessionStart"
         }
     ]
 }

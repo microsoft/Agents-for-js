@@ -4,8 +4,9 @@
  */
 
 import * as msal from '@azure/msal-node'
-import { Activity, ActivityTypes, CardAction } from '@microsoft/agents-activity-schema'
+import { Activity, ActivityTypes, CardAction } from '@microsoft/agents-bot-activity'
 import { ConnectionSettings, CopilotStudioClient, loadCopilotStudioConnectionSettingsFromEnv } from '@microsoft/agents-copilotstudio-client'
+import pkg from '@microsoft/agents-copilotstudio-client/package.json' with { type: 'json' }
 import readline from 'readline'
 import open from 'open'
 import os from 'os'
@@ -62,20 +63,21 @@ const createClient = async (): Promise<CopilotStudioClient> => {
   const settings = loadCopilotStudioConnectionSettingsFromEnv()
   const token = await acquireToken(settings)
   const copilotClient = new CopilotStudioClient(settings, token)
+  console.log(`Copilot Studio Client Version: ${pkg.version}, running with settings: ${JSON.stringify(settings, null, 2)}`)
   return copilotClient
 }
 
-const askQuestion = () => {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-  })
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+})
 
+const askQuestion = async (copilotClient: CopilotStudioClient, conversationId: string) => {
   rl.question('\n>>>: ', async (answer) => {
     if (answer.toLowerCase() === 'exit') {
       rl.close()
     } else {
-      const replies = await copilotClient.askQuestionAsync(answer)
+      const replies = await copilotClient.askQuestionAsync(answer, conversationId)
       replies.forEach((act: Activity) => {
         if (act.type === ActivityTypes.Message) {
           console.log(`\n${act.text}`)
@@ -85,21 +87,17 @@ const askQuestion = () => {
           rl.close()
         }
       })
-      askQuestion()
+      await askQuestion(copilotClient, conversationId)
     }
   })
 }
 
-const copilotClient = await createClient()
+const main = async () => {
+  const copilotClient = await createClient()
+  const act: Activity = await copilotClient.startConversationAsync(true)
+  console.log('\nSuggested Actions: ')
+  act.suggestedActions?.actions.forEach((action: CardAction) => console.log(action.value))
+  await askQuestion(copilotClient, act.conversation?.id!)
+}
 
-const replies = await copilotClient.startConversationAsync(true)
-
-replies.forEach((act: Activity) => {
-  if (act.type === 'message') {
-    console.log(act.text)
-    console.log('\nSuggested Actions: ')
-    act.suggestedActions?.actions.forEach((action: CardAction) => console.log(action.value))
-  }
-})
-
-askQuestion()
+main().catch(e => console.log(e))

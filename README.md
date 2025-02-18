@@ -1,14 +1,29 @@
-# Project
+# Microsoft 365 Agents SDK - NodeJS /TypeScript
 
-> This repo has been populated by an initial template to help get you started. Please
-> make sure to update the content to build a great experience for community-building.
+The Microsoft 365 Agent SDK simplifies building full stack, multichannel, trusted agents for platforms including M365, Teams, Copilot Studio, and Webchat. We also offer integrations with 3rd parties such as Facebook Messenger, Slack, or Twilio. The SDK provides developers with the building blocks to create agents that handle user interactions, orchestrate requests, reason responses, and collaborate with other agents.
 
-As the maintainer of this project, please make a few updates:
+The M365 Agent SDK is a comprehensive framework for building enterprise-grade agents, enabling developers to integrate components from the Azure AI Foundry SDK, Semantic Kernel, as well as AI components from other vendors.
 
-- Improving this README.MD file to provide a great experience
-- Updating SUPPORT.MD with content about this project's support experience
-- Understanding the security reporting process in SECURITY.MD
-- Remove this section from the README
+For more information please see the parent project information here [Microsoft 365 Agents SDK](https://aka.ms/agents)
+
+## Packages Overview
+
+We offer the following NPM packages to create conversational experiences based on bots:
+
+| Package Name | Description | Replaces|
+|--------------|-------------|---------|
+| `@microsoft/agents-bot-activity` | Types and validators implementing the Activity protocol spec. | `botframework-schema` |
+| `@microsoft/agents-bot-hosting` | Provides classes to host a bot in express.  | `botbuilder` |
+| `@microsoft/agents-bot-hosting-storage-blob` | Extension to use Azure Blob as storage.  | `botbuilder-azure` |
+| `@microsoft/agents-bot-hosting-storage-cosmos` | Extension to use CosmosDB as storage.  | `botbuilder-azure` |
+
+
+Additionally we provide a Copilot Studio Client, to interact with Agents created in CopilotStudio
+
+| Package Name | Description |
+|--------------|-------------|
+| `@microsoft/agents-copilotstudio-client`| Direct to Engine client to interact with Agents created in CopilotStudio
+
 
 ## Contributing
 

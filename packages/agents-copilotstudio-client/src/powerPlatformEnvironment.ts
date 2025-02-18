@@ -11,46 +11,60 @@ const ApiVersion: string = '2022-03-01-preview'
 
 export function getCopilotStudioConnectionUrl (
   settings: ConnectionSettings,
-  conversationId?: string,
-  botType: BotType = BotType.Published,
-  cloud: PowerPlatformCloud = PowerPlatformCloud.Prod,
-  cloudBaseAddress?: string
+  conversationId?: string
 ): string {
-  if (cloud === PowerPlatformCloud.Other && (!cloudBaseAddress || !cloudBaseAddress.trim())) {
-    throw new Error('cloudBaseAddress must be provided when PowerPlatformCloud is Other')
+  let cloudValue: PowerPlatformCloud = PowerPlatformCloud.Prod
+
+  const isNotEmptyCloud = settings.cloud && settings.cloud.trim() !== ''
+  const isNotEmptyCustomPowerPlatformCloud = settings.customPowerPlatformCloud !== undefined && settings.customPowerPlatformCloud.trim() !== ''
+
+  if (isNotEmptyCloud && !Object.values(PowerPlatformCloud).includes(settings.cloud)) {
+    throw new Error('Invalid PowerPlatformCloud enum key')
   }
 
-  if (!settings.environmentId || settings.environmentId.trim() === '') {
+  const cloudSetting = isNotEmptyCloud ? PowerPlatformCloud[settings.cloud as keyof typeof PowerPlatformCloud] : PowerPlatformCloud.Unknown
+
+  if (cloudSetting === PowerPlatformCloud.Other && isNotEmptyCustomPowerPlatformCloud) {
+    throw new Error('customPowerPlatformCloud must be provided when PowerPlatformCloud is Other')
+  }
+
+  if (settings.environmentId.trim() === '') {
     throw new Error('EnvironmentId must be provided')
   }
 
-  if (!settings.botIdentifier || settings.botIdentifier.trim() === '') {
+  if (settings.botIdentifier === undefined || settings.botIdentifier.trim() === '') {
     throw new Error('BotIdentifier must be provided')
   }
 
-  if (settings.cloud && settings.cloud !== PowerPlatformCloud.Unknown) {
-    cloud = settings.cloud
+  if (cloudSetting !== PowerPlatformCloud.Unknown) {
+    cloudValue = cloudSetting
   }
 
-  if (cloud === PowerPlatformCloud.Other) {
-    if (cloudBaseAddress && isValidUri(cloudBaseAddress)) {
-      cloud = PowerPlatformCloud.Other
-    } else if (settings.customPowerPlatformCloud && isValidUri(settings.customPowerPlatformCloud)) {
-      cloudBaseAddress = settings.customPowerPlatformCloud
+  if (cloudSetting === PowerPlatformCloud.Other) {
+    if (isNotEmptyCustomPowerPlatformCloud && isValidUri(settings.customPowerPlatformCloud!)) {
+      cloudValue = PowerPlatformCloud.Other
     } else {
       throw new Error(
-        'Either customPowerPlatformCloud or cloudBaseAddress must be provided when PowerPlatformCloud is Other'
+        'customPowerPlatformCloud must be provided when PowerPlatformCloud is Other'
       )
     }
   }
 
-  if (settings.copilotBotType) {
-    botType = settings.copilotBotType
+  let botType: BotType
+
+  if (settings.copilotBotType && settings.copilotBotType.trim() !== '') {
+    if (!Object.values(BotType).includes(settings.copilotBotType as unknown as BotType)) {
+      throw new Error('Invalid BotType enum key')
+    } else {
+      botType = BotType[settings.copilotBotType as keyof typeof BotType]
+    }
+  } else {
+    botType = BotType.Published
   }
 
-  cloudBaseAddress = cloudBaseAddress ?? 'api.unknown.powerplatform.com'
+  settings.customPowerPlatformCloud = isNotEmptyCustomPowerPlatformCloud ? settings.customPowerPlatformCloud : 'api.unknown.powerplatform.com'
 
-  const host = getEnvironmentEndpoint(cloud, settings.environmentId, cloudBaseAddress)
+  const host = getEnvironmentEndpoint(cloudValue, settings.environmentId, settings.customPowerPlatformCloud)
   return createUri(settings.botIdentifier, host, botType, conversationId)
 }
 
