@@ -34,7 +34,7 @@ const restaurantCardResource = require('../cards/RestaurantCard.json')
 
 const baseUrl = process.env.BASE_URL?.endsWith('/') ? process.env.BASE_URL : process.env.BASE_URL + '/'
 export class TeamsMultiFeatureBot extends TeamsActivityHandler {
-  constructor() {
+  constructor () {
     super()
     this.onMessage(async (context, next) => {
       if (context.activity.text?.indexOf('taskModule')! > 0) {
@@ -55,7 +55,7 @@ export class TeamsMultiFeatureBot extends TeamsActivityHandler {
     })
   }
 
-  async handleTeamsAppBasedLinkQuery(
+  async handleTeamsAppBasedLinkQuery (
     context: TurnContext,
     query: AppBasedLinkQuery
   ): Promise<MessagingExtensionResponse> {
@@ -94,7 +94,7 @@ export class TeamsMultiFeatureBot extends TeamsActivityHandler {
     })
   }
 
-  async handleTeamsMessagingExtensionQuery(
+  async handleTeamsMessagingExtensionQuery (
     context: TurnContext,
     query: MessagingExtensionQuery
   ): Promise<MessagingExtensionResponse> {
@@ -108,28 +108,28 @@ export class TeamsMultiFeatureBot extends TeamsActivityHandler {
       text = query?.parameters?.at(0)?.value ?? ''
       switch (text) {
         case 'link':
-          {
-            const card: Partial<HeroCard> = {
-              title: 'This is a Link Unfurling Sample',
-              subtitle: 'It will unfurl links from *.BotFramework.com',
-              text: 'This sample demonstrates how to handle link unfurling in Teams.'
-            }
-            const attachment: Attachment = {
-              content: card,
-              contentType: CardFactory.contentTypes.heroCard
-            }
-            return {
-              composeExtension: {
-                attachmentLayout: 'list',
-                type: 'result',
-                attachments: [{
-                  content: card,
-                  contentType: CardFactory.contentTypes.heroCard,
-                  preview: attachment
-                }]
-              }
+        {
+          const card: Partial<HeroCard> = {
+            title: 'This is a Link Unfurling Sample',
+            subtitle: 'It will unfurl links from *.BotFramework.com',
+            text: 'This sample demonstrates how to handle link unfurling in Teams.'
+          }
+          const attachment: Attachment = {
+            content: card,
+            contentType: CardFactory.contentTypes.heroCard
+          }
+          return {
+            composeExtension: {
+              attachmentLayout: 'list',
+              type: 'result',
+              attachments: [{
+                content: card,
+                contentType: CardFactory.contentTypes.heroCard,
+                preview: attachment
+              }]
             }
           }
+        }
         case 'adaptive card': {
           const response: MessagingExtensionResponse = this.getAdaptiveCard()
           return response
@@ -189,7 +189,7 @@ export class TeamsMultiFeatureBot extends TeamsActivityHandler {
     }
   }
 
-  async handleTeamsMessagingExtensionSelectItem(_context: TurnContext, _query: any): Promise<MessagingExtensionResponse> {
+  async handleTeamsMessagingExtensionSelectItem (_context: TurnContext, _query: any): Promise<MessagingExtensionResponse> {
     const packageId = _query['packageId']
     const version = _query['version']
     const description = _query['description']
@@ -236,7 +236,7 @@ export class TeamsMultiFeatureBot extends TeamsActivityHandler {
     }
   }
 
-  async handleTeamsTaskModuleFetch(_context: TurnContext, _taskModuleRequest: TaskModuleRequest): Promise<TaskModuleResponse> {
+  async handleTeamsTaskModuleFetch (_context: TurnContext, _taskModuleRequest: TaskModuleRequest): Promise<TaskModuleResponse> {
     const asJobject = _taskModuleRequest.data
 
     const value = asJobject.data
@@ -269,97 +269,97 @@ export class TeamsMultiFeatureBot extends TeamsActivityHandler {
     return TaskModuleResponseFactory.toTaskModuleResponse(taskInfo)
   }
 
-  async handleTeamsTaskModuleSubmit(_context: TurnContext, _taskModuleRequest: TaskModuleRequest): Promise<TaskModuleResponse> {
+  async handleTeamsTaskModuleSubmit (_context: TurnContext, _taskModuleRequest: TaskModuleRequest): Promise<TaskModuleResponse> {
     const reply = MessageFactory.text('OnTeamsTaskModuleSubmitAsync Value: ' + JSON.stringify(_taskModuleRequest.data))
     await _context.sendActivity(reply)
 
     return TaskModuleResponseFactory.createMessageResponse('Thanks!')
   }
 
-  async onTeamsMessageEdit(context: TurnContext): Promise<void> {
+  async onTeamsMessageEdit (context: TurnContext): Promise<void> {
     const reply = MessageFactory.text('You edited a message')
     await context.sendActivity(reply)
   }
 
-  async onTeamsMessageUndelete(context: TurnContext): Promise<void> {
+  async onTeamsMessageUndelete (context: TurnContext): Promise<void> {
     const reply = MessageFactory.text('You undeleted a message')
     await context.sendActivity(reply)
   }
 
-  async onTeamsMessageSoftDelete(context: TurnContext): Promise<void> {
+  async onTeamsMessageSoftDelete (context: TurnContext): Promise<void> {
     const reply = MessageFactory.text('You deleted a message')
     await context.sendActivity(reply)
   }
 
-  async onTeamsMembersAdded(context: TurnContext): Promise<void> {
+  async onTeamsMembersAdded (context: TurnContext): Promise<void> {
     const newMember = JSON.stringify(context.activity.membersAdded)
     const reply = MessageFactory.text('Hi there! You are a new member' + newMember)
     await context.sendActivity(reply)
   }
 
-  async onTeamsMembersRemoved(context: TurnContext): Promise<void> {
+  async onTeamsMembersRemoved (context: TurnContext): Promise<void> {
     const removedMember = JSON.stringify(context.activity.membersRemoved)
     const reply = MessageFactory.text('Hi there! A team member was removed' + removedMember)
     await context.sendActivity(reply)
   }
 
-  async onTeamsTeamRenamed(context: TurnContext): Promise<void> {
+  async onTeamsTeamRenamed (context: TurnContext): Promise<void> {
     const reply = MessageFactory.text('Hi, the team was renamed')
     await context.sendActivity(reply)
   }
 
-  async onTeamsTeamArchived(context: TurnContext): Promise<void> {
+  async onTeamsTeamArchived (context: TurnContext): Promise<void> {
     const reply = MessageFactory.text('Hi, the team was archived')
     console.log('Hi, the team was archived')
     await context.sendActivity(reply)
   }
 
-  async onTeamsTeamDeleted(context: TurnContext): Promise<void> {
+  async onTeamsTeamDeleted (context: TurnContext): Promise<void> {
     const reply = MessageFactory.text('Hi, the team was deleted')
     console.log('Hi, the team was deleted')
     await context.sendActivity(reply)
   }
 
-  async onTeamsTeamHardDeleted(context: TurnContext): Promise<void> {
+  async onTeamsTeamHardDeleted (context: TurnContext): Promise<void> {
     const reply = MessageFactory.text('Hi, the team was hard deleted')
     console.log('Hi, the team was hard deleted')
     await context.sendActivity(reply)
   }
 
-  async onTeamsTeamRestored(context: TurnContext): Promise<void> {
+  async onTeamsTeamRestored (context: TurnContext): Promise<void> {
     const reply = MessageFactory.text('Hi, the team has been restored')
     console.log('Hi, the team has been restored')
     await context.sendActivity(reply)
   }
 
-  async onTeamsTeamUnarchived(context: TurnContext): Promise<void> {
+  async onTeamsTeamUnarchived (context: TurnContext): Promise<void> {
     const reply = MessageFactory.text('Hi, the team has been unarchived')
     console.log('Hi, the team has been unarchived')
     await context.sendActivity(reply)
   }
 
-  async onTeamsChannelCreated(context: TurnContext): Promise<void> {
+  async onTeamsChannelCreated (context: TurnContext): Promise<void> {
     const reply = MessageFactory.text('Hi, the channel has been created')
     await context.sendActivity(reply)
   }
 
-  async onTeamsChannelDeleted(context: TurnContext): Promise<void> {
+  async onTeamsChannelDeleted (context: TurnContext): Promise<void> {
     const reply = MessageFactory.text('Hi, the channel has been deleted')
     await context.sendActivity(reply)
   }
 
-  async onTeamsChannelRenamed(context: TurnContext): Promise<void> {
+  async onTeamsChannelRenamed (context: TurnContext): Promise<void> {
     const reply = MessageFactory.text('Hi, the channel has been renamed')
     await context.sendActivity(reply)
   }
 
-  async onTeamsChannelRestored(context: TurnContext): Promise<void> {
+  async onTeamsChannelRestored (context: TurnContext): Promise<void> {
     const reply = MessageFactory.text('Hi, the channel has been restored')
     console.log('Hi, the channel has been restored')
     await context.sendActivity(reply)
   }
 
-  async findPackages(text: string): Promise<[{ item1: string, item2: string, item3: string, item4: string, item5: string }]> {
+  async findPackages (text: string): Promise<[{ item1: string, item2: string, item3: string, item4: string, item5: string }]> {
     const response = await fetch(`https://azuresearch-usnc.nuget.org/query?q=id:${text}&prerelease=true`)
     const status = response.status
 
@@ -374,7 +374,7 @@ export class TeamsMultiFeatureBot extends TeamsActivityHandler {
     }
   }
 
-  getAdaptiveCard(): MessagingExtensionResponse {
+  getAdaptiveCard (): MessagingExtensionResponse {
     const previewCard: Partial<ThumbnailCard> = {
       title: 'Adaptive Card',
       text: 'Please select to get Adaptive card'
@@ -405,7 +405,7 @@ export class TeamsMultiFeatureBot extends TeamsActivityHandler {
     }
   }
 
-  static getTaskModuleHeroCardOptions(): Attachment {
+  static getTaskModuleHeroCardOptions (): Attachment {
     const taskModuleActions: any = []
     const taskModules = [
       TaskModuleUIConstants.AdaptiveCard,
@@ -436,7 +436,7 @@ export class TeamsMultiFeatureBot extends TeamsActivityHandler {
     return attachment
   }
 
-  static getTaskModuleAdaptiveCardOptions(): Attachment {
+  static getTaskModuleAdaptiveCardOptions (): Attachment {
     const adaptiveCard = new AdaptiveCards.AdaptiveCard()
     adaptiveCard.version = new AdaptiveCards.Version(1, 2)
 
@@ -469,7 +469,7 @@ export class TeamsMultiFeatureBot extends TeamsActivityHandler {
     }
   }
 
-  createAdaptiveCardAttachment(): Attachment | undefined {
+  createAdaptiveCardAttachment (): Attachment | undefined {
     const adaptiveCardAttachment: Attachment = {
       contentType: CardFactory.contentTypes.adaptiveCard,
       content: adaptiveCardResource
@@ -478,7 +478,7 @@ export class TeamsMultiFeatureBot extends TeamsActivityHandler {
     return adaptiveCardAttachment
   }
 
-  setTaskInfo(uiConstants: UISettings): TaskModuleTaskInfo {
+  setTaskInfo (uiConstants: UISettings): TaskModuleTaskInfo {
     const taskInfo: TaskModuleTaskInfo = {
       height: uiConstants.height,
       width: uiConstants.width,

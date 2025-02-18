@@ -14,7 +14,7 @@ import {
   from '@microsoft/agents-bot-hosting'
 
 export class TeamsJsBot extends TeamsActivityHandler {
-  constructor() {
+  constructor () {
     super()
     this.onMessage(async (context) => {
       const text = context.activity.text!.trim()
@@ -107,7 +107,7 @@ export class TeamsJsBot extends TeamsActivityHandler {
     })
   }
 
-  async messageAllMembers(context: TurnContext) {
+  async messageAllMembers (context: TurnContext) {
     const author = await TeamsInfo.getMember(context, context.activity.from!.id!)
     const membersResult = await TeamsInfo.getPagedMembers(context, 2)
     await Promise.all(membersResult.members.map(async (member) => {
