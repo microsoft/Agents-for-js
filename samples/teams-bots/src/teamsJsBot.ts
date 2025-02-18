@@ -1,10 +1,20 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { CloudAdapter, ConversationParameters, MeetingNotification, MessageFactory, TeamsActivityHandler, TeamsInfo, TeamsMember, TurnContext } from '@microsoft/agents-bot-hosting'
+import {
+  CloudAdapter,
+  ConversationParameters,
+  MeetingNotification,
+  MessageFactory,
+  TeamsActivityHandler,
+  TeamsInfo,
+  TeamsMember,
+  TurnContext
+}
+  from '@microsoft/agents-bot-hosting'
 
 export class TeamsJsBot extends TeamsActivityHandler {
-  constructor () {
+  constructor() {
     super()
     this.onMessage(async (context) => {
       const text = context.activity.text!.trim()
@@ -97,15 +107,15 @@ export class TeamsJsBot extends TeamsActivityHandler {
     })
   }
 
-  async messageAllMembers (context: TurnContext) {
+  async messageAllMembers(context: TurnContext) {
     const author = await TeamsInfo.getMember(context, context.activity.from!.id!)
     const membersResult = await TeamsInfo.getPagedMembers(context, 2)
     await Promise.all(membersResult.members.map(async (member) => {
       const message = MessageFactory.text(
-          `Hello ${member.givenName} ${member.surname}. I'm a Teams conversation bot. from ${author.email}`
+        `Hello ${member.givenName} ${member.surname}. I'm a Teams conversation bot. from ${author.email}`
       )
 
-      const convoParams : ConversationParameters = {
+      const convoParams: ConversationParameters = {
         members: [{ id: member.id }],
         isGroup: false,
         bot: context.activity.recipient!,

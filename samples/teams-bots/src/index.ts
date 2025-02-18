@@ -18,15 +18,13 @@ const createBot = (botName: string) => {
     case 'TeamsJsBot':
       return new TeamsJsBot()
     case 'TeamsSsoBot':
-      {
-        const memoryStorage = new MemoryStorage()
-        const userState = new UserState(memoryStorage)
-        return new TeamsSsoBot(userState)
-      }
+    {
+      const memoryStorage = new MemoryStorage()
+      const userState = new UserState(memoryStorage)
+      return new TeamsSsoBot(userState)
+    }
     case 'TeamsMultiFeatureBot':
-      {
-        return new TeamsMultiFeatureBot()
-      }
+      return new TeamsMultiFeatureBot()
     default:
       throw new Error(`Bot with name ${botName} is not recognized.`)
   }
