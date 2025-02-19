@@ -47,7 +47,9 @@ The packages should target node18 or greater, and can be used from JavaScript us
 
 The packages include the source code in the `src`, along with the sourcemaps in the `dist/src` folder to allow VSCode to debug the typescript files.
 
+### Code Style
 
+We are using `eslint` configured with [neostandard](https://github.com/neostandard/neostandard)
 
 ## Contributing
 
