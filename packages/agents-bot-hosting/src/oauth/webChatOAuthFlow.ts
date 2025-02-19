@@ -9,10 +9,14 @@ import { BotStatePropertyAccessor } from '../state/botStatePropertyAccesor'
 import { UserState } from '../state/userState'
 import { TurnContext } from '../turnContext'
 import { MessageFactory } from '../messageFactory'
+import { debug } from '../logger'
+
+const logger = debug('agents:web-chat-oauth-flow')
 
 class FlowState {
   public flowStarted: boolean = false
   public userToken: string = ''
+  public flowExpires: number = 0
 }
 
 export class WebChatOAuthFlow {
@@ -30,6 +34,13 @@ export class WebChatOAuthFlow {
     if (this.state!.userToken !== '') {
       return this.state.userToken
     }
+    if (this.state?.flowExpires !== 0 && Date.now() > this.state.flowExpires) {
+      logger.warn('Sign-in flow expired')
+      this.state.flowStarted = false
+      this.state.userToken = ''
+      await context.sendActivity(MessageFactory.text('Sign-in session expired. Please try again.'))
+    }
+
     let retVal: string = ''
     const authConfig = context.adapter.authConfig
     const adapter = context.adapter as CloudAdapter
@@ -40,15 +51,18 @@ export class WebChatOAuthFlow {
     if (this.state!.flowStarted === true) {
       const userToken = await this.userTokenClient.getUserToken(authConfig.connectionName!, context.activity.channelId!, context.activity.from?.id!)
       if (userToken !== null) {
+        logger.info('Token obtained')
         this.state.userToken = userToken.token
         this.state.flowStarted = false
       } else {
         const code = context.activity.text as string
         const userToken = await this.userTokenClient!.getUserToken(authConfig.connectionName!, context.activity.channelId!, context.activity.from?.id!, code)
         if (userToken !== null) {
+          logger.info('Token obtained with code')
           this.state.userToken = userToken.token
           this.state.flowStarted = false
         } else {
+          logger.error('Sign in failed')
           await context.sendActivity(MessageFactory.text('Sign in failed'))
         }
       }
@@ -58,6 +72,8 @@ export class WebChatOAuthFlow {
       const oCard: Attachment = CardFactory.oauthCard(authConfig.connectionName!, 'Sign in', '', signingResource)
       await context.sendActivity(MessageFactory.attachment(oCard))
       this.state!.flowStarted = true
+      this.state.flowExpires = Date.now() + 30000
+      logger.info('OAuth flow started')
     }
     this.flowStateAccessor.set(context, this.state)
     return retVal
@@ -67,7 +83,9 @@ export class WebChatOAuthFlow {
     await this.userTokenClient!.signOut(context.activity.from?.id!, context.adapter.authConfig.connectionName!, context.activity.channelId!)
     this.state!.flowStarted = false
     this.state!.userToken = ''
+    this.state!.flowExpires = 0
     this.flowStateAccessor.set(context, this.state)
+    logger.info('User signed out successfully')
   }
 
   private async getUserState (context: TurnContext) {

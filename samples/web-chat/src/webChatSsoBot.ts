@@ -20,15 +20,26 @@ export class WebChatSsoBot extends ActivityHandler {
         await this.webChatOAuthFlow.signOut(context)
         await context.sendActivity(MessageFactory.text('User signed out'))
         return
-      }
-
-      const userToken = await this.webChatOAuthFlow.getOAuthToken(context)
-      if (userToken.length !== 0) {
-        await this.sendLoggedUserInfo(context, userToken)
+      } else if (context.activity.text === 'signin') {
+        await this.getToken(context)
+      } else {
+        const code = Number(context.activity.text)
+        if (code.toString().length !== 6) {
+          await context.sendActivity(MessageFactory.text('Please enter "signin" to sign in or "signour" to sign out'))
+        } else {
+          await this.getToken(context)
+        }
       }
 
       await next()
     })
+  }
+
+  async getToken (context: TurnContext): Promise<void> {
+    const userToken = await this.webChatOAuthFlow.getOAuthToken(context)
+    if (userToken.length !== 0) {
+      await this.sendLoggedUserInfo(context, userToken)
+    }
   }
 
   async sendLoggedUserInfo (context: TurnContext, token:string): Promise<void> {
