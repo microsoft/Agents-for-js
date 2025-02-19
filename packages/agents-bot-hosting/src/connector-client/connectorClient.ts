@@ -22,7 +22,7 @@ import { CancelOperationResponse } from './cancelOperationResponse'
 import { AttachmentInfo } from './attachmentInfo'
 import { AttachmentData } from './attachmentData'
 
-const logger = debug('agents:rest-client')
+const logger = debug('agents:connector-client')
 
 /**
  * ConnectorClient is a client for interacting with the Microsoft Teams Connector API.
