@@ -24,7 +24,7 @@
 				"build_packages"
 			],
 			"problemMatcher": [],
-			"path": "samples/echo-bot"
+			"path": "test-bots/echo-bot"
 		},
 		{
 			"label": "build_webchat",
@@ -38,7 +38,7 @@
 				"build_packages"
 			],
 			"problemMatcher": [],
-			"path": "samples/web-chat"
+			"path": "test-bots/web-chat"
 		},
 		{
 			"label": "build_copilot_client",
@@ -52,7 +52,7 @@
 			"dependsOn": [
 				"build_packages"
 			],
-			"path": "samples/copilotstudio-console"
+			"path": "test-bots/copilotstudio-console"
 		},
 		{
 			"label": "build_state",
@@ -66,7 +66,7 @@
 			"dependsOn": [
 				"build_packages"
 			],
-			"path": "samples/state-bot"
+			"path": "test-bots/state-bot"
 		},
 		{
 			"label": "build_teams",
@@ -80,7 +80,7 @@
 			"dependsOn": [
 				"build_packages"
 			],
-			"path": "samples/teams-bots"
+			"path": "test-bots/teams-bots"
 		},
 		{
 			"label": "build_all",

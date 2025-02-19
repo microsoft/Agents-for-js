@@ -36,7 +36,6 @@ export class TeamsSsoBot extends ActivityHandler {
     })
 
     this.onSignInInvoke(async (context, next) => {
-      console.log(context.activity.value)
       const token = await this.teamsOAuthFlow.continueFlow(context)
       if (token !== '') {
         await this.sendLoggedUserInfo(context, token)

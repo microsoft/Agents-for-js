@@ -28,10 +28,10 @@ This bot has been created using [Bot Framework](https://dev.botframework.com), i
     git clone https://github.com/microsoft/botbuilder-samples.git
     ```
 
-- In a console, navigate to `samples/typescript_nodejs/02.echo-bot`
+- In a console, navigate to `test-bots/typescript_nodejs/02.echo-bot`
 
     ```bash
-    cd samples/typescript_nodejs/02.echo-bot
+    cd test-bots/typescript_nodejs/02.echo-bot
     ```
 
 - Install modules
