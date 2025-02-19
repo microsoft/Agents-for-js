@@ -5,7 +5,8 @@ class Logger {
   private readonly levelColors: { [level: string]: string } = {
     info: '2', // Green
     warn: '3', // Yellow
-    error: '1' // Red
+    error: '1', // Red
+    debug: '4' // Blue
   }
 
   constructor (namespace: string = '') {
@@ -30,6 +31,10 @@ class Logger {
 
   error (message: string, ...args: any[]) {
     this.loggers.error(message, ...args)
+  }
+
+  debug (message: string, ...args: any[]) {
+    this.loggers.debug(message, ...args)
   }
 }
 

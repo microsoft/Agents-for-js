@@ -53,6 +53,9 @@ export class MsalTokenProvider implements AuthProvider {
             return
           case LogLevel.Warning:
             logger.warn(message)
+            return
+          case LogLevel.Verbose:
+            logger.debug(message)
         }
       },
       piiLoggingEnabled: false
