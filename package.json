@@ -33,7 +33,7 @@
   ],
   "dependencies": {
     "@azure/cosmos": "^4.2.0",
-    "@azure/msal-node": "^3.2.2",
+    "@azure/msal-node": "^3.2.3",
     "@azure/storage-blob": "^12.26.0",
     "axios": "^1.7.8",
     "debug": "^4.3.7",
@@ -46,7 +46,7 @@
     "@types/debug": "^4.1.12",
     "@types/express": "^5.0.0",
     "@types/express-serve-static-core": "^5.0.5",
-    "@types/node": "^22.13.0",
+    "@types/node": "^22.13.4",
     "@types/sinon": "^17.0.3",
     "@types/uuid": "^10.0.0",
     "eslint": "^9.20.1",
@@ -57,5 +57,8 @@
     "tsx": "^4.19.2",
     "typedoc": "^0.27.7",
     "typescript": "^5.7.3"
+  },
+  "overrides": {
+    "esbuild": "0.25.0"
   }
 }
