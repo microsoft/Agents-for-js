@@ -39,7 +39,7 @@ export class ConnectorClient {
     this.client.interceptors.response.use(
       (config) => {
         const { status, statusText, config: requestConfig } = config
-        logger.info('Response: ', {
+        logger.debug('Response: ', {
           status,
           statusText,
           data: config.config.data,
@@ -239,6 +239,7 @@ export class ConnectorClient {
       data: body
     }
     const response = await this.client(config)
+    logger.info('Reply to conversation/activity: ', response.data.id!, activityId)
     return response.data
   }
 

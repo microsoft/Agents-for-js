@@ -21,8 +21,8 @@
   "scripts": {
     "lint": "eslint --fix",
     "clean": "git clean -xdf",
-    "postclean": "npm ci",
-    "prebuild": "npm run lint",
+    "__postclean": "npm ci",
+    "__prebuild": "npm run lint",
     "build": "tsc --build --verbose tsconfig.build.json",
     "test": "node --test  --test-reporter=spec  --import tsx  --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=test-report.xml './packages/*/test/**/*.test.ts'",
     "docs": "typedoc --skipErrorChecking"

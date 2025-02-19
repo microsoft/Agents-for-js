@@ -67,7 +67,7 @@ export const authorizeJWT = (authConfig: AuthConfiguration) => {
       const token: string = authHeader.split(' ')[1] // Extract the token from the Bearer string
       try {
         const user = await verifyToken(token, authConfig)
-        logger.info('token verified for ', user)
+        logger.debug('token verified for ', user)
         req.user = user
       } catch (err: Error | any) {
         failed = true
