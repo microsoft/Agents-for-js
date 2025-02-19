@@ -69,6 +69,20 @@
 			"path": "samples/state-bot"
 		},
 		{
+			"label": "build_botapp",
+			"type": "npm",
+			"script": "build",
+			"group": {
+				"kind": "build",
+				"isDefault": false
+			},
+			"problemMatcher": [],
+			"dependsOn": [
+				"build_packages"
+			],
+			"path": "samples/botapp"
+		},
+		{
 			"label": "build_all",
 			"group": {
 				"kind": "build",
@@ -79,7 +93,8 @@
 			"dependsOn": [
 				"build_echo",
 				"build_webchat",
-				"build_copilot_client_sample"
+				"build_copilot_client_sample",
+				"build_botapp"
 			]
 		}
 	]

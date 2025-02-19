@@ -65,6 +65,22 @@
             "envFile": "${workspaceFolder}/samples/state-bot/.env",
             "console": "integratedTerminal",
             "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "botapp",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/samples/botapp/src/index.ts",
+            "outFiles": [
+                "${workspaceFolder}/**/dist/**/*.js"
+            ],
+            "preLaunchTask": "build_botapp",
+            "envFile": "${workspaceFolder}/samples/botapp/.env",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "openOnSessionStart"
         }
     ]
 }
