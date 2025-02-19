@@ -1,5 +1,5 @@
 {
-  "name": "copilotstudio-client",
+  "name": "copilotstudio-console",
   "version": "1.0.0",
   "private": true,
   "description": "Agents SKD copilot studio bot for testing and development",
@@ -22,7 +22,7 @@
     "open": "^10.1.0"
   },
   "devDependencies": {
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.3"
   },
   "keywords": []
 }
