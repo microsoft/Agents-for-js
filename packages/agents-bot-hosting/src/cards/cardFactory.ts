@@ -16,6 +16,9 @@ import { CardImage } from './cardImage'
 import { OAuthCard } from '../oauth/oauthCard'
 import { SigningResource } from '../oauth/signingResource'
 
+/**
+ * Factory class for creating various types of cards.
+ */
 export class CardFactory {
   static contentTypes: any = {
     adaptiveCard: 'application/vnd.microsoft.card.adaptive',
@@ -30,10 +33,23 @@ export class CardFactory {
     signinCard: 'application/vnd.microsoft.card.signin',
   }
 
+  /**
+   * Creates an adaptive card attachment.
+   * @param card The adaptive card content.
+   * @returns The adaptive card attachment.
+   */
   static adaptiveCard (card: any): Attachment {
     return { contentType: CardFactory.contentTypes.adaptiveCard, content: card }
   }
 
+  /**
+   * Creates an animation card attachment.
+   * @param title The title of the card.
+   * @param media The media URLs or objects.
+   * @param buttons The optional buttons for the card.
+   * @param other Additional properties for the card.
+   * @returns The animation card attachment.
+   */
   static animationCard (
     title: string,
     media: (MediaUrl | string)[],
@@ -43,6 +59,14 @@ export class CardFactory {
     return CardFactory.mediaCard(CardFactory.contentTypes.animationCard, title, media, buttons, other)
   }
 
+  /**
+   * Creates an audio card attachment.
+   * @param title The title of the card.
+   * @param media The media URLs or objects.
+   * @param buttons The optional buttons for the card.
+   * @param other Additional properties for the card.
+   * @returns The audio card attachment.
+   */
   static audioCard (
     title: string,
     media: (MediaUrl | string)[],
@@ -52,20 +76,48 @@ export class CardFactory {
     return CardFactory.mediaCard(CardFactory.contentTypes.audioCard, title, media, buttons, other)
   }
 
+  /**
+   * Creates a hero card attachment.
+   * @param title The title of the card.
+   * @param text The optional text for the card.
+   * @param images The optional images for the card.
+   * @param buttons The optional buttons for the card.
+   * @param other Additional properties for the card.
+   * @returns The hero card attachment.
+   */
   static heroCard (title: string, text?: any, images?: any, buttons?: any, other?: Partial<HeroCard>): Attachment {
     const a: Attachment = CardFactory.thumbnailCard(title, text, images, buttons, other)
     a.contentType = CardFactory.contentTypes.heroCard
     return a
   }
 
+  /**
+   * Creates a receipt card attachment.
+   * @param card The receipt card content.
+   * @returns The receipt card attachment.
+   */
   static receiptCard (card: ReceiptCard): Attachment {
     return { contentType: CardFactory.contentTypes.receiptCard, content: card }
   }
 
+  /**
+   * Creates an O365 connector card attachment.
+   * @param card The O365 connector card content.
+   * @returns The O365 connector card attachment.
+   */
   static o365ConnectorCard (card: O365ConnectorCard): Attachment {
     return { contentType: CardFactory.contentTypes.o365ConnectorCard, content: card }
   }
 
+  /**
+   * Creates a thumbnail card attachment.
+   * @param title The title of the card.
+   * @param text The optional text for the card.
+   * @param images The optional images for the card.
+   * @param buttons The optional buttons for the card.
+   * @param other Additional properties for the card.
+   * @returns The thumbnail card attachment.
+   */
   static thumbnailCard (
     title: string,
     text?: any,
@@ -96,6 +148,14 @@ export class CardFactory {
     return { contentType: CardFactory.contentTypes.thumbnailCard, content: card }
   }
 
+  /**
+   * Creates a video card attachment.
+   * @param title The title of the card.
+   * @param media The media URLs or objects.
+   * @param buttons The optional buttons for the card.
+   * @param other Additional properties for the card.
+   * @returns The video card attachment.
+   */
   static videoCard (
     title: string,
     media: (MediaUrl | string)[],
@@ -105,6 +165,11 @@ export class CardFactory {
     return CardFactory.mediaCard(CardFactory.contentTypes.videoCard, title, media, buttons, other)
   }
 
+  /**
+   * Converts an array of image URLs or objects to an array of CardImage objects.
+   * @param images The image URLs or objects.
+   * @returns The array of CardImage objects.
+   */
   static images (images: (CardImage | string)[] | undefined): CardImage[] {
     const list: CardImage[] = [];
     (images || []).forEach((img: CardImage | string) => {
@@ -118,6 +183,11 @@ export class CardFactory {
     return list
   }
 
+  /**
+   * Converts an array of action URLs or objects to an array of CardAction objects.
+   * @param actions The action URLs or objects.
+   * @returns The array of CardAction objects.
+   */
   static actions (actions: (CardAction | string)[] | undefined): CardAction[] {
     const list: CardAction[] = [];
     (actions || []).forEach((a: CardAction | string) => {
@@ -136,6 +206,14 @@ export class CardFactory {
     return list
   }
 
+  /**
+   * Creates an OAuth card attachment.
+   * @param connectionName The connection name.
+   * @param title The title of the card.
+   * @param text The optional text for the card.
+   * @param signingResource The signing resource.
+   * @returns The OAuth card attachment.
+   */
   static oauthCard (connectionName: string, title: string, text: string, signingResource: SigningResource) : Attachment {
     const card: Partial<OAuthCard> = {
       buttons: [{ type: ActionTypes.Signin, title, value: signingResource.singingLink, channelData: undefined }],
@@ -150,6 +228,11 @@ export class CardFactory {
     return { contentType: CardFactory.contentTypes.oauthCard, content: card }
   }
 
+  /**
+   * Converts an array of media URLs or objects to an array of MediaUrl objects.
+   * @param links The media URLs or objects.
+   * @returns The array of MediaUrl objects.
+   */
   static media (links: (MediaUrl | string)[] | undefined): MediaUrl[] {
     const list: MediaUrl[] = [];
     (links || []).forEach((lnk: MediaUrl | string) => {
@@ -163,6 +246,15 @@ export class CardFactory {
     return list
   }
 
+  /**
+   * Creates a media card attachment.
+   * @param contentType The content type of the card.
+   * @param title The title of the card.
+   * @param media The media URLs or objects.
+   * @param buttons The optional buttons for the card.
+   * @param other Additional properties for the card.
+   * @returns The media card attachment.
+   */
   private static mediaCard (
     contentType: string,
     title: string,

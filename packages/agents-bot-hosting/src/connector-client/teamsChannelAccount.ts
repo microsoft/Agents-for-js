@@ -5,11 +5,32 @@
 
 import { ChannelAccount } from '@microsoft/agents-bot-activity'
 
+/**
+ * Represents a Teams channel account.
+ */
 export interface TeamsChannelAccount extends ChannelAccount {
+  /**
+   * Given name of the user.
+   */
   givenName?: string
+  /**
+   * Surname of the user.
+   */
   surname?: string
+  /**
+   * Email address of the user.
+   */
   email?: string
+  /**
+   * User principal name of the user.
+   */
   userPrincipalName?: string
+  /**
+   * Tenant ID of the user.
+   */
   tenantId?: string
+  /**
+   * Role of the user in the team.
+   */
   userRole?: string
 }

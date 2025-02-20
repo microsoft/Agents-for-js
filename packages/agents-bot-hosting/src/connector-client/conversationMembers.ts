@@ -5,7 +5,16 @@
 
 import { ChannelAccount } from '@microsoft/agents-bot-activity'
 
+/**
+ * Represents the members of a conversation.
+ */
 export interface ConversationMembers {
-  id: string
-  members: ChannelAccount[]
+  /**
+   * The ID of the conversation.
+   */
+  id: string;
+  /**
+   * The list of members in the conversation.
+   */
+  members: ChannelAccount[];
 }

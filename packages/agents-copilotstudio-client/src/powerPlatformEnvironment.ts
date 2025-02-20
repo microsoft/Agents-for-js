@@ -9,6 +9,13 @@ import { PowerPlatformCloud } from './powerPlatformCloud'
 
 const ApiVersion: string = '2022-03-01-preview'
 
+/**
+ * Generates the connection URL for Copilot Studio.
+ * @param settings - The connection settings.
+ * @param conversationId - Optional conversation ID.
+ * @returns The connection URL.
+ * @throws Will throw an error if required settings are missing or invalid.
+ */
 export function getCopilotStudioConnectionUrl (
   settings: ConnectionSettings,
   conversationId?: string

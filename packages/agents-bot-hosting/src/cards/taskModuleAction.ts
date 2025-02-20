@@ -5,6 +5,9 @@
 
 import { CardAction } from '@microsoft/agents-bot-activity'
 
+/**
+ * Represents a task module action.
+ */
 export class TaskModuleAction implements CardAction {
   constructor (title: string, value: any) {
     this.type = 'invoke'
@@ -23,12 +26,36 @@ export class TaskModuleAction implements CardAction {
     this.value = data as string
   }
 
+  /**
+   * The type of the action.
+   */
   type: string
+  /**
+   * The title of the action.
+   */
   title: string
+  /**
+   * The image associated with the action.
+   */
   image?: string | undefined
+  /**
+   * The text associated with the action.
+   */
   text?: string | undefined
+  /**
+   * The display text of the action.
+   */
   displayText?: string | undefined
+  /**
+   * The value of the action.
+   */
   value: unknown
+  /**
+   * The channel data of the action.
+   */
   channelData?: unknown
+  /**
+   * The alt text for the image.
+   */
   imageAltText?: string | undefined
 }

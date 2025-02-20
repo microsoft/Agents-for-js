@@ -10,10 +10,16 @@ import { Storage, StoreItems } from '@microsoft/agents-bot-hosting'
 import { sanitizeBlobKey } from './blobsTranscriptStore'
 import { ignoreError, isStatusCodeError } from './ignoreError'
 
+/**
+ * Options for configuring the BlobsStorage.
+ */
 export interface BlobsStorageOptions {
   storagePipelineOptions?: StoragePipelineOptions;
 }
 
+/**
+ * A class that implements the Storage interface using Azure Blob Storage.
+ */
 export class BlobsStorage implements Storage {
   private readonly _containerClient: ContainerClient
   private readonly _concurrency = Infinity

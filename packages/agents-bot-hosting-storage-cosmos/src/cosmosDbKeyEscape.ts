@@ -2,6 +2,9 @@
 // Licensed under the MIT License.
 import { createHash } from 'crypto'
 
+/**
+ * Provides methods for escaping keys for Cosmos DB.
+ */
 export namespace CosmosDbKeyEscape {
   const maxKeyLength: number = 255
   const illegalKeys: readonly string[] = ['\\', '?', '/', '#', '\t', '\n', '\r', '*']
@@ -13,6 +16,13 @@ export namespace CosmosDbKeyEscape {
     new Map()
   )
 
+  /**
+   * Escapes a key for use in Cosmos DB.
+   * @param key The key to escape.
+   * @param keySuffix The suffix to append to the key.
+   * @param compatibilityMode Indicates whether compatibility mode is enabled.
+   * @returns The escaped key.
+   */
   export function escapeKey (key: string, keySuffix?: string, compatibilityMode?: boolean): string {
     if (!key) {
       throw new Error("The 'key' parameter is required.")

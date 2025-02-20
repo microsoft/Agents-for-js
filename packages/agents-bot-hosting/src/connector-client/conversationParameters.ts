@@ -5,12 +5,36 @@
 
 import { Activity, ChannelAccount } from '@microsoft/agents-bot-activity'
 
+/**
+ * Represents the parameters for creating a conversation.
+ */
 export interface ConversationParameters {
+  /**
+   * Indicates whether the conversation is a group conversation.
+   */
   isGroup: boolean
+  /**
+   * The bot account initiating the conversation.
+   */
   bot: ChannelAccount
+  /**
+   * The members to include in the conversation.
+   */
   members?: ChannelAccount[]
+  /**
+   * The topic name of the conversation.
+   */
   topicName?: string
+  /**
+   * The tenant ID of the conversation.
+   */
   tenantId?: string
+  /**
+   * The initial activity to send to the conversation.
+   */
   activity: Activity
+  /**
+   * Channel-specific data for the conversation.
+   */
   channelData: unknown
 }

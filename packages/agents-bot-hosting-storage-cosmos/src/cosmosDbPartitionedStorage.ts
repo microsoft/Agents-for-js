@@ -24,6 +24,9 @@ const _doOnce: DoOnce<Container> = new DoOnce<Container>()
 
 const maxDepthAllowed = 127
 
+/**
+ * Implements storage using Cosmos DB partitioned storage.
+ */
 export class CosmosDbPartitionedStorage implements Storage {
   private container!: Container
   private client!: CosmosClient
@@ -31,6 +34,10 @@ export class CosmosDbPartitionedStorage implements Storage {
   [key: string]: any;
   length: number = 0
 
+  /**
+   * Initializes a new instance of the CosmosDbPartitionedStorage class.
+   * @param cosmosDbStorageOptions The options for configuring Cosmos DB partitioned storage.
+   */
   constructor (private readonly cosmosDbStorageOptions: CosmosDbPartitionedStorageOptions) {
     if (!cosmosDbStorageOptions) {
       throw new ReferenceError('CosmosDbPartitionedStorageOptions is required.')
@@ -62,6 +69,11 @@ export class CosmosDbPartitionedStorage implements Storage {
     }
   }
 
+  /**
+   * Reads items from storage.
+   * @param keys The keys of the items to read.
+   * @returns A promise that resolves to the read items.
+   */
   async read (keys: string[]): Promise<StoreItems> {
     if (!keys) {
       throw new ReferenceError('Keys are required when reading.')
@@ -110,6 +122,10 @@ export class CosmosDbPartitionedStorage implements Storage {
     return storeItems
   }
 
+  /**
+   * Writes items to storage.
+   * @param changes The items to write.
+   */
   async write (changes: StoreItems): Promise<void> {
     if (!changes) {
       throw new ReferenceError('Changes are required when writing.')
@@ -146,6 +162,10 @@ export class CosmosDbPartitionedStorage implements Storage {
     )
   }
 
+  /**
+   * Deletes items from storage.
+   * @param keys The keys of the items to delete.
+   */
   async delete (keys: string[]): Promise<void> {
     await this.initialize()
 
@@ -169,6 +189,9 @@ export class CosmosDbPartitionedStorage implements Storage {
     )
   }
 
+  /**
+   * Initializes the Cosmos DB container.
+   */
   async initialize (): Promise<void> {
     if (!this.container) {
       if (!this.client) {
