@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { Attachment } from '@microsoft/agents-bot-activity'
+import { Attachment } from '@microsoft/agents-bot-hosting'
 
 export interface MessagingExtensionAttachment extends Attachment {
   preview?: Attachment

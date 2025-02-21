@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { CardAction } from '@microsoft/agents-bot-activity'
+import { CardAction } from '@microsoft/agents-bot-hosting'
 
 export interface MessagingExtensionSuggestedAction {
   actions?: CardAction[]

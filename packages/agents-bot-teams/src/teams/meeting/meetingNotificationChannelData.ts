@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { OnBehalfOf } from '@microsoft/agents-bot-activity'
+import { OnBehalfOf } from '@microsoft/agents-bot-hosting'
 
 export interface MeetingNotificationChannelData {
   onBehalfOf?: OnBehalfOf[];

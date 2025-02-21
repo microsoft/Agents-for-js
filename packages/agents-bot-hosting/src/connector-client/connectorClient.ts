@@ -3,38 +3,27 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
 import { AuthConfiguration } from '../auth/authConfiguration'
 import { AuthProvider } from '../auth/authProvider'
 import { debug } from '../logger'
-import { Activity, ChannelAccount, ChannelInfo, TeamsChannelData } from '@microsoft/agents-bot-activity'
+import { Activity } from '@microsoft/agents-bot-activity'
 import { ConversationsResult } from './conversationsResult'
-import { TeamsChannelAccount } from './teamsChannelAccount'
 import { ConversationParameters } from './conversationParameters'
 import { ConversationResourceResponse } from './conversationResourceResponse'
 import { ResourceResponse } from './resourceResponse'
-import { TeamsPagedMembersResult } from './teamsPagedMembersResult'
-import { TeamDetails } from './teamDetails'
-import { TeamsMember } from './teamsMember'
-import { MeetingInfo } from './meetingInfo'
-import { MeetingNotification } from './meetingNotification'
-import { MeetingNotificationResponse } from './meetingNotificationResponse'
-import { TeamsBatchOperationResponse } from './teamsBatchOperationResponse'
-import { BatchOperationStateResponse } from './batchOperationStateResponse'
-import { BatchFailedEntriesResponse } from './batchFailedEntriesResponse'
-import { CancelOperationResponse } from './cancelOperationResponse'
 import { AttachmentInfo } from './attachmentInfo'
 import { AttachmentData } from './attachmentData'
 
 const logger = debug('agents:connector-client')
 
 /**
- * ConnectorClient is a client for interacting with the Microsoft Teams Connector API.
+ * ConnectorClient is a client for interacting with the Microsoft Connector API.
  */
 export class ConnectorClient {
-  private readonly client: AxiosInstance
+  protected readonly client: AxiosInstance
 
   /**
    * Private constructor for the ConnectorClient.
    * @param client - The AxiosInstance to use for HTTP requests.
    */
-  private constructor (client: AxiosInstance) {
+  protected constructor (client: AxiosInstance) {
     this.client = client
     this.client.interceptors.response.use(
       (config) => {
@@ -104,97 +93,6 @@ export class ConnectorClient {
     }
     const response = await this.client(config)
     return response.data
-  }
-
-  /**
-   * Retrieves a conversation member by conversation ID and user ID.
-   * @param conversationId - The ID of the conversation.
-   * @param userId - The ID of the user.
-   * @returns The conversation member.
-   */
-  public async getConversationMember (conversationId: string, userId: string): Promise<ChannelAccount> {
-    const config: AxiosRequestConfig = {
-      method: 'get',
-      url: `/v3/conversations/${conversationId}/members/${userId}`,
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    }
-    const response: AxiosResponse = await this.client(config)
-    return response.data
-  }
-
-  /**
-   * Retrieves a team member by activity and user ID.
-   * @param activity - The activity object.
-   * @param userId - The ID of the user.
-   * @returns The team member.
-   */
-  static async getMember (activity: Activity, userId: string): Promise<TeamsChannelAccount> {
-    const teamsChannelData = activity.channelData as TeamsChannelData
-    const teamId = teamsChannelData.team?.id
-    if (teamId) {
-      return await this.getTeamMember(activity, teamId, userId)
-    } else {
-      const conversationId = (activity.conversation != null) && activity.conversation.id ? activity.conversation.id : undefined
-      return await this.getMemberInternal(activity, conversationId, userId)
-    }
-  }
-
-  /**
-   * Retrieves the team ID from an activity.
-   * @param activity - The activity object.
-   * @returns The team ID.
-   */
-  private static getTeamId (activity: any): string {
-    if (!activity) {
-      throw new Error('Missing activity parameter')
-    }
-    const channelData = activity.channelData as TeamsChannelData
-    const team = channelData && (channelData.team != null) ? channelData.team : undefined
-    const teamId = (team != null) && typeof team.id === 'string' ? team.id : undefined
-    return teamId as string
-  }
-
-  /**
-   * Retrieves a team member by activity, team ID, and user ID.
-   * @param activity - The activity object.
-   * @param teamId - The ID of the team.
-   * @param userId - The ID of the user.
-   * @returns The team member.
-   */
-  static async getTeamMember (activity: any, teamId?: string, userId?: string) {
-    const t = teamId || this.getTeamId(activity)
-    if (!t) {
-      throw new Error('This method is only valid within the scope of a MS Teams Team.')
-    }
-    if (!userId) {
-      throw new Error('userId is required')
-    }
-    return await this.getMemberInternal(activity, t, userId)
-  }
-
-  /**
-   * Retrieves a member internally by activity, conversation ID, and user ID.
-   * @param activity - The activity object.
-   * @param conversationId - The ID of the conversation.
-   * @param userId - The ID of the user.
-   * @returns The conversation member.
-   */
-  static async getMemberInternal (
-    activity: any,
-    conversationId: string | undefined,
-    userId: string
-  ): Promise<ChannelAccount> {
-    if (!conversationId) {
-      throw new Error('conversationId is required')
-    }
-    const client = activity.turnState?.get(activity.adapter.ConnectorClientKey) as ConnectorClient
-    if (!client) {
-      throw new Error('Client is not available in the context.')
-    }
-    const teamMember: ChannelAccount = await client.getConversationMember(conversationId, userId)
-    return teamMember
   }
 
   /**
@@ -315,232 +213,6 @@ export class ConnectorClient {
         'Content-Type': 'application/json'
       }
     }
-    const response = await this.client(config)
-    return response.data
-  }
-
-  // Teams specific methods
-
-  /**
-   * Retrieves paged members of a conversation.
-   * @param conversationId - The ID of the conversation.
-   * @param pageSize - The size of the page.
-   * @param continuationToken - The continuation token for pagination.
-   * @returns The paged members result.
-   */
-  public async getConversationPagedMember (conversationId: string, pageSize: number, continuationToken: string): Promise<TeamsPagedMembersResult> {
-    const config: AxiosRequestConfig = {
-      method: 'get',
-      url: `v3/conversations/${conversationId}/pagedMembers`,
-      params: {
-        pageSize,
-        continuationToken
-      }
-    }
-    const response = await this.client(config)
-    return response.data
-  }
-
-  /**
-   * Fetches the list of channels in a team.
-   * @param teamId - The ID of the team.
-   * @returns The list of channels.
-   */
-  public async fetchChannelList (teamId: string): Promise<ChannelInfo[]> {
-    const config: AxiosRequestConfig = {
-      method: 'get',
-      url: `v3/teams/${teamId}/conversations`
-    }
-    const response = await this.client(config)
-    return response.data
-  }
-
-  /**
-   * Fetches the details of a team.
-   * @param teamId - The ID of the team.
-   * @returns The team details.
-   */
-  public async fetchTeamDetails (teamId: string): Promise<TeamDetails> {
-    const config: AxiosRequestConfig = {
-      method: 'get',
-      url: `v3/teams/${teamId}`
-    }
-    const response = await this.client(config)
-    return response.data
-  }
-
-  /**
-   * Fetches the participant information of a meeting.
-   * @param meetingId - The ID of the meeting.
-   * @param participantId - The ID of the participant.
-   * @param tenantId - The ID of the tenant.
-   * @returns The participant information.
-   */
-  public async fetchMeetingParticipant (meetingId: string, participantId: string, tenantId: string): Promise<string> {
-    const config: AxiosRequestConfig = {
-      method: 'get',
-      url: `v1/meetings/${meetingId}/participants/${participantId}`,
-      params: { tenantId }
-    }
-    const response = await this.client(config)
-    return response.data
-  }
-
-  /**
-   * Fetches the information of a meeting.
-   * @param meetingId - The ID of the meeting.
-   * @returns The meeting information.
-   */
-  public async fetchMeetingInfo (meetingId: string): Promise<MeetingInfo> {
-    const config: AxiosRequestConfig = {
-      method: 'get',
-      url: `v1/meetings/${meetingId}`
-    }
-    const response = await this.client(config)
-    return response.data
-  }
-
-  /**
-   * Sends a notification to a meeting.
-   * @param meetingId - The ID of the meeting.
-   * @param notification - The meeting notification.
-   * @returns The meeting notification response.
-   */
-  public async sendMeetingNotification (meetingId: string, notification: MeetingNotification): Promise<MeetingNotificationResponse> {
-    const config: AxiosRequestConfig = {
-      method: 'post',
-      url: `v1/meetings/${meetingId}/notification`,
-      data: notification
-    }
-    const response = await this.client(config)
-    return response.data
-  }
-
-  /**
-   * Sends a message to a list of users.
-   * @param activity - The activity object.
-   * @param tenantId - The ID of the tenant.
-   * @param members - The list of members.
-   * @returns The batch operation response.
-   */
-  public async sendMessageToListOfUsers (activity: Activity, tenantId: string, members: TeamsMember[]): Promise<TeamsBatchOperationResponse> {
-    const content = {
-      activity,
-      members,
-      tenantId
-    }
-    const config: AxiosRequestConfig = {
-      method: 'post',
-      url: 'v3/batch/conversation/users',
-      data: content
-    }
-    const response = await this.client(config)
-    return response.data
-  }
-
-  /**
-   * Sends a message to all users in a tenant.
-   * @param activity - The activity object.
-   * @param tenandId - The ID of the tenant.
-   * @returns The batch operation response.
-   */
-  public async sendMessageToAllUsersInTenant (activity: Activity, tenandId: string): Promise<TeamsBatchOperationResponse> {
-    const content = {
-      activity,
-      tenandId
-    }
-    const config: AxiosRequestConfig = {
-      method: 'post',
-      url: 'v3/batch/conversation/tenant',
-      data: content
-    }
-    const response = await this.client(config)
-    return response.data
-  }
-
-  /**
-   * Sends a message to all users in a team.
-   * @param activity - The activity object.
-   * @param tenantId - The ID of the tenant.
-   * @param teamId - The ID of the team.
-   * @returns The batch operation response.
-   */
-  public async sendMessageToAllUsersInTeam (activity: Activity, tenantId: string, teamId: string): Promise<TeamsBatchOperationResponse> {
-    const content = {
-      activity,
-      tenantId,
-      teamId
-    }
-    const config: AxiosRequestConfig = {
-      method: 'post',
-      url: 'v3/batch/conversation/team',
-      data: content
-    }
-    const response = await this.client(config)
-    return response.data
-  }
-
-  /**
-   * Sends a message to a list of channels.
-   * @param activity - The activity object.
-   * @param tenantId - The ID of the tenant.
-   * @param members - The list of members.
-   * @returns The batch operation response.
-   */
-  public async sendMessageToListOfChannels (activity: Activity, tenantId: string, members: TeamsMember[]): Promise<TeamsBatchOperationResponse> {
-    const content = {
-      activity,
-      tenantId,
-      members
-    }
-    const config: AxiosRequestConfig = {
-      method: 'post',
-      url: 'v3/batch/conversation/channels',
-      data: content
-    }
-    const response = await this.client(config)
-    return response.data
-  }
-
-  /**
-   * Retrieves the state of an operation.
-   * @param operationId - The ID of the operation.
-   * @returns The operation state response.
-   */
-  public async getOperationState (operationId: string): Promise<BatchOperationStateResponse> {
-    const config: AxiosRequestConfig = {
-      method: 'get',
-      url: `v3/batch/conversation/${operationId}`
-    }
-    const response = await this.client(config)
-    return response.data
-  }
-
-  /**
-   * Retrieves the failed entries of an operation.
-   * @param operationId - The ID of the operation.
-   * @returns The failed entries response.
-   */
-  public async getFailedEntries (operationId: string): Promise<BatchFailedEntriesResponse> {
-    const config: AxiosRequestConfig = {
-      method: 'get',
-      url: `v3/batch/conversation/failedentries/${operationId}`
-    }
-    const response = await this.client(config)
-    return response.data
-  }
-
-  /**
-   * Cancels an operation.
-   * @param operationId - The ID of the operation.
-   * @returns The cancel operation response.
-   */
-  public async cancelOperation (operationId: string): Promise<CancelOperationResponse> {
-    const config: AxiosRequestConfig = {
-      method: 'delete',
-      url: `v3/batch/conversation/${operationId}`
-    }
-
     const response = await this.client(config)
     return response.data
   }

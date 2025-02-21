@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { SuggestedActions } from '@microsoft/agents-bot-activity'
+import { SuggestedActions } from '@microsoft/agents-bot-hosting'
 
 export interface BotConfigAuth {
   suggestedActions?: SuggestedActions

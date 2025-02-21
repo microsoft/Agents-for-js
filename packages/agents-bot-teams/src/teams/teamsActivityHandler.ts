@@ -3,12 +3,8 @@
  * Licensed under the MIT License.
  */
 
-import { ActivityHandler } from '../activityHandler'
-import { ConnectorClient } from '../connector-client/connectorClient'
-import { TurnContext } from '../turnContext'
 import { ReadReceiptInfo } from './readReceipInfo'
 import * as z from 'zod'
-import { ChannelInfo, Channels, MessagingExtensionQuery, TeamInfo, validateValueMessagingExtensionQuery } from '@microsoft/agents-bot-activity'
 import { FileConsentCardResponse } from './file/fileConsentCardResponse'
 import { TaskModuleRequest } from './task/taskModuleRequest'
 import { TabRequest } from './tab/tabRequest'
@@ -27,7 +23,8 @@ import { ConfigResponse } from './bot-config/configResponse'
 import { MessagingExtensionAction } from './messaging-extension/messagingExtensionAction'
 import { MessagingExtensionResponse } from './messaging-extension/messagingExtensionResponse'
 import { MessagingExtensionActionResponse } from './messaging-extension/messagingExtensionActionResponse'
-import { InvokeResponse } from '../invoke/invokeResponse'
+import { ChannelInfo, Channels, MessagingExtensionQuery, TeamInfo, validateValueMessagingExtensionQuery, ActivityHandler, InvokeResponse, TurnContext } from '@microsoft/agents-bot-hosting'
+import { TeamsConnectorClient } from '../connector-client/teamsConnectorClient'
 
 const TeamsMeetingStartT = z
   .object({
@@ -465,7 +462,7 @@ export class TeamsActivityHandler extends ActivityHandler {
         }
 
         try {
-          context.activity.membersAdded[i] = await ConnectorClient.getMember(context.activity, channelAccount.id!)
+          context.activity.membersAdded[i] = await TeamsConnectorClient.getMember(context.activity, channelAccount.id!)
         } catch (err: any) {
           const errCode: string = err.body && err.body.error && err.body.error.code
           if (errCode === 'ConversationNotFound') {

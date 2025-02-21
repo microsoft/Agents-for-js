@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { Activity } from '@microsoft/agents-bot-activity'
+import { Activity } from '@microsoft/agents-bot-hosting'
 import { MessagingExtensionAttachment } from './messagingExtensionAttachment'
 import { MessagingExtensionSuggestedAction } from './messagingExtensionSuggestedAction'
 
