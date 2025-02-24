@@ -9,7 +9,7 @@ import { ActionTypes, Activity, ActivityTypes, Attachment, ConversationReference
 
 export class MultiFeatureBot extends ActivityHandler {
   conversationReferences: { [key: string]: ConversationReference }
-  constructor (conversationReferences: { [key: string]: ConversationReference }) {
+  constructor(conversationReferences: { [key: string]: ConversationReference }) {
     super()
     this.conversationReferences = conversationReferences
 
@@ -58,6 +58,12 @@ export class MultiFeatureBot extends ActivityHandler {
             break
           case '1':
           case '2':
+            // Since no attachment was received, send an attachment to the user.
+            await this.handleOutgoingAttachment(context)
+            // Send a HeroCard with potential options for the user to select.
+            await this.displayAttachmentOptions(context)
+            break
+          case '3':
             // Since no attachment was received, send an attachment to the user.
             await this.handleOutgoingAttachment(context)
             // Send a HeroCard with potential options for the user to select.
@@ -166,20 +172,20 @@ export class MultiFeatureBot extends ActivityHandler {
     })
   }
 
-  async handleIncomingAttachment (turnContext: TurnContext, validAttachments: Attachment[]): Promise<void> {
+  async handleIncomingAttachment(turnContext: TurnContext, validAttachments: Attachment[]): Promise<void> {
     if (turnContext.activity.attachments === undefined) {
       throw new Error('Invalid Activity Attachments: undefined')
     }
     const promises = validAttachments.map(async a => await this.downloadAttachmentAndWrite(a))
     const successfulSaves = await Promise.all(promises)
 
-    async function replyForReceivedAttachments (localAttachmentData: {
+    async function replyForReceivedAttachments(localAttachmentData: {
       fileName: string
       localPath: string
     } | undefined): Promise<void> {
       if (localAttachmentData != null) {
         await turnContext.sendActivity(`Attachment "${localAttachmentData.fileName}" ` +
-                `has been received and saved to "${localAttachmentData.localPath}".`)
+          `has been received and saved to "${localAttachmentData.localPath}".`)
       } else {
         await turnContext.sendActivity('Attachment was not successfully saved to disk.')
       }
@@ -189,7 +195,7 @@ export class MultiFeatureBot extends ActivityHandler {
     await Promise.all(replyPromises)
   }
 
-  async downloadAttachmentAndWrite (attachment: Attachment): Promise<{
+  async downloadAttachmentAndWrite(attachment: Attachment): Promise<{
     fileName: string
     localPath: string
   } | undefined> {
@@ -230,7 +236,7 @@ export class MultiFeatureBot extends ActivityHandler {
     }
   }
 
-  async handleOutgoingAttachment (turnContext: TurnContext): Promise<void> {
+  async handleOutgoingAttachment(turnContext: TurnContext): Promise<void> {
     const reply: Activity = new Activity(ActivityTypes.Message)
 
     if (turnContext.activity.text === undefined) {
@@ -249,6 +255,9 @@ export class MultiFeatureBot extends ActivityHandler {
     } else if (firstChar === '2') {
       reply.attachments = [this.getInternetAttachment()]
       reply.text = 'This is an internet attachment.'
+    } else if (firstChar === '3') {
+      reply.attachments = [await this.getUploadedAttachment(turnContext)];
+      reply.text = 'This is an uploaded attachment.';
     } else {
       // The user did not enter input that this bot was built to handle.
       reply.text = 'Your input was not recognized, please try again.'
@@ -256,7 +265,7 @@ export class MultiFeatureBot extends ActivityHandler {
     await turnContext.sendActivity(reply)
   }
 
-  async displayAttachmentOptions (turnContext: TurnContext): Promise<void> {
+  async displayAttachmentOptions(turnContext: TurnContext): Promise<void> {
     const reply: Activity = new Activity(ActivityTypes.Message)
 
     // Note that some channels require different values to be used in order to get buttons to display text.
@@ -264,7 +273,8 @@ export class MultiFeatureBot extends ActivityHandler {
     // need to provide a value for other parameters like 'text' or 'displayText'.
     const buttons = [
       { type: ActionTypes.ImBack, title: '1. Inline Attachment', value: '1' },
-      { type: ActionTypes.ImBack, title: '2. Internet Attachment', value: '2' }
+      { type: ActionTypes.ImBack, title: '2. Internet Attachment', value: '2' },
+      { type: ActionTypes.ImBack, title: '3. Uploaded Attachment', value: '3' }
     ]
 
     const card = CardFactory.heroCard('', undefined,
@@ -275,7 +285,7 @@ export class MultiFeatureBot extends ActivityHandler {
     await turnContext.sendActivity(reply)
   }
 
-  getInlineAttachment (): Attachment {
+  getInlineAttachment(): Attachment {
     const imageData = fs.readFileSync(path.join(__dirname, '../resources/architecture-resize.png'))
     const base64Image = Buffer.from(imageData).toString('base64')
 
@@ -286,7 +296,7 @@ export class MultiFeatureBot extends ActivityHandler {
     }
   }
 
-  getInternetAttachment (): Attachment {
+  getInternetAttachment(): Attachment {
     // NOTE: The contentUrl must be HTTPS.
     return {
       name: 'architecture-resize.png',
@@ -295,7 +305,26 @@ export class MultiFeatureBot extends ActivityHandler {
     }
   }
 
-  addConversationReference (activity: Activity): void {
+  async getUploadedAttachment(turnContext: TurnContext) {
+    const imageData = fs.readFileSync(path.join(__dirname, '../src/resources/architecture-resize.png'));
+    const conversationId = turnContext.activity.conversation?.id ?? '';
+    const response = await turnContext.adapter.uploadAttachment(conversationId, {
+      name: 'architecture-resize.png',
+      originalBase64: imageData,
+      thumbnailBase64: imageData,
+      type: 'image/png'
+    });
+
+    const baseUri = turnContext.activity.serviceUrl ?? '';
+    const attachmentUri = baseUri + (baseUri.endsWith('/') ? '' : '/') + `v3/attachments/${encodeURI(response.id)}/views/original`;
+    return {
+      name: 'architecture-resize.png',
+      contentType: 'image/png',
+      contentUrl: attachmentUri
+    };
+  }
+
+  addConversationReference(activity: Activity): void {
     const newConversationReference = activity.getConversationReference()
     this.conversationReferences[newConversationReference.conversation.id] = newConversationReference
   }
