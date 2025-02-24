@@ -34,7 +34,7 @@ steps:
       testRunTitle: 'Node Tests'
       
 - script: |
-    for dir in ./samples/*/; do
+    for dir in ./test-bots/*/; do
       echo "Building $dir"
       (cd "$dir" && npm i && npm run build)
     done

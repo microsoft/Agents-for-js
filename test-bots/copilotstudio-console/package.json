@@ -1,0 +1,28 @@
+{
+  "name": "copilotstudio-console",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Agents SKD copilot studio bot for testing and development",
+  "author": "Microsoft",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "type": "module",
+  "scripts": {
+    "prebuild": "npm i",
+    "build": "tsc --build",
+    "prestart": "npm run build",
+    "start": "node --env-file .env ./dist/index.js",
+    "prebundle": "npm run build",
+    "bundle": "esbuild dist/index.js --bundle --platform=node --metafile=dist/meta.json --outfile=dist/bundle.js --tree-shaking=true --keep-names"
+  },
+  "dependencies": {
+    "@microsoft/agents-bot-activity": "file:../../packages/agents-bot-activity",
+    "@microsoft/agents-copilot-studio": "file:../../packages/agents-copilotstudio-client",
+    "@azure/msal-node": "^3.2.3",
+    "open": "^10.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  },
+  "keywords": []
+}

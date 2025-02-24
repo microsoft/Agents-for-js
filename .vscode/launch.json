@@ -11,12 +11,12 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/samples/echo-bot/src/index.ts",
+            "program": "${workspaceFolder}/test-bots/echo-bot/src/index.ts",
             "outFiles": [
                 "${workspaceFolder}/**/dist/**/*.js"
             ],
             "preLaunchTask": "build_echo",
-            "envFile": "${workspaceFolder}/samples/echo-bot/.env",
+            "envFile": "${workspaceFolder}/test-bots/echo-bot/.env",
             "console": "integratedTerminal",
             "internalConsoleOptions": "openOnSessionStart"
         },
@@ -27,12 +27,12 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/samples/copilotstudio-console/src/index.ts",
+            "program": "${workspaceFolder}/test-bots/copilotstudio-console/src/index.ts",
             "outFiles": [
                 "${workspaceFolder}/**/dist/**/*.js"
             ],
-            "preLaunchTask": "build_copilot_client_sample",
-            "envFile": "${workspaceFolder}/samples/copilotstudio-console/.env",
+            "preLaunchTask": "build_copilot_client",
+            "envFile": "${workspaceFolder}/test-bots/copilotstudio-console/.env",
             "console": "integratedTerminal"
         },
         {
@@ -42,12 +42,12 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/samples/web-chat/src/index.ts",
+            "program": "${workspaceFolder}/test-bots/web-chat/src/index.ts",
             "outFiles": [
                 "${workspaceFolder}/**/dist/**/*.js"
             ],
             "preLaunchTask": "build_webchat",
-            "envFile": "${workspaceFolder}/samples/web-chat/.env",
+            "envFile": "${workspaceFolder}/test-bots/web-chat/.env",
             "console": "integratedTerminal"
         },
         {
@@ -57,12 +57,28 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/samples/state-bot/src/index.ts",
+            "program": "${workspaceFolder}/test-bots/state-bot/src/index.ts",
             "outFiles": [
                 "${workspaceFolder}/**/dist/**/*.js"
             ],
             "preLaunchTask": "build_state",
-            "envFile": "${workspaceFolder}/samples/state-bot/.env",
+            "envFile": "${workspaceFolder}/test-bots/state-bot/.env",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "teams-bot",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/test-bots/teams-bots/src/index.ts",
+            "outFiles": [
+                "${workspaceFolder}/**/dist/**/*.js"
+            ],
+            "preLaunchTask": "build_teams",
+            "envFile": "${workspaceFolder}/test-bots/teams-bots/.env",
             "console": "integratedTerminal",
             "internalConsoleOptions": "openOnSessionStart"
         },

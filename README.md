@@ -6,7 +6,20 @@ The M365 Agent SDK is a comprehensive framework for building enterprise-grade ag
 
 For more information please see the parent project information here [Microsoft 365 Agents SDK](https://aka.ms/agents)
 
+## Getting Started
+
+The best to way to get started with these packages is to look at the samples available in https://github.com/microsoft/Agents
+
 ## Packages Overview
+
+> [!IMPORTANT]
+> Packages are not yet in NPM, while we push the latest packages, use our nightly feed, by configuring a `.npmrc` to add an additional registry:
+
+```env
+registry=https://registry.npmjs.org/
+@microsoft:registry=https://pkgs.dev.azure.com/ConversationalAI/BotFramework/_packaging/SDK/npm/registry/
+```
+
 
 We offer the following NPM packages to create conversational experiences based on bots:
 
@@ -24,6 +37,19 @@ Additionally we provide a Copilot Studio Client, to interact with Agents created
 |--------------|-------------|
 | `@microsoft/agents-copilotstudio-client`| Direct to Engine client to interact with Agents created in CopilotStudio
 
+### Environment requirements
+
+The packages should target node18 or greater, and can be used from JavaScript using CommonJS or ES6 modules, or from TypeScript.
+
+> Note: We are using node 22 to be able to initialize the process from a `.env` file without adding the dependency to `dotenv` by using the [`--env-file` flag](https://nodejs.org/en/learn/command-line/how-to-read-environment-variables-from-nodejs). Previous node versions should set the env vars explicitely before running.
+
+### Debugging
+
+The packages include the source code in the `src`, along with the sourcemaps in the `dist/src` folder to allow VSCode to debug the typescript files.
+
+### Code Style
+
+We are using `eslint` configured with [neostandard](https://github.com/neostandard/neostandard)
 
 ## Contributing
 

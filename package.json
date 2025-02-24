@@ -21,8 +21,8 @@
   "scripts": {
     "lint": "eslint --fix",
     "clean": "git clean -xdf",
-    "__postclean": "npm ci",
-    "__prebuild": "npm run lint",
+    "postclean": "npm ci",
+    "prebuild": "npm run lint",
     "build": "tsc --build --verbose tsconfig.build.json",
     "test": "node --test  --test-reporter=spec  --import tsx  --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=test-report.xml './packages/*/test/**/*.test.ts'",
     "docs": "typedoc --skipErrorChecking"
@@ -39,7 +39,7 @@
     "debug": "^4.3.7",
     "jsonwebtoken": "^9.0.2",
     "jwks-rsa": "^3.1.0",
-    "uuid": "^11.0.5",
+    "uuid": "11.0.5",
     "zod": "^3.24.2"
   },
   "devDependencies": {
@@ -54,11 +54,14 @@
     "neostandard": "^0.12.1",
     "nerdbank-gitversioning": "^3.7.115",
     "sinon": "^19.0.2",
-    "tsx": "^4.19.2",
+    "tsx": "^4.19.3",
     "typedoc": "^0.27.7",
     "typescript": "^5.7.3"
   },
   "overrides": {
     "esbuild": "0.25.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

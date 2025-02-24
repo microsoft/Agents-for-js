@@ -32,5 +32,8 @@
       "require": "./dist/src/index.js"
     },
    "./package.json": "./package.json"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
