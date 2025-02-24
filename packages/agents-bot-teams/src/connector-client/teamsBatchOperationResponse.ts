@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { BatchOperationResponse } from '../teams/batch-operations/batchOperationResponse'
+import { BatchOperationResponse } from '../batch-operations/batchOperationResponse'
 
 export type TeamsBatchOperationResponse = BatchOperationResponse & {
   _response: Response & {

@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { MeetingNotificationRecipientFailureInfo } from '../teams/meeting/meetingNotificationRecipientFailureInfo'
+import { MeetingNotificationRecipientFailureInfo } from '../meeting/meetingNotificationRecipientFailureInfo'
 
 export interface MeetingNotificationResponse {
   recipientsFailureInfo?: MeetingNotificationRecipientFailureInfo[];

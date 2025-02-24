@@ -3,20 +3,20 @@
  * Licensed under the MIT License.
  */
 
-import { TeamsChannelAccount } from '../connector-client/teamsChannelAccount'
+import { TeamsChannelAccount } from './connector-client/teamsChannelAccount'
 import { TeamsMeetingParticipant } from './meeting/teamsMeetingParticipant'
-import { MeetingInfo } from '../connector-client/meetingInfo'
-import { TeamDetails } from '../connector-client/teamDetails'
-import { TeamsPagedMembersResult } from '../connector-client/teamsPagedMembersResult'
-import { MeetingNotification } from '../connector-client/meetingNotification'
-import { MeetingNotificationResponse } from '../connector-client/meetingNotificationResponse'
+import { MeetingInfo } from './connector-client/meetingInfo'
+import { TeamDetails } from './connector-client/teamDetails'
+import { TeamsPagedMembersResult } from './connector-client/teamsPagedMembersResult'
+import { MeetingNotification } from './connector-client/meetingNotification'
+import { MeetingNotificationResponse } from './connector-client/meetingNotificationResponse'
 import { BatchOperationResponse } from './batch-operations/batchOperationResponse'
-import { TeamsMember } from '../connector-client/teamsMember'
-import { BatchOperationStateResponse } from '../connector-client/batchOperationStateResponse'
-import { BatchFailedEntriesResponse } from '../connector-client/batchFailedEntriesResponse'
-import { CancelOperationResponse } from '../connector-client/cancelOperationResponse'
+import { TeamsMember } from './connector-client/teamsMember'
+import { BatchOperationStateResponse } from './connector-client/batchOperationStateResponse'
+import { BatchFailedEntriesResponse } from './connector-client/batchFailedEntriesResponse'
+import { CancelOperationResponse } from './connector-client/cancelOperationResponse'
 import { Activity, Channels, ConversationReference, ChannelInfo, CloudAdapter, ConversationParameters, TurnContext } from '@microsoft/agents-bot-hosting'
-import { TeamsConnectorClient } from '../connector-client/teamsConnectorClient'
+import { TeamsConnectorClient } from './connector-client/teamsConnectorClient'
 
 export class TeamsInfo {
   static async getMeetingParticipant (

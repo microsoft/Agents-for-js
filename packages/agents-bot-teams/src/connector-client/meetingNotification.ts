@@ -3,6 +3,6 @@
  * Licensed under the MIT License.
  */
 
-import { TargetedMeetingNotification } from '../teams/meeting/targetedMeetingNotification'
+import { TargetedMeetingNotification } from '../meeting/targetedMeetingNotification'
 
 export type MeetingNotification = TargetedMeetingNotification

@@ -4,7 +4,7 @@
  */
 
 import { ConversationAccount } from '@microsoft/agents-bot-hosting'
-import { MeetingDetails } from '../teams/meeting/meetingDetails'
+import { MeetingDetails } from '../meeting/meetingDetails'
 import { TeamsChannelAccount } from './teamsChannelAccount'
 
 export interface MeetingInfo {

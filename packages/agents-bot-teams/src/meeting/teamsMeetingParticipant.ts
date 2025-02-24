@@ -5,7 +5,7 @@
 
 import { ConversationAccount } from '@microsoft/agents-bot-hosting'
 import { Meeting } from './meeting'
-import { TeamsChannelAccount } from '../../connector-client/teamsChannelAccount'
+import { TeamsChannelAccount } from '../connector-client/teamsChannelAccount'
 
 export interface TeamsMeetingParticipant {
   user?: TeamsChannelAccount;

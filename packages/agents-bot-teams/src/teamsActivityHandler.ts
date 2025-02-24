@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { ReadReceiptInfo } from './readReceipInfo'
+import { ReadReceiptInfo } from './message-read-info/readReceipInfo'
 import * as z from 'zod'
 import { FileConsentCardResponse } from './file/fileConsentCardResponse'
 import { TaskModuleRequest } from './task/taskModuleRequest'
@@ -11,7 +11,7 @@ import { TabRequest } from './tab/tabRequest'
 import { TabSubmit } from './tab/tabSubmit'
 import { TabResponse } from './tab/tabResponse'
 import { TaskModuleResponse } from './task/taskModuleResponse'
-import { TeamsChannelAccount } from '../connector-client/teamsChannelAccount'
+import { TeamsChannelAccount } from './connector-client/teamsChannelAccount'
 import { MeetingStartEventDetails } from './meeting/meetingStartEventDetails'
 import { MeetingEndEventDetails } from './meeting/meetingEndEventDetails'
 import { MeetingParticipantsEventDetails } from './meeting/meetingParticipantsEventDetails'
@@ -24,7 +24,7 @@ import { MessagingExtensionAction } from './messaging-extension/messagingExtensi
 import { MessagingExtensionResponse } from './messaging-extension/messagingExtensionResponse'
 import { MessagingExtensionActionResponse } from './messaging-extension/messagingExtensionActionResponse'
 import { ChannelInfo, Channels, MessagingExtensionQuery, TeamInfo, validateValueMessagingExtensionQuery, ActivityHandler, InvokeResponse, TurnContext } from '@microsoft/agents-bot-hosting'
-import { TeamsConnectorClient } from '../connector-client/teamsConnectorClient'
+import { TeamsConnectorClient } from './connector-client/teamsConnectorClient'
 
 const TeamsMeetingStartT = z
   .object({

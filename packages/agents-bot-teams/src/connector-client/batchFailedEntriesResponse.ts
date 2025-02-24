@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { BatchFailedEntry } from '../teams/batch-operations/batchFailedEntry'
+import { BatchFailedEntry } from '../batch-operations/batchFailedEntry'
 
 export interface BatchFailedEntriesResponse {
   continuationToken: string;

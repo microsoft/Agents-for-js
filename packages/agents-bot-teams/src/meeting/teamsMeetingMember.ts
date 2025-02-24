@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { TeamsChannelAccount } from '../../connector-client/teamsChannelAccount'
+import { TeamsChannelAccount } from '../connector-client/teamsChannelAccount'
 import { UserMeetingDetails } from './userMeetingDetails'
 
 export interface TeamsMeetingMember {
