@@ -13,7 +13,7 @@ const logger = debug('agents:teams-cloud-adapter')
  * Adapter for handling cloud-based bot interactions.
  */
 export class TeamsCloudAdapter extends CloudAdapter {
-  public teamsConnectorClient!: TeamsConnectorClient
+  public connectorClient!: TeamsConnectorClient
 
   /**
    * Processes an incoming request and sends the response.

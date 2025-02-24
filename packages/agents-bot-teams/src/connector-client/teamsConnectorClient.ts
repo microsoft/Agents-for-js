@@ -1,6 +1,6 @@
 /** * Copyright (c) Microsoft Corporation. All rights reserved. * Licensed under the MIT License. */
-import { AxiosRequestConfig, AxiosResponse } from 'axios'
-import { Activity, ChannelAccount, ChannelInfo, TeamsChannelData, ConnectorClient } from '@microsoft/agents-bot-hosting'
+import axios, { AxiosRequestConfig, AxiosResponse } from 'axios'
+import { Activity, ChannelAccount, ChannelInfo, TeamsChannelData, ConnectorClient, AuthConfiguration, AuthProvider } from '@microsoft/agents-bot-hosting'
 import { TeamsChannelAccount } from './teamsChannelAccount'
 import { TeamsPagedMembersResult } from './teamsPagedMembersResult'
 import { TeamDetails } from './teamDetails'
@@ -14,6 +14,34 @@ import { BatchFailedEntriesResponse } from './batchFailedEntriesResponse'
 import { CancelOperationResponse } from './cancelOperationResponse'
 
 export class TeamsConnectorClient extends ConnectorClient {
+  /**
+   * Creates a new instance of ConnectorClient with authentication.
+   * @param baseURL - The base URL for the API.
+   * @param authConfig - The authentication configuration.
+   * @param authProvider - The authentication provider.
+   * @param scope - The scope for the authentication token.
+   * @returns A new instance of ConnectorClient.
+   */
+  static async createClientWithAuthAsync (
+    baseURL: string,
+    authConfig: AuthConfiguration,
+    authProvider: AuthProvider,
+    scope: string
+  ): Promise<TeamsConnectorClient> {
+    const axiosInstance = axios.create({
+      baseURL,
+      headers: {
+        Accept: 'application/json'
+      }
+    })
+
+    const token = await authProvider.getAccessToken(authConfig, scope)
+    if (token.length > 1) {
+      axiosInstance.defaults.headers.common.Authorization = `Bearer ${token}`
+    }
+    return new TeamsConnectorClient(axiosInstance)
+  }
+
   static async getMember (activity: Activity, userId: string): Promise<TeamsChannelAccount> {
     const teamsChannelData = activity.channelData as TeamsChannelData
     const teamId = teamsChannelData.team?.id
