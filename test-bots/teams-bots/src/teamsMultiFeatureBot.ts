@@ -3,22 +3,14 @@
 
 import {
   ActionTypes,
-  AppBasedLinkQuery,
   Attachment,
   CardAction,
   CardFactory,
   CardImage,
   HeroCard,
   MessageFactory,
-  MessagingExtensionAttachment,
   MessagingExtensionQuery,
-  MessagingExtensionResponse,
   TaskModuleAction,
-  TaskModuleRequest,
-  TaskModuleResponse,
-  TaskModuleTaskInfo,
-  TeamsActivityHandler,
-  TeamsInfo,
   ThumbnailCard,
   TurnContext
 } from '@microsoft/agents-bot-hosting'
@@ -29,6 +21,7 @@ import { TaskModuleResponseFactory } from './models/taskModuleResponseFactory'
 import { AdaptiveCardTaskFetchValue } from './models/adaptiveCardTaskFetchValue'
 import { CardTaskFetchValue } from './models/cardTaskFetchValue'
 import * as AdaptiveCards from 'adaptivecards'
+import { AppBasedLinkQuery, MessagingExtensionAttachment, MessagingExtensionResponse, TaskModuleRequest, TaskModuleResponse, TaskModuleTaskInfo, TeamsActivityHandler, TeamsInfo } from '@microsoft/agents-bot-teams'
 const adaptiveCardResource = require('../cards/AdaptiveCard.json')
 const restaurantCardResource = require('../cards/RestaurantCard.json')
 

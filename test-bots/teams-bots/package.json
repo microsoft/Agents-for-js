@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@microsoft/agents-bot-hosting": "file:../../packages/agents-bot-hosting",
+    "@microsoft/agents-bot-teams": "file:../../packages/agents-bot-teams",
     "@microsoft/microsoft-graph-client": "^3.0.7",
     "adaptivecards": "^1.3.1",
     "adaptivecards-templating": "^2.3.1",

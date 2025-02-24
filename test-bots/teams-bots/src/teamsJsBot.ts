@@ -4,14 +4,11 @@
 import {
   CloudAdapter,
   ConversationParameters,
-  MeetingNotification,
   MessageFactory,
-  TeamsActivityHandler,
-  TeamsInfo,
-  TeamsMember,
   TurnContext
 }
   from '@microsoft/agents-bot-hosting'
+import { TeamsActivityHandler, TeamsInfo, TeamsMember, MeetingNotification } from '@microsoft/agents-bot-teams'
 
 export class TeamsJsBot extends TeamsActivityHandler {
   constructor () {

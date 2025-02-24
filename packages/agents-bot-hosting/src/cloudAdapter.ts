@@ -235,7 +235,7 @@ export class CloudAdapter extends BotAdapter {
  * @param context - The TurnContext for the current turn of the bot.
  * @returns The InvokeResponse if applicable, otherwise undefined.
  */
-  private processTurnResults (context: TurnContext): InvokeResponse | undefined {
+  protected processTurnResults (context: TurnContext): InvokeResponse | undefined {
     // Handle ExpectedReplies scenarios where all activities have been buffered and sent back at once in an invoke response.
     if (context.activity.deliveryMode === DeliveryModes.ExpectReplies) {
       return {
@@ -268,7 +268,7 @@ export class CloudAdapter extends BotAdapter {
    * @param conversationParameters - The conversation parameters.
    * @returns The created activity.
    */
-  private createCreateActivity (
+  protected createCreateActivity (
     createdConversationId: string | undefined,
     channelId: string,
     serviceUrl: string,

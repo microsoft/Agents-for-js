@@ -4,7 +4,8 @@
 import express, { Response } from 'express'
 import rateLimit from 'express-rate-limit'
 
-import { Request, CloudAdapter, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv, UserState, MemoryStorage } from '@microsoft/agents-bot-hosting'
+import { Request, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv, UserState, MemoryStorage } from '@microsoft/agents-bot-hosting'
+import { TeamsCloudAdapter } from '@microsoft/agents-bot-teams'
 
 import { TeamsJsBot } from './teamsJsBot'
 import { TeamsSsoBot } from './teamsSsoBot'
@@ -30,7 +31,7 @@ const createBot = (botName: string) => {
   }
 }
 
-const adapter = new CloudAdapter(authConfig)
+const adapter = new TeamsCloudAdapter(authConfig)
 
 const botName = process.env.botName || 'TeamsJsBot'
 const myBot = createBot(botName)
