@@ -23,8 +23,11 @@ import { ConfigResponse } from './bot-config/configResponse'
 import { MessagingExtensionAction } from './messaging-extension/messagingExtensionAction'
 import { MessagingExtensionResponse } from './messaging-extension/messagingExtensionResponse'
 import { MessagingExtensionActionResponse } from './messaging-extension/messagingExtensionActionResponse'
-import { ChannelInfo, Channels, MessagingExtensionQuery, TeamInfo, validateValueMessagingExtensionQuery, ActivityHandler, InvokeResponse, TurnContext } from '@microsoft/agents-bot-hosting'
+import { Channels, MessagingExtensionQuery, ActivityHandler, InvokeResponse, TurnContext } from '@microsoft/agents-bot-hosting'
 import { TeamsConnectorClient } from './connector-client/teamsConnectorClient'
+import { ChannelInfo, TeamInfo } from './channel-data'
+import { validateValueMessagingExtensionQuery } from './validators/activityValueValidators'
+import { validateTeamsChannelData } from './validators/teamsChannelDataValidator'
 
 const TeamsMeetingStartT = z
   .object({
@@ -343,7 +346,7 @@ export class TeamsActivityHandler extends ActivityHandler {
 
   protected async dispatchConversationUpdateActivity (context: TurnContext): Promise<void> {
     if (context.activity.channelId === 'msteams') {
-      const channelData = context.activity.validateTeamsChannelData(context.activity.channelData)
+      const channelData = validateTeamsChannelData(context.activity.channelData)
 
       if ((context.activity.membersAdded != null) && context.activity.membersAdded.length > 0) {
         return await this.onTeamsMembersAdded(context)
@@ -398,7 +401,7 @@ export class TeamsActivityHandler extends ActivityHandler {
 
   protected async dispatchMessageUpdateActivity (context: TurnContext): Promise<void> {
     if (context.activity.channelId === 'msteams') {
-      const channelData = context.activity.validateTeamsChannelData(context.activity.channelData)
+      const channelData = validateTeamsChannelData(context.activity.channelData)
 
       switch (channelData.eventType) {
         case 'undeleteMessage':
@@ -417,7 +420,7 @@ export class TeamsActivityHandler extends ActivityHandler {
 
   protected async dispatchMessageDeleteActivity (context: TurnContext): Promise<void> {
     if (context.activity.channelId === 'msteams') {
-      const channelData = context.activity.validateTeamsChannelData(context.activity.channelData)
+      const channelData = validateTeamsChannelData(context.activity.channelData)
 
       switch (channelData.eventType) {
         case 'softDeleteMessage':
@@ -561,7 +564,7 @@ export class TeamsActivityHandler extends ActivityHandler {
     ) => Promise<void>
   ): this {
     return this.on('TeamsMembersAdded', async (context, next) => {
-      const teamsChannelData = context.activity.validateTeamsChannelData(context.activity.channelData)
+      const teamsChannelData = validateTeamsChannelData(context.activity.channelData)
       await handler(context.activity.membersAdded || [], teamsChannelData.team as TeamInfo, context, next)
     })
   }
@@ -575,7 +578,7 @@ export class TeamsActivityHandler extends ActivityHandler {
     ) => Promise<void>
   ): this {
     return this.on('TeamsMembersRemoved', async (context, next) => {
-      const teamsChannelData = context.activity.validateTeamsChannelData(context.activity.channelData)
+      const teamsChannelData = validateTeamsChannelData(context.activity.channelData)
       await handler(context.activity.membersRemoved || [], teamsChannelData.team as TeamInfo, context, next)
     })
   }
@@ -589,7 +592,7 @@ export class TeamsActivityHandler extends ActivityHandler {
     ) => Promise<void>
   ): this {
     return this.on('TeamsChannelCreated', async (context, next) => {
-      const teamsChannelData = context.activity.validateTeamsChannelData(context.activity.channelData)
+      const teamsChannelData = validateTeamsChannelData(context.activity.channelData)
       await handler(teamsChannelData.channel as ChannelInfo, teamsChannelData.team as TeamInfo, context, next)
     })
   }
@@ -603,7 +606,7 @@ export class TeamsActivityHandler extends ActivityHandler {
     ) => Promise<void>
   ): this {
     return this.on('TeamsChannelDeleted', async (context, next) => {
-      const teamsChannelData = context.activity.validateTeamsChannelData(context.activity.channelData)
+      const teamsChannelData = validateTeamsChannelData(context.activity.channelData)
       await handler(teamsChannelData.channel as ChannelInfo, teamsChannelData.team as TeamInfo, context, next)
     })
   }
@@ -617,7 +620,7 @@ export class TeamsActivityHandler extends ActivityHandler {
     ) => Promise<void>
   ): this {
     return this.on('TeamsChannelRenamed', async (context, next) => {
-      const teamsChannelData = context.activity.validateTeamsChannelData(context.activity.channelData)
+      const teamsChannelData = validateTeamsChannelData(context.activity.channelData)
       await handler(teamsChannelData.channel as ChannelInfo, teamsChannelData.team as TeamInfo, context, next)
     })
   }
@@ -626,7 +629,7 @@ export class TeamsActivityHandler extends ActivityHandler {
     handler: (teamInfo: TeamInfo, context: TurnContext, next: () => Promise<void>) => Promise<void>
   ): this {
     return this.on('TeamsTeamArchived', async (context, next) => {
-      const teamsChannelData = context.activity.validateTeamsChannelData(context.activity.channelData)
+      const teamsChannelData = validateTeamsChannelData(context.activity.channelData)
       await handler(teamsChannelData.team as TeamInfo, context, next)
     })
   }
@@ -635,7 +638,7 @@ export class TeamsActivityHandler extends ActivityHandler {
     handler: (teamInfo: TeamInfo, context: TurnContext, next: () => Promise<void>) => Promise<void>
   ): this {
     return this.on('TeamsTeamDeleted', async (context, next) => {
-      const teamsChannelData = context.activity.validateTeamsChannelData(context.activity.channelData)
+      const teamsChannelData = validateTeamsChannelData(context.activity.channelData)
       await handler(teamsChannelData.team as TeamInfo, context, next)
     })
   }
@@ -644,7 +647,7 @@ export class TeamsActivityHandler extends ActivityHandler {
     handler: (teamInfo: TeamInfo, context: TurnContext, next: () => Promise<void>) => Promise<void>
   ): this {
     return this.on('TeamsTeamHardDeleted', async (context, next) => {
-      const teamsChannelData = context.activity.validateTeamsChannelData(context.activity.channelData)
+      const teamsChannelData = validateTeamsChannelData(context.activity.channelData)
       await handler(teamsChannelData.team as TeamInfo, context, next)
     })
   }
@@ -658,7 +661,7 @@ export class TeamsActivityHandler extends ActivityHandler {
     ) => Promise<void>
   ): this {
     return this.on('TeamsChannelRestored', async (context, next) => {
-      const teamsChannelData = context.activity.validateTeamsChannelData(context.activity.channelData)
+      const teamsChannelData = validateTeamsChannelData(context.activity.channelData)
       await handler(teamsChannelData.channel as ChannelInfo, teamsChannelData.team as TeamInfo, context, next)
     })
   }
@@ -667,7 +670,7 @@ export class TeamsActivityHandler extends ActivityHandler {
     handler: (teamInfo: TeamInfo, context: TurnContext, next: () => Promise<void>) => Promise<void>
   ): this {
     return this.on('TeamsTeamRenamed', async (context, next) => {
-      const teamsChannelData = context.activity.validateTeamsChannelData(context.activity.channelData)
+      const teamsChannelData = validateTeamsChannelData(context.activity.channelData)
       await handler(teamsChannelData.team as TeamInfo, context, next)
     })
   }
@@ -676,7 +679,7 @@ export class TeamsActivityHandler extends ActivityHandler {
     handler: (teamInfo: TeamInfo, context: TurnContext, next: () => Promise<void>) => Promise<void>
   ): this {
     return this.on('TeamsTeamRestored', async (context, next) => {
-      const teamsChannelData = context.activity.validateTeamsChannelData(context.activity.channelData)
+      const teamsChannelData = validateTeamsChannelData(context.activity.channelData)
       await handler(teamsChannelData.team as TeamInfo, context, next)
     })
   }
@@ -685,7 +688,7 @@ export class TeamsActivityHandler extends ActivityHandler {
     handler: (teamInfo: TeamInfo, context: TurnContext, next: () => Promise<void>) => Promise<void>
   ): this {
     return this.on('TeamsTeamUnarchived', async (context, next) => {
-      const teamsChannelData = context.activity.validateTeamsChannelData(context.activity.channelData)
+      const teamsChannelData = validateTeamsChannelData(context.activity.channelData)
       await handler(teamsChannelData.team as TeamInfo, context, next)
     })
   }

@@ -1,13 +1,15 @@
+import { Activity, ActivityTypes } from '@microsoft/agents-bot-hosting'
 import assert from 'assert'
 import { describe, it } from 'node:test'
-import { Activity, ActivityTypes, ChannelInfo } from '../../src'
+import { validateTeamsChannelData } from '../../src/validators/teamsChannelDataValidator'
+import { ChannelInfo } from '../channel-data'
 
 describe('TeamsChannelData Zod Validation', () => {
   it('Validate with no properties defined', () => {
     const teamsChannelDataObject = {}
     const obj = { type: ActivityTypes.Message, channelData: teamsChannelDataObject }
     const a1: Activity = Activity.fromObject(obj)
-    const teamsChannelData = a1.validateTeamsChannelData(a1.channelData)
+    const teamsChannelData = validateTeamsChannelData(a1.channelData)
     assert.strictEqual(a1.type, 'message')
     assert.deepEqual(a1.channelData, teamsChannelData)
   })
@@ -23,7 +25,7 @@ describe('TeamsChannelData Zod Validation', () => {
     }
     const obj = { type: ActivityTypes.Message, channelData: teamsChannelDataObject }
     const a1: Activity = Activity.fromObject(obj)
-    const teamsChannelData = a1.validateTeamsChannelData(a1.channelData)
+    const teamsChannelData = validateTeamsChannelData(a1.channelData)
     assert.strictEqual(a1.type, 'message')
     assert.deepEqual(a1.channelData, teamsChannelData)
   })
@@ -34,7 +36,7 @@ describe('TeamsChannelData Zod Validation', () => {
     }
     const obj = { type: ActivityTypes.Message, channelData: teamsChannelDataObject }
     const a1: Activity = Activity.fromObject(obj)
-    const teamsChannelData = a1.validateTeamsChannelData(a1.channelData)
+    const teamsChannelData = validateTeamsChannelData(a1.channelData)
     assert.strictEqual(a1.type, 'message')
     assert.deepEqual(a1.channelData, teamsChannelData)
   })
@@ -50,7 +52,7 @@ describe('TeamsChannelData Zod Validation', () => {
     }
     const obj = { type: ActivityTypes.Message, channelData: teamsChannelDataObject }
     const a1: Activity = Activity.fromObject(obj)
-    const teamsChannelData = a1.validateTeamsChannelData(a1.channelData)
+    const teamsChannelData = validateTeamsChannelData(a1.channelData)
     assert.strictEqual(a1.type, 'message')
     assert.deepEqual(a1.channelData, teamsChannelData)
   })
@@ -66,7 +68,7 @@ describe('TeamsChannelData Zod Validation', () => {
     }
     const obj = { type: ActivityTypes.Message, channelData: teamsChannelDataObject }
     const a1: Activity = Activity.fromObject(obj)
-    const teamsChannelData = a1.validateTeamsChannelData(a1.channelData)
+    const teamsChannelData = validateTeamsChannelData(a1.channelData)
     assert.strictEqual(a1.type, 'message')
     assert.deepEqual(a1.channelData, teamsChannelData)
   })
@@ -80,7 +82,7 @@ describe('TeamsChannelData Zod Validation', () => {
     }
     const obj = { type: ActivityTypes.Message, channelData: teamsChannelDataObject }
     const a1: Activity = Activity.fromObject(obj)
-    const teamsChannelData = a1.validateTeamsChannelData(a1.channelData)
+    const teamsChannelData = validateTeamsChannelData(a1.channelData)
     assert.strictEqual(a1.type, 'message')
     assert.deepEqual(a1.channelData, teamsChannelData)
   })
@@ -94,7 +96,7 @@ describe('TeamsChannelData Zod Validation', () => {
     }
     const obj = { type: ActivityTypes.Message, channelData: teamsChannelDataObject }
     const a1: Activity = Activity.fromObject(obj)
-    const teamsChannelData = a1.validateTeamsChannelData(a1.channelData)
+    const teamsChannelData = validateTeamsChannelData(a1.channelData)
     assert.strictEqual(a1.type, 'message')
     assert.deepEqual(a1.channelData, teamsChannelData)
   })
@@ -113,7 +115,7 @@ describe('TeamsChannelData Zod Validation', () => {
     }
     const obj = { type: ActivityTypes.Message, channelData: teamsChannelDataObject }
     const a1: Activity = Activity.fromObject(obj)
-    const teamsChannelData = a1.validateTeamsChannelData(a1.channelData)
+    const teamsChannelData = validateTeamsChannelData(a1.channelData)
     assert.strictEqual(a1.type, 'message')
     assert.deepEqual(a1.channelData, teamsChannelData)
   })
@@ -133,7 +135,7 @@ describe('TeamsChannelData Zod Validation', () => {
     }
     const obj = { type: ActivityTypes.Message, channelData: teamsChannelDataObject }
     const a1: Activity = Activity.fromObject(obj)
-    const teamsChannelData = a1.validateTeamsChannelData(a1.channelData)
+    const teamsChannelData = validateTeamsChannelData(a1.channelData)
     assert.strictEqual(a1.type, 'message')
     assert.deepEqual(a1.channelData, teamsChannelData)
   })
@@ -150,7 +152,7 @@ describe('TeamsChannelData Zod Validation', () => {
     }
     const obj = { type: ActivityTypes.Message, channelData: teamsChannelDataObject }
     const a1: Activity = Activity.fromObject(obj)
-    const teamsChannelData = a1.validateTeamsChannelData(a1.channelData)
+    const teamsChannelData = validateTeamsChannelData(a1.channelData)
     assert.strictEqual(a1.type, 'message')
     assert.deepEqual(a1.channelData, teamsChannelData)
   })
@@ -166,7 +168,7 @@ describe('TeamsChannelData Zod Validation', () => {
     }
     const obj = { type: ActivityTypes.Message, channelData: teamsChannelDataObject }
     const a1: Activity = Activity.fromObject(obj)
-    const teamsChannelData = a1.validateTeamsChannelData(a1.channelData)
+    const teamsChannelData = validateTeamsChannelData(a1.channelData)
     assert.strictEqual(a1.type, 'message')
     assert.deepEqual(a1.channelData, teamsChannelData)
   })
@@ -182,7 +184,7 @@ describe('TeamsChannelData Zod Validation', () => {
     }
     const obj = { type: ActivityTypes.Message, channelData: teamsChannelDataObject }
     const a1: Activity = Activity.fromObject(obj)
-    const teamsChannelData = a1.validateTeamsChannelData(a1.channelData)
+    const teamsChannelData = validateTeamsChannelData(a1.channelData)
     assert.strictEqual(a1.type, 'message')
     assert.deepEqual(a1.channelData, teamsChannelData)
   })
