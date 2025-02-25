@@ -10,7 +10,6 @@ import { TeamDetails } from './connector-client/teamDetails'
 import { TeamsPagedMembersResult } from './connector-client/teamsPagedMembersResult'
 import { MeetingNotification } from './connector-client/meetingNotification'
 import { MeetingNotificationResponse } from './connector-client/meetingNotificationResponse'
-import { BatchOperationResponse } from './batch-operations/batchOperationResponse'
 import { TeamsMember } from './connector-client/teamsMember'
 import { BatchOperationStateResponse } from './connector-client/batchOperationStateResponse'
 import { BatchFailedEntriesResponse } from './connector-client/batchFailedEntriesResponse'
@@ -19,6 +18,7 @@ import { Activity, Channels, ConversationReference, CloudAdapter, ConversationPa
 import { TeamsConnectorClient } from './connector-client/teamsConnectorClient'
 import { ChannelInfo } from './channel-data'
 import { validateTeamsChannelData } from './validators/teamsChannelDataValidator'
+import { BatchOperationResponse } from './connector-client/batchOperationResponse'
 
 export class TeamsInfo {
   static async getMeetingParticipant (
