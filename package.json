@@ -32,34 +32,22 @@
     "packages/*"
   ],
   "dependencies": {
-    "@azure/cosmos": "^4.2.0",
-    "@azure/msal-node": "^3.2.3",
-    "@azure/storage-blob": "^12.26.0",
-    "axios": "^1.7.8",
-    "debug": "^4.3.7",
-    "jsonwebtoken": "^9.0.2",
-    "jwks-rsa": "^3.1.0",
-    "uuid": "11.0.5",
-    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@types/debug": "^4.1.12",
     "@types/express": "^5.0.0",
     "@types/express-serve-static-core": "^5.0.5",
-    "@types/node": "^22.13.4",
-    "@types/sinon": "^17.0.3",
+    "@types/node": "^22.13.5",
+    "@types/sinon": "^17.0.4",
     "@types/uuid": "^10.0.0",
-    "eslint": "^9.20.1",
+    "eslint": "^9.21.0",
     "global": "4.4.0",
     "neostandard": "^0.12.1",
     "nerdbank-gitversioning": "^3.7.115",
     "sinon": "^19.0.2",
     "tsx": "^4.19.3",
-    "typedoc": "^0.27.7",
+    "typedoc": "^0.27.8",
     "typescript": "^5.7.3"
-  },
-  "overrides": {
-    "esbuild": "0.25.0"
   },
   "engines": {
     "node": ">=18.0.0"
