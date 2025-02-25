@@ -29,10 +29,6 @@ export { Thing } from './entity/thing'
 
 export * from './invoke/adaptiveCardInvokeAction'
 
-export { MessagingExtensionParameter } from './messaging-extension/messagingExtensionParameter'
-export * from './messaging-extension/messagingExtensionQuery'
-export { MessagingExtensionQueryOptions } from './messaging-extension/messagingExtensionQueryOptions'
-
 export { Activity, activityZodSchema } from './activity'
 export { ActivityEventNames } from './activityEventNames'
 export { ActivityImportance } from './activityImportance'

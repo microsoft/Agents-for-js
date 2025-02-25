@@ -4,7 +4,8 @@
  */
 
 import { z } from 'zod'
-import { activityZodSchema, AdaptiveCardInvokeAction, adaptiveCardInvokeActionZodSchema, adaptiveCardsSearchParamsZodSchema, MessagingExtensionQuery, messagingExtensionQueryZodSchema } from '@microsoft/agents-bot-hosting'
+import { activityZodSchema, AdaptiveCardInvokeAction, adaptiveCardInvokeActionZodSchema, adaptiveCardsSearchParamsZodSchema } from '@microsoft/agents-bot-hosting'
+import { MessagingExtensionQuery, messagingExtensionQueryZodSchema } from '../messaging-extension'
 
 export function validateValueAction (value: unknown): string {
   const valueActionZodSchema = z.object({
