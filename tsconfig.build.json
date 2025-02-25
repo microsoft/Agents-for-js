@@ -17,7 +17,7 @@
         "path": "packages/agents-bot-hosting-storage-cosmos"
       },
       {
-        "path": "packages/agents-bot-teams"
+        "path": "packages/agents-bot-hosting-teams"
       }
     ]
   }
