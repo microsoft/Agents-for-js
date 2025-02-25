@@ -9,8 +9,6 @@ export { SemanticAction } from './action/semanticAction'
 export { SemanticActionStateTypes } from './action/semanticActionStateTypes'
 export { SuggestedActions } from './action/suggestedActions'
 
-export * from './adaptive-cards/adaptiveCardsSearchParams'
-
 export { Attachment } from './attachment/attachment'
 export { AttachmentLayoutTypes } from './attachment/attachmentLayoutTypes'
 
