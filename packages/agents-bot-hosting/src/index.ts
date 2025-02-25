@@ -21,4 +21,7 @@ export * from './logger'
 export * from './messageFactory'
 export * from './turnContext'
 export * from './storage/storage'
+
+export * as botClient from './bot-client'
+
 export * from '@microsoft/agents-bot-activity'

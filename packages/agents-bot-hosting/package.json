@@ -41,7 +41,12 @@
       "import": "./dist/src/index.js",
       "require": "./dist/src/index.js"
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./botClient": {
+      "import": "./dist/src/bot-client/index.js",
+      "require": "./dist/src/bot-client/index.js",
+      "types": "./dist/src/bot-client/index.d.ts"
+    }
   },
   "engines": {
     "node": ">=18.0.0"
