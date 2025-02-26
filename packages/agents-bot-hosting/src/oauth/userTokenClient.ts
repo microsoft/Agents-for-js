@@ -3,7 +3,6 @@
 
 import axios, { AxiosInstance } from 'axios'
 import { SigningResource } from './signingResource'
-import { TokenExchangeRequest } from './tokenExchangeRequest'
 import { Activity } from '@microsoft/agents-bot-activity'
 import { debug } from '../logger'
 
@@ -62,17 +61,6 @@ export class UserTokenClient {
     } catch (error: any) {
       logger.error(error)
       throw error
-    }
-  }
-
-  async exchangeTokenAsync (userId: string, connectionName: string, channelId: string, tokenExchangeRequest: TokenExchangeRequest) {
-    try {
-      const params = { userId, connectionName, channelId }
-      const response = await this.client.post('/api/usertoken/exchange', tokenExchangeRequest, { params })
-      return response.data
-    } catch (error: any) {
-      logger.error(error)
-      return null
     }
   }
 }

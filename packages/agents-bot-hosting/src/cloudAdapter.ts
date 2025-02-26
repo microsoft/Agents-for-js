@@ -47,6 +47,24 @@ export class CloudAdapter extends BotAdapter {
     }
   }
 
+  protected async createConnectorClient (
+    serviceUrl: string,
+    scope: string
+  ): Promise<ConnectorClient> {
+    return ConnectorClient.createClientWithAuthAsync(
+      serviceUrl,
+      this.authConfig,
+      this.authProvider,
+      scope
+    )
+  }
+
+  protected setConnectorClient (
+    context: TurnContext
+  ) {
+    context.turnState.set('connectorClient', this.connectorClient)
+  }
+
   /**
    * Creates a TurnContext for the given activity and logic.
    * @param activity - The activity to process.
@@ -159,10 +177,10 @@ export class CloudAdapter extends BotAdapter {
 
     const scope = request.user?.azp ?? request.user?.appid ?? 'https://api.botframework.com'
     logger.debug('Creating connector client with scope: ', scope)
-    this.connectorClient = await ConnectorClient.createClientWithAuthAsync(activity.serviceUrl!, this.authConfig, this.authProvider, scope)
+    this.connectorClient = await this.createConnectorClient(activity.serviceUrl!, scope)
 
     const context = this.createTurnContext(activity, logic)
-    context.turnState.set('connectorClient', this.connectorClient)
+    this.setConnectorClient(context)
     await this.runMiddleware(context, logic)
     const invokeResponse = this.processTurnResults(context)
 
@@ -235,7 +253,7 @@ export class CloudAdapter extends BotAdapter {
  * @param context - The TurnContext for the current turn of the bot.
  * @returns The InvokeResponse if applicable, otherwise undefined.
  */
-  private processTurnResults (context: TurnContext): InvokeResponse | undefined {
+  protected processTurnResults (context: TurnContext): InvokeResponse | undefined {
     // Handle ExpectedReplies scenarios where all activities have been buffered and sent back at once in an invoke response.
     if (context.activity.deliveryMode === DeliveryModes.ExpectReplies) {
       return {
@@ -268,7 +286,7 @@ export class CloudAdapter extends BotAdapter {
    * @param conversationParameters - The conversation parameters.
    * @returns The created activity.
    */
-  private createCreateActivity (
+  protected createCreateActivity (
     createdConversationId: string | undefined,
     channelId: string,
     serviceUrl: string,
@@ -318,7 +336,7 @@ export class CloudAdapter extends BotAdapter {
     if (!conversationParameters) throw new TypeError('`conversationParameters` must be defined')
     if (!logic) throw new TypeError('`logic` must be defined')
 
-    const restClient = await ConnectorClient.createClientWithAuthAsync(serviceUrl, this.authConfig, this.authProvider, audience)
+    const restClient = await this.createConnectorClient(serviceUrl, audience)
     const createConversationResult = await restClient.createConversationAsync(conversationParameters)
     const createActivity = this.createCreateActivity(
       createConversationResult.id,

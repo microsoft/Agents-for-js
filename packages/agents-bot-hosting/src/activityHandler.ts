@@ -12,7 +12,7 @@ import { AdaptiveCardInvokeValue } from './invoke/adaptiveCardInvokeValue'
 import { SearchInvokeValue } from './invoke/searchInvokeValue'
 import { SearchInvokeResponse } from './invoke/searchInvokeResponse'
 import { AdaptiveCardInvokeResponse } from './invoke/adaptiveCardInvokeResponse'
-import { tokenResponseEventName } from './teams/signin/tokenResponseEventName'
+import { tokenResponseEventName } from './tokenResponseEventName'
 
 /** Symbol key for invoke response */
 export const INVOKE_RESPONSE_KEY = Symbol('invokeResponse')
