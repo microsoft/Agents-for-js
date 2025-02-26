@@ -24,11 +24,11 @@ import { MessagingExtensionAction } from './messaging-extension/messagingExtensi
 import { MessagingExtensionResponse } from './messaging-extension/messagingExtensionResponse'
 import { MessagingExtensionActionResponse } from './messaging-extension/messagingExtensionActionResponse'
 import { Channels, ActivityHandler, InvokeResponse, TurnContext } from '@microsoft/agents-bot-hosting'
-import { TeamsConnectorClient } from './connector-client/teamsConnectorClient'
 import { ChannelInfo, TeamInfo } from './channel-data'
 import { validateValueMessagingExtensionQuery } from './validators/activityValueValidators'
 import { validateTeamsChannelData } from './validators/teamsChannelDataValidator'
 import { MessagingExtensionQuery } from './messaging-extension'
+import { TeamsConnectorClient } from './connector-client/teamsConnectorClient'
 
 const TeamsMeetingStartT = z
   .object({

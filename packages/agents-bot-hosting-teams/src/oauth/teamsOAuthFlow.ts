@@ -44,6 +44,9 @@ export class TeamsOAuthFlow {
 
     const adapter = context.adapter as CloudAdapter
     const authConfig = context.adapter.authConfig
+    if (authConfig.connectionName === undefined) {
+      throw new Error('connectionName is not set in the auth config, review your environment variables')
+    }
     const scope = 'https://api.botframework.com'
     const accessToken = await adapter.authProvider.getAccessToken(authConfig, scope)
     this.userTokenClient = new TeamsUserTokenClient(accessToken)

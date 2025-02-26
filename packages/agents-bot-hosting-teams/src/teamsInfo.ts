@@ -288,6 +288,6 @@ export class TeamsInfo {
   }
 
   private static getRestClient (context: TurnContext) : TeamsConnectorClient {
-    return context.turnState.get('connectorClient')
+    return context.turnState.get('teamsConnectorClient')
   }
 }
