@@ -5,7 +5,7 @@ import express, { Response } from 'express'
 import rateLimit from 'express-rate-limit'
 
 import { Request, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv, UserState, MemoryStorage } from '@microsoft/agents-bot-hosting'
-import { TeamsCloudAdapter } from '@microsoft/agents-bot-teams'
+import { TeamsCloudAdapter } from '@microsoft/agents-bot-hosting-teams'
 
 import { TeamsJsBot } from './teamsJsBot'
 import { TeamsSsoBot } from './teamsSsoBot'

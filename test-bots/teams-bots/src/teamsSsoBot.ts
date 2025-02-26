@@ -5,7 +5,7 @@ import { ActivityHandler, CardFactory, MessageFactory, TurnContext, UserState } 
 import { Template } from 'adaptivecards-templating'
 import * as userTemplate from '../cards/UserProfileCard.json'
 import { getUserInfo } from './userGraphClient'
-import { TeamsOAuthFlow } from '@microsoft/agents-bot-teams'
+import { TeamsOAuthFlow } from '@microsoft/agents-bot-hosting-teams'
 
 export class TeamsSsoBot extends ActivityHandler {
   teamsOAuthFlow: TeamsOAuthFlow
