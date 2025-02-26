@@ -25,11 +25,13 @@ app.post('/api/messages', async (req: Request, res: Response) => {
   await adapter.process(req, res, async (context) => await myBot.run(context))
 })
 
-app.post('/api/botresponse', async (req: Request, res: Response) => {
-  console.log('botResponse', req.body)
+const responseAdapter = new CloudAdapter(authConfig)
+
+app.post('/api/botresponse/v3/conversations/:conversationId/activities/:activityId', async (req: Request, res: Response) => {
+  await responseAdapter.process(req, res, async (context) => await myBot.run(context))
 })
 
 const port = process.env.PORT || 39783
 app.listen(port, () => {
-  console.log(`\nServer listening to port ${port} on sdk ${sdkVersion} for appId ${authConfig.clientId} debug ${process.env.DEBUG}`)
+  console.log(`\nRootBot to port ${port} on sdk ${sdkVersion} for appId ${authConfig.clientId} debug ${process.env.DEBUG}`)
 })

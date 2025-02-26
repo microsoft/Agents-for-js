@@ -83,6 +83,20 @@
 			"path": "test-bots/teams-bots"
 		},
 		{
+			"label": "build_root_bot",
+			"type": "npm",
+			"script": "build",
+			"group": {
+				"kind": "build",
+				"isDefault": false
+			},
+			"problemMatcher": [],
+			"dependsOn": [
+				"build_packages"
+			],
+			"path": "test-bots/root-bot"
+		},
+		{
 			"label": "build_all",
 			"group": {
 				"kind": "build",
@@ -95,7 +109,8 @@
 				"build_webchat",
 				"build_copilot_client",
 				"build_state",
-				"build_teams"
+				"build_teams",
+				"build_root_bot"
 			]
 		}
 	]

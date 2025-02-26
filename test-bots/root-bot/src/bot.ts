@@ -22,7 +22,7 @@ export class EchoBot extends ActivityHandler {
 
     this.onMembersAdded(async (context, next) => {
       const membersAdded = context.activity.membersAdded ?? []
-      const welcomeText = `Echo bot running on sdk ${sdkVersion}`
+      const welcomeText = `Root bot running on sdk ${sdkVersion}`
       for (const member of membersAdded) {
         if (member.id !== (context.activity.recipient?.id ?? '')) {
           await context.sendActivity(MessageFactory.text(welcomeText, welcomeText))
