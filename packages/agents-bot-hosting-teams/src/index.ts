@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License.
+ */
+
 export * from './adaptive-cards'
 export * from './bot-config'
 export * from './channel-data'

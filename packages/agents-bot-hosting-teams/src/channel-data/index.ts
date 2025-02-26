@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License.
+ */
+
 export { ChannelInfo } from './channelInfo'
 export { NotificationInfo } from './notificationInfo'
 export { OnBehalfOf } from './onBehalfOf'

@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License.
+ */
+
 export { MessagingExtensionParameter } from './messagingExtensionParameter'
 export * from './messagingExtensionQuery'
 export { MessagingExtensionQueryOptions } from './messagingExtensionQueryOptions'
