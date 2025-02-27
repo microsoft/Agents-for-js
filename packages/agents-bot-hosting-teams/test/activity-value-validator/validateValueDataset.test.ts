@@ -1,7 +1,7 @@
 import assert from 'assert'
 import { describe, it } from 'node:test'
 import { ZodError } from 'zod'
-import { validateValueDataset } from '../../../src/activityValueValidators'
+import { validateValueDataset } from '../../src/validators/activityValueValidators'
 
 describe('validateValueDataset test', () => {
   it('Validate with all properties', () => {

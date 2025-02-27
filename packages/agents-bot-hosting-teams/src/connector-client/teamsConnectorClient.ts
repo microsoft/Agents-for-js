@@ -1,6 +1,6 @@
 /** * Copyright (c) Microsoft Corporation. All rights reserved. * Licensed under the MIT License. */
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios'
-import { Activity, ChannelAccount, ChannelInfo, TeamsChannelData, ConnectorClient, AuthConfiguration, AuthProvider } from '@microsoft/agents-bot-hosting'
+import { Activity, ChannelAccount, ConnectorClient, AuthConfiguration, AuthProvider } from '@microsoft/agents-bot-hosting'
 import { TeamsChannelAccount } from './teamsChannelAccount'
 import { TeamsPagedMembersResult } from './teamsPagedMembersResult'
 import { TeamDetails } from './teamDetails'
@@ -12,6 +12,7 @@ import { TeamsBatchOperationResponse } from './teamsBatchOperationResponse'
 import { BatchOperationStateResponse } from './batchOperationStateResponse'
 import { BatchFailedEntriesResponse } from './batchFailedEntriesResponse'
 import { CancelOperationResponse } from './cancelOperationResponse'
+import { ChannelInfo, TeamsChannelData } from '../channel-data'
 
 export class TeamsConnectorClient extends ConnectorClient {
   /**

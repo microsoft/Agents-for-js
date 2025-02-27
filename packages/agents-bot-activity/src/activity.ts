@@ -24,7 +24,6 @@ import { EndOfConversationCodes, endOfConversationCodesZodSchema } from './conve
 import { DeliveryModes, deliveryModesZodSchema } from './deliveryModes'
 import { Channels } from './conversation/channels'
 import { Mention } from './entity/mention'
-import { TeamsChannelData, teamsChannelDataZodSchema } from './teams/teamsChannelData'
 
 export const activityZodSchema = z.object({
   type: z.union([activityTypesZodSchema, z.string().min(1)]),
@@ -54,7 +53,7 @@ export const activityZodSchema = z.object({
   suggestedActions: suggestedActionsZodSchema.optional(),
   attachments: z.array(attachmentZodSchema).optional(),
   entities: z.array(entityZodSchema).optional(),
-  channelData: z.union([z.any(), teamsChannelDataZodSchema]).optional(),
+  channelData: z.any().optional(),
   action: z.string().min(1).optional(),
   replyToId: z.string().min(1).optional(),
   label: z.string().min(1).optional(),
@@ -99,7 +98,7 @@ export class Activity {
   suggestedActions?: SuggestedActions
   attachments?: Attachment[]
   entities?: Entity[]
-  channelData?: TeamsChannelData | any
+  channelData?: any
   action?: string
   replyToId?: string
   label?: string
@@ -142,11 +141,6 @@ export class Activity {
     const activity = new Activity(parsedActivity.type)
     Object.assign(activity, parsedActivity)
     return activity
-  }
-
-  public validateTeamsChannelData (o: object): TeamsChannelData {
-    teamsChannelDataZodSchema.passthrough().parse(o)
-    return o
   }
 
   static getContinuationActivity (reference: ConversationReference): Activity {
