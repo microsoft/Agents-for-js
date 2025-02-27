@@ -5,6 +5,9 @@
 
 import { z } from 'zod'
 
+/**
+ * Enum representing delivery modes.
+ */
 export enum DeliveryModes {
   Normal = 'normal',
   Notification = 'notification',
@@ -12,4 +15,7 @@ export enum DeliveryModes {
   Ephemeral = 'ephemeral',
 }
 
+/**
+ * Zod schema for validating a DeliveryModes enum.
+ */
 export const deliveryModesZodSchema = z.enum(['normal', 'notification', 'expectReplies', 'ephemeral'])

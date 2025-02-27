@@ -12,10 +12,10 @@ import {
   UserState,
   TurnContext,
   MessageFactory,
-  SigningResource
+  SigningResource,
+  TokenExchangeRequest
 } from '@microsoft/agents-bot-hosting'
 import { TeamsUserTokenClient } from './teamsUserTokenClient'
-import { TokenExchangeRequest } from './tokenExchangeRequest'
 
 const logger = debug('agents:teams-oauth-flow')
 

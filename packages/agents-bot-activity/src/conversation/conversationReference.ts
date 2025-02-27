@@ -7,6 +7,9 @@ import { z } from 'zod'
 import { ChannelAccount, channelAccountZodSchema } from './channelAccount'
 import { ConversationAccount, conversationAccountZodSchema } from './conversationAccount'
 
+/**
+ * Interface representing a reference to a conversation.
+ */
 export interface ConversationReference {
   activityId?: string
   user?: ChannelAccount
@@ -17,6 +20,9 @@ export interface ConversationReference {
   serviceUrl?: string | undefined
 }
 
+/**
+ * Zod schema for validating a conversation reference.
+ */
 export const conversationReferenceZodSchema = z.object({
   activityId: z.string().min(1).optional(),
   user: channelAccountZodSchema.optional(),

@@ -1,8 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { debug, UserTokenClient } from '@microsoft/agents-bot-hosting'
-import { TokenExchangeRequest } from './tokenExchangeRequest'
+import { debug, UserTokenClient, TokenExchangeRequest } from '@microsoft/agents-bot-hosting'
 
 const logger = debug('agents:teamsUserTokenClient')
 
