@@ -5,6 +5,12 @@
 
 import { TabResponseCard } from './tabResponseCard'
 
+/**
+ * Interface representing a collection of tab response cards.
+ */
 export interface TabResponseCards {
+  /**
+   * Array of response cards.
+   */
   cards: TabResponseCard[]
 }

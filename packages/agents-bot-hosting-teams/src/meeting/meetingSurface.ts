@@ -6,4 +6,7 @@
 import { MeetingStageSurface } from './meetingStageSurface'
 import { MeetingTabIconSurface } from './meetingTabIconSurface'
 
+/**
+ * Type representing a meeting surface, which can be either a stage surface or a tab icon surface.
+ */
 export type MeetingSurface = MeetingStageSurface<any> | MeetingTabIconSurface

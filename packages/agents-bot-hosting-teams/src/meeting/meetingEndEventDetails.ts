@@ -5,6 +5,10 @@
 
 import { MeetingEventDetails } from './meetingEventDetails'
 
+/**
+ * Interface representing the details of a meeting end event.
+ */
 export interface MeetingEndEventDetails extends MeetingEventDetails {
+  /** The end time of the meeting. */
   endTime: Date
 }

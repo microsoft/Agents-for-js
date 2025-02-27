@@ -3,7 +3,17 @@
  * Licensed under the MIT License.
  */
 
+/**
+ * Interface representing a meeting tab icon surface.
+ */
 export interface MeetingTabIconSurface {
-  surface: 'meetingTabIcon'
-  tabEntityId?: string
+  /**
+   * The type of surface.
+   */
+  surface: 'meetingTabIcon';
+
+  /**
+   * The tab entity ID associated with the surface.
+   */
+  tabEntityId?: string;
 }
