@@ -3,7 +3,6 @@
 
 import axios, { AxiosInstance } from 'axios'
 import { SigningResource } from './signingResource'
-import { TokenExchangeRequest } from './tokenExchangeRequest'
 import { Activity } from '@microsoft/agents-bot-activity'
 import { debug } from '../logger'
 
