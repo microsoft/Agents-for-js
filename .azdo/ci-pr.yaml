@@ -10,15 +10,15 @@ steps:
   inputs:
     version: '22.x'
   displayName: 'Install Node.js'
-
+  
 - script: npm install
-  displayName: npm ci
-
-- script: npm run build
-  displayName: build
+  displayName: npm ci --dd
 
 - script: node setVersion.js
   displayName: set version
+
+- script: npm run build
+  displayName: build
 
 - script: npm run test
   displayName: tests
