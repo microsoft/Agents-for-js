@@ -64,4 +64,4 @@ app.post('/api/messages', async (req: Request, res: Response) => {
 const port = process.env.PORT || 3978
 app.listen(port, () => {
   console.log(`\nServer listening to port ${port} for appId ${authConfig.clientId} debug ${process.env.DEBUG}`)
-})
+}).on('error', console.error)
