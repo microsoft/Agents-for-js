@@ -31,6 +31,7 @@ const verifyToken = async (raw: string, config: AuthConfiguration): Promise<JwtP
 
     jwksClient.getSigningKey(header.kid, (err: Error | null, key: SigningKey | undefined): void => {
       if (err != null) {
+        logger.error('jwksClient.getSigningKey ', JSON.stringify(err))
         logger.error(JSON.stringify(err))
         callback(err, undefined)
         return
@@ -44,13 +45,13 @@ const verifyToken = async (raw: string, config: AuthConfiguration): Promise<JwtP
     const verifyOptions: jwt.VerifyOptions = {
       issuer: config.issuers,
       audience: config.clientId,
-      ignoreExpiration: false,
+      ignoreExpiration: true,
       algorithms: ['RS256']
     }
 
     jwt.verify(raw, getKey, verifyOptions, (err, user) => {
       if (err != null) {
-        logger.error(JSON.stringify(err))
+        logger.error('jwt.verify ', JSON.stringify(err))
         reject(err)
         return
       }

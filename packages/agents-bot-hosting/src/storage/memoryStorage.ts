@@ -62,3 +62,7 @@ export class MemoryStorage implements Storage {
     this.memory[key] = JSON.stringify(clone)
   }
 }
+
+export function memoryStorageSingleton (): MemoryStorage {
+  return new MemoryStorage()
+}

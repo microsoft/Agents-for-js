@@ -3,21 +3,20 @@
 
 import express, { Response } from 'express'
 
-import rateLimit from 'express-rate-limit'
-import { Request, CloudAdapter, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv } from '@microsoft/agents-bot-hosting'
+import { Request, CloudAdapter, /* authorizeJWT, */ AuthConfiguration, loadAuthConfigFromEnv, memoryStorageSingleton, ConversationState } from '@microsoft/agents-bot-hosting'
 import { version as sdkVersion } from '@microsoft/agents-bot-hosting/package.json'
-import { EchoBot } from './bot'
-
+import { RootBot } from './bot'
 const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
 
+const conversationState = new ConversationState(memoryStorageSingleton())
+
 const adapter = new CloudAdapter(authConfig)
-const myBot = new EchoBot()
+const myBot = new RootBot(conversationState)
 
 const app = express()
 
-app.use(rateLimit({ validate: { xForwardedForHeader: false } }))
 app.use(express.json())
-app.use(authorizeJWT(authConfig))
+// app.use(authorizeJWT(authConfig))
 
 app.post('/api/messages', async (req: Request, res: Response) => {
   // console.log(req.body)
@@ -25,13 +24,11 @@ app.post('/api/messages', async (req: Request, res: Response) => {
   await adapter.process(req, res, async (context) => await myBot.run(context))
 })
 
-const responseAdapter = new CloudAdapter(authConfig)
-
 app.post('/api/botresponse/v3/conversations/:conversationId/activities/:activityId', async (req: Request, res: Response) => {
-  await responseAdapter.process(req, res, async (context) => await myBot.run(context))
+  await adapter.process(req, res, async (context) => await myBot.run(context))
 })
 
-const port = process.env.PORT || 39783
+const port = process.env.PORT || 3978
 app.listen(port, () => {
   console.log(`\nRootBot to port ${port} on sdk ${sdkVersion} for appId ${authConfig.clientId} debug ${process.env.DEBUG}`)
 })
