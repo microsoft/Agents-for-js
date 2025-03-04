@@ -3,6 +3,12 @@
  * Licensed under the MIT License.
  */
 
+/**
+ * Represents a response containing a resource ID.
+ */
 export interface ResourceResponse {
-  id: string
+  /**
+   * Unique identifier of the resource.
+   */
+  id: string;
 }

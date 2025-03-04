@@ -16,10 +16,20 @@ interface streamRead {
 }
 
 export class CopilotStudioClient {
+  /** The ID of the current conversation. */
   private conversationId: string = ''
+  /** The connection settings for the client. */
   private readonly settings: ConnectionSettings
+  /** The Axios instance used for HTTP requests. */
   private readonly client: AxiosInstance
+  /** The logger for debugging. */
   private readonly logger: Debugger
+
+  /**
+   * Creates an instance of CopilotStudioClient.
+   * @param settings The connection settings.
+   * @param token The authentication token.
+   */
   constructor (settings: ConnectionSettings, token: string) {
     this.settings = settings
     this.client = axios.create()

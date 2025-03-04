@@ -5,7 +5,8 @@
       "./packages/agents-copilotstudio-client/index.ts",
       "./packages/agents-bot-hosting/index.ts",
       "./packages/agents-bot-hosting-storage-blob/index.ts",
-      "./packages/agents-bot-hosting-storage-cosmos/index.ts"
+      "./packages/agents-bot-hosting-storage-cosmos/index.ts",
+      "./packages/agents-bot-hosting-teams/index.ts",
     ],
     "out": "docs",
     "exclude": ["**/node_modules/**", "**/test/**"],

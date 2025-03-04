@@ -3,6 +3,9 @@
  * Licensed under the MIT License.
  */
 
+/**
+ * Represents the authentication configuration.
+ */
 export interface AuthConfiguration {
   tenantId?: string
   clientId?: string
@@ -14,6 +17,11 @@ export interface AuthConfiguration {
   FICClientId?: string
 }
 
+/**
+ * Loads the authentication configuration from environment variables.
+ * @returns The authentication configuration.
+ * @throws Will throw an error if clientId is not provided in production.
+ */
 export const loadAuthConfigFromEnv: () => AuthConfiguration = () => {
   if (process.env.clientId === undefined && process.env.NODE_ENV === 'production') {
     throw new Error('ClientId required in production')
@@ -34,6 +42,11 @@ export const loadAuthConfigFromEnv: () => AuthConfiguration = () => {
   }
 }
 
+/**
+ * Loads the bot authentication configuration from environment variables.
+ * @returns The bot authentication configuration.
+ * @throws Will throw an error if MicrosoftAppId is not provided in production.
+ */
 export const loadBotAuthConfigFromEnv: () => AuthConfiguration = () => {
   if (process.env.MicrosoftAppId === undefined && process.env.NODE_ENV === 'production') {
     throw new Error('ClientId required in production')

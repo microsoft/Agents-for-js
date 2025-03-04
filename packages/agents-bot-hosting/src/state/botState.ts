@@ -29,11 +29,22 @@ export class BotState {
     */
   constructor (protected storage: Storage, protected storageKey: StorageKeyFactory) { }
 
+  /**
+   * Creates a property accessor for the specified property.
+   * @param name The name of the property.
+   * @returns A property accessor for the specified property.
+   */
   createProperty<T = any>(name: string): BotStatePropertyAccessor<T> {
     const prop: BotStatePropertyAccessor<T> = new BotStatePropertyAccessor<T>(this, name)
     return prop
   }
 
+  /**
+   * Loads the state from storage.
+   * @param context The turn context.
+   * @param force Whether to force loading the state.
+   * @returns A promise that resolves to the loaded state.
+   */
   public async load (context: TurnContext, force = false): Promise<any> {
     const cached: CachedBotState = context.turnState.get(this.stateKey)
 
@@ -52,6 +63,12 @@ export class BotState {
     return cached.state
   }
 
+  /**
+   * Saves the state to storage.
+   * @param context The turn context.
+   * @param force Whether to force saving the state.
+   * @returns A promise that resolves when the save operation is complete.
+   */
   public async saveChanges (context: TurnContext, force = false): Promise<void> {
     let cached: CachedBotState = context.turnState.get(this.stateKey)
     if (force || (cached && cached.hash !== this.calculateChangeHash(cached?.state))) {
@@ -71,11 +88,21 @@ export class BotState {
     }
   }
 
+  /**
+   * Clears the state from the turn context.
+   * @param context The turn context.
+   * @returns A promise that resolves when the clear operation is complete.
+   */
   public async clear (context: TurnContext): Promise<void> {
     const emptyObjectToForceSave = { state: {}, hash: '' }
     context.turnState.set(this.stateKey, emptyObjectToForceSave)
   }
 
+  /**
+   * Deletes the state from storage.
+   * @param context The turn context.
+   * @returns A promise that resolves when the delete operation is complete.
+   */
   public async delete (context: TurnContext): Promise<void> {
     if (context.turnState.has(this.stateKey)) {
       context.turnState.delete(this.stateKey)
@@ -85,12 +112,22 @@ export class BotState {
     await this.storage.delete([key])
   }
 
+  /**
+   * Gets the state from the turn context.
+   * @param context The turn context.
+   * @returns The state, or undefined if the state is not found.
+   */
   public get (context: TurnContext): any | undefined {
     const cached: CachedBotState = context.turnState.get(this.stateKey)
 
     return typeof cached === 'object' && typeof cached.state === 'object' ? cached.state : undefined
   }
 
+  /**
+   * Calculates the change hash for the specified item.
+   * @param item The item to calculate the hash for.
+   * @returns The calculated hash.
+   */
   private readonly calculateChangeHash = (item: StoreItem): string => {
     const { eTag, ...rest } = item
 

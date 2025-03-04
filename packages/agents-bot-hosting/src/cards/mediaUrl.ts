@@ -3,7 +3,16 @@
  * Licensed under the MIT License.
  */
 
+/**
+ * Represents a media URL.
+ */
 export interface MediaUrl {
-  url: string
-  profile?: string
+  /**
+   * The URL of the media.
+   */
+  url: string;
+  /**
+   * The profile of the media.
+   */
+  profile?: string;
 }

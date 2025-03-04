@@ -15,7 +15,16 @@ import crypto from 'crypto'
 const audience = 'api://AzureADTokenExchange'
 const logger = debug('agents:msal-token-provider')
 
+/**
+ * Provides tokens using MSAL.
+ */
 export class MsalTokenProvider implements AuthProvider {
+  /**
+   * Gets an access token.
+   * @param authConfig The authentication configuration.
+   * @param scope The scope for the token.
+   * @returns A promise that resolves to the access token.
+   */
   async getAccessToken (authConfig: AuthConfiguration, scope: string): Promise<string> {
     if (!authConfig.clientId && process.env.NODE_ENV !== 'production') {
       return ''
@@ -62,6 +71,12 @@ export class MsalTokenProvider implements AuthProvider {
     }
   }
 
+  /**
+   * Acquires a token using a user-assigned identity.
+   * @param authConfig The authentication configuration.
+   * @param scope The scope for the token.
+   * @returns A promise that resolves to the access token.
+   */
   private async acquireTokenWithUserAssignedIdentity (authConfig: AuthConfiguration, scope: string) {
     const mia = new ManagedIdentityApplication({
       managedIdentityIdParams: {
@@ -75,6 +90,12 @@ export class MsalTokenProvider implements AuthProvider {
     return token?.accessToken
   }
 
+  /**
+   * Acquires a token using a certificate.
+   * @param authConfig The authentication configuration.
+   * @param scope The scope for the token.
+   * @returns A promise that resolves to the access token.
+   */
   private async acquireTokenWithCertificate (authConfig: AuthConfiguration, scope: string) {
     const privateKeySource = fs.readFileSync(authConfig.certKeyFile as string)
 
@@ -110,6 +131,12 @@ export class MsalTokenProvider implements AuthProvider {
     return token?.accessToken as string
   }
 
+  /**
+   * Acquires a token using a client secret.
+   * @param authConfig The authentication configuration.
+   * @param scope The scope for the token.
+   * @returns A promise that resolves to the access token.
+   */
   private async acquireAccessTokenViaSecret (authConfig: AuthConfiguration, scope: string) {
     const cca = new ConfidentialClientApplication({
       auth: {
@@ -126,6 +153,12 @@ export class MsalTokenProvider implements AuthProvider {
     return token?.accessToken as string
   }
 
+  /**
+   * Acquires a token using a FIC client assertion.
+   * @param authConfig The authentication configuration.
+   * @param scope The scope for the token.
+   * @returns A promise that resolves to the access token.
+   */
   private async acquireAccessTokenViaFIC (authConfig: AuthConfiguration, scope: string) : Promise<string> {
     const scopes = [`${scope}/.default`]
     const clientAssertion = await this.fetchExternalToken(authConfig.FICClientId as string)
@@ -142,6 +175,11 @@ export class MsalTokenProvider implements AuthProvider {
     return token?.accessToken as string
   }
 
+  /**
+   * Fetches an external token.
+   * @param FICClientId The FIC client ID.
+   * @returns A promise that resolves to the external token.
+   */
   private async fetchExternalToken (FICClientId: string) : Promise<string> {
     const managedIdentityClientAssertion = new ManagedIdentityApplication({
       managedIdentityIdParams: {

@@ -69,11 +69,17 @@ export function maybeCast<T> (value: unknown, ctor?: { new (...args: any[]): T }
 
 const MAX_PAGE_SIZE = 20
 
+/**
+ * Options for configuring the BlobsTranscriptStore.
+ */
 export interface BlobsTranscriptStoreOptions {
   storagePipelineOptions?: StoragePipelineOptions;
   decodeTranscriptKey?: boolean;
 }
 
+/**
+ * A class that implements the TranscriptStore interface using Azure Blob Storage.
+ */
 export class BlobsTranscriptStore implements TranscriptStore {
   private readonly _containerClient: ContainerClient
   private readonly _concurrency = Infinity

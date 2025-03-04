@@ -3,9 +3,24 @@
  * Licensed under the MIT License.
  */
 
+/**
+ * Represents the data of an attachment.
+ */
 export interface AttachmentData {
-  type: string
-  name: string
-  originalBase64: Uint8Array
-  thumbnailBase64: Uint8Array
+  /**
+   * The type of the attachment.
+   */
+  type: string;
+  /**
+   * The name of the attachment.
+   */
+  name: string;
+  /**
+   * The original data of the attachment in Base64 format.
+   */
+  originalBase64: Uint8Array;
+  /**
+   * The thumbnail data of the attachment in Base64 format.
+   */
+  thumbnailBase64: Uint8Array;
 }

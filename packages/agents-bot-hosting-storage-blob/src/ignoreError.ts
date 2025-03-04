@@ -1,3 +1,8 @@
+/**
+ * A function type that determines whether an error should be ignored.
+ * @param err - The error to check.
+ * @returns A boolean indicating whether the error should be ignored.
+ */
 export type IgnoreError = (err: Error) => boolean
 
 export async function ignoreError<T> (promise: Promise<T>, ignore: IgnoreError): Promise<T | null> {
@@ -12,6 +17,9 @@ export async function ignoreError<T> (promise: Promise<T>, ignore: IgnoreError):
   }
 }
 
+/**
+ * An interface representing an error with an optional status code.
+ */
 interface ErrorWithStatusCode {
   statusCode?: number;
 }

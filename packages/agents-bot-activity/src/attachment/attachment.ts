@@ -5,6 +5,9 @@
 
 import { z } from 'zod'
 
+/**
+ * Interface representing an attachment.
+ */
 export interface Attachment {
   contentType: string
   contentUrl?: string
@@ -13,6 +16,9 @@ export interface Attachment {
   thumbnailUrl?: string
 }
 
+/**
+ * Zod schema for validating attachments.
+ */
 export const attachmentZodSchema = z.object({
   contentType: z.string().min(1),
   contentUrl: z.string().min(1).optional(),
