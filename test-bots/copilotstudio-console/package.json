@@ -21,7 +21,6 @@
     "open": "^10.1.0"
   },
   "devDependencies": {
-    "typescript": "^5.7.3"
   },
   "keywords": []
 }
