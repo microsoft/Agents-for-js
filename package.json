@@ -29,7 +29,8 @@
   },
   "license": "MIT",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "test-bots/*"
   ],
   "dependencies": {
   },
