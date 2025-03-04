@@ -9,8 +9,16 @@ import { debug } from '../logger'
 const logger = debug('agents:memory-storage')
 
 export class MemoryStorage implements Storage {
+  private static instance: MemoryStorage
   private etag: number = 1
   constructor (private memory: { [k: string]: string } = {}) { }
+
+  static getSingleInstance (): MemoryStorage {
+    if (!MemoryStorage.instance) {
+      MemoryStorage.instance = new MemoryStorage()
+    }
+    return MemoryStorage.instance
+  }
 
   async read (keys: string[]): Promise<StoreItem> {
     if (!keys || keys.length === 0) {
@@ -61,8 +69,4 @@ export class MemoryStorage implements Storage {
     const clone = Object.assign({}, item, { eTag: (this.etag++).toString() })
     this.memory[key] = JSON.stringify(clone)
   }
-}
-
-export function memoryStorageSingleton (): MemoryStorage {
-  return new MemoryStorage()
 }

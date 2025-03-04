@@ -3,12 +3,12 @@
 
 import express, { Response } from 'express'
 
-import { Request, CloudAdapter, /* authorizeJWT, */ AuthConfiguration, loadAuthConfigFromEnv, memoryStorageSingleton, ConversationState } from '@microsoft/agents-bot-hosting'
+import { Request, CloudAdapter, /* authorizeJWT, */ AuthConfiguration, loadAuthConfigFromEnv, ConversationState, MemoryStorage } from '@microsoft/agents-bot-hosting'
 import { version as sdkVersion } from '@microsoft/agents-bot-hosting/package.json'
 import { RootBot } from './bot'
 const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
 
-const conversationState = new ConversationState(memoryStorageSingleton())
+const conversationState = new ConversationState(new MemoryStorage())
 
 const adapter = new CloudAdapter(authConfig)
 const myBot = new RootBot(conversationState)
@@ -25,6 +25,9 @@ app.post('/api/messages', async (req: Request, res: Response) => {
 })
 
 app.post('/api/botresponse/v3/conversations/:conversationId/activities/:activityId', async (req: Request, res: Response) => {
+  // memoryStorageSingleton()
+  // 01. Read from memory using conversationId. We don't need to use botClientConfig
+  // 02. Update activity
   await adapter.process(req, res, async (context) => await myBot.run(context))
 })
 
