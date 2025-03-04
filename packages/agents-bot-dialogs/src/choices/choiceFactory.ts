@@ -6,14 +6,11 @@
 import {
   ActionTypes,
   Activity,
-  CardAction,
-  CardFactory,
   InputHints,
   MessageFactory,
   TurnContext,
 } from '@microsoft/agents-bot-hosting'
 import { Choice } from './choice'
-import * as channel from './channel'
 
 /**
  * Additional options used to tweak the formatting of choice lists.
@@ -71,8 +68,6 @@ export class ChoiceFactory {
     speak?: string,
     options?: ChoiceFactoryOptions
   ): Partial<Activity> {
-    const channelId: string = typeof channelOrContext === 'string' ? channelOrContext : channelOrContext.activity.channelId ?? ''
-
     const list: Choice[] = ChoiceFactory.toChoices(choices)
 
     let maxTitleLength = 0
@@ -83,45 +78,13 @@ export class ChoiceFactory {
       }
     })
 
-    const supportsSuggestedActions: boolean = channel.supportsSuggestedActions(channelId, choices.length)
-    const supportsCardActions = channel.supportsCardActions(channelId, choices.length)
     const longTitles: boolean = maxTitleLength > this.MAX_ACTION_TITLE_LENGTH
-    if (!longTitles && !supportsSuggestedActions && supportsCardActions) {
-      // SuggestedActions is the preferred approach, but for channels that don't
-      // support them (e.g. Teams, Slack) we should use a HeroCard with CardActions
-      return ChoiceFactory.heroCard(list, text, speak)
-    } else if (!longTitles && supportsSuggestedActions) {
-      // We always prefer showing choices using suggested actions. If the titles are too long, however,
-      // we'll have to show them as a text list.
-      return ChoiceFactory.suggestedAction(list, text, speak)
-    } else if (!longTitles && choices.length <= 3) {
+    if (!longTitles && choices.length <= 3) {
       // If the titles are short and there are 3 or less choices we'll use an inline list.
       return ChoiceFactory.inline(list, text, speak, options)
     } else {
       return ChoiceFactory.list(list, text, speak, options)
     }
-  }
-
-  /**
-     * Creates a message Activity that includes a Choice list that have been added as `HeroCard`'s.
-     *
-     * @param choices Optional. The Choice list to add.
-     * @param text Optional. Text of the message.
-     * @param speak Optional. SSML text to be spoken by the bot on a speech-enabled channel.
-     * @returns An Activity with choices as `HeroCard` with buttons.
-     */
-  static heroCard (choices: (string | Choice)[] = [], text = '', speak = ''): Activity {
-    const buttons: CardAction[] = ChoiceFactory.toChoices(choices).map(
-      (choice) =>
-        ({
-          title: choice.value,
-          type: ActionTypes.ImBack,
-          value: choice.value,
-        }) as CardAction
-    )
-    const attachment = CardFactory.heroCard('', text, undefined, buttons)
-
-    return MessageFactory.attachment(attachment, undefined, speak, InputHints.ExpectingInput)
   }
 
   /**
@@ -196,27 +159,6 @@ export class ChoiceFactory {
     })
 
     return MessageFactory.text(txt, speak, InputHints.ExpectingInput)
-  }
-
-  /**
-     * Returns a 'message' activity containing a list of choices that have been added as suggested
-     * actions.
-     *
-     * @param choices List of choices to add.
-     * @param text (Optional) text of the message.
-     * @param speak (Optional) SSML to speak for the message.
-     * @returns An activity with choices as suggested actions.
-     */
-  static suggestedAction (choices: (string | Choice)[], text?: string, speak?: string): Partial<Activity> {
-    const actions: CardAction[] = ChoiceFactory.toChoices(choices).map<CardAction>((choice: Choice) => {
-      if (choice.action) {
-        return choice.action
-      } else {
-        return { type: ActionTypes.ImBack, value: choice.value, title: choice.value, channelData: undefined }
-      }
-    })
-
-    return MessageFactory.suggestedActions(actions, text, speak, InputHints.ExpectingInput)
   }
 
   /**
