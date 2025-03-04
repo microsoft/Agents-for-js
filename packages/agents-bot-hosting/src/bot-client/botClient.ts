@@ -5,17 +5,18 @@ import { AuthConfiguration, MsalTokenProvider } from '../auth'
 
 export const PostActivity = async (activity: Activity, botClientConfig: BotClientConfig, authConfig: AuthConfiguration): Promise<unknown> => {
   // const conversationReference = activity.getConversationReference()
-  activity.conversation!.id = v4()
+  const activityCopy = { ...activity }
   activity.serviceUrl = botClientConfig.serviceUrl
   activity.recipient = { id: botClientConfig.botId, role: RoleTypes.Skill }
   activity.relatesTo = {
-    serviceUrl: activity.serviceUrl,
-    activityId: activity.id,
-    channelId: activity.channelId!,
-    locale: activity.locale,
-    conversation: activity.conversation!
+    serviceUrl: activityCopy.serviceUrl,
+    activityId: activityCopy.id,
+    channelId: activityCopy.channelId!,
+    locale: activityCopy.locale,
+    conversation: activityCopy.conversation!
   }
-  activity.relatesTo.conversation!.id = activity.conversation!.id
+  activity.conversation!.id = v4()
+
   const authProvider = new MsalTokenProvider()
   const token = await authProvider.getAccessToken(authConfig, botClientConfig.botId)
 

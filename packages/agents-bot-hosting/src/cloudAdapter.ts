@@ -165,6 +165,7 @@ export class CloudAdapter extends BotAdapter {
         const dataForBot = await MemoryStorage.getSingleInstance().read(['botData'])
         activity.serviceUrl = dataForBot.botData.serviceUrl
         activity.conversation!.id = dataForBot.botData.conversationId
+        activity.id = activity.replyToId
       }
     } catch (error) {
       // A skill bot error is expected if the bot is a skill bot

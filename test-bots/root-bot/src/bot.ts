@@ -42,8 +42,8 @@ export class RootBot extends ActivityHandler {
         const dataForBot = await this.memoryForBot.read(['botData'])
         context.activity.serviceUrl = dataForBot.botData.serviceUrl
         context.activity.conversation!.id = dataForBot.botData.conversationId
-        const message = MessageFactory.text(`From echo-bot: ${context.activity.text}`)
-        await context.sendActivity(message)
+        // const message = MessageFactory.text(`From echo-bot: ${context.activity.text}`)
+        await context.sendActivity(context.activity)
       } else {
         await context.sendActivity(MessageFactory.text(`Echo: ${context.activity.text}`))
       }
