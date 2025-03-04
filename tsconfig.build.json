@@ -18,6 +18,9 @@
       },
       {
         "path": "packages/agents-bot-hosting-teams"
+      },
+      {
+        "path": "packages/agents-bot-dialogs"
       }
     ]
   }
