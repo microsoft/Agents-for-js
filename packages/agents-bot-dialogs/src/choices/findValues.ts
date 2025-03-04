@@ -15,22 +15,12 @@ export interface FindValuesOptions {
   tokenizer?: TokenizerFunction;
 }
 
-/**
- * INTERNAL: Raw search result returned by `findValues()`.
- */
 export interface FoundValue {
   value: string;
   index: number;
   score: number;
 }
 
-/**
- * INTERNAL: A value that can be sorted and still refer to its original position within a source
- * array. The `findChoices()` function expands the passed in choices to individual `SortedValue`
- * instances and passes them to `findValues()`. Each individual `Choice` can result in multiple
- * synonyms that should be searched for so this data structure lets us pass each synonym as a value
- * to search while maintaining the index of the choice that value came from.
- */
 export interface SortedValue {
   value: string;
   index: number;
@@ -91,30 +81,19 @@ export function findValues (
     vTokens: Token[],
     startPos: number
   ): ModelResult<FoundValue> | undefined {
-    // Match value to utterance and calculate total deviation.
-    // - The tokens are matched in order so "second last" will match in
-    //   "the second from last one" but not in "the last from the second one".
-    // - The total deviation is a count of the number of tokens skipped in the
-    //   match so for the example above the number of tokens matched would be
-    //   2 and the total deviation would be 1.
     let matched = 0
     let totalDeviation = 0
     let start = -1
     let end = -1
     vTokens.forEach((token: Token) => {
-      // Find the position of the token in the utterance.
       const pos: number = indexOfToken(token, startPos)
       if (pos >= 0) {
-        // Calculate the distance between the current tokens position and the previous tokens distance.
         const distance: number = matched > 0 ? pos - startPos : 0
         if (distance <= maxDistance) {
-          // Update count of tokens matched and move start pointer to search for next token after
-          // the current token.
           matched++
           totalDeviation += distance
           startPos = pos + 1
 
-          // Update start & end position that will track the span of the utterance that's matched.
           if (start < 0) {
             start = pos
           }
@@ -123,25 +102,14 @@ export function findValues (
       }
     })
 
-    // Calculate score and format result
-    // - The start & end positions and the results text field will be corrected by the caller.
     let result: ModelResult<FoundValue> | undefined
     if (matched > 0 && (matched === vTokens.length || opt.allowPartialMatches)) {
-      // Percentage of tokens matched. If matching "second last" in
-      // "the second from last one" the completeness would be 1.0 since
-      // all tokens were found.
       const completeness: number = matched / vTokens.length
 
-      // Accuracy of the match. The accuracy is reduced by additional tokens
-      // occurring in the value that weren't in the utterance. So an utterance
-      // of "second last" matched against a value of "second from last" would
-      // result in an accuracy of 0.5.
       const accuracy: number = matched / (matched + totalDeviation)
 
-      // The final score is simply the completeness multiplied by the accuracy.
       const score: number = completeness * accuracy
 
-      // Format result
       result = {
         start,
         end,
@@ -157,20 +125,14 @@ export function findValues (
     return result
   }
 
-  // Sort values in descending order by length so that the longest value is searched over first.
   const list: SortedValue[] = values.sort((a: SortedValue, b: SortedValue) => b.value.length - a.value.length)
 
-  // Search for each value within the utterance.
   let matches: ModelResult<FoundValue>[] = []
   const opt: FindValuesOptions = options || {}
   const tokenizer: TokenizerFunction = opt.tokenizer || defaultTokenizer
   const tokens: Token[] = tokenizer(utterance, opt.locale)
   const maxDistance: number = opt.maxTokenDistance !== undefined ? opt.maxTokenDistance : 2
   list.forEach((entry: SortedValue) => {
-    // Find all matches for a value
-    // - To match "last one" in "the last time I chose the last one" we need
-    //   to re-search the string starting from the end of the previous match.
-    // - The start & end position returned for the match are token positions.
     let startPos = 0
     const vTokens: Token[] = tokenizer(entry.value.trim(), opt.locale)
     while (startPos < tokens.length) {
@@ -184,20 +146,14 @@ export function findValues (
     }
   })
 
-  // Sort matches by score descending
   matches = matches.sort(
     (a: ModelResult<FoundValue>, b: ModelResult<FoundValue>) => b.resolution.score - a.resolution.score
   )
 
-  // Filter out duplicate matching indexes and overlapping characters.
-  // - The start & end positions are token positions and need to be translated to
-  //   character positions before returning. We also need to populate the "text"
-  //   field as well.
   const results: ModelResult<FoundValue>[] = []
   const foundIndexes: { [index: number]: boolean } = {}
   const usedTokens: { [index: number]: boolean } = {}
   matches.forEach((match: ModelResult<FoundValue>) => {
-    // Apply filters
     let add = !Object.prototype.hasOwnProperty.call(foundIndexes, match.resolution.index)
     for (let i: number = match.start; i <= match.end; i++) {
       if (usedTokens[i]) {
@@ -206,15 +162,12 @@ export function findValues (
       }
     }
 
-    // Add to results
     if (add) {
-      // Update filter info
       foundIndexes[match.resolution.index] = true
       for (let i: number = match.start; i <= match.end; i++) {
         usedTokens[i] = true
       }
 
-      // Translate start & end and populate text field
       match.start = tokens[match.start].start
       match.end = tokens[match.end].end
       match.text = utterance.substring(match.start, match.end + 1)
@@ -222,6 +175,5 @@ export function findValues (
     }
   })
 
-  // Return the results sorted by position in the utterance
   return results.sort((a: ModelResult<FoundValue>, b: ModelResult<FoundValue>) => a.start - b.start)
 }
