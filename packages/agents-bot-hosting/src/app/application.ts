@@ -4,74 +4,19 @@
  */
 
 import {
-  Storage,
   TurnContext,
-  CloudAdapter,
   ResourceResponse
 } from '..'
 import { TurnState } from './turnState'
-import { InputFileDownloader } from './inputFileDownloader'
 import { BotAdapter } from '../botAdapter'
 import { Activity, ActivityTypes, ConversationReference } from '@microsoft/agents-bot-activity'
+import { ApplicationOptions } from './applicationOptions'
+import { RouteSelector } from './routeSelector'
+import { RouteHandler } from './routeHandler'
+import { ConversationUpdateEvents } from './conversationUpdateEvents'
+import { TurnEvents } from './turnEvents'
 
 const TYPING_TIMER_DELAY = 1000
-
-export interface ApplicationOptions<TState extends TurnState> {
-  adapter?: CloudAdapter;
-  botAppId?: string;
-  storage?: Storage;
-  startTypingTimer: boolean;
-
-  /**
-     * Optional. If true, the bot supports long running messages that can take longer then the 10 - 15
-     * second timeout imposed by most channels. Defaults to false.
-     * @remarks
-     * This works by immediately converting the incoming request to a proactive conversation. Care should
-     * be used for bots that operate in a shared hosting environment. The incoming request is immediately
-     * completed and many shared hosting environments will mark the bot's process as idle and shut it down.
-     */
-  longRunningMessages: boolean;
-  turnStateFactory: () => TState;
-  fileDownloaders?: InputFileDownloader<TState>[];
-}
-
-export type ConversationUpdateEvents =
-    | 'membersAdded'
-    | 'membersRemoved'
-
-/**
- * Function for handling an incoming request.
- * @template TState Type of the turn state.
- * @param context Context for the current turn of conversation with the user.
- * @param state Current turn state.
- * @returns A promise that resolves when the handler completes its processing.
- */
-export type RouteHandler<TState extends TurnState> = (context: TurnContext, state: TState) => Promise<void>
-
-/**
- * A selector function for matching incoming activities.
- */
-export type Selector = (context: TurnContext) => Promise<boolean>
-
-/**
- * Function for selecting whether a route handler should be triggered.
- * @param context Context for the current turn of conversation with the user.
- * @returns A promise that resolves with a boolean indicating whether the route handler should be triggered.
- */
-export type RouteSelector = Selector
-
-/**
- * Turn event types.
- * @remarks
- * The `beforeTurn` event is triggered before the turn is processed. This allows for the turn state to be
- * modified before the turn is processed. Returning false from the event handler will prevent the turn from
- * being processed.
- *
- * The `afterTurn` event is triggered after the turn is processed. This allows for the turn state to be
- * modified or inspected after the turn is processed. Returning false from the event handler will prevent
- * the turn state from being saved.
- */
-export type TurnEvents = 'beforeTurn' | 'afterTurn'
 
 /**
  * Application class for routing and processing incoming requests.
