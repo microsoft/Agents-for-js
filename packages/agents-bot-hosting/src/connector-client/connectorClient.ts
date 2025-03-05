@@ -234,9 +234,10 @@ export class ConnectorClient {
     }
     const config: AxiosRequestConfig = {
       method: 'post',
-      url: `v3/conversations/${conversationId}/activities/${activityId}`,
+      url: `/v3/conversations/${conversationId}/activities/${encodeURIComponent(activityId)}`,
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'x-ms-conversation-id': conversationId
       },
       data: body
     }

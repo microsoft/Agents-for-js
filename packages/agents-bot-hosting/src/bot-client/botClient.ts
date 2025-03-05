@@ -1,6 +1,6 @@
 import { Activity, RoleTypes } from '@microsoft/agents-bot-activity'
 import { BotClientConfig } from './botClientConfig'
-import { v4 } from 'uuid'
+// import { v4 } from 'uuid'
 import { AuthConfiguration, MsalTokenProvider } from '../auth'
 
 export const PostActivity = async (activity: Activity, botClientConfig: BotClientConfig, authConfig: AuthConfiguration): Promise<unknown> => {
@@ -15,7 +15,7 @@ export const PostActivity = async (activity: Activity, botClientConfig: BotClien
     locale: activityCopy.locale,
     conversation: activityCopy.conversation!
   }
-  activity.conversation!.id = v4()
+  // activity.conversation!.id = v4()
 
   const authProvider = new MsalTokenProvider()
   const token = await authProvider.getAccessToken(authConfig, botClientConfig.botId)

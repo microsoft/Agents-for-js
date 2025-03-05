@@ -11,7 +11,7 @@ import { Request } from './auth/request'
 import { ConnectorClient } from './connector-client/connectorClient'
 import { AuthConfiguration } from './auth/authConfiguration'
 import { AuthProvider } from './auth/authProvider'
-import { Activity, ActivityEventNames, ActivityTypes, Channels, ConversationReference, DeliveryModes, RoleTypes } from '@microsoft/agents-bot-activity'
+import { Activity, ActivityEventNames, ActivityTypes, Channels, ConversationReference, DeliveryModes } from '@microsoft/agents-bot-activity'
 import { ResourceResponse } from './connector-client/resourceResponse'
 import { MsalTokenProvider } from './auth/msalTokenProvider'
 import { ConversationParameters } from './connector-client/conversationParameters'
@@ -21,8 +21,6 @@ import { StatusCodes } from './statusCodes'
 import { InvokeResponse } from './invoke/invokeResponse'
 import { AttachmentInfo } from './connector-client/attachmentInfo'
 import { AttachmentData } from './connector-client/attachmentData'
-import { BotClientConfig, loadBotClientConfig } from './bot-client/botClientConfig'
-import { MemoryStorage } from './storage/memoryStorage'
 
 const logger = debug('agents:cloud-adapter')
 
@@ -132,7 +130,7 @@ export class CloudAdapter extends BotAdapter {
   public async process (
     request: Request,
     res: Response,
-    logic: (context: TurnContext) => Promise<void>): Promise<void> {
+    logic: (context: TurnContext) => Promise<void>, pepito: Boolean = false): Promise<void> {
     const end = (status: StatusCodes, body?: unknown, isInvokeResponseOrExpectReplies: boolean = false) => {
       res.status(status)
       if (isInvokeResponseOrExpectReplies) {
@@ -158,20 +156,10 @@ export class CloudAdapter extends BotAdapter {
       const invokeResponse = this.processTurnResults(context)
       return end(invokeResponse?.status ?? StatusCodes.OK, JSON.stringify(invokeResponse?.body), true)
     }
-
-    try {
-      const botClientConfig: BotClientConfig = loadBotClientConfig('Bot1')
-      if (activity?.from?.id === botClientConfig.botId && activity?.from?.role === RoleTypes.Skill) {
-        const dataForBot = await MemoryStorage.getSingleInstance().read(['botData'])
-        activity.serviceUrl = dataForBot.botData.serviceUrl
-        activity.conversation!.id = dataForBot.botData.conversationId
-        activity.id = activity.replyToId
-      }
-    } catch (error) {
-      // A skill bot error is expected if the bot is a skill bot
+    let scope = 'https://api.botframework.com'
+    if (pepito === false) {
+      scope = request.user?.azp ?? request.user?.appid ?? 'https://api.botframework.com'
     }
-
-    const scope = request.user?.azp ?? request.user?.appid ?? 'https://api.botframework.com'
     logger.info(`****Creating connector client with scope: ${scope} for serviceUrl: ${activity.serviceUrl}`)
     this.connectorClient = await ConnectorClient.createClientWithAuthAsync(activity.serviceUrl!, this.authConfig, this.authProvider, scope)
 

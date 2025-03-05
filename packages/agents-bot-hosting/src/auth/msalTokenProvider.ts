@@ -8,6 +8,7 @@ import { AuthConfiguration } from './authConfiguration'
 import { AuthProvider } from './authProvider'
 import { debug } from '../logger'
 import { v4 } from 'uuid'
+import jwt from 'jsonwebtoken'
 
 import fs from 'fs'
 import crypto from 'crypto'
@@ -20,21 +21,27 @@ export class MsalTokenProvider implements AuthProvider {
     if (!authConfig.clientId && process.env.NODE_ENV !== 'production') {
       return ''
     }
-
+    let token
     if (authConfig.FICClientId !== undefined) {
-      return await this.acquireAccessTokenViaFIC(authConfig, scope)
+      token = await this.acquireAccessTokenViaFIC(authConfig, scope)
     } else if (authConfig.clientSecret !== undefined) {
-      return await this.acquireAccessTokenViaSecret(authConfig, scope)
+      token = await this.acquireAccessTokenViaSecret(authConfig, scope)
     } else if (authConfig.certPemFile !== undefined &&
       authConfig.certKeyFile !== undefined) {
-      return await this.acquireTokenWithCertificate(authConfig, scope)
+      token = await this.acquireTokenWithCertificate(authConfig, scope)
     } else if (authConfig.clientSecret === undefined &&
       authConfig.certPemFile === undefined &&
       authConfig.certKeyFile === undefined) {
-      return await this.acquireTokenWithUserAssignedIdentity(authConfig, scope)
+      token = await this.acquireTokenWithUserAssignedIdentity(authConfig, scope)
     } else {
       throw new Error('Invalid authConfig. ')
     }
+    if (token === undefined) {
+      throw new Error('Failed to acquire token')
+    }
+    const decodedToken = jwt.decode(token)
+    console.log(decodedToken)
+    return token
   }
 
   private readonly sysOptions: NodeSystemOptions = {

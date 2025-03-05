@@ -3,7 +3,7 @@
 
 import express, { Response } from 'express'
 
-import { Request, CloudAdapter, /* authorizeJWT, */ AuthConfiguration, loadAuthConfigFromEnv, ConversationState, MemoryStorage } from '@microsoft/agents-bot-hosting'
+import { Request, CloudAdapter, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv, ConversationState, MemoryStorage, Activity } from '@microsoft/agents-bot-hosting'
 import { version as sdkVersion } from '@microsoft/agents-bot-hosting/package.json'
 import { RootBot } from './bot'
 const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
@@ -16,7 +16,7 @@ const myBot = new RootBot(conversationState)
 const app = express()
 
 app.use(express.json())
-// app.use(authorizeJWT(authConfig))
+app.use(authorizeJWT(authConfig))
 
 app.post('/api/messages', async (req: Request, res: Response) => {
   // console.log(req.body)
@@ -28,7 +28,17 @@ app.post('/api/botresponse/v3/conversations/:conversationId/activities/:activity
   // memoryStorageSingleton()
   // 01. Read from memory using conversationId. We don't need to use botClientConfig
   // 02. Update activity
-  await adapter.process(req, res, async (context) => await myBot.run(context))
+  console.log('params', req.params)
+  const dataForBot = await MemoryStorage.getSingleInstance().read(['botData'])
+  console.log('Data for bot:', dataForBot)
+  const activity = Activity.fromObject(req.body!)
+  activity.serviceUrl = encodeURI(dataForBot.botData.serviceUrl)
+  activity.conversation!.id = dataForBot.botData.conversationId
+  activity.replyToId = req.params!.activityId
+  console.log(activity)
+  req.body = activity
+
+  await adapter.process(req, res, async (context) => await myBot.run(context), true)
 })
 
 const port = process.env.PORT || 3978
