@@ -6,7 +6,8 @@
 import {
   Storage,
   TurnContext,
-  CloudAdapter
+  CloudAdapter,
+  ResourceResponse
 } from '..'
 import { TurnState } from './turnState'
 import { InputFileDownloader } from './inputFileDownloader'
@@ -364,6 +365,51 @@ export class Application<TState extends TurnState = TurnState> {
         this.stopTypingTimer()
       }
     })
+  }
+
+  /**
+     * Sends a proactive activity to an existing conversation the bot is a member of.
+     * @remarks
+     * This method provides a simple way to send a proactive message to a conversation the bot is a member of.
+     *
+     * Use of the method requires you configure the Application with the `adapter.appId`
+     * options. An exception will be thrown if either is missing.
+     * @param context Context of the conversation to proactively message. This can be derived from either a TurnContext, ConversationReference, or Activity.
+     * @param activityOrText Activity or message to send to the conversation.
+     * @param speak Optional. Text to speak for channels that support voice.
+     * @param inputHint Optional. Input hint for channels that support voice.
+     * @returns A Resource response containing the ID of the activity that was sent.
+     */
+  public sendProactiveActivity (
+    context: TurnContext,
+    activityOrText: string | Activity,
+    speak?: string,
+    inputHint?: string
+  ): Promise<ResourceResponse | undefined>
+  public sendProactiveActivity (
+    conversationReference: ConversationReference,
+    activityOrText: string | Activity,
+    speak?: string,
+    inputHint?: string
+  ): Promise<ResourceResponse | undefined>
+  public sendProactiveActivity (
+    activity: Activity,
+    activityOrText: string | Activity,
+    speak?: string,
+    inputHint?: string
+  ): Promise<ResourceResponse | undefined>
+  public async sendProactiveActivity (
+    context: TurnContext | ConversationReference | Activity,
+    activityOrText: string | Activity,
+    speak?: string,
+    inputHint?: string
+  ): Promise<ResourceResponse | undefined> {
+    let response: ResourceResponse | undefined
+    await this.continueConversationAsync(context, async (ctx) => {
+      response = await ctx.sendActivity(activityOrText, speak, inputHint)
+    })
+
+    return response
   }
 
   /**
