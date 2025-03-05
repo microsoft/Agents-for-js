@@ -4,7 +4,7 @@
 import express, { Response } from 'express'
 
 import rateLimit from 'express-rate-limit'
-import { Request, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv, TurnState, MemoryStorage, TurnContext, CloudAdapter, ApplicationBuilder }
+import { Request, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv, TurnState, MemoryStorage, TurnContext, CloudAdapter, Application, AttachmentDownloader }
   from '@microsoft/agents-bot-hosting'
 import { version } from '@microsoft/agents-bot-hosting/package.json'
 import { ActivityTypes } from '@microsoft/agents-bot-activity'
@@ -24,9 +24,14 @@ interface ConversationState {
 }
 type ApplicationTurnState = TurnState<ConversationState>
 
+const downloader = new AttachmentDownloader()
+
 // Define storage and application
 const storage = new MemoryStorage()
-const app = new ApplicationBuilder<ApplicationTurnState>().withStorage(storage).build()
+const app = new Application<ApplicationTurnState>({
+  storage,
+  fileDownloaders: [downloader]
+})
 
 // Listen for user to say '/reset' and then delete conversation state
 app.message('/reset', async (context: TurnContext, state: ApplicationTurnState) => {
