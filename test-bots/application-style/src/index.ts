@@ -4,7 +4,7 @@
 import express, { Response } from 'express'
 
 import rateLimit from 'express-rate-limit'
-import { Request, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv, TurnState, MemoryStorage, Application, TurnContext, CloudAdapter }
+import { Request, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv, TurnState, MemoryStorage, TurnContext, CloudAdapter, ApplicationBuilder }
   from '@microsoft/agents-bot-hosting'
 import { version } from '@microsoft/agents-bot-hosting/package.json'
 import { ActivityTypes } from '@microsoft/agents-bot-activity'
@@ -26,7 +26,7 @@ type ApplicationTurnState = TurnState<ConversationState>
 
 // Define storage and application
 const storage = new MemoryStorage()
-const app = new Application<ApplicationTurnState>({ storage })
+const app = new ApplicationBuilder<ApplicationTurnState>().withStorage(storage).build()
 
 // Listen for user to say '/reset' and then delete conversation state
 app.message('/reset', async (context: TurnContext, state: ApplicationTurnState) => {
