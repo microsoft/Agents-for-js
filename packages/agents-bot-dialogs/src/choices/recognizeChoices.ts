@@ -2,8 +2,6 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
-
-import * as Recognizers from '@microsoft/recognizers-text-number'
 import { findChoices, FindChoicesOptions, FoundChoice } from './findChoices'
 import { ModelResult } from './modelResult'
 import { Choice } from './choice'
@@ -72,13 +70,18 @@ export function recognizeChoices (
   if (matched.length === 0) {
     // Next try finding by ordinal
     if (options.recognizeOrdinals) {
-      const ordinals: ModelResult[] = Recognizers.recognizeOrdinal(utterance, options.locale ?? '')
+      // TODO: Review recognizeOrdinal function
+      // const ordinals: ModelResult[] = Recognizers.recognizeOrdinal(utterance, options.locale ?? '')
+      const ordinals: ModelResult[] = []
       ordinals.forEach(matchChoiceByIndex)
     }
 
     // Finally try by numerical index
     if (matched.length === 0 && options.recognizeNumbers) {
-      Recognizers.recognizeNumber(utterance, options.locale ?? '').forEach(matchChoiceByIndex)
+      // TODO: Review recognizeNumber function
+      // const numbers: ModelResult[] = Recognizers.recognizeNumber(utterance, options.locale ?? '').forEach(matchChoiceByIndex)
+      const numbers: ModelResult[] = []
+      numbers.forEach(matchChoiceByIndex)
     }
 
     // Sort any found matches by their position within the utterance.

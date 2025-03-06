@@ -67,7 +67,7 @@ export class ChoiceFactory {
     text?: string,
     speak?: string,
     options?: ChoiceFactoryOptions
-  ): Partial<Activity> {
+  ): Activity {
     const list: Choice[] = ChoiceFactory.toChoices(choices)
 
     let maxTitleLength = 0
@@ -102,7 +102,7 @@ export class ChoiceFactory {
     text?: string,
     speak?: string,
     options?: ChoiceFactoryOptions
-  ): Partial<Activity> {
+  ): Activity {
     const opt: ChoiceFactoryOptions = {
       inlineSeparator: ', ',
       inlineOr: ' or ',
@@ -143,7 +143,7 @@ export class ChoiceFactory {
     text?: string,
     speak?: string,
     options?: ChoiceFactoryOptions
-  ): Partial<Activity> {
+  ): Activity {
     const opt: ChoiceFactoryOptions = {
       includeNumbers: true,
       ...options,
