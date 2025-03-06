@@ -18,7 +18,7 @@ import { ResourceResponse } from '../connector-client'
 const TYPING_TIMER_DELAY = 1000
 type ApplicationEventHandler<TState extends TurnState> = (context: TurnContext, state: TState) => Promise<boolean>
 
-export class Application<TState extends TurnState = TurnState> {
+export class Application<TState extends TurnState> {
   private readonly _options: ApplicationOptions<TState>
   private readonly _routes: AppRoute<TState>[] = []
   private readonly _beforeTurn: ApplicationEventHandler<TState>[] = []
