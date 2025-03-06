@@ -6,35 +6,12 @@
 import { TurnContext } from '..'
 import { TurnState } from './turnState'
 
-/**
- * A plugin responsible for downloading files relative to the current user's input.
- * @template TState Optional. Type of application state.
- */
-export interface InputFileDownloader<TState extends TurnState = TurnState> {
-  /**
-     * Download any files relative to the current user's input.
-     * @param context Context for the current turn of conversation.
-     * @param state Application state for the current turn of conversation.
-     */
-  downloadFiles(context: TurnContext, state: TState): Promise<InputFile[]>;
+export interface InputFile {
+  content: Buffer;
+  contentType: string;
+  contentUrl?: string;
 }
 
-/**
- * A file sent by the user to the bot.
- */
-export interface InputFile {
-  /**
-     * The downloaded content of the file.
-     */
-  content: Buffer;
-
-  /**
-     * The content type of the file.
-     */
-  contentType: string;
-
-  /**
-     * Optional. URL to the content of the file.
-     */
-  contentUrl?: string;
+export interface InputFileDownloader<TState extends TurnState = TurnState> {
+  downloadFiles(context: TurnContext, state: TState): Promise<InputFile[]>;
 }
