@@ -3,10 +3,6 @@
  * Licensed under the MIT License.
  */
 
-import {
-  TurnContext,
-  ResourceResponse
-} from '..'
 import { TurnState } from './turnState'
 import { BotAdapter } from '../botAdapter'
 import { Activity, ActivityTypes, ConversationReference } from '@microsoft/agents-bot-activity'
@@ -15,8 +11,12 @@ import { RouteSelector } from './routeSelector'
 import { RouteHandler } from './routeHandler'
 import { ConversationUpdateEvents } from './conversationUpdateEvents'
 import { TurnEvents } from './turnEvents'
+import { AppRoute } from './appRoute'
+import { TurnContext } from '../turnContext'
+import { ResourceResponse } from '../connector-client'
 
 const TYPING_TIMER_DELAY = 1000
+type ApplicationEventHandler<TState extends TurnState> = (context: TurnContext, state: TState) => Promise<boolean>
 
 export class Application<TState extends TurnState = TurnState> {
   private readonly _options: ApplicationOptions<TState>
@@ -77,7 +77,7 @@ export class Application<TState extends TurnState = TurnState> {
     handler: (context: TurnContext, state: TState) => Promise<void>
   ): this {
     (Array.isArray(type) ? type : [type]).forEach((t) => {
-      const selector = createActivitySelector(t)
+      const selector = this.createActivitySelector(t)
       this.addRoute(selector, handler)
     })
     return this
@@ -93,7 +93,7 @@ export class Application<TState extends TurnState = TurnState> {
       )
     }
 
-    const selector = createConversationUpdateSelector(event)
+    const selector = this.createConversationUpdateSelector(event)
     this.addRoute(selector, handler)
     return this
   }
@@ -131,7 +131,7 @@ export class Application<TState extends TurnState = TurnState> {
     handler: (context: TurnContext, state: TState) => Promise<void>
   ): this {
     (Array.isArray(keyword) ? keyword : [keyword]).forEach((k) => {
-      const selector = createMessageSelector(k)
+      const selector = this.createMessageSelector(k)
       this.addRoute(selector, handler)
     })
     return this
@@ -320,79 +320,72 @@ export class Application<TState extends TurnState = TurnState> {
       return handler(context)
     }
   }
-}
 
-interface AppRoute<TState extends TurnState> {
-  selector: RouteSelector;
-  handler: RouteHandler<TState>;
-}
-
-function createActivitySelector (type: string | RegExp | RouteSelector): RouteSelector {
-  if (typeof type === 'function') {
-    return type
-  } else if (type instanceof RegExp) {
-    return (context: TurnContext) => {
-      return Promise.resolve(context?.activity?.type ? type.test(context.activity.type) : false)
-    }
-  } else {
-    const typeName = type.toString().toLocaleLowerCase()
-    return (context: TurnContext) => {
-      return Promise.resolve(
-        context?.activity?.type ? context.activity.type.toLocaleLowerCase() === typeName : false
-      )
+  private createActivitySelector (type: string | RegExp | RouteSelector): RouteSelector {
+    if (typeof type === 'function') {
+      return type
+    } else if (type instanceof RegExp) {
+      return (context: TurnContext) => {
+        return Promise.resolve(context?.activity?.type ? type.test(context.activity.type) : false)
+      }
+    } else {
+      const typeName = type.toString().toLocaleLowerCase()
+      return (context: TurnContext) => {
+        return Promise.resolve(
+          context?.activity?.type ? context.activity.type.toLocaleLowerCase() === typeName : false
+        )
+      }
     }
   }
-}
 
-function createConversationUpdateSelector (event: ConversationUpdateEvents): RouteSelector {
-  switch (event) {
-    case 'membersAdded':
-      return (context: TurnContext): Promise<boolean> => {
-        return Promise.resolve(
-          context?.activity?.type === ActivityTypes.ConversationUpdate &&
-                        Array.isArray(context?.activity?.membersAdded) &&
-                        context.activity.membersAdded.length > 0
-        )
-      }
-    case 'membersRemoved':
-      return (context: TurnContext): Promise<boolean> => {
-        return Promise.resolve(
-          context?.activity?.type === ActivityTypes.ConversationUpdate &&
-                        Array.isArray(context?.activity?.membersRemoved) &&
-                        context.activity.membersRemoved.length > 0
-        )
-      }
-    default:
-      return (context: TurnContext): Promise<boolean> => {
-        return Promise.resolve(
-          context?.activity?.type === ActivityTypes.ConversationUpdate &&
-                        context?.activity?.channelData?.eventType === event
-        )
-      }
-  }
-}
-
-function createMessageSelector (keyword: string | RegExp | RouteSelector): RouteSelector {
-  if (typeof keyword === 'function') {
-    return keyword
-  } else if (keyword instanceof RegExp) {
-    return (context: TurnContext) => {
-      if (context?.activity?.type === ActivityTypes.Message && context.activity.text) {
-        return Promise.resolve(keyword.test(context.activity.text))
-      } else {
-        return Promise.resolve(false)
-      }
+  private createConversationUpdateSelector (event: ConversationUpdateEvents): RouteSelector {
+    switch (event) {
+      case 'membersAdded':
+        return (context: TurnContext): Promise<boolean> => {
+          return Promise.resolve(
+            context?.activity?.type === ActivityTypes.ConversationUpdate &&
+                          Array.isArray(context?.activity?.membersAdded) &&
+                          context.activity.membersAdded.length > 0
+          )
+        }
+      case 'membersRemoved':
+        return (context: TurnContext): Promise<boolean> => {
+          return Promise.resolve(
+            context?.activity?.type === ActivityTypes.ConversationUpdate &&
+                          Array.isArray(context?.activity?.membersRemoved) &&
+                          context.activity.membersRemoved.length > 0
+          )
+        }
+      default:
+        return (context: TurnContext): Promise<boolean> => {
+          return Promise.resolve(
+            context?.activity?.type === ActivityTypes.ConversationUpdate &&
+                          context?.activity?.channelData?.eventType === event
+          )
+        }
     }
-  } else {
-    const k = keyword.toString().toLocaleLowerCase()
-    return (context: TurnContext) => {
-      if (context?.activity?.type === ActivityTypes.Message && context.activity.text) {
-        return Promise.resolve(context.activity.text.toLocaleLowerCase().indexOf(k) >= 0)
-      } else {
-        return Promise.resolve(false)
+  }
+
+  private createMessageSelector (keyword: string | RegExp | RouteSelector): RouteSelector {
+    if (typeof keyword === 'function') {
+      return keyword
+    } else if (keyword instanceof RegExp) {
+      return (context: TurnContext) => {
+        if (context?.activity?.type === ActivityTypes.Message && context.activity.text) {
+          return Promise.resolve(keyword.test(context.activity.text))
+        } else {
+          return Promise.resolve(false)
+        }
+      }
+    } else {
+      const k = keyword.toString().toLocaleLowerCase()
+      return (context: TurnContext) => {
+        if (context?.activity?.type === ActivityTypes.Message && context.activity.text) {
+          return Promise.resolve(context.activity.text.toLocaleLowerCase().indexOf(k) >= 0)
+        } else {
+          return Promise.resolve(false)
+        }
       }
     }
   }
 }
-
-type ApplicationEventHandler<TState extends TurnState> = (context: TurnContext, state: TState) => Promise<boolean>

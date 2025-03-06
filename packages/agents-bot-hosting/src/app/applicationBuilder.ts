@@ -3,9 +3,10 @@
  * Licensed under the MIT License.
  */
 
+import { Application } from './application'
 import { ApplicationOptions } from './applicationOptions'
 import { TurnState } from './turnState'
-import { Application, Storage } from '..'
+import { Storage } from '../storage'
 
 export class ApplicationBuilder<TState extends TurnState = TurnState> {
   private _options: Partial<ApplicationOptions<TState>> = {}

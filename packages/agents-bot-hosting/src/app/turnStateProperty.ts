@@ -3,8 +3,9 @@
  * Licensed under the MIT License.
  */
 
-import { TurnContext } from '..'
-import { TurnState, TurnStateEntry } from './turnState'
+import { TurnContext } from '../turnContext'
+import { TurnState } from './turnState'
+import { TurnStateEntry } from './turnStateEntry'
 
 export class TurnStateProperty<T = any> {
   private readonly _state: TurnStateEntry

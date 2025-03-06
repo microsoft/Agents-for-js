@@ -6,7 +6,7 @@
 import { CloudAdapter } from '../cloudAdapter'
 import { InputFileDownloader } from './inputFileDownloader'
 import { TurnState } from './turnState'
-import { Storage } from '..'
+import { Storage } from '../storage'
 
 export interface ApplicationOptions<TState extends TurnState> {
   adapter?: CloudAdapter;

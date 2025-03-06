@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { TurnContext } from '..'
+import { TurnContext } from '../turnContext'
 import { TurnState } from './turnState'
 
 export interface InputFile {
