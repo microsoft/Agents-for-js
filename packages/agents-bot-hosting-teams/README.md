@@ -32,6 +32,8 @@ export class TeamsMultiFeatureBot extends TeamsActivityHandler {
         super()
     }
 
-    async handleTeamsMessagingExtensionQuery ()
+    async handleTeamsMessagingExtensionQuery () {
+        // This function is intentionally left unimplemented. Provide your own implementation.
+    }
 }
 ```
