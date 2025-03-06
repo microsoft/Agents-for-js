@@ -21,6 +21,21 @@
       },
       {
         "path": "packages/agents-bot-dialogs"
+      },
+      {
+        "path": "test-bots/echo-bot"
+      },
+      {
+        "path": "test-bots/web-chat"
+      },
+      {
+        "path": "test-bots/state-bot"
+      },
+      {
+        "path": "test-bots/teams-bots"
+      },
+      {
+        "path": "test-bots/copilotstudio-console"
       }
     ]
   }
