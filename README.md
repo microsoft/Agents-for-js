@@ -20,7 +20,6 @@ registry=https://registry.npmjs.org/
 @microsoft:registry=https://pkgs.dev.azure.com/ConversationalAI/BotFramework/_packaging/SDK/npm/registry/
 ```
 
-
 We offer the following NPM packages to create conversational experiences based on bots:
 
 | Package Name | Description | Replaces|
