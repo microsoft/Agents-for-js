@@ -7,13 +7,40 @@ import { CardAction } from '@microsoft/agents-bot-activity'
 import { Fact } from './fact'
 import { ReceiptItem } from './receiptItem'
 
+/**
+ * Represents a receipt card.
+ */
 export interface ReceiptCard {
-  title: string
-  facts: Fact[]
-  items: ReceiptItem[]
-  tap?: CardAction
-  total: string
-  tax: string
-  vat?: string
-  buttons: CardAction[]
+  /**
+   * The title of the card.
+   */
+  title: string;
+  /**
+   * The facts of the card.
+   */
+  facts: Fact[];
+  /**
+   * The items of the card.
+   */
+  items: ReceiptItem[];
+  /**
+   * The tap action of the card.
+   */
+  tap?: CardAction;
+  /**
+   * The total amount of the receipt.
+   */
+  total: string;
+  /**
+   * The tax amount of the receipt.
+   */
+  tax: string;
+  /**
+   * The VAT amount of the receipt.
+   */
+  vat?: string;
+  /**
+   * The buttons of the card.
+   */
+  buttons: CardAction[];
 }

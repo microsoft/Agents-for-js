@@ -17,6 +17,11 @@ export class BotStatePropertyAccessor<T = any> {
    */
   constructor (protected readonly state: BotState, public readonly name: string) { }
 
+  /**
+   * Deletes the property from the state.
+   * @param context The turn context.
+   * @returns A promise that resolves when the delete operation is complete.
+   */
   async delete (context: TurnContext): Promise<void> {
     const obj: any = await this.state.load(context)
     if (Object.prototype.hasOwnProperty.call(obj, this.name)) {
@@ -24,6 +29,12 @@ export class BotStatePropertyAccessor<T = any> {
     }
   }
 
+  /**
+   * Gets the value of the property from the state.
+   * @param context The turn context.
+   * @param defaultValue The default value to return if the property is not found.
+   * @returns A promise that resolves to the value of the property.
+   */
   async get (context: TurnContext, defaultValue?: T): Promise<T> {
     const obj: any = await this.state.load(context)
     if (!Object.prototype.hasOwnProperty.call(obj, this.name) && defaultValue !== undefined) {
@@ -37,6 +48,12 @@ export class BotStatePropertyAccessor<T = any> {
     return obj[this.name]
   }
 
+  /**
+   * Sets the value of the property in the state.
+   * @param context The turn context.
+   * @param value The value to set.
+   * @returns A promise that resolves when the set operation is complete.
+   */
   async set (context: TurnContext, value: T): Promise<void> {
     const obj: any = await this.state.load(context)
     obj[this.name] = value

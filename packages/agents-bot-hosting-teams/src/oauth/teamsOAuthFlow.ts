@@ -12,10 +12,10 @@ import {
   UserState,
   TurnContext,
   MessageFactory,
-  SigningResource
+  SigningResource,
+  TokenExchangeRequest
 } from '@microsoft/agents-bot-hosting'
 import { TeamsUserTokenClient } from './teamsUserTokenClient'
-import { TokenExchangeRequest } from './tokenExchangeRequest'
 
 const logger = debug('agents:teams-oauth-flow')
 
@@ -25,16 +25,29 @@ class FlowState {
   public flowExpires: number = 0
 }
 
+/**
+ * Manages the OAuth flow for Teams.
+ */
 export class TeamsOAuthFlow {
   userTokenClient?: TeamsUserTokenClient
   state: FlowState | null
   flowStateAccessor: BotStatePropertyAccessor<FlowState | null>
   tokenExchangeId: string | null = null
+
+  /**
+   * Creates a new instance of TeamsOAuthFlow.
+   * @param userState The user state.
+   */
   constructor (userState: UserState) {
     this.state = null
     this.flowStateAccessor = userState.createProperty('flowState')
   }
 
+  /**
+   * Begins the OAuth flow.
+   * @param context The turn context.
+   * @returns A promise that resolves to the user token.
+   */
   public async beginFlow (context: TurnContext): Promise<string> {
     this.state = await this.getUserState(context)
 
@@ -62,6 +75,11 @@ export class TeamsOAuthFlow {
     return retVal
   }
 
+  /**
+   * Continues the OAuth flow.
+   * @param context The turn context.
+   * @returns A promise that resolves to the user token.
+   */
   public async continueFlow (context: TurnContext): Promise<string> {
     if (this.state?.flowExpires !== 0 && Date.now() > this.state!.flowExpires) {
       logger.warn('Sign-in flow expired')
@@ -87,6 +105,11 @@ export class TeamsOAuthFlow {
     return this.state?.userToken!
   }
 
+  /**
+   * Signs the user out.
+   * @param context The turn context.
+   * @returns A promise that resolves when the sign-out operation is complete.
+   */
   public async signOut (context: TurnContext): Promise<void> {
     await this.userTokenClient?.signOut(context.activity.from?.id as string, context.adapter.authConfig.connectionName as string, context.activity.channelId as string)
     await context.sendActivity(MessageFactory.text('User signed out'))
@@ -96,6 +119,11 @@ export class TeamsOAuthFlow {
     logger.info('User signed out successfully')
   }
 
+  /**
+   * Gets the user state.
+   * @param context The turn context.
+   * @returns A promise that resolves to the user state.
+   */
   private async getUserState (context: TurnContext) {
     let userProfile: FlowState | null = await this.flowStateAccessor.get(context, null)
     if (userProfile === null) {

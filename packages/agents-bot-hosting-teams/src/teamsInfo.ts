@@ -21,6 +21,15 @@ import { validateTeamsChannelData } from './validators/teamsChannelDataValidator
 import { BatchOperationResponse } from './connector-client/batchOperationResponse'
 
 export class TeamsInfo {
+  /**
+   * Gets the meeting participant information.
+   *
+   * @param {TurnContext} context - The turn context.
+   * @param {string} [meetingId] - The meeting ID.
+   * @param {string} [participantId] - The participant ID.
+   * @param {string} [tenantId] - The tenant ID.
+   * @returns {Promise<TeamsMeetingParticipant>} - The meeting participant information.
+   */
   static async getMeetingParticipant (
     context: TurnContext,
     meetingId?: string,
@@ -61,6 +70,13 @@ export class TeamsInfo {
     return res as TeamsMeetingParticipant
   }
 
+  /**
+   * Gets the meeting information.
+   *
+   * @param {TurnContext} context - The turn context.
+   * @param {string} [meetingId] - The meeting ID.
+   * @returns {Promise<MeetingInfo>} - The meeting information.
+   */
   static async getMeetingInfo (context: TurnContext, meetingId?: string): Promise<MeetingInfo> {
     if (!meetingId) {
       const teamsChannelData = validateTeamsChannelData(context.activity.channelData)
@@ -70,6 +86,13 @@ export class TeamsInfo {
     return res as MeetingInfo
   }
 
+  /**
+   * Gets the team details.
+   *
+   * @param {TurnContext} context - The turn context.
+   * @param {string} [teamId] - The team ID.
+   * @returns {Promise<TeamDetails>} - The team details.
+   */
   static async getTeamDetails (context: TurnContext, teamId?: string): Promise<TeamDetails> {
     if (!teamId) {
       const teamsChannelData = validateTeamsChannelData(context.activity.channelData)
@@ -82,6 +105,15 @@ export class TeamsInfo {
     return res as TeamDetails
   }
 
+  /**
+   * Sends a message to a Teams channel.
+   *
+   * @param {TurnContext} context - The turn context.
+   * @param {Activity} activity - The activity to send.
+   * @param {string} teamsChannelId - The Teams channel ID.
+   * @param {string} [botAppId] - The bot application ID.
+   * @returns {Promise<[ConversationReference, string]>} - The conversation reference and new activity ID.
+   */
   static async sendMessageToTeamsChannel (context: TurnContext, activity: Activity, teamsChannelId: string, botAppId?: string): Promise<[ConversationReference, string]> {
     if (!context) {
       throw new Error('TurnContext cannot be null')
@@ -134,6 +166,13 @@ export class TeamsInfo {
     return [conversationReference as ConversationReference, newActivityId]
   }
 
+  /**
+   * Gets the channels of a team.
+   *
+   * @param {TurnContext} context - The turn context.
+   * @param {string} [teamId] - The team ID.
+   * @returns {Promise<ChannelInfo[]>} - The list of channels.
+   */
   static async getTeamChannels (context: TurnContext, teamId?: string): Promise<ChannelInfo[]> {
     if (!teamId) {
       const teamsChannelData = validateTeamsChannelData(context.activity.channelData)
@@ -145,6 +184,14 @@ export class TeamsInfo {
     return await this.getRestClient(context).fetchChannelList(teamId!)
   }
 
+  /**
+   * Gets the paged members of a team or conversation.
+   *
+   * @param {TurnContext} context - The turn context.
+   * @param {number} [pageSize] - The page size.
+   * @param {string} [continuationToken] - The continuation token.
+   * @returns {Promise<TeamsPagedMembersResult>} - The paged members result.
+   */
   static async getPagedMembers (context: TurnContext, pageSize?: number, continuationToken?: string): Promise<TeamsPagedMembersResult> {
     const teamsChannelData = validateTeamsChannelData(context.activity.channelData)
     const teamId = teamsChannelData.team?.id
@@ -157,6 +204,13 @@ export class TeamsInfo {
     }
   }
 
+  /**
+   * Gets a member of a team or conversation.
+   *
+   * @param {TurnContext} context - The turn context.
+   * @param {string} userId - The user ID.
+   * @returns {Promise<TeamsChannelAccount>} - The member information.
+   */
   static async getMember (context: TurnContext, userId: string): Promise<TeamsChannelAccount> {
     const teamsChannelData = validateTeamsChannelData(context.activity.channelData)
     const teamId = teamsChannelData.team?.id
@@ -168,6 +222,15 @@ export class TeamsInfo {
     }
   }
 
+  /**
+   * Gets the paged members of a team.
+   *
+   * @param {TurnContext} context - The turn context.
+   * @param {string} [teamId] - The team ID.
+   * @param {number} [pageSize] - The page size.
+   * @param {string} [continuationToken] - The continuation token.
+   * @returns {Promise<TeamsPagedMembersResult>} - The paged members result.
+   */
   static async getPagedTeamMembers (context: TurnContext, teamId?: string, pageSize?: number, continuationToken?: string): Promise<TeamsPagedMembersResult> {
     if (!teamId) {
       const teamsChannelData = validateTeamsChannelData(context.activity.channelData)
@@ -187,10 +250,26 @@ export class TeamsInfo {
     return pagedResults
   }
 
+  /**
+   * Gets a member of a team.
+   *
+   * @param {TurnContext} context - The turn context.
+   * @param {string} teamId - The team ID.
+   * @param {string} userId - The user ID.
+   * @returns {Promise<TeamsChannelAccount>} - The member information.
+   */
   static async getTeamMember (context: TurnContext, teamId: string, userId: string): Promise<TeamsChannelAccount> {
     return await this.getRestClient(context).getConversationMember(teamId, userId)
   }
 
+  /**
+   * Sends a meeting notification.
+   *
+   * @param {TurnContext} context - The turn context.
+   * @param {MeetingNotification} notification - The meeting notification.
+   * @param {string} [meetingId] - The meeting ID.
+   * @returns {Promise<MeetingNotificationResponse>} - The meeting notification response.
+   */
   static async sendMeetingNotification (context: TurnContext, notification: MeetingNotification, meetingId?: string): Promise<MeetingNotificationResponse> {
     const activity = context.activity
 
@@ -208,6 +287,15 @@ export class TeamsInfo {
     return await this.getRestClient(context).sendMeetingNotification(meetingId, notification)
   }
 
+  /**
+   * Sends a message to a list of users.
+   *
+   * @param {TurnContext} context - The turn context.
+   * @param {Activity} activity - The activity to send.
+   * @param {string} tenantId - The tenant ID.
+   * @param {TeamsMember[]} members - The list of members.
+   * @returns {Promise<BatchOperationResponse>} - The batch operation response.
+   */
   static async sendMessageToListOfUsers (context: TurnContext, activity: Activity, tenantId: string, members: TeamsMember[]): Promise<BatchOperationResponse> {
     if (!activity) {
       throw new Error('activity is required.')
@@ -222,6 +310,14 @@ export class TeamsInfo {
     return await this.getRestClient(context).sendMessageToListOfUsers(activity, tenantId, members)
   }
 
+  /**
+   * Sends a message to all users in a tenant.
+   *
+   * @param {TurnContext} context - The turn context.
+   * @param {Activity} activity - The activity to send.
+   * @param {string} tenantId - The tenant ID.
+   * @returns {Promise<BatchOperationResponse>} - The batch operation response.
+   */
   static async sendMessageToAllUsersInTenant (context: TurnContext, activity: Activity, tenantId: string): Promise<BatchOperationResponse> {
     if (!activity) {
       throw new Error('activity is required.')
@@ -233,6 +329,15 @@ export class TeamsInfo {
     return await this.getRestClient(context).sendMessageToAllUsersInTenant(activity, tenantId)
   }
 
+  /**
+   * Sends a message to all users in a team.
+   *
+   * @param {TurnContext} context - The turn context.
+   * @param {Activity} activity - The activity to send.
+   * @param {string} tenantId - The tenant ID.
+   * @param {string} teamId - The team ID.
+   * @returns {Promise<BatchOperationResponse>} - The batch operation response.
+   */
   static async sendMessageToAllUsersInTeam (context: TurnContext, activity: Activity, tenantId: string, teamId: string): Promise<BatchOperationResponse> {
     if (!activity) {
       throw new Error('activity is required.')
@@ -246,6 +351,15 @@ export class TeamsInfo {
     return await this.getRestClient(context).sendMessageToAllUsersInTeam(activity, tenantId, teamId)
   }
 
+  /**
+   * Sends a message to a list of channels.
+   *
+   * @param {TurnContext} context - The turn context.
+   * @param {Activity} activity - The activity to send.
+   * @param {string} tenantId - The tenant ID.
+   * @param {TeamsMember[]} members - The list of members.
+   * @returns {Promise<BatchOperationResponse>} - The batch operation response.
+   */
   static async sendMessageToListOfChannels (context: TurnContext, activity: Activity, tenantId: string, members: TeamsMember[]): Promise<BatchOperationResponse> {
     if (!activity) {
       throw new Error('activity is required.')
@@ -259,6 +373,13 @@ export class TeamsInfo {
     return this.getRestClient(context).sendMessageToListOfChannels(activity, tenantId, members)
   }
 
+  /**
+   * Gets the operation state.
+   *
+   * @param {TurnContext} context - The turn context.
+   * @param {string} operationId - The operation ID.
+   * @returns {Promise<BatchOperationStateResponse>} - The operation state response.
+   */
   static async getOperationState (context: TurnContext, operationId: string): Promise<BatchOperationStateResponse> {
     if (!operationId) {
       throw new Error('operationId is required.')
@@ -267,6 +388,13 @@ export class TeamsInfo {
     return await this.getRestClient(context).getOperationState(operationId)
   }
 
+  /**
+   * Gets the failed entries of an operation.
+   *
+   * @param {TurnContext} context - The turn context.
+   * @param {string} operationId - The operation ID.
+   * @returns {Promise<BatchFailedEntriesResponse>} - The failed entries response.
+   */
   static async getFailedEntries (context: TurnContext, operationId: string): Promise<BatchFailedEntriesResponse> {
     if (!operationId) {
       throw new Error('operationId is required.')
@@ -275,6 +403,13 @@ export class TeamsInfo {
     return await this.getRestClient(context).getFailedEntries(operationId)
   }
 
+  /**
+   * Cancels an operation.
+   *
+   * @param {TurnContext} context - The turn context.
+   * @param {string} operationId - The operation ID.
+   * @returns {Promise<CancelOperationResponse>} - The cancel operation response.
+   */
   static async cancelOperation (context: TurnContext, operationId: string): Promise<CancelOperationResponse> {
     if (!operationId) {
       throw new Error('operationId is required.')

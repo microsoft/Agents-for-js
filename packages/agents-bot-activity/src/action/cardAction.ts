@@ -6,17 +6,47 @@
 import { z } from 'zod'
 import { ActionTypes, actionTypesZodSchema } from './actionTypes'
 
+/**
+ * Interface representing a card action.
+ */
 export interface CardAction {
+  /**
+   * Type of the action.
+   */
   type: ActionTypes | string
+  /**
+   * Title of the action.
+   */
   title: string
+  /**
+   * URL of the image associated with the action.
+   */
   image?: string
+  /**
+   * Text associated with the action.
+   */
   text?: string
+  /**
+   * Display text for the action.
+   */
   displayText?: string
+  /**
+   * Value associated with the action.
+   */
   value?: any
+  /**
+   * Channel-specific data associated with the action.
+   */
   channelData?: unknown
+  /**
+   * Alt text for the image.
+   */
   imageAltText?: string
 }
 
+/**
+ * Zod schema for validating CardAction.
+ */
 export const cardActionZodSchema = z.object({
   type: z.union([actionTypesZodSchema, z.string().min(1)]),
   title: z.string().min(1),

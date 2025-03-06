@@ -3,6 +3,9 @@
  * Licensed under the MIT License.
  */
 
+/**
+ * Export statements for various modules.
+ */
 export { ActionTypes } from './action/actionTypes'
 export { CardAction } from './action/cardAction'
 export { SemanticAction } from './action/semanticAction'

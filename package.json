@@ -29,7 +29,8 @@
   },
   "license": "MIT",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "test-bots/*"
   ],
   "dependencies": {
   },
@@ -37,7 +38,7 @@
     "@types/debug": "^4.1.12",
     "@types/express": "^5.0.0",
     "@types/express-serve-static-core": "^5.0.5",
-    "@types/node": "^22.13.5",
+    "@types/node": "^22.13.9",
     "@types/sinon": "^17.0.4",
     "@types/uuid": "^10.0.0",
     "eslint": "^9.21.0",
@@ -46,8 +47,8 @@
     "nerdbank-gitversioning": "^3.7.115",
     "sinon": "^19.0.2",
     "tsx": "^4.19.3",
-    "typedoc": "^0.27.8",
-    "typescript": "^5.7.3"
+    "typedoc": "^0.27.9",
+    "typescript": "^5.8.2"
   },
   "engines": {
     "node": ">=18.0.0"

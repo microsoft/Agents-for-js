@@ -3,6 +3,9 @@
  * Licensed under the MIT License.
  */
 
+/**
+ * Enum representing the different channels a bot can communicate through.
+ */
 export enum Channels {
   Alexa = 'alexa',
   Console = 'console',

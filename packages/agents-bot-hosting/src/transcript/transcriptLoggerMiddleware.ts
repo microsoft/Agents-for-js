@@ -3,10 +3,21 @@ import { ResourceResponse } from '../connector-client'
 import { Middleware } from '../middlewareSet'
 import { TranscriptLogger } from './transcriptLogger'
 import { Activity, ActivityEventNames, ActivityTypes, ConversationReference, RoleTypes } from '@microsoft/agents-bot-activity'
+import { debug } from '../logger'
 
+const appLogger = debug('agents:rest-client')
+
+/**
+ * Middleware for logging bot conversations to a transcript logger.
+ */
 export class TranscriptLoggerMiddleware implements Middleware {
   private logger: TranscriptLogger
 
+  /**
+   * Creates a new instance of the TranscriptLoggerMiddleware class.
+   * @param logger The transcript logger to use.
+   * @throws Will throw an error if the logger is not provided.
+   */
   constructor (logger: TranscriptLogger) {
     if (!logger) {
       throw new Error('TranscriptLoggerMiddleware requires a TranscriptLogger instance.')
@@ -15,6 +26,11 @@ export class TranscriptLoggerMiddleware implements Middleware {
     this.logger = logger
   }
 
+  /**
+   * Called each time the bot processes a turn.
+   * @param context The context object for the turn.
+   * @param next The next middleware or handler to call.
+   */
   async onTurn (context: TurnContext, next: () => Promise<void>): Promise<void> {
     const transcript: Activity[] = []
     if (context.activity && context.activity.from) {
@@ -96,6 +112,11 @@ export class TranscriptLoggerMiddleware implements Middleware {
     }
   }
 
+  /**
+   * Logs an activity to the transcript.
+   * @param transcript The transcript array to log the activity to.
+   * @param activity The activity to log.
+   */
   private logActivity (transcript: Activity[], activity: Activity): void {
     if (!activity.timestamp) {
       activity.timestamp = new Date()
@@ -106,16 +127,25 @@ export class TranscriptLoggerMiddleware implements Middleware {
     }
   }
 
+  /**
+   * Creates a deep copy of an activity.
+   * @param activity The activity to clone.
+   * @returns A deep copy of the activity.
+   */
   private cloneActivity (activity: Partial<Activity>): Activity {
     return Object.assign(<Activity>{}, activity)
   }
 
+  /**
+   * Handles errors that occur during logging.
+   * @param err The error that occurred.
+   */
   private transcriptLoggerErrorHandler (err: Error | any): void {
     if (err instanceof Error) {
-      console.error(`TranscriptLoggerMiddleware logActivity failed: "${err.message}"`)
-      console.error(err.stack)
+      appLogger.error(`TranscriptLoggerMiddleware logActivity failed: "${err.message}"`)
+      appLogger.error(JSON.stringify(err.stack))
     } else {
-      console.error(`TranscriptLoggerMiddleware logActivity failed: "${JSON.stringify(err)}"`)
+      appLogger.error(`TranscriptLoggerMiddleware logActivity failed: "${JSON.stringify(err)}"`)
     }
   }
 }

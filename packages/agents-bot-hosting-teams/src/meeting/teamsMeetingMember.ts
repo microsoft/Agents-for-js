@@ -6,7 +6,17 @@
 import { TeamsChannelAccount } from '../connector-client/teamsChannelAccount'
 import { UserMeetingDetails } from './userMeetingDetails'
 
+/**
+ * Interface representing a member of a Teams meeting.
+ */
 export interface TeamsMeetingMember {
-  user: TeamsChannelAccount
-  meeting: UserMeetingDetails
+  /**
+   * The user who is a member of the meeting.
+   */
+  user: TeamsChannelAccount;
+
+  /**
+   * The meeting details for the user.
+   */
+  meeting: UserMeetingDetails;
 }

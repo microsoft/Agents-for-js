@@ -5,6 +5,9 @@
 
 import { z } from 'zod'
 
+/**
+ * Enum representing the types of actions.
+ */
 export enum ActionTypes {
   OpenUrl = 'openUrl',
   ImBack = 'imBack',
@@ -19,4 +22,7 @@ export enum ActionTypes {
   OpenApp = 'openApp',
 }
 
+/**
+ * Zod schema for validating ActionTypes.
+ */
 export const actionTypesZodSchema = z.enum(['openUrl', 'imBack', 'postBack', 'playAudio', 'showImage', 'downloadFile', 'signin', 'call', 'messageBack', 'openApp'])

@@ -7,7 +7,7 @@
 			"script": "build",
 			"group": {
 				"kind": "build",
-				"isDefault": false
+				"isDefault": true
 			},
 			"problemMatcher": [],
 			"detail": "tsc --build --verbose tsconfig.build.json"
@@ -95,22 +95,6 @@
 				"build_packages"
 			],
 			"path": "test-bots/application-style"
-		},
-		{
-			"label": "build_all",
-			"group": {
-				"kind": "build",
-				"isDefault": true
-			},
-			"problemMatcher": [],
-			"dependsOrder": "sequence",
-			"dependsOn": [
-				"build_echo",
-				"build_webchat",
-				"build_copilot_client",
-				"build_state",
-				"build_teams"
-			]
 		}
 	]
 }

@@ -7,7 +7,6 @@
   "license": "MIT",
   "main": "./dist/index.js",
   "scripts": {
-    "prebuild": "npm i",
     "build": "tsc --build",
     "prestart": "npm run build",
     "start": "node --env-file .env ./dist/index.js"
@@ -23,8 +22,7 @@
     "express-rate-limit": "^7.5.0"
   },
   "devDependencies": {
-    "@types/express": "^5.0.0",
-    "typescript": "^5.7.3"
+    "@types/express": "^5.0.0"
   },
   "keywords": []
 }

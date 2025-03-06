@@ -6,6 +6,9 @@
 import { z } from 'zod'
 import { roleTypeZodSchema, RoleTypes } from './roleTypes'
 
+/**
+ * Interface representing a conversation account.
+ */
 export interface ConversationAccount {
   id: string
   conversationType?: string
@@ -17,6 +20,9 @@ export interface ConversationAccount {
   properties?: unknown
 }
 
+/**
+ * Zod schema for validating a conversation account.
+ */
 export const conversationAccountZodSchema = z.object({
   isGroup: z.boolean().optional(),
   conversationType: z.string().min(1).optional(),

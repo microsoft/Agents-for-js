@@ -5,6 +5,12 @@
 
 import { TabResponsePayload } from './tabResponsePayload'
 
+/**
+ * Interface representing a tab response.
+ */
 export interface TabResponse {
+  /**
+   * Payload of the tab response.
+   */
   tab: TabResponsePayload
 }

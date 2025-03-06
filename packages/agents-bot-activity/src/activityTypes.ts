@@ -5,6 +5,9 @@
 
 import { z } from 'zod'
 
+/**
+ * Enum representing activity types.
+ */
 export enum ActivityTypes {
   Message = 'message',
   ContactRelationUpdate = 'contactRelationUpdate',
@@ -27,6 +30,9 @@ export enum ActivityTypes {
   Delay = 'delay'
 }
 
+/**
+ * Zod schema for validating an ActivityTypes enum.
+ */
 export const activityTypesZodSchema = z.enum([
   'message',
   'contactRelationUpdate',

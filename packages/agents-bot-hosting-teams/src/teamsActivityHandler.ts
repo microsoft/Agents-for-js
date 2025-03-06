@@ -49,6 +49,11 @@ const TeamsMeetingEndT = z
   })
 
 export class TeamsActivityHandler extends ActivityHandler {
+  /**
+   * Handles invoke activities.
+   * @param {TurnContext} context - The context object for the turn.
+   * @returns {Promise<InvokeResponse>} The invoke response.
+   */
   protected async onInvokeActivity (context: TurnContext): Promise<InvokeResponse> {
     let runEvents = true
     try {
@@ -161,18 +166,41 @@ export class TeamsActivityHandler extends ActivityHandler {
     }
   }
 
+  /**
+   * Handles card action invoke.
+   * @param {TurnContext} _context - The context object for the turn.
+   * @returns {Promise<InvokeResponse>} The invoke response.
+   */
   protected async handleTeamsCardActionInvoke (_context: TurnContext): Promise<InvokeResponse> {
     throw new Error('NotImplemented')
   }
 
+  /**
+   * Handles config fetch.
+   * @param {TurnContext} _context - The context object for the turn.
+   * @param {any} _configData - The config data.
+   * @returns {Promise<ConfigResponse>} The config response.
+   */
   protected async handleTeamsConfigFetch (_context: TurnContext, _configData: any): Promise<ConfigResponse> {
     throw new Error('NotImplemented')
   }
 
+  /**
+   * Handles config submit.
+   * @param {TurnContext} _context - The context object for the turn.
+   * @param {any} _configData - The config data.
+   * @returns {Promise<ConfigResponse>} The config response.
+   */
   protected async handleTeamsConfigSubmit (_context: TurnContext, _configData: any): Promise<ConfigResponse> {
     throw new Error('NotImplemented')
   }
 
+  /**
+   * Handles file consent.
+   * @param {TurnContext} context - The context object for the turn.
+   * @param {FileConsentCardResponse} fileConsentCardResponse - The file consent card response.
+   * @returns {Promise<void>}
+   */
   protected async handleTeamsFileConsent (
     context: TurnContext,
     fileConsentCardResponse: FileConsentCardResponse
@@ -187,6 +215,12 @@ export class TeamsActivityHandler extends ActivityHandler {
     }
   }
 
+  /**
+   * Handles file consent accept.
+   * @param {TurnContext} _context - The context object for the turn.
+   * @param {FileConsentCardResponse} _fileConsentCardResponse - The file consent card response.
+   * @returns {Promise<void>}
+   */
   protected async handleTeamsFileConsentAccept (
     _context: TurnContext,
     _fileConsentCardResponse: FileConsentCardResponse
@@ -194,6 +228,12 @@ export class TeamsActivityHandler extends ActivityHandler {
     throw new Error('NotImplemented')
   }
 
+  /**
+   * Handles file consent decline.
+   * @param {TurnContext} _context - The context object for the turn.
+   * @param {FileConsentCardResponse} _fileConsentCardResponse - The file consent card response.
+   * @returns {Promise<void>}
+   */
   protected async handleTeamsFileConsentDecline (
     _context: TurnContext,
     _fileConsentCardResponse: FileConsentCardResponse
@@ -201,6 +241,12 @@ export class TeamsActivityHandler extends ActivityHandler {
     throw new Error('NotImplemented')
   }
 
+  /**
+   * Handles O365 connector card action.
+   * @param {TurnContext} _context - The context object for the turn.
+   * @param {O365ConnectorCardActionQuery} _query - The O365 connector card action query.
+   * @returns {Promise<void>}
+   */
   protected async handleTeamsO365ConnectorCardAction (
     _context: TurnContext,
     _query: O365ConnectorCardActionQuery
@@ -208,15 +254,12 @@ export class TeamsActivityHandler extends ActivityHandler {
     throw new Error('NotImplemented')
   }
 
-  // protected async onSignInInvoke (context: TurnContext): Promise<void> {
-  //   switch (context.activity.name) {
-  //     case verifyStateOperationName:
-  //       return await this.handleTeamsSigninVerifyState(context, context.activity.value as SigninStateVerificationQuery)
-  //     case tokenExchangeOperationName:
-  //       return await this.handleTeamsSigninTokenExchange(context, context.activity.value as SigninStateVerificationQuery)
-  //   }
-  // }
-
+  /**
+   * Handles sign-in verify state.
+   * @param {TurnContext} _context - The context object for the turn.
+   * @param {SigninStateVerificationQuery} _query - The sign-in state verification query.
+   * @returns {Promise<void>}
+   */
   protected async handleTeamsSigninVerifyState (
     _context: TurnContext,
     _query: SigninStateVerificationQuery
@@ -224,6 +267,12 @@ export class TeamsActivityHandler extends ActivityHandler {
     throw new Error('NotImplemented')
   }
 
+  /**
+   * Handles sign-in token exchange.
+   * @param {TurnContext} _context - The context object for the turn.
+   * @param {SigninStateVerificationQuery} _query - The sign-in state verification query.
+   * @returns {Promise<void>}
+   */
   protected async handleTeamsSigninTokenExchange (
     _context: TurnContext,
     _query: SigninStateVerificationQuery
@@ -231,6 +280,12 @@ export class TeamsActivityHandler extends ActivityHandler {
     throw new Error('NotImplemented')
   }
 
+  /**
+   * Handles messaging extension card button clicked.
+   * @param {TurnContext} _context - The context object for the turn.
+   * @param {any} _cardData - The card data.
+   * @returns {Promise<void>}
+   */
   protected async handleTeamsMessagingExtensionCardButtonClicked (
     _context: TurnContext,
     _cardData: any
@@ -238,6 +293,12 @@ export class TeamsActivityHandler extends ActivityHandler {
     throw new Error('NotImplemented')
   }
 
+  /**
+   * Handles task module fetch.
+   * @param {TurnContext} _context - The context object for the turn.
+   * @param {TaskModuleRequest} _taskModuleRequest - The task module request.
+   * @returns {Promise<TaskModuleResponse>} The task module response.
+   */
   protected async handleTeamsTaskModuleFetch (
     _context: TurnContext,
     _taskModuleRequest: TaskModuleRequest
@@ -245,6 +306,12 @@ export class TeamsActivityHandler extends ActivityHandler {
     throw new Error('NotImplemented')
   }
 
+  /**
+   * Handles task module submit.
+   * @param {TurnContext} _context - The context object for the turn.
+   * @param {TaskModuleRequest} _taskModuleRequest - The task module request.
+   * @returns {Promise<TaskModuleResponse>} The task module response.
+   */
   protected async handleTeamsTaskModuleSubmit (
     _context: TurnContext,
     _taskModuleRequest: TaskModuleRequest
@@ -252,14 +319,32 @@ export class TeamsActivityHandler extends ActivityHandler {
     throw new Error('NotImplemented')
   }
 
+  /**
+   * Handles tab fetch.
+   * @param {TurnContext} _context - The context object for the turn.
+   * @param {TabRequest} _tabRequest - The tab request.
+   * @returns {Promise<TabResponse>} The tab response.
+   */
   protected async handleTeamsTabFetch (_context: TurnContext, _tabRequest: TabRequest): Promise<TabResponse> {
     throw new Error('NotImplemented')
   }
 
+  /**
+   * Handles tab submit.
+   * @param {TurnContext} _context - The context object for the turn.
+   * @param {TabSubmit} _tabSubmit - The tab submit.
+   * @returns {Promise<TabResponse>} The tab response.
+   */
   protected async handleTeamsTabSubmit (_context: TurnContext, _tabSubmit: TabSubmit): Promise<TabResponse> {
     throw new Error('NotImplemented')
   }
 
+  /**
+   * Handles app-based link query.
+   * @param {TurnContext} _context - The context object for the turn.
+   * @param {AppBasedLinkQuery} _query - The app-based link query.
+   * @returns {Promise<MessagingExtensionResponse>} The messaging extension response.
+   */
   protected async handleTeamsAppBasedLinkQuery (
     _context: TurnContext,
     _query: AppBasedLinkQuery
@@ -267,6 +352,12 @@ export class TeamsActivityHandler extends ActivityHandler {
     throw new Error('NotImplemented')
   }
 
+  /**
+   * Handles anonymous app-based link query.
+   * @param {TurnContext} _context - The context object for the turn.
+   * @param {AppBasedLinkQuery} _query - The app-based link query.
+   * @returns {Promise<MessagingExtensionResponse>} The messaging extension response.
+   */
   protected async handleTeamsAnonymousAppBasedLinkQuery (
     _context: TurnContext,
     _query: AppBasedLinkQuery
@@ -274,6 +365,12 @@ export class TeamsActivityHandler extends ActivityHandler {
     throw new Error('NotImplemented')
   }
 
+  /**
+   * Handles messaging extension query.
+   * @param {TurnContext} _context - The context object for the turn.
+   * @param {MessagingExtensionQuery} _query - The messaging extension query.
+   * @returns {Promise<MessagingExtensionResponse>} The messaging extension response.
+   */
   protected async handleTeamsMessagingExtensionQuery (
     _context: TurnContext,
     _query: MessagingExtensionQuery
@@ -281,6 +378,12 @@ export class TeamsActivityHandler extends ActivityHandler {
     throw new Error('NotImplemented')
   }
 
+  /**
+   * Handles messaging extension select item.
+   * @param {TurnContext} _context - The context object for the turn.
+   * @param {any} _query - The query.
+   * @returns {Promise<MessagingExtensionResponse>} The messaging extension response.
+   */
   protected async handleTeamsMessagingExtensionSelectItem (
     _context: TurnContext,
     _query: any
@@ -288,6 +391,12 @@ export class TeamsActivityHandler extends ActivityHandler {
     throw new Error('NotImplemented')
   }
 
+  /**
+   * Handles messaging extension submit action dispatch.
+   * @param {TurnContext} context - The context object for the turn.
+   * @param {MessagingExtensionAction} action - The messaging extension action.
+   * @returns {Promise<MessagingExtensionActionResponse>} The messaging extension action response.
+   */
   protected async handleTeamsMessagingExtensionSubmitActionDispatch (
     context: TurnContext,
     action: MessagingExtensionAction
@@ -306,6 +415,12 @@ export class TeamsActivityHandler extends ActivityHandler {
     }
   }
 
+  /**
+   * Handles messaging extension submit action.
+   * @param {TurnContext} _context - The context object for the turn.
+   * @param {MessagingExtensionAction} _action - The messaging extension action.
+   * @returns {Promise<MessagingExtensionActionResponse>} The messaging extension action response.
+   */
   protected async handleTeamsMessagingExtensionSubmitAction (
     _context: TurnContext,
     _action: MessagingExtensionAction
@@ -313,6 +428,12 @@ export class TeamsActivityHandler extends ActivityHandler {
     throw new Error('NotImplemented')
   }
 
+  /**
+   * Handles messaging extension bot message preview edit.
+   * @param {TurnContext} _context - The context object for the turn.
+   * @param {MessagingExtensionAction} _action - The messaging extension action.
+   * @returns {Promise<MessagingExtensionActionResponse>} The messaging extension action response.
+   */
   protected async handleTeamsMessagingExtensionBotMessagePreviewEdit (
     _context: TurnContext,
     _action: MessagingExtensionAction
@@ -320,6 +441,12 @@ export class TeamsActivityHandler extends ActivityHandler {
     throw new Error('NotImplemented')
   }
 
+  /**
+   * Handles messaging extension bot message preview send.
+   * @param {TurnContext} _context - The context object for the turn.
+   * @param {MessagingExtensionAction} _action - The messaging extension action.
+   * @returns {Promise<MessagingExtensionActionResponse>} The messaging extension action response.
+   */
   protected async handleTeamsMessagingExtensionBotMessagePreviewSend (
     _context: TurnContext,
     _action: MessagingExtensionAction
@@ -327,6 +454,12 @@ export class TeamsActivityHandler extends ActivityHandler {
     throw new Error('NotImplemented')
   }
 
+  /**
+   * Handles messaging extension fetch task.
+   * @param {TurnContext} _context - The context object for the turn.
+   * @param {MessagingExtensionAction} _action - The messaging extension action.
+   * @returns {Promise<MessagingExtensionActionResponse>} The messaging extension action response.
+   */
   protected async handleTeamsMessagingExtensionFetchTask (
     _context: TurnContext,
     _action: MessagingExtensionAction
@@ -334,6 +467,12 @@ export class TeamsActivityHandler extends ActivityHandler {
     throw new Error('NotImplemented')
   }
 
+  /**
+   * Handles messaging extension configuration query setting URL.
+   * @param {TurnContext} _context - The context object for the turn.
+   * @param {MessagingExtensionQuery} _query - The messaging extension query.
+   * @returns {Promise<MessagingExtensionResponse>} The messaging extension response.
+   */
   protected async handleTeamsMessagingExtensionConfigurationQuerySettingUrl (
     _context: TurnContext,
     _query: MessagingExtensionQuery
@@ -341,10 +480,21 @@ export class TeamsActivityHandler extends ActivityHandler {
     throw new Error('NotImplemented')
   }
 
+  /**
+   * Handles messaging extension configuration setting.
+   * @param {TurnContext} _context - The context object for the turn.
+   * @param {any} _settings - The settings.
+   * @returns {Promise<void>}
+   */
   protected async handleTeamsMessagingExtensionConfigurationSetting (_context: TurnContext, _settings: any): Promise<void> {
     throw new Error('NotImplemented')
   }
 
+  /**
+   * Dispatches conversation update activity.
+   * @param {TurnContext} context - The context object for the turn.
+   * @returns {Promise<void>}
+   */
   protected async dispatchConversationUpdateActivity (context: TurnContext): Promise<void> {
     if (context.activity.channelId === 'msteams') {
       const channelData = validateTeamsChannelData(context.activity.channelData)
@@ -400,6 +550,11 @@ export class TeamsActivityHandler extends ActivityHandler {
     }
   }
 
+  /**
+   * Dispatches message update activity.
+   * @param {TurnContext} context - The context object for the turn.
+   * @returns {Promise<void>}
+   */
   protected async dispatchMessageUpdateActivity (context: TurnContext): Promise<void> {
     if (context.activity.channelId === 'msteams') {
       const channelData = validateTeamsChannelData(context.activity.channelData)
@@ -419,6 +574,11 @@ export class TeamsActivityHandler extends ActivityHandler {
     }
   }
 
+  /**
+   * Dispatches message delete activity.
+   * @param {TurnContext} context - The context object for the turn.
+   * @returns {Promise<void>}
+   */
   protected async dispatchMessageDeleteActivity (context: TurnContext): Promise<void> {
     if (context.activity.channelId === 'msteams') {
       const channelData = validateTeamsChannelData(context.activity.channelData)
@@ -435,18 +595,38 @@ export class TeamsActivityHandler extends ActivityHandler {
     }
   }
 
+  /**
+   * Handles Teams message undelete.
+   * @param {TurnContext} context - The context object for the turn.
+   * @returns {Promise<void>}
+   */
   protected async onTeamsMessageUndelete (context: TurnContext): Promise<void> {
     await this.handle(context, 'TeamsMessageUndelete', this.defaultNextEvent(context))
   }
 
+  /**
+   * Handles Teams message edit.
+   * @param {TurnContext} context - The context object for the turn.
+   * @returns {Promise<void>}
+   */
   protected async onTeamsMessageEdit (context: TurnContext): Promise<void> {
     await this.handle(context, 'TeamsMessageEdit', this.defaultNextEvent(context))
   }
 
+  /**
+   * Handles Teams message soft delete.
+   * @param {TurnContext} context - The context object for the turn.
+   * @returns {Promise<void>}
+   */
   protected async onTeamsMessageSoftDelete (context: TurnContext): Promise<void> {
     await this.handle(context, 'onTeamsMessageSoftDelete', this.defaultNextEvent(context))
   }
 
+  /**
+   * Handles Teams members added.
+   * @param {TurnContext} context - The context object for the turn.
+   * @returns {Promise<void>}
+   */
   protected async onTeamsMembersAdded (context: TurnContext): Promise<void> {
     if ('TeamsMembersAdded' in this.handlers && this.handlers.TeamsMembersAdded.length > 0) {
       if (!context.activity || (context.activity.membersAdded == null)) {
@@ -490,6 +670,11 @@ export class TeamsActivityHandler extends ActivityHandler {
     }
   }
 
+  /**
+   * Handles Teams members removed.
+   * @param {TurnContext} context - The context object for the turn.
+   * @returns {Promise<void>}
+   */
   protected async onTeamsMembersRemoved (context: TurnContext): Promise<void> {
     if ('TeamsMembersRemoved' in this.handlers && this.handlers.TeamsMembersRemoved.length > 0) {
       await this.handle(context, 'TeamsMembersRemoved', this.defaultNextEvent(context))
@@ -498,64 +683,134 @@ export class TeamsActivityHandler extends ActivityHandler {
     }
   }
 
+  /**
+   * Handles Teams channel created.
+   * @param {TurnContext} context - The context object for the turn.
+   * @returns {Promise<void>}
+   */
   protected async onTeamsChannelCreated (context: TurnContext): Promise<void> {
     await this.handle(context, 'TeamsChannelCreated', this.defaultNextEvent(context))
   }
 
+  /**
+   * Handles Teams channel deleted.
+   * @param {TurnContext} context - The context object for the turn.
+   * @returns {Promise<void>}
+   */
   protected async onTeamsChannelDeleted (context: TurnContext): Promise<void> {
     await this.handle(context, 'TeamsChannelDeleted', this.defaultNextEvent(context))
   }
 
+  /**
+   * Handles Teams channel renamed.
+   * @param {TurnContext} context - The context object for the turn.
+   * @returns {Promise<void>}
+   */
   protected async onTeamsChannelRenamed (context: TurnContext): Promise<void> {
     await this.handle(context, 'TeamsChannelRenamed', this.defaultNextEvent(context))
   }
 
+  /**
+   * Handles Teams team archived.
+   * @param {TurnContext} context - The context object for the turn.
+   * @returns {Promise<void>}
+   */
   protected async onTeamsTeamArchived (context: TurnContext): Promise<void> {
     await this.handle(context, 'TeamsTeamArchived', this.defaultNextEvent(context))
   }
 
+  /**
+   * Handles Teams team deleted.
+   * @param {TurnContext} context - The context object for the turn.
+   * @returns {Promise<void>}
+   */
   protected async onTeamsTeamDeleted (context: TurnContext): Promise<void> {
     await this.handle(context, 'TeamsTeamDeleted', this.defaultNextEvent(context))
   }
 
+  /**
+   * Handles Teams team hard deleted.
+   * @param {TurnContext} context - The context object for the turn.
+   * @returns {Promise<void>}
+   */
   protected async onTeamsTeamHardDeleted (context: TurnContext): Promise<void> {
     await this.handle(context, 'TeamsTeamHardDeleted', this.defaultNextEvent(context))
   }
 
+  /**
+   * Handles Teams channel restored.
+   * @param {TurnContext} context - The context object for the turn.
+   * @returns {Promise<void>}
+   */
   protected async onTeamsChannelRestored (context: TurnContext): Promise<void> {
     await this.handle(context, 'TeamsChannelRestored', this.defaultNextEvent(context))
   }
 
+  /**
+   * Handles Teams team renamed.
+   * @param {TurnContext} context - The context object for the turn.
+   * @returns {Promise<void>}
+   */
   protected async onTeamsTeamRenamed (context: TurnContext): Promise<void> {
     await this.handle(context, 'TeamsTeamRenamed', this.defaultNextEvent(context))
   }
 
+  /**
+   * Handles Teams team restored.
+   * @param {TurnContext} context - The context object for the turn.
+   * @returns {Promise<void>}
+   */
   protected async onTeamsTeamRestored (context: TurnContext): Promise<void> {
     await this.handle(context, 'TeamsTeamRestored', this.defaultNextEvent(context))
   }
 
+  /**
+   * Handles Teams team unarchived.
+   * @param {TurnContext} context - The context object for the turn.
+   * @returns {Promise<void>}
+   */
   protected async onTeamsTeamUnarchived (context: TurnContext): Promise<void> {
     await this.handle(context, 'TeamsTeamUnarchived', this.defaultNextEvent(context))
   }
 
+  /**
+   * Registers a handler for Teams message undelete event.
+   * @param {function} handler - The handler function.
+   * @returns {this}
+   */
   onTeamsMessageUndeleteEvent (handler: (context: TurnContext, next: () => Promise<void>) => Promise<void>): this {
     return this.on('TeamsMessageUndelete', async (context, next) => {
       await handler(context, next)
     })
   }
 
+  /**
+   * Registers a handler for Teams message edit event.
+   * @param {function} handler - The handler function.
+   * @returns {this}
+   */
   onTeamsMessageEditEvent (handler: (context: TurnContext, next: () => Promise<void>) => Promise<void>): this {
     return this.on('TeamsMessageEdit', async (context, next) => {
       await handler(context, next)
     })
   }
 
+  /**
+   * Registers a handler for Teams message soft delete event.
+   * @param {function} handler - The handler function.
+   * @returns {this}
+   */
   onTeamsMessageSoftDeleteEvent (handler: (context: TurnContext, next: () => Promise<void>) => Promise<void>): this {
     return this.on('onTeamsMessageSoftDelete', async (context, next) => {
       await handler(context, next)
     })
   }
 
+  /**
+   * Registers a handler for Teams members added event.
+   * @param {function} handler - The handler function.
+   * @returns {this}
+   */
   onTeamsMembersAddedEvent (
     handler: (
       membersAdded: TeamsChannelAccount[],
@@ -570,6 +825,11 @@ export class TeamsActivityHandler extends ActivityHandler {
     })
   }
 
+  /**
+   * Registers a handler for Teams members removed event.
+   * @param {function} handler - The handler function.
+   * @returns {this}
+   */
   onTeamsMembersRemovedEvent (
     handler: (
       membersRemoved: TeamsChannelAccount[],
@@ -584,6 +844,11 @@ export class TeamsActivityHandler extends ActivityHandler {
     })
   }
 
+  /**
+   * Registers a handler for Teams channel created event.
+   * @param {function} handler - The handler function.
+   * @returns {this}
+   */
   onTeamsChannelCreatedEvent (
     handler: (
       channelInfo: ChannelInfo,
@@ -598,6 +863,11 @@ export class TeamsActivityHandler extends ActivityHandler {
     })
   }
 
+  /**
+   * Registers a handler for Teams channel deleted event.
+   * @param {function} handler - The handler function.
+   * @returns {this}
+   */
   onTeamsChannelDeletedEvent (
     handler: (
       channelInfo: ChannelInfo,
@@ -612,6 +882,11 @@ export class TeamsActivityHandler extends ActivityHandler {
     })
   }
 
+  /**
+   * Registers a handler for Teams channel renamed event.
+   * @param {function} handler - The handler function.
+   * @returns {this}
+   */
   onTeamsChannelRenamedEvent (
     handler: (
       channelInfo: ChannelInfo,
@@ -626,6 +901,11 @@ export class TeamsActivityHandler extends ActivityHandler {
     })
   }
 
+  /**
+   * Registers a handler for Teams team archived event.
+   * @param {function} handler - The handler function.
+   * @returns {this}
+   */
   onTeamsTeamArchivedEvent (
     handler: (teamInfo: TeamInfo, context: TurnContext, next: () => Promise<void>) => Promise<void>
   ): this {
@@ -635,6 +915,11 @@ export class TeamsActivityHandler extends ActivityHandler {
     })
   }
 
+  /**
+   * Registers a handler for Teams team deleted event.
+   * @param {function} handler - The handler function.
+   * @returns {this}
+   */
   onTeamsTeamDeletedEvent (
     handler: (teamInfo: TeamInfo, context: TurnContext, next: () => Promise<void>) => Promise<void>
   ): this {
@@ -644,6 +929,11 @@ export class TeamsActivityHandler extends ActivityHandler {
     })
   }
 
+  /**
+   * Registers a handler for Teams team hard deleted event.
+   * @param {function} handler - The handler function.
+   * @returns {this}
+   */
   onTeamsTeamHardDeletedEvent (
     handler: (teamInfo: TeamInfo, context: TurnContext, next: () => Promise<void>) => Promise<void>
   ): this {
@@ -653,6 +943,11 @@ export class TeamsActivityHandler extends ActivityHandler {
     })
   }
 
+  /**
+   * Registers a handler for Teams channel restored event.
+   * @param {function} handler - The handler function.
+   * @returns {this}
+   */
   onTeamsChannelRestoredEvent (
     handler: (
       channelInfo: ChannelInfo,
@@ -667,6 +962,11 @@ export class TeamsActivityHandler extends ActivityHandler {
     })
   }
 
+  /**
+   * Registers a handler for Teams team renamed event.
+   * @param {function} handler - The handler function.
+   * @returns {this}
+   */
   onTeamsTeamRenamedEvent (
     handler: (teamInfo: TeamInfo, context: TurnContext, next: () => Promise<void>) => Promise<void>
   ): this {
@@ -676,6 +976,11 @@ export class TeamsActivityHandler extends ActivityHandler {
     })
   }
 
+  /**
+   * Registers a handler for Teams team restored event.
+   * @param {function} handler - The handler function.
+   * @returns {this}
+   */
   onTeamsTeamRestoredEvent (
     handler: (teamInfo: TeamInfo, context: TurnContext, next: () => Promise<void>) => Promise<void>
   ): this {
@@ -685,6 +990,11 @@ export class TeamsActivityHandler extends ActivityHandler {
     })
   }
 
+  /**
+   * Registers a handler for Teams team unarchived event.
+   * @param {function} handler - The handler function.
+   * @returns {this}
+   */
   onTeamsTeamUnarchivedEvent (
     handler: (teamInfo: TeamInfo, context: TurnContext, next: () => Promise<void>) => Promise<void>
   ): this {
@@ -694,6 +1004,11 @@ export class TeamsActivityHandler extends ActivityHandler {
     })
   }
 
+  /**
+   * Dispatches event activity.
+   * @param {TurnContext} context - The context object for the turn.
+   * @returns {Promise<void>}
+   */
   protected async dispatchEventActivity (context: TurnContext): Promise<void> {
     if (context.activity.channelId === Channels.Msteams) {
       switch (context.activity.name) {
@@ -713,26 +1028,56 @@ export class TeamsActivityHandler extends ActivityHandler {
     return await super.dispatchEventActivity(context)
   }
 
+  /**
+   * Handles Teams meeting start.
+   * @param {TurnContext} context - The context object for the turn.
+   * @returns {Promise<void>}
+   */
   protected async onTeamsMeetingStart (context: TurnContext): Promise<void> {
     await this.handle(context, 'TeamsMeetingStart', this.defaultNextEvent(context))
   }
 
+  /**
+   * Handles Teams meeting end.
+   * @param {TurnContext} context - The context object for the turn.
+   * @returns {Promise<void>}
+   */
   protected async onTeamsMeetingEnd (context: TurnContext): Promise<void> {
     await this.handle(context, 'TeamsMeetingEnd', this.defaultNextEvent(context))
   }
 
+  /**
+   * Handles Teams read receipt.
+   * @param {TurnContext} context - The context object for the turn.
+   * @returns {Promise<void>}
+   */
   protected async onTeamsReadReceipt (context: TurnContext): Promise<void> {
     await this.handle(context, 'TeamsReadReceipt', this.defaultNextEvent(context))
   }
 
+  /**
+   * Handles Teams meeting participants join.
+   * @param {TurnContext} context - The context object for the turn.
+   * @returns {Promise<void>}
+   */
   protected async onTeamsMeetingParticipantsJoin (context: TurnContext): Promise<void> {
     await this.handle(context, 'TeamsMeetingParticipantsJoin', this.defaultNextEvent(context))
   }
 
+  /**
+   * Handles Teams meeting participants leave.
+   * @param {TurnContext} context - The context object for the turn.
+   * @returns {Promise<void>}
+   */
   protected async onTeamsMeetingParticipantsLeave (context: TurnContext): Promise<void> {
     await this.handle(context, 'TeamsMeetingParticipantsLeave', this.defaultNextEvent(context))
   }
 
+  /**
+   * Registers a handler for Teams meeting start event.
+   * @param {function} handler - The handler function.
+   * @returns {this}
+   */
   onTeamsMeetingStartEvent (
     handler: (meeting: MeetingStartEventDetails, context: TurnContext, next: () => Promise<void>) => Promise<void>
   ): this {
@@ -752,6 +1097,11 @@ export class TeamsActivityHandler extends ActivityHandler {
     })
   }
 
+  /**
+   * Registers a handler for Teams meeting end event.
+   * @param {function} handler - The handler function.
+   * @returns {this}
+   */
   onTeamsMeetingEndEvent (
     handler: (meeting: MeetingEndEventDetails, context: TurnContext, next: () => Promise<void>) => Promise<void>
   ): this {
@@ -771,6 +1121,11 @@ export class TeamsActivityHandler extends ActivityHandler {
     })
   }
 
+  /**
+   * Registers a handler for Teams read receipt event.
+   * @param {function} handler - The handler function.
+   * @returns {this}
+   */
   onTeamsReadReceiptEvent (
     handler: (receiptInfo: ReadReceiptInfo, context: TurnContext, next: () => Promise<void>) => Promise<void>
   ): this {
@@ -780,6 +1135,11 @@ export class TeamsActivityHandler extends ActivityHandler {
     })
   }
 
+  /**
+   * Registers a handler for Teams meeting participants join event.
+   * @param {function} handler - The handler function.
+   * @returns {this}
+   */
   onTeamsMeetingParticipantsJoinEvent (
     handler: (
       meeting: MeetingParticipantsEventDetails,
@@ -799,6 +1159,11 @@ export class TeamsActivityHandler extends ActivityHandler {
     })
   }
 
+  /**
+   * Registers a handler for Teams meeting participants leave event.
+   * @param {function} handler - The handler function.
+   * @returns {this}
+   */
   onTeamsMeetingParticipantsLeaveEvent (
     handler: (
       meeting: MeetingParticipantsEventDetails,
