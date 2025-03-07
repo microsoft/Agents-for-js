@@ -8,6 +8,9 @@ import { InputFile, InputFileDownloader } from './inputFileDownloader'
 import { TurnState } from './turnState'
 import { TurnContext } from '../turnContext'
 import { Attachment } from '@microsoft/agents-bot-activity'
+import { debug } from '../logger'
+
+const logger = debug('agents:attachmentDownloader')
 
 export class AttachmentDownloader<TState extends TurnState = TurnState> implements InputFileDownloader<TState> {
   private _httpClient: AxiosInstance
@@ -19,6 +22,7 @@ export class AttachmentDownloader<TState extends TurnState = TurnState> implemen
   public async downloadFiles (context: TurnContext, state: TState): Promise<InputFile[]> {
     const attachments = context.activity.attachments?.filter((a) => !a.contentType.startsWith('text/html'))
     if (!attachments || attachments.length === 0) {
+      logger.info('No Attachments to download')
       return Promise.resolve([])
     }
 
@@ -32,6 +36,7 @@ export class AttachmentDownloader<TState extends TurnState = TurnState> implemen
       }
     }
 
+    logger.info('Attachments downloaded')
     return files
   }
 

@@ -10,6 +10,9 @@ import { Memory } from './memoryFork'
 import { InputFile } from './inputFileDownloader'
 import { TurnStateEntry } from './turnStateEntry'
 import { TurnContext } from '../turnContext'
+import { debug } from '../logger'
+
+const logger = debug('agents:turnState')
 
 const CONVERSATION_SCOPE = 'conversation'
 
@@ -206,7 +209,8 @@ export class TurnState<
           this._isLoaded = true
           this._loadingPromise = undefined
           resolve(true)
-        } catch (err) {
+        } catch (err: any) {
+          logger.error(err)
           this._loadingPromise = undefined
           reject(err)
         }

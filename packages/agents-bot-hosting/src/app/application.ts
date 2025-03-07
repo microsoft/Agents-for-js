@@ -14,6 +14,9 @@ import { TurnEvents } from './turnEvents'
 import { AppRoute } from './appRoute'
 import { TurnContext } from '../turnContext'
 import { ResourceResponse } from '../connector-client'
+import { debug } from '../logger'
+
+const logger = debug('agents:application')
 
 const TYPING_TIMER_DELAY = 1000
 type ApplicationEventHandler<TState extends TurnState> = (context: TurnContext, state: TState) => Promise<boolean>
@@ -185,6 +188,9 @@ export class Application<TState extends TurnState> {
         }
 
         return false
+      } catch (err: any) {
+        logger.error(err)
+        throw err
       } finally {
         this.stopTypingTimer()
       }
@@ -243,7 +249,8 @@ export class Application<TState extends TurnState> {
       const onTimeout = async () => {
         try {
           await context.sendActivity(Activity.fromObject({ type: ActivityTypes.Typing }))
-        } catch (err) {
+        } catch (err: any) {
+          logger.error(err)
           this._typingTimer = undefined
           timerRunning = false
         }
@@ -311,7 +318,8 @@ export class Application<TState extends TurnState> {
 
             const result = await handler(ctx)
             resolve(result)
-          } catch (err) {
+          } catch (err: any) {
+            logger.error(err)
             reject(err)
           }
         })
