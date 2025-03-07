@@ -101,32 +101,31 @@ export class Application<TState extends TurnState> {
     return this
   }
 
-  private continueConversationAsync (
-    context: TurnContext,
-    logic: (context: TurnContext) => Promise<void>
-  ): Promise<void>
-  private continueConversationAsync (
-    conversationReference: Partial<ConversationReference>,
-    logic: (context: TurnContext) => Promise<void>
-  ): Promise<void>
   private async continueConversationAsync (
-    context: TurnContext,
+    conversationReferenceOrContext: ConversationReference | TurnContext,
     logic: (context: TurnContext) => Promise<void>
   ): Promise<void> {
     if (!this._adapter) {
       throw new Error(
-        'You must configure the Application with an \'adapter\' before calling Application.continueConversationAsync()'
+        "You must configure the Application with an 'adapter' before calling Application.continueConversationAsync()"
       )
     }
 
     if (!this.options.botAppId) {
       console.warn(
-        'Calling Application.continueConversationAsync() without a configured \'botAppId\'. In production environments a \'botAppId\' is required.'
+        "Calling Application.continueConversationAsync() without a configured 'botAppId'. In production environments, a 'botAppId' is required."
       )
     }
 
-    const reference = context.activity.getConversationReference()
-    await this.adapter.continueConversation(reference, logic)
+    let reference: ConversationReference
+
+    if ('activity' in conversationReferenceOrContext) {
+      reference = conversationReferenceOrContext.activity.getConversationReference()
+    } else {
+      reference = conversationReferenceOrContext
+    }
+
+    await this._adapter.continueConversation(reference, logic)
   }
 
   public message (
@@ -197,26 +196,8 @@ export class Application<TState extends TurnState> {
     })
   }
 
-  public sendProactiveActivity (
-    context: TurnContext,
-    activityOrText: string | Activity,
-    speak?: string,
-    inputHint?: string
-  ): Promise<ResourceResponse | undefined>
-  public sendProactiveActivity (
-    conversationReference: ConversationReference,
-    activityOrText: string | Activity,
-    speak?: string,
-    inputHint?: string
-  ): Promise<ResourceResponse | undefined>
-  public sendProactiveActivity (
-    activity: Activity,
-    activityOrText: string | Activity,
-    speak?: string,
-    inputHint?: string
-  ): Promise<ResourceResponse | undefined>
   public async sendProactiveActivity (
-    context: TurnContext | ConversationReference | Activity,
+    context: TurnContext | ConversationReference,
     activityOrText: string | Activity,
     speak?: string,
     inputHint?: string
