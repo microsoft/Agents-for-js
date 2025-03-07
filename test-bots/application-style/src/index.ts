@@ -79,6 +79,17 @@ app.activity(ActivityTypes.Message, async (context: TurnContext, state: Applicat
   await context.sendActivity(`[${count}] you said: ${context.activity.text}`)
 })
 
+// app.activity(/^message/, async (context: TurnContext, state: ApplicationTurnState) => {
+//   await context.sendActivity(`Matched with regex: ${context.activity.type}`)
+// })
+
+// app.activity(
+//   async (context: TurnContext) => Promise.resolve(context.activity.type === 'message'),
+//   async (context, state) => {
+//     await context.sendActivity(`Matched function: ${context.activity.type}`)
+//   }
+// )
+
 server.post('/api/messages', async (req: Request, res: Response) => {
   // console.log(req.body)
   // console.log('req.user', req.user)
