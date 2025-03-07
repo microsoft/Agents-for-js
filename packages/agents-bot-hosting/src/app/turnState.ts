@@ -6,7 +6,7 @@
  */
 
 import { Storage, StoreItems } from '../storage'
-import { Memory } from './memoryFork'
+import { Memory } from './memory'
 import { InputFile } from './inputFileDownloader'
 import { TurnStateEntry } from './turnStateEntry'
 import { TurnContext } from '../turnContext'
