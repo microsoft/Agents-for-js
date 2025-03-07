@@ -12,15 +12,6 @@ The best to way to get started with these packages is to look at the samples ava
 
 ## Packages Overview
 
-> [!IMPORTANT]
-> Packages are not yet in NPM, while we push the latest packages, use our nightly feed, by configuring a `.npmrc` to add an additional registry:
-
-```env
-registry=https://registry.npmjs.org/
-@microsoft:registry=https://pkgs.dev.azure.com/ConversationalAI/BotFramework/_packaging/SDK/npm/registry/
-```
-
-
 We offer the following NPM packages to create conversational experiences based on bots:
 
 | Package Name | Description | Replaces|
