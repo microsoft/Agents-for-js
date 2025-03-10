@@ -20,6 +20,8 @@
     },
     "dependencies": {
       "@microsoft/agents-bot-hosting": "file:../../packages/agents-bot-hosting",
+      "@microsoft/agents-bot-hosting-storage-blob": "file:../../packages/agents-bot-hosting-storage-blob",
+      "@microsoft/agents-bot-hosting-storage-cosmos": "file:../../packages/agents-bot-hosting-storage-cosmos",
       "express": "^5.0.1",
       "express-rate-limit": "^7.5.0"
     },
