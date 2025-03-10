@@ -21,7 +21,7 @@ const logger = debug('agents:application')
 const TYPING_TIMER_DELAY = 1000
 type ApplicationEventHandler<TState extends TurnState> = (context: TurnContext, state: TState) => Promise<boolean>
 
-export class Application<TState extends TurnState> {
+export class AgentApplication<TState extends TurnState> {
   private readonly _options: ApplicationOptions<TState>
   private readonly _routes: AppRoute<TState>[] = []
   private readonly _beforeTurn: ApplicationEventHandler<TState>[] = []

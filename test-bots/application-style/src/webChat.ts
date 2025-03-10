@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { TurnState, MemoryStorage, TurnContext, Application, AttachmentDownloader }
+import { TurnState, MemoryStorage, TurnContext, AgentApplication, AttachmentDownloader }
   from '@microsoft/agents-bot-hosting'
 import { version } from '@microsoft/agents-bot-hosting/package.json'
 import { ActivityTypes } from '@microsoft/agents-bot-activity'
@@ -15,7 +15,7 @@ const downloader = new AttachmentDownloader()
 
 // Define storage and application
 const storage = new MemoryStorage()
-export const app = new Application<ApplicationTurnState>({
+export const app = new AgentApplication<ApplicationTurnState>({
   storage,
   fileDownloaders: [downloader]
 })

@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { Application } from './application'
+import { AgentApplication } from './agentApplication'
 import { ApplicationOptions } from './applicationOptions'
 import { TurnState } from './turnState'
 import { Storage } from '../storage'
@@ -26,7 +26,7 @@ export class ApplicationBuilder<TState extends TurnState = TurnState> {
     return this
   }
 
-  public build (): Application<TState> {
-    return new Application(this._options)
+  public build (): AgentApplication<TState> {
+    return new AgentApplication(this._options)
   }
 }

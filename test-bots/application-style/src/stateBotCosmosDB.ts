@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { TurnState, TurnContext, Application } from '@microsoft/agents-bot-hosting'
+import { TurnState, TurnContext, AgentApplication } from '@microsoft/agents-bot-hosting'
 import { ActivityTypes } from '@microsoft/agents-bot-activity'
 import { CosmosDbPartitionedStorage, CosmosDbPartitionedStorageOptions } from '@microsoft/agents-bot-hosting-storage-cosmos'
 
@@ -29,7 +29,7 @@ type ApplicationTurnState = TurnState<ConversationData, UserProfile>
 
 // Define storage and application
 const storage = cosmosStorage
-export const app = new Application<ApplicationTurnState>({
+export const app = new AgentApplication<ApplicationTurnState>({
   storage
 })
 

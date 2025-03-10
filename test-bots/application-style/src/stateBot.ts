@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { TurnState, MemoryStorage, TurnContext, Application } from '@microsoft/agents-bot-hosting'
+import { TurnState, MemoryStorage, TurnContext, AgentApplication } from '@microsoft/agents-bot-hosting'
 import { ActivityTypes } from '@microsoft/agents-bot-activity'
 
 interface ConversationData {
@@ -18,7 +18,7 @@ type ApplicationTurnState = TurnState<ConversationData, UserProfile>
 
 // Define storage and application
 const storage = new MemoryStorage()
-export const app = new Application<ApplicationTurnState>({
+export const app = new AgentApplication<ApplicationTurnState>({
   storage
 })
 
