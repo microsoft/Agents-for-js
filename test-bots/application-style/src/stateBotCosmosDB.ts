@@ -1,23 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import express, { Response } from 'express'
-
-import rateLimit from 'express-rate-limit'
-import { Request, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv, TurnState, TurnContext, CloudAdapter, Application }
-  from '@microsoft/agents-bot-hosting'
+import { TurnState, TurnContext, Application } from '@microsoft/agents-bot-hosting'
 import { ActivityTypes } from '@microsoft/agents-bot-activity'
 import { CosmosDbPartitionedStorage, CosmosDbPartitionedStorageOptions } from '@microsoft/agents-bot-hosting-storage-cosmos'
-
-const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
-
-const adapter = new CloudAdapter(authConfig)
-
-const server = express()
-
-server.use(rateLimit({ validate: { xForwardedForHeader: false } }))
-server.use(express.json())
-server.use(authorizeJWT(authConfig))
 
 const cosmosDbStorageOptions = {
   databaseId: process.env.COSMOS_DATABASE_ID || 'botsDB',
@@ -43,7 +29,7 @@ type ApplicationTurnState = TurnState<ConversationData, UserProfile>
 
 // Define storage and application
 const storage = cosmosStorage
-const app = new Application<ApplicationTurnState>({
+export const app = new Application<ApplicationTurnState>({
   storage
 })
 
@@ -91,15 +77,4 @@ app.conversationUpdate('membersAdded', async (context: TurnContext, state: Appli
       await context.sendActivity('Welcome to State Bot Sample. Type anything to get started.')
     }
   }
-})
-
-server.post('/api/messages', async (req: Request, res: Response) => {
-  await adapter.process(req, res, async (context) => {
-    await app.run(context)
-  })
-})
-
-const port = process.env.PORT || 3978
-server.listen(port, () => {
-  console.log(`\nServer listening to port ${port} for appId ${authConfig.clientId} debug ${process.env.DEBUG}`)
 })

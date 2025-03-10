@@ -1,23 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import express, { Response } from 'express'
-
-import rateLimit from 'express-rate-limit'
-import { Request, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv, TurnState, TurnContext, CloudAdapter, Application }
-  from '@microsoft/agents-bot-hosting'
+import { TurnState, TurnContext, Application } from '@microsoft/agents-bot-hosting'
 import { ActivityTypes } from '@microsoft/agents-bot-activity'
 import { BlobsStorage, BlobsTranscriptStore } from '@microsoft/agents-bot-hosting-storage-blob'
-
-const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
-
-const adapter = new CloudAdapter(authConfig)
-
-const server = express()
-
-server.use(rateLimit({ validate: { xForwardedForHeader: false } }))
-server.use(express.json())
-server.use(authorizeJWT(authConfig))
 
 const blobStorage = new BlobsStorage(process.env.BLOB_STORAGE_CONNECTION_STRING!, process.env.BLOB_CONTAINER_ID!)
 const blobTranscriptStore = new BlobsTranscriptStore(process.env.BLOB_STORAGE_CONNECTION_STRING!, process.env.BLOB_CONTAINER_ID!)
@@ -36,7 +22,7 @@ type ApplicationTurnState = TurnState<ConversationData, UserProfile>
 
 // Define storage and application
 const storage = blobStorage
-const app = new Application<ApplicationTurnState>({
+export const app = new Application<ApplicationTurnState>({
   storage
 })
 
@@ -88,17 +74,6 @@ app.conversationUpdate('membersAdded', async (context: TurnContext, state: Appli
       await context.sendActivity('Welcome to State Bot Sample. Type anything to get started.')
     }
   }
-})
-
-server.post('/api/messages', async (req: Request, res: Response) => {
-  await adapter.process(req, res, async (context) => {
-    await app.run(context)
-  })
-})
-
-const port = process.env.PORT || 3978
-server.listen(port, () => {
-  console.log(`\nServer listening to port ${port} for appId ${authConfig.clientId} debug ${process.env.DEBUG}`)
 })
 
 async function showTranscript (turnContext: TurnContext) {
