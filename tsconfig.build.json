@@ -20,6 +20,9 @@
         "path": "packages/agents-bot-hosting-teams"
       },
       {
+        "path": "test-bots/application-style"
+      },
+      {
         "path": "test-bots/echo-bot"
       },
       {
