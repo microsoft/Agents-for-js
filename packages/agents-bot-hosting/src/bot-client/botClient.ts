@@ -5,12 +5,26 @@ import { AuthConfiguration, MsalTokenProvider } from '../auth'
 import { v4 } from 'uuid'
 import { MemoryStorage, StoreItem } from '../storage'
 
-export const PostActivity = async (activity: Activity, botClientConfig: BotClientConfig, authConfig: AuthConfiguration): Promise<unknown> => {
+export const PostActivity = async (activity: Activity, botClientConfig: BotClientConfig, authConfig: AuthConfiguration): Promise<string> => {
   const activityCopy = { ...activity }
   activityCopy.serviceUrl = botClientConfig.serviceUrl
-  activityCopy.recipient = { role: RoleTypes.Skill }
-  activityCopy.relatesTo = activity.getConversationReference()
-
+  activityCopy.recipient = { ...activityCopy.recipient, role: RoleTypes.Skill }
+  activityCopy.relatesTo = {
+    serviceUrl: activity.serviceUrl,
+    activityId: activityCopy.id,
+    channelId: activityCopy.channelId!,
+    locale: activityCopy.locale,
+    conversation: {
+      id: activityCopy.conversation!.id,
+      name: activityCopy.conversation!.name,
+      conversationType: activityCopy.conversation!.conversationType,
+      aadObjectId: activityCopy.conversation!.aadObjectId,
+      isGroup: activityCopy.conversation!.isGroup,
+      properties: activityCopy.conversation!.properties,
+      role: activityCopy.conversation!.role,
+      tenantId: activityCopy.conversation!.tenantId
+    }
+  }
   activityCopy.conversation!.id = v4()
 
   const memory = MemoryStorage.getSingleInstance()
@@ -35,5 +49,5 @@ export const PostActivity = async (activity: Activity, botClientConfig: BotClien
   if (!response.ok) {
     throw new Error(`Failed to post activity to bot: ${response.statusText}`)
   }
-  return response.json()
+  return response.statusText
 }

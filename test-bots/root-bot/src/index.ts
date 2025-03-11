@@ -45,7 +45,7 @@ app.post('/api/botresponse/v3/conversations/:conversationId/activities/:activity
   const callback = async (turnContext: TurnContext) => {
     activity.applyConversationReference(conversationReference)
     activity.id = req.params!.activityId
-    activity.callerId = `urn:botframework:aadappid:${turnContext.activity.from?.id}`
+    // TODO review activity.callerId = `urn:botframework:aadappid:${turnContext.activity.from?.id}`
 
     if (activity.type === 'endOfConversation') {
       await MemoryStorage.getSingleInstance().delete([activity.conversation!.id])

@@ -160,7 +160,7 @@ export class CloudAdapter extends BotAdapter {
       return end(invokeResponse?.status ?? StatusCodes.OK, JSON.stringify(invokeResponse?.body), true)
     }
     let scope = 'https://api.botframework.com'
-    if (pepito === false) {
+    if (pepito === true) {
       scope = request.user?.azp ?? request.user?.appid ?? 'https://api.botframework.com'
       activity.callerId = `urn:botframework:aadappid:${scope}`
     }
