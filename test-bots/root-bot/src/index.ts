@@ -3,7 +3,7 @@
 
 import express, { Response } from 'express'
 
-import { Request, CloudAdapter, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv, ConversationState, MemoryStorage, Activity } from '@microsoft/agents-bot-hosting'
+import { Request, CloudAdapter, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv, ConversationState, MemoryStorage, Activity, TurnContext } from '@microsoft/agents-bot-hosting'
 import { version as sdkVersion } from '@microsoft/agents-bot-hosting/package.json'
 import { RootBot } from './bot'
 const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
@@ -29,16 +29,35 @@ app.post('/api/botresponse/v3/conversations/:conversationId/activities/:activity
   // 01. Read from memory using conversationId. We don't need to use botClientConfig
   // 02. Update activity
   console.log('params', req.params)
-  const dataForBot = await MemoryStorage.getSingleInstance().read(['botData'])
-  console.log('Data for bot:', dataForBot)
   const activity = Activity.fromObject(req.body!)
-  activity.serviceUrl = encodeURI(dataForBot.botData.serviceUrl)
-  activity.conversation!.id = dataForBot.botData.conversationId
-  activity.replyToId = req.params!.activityId
-  console.log(activity)
-  req.body = activity
+  const dataForBot = await MemoryStorage.getSingleInstance().read([activity.conversation!.id])
+  const conversationReference = dataForBot[activity.conversation!.id].conversationReference
+  console.log('Data for bot:', dataForBot)
+  // activity.serviceUrl = encodeURI(dataForBot.botData.serviceUrl)
+  // activity.conversation!.id = dataForBot.botData.conversationId
+  // activity.id = req.params!.activityId
+  activity.applyConversationReference(dataForBot[activity.conversation!.id].conversationReference)
 
-  await adapter.process(req, res, async (context) => await myBot.run(context), true)
+  // TODO delete activity from memory.
+  // Bot1.cs 174
+  //  await _conversationIdFactory.DeleteConversationReferenceAsync(conversationId, cancellationToken).ConfigureAwait(false);
+
+  const callback = async (turnContext: TurnContext) => {
+    activity.applyConversationReference(conversationReference)
+    activity.id = req.params!.activityId
+    activity.callerId = `urn:botframework:aadappid:${turnContext.activity.from?.id}`
+
+    if (activity.type === 'endOfConversation') {
+      await MemoryStorage.getSingleInstance().delete([activity.conversation!.id])
+      // adapter.createTurnContext(activity)
+      await myBot.run(turnContext)
+    } else {
+      await turnContext.sendActivity(activity)
+    }
+  }
+
+  await adapter.continueConversation(conversationReference, callback)
+  // await adapter.process(req, res, async (context) => await myBot.run(context), true)
 })
 
 const port = process.env.PORT || 3978

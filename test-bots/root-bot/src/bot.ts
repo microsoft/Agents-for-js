@@ -1,4 +1,4 @@
-import { ActivityHandler, BotStatePropertyAccessor, ConversationState, MemoryStorage, MessageFactory, StoreItem, botClient } from '@microsoft/agents-bot-hosting'
+import { ActivityHandler, BotStatePropertyAccessor, ConversationState, MemoryStorage, MessageFactory, botClient } from '@microsoft/agents-bot-hosting'
 import { version as sdkVersion } from '@microsoft/agents-bot-hosting/package.json'
 
 interface BotData {
@@ -25,10 +25,6 @@ export class RootBot extends ActivityHandler {
         // await this.conversationState.saveChanges(context, false)
         // const botData2 = await this.conversationDataAccessor.get(context)
         // console.log('Saved botData:', botData2)
-        const changes: StoreItem = {} as StoreItem
-        changes['botData'] = { serviceUrl: context.activity.serviceUrl!, channelId: context.activity.callerId!, conversationId: context.activity.conversation!.id }
-        await this.memoryForBot.write(changes)
-
         await botClient.PostActivity(context.activity, botClientConfig, context.adapter.authConfig)
       } else if (text?.startsWith('echo-bot:')) {
         // const botData = await this.conversationDataAccessor.get(context)
@@ -39,9 +35,9 @@ export class RootBot extends ActivityHandler {
         // if (botData?.serviceUrl && botData?.conversationId) {
         // const botClientConfig: botClient.BotClientConfig = botClient.loadBotClientConfig('Bot1')
 
-        const dataForBot = await this.memoryForBot.read(['botData'])
-        context.activity.serviceUrl = dataForBot.botData.serviceUrl
-        context.activity.conversation!.id = dataForBot.botData.conversationId
+        // const dataForBot = await this.memoryForBot.read(['botData'])
+        // context.activity.serviceUrl = dataForBot.botData.serviceUrl
+        // context.activity.conversation!.id = dataForBot.botData.conversationId
         // const message = MessageFactory.text(`From echo-bot: ${context.activity.text}`)
         await context.sendActivity(context.activity)
       } else {

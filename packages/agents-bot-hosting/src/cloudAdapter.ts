@@ -143,6 +143,9 @@ export class CloudAdapter extends BotAdapter {
     }
 
     const activity = Activity.fromObject(request.body!)
+    if (!this.isValidChannelActivity(activity)) {
+      return end(StatusCodes.BAD_REQUEST)
+    }
 
     logger.debug('Received activity: ', activity)
 
@@ -159,6 +162,7 @@ export class CloudAdapter extends BotAdapter {
     let scope = 'https://api.botframework.com'
     if (pepito === false) {
       scope = request.user?.azp ?? request.user?.appid ?? 'https://api.botframework.com'
+      activity.callerId = `urn:botframework:aadappid:${scope}`
     }
     logger.info(`****Creating connector client with scope: ${scope} for serviceUrl: ${activity.serviceUrl}`)
     this.connectorClient = await ConnectorClient.createClientWithAuthAsync(activity.serviceUrl!, this.authConfig, this.authProvider, scope)
@@ -169,6 +173,25 @@ export class CloudAdapter extends BotAdapter {
     const invokeResponse = this.processTurnResults(context)
 
     return end(invokeResponse?.status ?? StatusCodes.OK, invokeResponse?.body)
+  }
+
+  private isValidChannelActivity (activity: Activity): Boolean {
+    if (activity == null) {
+      logger.warn('BadRequest: Missing activity')
+      return false
+    }
+
+    if (activity.type == null || activity.type === '') {
+      logger.warn('BadRequest: Missing activity type')
+      return false
+    }
+
+    if (activity.conversation?.id == null || activity.conversation?.id === '') {
+      logger.warn('BadRequest: Missing conversation.Id')
+      return false
+    }
+
+    return true
   }
 
   /**
