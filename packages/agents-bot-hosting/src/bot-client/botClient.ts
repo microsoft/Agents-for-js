@@ -15,7 +15,7 @@ export const PostActivity = async (activity: Activity, botClientConfig: BotClien
     channelId: activityCopy.channelId!,
     locale: activityCopy.locale,
     conversation: {
-      id: activityCopy.conversation!.id,
+      id: activity.conversation!.id,
       name: activityCopy.conversation!.name,
       conversationType: activityCopy.conversation!.conversationType,
       aadObjectId: activityCopy.conversation!.aadObjectId,

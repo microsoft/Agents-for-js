@@ -36,7 +36,7 @@ app.post('/api/botresponse/v3/conversations/:conversationId/activities/:activity
   // activity.serviceUrl = encodeURI(dataForBot.botData.serviceUrl)
   // activity.conversation!.id = dataForBot.botData.conversationId
   // activity.id = req.params!.activityId
-  activity.applyConversationReference(dataForBot[activity.conversation!.id].conversationReference)
+  // activity.applyConversationReference(dataForBot[activity.conversation!.id].conversationReference)
 
   // TODO delete activity from memory.
   // Bot1.cs 174
