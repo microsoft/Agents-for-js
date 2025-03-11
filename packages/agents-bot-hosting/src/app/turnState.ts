@@ -1,5 +1,3 @@
-/* eslint-disable no-async-promise-executor */
-
 /**
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
@@ -155,8 +153,7 @@ export class TurnState<
 
   public deleteValue (path: string): void {
     const { scope, name } = this.getScopeAndName(path)
-    // eslint-disable-next-line no-prototype-builtins
-    if (scope.value.hasOwnProperty(name)) {
+    if (Object.prototype.hasOwnProperty.call(scope.value, name)) {
       delete scope.value[name]
     }
   }
@@ -182,38 +179,38 @@ export class TurnState<
     }
 
     if (!this._loadingPromise) {
-      this._loadingPromise = new Promise<boolean>(async (resolve, reject) => {
-        try {
-          this._isLoaded = true
+      this._loadingPromise = new Promise<boolean>((resolve, reject) => {
+        this._isLoaded = true
 
-          const keys: string[] = []
-          const scopes = await this.onComputeStorageKeys(context)
-          for (const key in scopes) {
-            if (Object.prototype.hasOwnProperty.call(scopes, key)) {
-              keys.push(scopes[key])
+        const keys: string[] = []
+        this.onComputeStorageKeys(context)
+          .then(async (scopes) => {
+            for (const key in scopes) {
+              if (Object.prototype.hasOwnProperty.call(scopes, key)) {
+                keys.push(scopes[key])
+              }
             }
-          }
 
-          const items = storage ? await storage.read(keys) : {}
+            const items = storage ? await storage.read(keys) : {}
 
-          for (const key in scopes) {
-            if (Object.prototype.hasOwnProperty.call(scopes, key)) {
-              const storageKey = scopes[key]
-              const value = items[storageKey]
-              this._scopes[key] = new TurnStateEntry(value, storageKey)
+            for (const key in scopes) {
+              if (Object.prototype.hasOwnProperty.call(scopes, key)) {
+                const storageKey = scopes[key]
+                const value = items[storageKey]
+                this._scopes[key] = new TurnStateEntry(value, storageKey)
+              }
             }
-          }
 
-          this._scopes[TEMP_SCOPE] = new TurnStateEntry({})
-
-          this._isLoaded = true
-          this._loadingPromise = undefined
-          resolve(true)
-        } catch (err: any) {
-          logger.error(err)
-          this._loadingPromise = undefined
-          reject(err)
-        }
+            this._scopes[TEMP_SCOPE] = new TurnStateEntry({})
+            this._isLoaded = true
+            this._loadingPromise = undefined
+            resolve(true)
+          })
+          .catch((err) => {
+            logger.error(err)
+            this._loadingPromise = undefined
+            reject(err)
+          })
       })
     }
 
