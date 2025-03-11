@@ -1,5 +1,5 @@
 {
-    "name": "application-style",
+    "name": "node-application-style",
     "version": "1.0.0",
     "private": true,
     "description": "Bot Builder application style bot sample",
@@ -10,9 +10,11 @@
       "prebuild": "npm i",
       "build": "tsc --build",
       "prestart": "npm run build",
-      "start": "node --env-file .env ./dist/index.js",
+      "start": "node --env-file .env ./dist/index.js",    
       "prebundle": "npm run build",
-      "bundle": "esbuild dist/index.js --bundle --platform=node --metafile=dist/meta.json --outfile=dist/bundle.js --tree-shaking=true --keep-names"
+      "bundle": "esbuild ./src/index.js --bundle --platform=node --metafile=dist/meta.json --outfile=dist/bundle.cjs --tree-shaking=true --keep-names",
+      "predocker": "npm run bundle",
+      "docker": "docker build -t \"$npm_package_name:$npm_package_version\" ."
     },
     "repository": {
       "type": "git",
@@ -27,7 +29,8 @@
     },
     "devDependencies": {
       "@types/express": "^5.0.0",
-      "typescript": "^5.7.2"
+      "typescript": "^5.7.2",
+       "esbuild": "^0.25.0"
     },
     "keywords": []
   }
