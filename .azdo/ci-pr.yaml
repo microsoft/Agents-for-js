@@ -1,6 +1,6 @@
 pr:
 - main
-- dev
+- feat/*
 
 pool:
   vmImage: ubuntu-latest
@@ -10,7 +10,14 @@ steps:
   inputs:
     version: '22.x'
   displayName: 'Install Node.js'
-  
+
+- script: echo "registry=https://pkgs.dev.azure.com/dynamicscrm/OneCRM/_packaging/DPX-Tools-Upstream/npm/registry/" > .npmrc
+  displayName: 'Set NPM registry'
+
+- task: npmAuthenticate@0
+  inputs:
+    workingFile: .npmrc
+
 - script: npm install
   displayName: npm ci --dd
 
