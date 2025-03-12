@@ -22,7 +22,7 @@ steps:
   inputs:
     command: ci
     customRegistry: useFeed
-    customFeed : OneCRM/DPX-Tools-Upstream
+    customFeed: OneCRM/DPX-Tools-Upstream
     verbose: true
     workingDir: .
   displayName: 'npm install'
