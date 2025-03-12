@@ -28,8 +28,10 @@ app.post('/api/botresponse/v3/conversations/:conversationId/activities/:activity
   // memoryStorageSingleton()
   // 01. Read from memory using conversationId. We don't need to use botClientConfig
   // 02. Update activity
-  console.log('params', req.params)
   const activity = Activity.fromObject(req.body!)
+  const activityFromEchoBot = JSON.stringify(activity)
+  console.log('activityFromEchoBot', activityFromEchoBot)
+
   const dataForBot = await MemoryStorage.getSingleInstance().read([activity.conversation!.id])
   const conversationReference = dataForBot[activity.conversation!.id].conversationReference
   console.log('Data for bot:', dataForBot)
@@ -56,7 +58,7 @@ app.post('/api/botresponse/v3/conversations/:conversationId/activities/:activity
     }
   }
 
-  await adapter.continueConversation(conversationReference, callback)
+  await adapter.continueConversation(conversationReference, callback, true)
   // await adapter.process(req, res, async (context) => await myBot.run(context), true)
 })
 

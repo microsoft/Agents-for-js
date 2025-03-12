@@ -25,6 +25,10 @@ export class RootBot extends ActivityHandler {
         // await this.conversationState.saveChanges(context, false)
         // const botData2 = await this.conversationDataAccessor.get(context)
         // console.log('Saved botData:', botData2)
+
+        const activityStarts = JSON.stringify(context.activity)
+        console.log('activityStarts', activityStarts)
+
         await botClient.PostActivity(context.activity, botClientConfig, context.adapter.authConfig)
       } else if (text?.startsWith('echo-bot:')) {
         // const botData = await this.conversationDataAccessor.get(context)

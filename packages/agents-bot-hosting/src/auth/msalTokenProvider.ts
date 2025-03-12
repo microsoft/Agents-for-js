@@ -8,7 +8,6 @@ import { AuthConfiguration } from './authConfiguration'
 import { AuthProvider } from './authProvider'
 import { debug } from '../logger'
 import { v4 } from 'uuid'
-import jwt from 'jsonwebtoken'
 
 import fs from 'fs'
 import crypto from 'crypto'
@@ -39,8 +38,7 @@ export class MsalTokenProvider implements AuthProvider {
     if (token === undefined) {
       throw new Error('Failed to acquire token')
     }
-    const decodedToken = jwt.decode(token)
-    console.log(decodedToken)
+
     return token
   }
 

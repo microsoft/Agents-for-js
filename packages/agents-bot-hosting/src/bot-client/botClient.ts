@@ -6,7 +6,7 @@ import { v4 } from 'uuid'
 import { MemoryStorage, StoreItem } from '../storage'
 
 export const PostActivity = async (activity: Activity, botClientConfig: BotClientConfig, authConfig: AuthConfiguration): Promise<string> => {
-  const activityCopy = { ...activity }
+  const activityCopy = JSON.parse(JSON.stringify(activity)) as Activity
   activityCopy.serviceUrl = botClientConfig.serviceUrl
   activityCopy.recipient = { ...activityCopy.recipient, role: RoleTypes.Skill }
   activityCopy.relatesTo = {
@@ -34,8 +34,14 @@ export const PostActivity = async (activity: Activity, botClientConfig: BotClien
   }
   await memory.write(changes)
 
+  const memoryChanges = JSON.stringify(changes)
+  console.log('memoryChanges', memoryChanges)
+
   const authProvider = new MsalTokenProvider()
   const token = await authProvider.getAccessToken(authConfig, botClientConfig.botId)
+
+  const activityToEchoBot = JSON.stringify(activityCopy)
+  console.log('activityToEchoBot', activityToEchoBot)
 
   const response = await fetch(botClientConfig.botEndPoint, {
     method: 'POST',

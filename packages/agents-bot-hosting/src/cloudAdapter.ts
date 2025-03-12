@@ -57,6 +57,11 @@ export class CloudAdapter extends BotAdapter {
     return new TurnContext(this, activity)
   }
 
+  async createTurnContextWithScope (activity: Activity, logic: BotHandler, scope: string): Promise<TurnContext> {
+    this.connectorClient = await ConnectorClient.createClientWithAuthAsync(activity.serviceUrl!, this.authConfig, this.authProvider, scope)
+    return new TurnContext(this, activity)
+  }
+
   /**
    * Sends multiple activities to the conversation.
    * @param context - The TurnContext for the current turn of the bot.
@@ -93,6 +98,9 @@ export class CloudAdapter extends BotAdapter {
         }
 
         if (activity.replyToId) {
+          const activityToWebChat = JSON.stringify(activity)
+          console.log('activityToWebChat', activityToWebChat)
+
           response = await this.connectorClient.replyToActivityAsync(activity.conversation.id, activity.replyToId, activity)
         } else {
           response = await this.connectorClient.sendToConversationAsync(activity.conversation.id, activity)
@@ -160,9 +168,10 @@ export class CloudAdapter extends BotAdapter {
       return end(invokeResponse?.status ?? StatusCodes.OK, JSON.stringify(invokeResponse?.body), true)
     }
     let scope = 'https://api.botframework.com'
-    if (pepito === true) {
+    if (pepito === false) {
       scope = request.user?.azp ?? request.user?.appid ?? 'https://api.botframework.com'
       activity.callerId = `urn:botframework:aadappid:${scope}`
+      // const context = this.createTurnContext(Activity.getContinuationActivity(activity), logic)
     }
     logger.info(`****Creating connector client with scope: ${scope} for serviceUrl: ${activity.serviceUrl}`)
     this.connectorClient = await ConnectorClient.createClientWithAuthAsync(activity.serviceUrl!, this.authConfig, this.authProvider, scope)
@@ -246,12 +255,17 @@ export class CloudAdapter extends BotAdapter {
    * @param logic - The logic to execute.
    * @returns A promise representing the completion of the continue operation.
    */
-  async continueConversation (reference: ConversationReference, logic: (revocableContext: TurnContext) => Promise<void>): Promise<void> {
+  async continueConversation (reference: ConversationReference, logic: (revocableContext: TurnContext) => Promise<void>, isBotResponse: Boolean = false): Promise<void> {
     if (!reference || !reference.serviceUrl || (reference.conversation == null) || !reference.conversation.id) {
       throw new Error('Invalid conversation reference object')
     }
 
-    const context = this.createTurnContext(Activity.getContinuationActivity(reference), logic)
+    let context
+    if (isBotResponse) {
+      context = await this.createTurnContextWithScope(Activity.getContinuationActivity(reference), logic, 'https://api.botframework.com')
+    } else {
+      context = this.createTurnContext(Activity.getContinuationActivity(reference), logic)
+    }
     await this.runMiddleware(context, logic)
   }
 
