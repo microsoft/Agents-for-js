@@ -18,8 +18,14 @@ steps:
   inputs:
     workingFile: .npmrc
 
-- script: npm install
-  displayName: npm ci --dd
+- task: Npm@1
+  inputs:
+    command: ci
+    customRegistry: useFeed
+    customFeed : OneCRM/DPX-Tools-Upstream
+    verbose: true
+    workingDir: .
+  displayName: 'npm install'
 
 - script: node setVersion.js
   displayName: set version
