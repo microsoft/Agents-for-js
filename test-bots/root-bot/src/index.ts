@@ -50,6 +50,8 @@ app.post('/api/botresponse/v3/conversations/:conversationId/activities/:activity
 
   await adapter.continueConversation(conversationReference, callback, true)
   // await adapter.process(req, res, async (context) => await myBot.run(context), true)
+
+  // TODO send an http response
 })
 
 const port = process.env.PORT || 3978
