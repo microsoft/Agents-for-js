@@ -16,7 +16,7 @@ import { TurnContext } from '../turnContext'
 import { ResourceResponse } from '../connector-client'
 import { debug } from '../logger'
 
-const logger = debug('agents:application')
+const logger = debug('agents:agent-application')
 
 const TYPING_TIMER_DELAY = 1000
 type ApplicationEventHandler<TState extends TurnState> = (context: TurnContext, state: TState) => Promise<boolean>
@@ -101,7 +101,7 @@ export class AgentApplication<TState extends TurnState> {
     return this
   }
 
-  private async continueConversationAsync (
+  protected async continueConversationAsync (
     conversationReferenceOrContext: ConversationReference | TurnContext,
     logic: (context: TurnContext) => Promise<void>
   ): Promise<void> {
