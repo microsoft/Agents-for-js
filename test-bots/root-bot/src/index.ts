@@ -19,15 +19,10 @@ app.use(express.json())
 app.use(authorizeJWT(authConfig))
 
 app.post('/api/messages', async (req: Request, res: Response) => {
-  // console.log(req.body)
-  // console.log('req.user', req.user)
   await adapter.process(req, res, async (context) => await myBot.run(context))
 })
 
 app.post('/api/botresponse/v3/conversations/:conversationId/activities/:activityId', async (req: Request, res: Response) => {
-  // memoryStorageSingleton()
-  // 01. Read from memory using conversationId. We don't need to use botClientConfig
-  // 02. Update activity
   const activity = Activity.fromObject(req.body!)
   const activityFromEchoBot = JSON.stringify(activity)
   console.log('activityFromEchoBot', activityFromEchoBot)
@@ -35,10 +30,6 @@ app.post('/api/botresponse/v3/conversations/:conversationId/activities/:activity
   const dataForBot = await MemoryStorage.getSingleInstance().read([activity.conversation!.id])
   const conversationReference = dataForBot[activity.conversation!.id].conversationReference
   console.log('Data for bot:', dataForBot)
-  // activity.serviceUrl = encodeURI(dataForBot.botData.serviceUrl)
-  // activity.conversation!.id = dataForBot.botData.conversationId
-  // activity.id = req.params!.activityId
-  // activity.applyConversationReference(dataForBot[activity.conversation!.id].conversationReference)
 
   // TODO delete activity from memory.
   // Bot1.cs 174
@@ -51,7 +42,6 @@ app.post('/api/botresponse/v3/conversations/:conversationId/activities/:activity
 
     if (activity.type === 'endOfConversation') {
       await MemoryStorage.getSingleInstance().delete([activity.conversation!.id])
-      // adapter.createTurnContext(activity)
       await myBot.run(turnContext)
     } else {
       await turnContext.sendActivity(activity)
