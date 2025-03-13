@@ -4,16 +4,16 @@
  */
 
 import { Activity, ActivityTypes, INVOKE_RESPONSE_KEY, InvokeResponse, RouteSelector, TurnContext, TurnState } from '@microsoft/agents-bot-hosting'
-import { TeamsApplication } from './teamsApplication'
-import { TaskModuleTaskInfo } from '../task/taskModuleTaskInfo'
-import { MessagingExtensionResult } from '../messaging-extension/messagingExtensionResult'
-import { MessagingExtensionActionResponse } from '../messaging-extension/messagingExtensionActionResponse'
-import { MessagingExtensionParameter } from '../messaging-extension/messagingExtensionParameter'
-import { MessagingExtensionQuery } from '../messaging-extension/messagingExtensionQuery'
-import { Query } from './query'
-import { TaskModuleResponse } from '../task/taskModuleResponse'
+import { TeamsApplication } from '../teamsApplication'
+import { TaskModuleTaskInfo } from '../../task/taskModuleTaskInfo'
+import { MessagingExtensionResult } from '../../messaging-extension/messagingExtensionResult'
+import { MessagingExtensionActionResponse } from '../../messaging-extension/messagingExtensionActionResponse'
+import { MessagingExtensionParameter } from '../../messaging-extension/messagingExtensionParameter'
+import { MessagingExtensionQuery } from '../../messaging-extension/messagingExtensionQuery'
+import { TaskModuleResponse } from '../../task/taskModuleResponse'
 import { MessageExtensionsInvokeNames } from './messageExtensionsInvokeNames'
-import { validatetValueBotMessagePreviewAction, validateValueBotActivityPreview, validateValueCommandId, validateValueQuery } from '../validators'
+import { validatetValueBotMessagePreviewAction, validateValueBotActivityPreview, validateValueCommandId, validateValueQuery } from '../../validators'
+import { Query } from '../query'
 
 export class MessageExtensions<TState extends TurnState> {
   private readonly _app: TeamsApplication<TState>

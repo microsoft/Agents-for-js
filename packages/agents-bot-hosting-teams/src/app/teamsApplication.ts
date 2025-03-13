@@ -3,24 +3,21 @@
  * Licensed under the MIT License.
  */
 
-import { Activity, ActivityTypes, AgentApplication, AppRoute, ConversationReference, debug, RouteSelector, TurnContext, TurnState } from '@microsoft/agents-bot-hosting'
+import { Activity, ActivityTypes, AgentApplication, AppRoute, ConversationReference, debug, RouteHandler, RouteSelector, TurnContext, TurnState } from '@microsoft/agents-bot-hosting'
 import { TeamsApplicationOptions } from './teamsApplicationOptions'
-import { RouteHandler } from '@microsoft/agents-bot-hosting/dist/src/app/routeHandler'
-import { AdaptiveCards } from './adaptiveCards'
-import { Messages } from './messages'
-import { MessageExtensions } from './messageExtensions'
-import { Meetings } from './meetings'
-import { TaskModules } from './taskModules'
-import { TeamsMessageEvents } from './teamsMessageEvents'
-import { MessageReactionEvents } from './messageReactionEvents'
 import { FileConsentCardResponse } from '../file/fileConsentCardResponse'
 import { ChannelInfo } from '../channel-data/channelInfo'
 import { TeamsInfo } from '../teamsInfo'
 import { TeamDetails } from '../connector-client/teamDetails'
 import { TeamsPagedMembersResult } from '../connector-client/teamsPagedMembersResult'
 import { ReadReceiptInfo } from '../message-read-info/readReceipInfo'
-import { TeamsConversationUpdateEvents } from './teamsConversationUpdateEvents'
 import { validateValueAction, validateValueContinuation } from '../validators'
+import { AdaptiveCards } from './adaptive-cards'
+import { MessageReactionEvents, Messages, TeamsMessageEvents } from './messages'
+import { MessageExtensions } from './messaging-extension'
+import { Meetings } from './meeting'
+import { TaskModules } from './task'
+import { TeamsConversationUpdateEvents } from './conversation-events'
 
 const logger = debug('agents:teams-application')
 

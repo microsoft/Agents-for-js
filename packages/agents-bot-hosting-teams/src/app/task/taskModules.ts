@@ -4,11 +4,11 @@
  */
 
 import { Activity, ActivityTypes, Channels, INVOKE_RESPONSE_KEY, InvokeResponse, RouteSelector, TurnContext, TurnState } from '@microsoft/agents-bot-hosting'
-import { ConfigResponse } from '../bot-config/configResponse'
-import { TeamsApplication } from './teamsApplication'
-import { BotConfigAuth } from '../bot-config/botConfigAuth'
-import { TaskModuleResponse } from '../task/taskModuleResponse'
-import { TaskModuleTaskInfo } from '../task/taskModuleTaskInfo'
+import { ConfigResponse } from '../../bot-config/configResponse'
+import { TeamsApplication } from '../teamsApplication'
+import { BotConfigAuth } from '../../bot-config/botConfigAuth'
+import { TaskModuleResponse } from '../../task/taskModuleResponse'
+import { TaskModuleTaskInfo } from '../../task/taskModuleTaskInfo'
 import { TaskModuleInvokeNames } from './taskModuleInvokeNames'
 
 export class TaskModules<TState extends TurnState> {

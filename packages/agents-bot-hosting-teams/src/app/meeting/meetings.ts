@@ -4,10 +4,10 @@
  */
 
 import { ActivityTypes, TurnContext, TurnState } from '@microsoft/agents-bot-hosting'
-import { TeamsApplication } from './teamsApplication'
-import { MeetingParticipantsEventDetails } from '../meeting/meetingParticipantsEventDetails'
-import { MeetingEndEventDetails } from '../meeting/meetingEndEventDetails'
-import { MeetingStartEventDetails } from '../meeting/meetingStartEventDetails'
+import { TeamsApplication } from '../teamsApplication'
+import { MeetingParticipantsEventDetails } from '../../meeting/meetingParticipantsEventDetails'
+import { MeetingEndEventDetails } from '../../meeting/meetingEndEventDetails'
+import { MeetingStartEventDetails } from '../../meeting/meetingStartEventDetails'
 
 export class Meetings<TState extends TurnState> {
   private readonly _app: TeamsApplication<TState>
