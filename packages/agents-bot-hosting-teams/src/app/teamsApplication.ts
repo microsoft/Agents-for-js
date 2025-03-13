@@ -20,6 +20,7 @@ import { TeamDetails } from '../connector-client/teamDetails'
 import { TeamsPagedMembersResult } from '../connector-client/teamsPagedMembersResult'
 import { ReadReceiptInfo } from '../message-read-info/readReceipInfo'
 import { TeamsConversationUpdateEvents } from './teamsConversationUpdateEvents'
+import { validateValueAction, validateValueContinuation } from '../validators'
 
 const logger = debug('agents:teams-application')
 
@@ -199,10 +200,11 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
     handler: (context: TurnContext, state: TState, fileConsentResponse: FileConsentCardResponse) => Promise<void>
   ): this {
     const selector = (context: TurnContext): Promise<boolean> => {
+      const valueAction = validateValueAction(context.activity.value)
       return Promise.resolve(
         context.activity.type === ActivityTypes.Invoke &&
                 context.activity.name === 'fileConsent/invoke' &&
-                context.activity.value?.action === 'accept'
+                valueAction === 'accept'
       )
     }
     const handlerWrapper = async (context: TurnContext, state: TState) => {
@@ -220,10 +222,11 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
     handler: (context: TurnContext, state: TState, fileConsentResponse: FileConsentCardResponse) => Promise<void>
   ): this {
     const selector = (context: TurnContext): Promise<boolean> => {
+      const valueAction = validateValueAction(context.activity.value)
       return Promise.resolve(
         context.activity.type === ActivityTypes.Invoke &&
                 context.activity.name === 'fileConsent/invoke' &&
-                context.activity.value?.action === 'decline'
+                valueAction === 'decline'
       )
     }
     const handlerWrapper = async (context: TurnContext, state: TState) => {
@@ -244,7 +247,8 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
       )
     }
     const handlerWrapper = async (context: TurnContext, state: TState) => {
-      await handler(context, state, context.activity.value!.continuation)
+      const valueContinuation = validateValueContinuation(context.activity.value)
+      await handler(context, state, valueContinuation)
       await context.sendActivity({
         type: ActivityTypes.InvokeResponse,
         value: { status: 200 }

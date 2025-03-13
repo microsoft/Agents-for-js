@@ -39,7 +39,7 @@ export class TaskModules<TState extends TurnState> {
               )
             }
 
-            const result = await handler(context, state, context.activity.value?.data ?? {})
+            const result = await handler(context, state, (context.activity.value as TData)?.data ?? {} as TData)
             if (!context.turnState.get(INVOKE_RESPONSE_KEY)) {
               let response: TaskModuleResponse
               if (typeof result === 'string') {
@@ -96,7 +96,7 @@ export class TaskModules<TState extends TurnState> {
               )
             }
 
-            const result = await handler(context, state, context.activity.value?.data ?? {})
+            const result = await handler(context, state, (context.activity.value as TData)?.data ?? {} as TData)
 
             if (!result) {
               await context.sendActivity({
@@ -148,7 +148,7 @@ export class TaskModules<TState extends TurnState> {
       selector,
       async (context, state) => {
         if (context?.activity?.channelId === Channels.Msteams) {
-          const result = await handler(context, state, context.activity.value?.data ?? {})
+          const result = await handler(context, state, (context.activity.value as TData)?.data ?? {} as TData)
           let response: ConfigResponse
           if (!context.turnState.get(INVOKE_RESPONSE_KEY)) {
             response = {
@@ -186,7 +186,7 @@ export class TaskModules<TState extends TurnState> {
       selector,
       async (context, state) => {
         if (context?.activity?.channelId === Channels.Msteams) {
-          const result = await handler(context, state, context.activity.value?.data ?? {})
+          const result = await handler(context, state, (context.activity.value as TData)?.data ?? {} as TData)
           let response: ConfigResponse
           if (!context.turnState.get(INVOKE_RESPONSE_KEY)) {
             response = {
@@ -221,7 +221,7 @@ function createTaskSelector (
     return (context: TurnContext) => {
       const isTeams = context.activity.channelId === Channels.Msteams
       const isInvoke = context?.activity?.type === ActivityTypes.Invoke && context?.activity?.name === invokeName
-      const data = context?.activity?.value?.data
+      const data = (context?.activity?.value as any)?.data
       if (isInvoke && isTeams && typeof data === 'object' && typeof data[filterField] === 'string') {
         return Promise.resolve(verb.test(data[filterField]))
       } else {
@@ -231,7 +231,7 @@ function createTaskSelector (
   } else {
     return (context: TurnContext) => {
       const isInvoke = context?.activity?.type === ActivityTypes.Invoke && context?.activity?.name === invokeName
-      const data = context?.activity?.value?.data
+      const data = (context?.activity?.value as any)?.data
       return Promise.resolve(isInvoke && typeof data === 'object' && data[filterField] === verb)
     }
   }

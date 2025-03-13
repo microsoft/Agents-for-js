@@ -28,7 +28,7 @@ export class Messages<TState extends TurnState> {
       },
       async (context, state) => {
         if (context?.activity?.channelId === Channels.Msteams) {
-          const result = await handler(context, state, context.activity.value?.data ?? {})
+          const result = await handler(context, state, (context.activity.value as TData)?.data ?? {} as TData)
 
           if (!context.turnState.get(INVOKE_RESPONSE_KEY)) {
             let response: TaskModuleResponse
