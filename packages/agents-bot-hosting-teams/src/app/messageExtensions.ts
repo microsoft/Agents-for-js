@@ -13,6 +13,7 @@ import { MessagingExtensionQuery } from '../messaging-extension/messagingExtensi
 import { Query } from './query'
 import { TaskModuleResponse } from '../task/taskModuleResponse'
 import { MessageExtensionsInvokeNames } from './messageExtensionsInvokeNames'
+import { validatetValueBotMessagePreviewAction, validateValueBotActivityPreview, validateValueCommandId, validateValueQuery } from '../validators'
 
 export class MessageExtensions<TState extends TurnState> {
   private readonly _app: TeamsApplication<TState>
@@ -33,7 +34,8 @@ export class MessageExtensions<TState extends TurnState> {
     this._app.addRoute(
       selector,
       async (context, state) => {
-        const result = await handler(context, state, context.activity.value?.url ?? '')
+        const activityValueUrl = validateValueQuery(context.activity.value)
+        const result = await handler(context, state, activityValueUrl.url ?? '')
         if (!context.turnState.get(INVOKE_RESPONSE_KEY)) {
           const response = {
             composeExtension: result
@@ -64,17 +66,18 @@ export class MessageExtensions<TState extends TurnState> {
       this._app.addRoute(
         selector,
         async (context, state) => {
-          if (
-            context?.activity?.type !== ActivityTypes.Invoke ||
-                        context?.activity?.name !== SUBMIT_ACTION_INVOKE ||
-                        context?.activity?.value?.botMessagePreviewAction !== 'edit'
+          const activityValue = validatetValueBotMessagePreviewAction(context.activity.value)
+          if (context?.activity?.type !== ActivityTypes.Invoke ||
+            context?.activity?.name !== SUBMIT_ACTION_INVOKE ||
+            activityValue.botMessagePreviewAction !== 'edit'
           ) {
             throw new Error(
                             `Unexpected MessageExtensions.botMessagePreviewEdit() triggered for activity type: ${context?.activity?.type}`
             )
           }
 
-          const result = await handler(context, state, context.activity.value?.botActivityPreview[0] ?? {})
+          const activityBotActivityPreview = validateValueBotActivityPreview(context.activity.value)
+          const result = await handler(context, state, activityBotActivityPreview.botActivityPreview[0] ?? {})
           await this.returnSubmitActionResponse(context, result)
         },
         true
@@ -93,17 +96,19 @@ export class MessageExtensions<TState extends TurnState> {
       this._app.addRoute(
         selector,
         async (context, state) => {
+          const activityBotMessagePreviewAction = validatetValueBotMessagePreviewAction(context.activity.value)
           if (
             context?.activity?.type !== ActivityTypes.Invoke ||
                         context?.activity?.name !== SUBMIT_ACTION_INVOKE ||
-                        context?.activity?.value?.botMessagePreviewAction !== 'send'
+                        activityBotMessagePreviewAction.botMessagePreviewAction !== 'send'
           ) {
             throw new Error(
                             `Unexpected MessageExtensions.botMessagePreviewSend() triggered for activity type: ${context?.activity?.type}`
             )
           }
 
-          await handler(context, state, context.activity.value?.botActivityPreview[0] ?? {})
+          const activityBotActivityPreview = validateValueBotActivityPreview(context.activity.value)
+          await handler(context, state, activityBotActivityPreview.botActivityPreview[0] ?? {})
 
           if (!context.turnState.get(INVOKE_RESPONSE_KEY)) {
             await context.sendActivity({
@@ -227,7 +232,8 @@ export class MessageExtensions<TState extends TurnState> {
     this._app.addRoute(
       selector,
       async (context, state) => {
-        const result = await handler(context, state, context.activity.value?.url)
+        const activityValueUrl = validateValueQuery(context.activity.value)
+        const result = await handler(context, state, activityValueUrl.url)
         if (!context.turnState.get(INVOKE_RESPONSE_KEY)) {
           const response: MessagingExtensionActionResponse = {
             composeExtension: result
@@ -254,11 +260,10 @@ export class MessageExtensions<TState extends TurnState> {
         context?.activity?.type === ActivityTypes.Invoke && context?.activity.name === SELECT_ITEM_INVOKE
       )
 
-    // Add route
     this._app.addRoute(
       selector,
       async (context, state) => {
-        const result = await handler(context, state, context?.activity?.value ?? {})
+        const result = await handler(context, state, context?.activity?.value as TItem ?? {} as TItem)
         if (!context.turnState.get(INVOKE_RESPONSE_KEY)) {
           const response: MessagingExtensionActionResponse = {
             composeExtension: result
@@ -290,7 +295,6 @@ export class MessageExtensions<TState extends TurnState> {
       this._app.addRoute(
         selector,
         async (context, state) => {
-          // Insure that we're in an invoke as expected
           if (
             context?.activity?.type !== ActivityTypes.Invoke ||
                         context?.activity?.name !== SUBMIT_ACTION_INVOKE
@@ -300,7 +304,7 @@ export class MessageExtensions<TState extends TurnState> {
             )
           }
 
-          const result = await handler(context, state, context.activity.value?.data ?? {})
+          const result = await handler(context, state, (context.activity.value as TData)?.data ?? {} as TData)
           await this.returnSubmitActionResponse(context, result)
         },
         true
@@ -314,10 +318,8 @@ export class MessageExtensions<TState extends TurnState> {
     result: MessagingExtensionResult | TaskModuleTaskInfo | string | null | undefined
   ): Promise<void> {
     if (!context.turnState.get(INVOKE_RESPONSE_KEY)) {
-      // Format invoke response
       let response: MessagingExtensionActionResponse
       if (typeof result === 'string') {
-        // Return message
         response = {
           task: {
             type: 'message',
@@ -326,7 +328,6 @@ export class MessageExtensions<TState extends TurnState> {
         }
       } else if (typeof result === 'object' && result != null) {
         if ((result as TaskModuleTaskInfo).card) {
-          // Return another task module
           response = {
             task: {
               type: 'continue',
@@ -334,7 +335,6 @@ export class MessageExtensions<TState extends TurnState> {
             }
           }
         } else {
-          // Return card to user
           response = {
             composeExtension: result as MessagingExtensionResult
           }
@@ -390,11 +390,10 @@ export class MessageExtensions<TState extends TurnState> {
         context?.activity?.type === ActivityTypes.Invoke && context?.activity.name === CONFIGURE_SETTINGS
       )
 
-    // Add route
     this._app.addRoute(
       selector,
       async (context, state) => {
-        await handler(context, state, context.activity.value ?? {})
+        await handler(context, state, context.activity.value as TData ?? {} as TData)
         if (!context.turnState.get(INVOKE_RESPONSE_KEY)) {
           await context.sendActivity({
             value: { status: 200 } as InvokeResponse,
@@ -412,7 +411,6 @@ export class MessageExtensions<TState extends TurnState> {
     handler: (context: TurnContext, state: TState, data: TData) => Promise<void>
   ): TeamsApplication<TState> {
     const { QUERY_CARD_BUTTON_CLICKED } = MessageExtensionsInvokeNames
-    // Define static route selector
     const selector = (context: TurnContext) =>
       Promise.resolve(
         context?.activity?.type === ActivityTypes.Invoke && context?.activity.name === QUERY_CARD_BUTTON_CLICKED
@@ -421,10 +419,8 @@ export class MessageExtensions<TState extends TurnState> {
     this._app.addRoute(
       selector,
       async (context, state) => {
-        // Call handler and then check to see if an invoke response has already been added
-        await handler(context, state, context.activity.value ?? {})
+        await handler(context, state, context.activity.value as TData ?? {} as TData)
         if (!context.turnState.get(INVOKE_RESPONSE_KEY)) {
-          // Queue up 'empty' invoke response with no body, as only a 200 status code is expected
           await context.sendActivity({
             value: { status: 200 } as InvokeResponse,
             type: ActivityTypes.InvokeResponse
@@ -447,23 +443,26 @@ function createTaskSelector (
     return commandId
   } else if (commandId instanceof RegExp) {
     return (context: TurnContext) => {
+      const activityValue = validateValueCommandId(context.activity.value)
       const isInvoke = context?.activity?.type === ActivityTypes.Invoke && context?.activity?.name === invokeName
       if (
         isInvoke &&
-                typeof context?.activity?.value?.commandId === 'string' &&
+                typeof activityValue.commandId === 'string' &&
+
                 matchesPreviewAction(context.activity, botMessagePreviewAction)
       ) {
-        return Promise.resolve(commandId.test(context.activity.value.commandId))
+        return Promise.resolve(commandId.test(activityValue.commandId))
       } else {
         return Promise.resolve(false)
       }
     }
   } else {
     return (context: TurnContext) => {
+      const activityValue = validateValueCommandId(context.activity.value)
       const isInvoke = context?.activity?.type === ActivityTypes.Invoke && context?.activity?.name === invokeName
       return Promise.resolve(
         isInvoke &&
-                    context?.activity?.value?.commandId === commandId &&
+                    activityValue.commandId === commandId &&
                     matchesPreviewAction(context.activity, botMessagePreviewAction)
       )
     }
@@ -471,8 +470,9 @@ function createTaskSelector (
 }
 
 function matchesPreviewAction (activity: Activity, botMessagePreviewAction?: 'edit' | 'send'): boolean {
-  if (typeof activity?.value?.botMessagePreviewAction === 'string') {
-    return activity.value.botMessagePreviewAction === botMessagePreviewAction
+  const activityValue = validatetValueBotMessagePreviewAction(activity.value)
+  if (typeof activityValue.botMessagePreviewAction === 'string') {
+    return activityValue.botMessagePreviewAction === botMessagePreviewAction
   } else {
     return botMessagePreviewAction === undefined
   }

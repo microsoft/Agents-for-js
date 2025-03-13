@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { Activity, ActivityTypes, AdaptiveCardInvokeResponse, CardFactory, INVOKE_RESPONSE_KEY, InvokeResponse, MessageFactory, RouteSelector, TurnContext, TurnState } from '@microsoft/agents-bot-hosting'
+import { Activity, ActivityTypes, AdaptiveCardInvokeAction, AdaptiveCardInvokeResponse, CardFactory, INVOKE_RESPONSE_KEY, InvokeResponse, MessageFactory, RouteSelector, TurnContext, TurnState } from '@microsoft/agents-bot-hosting'
 import { AdaptiveCard } from './adaptiveCard'
 import { TeamsApplication } from './teamsApplication'
 import { AdaptiveCardActionExecuteResponseType } from './adaptiveCardActionExecuteResponseType'
@@ -11,6 +11,7 @@ import { AdaptiveCardInvokeResponseType } from './adaptiveCardInvokeResponseType
 import { AdaptiveCardsSearchParams } from '../adaptive-cards'
 import { AdaptiveCardSearchResult } from './adaptiveCardSearchResult'
 import { Query } from './query'
+import { validateAdaptiveCardInvokeAction, validateValueActionExecuteSelector, validateValueDataset, validateValueSearchQuery } from '../validators'
 
 export const ACTION_INVOKE_NAME = 'adaptiveCard/action'
 const ACTION_EXECUTE_TYPE = 'Action.Execute'
@@ -40,14 +41,14 @@ export class AdaptiveCards<TState extends TurnState> {
           if (
             a?.type !== ActivityTypes.Invoke ||
                         a?.name !== ACTION_INVOKE_NAME ||
-                        a?.value?.action?.type !== ACTION_EXECUTE_TYPE
+                        (a?.value as AdaptiveCardInvokeAction).type !== ACTION_EXECUTE_TYPE
           ) {
             throw new Error(
                             `Unexpected AdaptiveCards.actionExecute() triggered for activity type: ${a?.type}`
             )
           }
 
-          const result = await handler(context, state, a.value?.action?.data ?? {})
+          const result = await handler(context, state, (validateAdaptiveCardInvokeAction(a.value)).data as TData ?? {} as TData)
           if (!context.turnState.get(INVOKE_RESPONSE_KEY)) {
             let response: AdaptiveCardInvokeResponse
             if (typeof result === 'string') {
@@ -111,7 +112,7 @@ export class AdaptiveCards<TState extends TurnState> {
           throw new Error(`Unexpected AdaptiveCards.actionSubmit() triggered for activity type: ${a?.type}`)
         }
 
-        await handler(context, state, a.value ?? {})
+        await handler(context, state as TState, (validateAdaptiveCardInvokeAction(a.value)).data as TData ?? {} as TData)
       })
     })
     return this._app
@@ -135,12 +136,15 @@ export class AdaptiveCards<TState extends TurnState> {
             throw new Error(`Unexpected AdaptiveCards.search() triggered for activity type: ${a?.type}`)
           }
 
+          const validatedQuery = validateValueSearchQuery(a.value)
           const query: Query<AdaptiveCardsSearchParams> = {
-            count: a?.value?.queryOptions?.top ?? 25,
-            skip: a?.value?.queryOptions?.skip ?? 0,
+            count: validatedQuery.queryOptions?.top ?? 25,
+            skip: validatedQuery.queryOptions?.skip ?? 0,
+
             parameters: {
-              queryText: a?.value?.queryText ?? '',
-              dataset: a?.value?.dataset ?? ''
+              queryText: validatedQuery.queryText ?? '',
+              dataset: validatedQuery.dataset ?? ''
+
             }
           }
 
@@ -172,12 +176,13 @@ function createActionExecuteSelector (verb: string | RegExp | RouteSelector): Ro
   } else if (verb instanceof RegExp) {
     return (context: TurnContext) => {
       const a = context?.activity
+      const valueAction = validateValueActionExecuteSelector(a.value)
       const isInvoke =
                 a?.type === ActivityTypes.Invoke &&
                 a?.name === ACTION_INVOKE_NAME &&
-                a?.value?.action?.type === ACTION_EXECUTE_TYPE
-      if (isInvoke && typeof a?.value?.action?.verb === 'string') {
-        return Promise.resolve(verb.test(a.value.action.verb))
+                valueAction.action?.type === ACTION_EXECUTE_TYPE
+      if (isInvoke && typeof valueAction.action.verb === 'string') {
+        return Promise.resolve(verb.test(valueAction.action.verb))
       } else {
         return Promise.resolve(false)
       }
@@ -185,11 +190,12 @@ function createActionExecuteSelector (verb: string | RegExp | RouteSelector): Ro
   } else {
     return (context: TurnContext) => {
       const a = context?.activity
+      const valueAction = validateValueActionExecuteSelector(a.value)
       const isInvoke =
                 a?.type === ActivityTypes.Invoke &&
                 a?.name === ACTION_INVOKE_NAME &&
-                a?.value?.action?.type === ACTION_EXECUTE_TYPE
-      if (isInvoke && a?.value?.action?.verb === verb) {
+                valueAction.action?.type === ACTION_EXECUTE_TYPE
+      if (isInvoke && valueAction.verb === verb) {
         return Promise.resolve(true)
       } else {
         return Promise.resolve(false)
@@ -205,8 +211,8 @@ function createActionSubmitSelector (verb: string | RegExp | RouteSelector, filt
     return (context: TurnContext) => {
       const a = context?.activity
       const isSubmit = a?.type === ActivityTypes.Message && !a?.text && typeof a?.value === 'object'
-      if (isSubmit && typeof a?.value[filter] === 'string') {
-        return Promise.resolve(verb.test(a.value[filter]))
+      if (isSubmit && typeof (a?.value as any)[filter] === 'string') {
+        return Promise.resolve(verb.test((a.value as any)[filter]))
       } else {
         return Promise.resolve(false)
       }
@@ -215,7 +221,7 @@ function createActionSubmitSelector (verb: string | RegExp | RouteSelector, filt
     return (context: TurnContext) => {
       const a = context?.activity
       const isSubmit = a?.type === ActivityTypes.Message && !a?.text && typeof a?.value === 'object'
-      return Promise.resolve(isSubmit && a?.value[filter] === verb)
+      return Promise.resolve(isSubmit && (a?.value as any)[filter] === verb)
     }
   }
 }
@@ -226,9 +232,10 @@ function createSearchSelector (dataset: string | RegExp | RouteSelector): RouteS
   } else if (dataset instanceof RegExp) {
     return (context: TurnContext) => {
       const a = context?.activity
+      const valueDataset = validateValueDataset(a.value)
       const isSearch = a?.type === ActivityTypes.Invoke && a?.name === SEARCH_INVOKE_NAME
-      if (isSearch && typeof a?.value?.dataset === 'string') {
-        return Promise.resolve(dataset.test(a.value.dataset))
+      if (isSearch && typeof valueDataset.dataset === 'string') {
+        return Promise.resolve(dataset.test(valueDataset.dataset))
       } else {
         return Promise.resolve(false)
       }
@@ -236,8 +243,9 @@ function createSearchSelector (dataset: string | RegExp | RouteSelector): RouteS
   } else {
     return (context: TurnContext) => {
       const a = context?.activity
+      const valueDataset = validateValueDataset(a.value)
       const isSearch = a?.type === ActivityTypes.Invoke && a?.name === SEARCH_INVOKE_NAME
-      return Promise.resolve(isSearch && a?.value?.dataset === dataset)
+      return Promise.resolve(isSearch && valueDataset.dataset === dataset)
     }
   }
 }

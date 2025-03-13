@@ -61,7 +61,7 @@ export const activityZodSchema = z.object({
   replyToId: z.string().min(1).optional(),
   label: z.string().min(1).optional(),
   valueType: z.string().min(1).optional(),
-  value: z.any().optional(),
+  value: z.unknown().optional(),
   name: z.union([activityEventNamesZodSchema, z.string().min(1)]).optional(),
   relatesTo: conversationReferenceZodSchema.optional(),
   code: z.union([endOfConversationCodesZodSchema, z.string().min(1)]).optional(),
@@ -109,7 +109,7 @@ export class Activity {
   replyToId?: string
   label?: string
   valueType?: string
-  value?: any
+  value?: unknown
   name?: ActivityEventNames | string
   relatesTo?: ConversationReference
   code?: EndOfConversationCodes | string
