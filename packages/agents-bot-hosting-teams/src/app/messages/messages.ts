@@ -4,9 +4,9 @@
  */
 
 import { Activity, ActivityTypes, Channels, INVOKE_RESPONSE_KEY, InvokeResponse, TurnContext, TurnState } from '@microsoft/agents-bot-hosting'
-import { TeamsApplication } from './teamsApplication'
-import { TaskModuleTaskInfo } from '../task/taskModuleTaskInfo'
-import { TaskModuleResponse } from '../task/taskModuleResponse'
+import { TeamsApplication } from '../teamsApplication'
+import { TaskModuleTaskInfo } from '../../task/taskModuleTaskInfo'
+import { TaskModuleResponse } from '../../task/taskModuleResponse'
 import { MessageInvokeNames } from './messageInvokeNames'
 
 export class Messages<TState extends TurnState> {

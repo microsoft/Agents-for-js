@@ -4,8 +4,8 @@
  */
 
 import { ApplicationOptions, TurnState } from '@microsoft/agents-bot-hosting'
-import { AdaptiveCardsOptions } from './adaptiveCardsOptions'
-import { TaskModulesOptions } from './taskModulesOptions'
+import { TaskModulesOptions } from './task'
+import { AdaptiveCardsOptions } from './adaptive-cards'
 
 export interface TeamsApplicationOptions<TState extends TurnState> extends ApplicationOptions<TState> {
   adaptiveCards?: AdaptiveCardsOptions
