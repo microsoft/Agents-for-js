@@ -11,6 +11,7 @@ const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
 const conversationState = new ConversationState(new MemoryStorage())
 
 const adapter = new CloudAdapter(authConfig)
+
 const myBot = new RootBot(conversationState)
 
 const app = express()
@@ -27,8 +28,8 @@ app.post('/api/botresponse/v3/conversations/:conversationId/activities/:activity
   const activityFromEchoBot = JSON.stringify(activity)
   console.log('activityFromEchoBot', activityFromEchoBot)
 
-  const dataForBot = await MemoryStorage.getSingleInstance().read([activity.conversation!.id])
-  const conversationReference = dataForBot[activity.conversation!.id].conversationReference
+  const dataForBot = await MemoryStorage.getSingleInstance().read([req.params!.conversationId])
+  const conversationReference = dataForBot[req.params!.conversationId].conversationReference
   console.log('Data for bot:', dataForBot)
 
   // TODO delete activity from memory.
@@ -37,8 +38,7 @@ app.post('/api/botresponse/v3/conversations/:conversationId/activities/:activity
 
   const callback = async (turnContext: TurnContext) => {
     activity.applyConversationReference(conversationReference)
-    activity.id = req.params!.activityId
-    // TODO review activity.callerId = `urn:botframework:aadappid:${turnContext.activity.from?.id}`
+    turnContext.activity.id = req.params!.activityId
 
     if (activity.type === 'endOfConversation') {
       await MemoryStorage.getSingleInstance().delete([activity.conversation!.id])
@@ -49,8 +49,6 @@ app.post('/api/botresponse/v3/conversations/:conversationId/activities/:activity
   }
 
   await adapter.continueConversation(conversationReference, callback, true)
-  // await adapter.process(req, res, async (context) => await myBot.run(context), true)
-
   // TODO send an http response
 })
 
