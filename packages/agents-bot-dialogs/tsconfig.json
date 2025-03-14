@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "rootDirs": [ "src/", "test/", "vendor/"],
+    "outDir": "dist",
+    "paths": {
+      "@microsoft/*": ["./packages/*"]
+    },
+    "noImplicitAny": false,
+    "strictNullChecks": false
+  }
+}
