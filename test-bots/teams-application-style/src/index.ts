@@ -26,20 +26,6 @@ async function loadModule () {
 
 server.use(express.static(path.join(__dirname, '..', 'public')))
 
-server.get('/Youtube', (_req, res) => {
-  const filePath = path.join(__dirname, '../pages/youtube.html')
-  res.sendFile(filePath)
-})
-
-server.get('/CustomForm', (_req, res) => {
-  const filePath = path.join(__dirname, '../pages/customForm.html')
-  res.sendFile(filePath)
-})
-
-server.post('/CustomForm', (_req) => {
-  console.log('Data is being sent to the teams handler when this endpoint is called by teams')
-})
-
 server.post('/api/messages', async (req: Request, res: Response) => {
   await adapter.process(req, res, async (context) => {
     const app = await loadModule()

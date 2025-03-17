@@ -13,7 +13,9 @@ import {
 import { TeamsInfo, TeamsMember, MeetingNotification, validateTeamsChannelData, TeamsApplication } from '@microsoft/agents-bot-hosting-teams'
 
 type ApplicationTurnState = TurnState
-export const app = new TeamsApplication()
+export const app = new TeamsApplication({
+  removeRecipientMention: false
+})
 
 app.conversationUpdate('membersAdded', async (context: TurnContext, state: ApplicationTurnState) => {
   const membersAdded = context.activity.membersAdded ?? []
@@ -127,7 +129,21 @@ app.message('/msgAllMembers', async (context: TurnContext, state: ApplicationTur
 app.activity(ActivityTypes.Message, async (context: TurnContext, state: ApplicationTurnState) => {
   await context.sendActivities([
     MessageFactory.text('Welcome to teams-js-bot1'),
-    MessageFactory.text('options: /getMember, /getMeetingInfo, /getMeetingParticipant, /sendMeetingNotification,  /sendMessageToAllUsersInTenant, /getTeamChannels, /getTeamDetails, /getPagedTeamMembers, /getPagedMembers, /sendMessageToTeamsChannel, /sendMessageToListOfUsers, /sendMessageToAllUsersInTenant, /msgAllMembers')])
+    MessageFactory.text(`options: 
+      /getMember,
+      /getMeetingInfo,
+      /getMeetingParticipant,
+      /sendMeetingNotification,
+      /sendMessageToAllUsersInTenant,
+      /getTeamChannels,
+      /getTeamDetails,
+      /getPagedTeamMembers,
+      /getPagedMembers,
+      /sendMessageToTeamsChannel,
+      /sendMessageToListOfUsers,
+      /sendMessageToAllUsersInTenant,
+      /msgAllMembers`
+    )])
 })
 
 async function messageAllMembers (context: TurnContext) {
