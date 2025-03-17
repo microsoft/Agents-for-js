@@ -111,6 +111,11 @@ export class ActivityHandler {
     return this.on('UnrecognizedActivityType', handler)
   }
 
+  /** * Registers an activity event handler for the _dialog_ event, emitted as the last event for an incoming activity. */
+  onDialog (handler: BotHandler): this {
+    return this.on('Dialog', handler)
+  }
+
   /** * Runs the activity handler pipeline. */
   async run (context: TurnContext): Promise<void> {
     if (!context) throw new Error('Missing TurnContext parameter')
