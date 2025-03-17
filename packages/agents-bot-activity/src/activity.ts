@@ -262,6 +262,19 @@ export class Activity {
     return this
   }
 
+  public clone (): Activity {
+    const activityCopy = JSON.parse(JSON.stringify(this))
+
+    for (const key in activityCopy) {
+      if (typeof activityCopy[key] === 'string' && !isNaN(Date.parse(activityCopy[key]))) {
+        activityCopy[key] = new Date(activityCopy[key] as string)
+      }
+    }
+
+    Object.setPrototypeOf(activityCopy, Activity.prototype)
+    return activityCopy
+  }
+
   /**
    * Gets the mentions in the activity.
    * @param activity The activity.
