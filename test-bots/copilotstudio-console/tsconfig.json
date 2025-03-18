@@ -4,6 +4,7 @@
     "module": "ESNext",
     "moduleResolution": "node",
     "rootDir": "src",
-    "outDir": "dist"
+    "outDir": "dist",
+    "tsBuildInfoFile": "dist/.tsbuildinfo"
   }
 }

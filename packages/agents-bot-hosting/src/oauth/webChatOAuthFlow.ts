@@ -19,16 +19,28 @@ class FlowState {
   public flowExpires: number = 0
 }
 
+/**
+ * Manages the OAuth flow for Web Chat.
+ */
 export class WebChatOAuthFlow {
   userTokenClient?: UserTokenClient
   state: FlowState | null
   flowStateAccessor: BotStatePropertyAccessor<FlowState | null>
 
+  /**
+   * Creates a new instance of WebChatOAuthFlow.
+   * @param userState The user state.
+   */
   constructor (userState: UserState) {
     this.state = null
     this.flowStateAccessor = userState.createProperty('flowState')
   }
 
+  /**
+   * Gets the OAuth token.
+   * @param context The turn context.
+   * @returns A promise that resolves to the user token.
+   */
   public async getOAuthToken (context: TurnContext) : Promise<string> {
     this.state = await this.getUserState(context)
     if (this.state!.userToken !== '') {
@@ -43,6 +55,9 @@ export class WebChatOAuthFlow {
 
     let retVal: string = ''
     const authConfig = context.adapter.authConfig
+    if (authConfig.connectionName === undefined) {
+      throw new Error('connectionName is not set in the auth config, review your environment variables')
+    }
     const adapter = context.adapter as CloudAdapter
     const scope = 'https://api.botframework.com'
     const accessToken = await adapter.authProvider.getAccessToken(authConfig, scope)
@@ -79,6 +94,11 @@ export class WebChatOAuthFlow {
     return retVal
   }
 
+  /**
+   * Signs the user out.
+   * @param context The turn context.
+   * @returns A promise that resolves when the sign-out operation is complete.
+   */
   async signOut (context: TurnContext) {
     await this.userTokenClient!.signOut(context.activity.from?.id!, context.adapter.authConfig.connectionName!, context.activity.channelId!)
     this.state!.flowStarted = false
@@ -88,6 +108,11 @@ export class WebChatOAuthFlow {
     logger.info('User signed out successfully')
   }
 
+  /**
+   * Gets the user state.
+   * @param context The turn context.
+   * @returns A promise that resolves to the user state.
+   */
   private async getUserState (context: TurnContext) {
     let userProfile: FlowState | null = await this.flowStateAccessor.get(context, null)
     if (userProfile === null) {

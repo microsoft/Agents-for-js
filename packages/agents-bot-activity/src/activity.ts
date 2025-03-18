@@ -24,8 +24,10 @@ import { EndOfConversationCodes, endOfConversationCodesZodSchema } from './conve
 import { DeliveryModes, deliveryModesZodSchema } from './deliveryModes'
 import { Channels } from './conversation/channels'
 import { Mention } from './entity/mention'
-import { TeamsChannelData, teamsChannelDataZodSchema } from './teams/teamsChannelData'
 
+/**
+ * Zod schema for validating an Activity object.
+ */
 export const activityZodSchema = z.object({
   type: z.union([activityTypesZodSchema, z.string().min(1)]),
   text: z.string().min(1).optional(),
@@ -54,7 +56,7 @@ export const activityZodSchema = z.object({
   suggestedActions: suggestedActionsZodSchema.optional(),
   attachments: z.array(attachmentZodSchema).optional(),
   entities: z.array(entityZodSchema).optional(),
-  channelData: z.union([z.any(), teamsChannelDataZodSchema]).optional(),
+  channelData: z.any().optional(),
   action: z.string().min(1).optional(),
   replyToId: z.string().min(1).optional(),
   label: z.string().min(1).optional(),
@@ -71,6 +73,9 @@ export const activityZodSchema = z.object({
   semanticAction: semanticActionZodSchema.optional()
 })
 
+/**
+ * Represents an activity in a conversation.
+ */
 export class Activity {
   type: ActivityTypes | string
   text?: string
@@ -99,7 +104,7 @@ export class Activity {
   suggestedActions?: SuggestedActions
   attachments?: Attachment[]
   entities?: Entity[]
-  channelData?: TeamsChannelData | any
+  channelData?: any
   action?: string
   replyToId?: string
   label?: string
@@ -119,6 +124,11 @@ export class Activity {
   rawLocalTimestamp?: string
   [x: string]: unknown
 
+  /**
+   * Creates a new Activity instance.
+   * @param t The type of the activity.
+   * @throws Will throw an error if the activity type is invalid.
+   */
   constructor (t: ActivityTypes | string) {
     if (t === undefined) {
       throw new Error('Invalid ActivityType: undefined')
@@ -133,10 +143,20 @@ export class Activity {
     this.type = t
   }
 
+  /**
+   * Creates an Activity instance from a JSON string.
+   * @param json The JSON string representing the activity.
+   * @returns The created Activity instance.
+   */
   static fromJson (json: string): Activity {
     return this.fromObject(JSON.parse(json))
   }
 
+  /**
+   * Creates an Activity instance from an object.
+   * @param o The object representing the activity.
+   * @returns The created Activity instance.
+   */
   static fromObject (o: object): Activity {
     const parsedActivity = activityZodSchema.passthrough().parse(o)
     const activity = new Activity(parsedActivity.type)
@@ -144,11 +164,11 @@ export class Activity {
     return activity
   }
 
-  public validateTeamsChannelData (o: object): TeamsChannelData {
-    teamsChannelDataZodSchema.passthrough().parse(o)
-    return o
-  }
-
+  /**
+   * Creates a continuation activity from a conversation reference.
+   * @param reference The conversation reference.
+   * @returns The created continuation activity.
+   */
   static getContinuationActivity (reference: ConversationReference): Activity {
     const continuationActivityObj = {
       type: ActivityTypes.Event,
@@ -166,6 +186,10 @@ export class Activity {
     return continuationActivity
   }
 
+  /**
+   * Gets the appropriate reply-to ID for the activity.
+   * @returns The reply-to ID, or undefined if not applicable.
+   */
   private getAppropriateReplyToId (): string | undefined {
     if (
       this.type !== ActivityTypes.ConversationUpdate ||
@@ -177,6 +201,11 @@ export class Activity {
     return undefined
   }
 
+  /**
+   * Gets the conversation reference for the activity.
+   * @returns The conversation reference.
+   * @throws Will throw an error if required properties are undefined.
+   */
   public getConversationReference (): ConversationReference {
     if (this.recipient === null || this.recipient === undefined) {
       throw new Error('Activity Recipient undefined')
@@ -202,6 +231,12 @@ export class Activity {
     }
   }
 
+  /**
+   * Applies a conversation reference to the activity.
+   * @param reference The conversation reference.
+   * @param isIncoming Whether the activity is incoming.
+   * @returns The updated activity.
+   */
   public applyConversationReference (
     reference: ConversationReference,
     isIncoming = false
@@ -227,6 +262,24 @@ export class Activity {
     return this
   }
 
+  public clone (): Activity {
+    const activityCopy = JSON.parse(JSON.stringify(this))
+
+    for (const key in activityCopy) {
+      if (typeof activityCopy[key] === 'string' && !isNaN(Date.parse(activityCopy[key]))) {
+        activityCopy[key] = new Date(activityCopy[key] as string)
+      }
+    }
+
+    Object.setPrototypeOf(activityCopy, Activity.prototype)
+    return activityCopy
+  }
+
+  /**
+   * Gets the mentions in the activity.
+   * @param activity The activity.
+   * @returns The list of mentions.
+   */
   private getMentions (activity: Activity): Mention[] {
     const result: Mention[] = []
     if (activity.entities !== undefined) {
@@ -239,6 +292,11 @@ export class Activity {
     return result
   }
 
+  /**
+   * Removes the mention text for a given ID.
+   * @param id The ID of the mention to remove.
+   * @returns The updated text.
+   */
   private removeMentionText (id: string): string {
     const mentions = this.getMentions(this)
     const mentionsFiltered = mentions.filter((mention): boolean => mention.mentioned.id === id)
@@ -248,6 +306,10 @@ export class Activity {
     return this.text || ''
   }
 
+  /**
+   * Removes the recipient mention from the activity text.
+   * @returns The updated text.
+   */
   public removeRecipientMention (): string {
     if ((this.recipient != null) && this.recipient.id) {
       return this.removeMentionText(this.recipient.id)
@@ -255,6 +317,11 @@ export class Activity {
     return ''
   }
 
+  /**
+   * Gets the conversation reference for a reply.
+   * @param replyId The ID of the reply.
+   * @returns The conversation reference.
+   */
   public getReplyConversationReference (
     replyId: string
   ): ConversationReference {

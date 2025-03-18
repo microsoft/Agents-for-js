@@ -3,8 +3,20 @@
  * Licensed under the MIT License.
  */
 
+/**
+ * Represents the response from a conversation resource operation.
+ */
 export interface ConversationResourceResponse {
-  activityId: string
-  serviceUrl: string
-  id: string
+  /**
+   * The ID of the activity.
+   */
+  activityId: string;
+  /**
+   * The service URL.
+   */
+  serviceUrl: string;
+  /**
+   * The ID of the conversation resource.
+   */
+  id: string;
 }

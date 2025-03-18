@@ -5,7 +5,16 @@
 
 import { ConversationMembers } from './conversationMembers'
 
+/**
+ * Represents the result of a conversation query.
+ */
 export interface ConversationsResult {
-  continuationToken: string
-  conversations: ConversationMembers[]
+  /**
+   * A token to retrieve the next page of results.
+   */
+  continuationToken: string;
+  /**
+   * A list of conversation members.
+   */
+  conversations: ConversationMembers[];
 }

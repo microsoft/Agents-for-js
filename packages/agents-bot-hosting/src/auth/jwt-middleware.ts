@@ -14,9 +14,9 @@ const logger = debug('agents:jwt-middleware')
 
 /**
  * Verifies the JWT token.
- * @param {string} raw - The raw JWT token.
- * @param {AuthConfiguration} config - The authentication configuration.
- * @returns {Promise<JwtPayload>} - The decoded JWT payload.
+ * @param raw The raw JWT token.
+ * @param config The authentication configuration.
+ * @returns A promise that resolves to the JWT payload.
  */
 const verifyToken = async (raw: string, config: AuthConfiguration): Promise<JwtPayload> => {
   const getKey: GetPublicKeyOrSecret = (header: JwtHeader, callback: SignCallback) => {
@@ -66,9 +66,9 @@ const verifyToken = async (raw: string, config: AuthConfiguration): Promise<JwtP
 }
 
 /**
- * Middleware to authorize JWT.
- * @param {AuthConfiguration} authConfig - The authentication configuration.
- * @returns {Function} - The middleware function.
+ * Middleware to authorize JWT tokens.
+ * @param authConfig The authentication configuration.
+ * @returns An Express middleware function.
  */
 export const authorizeJWT = (authConfig: AuthConfiguration) => {
   return async function (req: Request, res: Response, next: NextFunction) {

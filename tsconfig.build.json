@@ -15,6 +15,24 @@
       },
       {
         "path": "packages/agents-bot-hosting-storage-cosmos"
+      },
+      {
+        "path": "packages/agents-bot-hosting-teams"
+      },
+      {
+        "path": "test-bots/echo-bot"
+      },
+      {
+        "path": "test-bots/web-chat"
+      },
+      {
+        "path": "test-bots/state-bot"
+      },
+      {
+        "path": "test-bots/teams-bots"
+      },
+      {
+        "path": "test-bots/copilotstudio-console"
       }
     ]
   }

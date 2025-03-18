@@ -5,11 +5,23 @@
 
 import { z } from 'zod'
 
+/**
+ * Interface representing a text highlight.
+ */
 export interface TextHighlight {
+  /**
+   * The highlighted text.
+   */
   text: string
+  /**
+   * The occurrence count of the highlighted text.
+   */
   occurrence: number
 }
 
+/**
+ * Zod schema for validating TextHighlight objects.
+ */
 export const textHighlightZodSchema = z.object({
   text: z.string().min(1),
   occurrence: z.number()

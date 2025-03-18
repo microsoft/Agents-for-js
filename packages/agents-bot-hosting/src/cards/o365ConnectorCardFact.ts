@@ -3,7 +3,16 @@
  * Licensed under the MIT License.
  */
 
+/**
+ * Represents a fact in an O365 connector card.
+ */
 export interface O365ConnectorCardFact {
-  name?: string
-  value?: string
+  /**
+   * The name of the fact.
+   */
+  name?: string;
+  /**
+   * The value of the fact.
+   */
+  value?: string;
 }

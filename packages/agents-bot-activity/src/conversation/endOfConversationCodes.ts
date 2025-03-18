@@ -5,6 +5,9 @@
 
 import { z } from 'zod'
 
+/**
+ * Enum representing the different end of conversation codes.
+ */
 export enum EndOfConversationCodes {
   Unknown = 'unknown',
   CompletedSuccessfully = 'completedSuccessfully',
@@ -14,4 +17,7 @@ export enum EndOfConversationCodes {
   ChannelFailed = 'channelFailed',
 }
 
+/**
+ * Zod schema for validating end of conversation codes.
+ */
 export const endOfConversationCodesZodSchema = z.enum(['unknown', 'completedSuccessfully', 'userCancelled', 'botTimedOut', 'botIssuedInvalidMessage', 'channelFailed'])

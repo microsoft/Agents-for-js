@@ -6,6 +6,9 @@
 import { z } from 'zod'
 import { roleTypeZodSchema, RoleTypes } from './roleTypes'
 
+/**
+ * Interface representing a channel account.
+ */
 export interface ChannelAccount {
   id?: string
   name?: string
@@ -14,6 +17,9 @@ export interface ChannelAccount {
   properties?: unknown
 }
 
+/**
+ * Zod schema for validating a channel account.
+ */
 export const channelAccountZodSchema = z.object({
   id: z.string().min(1).optional(),
   name: z.string().optional(),

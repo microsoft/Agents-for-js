@@ -5,9 +5,15 @@
 
 import { z } from 'zod'
 
+/**
+ * Enum representing the layout types for attachments.
+ */
 export enum AttachmentLayoutTypes {
   List = 'list',
   Carousel = 'carousel',
 }
 
+/**
+ * Zod schema for validating attachment layout types.
+ */
 export const attachmentLayoutTypesZodSchema = z.enum(['list', 'carousel'])

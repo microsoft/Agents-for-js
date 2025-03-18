@@ -7,7 +7,7 @@
 			"script": "build",
 			"group": {
 				"kind": "build",
-				"isDefault": false
+				"isDefault": true
 			},
 			"problemMatcher": [],
 			"detail": "tsc --build --verbose tsconfig.build.json"

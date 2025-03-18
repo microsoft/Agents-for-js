@@ -4,7 +4,8 @@
 import express, { Response } from 'express'
 import rateLimit from 'express-rate-limit'
 
-import { Request, CloudAdapter, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv, UserState, MemoryStorage } from '@microsoft/agents-bot-hosting'
+import { Request, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv, UserState, MemoryStorage } from '@microsoft/agents-bot-hosting'
+import { TeamsCloudAdapter } from '@microsoft/agents-bot-hosting-teams'
 
 import { TeamsJsBot } from './teamsJsBot'
 import { TeamsSsoBot } from './teamsSsoBot'
@@ -30,7 +31,7 @@ const createBot = (botName: string) => {
   }
 }
 
-const adapter = new CloudAdapter(authConfig)
+const adapter = new TeamsCloudAdapter(authConfig)
 
 const botName = process.env.botName || 'TeamsJsBot'
 const myBot = createBot(botName)
@@ -64,4 +65,4 @@ app.post('/api/messages', async (req: Request, res: Response) => {
 const port = process.env.PORT || 3978
 app.listen(port, () => {
   console.log(`\nServer listening to port ${port} for appId ${authConfig.clientId} debug ${process.env.DEBUG}`)
-})
+}).on('error', console.error)
