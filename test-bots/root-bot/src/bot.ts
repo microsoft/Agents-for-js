@@ -17,7 +17,7 @@ export class RootBot extends ActivityHandler {
       } else if (text?.startsWith('echo-bot:')) {
         await context.sendActivity(context.activity)
       } else {
-        await context.sendActivity(MessageFactory.text(`Echo: ${context.activity.text}`))
+        await context.sendActivity(MessageFactory.text(`root-bot: ${context.activity.text}`))
       }
 
       await next()
