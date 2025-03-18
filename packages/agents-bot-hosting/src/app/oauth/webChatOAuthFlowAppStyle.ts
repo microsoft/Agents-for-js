@@ -47,12 +47,12 @@ export class WebChatOAuthFlowAppStyle {
   userTokenClient?: UserTokenClient
   flowProfile: FlowProfile
   storage: Storage
-  appState: TurnState
+  appState: FlowState<FlowProfile>
 
   constructor (storage: Storage) {
     this.flowProfile = new FlowProfile()
     this.storage = storage
-    this.appState = new FlowState()
+    this.appState = new FlowState<FlowProfile>()
   }
 
   public async getOAuthToken (context: TurnContext) : Promise<string> {
