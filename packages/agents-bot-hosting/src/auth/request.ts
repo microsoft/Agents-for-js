@@ -5,10 +5,6 @@
 
 import { JwtPayload } from 'jsonwebtoken'
 
-export interface IParams {
-  [key: string]: string
-}
-
 /**
  * Represents a Node.js HTTP Request, including the minimal set of use properties.
  * Compatible with Restify, Express, and Node.js core http.
