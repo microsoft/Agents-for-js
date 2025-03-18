@@ -17,7 +17,7 @@ export class BotClient {
   }
 
   public async postActivity (activity: Activity, authConfig: AuthConfiguration): Promise<string> {
-    const activityCopy = JSON.parse(JSON.stringify(activity)) as Activity
+    const activityCopy = activity.clone()
     activityCopy.serviceUrl = this.botClientConfig.serviceUrl
     activityCopy.recipient = { ...activityCopy.recipient, role: RoleTypes.Skill }
     activityCopy.relatesTo = {
@@ -27,13 +27,7 @@ export class BotClient {
       locale: activityCopy.locale,
       conversation: {
         id: activity.conversation!.id,
-        name: activityCopy.conversation!.name,
-        conversationType: activityCopy.conversation!.conversationType,
-        aadObjectId: activityCopy.conversation!.aadObjectId,
-        isGroup: activityCopy.conversation!.isGroup,
-        properties: activityCopy.conversation!.properties,
-        role: activityCopy.conversation!.role,
-        tenantId: activityCopy.conversation!.tenantId
+        ...activityCopy.conversation
       }
     }
     activityCopy.conversation!.id = v4()
