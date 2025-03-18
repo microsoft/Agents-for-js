@@ -134,8 +134,7 @@ export class ConnectorClient {
       method: 'post',
       url: `v3/conversations/${conversationId}/activities/${encodeURIComponent(activityId)}`,
       headers: {
-        'Content-Type': 'application/json',
-        'x-ms-conversation-id': conversationId
+        'Content-Type': 'application/json'
       },
       data: body
     }
