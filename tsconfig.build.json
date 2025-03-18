@@ -37,5 +37,9 @@
       {
         "path": "test-bots/copilotstudio-console"
       }
+      ,
+      {
+        "path": "test-bots/multi-turn-prompt"
+      }
     ]
   }

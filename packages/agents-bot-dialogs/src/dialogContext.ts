@@ -2,10 +2,10 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
-import { TurnContext, TurnContextStateCollection } from '@microsoft/agents-bot-hosting'
+import { Activity, TurnContext, TurnContextStateCollection } from '@microsoft/agents-bot-hosting'
 import { Dialog } from './dialog'
 import { DialogSet } from './dialogSet'
-// import { PromptOptions } from './prompts'
+import { PromptOptions } from './prompts'
 import { DialogStateManager, TurnPath } from './memory'
 import { DialogContainer } from './dialogContainer'
 import { DialogEvents } from './dialogEvents'
@@ -17,6 +17,7 @@ import { DialogReason } from './dialogReason'
 import { DialogEvent } from './dialogEvent'
 import { DialogTurnResult } from './dialogTurnResult'
 import { DialogTurnStatus } from './dialogTurnStatus'
+import { Choice } from './choices'
 
 /**
  * Wraps a promise in a try-catch that automatically enriches errors with extra dialog context.
@@ -332,10 +333,10 @@ export class DialogContext {
      * DialogContext.beginDialog to start the specified prompt dialog.
      *
      */
-  // async prompt (
-  //   dialogId: string,
-  //   promptOrOptions: string | Partial<Activity> | PromptOptions,
-  // ): Promise<DialogTurnResult>
+  async prompt (
+    dialogId: string,
+    promptOrOptions: string | Partial<Activity> | PromptOptions,
+  ): Promise<DialogTurnResult>
 
   /**
      * Helper function to simplify formatting the options for calling a prompt dialog.
@@ -351,11 +352,11 @@ export class DialogContext {
      * DialogContext.beginDialog to start the specified prompt dialog.
      *
      */
-  // async prompt (
-  //   dialogId: string,
-  //   promptOrOptions: string | Partial<Activity> | PromptOptions,
-  //   choices: (string | Choice)[],
-  // ): Promise<DialogTurnResult>
+  async prompt (
+    dialogId: string,
+    promptOrOptions: string | Partial<Activity> | PromptOptions,
+    choices: (string | Choice)[],
+  ): Promise<DialogTurnResult>
 
   /**
      * Helper function to simplify formatting the options for calling a prompt dialog.
@@ -370,27 +371,27 @@ export class DialogContext {
      * beginDialog to start the specified prompt dialog.
      *
      */
-  // async prompt (
-  //   dialogId: string,
-  //   promptOrOptions: string | Partial<Activity>,
-  //   choices?: (string | Choice)[]
-  // ): Promise<DialogTurnResult> {
-  //   let options: PromptOptions
-  //   if (
-  //     (typeof promptOrOptions === 'object' && (promptOrOptions as Activity).type !== undefined) ||
-  //           typeof promptOrOptions === 'string'
-  //   ) {
-  //     options = { prompt: promptOrOptions as string | Partial<Activity> }
-  //   } else {
-  //     options = { ...(promptOrOptions as PromptOptions) }
-  //   }
+  async prompt (
+    dialogId: string,
+    promptOrOptions: string | Activity,
+    choices?: (string | Choice)[]
+  ): Promise<DialogTurnResult> {
+    let options: PromptOptions
+    if (
+      (typeof promptOrOptions === 'object' && (promptOrOptions as Activity).type !== undefined) ||
+            typeof promptOrOptions === 'string'
+    ) {
+      options = { prompt: promptOrOptions as string | Activity }
+    } else {
+      options = { ...(promptOrOptions as PromptOptions) }
+    }
 
-  //   if (choices) {
-  //     options.choices = choices
-  //   }
+    if (choices) {
+      options.choices = choices
+    }
 
-  //   return wrapErrors(this, this.beginDialog(dialogId, options))
-  // }
+    return wrapErrors(this, this.beginDialog(dialogId, options))
+  }
 
   /**
      * Continues execution of the active dialog, if there is one, by passing this dialog context to its

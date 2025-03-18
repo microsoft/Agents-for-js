@@ -113,7 +113,7 @@ export class ActivityHandler {
 
   /** * Registers an activity event handler for the _dialog_ event, emitted as the last event for an incoming activity. */
   onDialog (handler: BotHandler): this {
-    return this.on('Dialog', handler)
+    return this.on('Default', handler)
   }
 
   /** * Runs the activity handler pipeline. */

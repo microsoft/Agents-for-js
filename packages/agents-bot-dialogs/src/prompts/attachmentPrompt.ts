@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 import { Attachment, InputHints, TurnContext } from '@microsoft/agents-bot-hosting'
-import { Prompt, PromptOptions, PromptRecognizerResult } from './prompt'
+import { Prompt, PromptOptions, PromptRecognizerResult, PromptValidator } from './prompt'
 
 /**
  * Prompts a user to upload attachments like images.
@@ -12,6 +12,11 @@ import { Prompt, PromptOptions, PromptRecognizerResult } from './prompt'
  * By default the prompt will return to the calling dialog an `Attachment[]`.
  */
 export class AttachmentPrompt extends Prompt<Attachment[]> {
+  // eslint-disable-next-line @typescript-eslint/no-useless-constructor
+  constructor (dialogId: string, validator?: PromptValidator<Attachment[]>) {
+    super(dialogId, validator)
+  }
+
   /**
      * Prompts the user for input.
      *
