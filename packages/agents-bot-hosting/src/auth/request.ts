@@ -21,5 +21,4 @@ export interface Request<
   headers: Headers
   method?: string
   user?: JwtPayload
-  params?: IParams
 }

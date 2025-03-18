@@ -45,7 +45,7 @@ const verifyToken = async (raw: string, config: AuthConfiguration): Promise<JwtP
     const verifyOptions: jwt.VerifyOptions = {
       issuer: config.issuers,
       audience: config.clientId,
-      ignoreExpiration: true,
+      ignoreExpiration: false,
       algorithms: ['RS256']
     }
 

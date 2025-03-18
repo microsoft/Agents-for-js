@@ -40,5 +40,3 @@ export class ConversationState extends BotState {
     return `${channelId}/conversations/${conversationId}/${this.namespace}`
   }
 }
-
-// Tanto el channelId como el conversationId del POST debe matchear al volver la request

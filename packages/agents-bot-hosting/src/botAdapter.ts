@@ -26,12 +26,12 @@ export abstract class BotAdapter {
     logger.error(`\n [onTurnError] unhandled error: ${error}`)
 
     // Send a trace activity, which will be displayed in Bot Framework Emulator
-    // await context.sendTraceActivity(
-    //   'OnTurnError Trace',
-    //   `${error}`,
-    //   'https://www.botframework.com/schemas/error',
-    //   'TurnError'
-    // )
+    await context.sendTraceActivity(
+      'OnTurnError Trace',
+      `${error}`,
+      'https://www.botframework.com/schemas/error',
+      'TurnError'
+    )
 
     // Send a message to the user
     await context.sendActivity('The bot encountered an error or bug.')
