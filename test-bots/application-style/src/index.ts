@@ -26,6 +26,9 @@ async function loadModule () {
     case 'WebChat-State-Cosmos':
       module = (await import('./stateBotCosmosDB')).app
       return module
+    case 'WebChat-SSO':
+      module = (await import('./webChatSsoBot')).app
+      return module
     default:
       throw new Error(`Bot with name ${moduleName} is not recognized.`)
   }
