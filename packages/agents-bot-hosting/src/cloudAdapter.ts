@@ -138,7 +138,7 @@ export class CloudAdapter extends BotAdapter {
   public async process (
     request: Request,
     res: Response,
-    logic: (context: TurnContext) => Promise<void>, pepito: Boolean = false): Promise<void> {
+    logic: (context: TurnContext) => Promise<void>): Promise<void> {
     const end = (status: StatusCodes, body?: unknown, isInvokeResponseOrExpectReplies: boolean = false) => {
       res.status(status)
       if (isInvokeResponseOrExpectReplies) {
@@ -167,12 +167,8 @@ export class CloudAdapter extends BotAdapter {
       const invokeResponse = this.processTurnResults(context)
       return end(invokeResponse?.status ?? StatusCodes.OK, JSON.stringify(invokeResponse?.body), true)
     }
-    let scope = 'https://api.botframework.com'
-    if (pepito === false) {
-      scope = request.user?.azp ?? request.user?.appid ?? 'https://api.botframework.com'
-      activity.callerId = `urn:botframework:aadappid:${scope}`
-      // const context = this.createTurnContext(Activity.getContinuationActivity(activity), logic)
-    }
+
+    const scope = request.user?.azp ?? request.user?.appid ?? 'https://api.botframework.com'
     logger.info(`****Creating connector client with scope: ${scope} for serviceUrl: ${activity.serviceUrl}`)
     this.connectorClient = await ConnectorClient.createClientWithAuthAsync(activity.serviceUrl!, this.authConfig, this.authProvider, scope)
 
