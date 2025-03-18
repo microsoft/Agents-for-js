@@ -15,6 +15,7 @@ import { AppRoute } from './appRoute'
 import { TurnContext } from '../turnContext'
 import { ResourceResponse } from '../connector-client'
 import { debug } from '../logger'
+import { WebChatOAuthFlowAppStyle } from './oauth/webChatOAuthFlowAppStyle'
 
 const logger = debug('agents:application')
 
@@ -28,6 +29,7 @@ export class AgentApplication<TState extends TurnState> {
   private readonly _afterTurn: ApplicationEventHandler<TState>[] = []
   private readonly _adapter?: BotAdapter
   private _typingTimer: any
+  private readonly _authManager?: WebChatOAuthFlowAppStyle
 
   public constructor (options?: Partial<ApplicationOptions<TState>>) {
     this._options = {
@@ -39,6 +41,10 @@ export class AgentApplication<TState extends TurnState> {
 
     if (this._options.adapter) {
       this._adapter = this._options.adapter
+    }
+
+    if (this._options.storage && this._options.authentication && this._options.authentication.enableSSO) {
+      this._authManager = new WebChatOAuthFlowAppStyle(this._options.storage)
     }
 
     if (this._options.longRunningMessages && !this._adapter && !this._options.botAppId) {
@@ -56,6 +62,16 @@ export class AgentApplication<TState extends TurnState> {
     }
 
     return this._adapter
+  }
+
+  public get authManager (): WebChatOAuthFlowAppStyle {
+    if (!this._authManager) {
+      throw new Error(
+        'The Application.authentication property is unavailable because no authentication options were configured.'
+      )
+    }
+
+    return this._authManager
   }
 
   public get options (): ApplicationOptions<TState> {

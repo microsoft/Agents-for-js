@@ -7,6 +7,7 @@ import { CloudAdapter } from '../cloudAdapter'
 import { InputFileDownloader } from './inputFileDownloader'
 import { TurnState } from './turnState'
 import { Storage } from '../storage'
+import { AuthenticationOptions } from './oauth/authenticationOptions'
 
 export interface ApplicationOptions<TState extends TurnState> {
   adapter?: CloudAdapter;
@@ -16,4 +17,5 @@ export interface ApplicationOptions<TState extends TurnState> {
   longRunningMessages: boolean;
   turnStateFactory: () => TState;
   fileDownloaders?: InputFileDownloader<TState>[];
+  authentication?: AuthenticationOptions;
 }

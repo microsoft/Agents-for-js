@@ -9,6 +9,7 @@ import { TurnContext } from '../../turnContext'
 import { MessageFactory } from '../../messageFactory'
 import { debug } from '../../logger'
 import { TurnState } from '../turnState'
+import { Storage } from '../../storage'
 
 const logger = debug('agents:web-chat-oauth-flow')
 
@@ -44,23 +45,25 @@ class FlowProfile {
 
 export class WebChatOAuthFlowAppStyle {
   userTokenClient?: UserTokenClient
-  state: FlowProfile
-  storage: any
+  flowProfile: FlowProfile
+  storage: Storage
+  appState: TurnState
 
-  constructor (storage: any) {
-    this.state = new FlowProfile()
+  constructor (storage: Storage) {
+    this.flowProfile = new FlowProfile()
     this.storage = storage
+    this.appState = new FlowState()
   }
 
-  public async getOAuthToken (context: TurnContext, appState: any) : Promise<string> {
-    this.state = await this.getUserState(context, appState)
-    if (this.state!.userToken !== '') {
-      return this.state.userToken
+  public async getOAuthToken (context: TurnContext) : Promise<string> {
+    this.flowProfile = await this.getUserState(context)
+    if (this.flowProfile!.userToken !== '') {
+      return this.flowProfile.userToken
     }
-    if (this.state?.flowExpires !== 0 && Date.now() > this.state.flowExpires) {
+    if (this.flowProfile?.flowExpires !== 0 && Date.now() > this.flowProfile.flowExpires) {
       logger.warn('Sign-in flow expired')
-      this.state.flowStarted = false
-      this.state.userToken = ''
+      this.flowProfile.flowStarted = false
+      this.flowProfile.userToken = ''
       await context.sendActivity(MessageFactory.text('Sign-in session expired. Please try again.'))
     }
 
@@ -74,48 +77,48 @@ export class WebChatOAuthFlowAppStyle {
     const accessToken = await adapter.authProvider.getAccessToken(authConfig, scope)
     this.userTokenClient = new UserTokenClient(accessToken)
 
-    if (this.state!.flowStarted === true) {
+    if (this.flowProfile!.flowStarted === true) {
       const userToken = await this.userTokenClient.getUserToken(authConfig.connectionName!, context.activity.channelId!, context.activity.from?.id!)
       if (userToken !== null) {
         logger.info('Token obtained')
-        this.state.userToken = userToken.token
-        this.state.flowStarted = false
+        this.flowProfile.userToken = userToken.token
+        this.flowProfile.flowStarted = false
       } else {
         const code = context.activity.text as string
         const userToken = await this.userTokenClient!.getUserToken(authConfig.connectionName!, context.activity.channelId!, context.activity.from?.id!, code)
         if (userToken !== null) {
           logger.info('Token obtained with code')
-          this.state.userToken = userToken.token
-          this.state.flowStarted = false
+          this.flowProfile.userToken = userToken.token
+          this.flowProfile.flowStarted = false
         } else {
           logger.error('Sign in failed')
           await context.sendActivity(MessageFactory.text('Sign in failed'))
         }
       }
-      retVal = this.state.userToken
-    } else if (this.state!.flowStarted === false) {
+      retVal = this.flowProfile.userToken
+    } else if (this.flowProfile!.flowStarted === false) {
       const signingResource = await this.userTokenClient.getSignInResource(authConfig.clientId!, authConfig.connectionName!, context.activity)
       const oCard: Attachment = CardFactory.oauthCard(authConfig.connectionName!, 'Sign in', '', signingResource)
       await context.sendActivity(MessageFactory.attachment(oCard))
-      this.state!.flowStarted = true
-      this.state.flowExpires = Date.now() + 30000
+      this.flowProfile!.flowStarted = true
+      this.flowProfile.flowExpires = Date.now() + 30000
       logger.info('OAuth flow started')
     }
-    appState.save(context, this.storage)
+    this.appState.save(context, this.storage)
     return retVal
   }
 
-  async signOut (context: TurnContext, appState: any) {
+  async signOut (context: TurnContext) {
     await this.userTokenClient!.signOut(context.activity.from?.id!, context.adapter.authConfig.connectionName!, context.activity.channelId!)
-    this.state!.flowStarted = false
-    this.state!.userToken = ''
-    this.state!.flowExpires = 0
-    appState.save(context, this.storage)
+    this.flowProfile!.flowStarted = false
+    this.flowProfile!.userToken = ''
+    this.flowProfile!.flowExpires = 0
+    this.appState.save(context, this.storage)
     logger.info('User signed out successfully')
   }
 
-  private async getUserState (context: TurnContext, appState: any) {
-    await appState.load(context, this.storage)
-    return this.state
+  private async getUserState (context: TurnContext) {
+    await this.appState.load(context, this.storage)
+    return this.flowProfile
   }
 }

@@ -7,6 +7,7 @@ import { AgentApplication } from './agentApplication'
 import { ApplicationOptions } from './applicationOptions'
 import { TurnState } from './turnState'
 import { Storage } from '../storage'
+import { AuthenticationOptions } from './oauth/authenticationOptions'
 
 export class ApplicationBuilder<TState extends TurnState = TurnState> {
   private _options: Partial<ApplicationOptions<TState>> = {}
@@ -23,6 +24,11 @@ export class ApplicationBuilder<TState extends TurnState = TurnState> {
 
   public setStartTypingTimer (startTypingTimer: boolean): this {
     this._options.startTypingTimer = startTypingTimer
+    return this
+  }
+
+  public withAuthentication (authenticationOptions: AuthenticationOptions): this {
+    this._options.authentication = authenticationOptions
     return this
   }
 
