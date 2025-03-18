@@ -16,16 +16,16 @@ import { TurnContext } from '../turnContext'
 import { ResourceResponse } from '../connector-client'
 import { debug } from '../logger'
 
-const logger = debug('agents:application')
+const logger = debug('agents:agent-application')
 
 const TYPING_TIMER_DELAY = 1000
 type ApplicationEventHandler<TState extends TurnState> = (context: TurnContext, state: TState) => Promise<boolean>
 
 export class AgentApplication<TState extends TurnState> {
   private readonly _options: ApplicationOptions<TState>
-  private readonly _routes: AppRoute<TState>[] = []
-  private readonly _beforeTurn: ApplicationEventHandler<TState>[] = []
-  private readonly _afterTurn: ApplicationEventHandler<TState>[] = []
+  protected readonly _routes: AppRoute<TState>[] = []
+  protected readonly _beforeTurn: ApplicationEventHandler<TState>[] = []
+  protected readonly _afterTurn: ApplicationEventHandler<TState>[] = []
   private readonly _adapter?: BotAdapter
   private _typingTimer: any
 
@@ -101,7 +101,7 @@ export class AgentApplication<TState extends TurnState> {
     return this
   }
 
-  private async continueConversationAsync (
+  protected async continueConversationAsync (
     conversationReferenceOrContext: ConversationReference | TurnContext,
     logic: (context: TurnContext) => Promise<void>
   ): Promise<void> {
@@ -212,12 +212,13 @@ export class AgentApplication<TState extends TurnState> {
 
   public startTypingTimer (context: TurnContext): void {
     if (context.activity.type === ActivityTypes.Message && !this._typingTimer) {
-      context.onSendActivities((context, activities, next) => {
+      context.onSendActivities(async (context, activities, next) => {
         if (timerRunning) {
           for (let i = 0; i < activities.length; i++) {
             if (activities[i].type === ActivityTypes.Message || activities[i].channelData?.streamType) {
               this.stopTypingTimer()
               timerRunning = false
+              await lastSend
               break
             }
           }
@@ -227,13 +228,16 @@ export class AgentApplication<TState extends TurnState> {
       })
 
       let timerRunning = true
+      let lastSend: Promise<any> = Promise.resolve()
       const onTimeout = async () => {
         try {
-          await context.sendActivity(Activity.fromObject({ type: ActivityTypes.Typing }))
+          lastSend = context.sendActivity(Activity.fromObject({ type: ActivityTypes.Typing }))
+          await lastSend
         } catch (err: any) {
           logger.error(err)
           this._typingTimer = undefined
           timerRunning = false
+          lastSend = Promise.resolve()
         }
 
         if (timerRunning) {
@@ -270,7 +274,7 @@ export class AgentApplication<TState extends TurnState> {
     return this
   }
 
-  private async callEventHandlers (
+  protected async callEventHandlers (
     context: TurnContext,
     state: TState,
     handlers: ApplicationEventHandler<TState>[]
@@ -285,7 +289,7 @@ export class AgentApplication<TState extends TurnState> {
     return true
   }
 
-  private startLongRunningCall (
+  protected startLongRunningCall (
     context: TurnContext,
     handler: (context: TurnContext) => Promise<boolean>
   ): Promise<boolean> {
