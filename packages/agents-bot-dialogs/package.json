@@ -16,10 +16,12 @@
   "main": "dist/index.js",
   "types": "dist/src/index.d.ts",
   "dependencies": {
-    "@microsoft/agents-bot-hosting": "file:../agents-bot-hosting"
+    "@microsoft/agents-bot-hosting": "file:../agents-bot-hosting",
+    "dependency-graph": "^1.0.0"
   },
   "devDependencies": {
-    "@types/express": "^5.0.0"
+    "@types/express": "^5.0.0",
+    "@types/lodash": "^4.17.16"
   },
   "license": "MIT",
   "files": [
