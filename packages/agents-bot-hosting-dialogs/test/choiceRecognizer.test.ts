@@ -1,4 +1,4 @@
-import { ModelResult, findValues, findChoices, recognizeChoices } from '../'
+import { ModelResult, findValues, findChoices, recognizeChoices } from '../src'
 import { describe, it } from 'node:test'
 import assert from 'assert'
 
