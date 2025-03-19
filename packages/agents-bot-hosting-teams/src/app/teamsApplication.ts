@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { Activity, ActivityTypes, AgentApplication, AppRoute, ConversationReference, debug, RouteHandler, RouteSelector, TurnContext, TurnState } from '@microsoft/agents-bot-hosting'
+import { Activity, ActivityTypes, AgentApplication, AppRoute, ConversationReference, debug, MemoryStorage, RouteHandler, RouteSelector, TurnContext, TurnState } from '@microsoft/agents-bot-hosting'
 import { TeamsApplicationOptions } from './teamsApplicationOptions'
 import { FileConsentCardResponse } from '../file/fileConsentCardResponse'
 import { ChannelInfo } from '../channel-data/channelInfo'
@@ -18,6 +18,7 @@ import { MessageExtensions } from './messaging-extension'
 import { Meetings } from './meeting'
 import { TaskModules } from './task'
 import { TeamsConversationUpdateEvents } from './conversation-events'
+import { TeamsOAuthFlowAppStyle } from './oauth/teamsOAuthFlowAppStyle'
 
 const logger = debug('agents:teams-application')
 
@@ -29,6 +30,7 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
   private readonly _messageExtensions: MessageExtensions<TState>
   private readonly _meetings: Meetings<TState>
   private readonly _taskModules: TaskModules<TState>
+  private readonly _teamsAuthManager?: TeamsOAuthFlowAppStyle
 
   public constructor (options?: Partial<TeamsApplicationOptions<TState>>) {
     super()
@@ -36,6 +38,10 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
       ...super.options,
       removeRecipientMention:
                 options?.removeRecipientMention !== undefined ? options.removeRecipientMention : true
+    }
+
+    if (options?.storage && options?.authentication && options?.authentication.enableSSO) {
+      this._teamsAuthManager = new TeamsOAuthFlowAppStyle(options?.storage ?? new MemoryStorage())
     }
 
     this._adaptiveCards = new AdaptiveCards<TState>(this)
@@ -67,6 +73,16 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
 
   public get meetings (): Meetings<TState> {
     return this._meetings
+  }
+
+  public get teamsAuthManager (): TeamsOAuthFlowAppStyle {
+    if (!this._teamsAuthManager) {
+      throw new Error(
+        'The Application.authentication property is unavailable because no authentication options were configured.'
+      )
+    }
+
+    return this._teamsAuthManager
   }
 
   public addRoute (selector: RouteSelector, handler: RouteHandler<TState>, isInvokeRoute = false): this {

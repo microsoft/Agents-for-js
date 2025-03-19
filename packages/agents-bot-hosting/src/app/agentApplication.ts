@@ -23,7 +23,7 @@ const TYPING_TIMER_DELAY = 1000
 type ApplicationEventHandler<TState extends TurnState> = (context: TurnContext, state: TState) => Promise<boolean>
 
 export class AgentApplication<TState extends TurnState> {
-  private readonly _options: ApplicationOptions<TState>
+  protected readonly _options: ApplicationOptions<TState>
   protected readonly _routes: AppRoute<TState>[] = []
   protected readonly _beforeTurn: ApplicationEventHandler<TState>[] = []
   protected readonly _afterTurn: ApplicationEventHandler<TState>[] = []

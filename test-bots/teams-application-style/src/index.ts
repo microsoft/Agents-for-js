@@ -16,8 +16,11 @@ async function loadModule () {
   const moduleName = process.env.botName || 'TeamsJsBot'
   let module
   switch (moduleName) {
-    case 'TeamsJsBot':
+    case 'Teams':
       module = (await import('./teamsJsBot')).app
+      return module
+    case 'Teams-SSO':
+      module = (await import('./teamsSsoBot')).app
       return module
     default:
       throw new Error(`Bot with name ${moduleName} is not recognized.`)
