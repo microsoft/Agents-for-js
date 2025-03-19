@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { defaultTokenizer } from '../src'
+import { defaultTokenizer } from '../src/choices/tokenizer'
 import { describe, it } from 'node:test'
 
 interface Token {
