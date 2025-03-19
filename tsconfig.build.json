@@ -20,7 +20,7 @@
         "path": "packages/agents-bot-hosting-teams"
       },
       {
-        "path": "packages/agents-bot-dialogs"
+        "path": "packages/agents-bot-hosting-dialogs"
       },
       {
         "path": "test-bots/echo-bot"
