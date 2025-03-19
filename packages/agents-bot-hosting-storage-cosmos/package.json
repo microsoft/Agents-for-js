@@ -17,7 +17,7 @@
   "main": "dist/index.js",
   "types" : "dist/src/index.d.ts",
   "dependencies": {
-    "@azure/cosmos": "^4.2.0",
+    "@azure/cosmos": "^4.3.0",
     "@microsoft/agents-bot-hosting": "file:../../packages/agents-bot-hosting"
   },
   "license": "MIT",
