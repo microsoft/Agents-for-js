@@ -21,11 +21,12 @@ const storage = new MemoryStorage()
 export const app = new ApplicationBuilder<ApplicationTurnState>().withStorage(storage).withAuthentication({ enableSSO: true }).build()
 
 app.message('/signout', async (context: TurnContext, state: ApplicationTurnState) => {
-  await app.authManager.signOut(context)
+  await app.authManager.signOut(context, state)
   await context.sendActivity(MessageFactory.text('User signed out'))
 })
 
 app.message('/signin', async (context: TurnContext, state: ApplicationTurnState) => {
+  await state.load(context, storage)
   await getToken(context, state)
 })
 
@@ -71,7 +72,7 @@ app.activity(ActivityTypes.Message, async (context: TurnContext, state: Applicat
 })
 
 async function getToken (context: TurnContext, state: ApplicationTurnState): Promise<void> {
-  const userToken = await app.authManager.getOAuthToken(context)
+  const userToken = await app.authManager.getOAuthToken(context, state)
   if (userToken.length !== 0) {
     await sendLoggedUserInfo(context, userToken)
   }

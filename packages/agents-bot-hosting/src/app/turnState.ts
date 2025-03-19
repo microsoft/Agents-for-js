@@ -18,6 +18,8 @@ const USER_SCOPE = 'user'
 
 const TEMP_SCOPE = 'temp'
 
+const SSO_SCOPE = 'sso'
+
 export interface DefaultConversationState {}
 
 export interface DefaultUserState {}
@@ -28,6 +30,12 @@ export interface DefaultTempState {
   actionOutputs: Record<string, string>;
   authTokens: { [key: string]: string };
   duplicateTokenExchange?: boolean;
+}
+
+export interface DefaultSSOState {
+  flowStarted: boolean;
+  userToken: string;
+  flowExpires: number;
 }
 
 /**
@@ -64,7 +72,8 @@ export interface DefaultTempState {
 export class TurnState<
     TConversationState = DefaultConversationState,
     TUserState = DefaultUserState,
-    TTempState = DefaultTempState
+    TTempState = DefaultTempState,
+    TSSOState = DefaultSSOState
 > implements Memory {
   private _scopes: Record<string, TurnStateEntry> = {}
   private _isLoaded = false
@@ -117,6 +126,22 @@ export class TurnState<
 
   public set user (value: TUserState) {
     const scope = this.getScope(USER_SCOPE)
+    if (!scope) {
+      throw new Error(this._stateNotLoadedString)
+    }
+    scope.replace(value as Record<string, unknown>)
+  }
+
+  public get sso (): TSSOState {
+    const scope = this.getScope(SSO_SCOPE)
+    if (!scope) {
+      throw new Error(this._stateNotLoadedString)
+    }
+    return scope.value as TSSOState
+  }
+
+  public set sso (value: TSSOState) {
+    const scope = this.getScope(SSO_SCOPE)
     if (!scope) {
       throw new Error(this._stateNotLoadedString)
     }
@@ -292,6 +317,7 @@ export class TurnState<
     const keys: Record<string, string> = {}
     keys[CONVERSATION_SCOPE] = `${channelId}/${botId}/conversations/${conversationId}`
     keys[USER_SCOPE] = `${channelId}/${botId}/users/${userId}`
+    keys[SSO_SCOPE] = `${channelId}/${botId}/sso`
     return Promise.resolve(keys)
   }
 
