@@ -1,8 +1,15 @@
-import { Request, Response } from 'express'
-import { Activity, TurnContext, MemoryStorage, CloudAdapter } from '@microsoft/agents-bot-hosting'
-import { RootBot } from '../bot'
+import { Activity } from '@microsoft/agents-bot-activity'
+import { ActivityHandler } from '../activityHandler'
+import { CloudAdapter } from '../cloudAdapter'
+import { Request, Response, Application } from 'express'
+import { MemoryStorage } from '../storage'
+import { TurnContext } from '../turnContext'
 
-export const handleBotResponse = (adapter: CloudAdapter, bot: RootBot) => async (req: Request, res: Response) => {
+export const addBotApi = (app: Application, adapter: CloudAdapter, bot: ActivityHandler) => {
+  app.post('/api/botresponse/v3/conversations/:conversationId/activities/:activityId', handleBotResponse(adapter, bot))
+}
+
+const handleBotResponse = (adapter: CloudAdapter, bot: ActivityHandler) => async (req: Request, res: Response) => {
   const activity = Activity.fromObject(req.body!)
   const activityFromEchoBot = JSON.stringify(activity)
   console.log('activityFromEchoBot', activityFromEchoBot)
