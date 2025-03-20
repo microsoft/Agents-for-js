@@ -23,20 +23,25 @@ export class TeamsOAuthFlowAppStyle {
   userTokenClient?: TeamsUserTokenClient
   tokenExchangeId: string | null = null
   storage: Storage
+  appState: TurnState | null = null
 
   constructor (storage: Storage) {
     this.storage = storage
   }
 
   public async beginFlow (context: TurnContext, state: TurnState): Promise<string> {
-    if (Object.keys(state.sso).length === 0) {
-      state.sso.flowStarted = false
-      state.sso.userToken = ''
-      state.sso.flowExpires = 0
-      await state.save(context)
+    await state.load(context, this.storage)
+    if (this.appState === null) {
+      this.appState = state
     }
-    if (state.sso.userToken !== '') {
-      return state.sso.userToken
+    if (Object.keys(this.appState.sso).length === 0) {
+      this.appState.sso.flowStarted = false
+      this.appState.sso.userToken = ''
+      this.appState.sso.flowExpires = 0
+      await this.appState.save(context, this.storage)
+    }
+    if (this.appState.sso.userToken !== '') {
+      return this.appState.sso.userToken
     }
 
     const adapter = context.adapter as CloudAdapter
@@ -54,16 +59,20 @@ export class TeamsOAuthFlowAppStyle {
     await context.sendActivity(MessageFactory.attachment(oCard))
     state.sso.flowStarted = true
     state.sso.flowExpires = Date.now() + 30000
-    await state.save(context)
+    await state.save(context, this.storage)
     logger.info('OAuth flow started')
     return retVal
   }
 
-  public async continueFlow (context: TurnContext, state: TurnState): Promise<string> {
-    if (state.sso?.flowExpires !== 0 && Date.now() > state.sso!.flowExpires) {
+  public async continueFlow (context: TurnContext): Promise<string> {
+    if (this.appState!.sso!.userToken !== '') {
+      return ''
+    }
+    await this.appState!.load(context, this.storage)
+    if (this.appState!.sso?.flowExpires !== 0 && Date.now() > this.appState!.sso!.flowExpires) {
       logger.warn('Sign-in flow expired')
-      state.sso!.flowStarted = false
-      state.sso!.userToken = ''
+      this.appState!.sso!.flowStarted = false
+      this.appState!.sso!.userToken = ''
       await context.sendActivity(MessageFactory.text('Sign-in session expired. Please try again.'))
       return ''
     }
@@ -76,19 +85,29 @@ export class TeamsOAuthFlowAppStyle {
     this.tokenExchangeId = tokenExchangeRequest.id!
     const userTokenReq = await this.userTokenClient?.exchangeTokenAsync(contFlowActivity.from?.id!, authConfig.connectionName!, contFlowActivity.channelId!, tokenExchangeRequest)
     logger.info('Token obtained')
-    state.sso!.userToken = userTokenReq.token
-    state.sso!.flowStarted = false
-    await context.sendActivity(MessageFactory.text('User signed in' + new Date().toISOString()))
-    await state.save(context)
-    return state.sso?.userToken!
+    this.appState!.sso!.userToken = userTokenReq.token
+    this.appState!.sso!.flowStarted = false
+    await context.sendActivity(MessageFactory.text('User signed in ' + new Date().toISOString()))
+    await this.appState!.save(context, this.storage)
+    return this.appState!.sso?.userToken!
   }
 
-  public async signOut (context: TurnContext, state: TurnState): Promise<void> {
-    await this.userTokenClient?.signOut(context.activity.from?.id as string, context.adapter.authConfig.connectionName as string, context.activity.channelId as string)
-    await context.sendActivity(MessageFactory.text('User signed out'))
-    state.sso!.userToken = ''
-    state.sso!.flowExpires = 0
-    await state.save(context)
-    logger.info('User signed out successfully')
+  public async signOut (context: TurnContext): Promise<void> {
+    if (this.appState !== null) {
+      await this.appState.load(context, this.storage)
+      await this.userTokenClient?.signOut(context.activity.from?.id as string, context.adapter.authConfig.connectionName as string, context.activity.channelId as string)
+      await context.sendActivity(MessageFactory.text('User signed out'))
+      this.appState.sso!.userToken = ''
+      this.appState.sso!.flowExpires = 0
+      await this.appState.save(context, this.storage)
+      logger.info('User signed out successfully')
+    } else {
+      await context.sendActivity(MessageFactory.text('User is not signed in'))
+    }
+  }
+
+  public async userSignedInToken (context: TurnContext) {
+    await this.appState?.load(context, this.storage)
+    return this.appState?.sso?.userToken
   }
 }
