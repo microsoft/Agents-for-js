@@ -4,6 +4,7 @@ import { CloudAdapter } from '../cloudAdapter'
 import { Request, Response, Application } from 'express'
 import { MemoryStorage } from '../storage'
 import { TurnContext } from '../turnContext'
+import { v4 } from 'uuid'
 
 export const addBotApi = (app: Application, adapter: CloudAdapter, bot: ActivityHandler) => {
   app.post('/api/botresponse/v3/conversations/:conversationId/activities/:activityId', handleBotResponse(adapter, bot))
@@ -22,17 +23,21 @@ const handleBotResponse = (adapter: CloudAdapter, bot: ActivityHandler) => async
     activity.applyConversationReference(conversationReference)
     turnContext.activity.id = req.params!.activityId
 
+    let response
     if (activity.type === ActivityTypes.EndOfConversation) {
       await MemoryStorage.getSingleInstance().delete([activity.conversation!.id])
+
       applyActivityToTurnContext(turnContext, activity)
       await bot.run(turnContext)
+
+      response = v4().replace(/-/g, '')
     } else {
-      await turnContext.sendActivity(activity)
+      response = await turnContext.sendActivity(activity)
     }
+    res.status(200).send(response)
   }
 
   await adapter.continueConversation(conversationReference, callback, true)
-  res.status(200).send()
 }
 
 const applyActivityToTurnContext = (turnContext : TurnContext, activity : Activity) => {
