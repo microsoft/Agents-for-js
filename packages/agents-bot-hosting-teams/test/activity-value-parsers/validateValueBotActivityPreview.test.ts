@@ -1,7 +1,7 @@
 import assert from 'assert'
 import { describe, it } from 'node:test'
 import { ZodError } from 'zod'
-import { parseValueBotActivityPreview } from '../../src/validators/activityValueParsers'
+import { parseValueBotActivityPreview } from '../../src/parsers/activityValueParsers'
 import { ActivityTypes } from '@microsoft/agents-bot-hosting'
 
 describe('parseValueBotActivityPreview test', () => {

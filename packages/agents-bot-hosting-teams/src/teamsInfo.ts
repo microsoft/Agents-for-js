@@ -17,7 +17,7 @@ import { CancelOperationResponse } from './connector-client/cancelOperationRespo
 import { Activity, Channels, ConversationReference, CloudAdapter, ConversationParameters, TurnContext } from '@microsoft/agents-bot-hosting'
 import { TeamsConnectorClient } from './connector-client/teamsConnectorClient'
 import { ChannelInfo } from './channel-data'
-import { parseTeamsChannelData } from './validators/teamsChannelDataParser'
+import { parseTeamsChannelData } from './parsers/teamsChannelDataParser'
 import { BatchOperationResponse } from './connector-client/batchOperationResponse'
 
 export class TeamsInfo {

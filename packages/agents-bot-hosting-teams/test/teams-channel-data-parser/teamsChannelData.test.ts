@@ -1,7 +1,7 @@
 import { Activity, ActivityTypes } from '@microsoft/agents-bot-hosting'
 import assert from 'assert'
 import { describe, it } from 'node:test'
-import { parseTeamsChannelData } from '../../src/validators/teamsChannelDataParser'
+import { parseTeamsChannelData } from '../../src/parsers/teamsChannelDataParser'
 import { ChannelInfo } from '../channel-data'
 
 describe('parseTeamsChannelData test', () => {

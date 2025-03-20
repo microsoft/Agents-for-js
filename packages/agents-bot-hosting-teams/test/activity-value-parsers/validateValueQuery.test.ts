@@ -1,23 +1,23 @@
 import assert from 'assert'
 import { describe, it } from 'node:test'
 import { ZodError } from 'zod'
-import { parseValueAction } from '../../src/validators/activityValueParsers'
+import { parseValueQuery } from '../../src/parsers/activityValueParsers'
 
-describe('validateValueAction test', () => {
+describe('parseValueQuery test', () => {
   it('Parse with all properties', () => {
     const valueObject = {
-      action: 'action'
+      url: 'url'
     }
-    const parsedValue = parseValueAction(valueObject)
+    const parsedValue = parseValueQuery(valueObject)
     assert.deepEqual(parsedValue, valueObject)
   })
 
-  it('Should throw with not string action', () => {
+  it('Should throw with not string url', () => {
     const valueObject = {
-      action: 1
+      url: 1
     }
     assert.throws(() => {
-      parseValueAction(valueObject)
+      parseValueQuery(valueObject)
     }, ZodError)
   })
 })

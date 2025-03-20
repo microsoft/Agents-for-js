@@ -1,7 +1,7 @@
 import assert from 'assert'
 import { describe, it } from 'node:test'
 import { ZodError } from 'zod'
-import { parseValueActionExecuteSelector } from '../../src/validators/activityValueParsers'
+import { parseValueActionExecuteSelector } from '../../src/parsers/activityValueParsers'
 
 describe('parseValueActionExecuteSelector test', () => {
   it('Parse with all properties', () => {

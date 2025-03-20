@@ -1,7 +1,7 @@
 import assert from 'assert'
 import { describe, it } from 'node:test'
 import { ZodError } from 'zod'
-import { parseValueContinuation } from '../../src/validators/activityValueParsers'
+import { parseValueContinuation } from '../../src/parsers/activityValueParsers'
 
 describe('parseValueContinuation test', () => {
   it('Parse with all properties', () => {

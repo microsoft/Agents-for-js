@@ -25,8 +25,8 @@ import { MessagingExtensionResponse } from './messaging-extension/messagingExten
 import { MessagingExtensionActionResponse } from './messaging-extension/messagingExtensionActionResponse'
 import { Channels, ActivityHandler, InvokeResponse, TurnContext } from '@microsoft/agents-bot-hosting'
 import { ChannelInfo, TeamInfo } from './channel-data'
-import { parseValueMessagingExtensionQuery } from './validators/activityValueParsers'
-import { parseTeamsChannelData } from './validators/teamsChannelDataParser'
+import { parseValueMessagingExtensionQuery } from './parsers/activityValueParsers'
+import { parseTeamsChannelData } from './parsers/teamsChannelDataParser'
 import { MessagingExtensionQuery } from './messaging-extension'
 import { TeamsConnectorClient } from './connector-client/teamsConnectorClient'
 

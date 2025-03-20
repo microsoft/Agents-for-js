@@ -1,7 +1,7 @@
 import assert from 'assert'
 import { describe, it } from 'node:test'
 import { ZodError } from 'zod'
-import { parseValueActionFeedbackLoopData } from '../../src/validators/activityValueParsers'
+import { parseValueActionFeedbackLoopData } from '../../src/parsers/activityValueParsers'
 
 describe('parseValueActionFeedbackLoopData test', () => {
   it('Parse with all properties', () => {
