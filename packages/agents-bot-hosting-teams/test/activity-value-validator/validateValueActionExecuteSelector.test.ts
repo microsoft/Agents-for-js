@@ -1,17 +1,17 @@
 import assert from 'assert'
 import { describe, it } from 'node:test'
 import { ZodError } from 'zod'
-import { validateValueActionExecuteSelector } from '../../src/validators/activityValueValidators'
+import { parseValueActionExecuteSelector } from '../../src/validators/activityValueParsers'
 
-describe('validateValueActionExecuteSelector test', () => {
-  it('Validate with all properties', () => {
+describe('parseValueActionExecuteSelector test', () => {
+  it('Parse with all properties', () => {
     const valueObject = {
       action: {
         type: 'type',
         verb: 'verb'
       }
     }
-    const parsedValue = validateValueActionExecuteSelector(valueObject)
+    const parsedValue = parseValueActionExecuteSelector(valueObject)
     assert.deepEqual(parsedValue, valueObject)
   })
 
@@ -23,7 +23,7 @@ describe('validateValueActionExecuteSelector test', () => {
       }
     }
     assert.throws(() => {
-      validateValueActionExecuteSelector(valueObject)
+      parseValueActionExecuteSelector(valueObject)
     }, ZodError)
   })
 
@@ -35,7 +35,7 @@ describe('validateValueActionExecuteSelector test', () => {
       }
     }
     assert.throws(() => {
-      validateValueActionExecuteSelector(valueObject)
+      parseValueActionExecuteSelector(valueObject)
     }, ZodError)
   })
 })

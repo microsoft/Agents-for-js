@@ -1,14 +1,14 @@
 import assert from 'assert'
 import { describe, it } from 'node:test'
 import { ZodError } from 'zod'
-import { validateValueContinuation } from '../../src/validators/activityValueValidators'
+import { parseValueContinuation } from '../../src/validators/activityValueParsers'
 
-describe('validateValueContinuation test', () => {
-  it('Validate with all properties', () => {
+describe('parseValueContinuation test', () => {
+  it('Parse with all properties', () => {
     const valueObject = {
       continuation: 'continuation'
     }
-    const parsedValue = validateValueContinuation(valueObject)
+    const parsedValue = parseValueContinuation(valueObject)
     assert.deepEqual(parsedValue, valueObject)
   })
 
@@ -17,7 +17,7 @@ describe('validateValueContinuation test', () => {
       continuation: 1
     }
     assert.throws(() => {
-      validateValueContinuation(valueObject)
+      parseValueContinuation(valueObject)
     }, ZodError)
   })
 })

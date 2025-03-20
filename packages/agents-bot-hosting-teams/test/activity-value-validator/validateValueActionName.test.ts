@@ -1,14 +1,14 @@
 import assert from 'assert'
 import { describe, it } from 'node:test'
 import { ZodError } from 'zod'
-import { validateValueActionName } from '../../src/validators/activityValueValidators'
+import { parseValueActionName } from '../../src/validators/activityValueParsers'
 
-describe('validateValueActionName test', () => {
-  it('Validate with all properties', () => {
+describe('parseValueActionName test', () => {
+  it('Parse with all properties', () => {
     const valueObject = {
       actionName: 'actionName'
     }
-    const parsedValue = validateValueActionName(valueObject)
+    const parsedValue = parseValueActionName(valueObject)
     assert.deepEqual(parsedValue, valueObject)
   })
 
@@ -17,7 +17,7 @@ describe('validateValueActionName test', () => {
       actionName: 1
     }
     assert.throws(() => {
-      validateValueActionName(valueObject)
+      parseValueActionName(valueObject)
     }, ZodError)
   })
 })

@@ -17,7 +17,7 @@ import { CancelOperationResponse } from './connector-client/cancelOperationRespo
 import { Activity, Channels, ConversationReference, CloudAdapter, ConversationParameters, TurnContext } from '@microsoft/agents-bot-hosting'
 import { TeamsConnectorClient } from './connector-client/teamsConnectorClient'
 import { ChannelInfo } from './channel-data'
-import { validateTeamsChannelData } from './validators/teamsChannelDataValidator'
+import { parseTeamsChannelData } from './validators/teamsChannelDataParser'
 import { BatchOperationResponse } from './connector-client/batchOperationResponse'
 
 export class TeamsInfo {
@@ -41,7 +41,7 @@ export class TeamsInfo {
     }
 
     const activity = context.activity
-    const teamsChannelData = validateTeamsChannelData(context.activity.channelData) // teamsGetTeamMeetingInfo(activity)
+    const teamsChannelData = parseTeamsChannelData(context.activity.channelData) // teamsGetTeamMeetingInfo(activity)
 
     if (meetingId == null) {
       meetingId = teamsChannelData.meeting?.id
@@ -79,7 +79,7 @@ export class TeamsInfo {
    */
   static async getMeetingInfo (context: TurnContext, meetingId?: string): Promise<MeetingInfo> {
     if (!meetingId) {
-      const teamsChannelData = validateTeamsChannelData(context.activity.channelData)
+      const teamsChannelData = parseTeamsChannelData(context.activity.channelData)
       meetingId = teamsChannelData.meeting?.id
     }
     const res = await this.getRestClient(context).fetchMeetingInfo(meetingId!)
@@ -95,7 +95,7 @@ export class TeamsInfo {
    */
   static async getTeamDetails (context: TurnContext, teamId?: string): Promise<TeamDetails> {
     if (!teamId) {
-      const teamsChannelData = validateTeamsChannelData(context.activity.channelData)
+      const teamsChannelData = parseTeamsChannelData(context.activity.channelData)
       teamId = teamsChannelData.team?.id
     }
     if (!teamId) {
@@ -175,7 +175,7 @@ export class TeamsInfo {
    */
   static async getTeamChannels (context: TurnContext, teamId?: string): Promise<ChannelInfo[]> {
     if (!teamId) {
-      const teamsChannelData = validateTeamsChannelData(context.activity.channelData)
+      const teamsChannelData = parseTeamsChannelData(context.activity.channelData)
       teamId = teamsChannelData.team?.id
     }
     if (!teamId) {
@@ -193,7 +193,7 @@ export class TeamsInfo {
    * @returns {Promise<TeamsPagedMembersResult>} - The paged members result.
    */
   static async getPagedMembers (context: TurnContext, pageSize?: number, continuationToken?: string): Promise<TeamsPagedMembersResult> {
-    const teamsChannelData = validateTeamsChannelData(context.activity.channelData)
+    const teamsChannelData = parseTeamsChannelData(context.activity.channelData)
     const teamId = teamsChannelData.team?.id
     if (teamId) {
       return await this.getPagedTeamMembers(context, teamId, pageSize, continuationToken)
@@ -212,7 +212,7 @@ export class TeamsInfo {
    * @returns {Promise<TeamsChannelAccount>} - The member information.
    */
   static async getMember (context: TurnContext, userId: string): Promise<TeamsChannelAccount> {
-    const teamsChannelData = validateTeamsChannelData(context.activity.channelData)
+    const teamsChannelData = parseTeamsChannelData(context.activity.channelData)
     const teamId = teamsChannelData.team?.id
     if (teamId) {
       return await this.getTeamMember(context, teamId, userId)
@@ -233,7 +233,7 @@ export class TeamsInfo {
    */
   static async getPagedTeamMembers (context: TurnContext, teamId?: string, pageSize?: number, continuationToken?: string): Promise<TeamsPagedMembersResult> {
     if (!teamId) {
-      const teamsChannelData = validateTeamsChannelData(context.activity.channelData)
+      const teamsChannelData = parseTeamsChannelData(context.activity.channelData)
       teamId = teamsChannelData.team?.id
     }
     if (!teamId) {
@@ -274,7 +274,7 @@ export class TeamsInfo {
     const activity = context.activity
 
     if (meetingId == null) {
-      const teamsChannelData = validateTeamsChannelData(activity.channelData)
+      const teamsChannelData = parseTeamsChannelData(activity.channelData)
       // const meeting = teamsGetTeamMeetingInfo(activity)
       const meeting = teamsChannelData.meeting
       meetingId = meeting?.id

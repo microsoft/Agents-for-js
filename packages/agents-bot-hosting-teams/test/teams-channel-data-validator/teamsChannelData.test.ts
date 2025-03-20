@@ -1,20 +1,20 @@
 import { Activity, ActivityTypes } from '@microsoft/agents-bot-hosting'
 import assert from 'assert'
 import { describe, it } from 'node:test'
-import { validateTeamsChannelData } from '../../src/validators/teamsChannelDataValidator'
+import { parseTeamsChannelData } from '../../src/validators/teamsChannelDataParser'
 import { ChannelInfo } from '../channel-data'
 
-describe('TeamsChannelData Zod Validation', () => {
-  it('Validate with no properties defined', () => {
+describe('parseTeamsChannelData test', () => {
+  it('Parse with no properties defined', () => {
     const teamsChannelDataObject = {}
     const obj = { type: ActivityTypes.Message, channelData: teamsChannelDataObject }
     const a1: Activity = Activity.fromObject(obj)
-    const teamsChannelData = validateTeamsChannelData(a1.channelData)
+    const teamsChannelData = parseTeamsChannelData(a1.channelData)
     assert.strictEqual(a1.type, 'message')
     assert.deepEqual(a1.channelData, teamsChannelData)
   })
 
-  it('Validate with channel', () => {
+  it('Parse with channel', () => {
     const channelInfo = {
       id: 'id',
       name: 'name',
@@ -25,23 +25,23 @@ describe('TeamsChannelData Zod Validation', () => {
     }
     const obj = { type: ActivityTypes.Message, channelData: teamsChannelDataObject }
     const a1: Activity = Activity.fromObject(obj)
-    const teamsChannelData = validateTeamsChannelData(a1.channelData)
+    const teamsChannelData = parseTeamsChannelData(a1.channelData)
     assert.strictEqual(a1.type, 'message')
     assert.deepEqual(a1.channelData, teamsChannelData)
   })
 
-  it('Validate with eventType', () => {
+  it('Parse with eventType', () => {
     const teamsChannelDataObject = {
       eventType: 'eventType'
     }
     const obj = { type: ActivityTypes.Message, channelData: teamsChannelDataObject }
     const a1: Activity = Activity.fromObject(obj)
-    const teamsChannelData = validateTeamsChannelData(a1.channelData)
+    const teamsChannelData = parseTeamsChannelData(a1.channelData)
     assert.strictEqual(a1.type, 'message')
     assert.deepEqual(a1.channelData, teamsChannelData)
   })
 
-  it('Validate with team', () => {
+  it('Parse with team', () => {
     const team = {
       id: 'id',
       name: 'name',
@@ -52,12 +52,12 @@ describe('TeamsChannelData Zod Validation', () => {
     }
     const obj = { type: ActivityTypes.Message, channelData: teamsChannelDataObject }
     const a1: Activity = Activity.fromObject(obj)
-    const teamsChannelData = validateTeamsChannelData(a1.channelData)
+    const teamsChannelData = parseTeamsChannelData(a1.channelData)
     assert.strictEqual(a1.type, 'message')
     assert.deepEqual(a1.channelData, teamsChannelData)
   })
 
-  it('Validate with notification', () => {
+  it('Parse with notification', () => {
     const notification = {
       alert: true,
       alertInMeeting: false,
@@ -68,12 +68,12 @@ describe('TeamsChannelData Zod Validation', () => {
     }
     const obj = { type: ActivityTypes.Message, channelData: teamsChannelDataObject }
     const a1: Activity = Activity.fromObject(obj)
-    const teamsChannelData = validateTeamsChannelData(a1.channelData)
+    const teamsChannelData = parseTeamsChannelData(a1.channelData)
     assert.strictEqual(a1.type, 'message')
     assert.deepEqual(a1.channelData, teamsChannelData)
   })
 
-  it('Validate with tenant', () => {
+  it('Parse with tenant', () => {
     const tenant = {
       id: 'id'
     }
@@ -82,12 +82,12 @@ describe('TeamsChannelData Zod Validation', () => {
     }
     const obj = { type: ActivityTypes.Message, channelData: teamsChannelDataObject }
     const a1: Activity = Activity.fromObject(obj)
-    const teamsChannelData = validateTeamsChannelData(a1.channelData)
+    const teamsChannelData = parseTeamsChannelData(a1.channelData)
     assert.strictEqual(a1.type, 'message')
     assert.deepEqual(a1.channelData, teamsChannelData)
   })
 
-  it('Validate with meeting', () => {
+  it('Parse with meeting', () => {
     const meeting = {
       id: 'id'
     }
@@ -96,12 +96,12 @@ describe('TeamsChannelData Zod Validation', () => {
     }
     const obj = { type: ActivityTypes.Message, channelData: teamsChannelDataObject }
     const a1: Activity = Activity.fromObject(obj)
-    const teamsChannelData = validateTeamsChannelData(a1.channelData)
+    const teamsChannelData = parseTeamsChannelData(a1.channelData)
     assert.strictEqual(a1.type, 'message')
     assert.deepEqual(a1.channelData, teamsChannelData)
   })
 
-  it('Validate with settings', () => {
+  it('Parse with settings', () => {
     const channelInfo: ChannelInfo = {
       id: 'id',
       name: 'name',
@@ -115,12 +115,12 @@ describe('TeamsChannelData Zod Validation', () => {
     }
     const obj = { type: ActivityTypes.Message, channelData: teamsChannelDataObject }
     const a1: Activity = Activity.fromObject(obj)
-    const teamsChannelData = validateTeamsChannelData(a1.channelData)
+    const teamsChannelData = parseTeamsChannelData(a1.channelData)
     assert.strictEqual(a1.type, 'message')
     assert.deepEqual(a1.channelData, teamsChannelData)
   })
 
-  it('Validate with settings with extra props', () => {
+  it('Parse with settings with extra props', () => {
     const channelInfo: ChannelInfo = {
       id: 'id',
       name: 'name',
@@ -135,12 +135,12 @@ describe('TeamsChannelData Zod Validation', () => {
     }
     const obj = { type: ActivityTypes.Message, channelData: teamsChannelDataObject }
     const a1: Activity = Activity.fromObject(obj)
-    const teamsChannelData = validateTeamsChannelData(a1.channelData)
+    const teamsChannelData = parseTeamsChannelData(a1.channelData)
     assert.strictEqual(a1.type, 'message')
     assert.deepEqual(a1.channelData, teamsChannelData)
   })
 
-  it('Validate with onBehalfOf', () => {
+  it('Parse with onBehalfOf', () => {
     const onBehalfOf = {
       itemid: 0,
       mentionType: 'person',
@@ -152,12 +152,12 @@ describe('TeamsChannelData Zod Validation', () => {
     }
     const obj = { type: ActivityTypes.Message, channelData: teamsChannelDataObject }
     const a1: Activity = Activity.fromObject(obj)
-    const teamsChannelData = validateTeamsChannelData(a1.channelData)
+    const teamsChannelData = parseTeamsChannelData(a1.channelData)
     assert.strictEqual(a1.type, 'message')
     assert.deepEqual(a1.channelData, teamsChannelData)
   })
 
-  it('Validate with onBehalfOf with only required props', () => {
+  it('Parse with onBehalfOf with only required props', () => {
     const onBehalfOf = {
       itemid: 1,
       mentionType: 'mentionType',
@@ -168,12 +168,12 @@ describe('TeamsChannelData Zod Validation', () => {
     }
     const obj = { type: ActivityTypes.Message, channelData: teamsChannelDataObject }
     const a1: Activity = Activity.fromObject(obj)
-    const teamsChannelData = validateTeamsChannelData(a1.channelData)
+    const teamsChannelData = parseTeamsChannelData(a1.channelData)
     assert.strictEqual(a1.type, 'message')
     assert.deepEqual(a1.channelData, teamsChannelData)
   })
 
-  it('Validate with onBehalfOf with literal values', () => {
+  it('Parse with onBehalfOf with literal values', () => {
     const onBehalfOf = {
       itemid: 0,
       mentionType: 'person',
@@ -184,7 +184,7 @@ describe('TeamsChannelData Zod Validation', () => {
     }
     const obj = { type: ActivityTypes.Message, channelData: teamsChannelDataObject }
     const a1: Activity = Activity.fromObject(obj)
-    const teamsChannelData = validateTeamsChannelData(a1.channelData)
+    const teamsChannelData = parseTeamsChannelData(a1.channelData)
     assert.strictEqual(a1.type, 'message')
     assert.deepEqual(a1.channelData, teamsChannelData)
   })

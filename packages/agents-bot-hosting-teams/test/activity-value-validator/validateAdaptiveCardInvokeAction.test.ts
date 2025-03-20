@@ -1,17 +1,17 @@
 import assert from 'assert'
 import { describe, it } from 'node:test'
 import { ZodError } from 'zod'
-import { validateAdaptiveCardInvokeAction } from '../../src/validators/activityValueValidators'
+import { parseAdaptiveCardInvokeAction } from '../../src/validators/activityValueParsers'
 
-describe('AdaptiveCardInvokeAction Zod Validation', () => {
-  it('Validate with all properties', () => {
+describe('parseAdaptiveCardInvokeAction test', () => {
+  it('Parse with all properties', () => {
     const adaptiveCardInvokeActionObject = {
       type: 'type',
       id: 'id',
       verb: 'verb',
       data: { x: 'data' }
     }
-    const adaptiveCardInvokeAction = validateAdaptiveCardInvokeAction(adaptiveCardInvokeActionObject)
+    const adaptiveCardInvokeAction = parseAdaptiveCardInvokeAction(adaptiveCardInvokeActionObject)
     assert.deepEqual(adaptiveCardInvokeActionObject, adaptiveCardInvokeAction)
   })
 
@@ -22,7 +22,7 @@ describe('AdaptiveCardInvokeAction Zod Validation', () => {
       data: { x: 'data' }
     }
     assert.throws(() => {
-      validateAdaptiveCardInvokeAction(adaptiveCardInvokeActionObject)
+      parseAdaptiveCardInvokeAction(adaptiveCardInvokeActionObject)
     }, ZodError)
   })
 
@@ -34,7 +34,7 @@ describe('AdaptiveCardInvokeAction Zod Validation', () => {
       data: { x: 'data' }
     }
     assert.throws(() => {
-      validateAdaptiveCardInvokeAction(adaptiveCardInvokeActionObject)
+      parseAdaptiveCardInvokeAction(adaptiveCardInvokeActionObject)
     }, ZodError)
   })
 
@@ -45,7 +45,7 @@ describe('AdaptiveCardInvokeAction Zod Validation', () => {
       data: { x: 'data' }
     }
     assert.throws(() => {
-      validateAdaptiveCardInvokeAction(adaptiveCardInvokeActionObject)
+      parseAdaptiveCardInvokeAction(adaptiveCardInvokeActionObject)
     }, ZodError)
   })
 
@@ -57,7 +57,7 @@ describe('AdaptiveCardInvokeAction Zod Validation', () => {
       data: { x: 'data' }
     }
     assert.throws(() => {
-      validateAdaptiveCardInvokeAction(adaptiveCardInvokeActionObject)
+      parseAdaptiveCardInvokeAction(adaptiveCardInvokeActionObject)
     }, ZodError)
   })
 
@@ -68,7 +68,7 @@ describe('AdaptiveCardInvokeAction Zod Validation', () => {
       data: { x: 'data' }
     }
     assert.throws(() => {
-      validateAdaptiveCardInvokeAction(adaptiveCardInvokeActionObject)
+      parseAdaptiveCardInvokeAction(adaptiveCardInvokeActionObject)
     }, ZodError)
   })
 
@@ -80,7 +80,7 @@ describe('AdaptiveCardInvokeAction Zod Validation', () => {
       data: { x: 'data' }
     }
     assert.throws(() => {
-      validateAdaptiveCardInvokeAction(adaptiveCardInvokeActionObject)
+      parseAdaptiveCardInvokeAction(adaptiveCardInvokeActionObject)
     }, ZodError)
   })
 
@@ -91,7 +91,7 @@ describe('AdaptiveCardInvokeAction Zod Validation', () => {
       verb: 'verb',
     }
     assert.throws(() => {
-      validateAdaptiveCardInvokeAction(adaptiveCardInvokeActionObject)
+      parseAdaptiveCardInvokeAction(adaptiveCardInvokeActionObject)
     }, ZodError)
   })
 
@@ -103,7 +103,7 @@ describe('AdaptiveCardInvokeAction Zod Validation', () => {
       data: 'data'
     }
     assert.throws(() => {
-      validateAdaptiveCardInvokeAction(adaptiveCardInvokeActionObject)
+      parseAdaptiveCardInvokeAction(adaptiveCardInvokeActionObject)
     }, ZodError)
   })
 })

@@ -1,10 +1,10 @@
 import assert from 'assert'
 import { describe, it } from 'node:test'
-import { validateValueMessagingExtensionQuery } from '../../src/validators/activityValueValidators'
+import { parseValueMessagingExtensionQuery } from '../../src/validators/activityValueParsers'
 import { ZodError } from 'zod'
 
-describe('validateValueMessagingExtensionQuery Zod Validation', () => {
-  it('Validate with all properties', () => {
+describe('parseValueMessagingExtensionQuery test', () => {
+  it('Parse with all properties', () => {
     const messagingExtensionQueryObj = {
       commandId: 'commandId',
       parameters: [{
@@ -17,11 +17,11 @@ describe('validateValueMessagingExtensionQuery Zod Validation', () => {
       },
       state: 'state'
     }
-    const messagingExtensionQuery = validateValueMessagingExtensionQuery(messagingExtensionQueryObj)
+    const messagingExtensionQuery = parseValueMessagingExtensionQuery(messagingExtensionQueryObj)
     assert.deepEqual(messagingExtensionQuery, messagingExtensionQueryObj)
   })
 
-  it('Validate with no commandId', () => {
+  it('Parse with no commandId', () => {
     const messagingExtensionQueryObj = {
       parameters: [{
         name: 'name',
@@ -33,7 +33,7 @@ describe('validateValueMessagingExtensionQuery Zod Validation', () => {
       },
       state: 'state'
     }
-    const messagingExtensionQuery = validateValueMessagingExtensionQuery(messagingExtensionQueryObj)
+    const messagingExtensionQuery = parseValueMessagingExtensionQuery(messagingExtensionQueryObj)
     assert.deepEqual(messagingExtensionQuery, messagingExtensionQueryObj)
   })
 
@@ -51,11 +51,11 @@ describe('validateValueMessagingExtensionQuery Zod Validation', () => {
       state: 'state'
     }
     assert.throws(() => {
-      validateValueMessagingExtensionQuery(messagingExtensionQueryObj)
+      parseValueMessagingExtensionQuery(messagingExtensionQueryObj)
     }, ZodError)
   })
 
-  it('Validate with no parameters', () => {
+  it('Parse with no parameters', () => {
     const messagingExtensionQueryObj = {
       commandId: 'commandId',
       queryOptions: {
@@ -64,7 +64,7 @@ describe('validateValueMessagingExtensionQuery Zod Validation', () => {
       },
       state: 'state'
     }
-    const messagingExtensionQuery = validateValueMessagingExtensionQuery(messagingExtensionQueryObj)
+    const messagingExtensionQuery = parseValueMessagingExtensionQuery(messagingExtensionQueryObj)
     assert.deepEqual(messagingExtensionQuery, messagingExtensionQueryObj)
   })
 
@@ -82,11 +82,11 @@ describe('validateValueMessagingExtensionQuery Zod Validation', () => {
       state: 'state'
     }
     assert.throws(() => {
-      validateValueMessagingExtensionQuery(messagingExtensionQueryObj)
+      parseValueMessagingExtensionQuery(messagingExtensionQueryObj)
     }, ZodError)
   })
 
-  it('Validate with no queryOptions', () => {
+  it('Parse with no queryOptions', () => {
     const messagingExtensionQueryObj = {
       commandId: 'commandId',
       parameters: [{
@@ -95,7 +95,7 @@ describe('validateValueMessagingExtensionQuery Zod Validation', () => {
       }],
       state: 'state'
     }
-    const messagingExtensionQuery = validateValueMessagingExtensionQuery(messagingExtensionQueryObj)
+    const messagingExtensionQuery = parseValueMessagingExtensionQuery(messagingExtensionQueryObj)
     assert.deepEqual(messagingExtensionQuery, messagingExtensionQueryObj)
   })
 
@@ -113,11 +113,11 @@ describe('validateValueMessagingExtensionQuery Zod Validation', () => {
       state: 'state'
     }
     assert.throws(() => {
-      validateValueMessagingExtensionQuery(messagingExtensionQueryObj)
+      parseValueMessagingExtensionQuery(messagingExtensionQueryObj)
     }, ZodError)
   })
 
-  it('Validate with no state', () => {
+  it('Parse with no state', () => {
     const messagingExtensionQueryObj = {
       commandId: 'commandId',
       parameters: [{
@@ -129,7 +129,7 @@ describe('validateValueMessagingExtensionQuery Zod Validation', () => {
         count: 1
       }
     }
-    const messagingExtensionQuery = validateValueMessagingExtensionQuery(messagingExtensionQueryObj)
+    const messagingExtensionQuery = parseValueMessagingExtensionQuery(messagingExtensionQueryObj)
     assert.deepEqual(messagingExtensionQuery, messagingExtensionQueryObj)
   })
 
@@ -147,7 +147,7 @@ describe('validateValueMessagingExtensionQuery Zod Validation', () => {
       state: 1
     }
     assert.throws(() => {
-      validateValueMessagingExtensionQuery(messagingExtensionQueryObj)
+      parseValueMessagingExtensionQuery(messagingExtensionQueryObj)
     }, ZodError)
   })
 })

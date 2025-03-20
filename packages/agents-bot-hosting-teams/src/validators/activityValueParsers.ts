@@ -14,7 +14,7 @@ import { adaptiveCardsSearchParamsZodSchema } from '../adaptive-cards'
  * @param {unknown} value - The value to validate.
  * @returns {string} - The validated value action.
  */
-export function validateValueAction (value: unknown): string {
+export function parseValueAction (value: unknown): string {
   const valueActionZodSchema = z.object({
     action: z.string().min(1)
   })
@@ -28,7 +28,7 @@ export function validateValueAction (value: unknown): string {
  * @param {unknown} value - The value to validate.
  * @returns {string} - The validated value action name.
  */
-export function validateValueActionName (value: unknown): string {
+export function parseValueActionName (value: unknown): string {
   const valueActionNameZodSchema = z.object({
     actionName: z.string().min(1),
   })
@@ -42,7 +42,7 @@ export function validateValueActionName (value: unknown): string {
  * @param {unknown} value - The value to validate.
  * @returns {string} - The validated value continuation.
  */
-export function validateValueContinuation (value: unknown): string {
+export function parseValueContinuation (value: unknown): string {
   const valueContinuationZodSchema = z.object({
     continuation: z.string().min(1)
   })
@@ -56,7 +56,7 @@ export function validateValueContinuation (value: unknown): string {
  * @param {unknown} value - The value to validate.
  * @returns {object} - The validated value action execute selector.
  */
-export function validateValueActionExecuteSelector (value: unknown) {
+export function parseValueActionExecuteSelector (value: unknown) {
   const actionZodSchema = z.object({
     type: z.string().min(1),
     verb: z.string().min(1)
@@ -74,7 +74,7 @@ export function validateValueActionExecuteSelector (value: unknown) {
  * @param {unknown} value - The value to validate.
  * @returns {object} - The validated dataset.
  */
-export function validateValueDataset (value: unknown) {
+export function parseValueDataset (value: unknown) {
   const datasetZodSchema = z.object({
     dataset: z.string().min(1)
   })
@@ -90,7 +90,7 @@ export function validateValueDataset (value: unknown) {
  * @param {unknown} value - The value to validate.
  * @returns {object} - The validated action feedback loop data.
  */
-export function validateValueActionFeedbackLoopData (value: unknown): {
+export function parseValueActionFeedbackLoopData (value: unknown): {
   actionValue: {
     reaction: 'like' | 'dislike';
     feedback: string | Record<string, any>;
@@ -117,7 +117,7 @@ export function validateValueActionFeedbackLoopData (value: unknown): {
  * @param {unknown} value - The value to validate.
  * @returns {AdaptiveCardInvokeAction} - The validated adaptive card invoke action.
  */
-export function validateAdaptiveCardInvokeAction (value: unknown) {
+export function parseAdaptiveCardInvokeAction (value: unknown) {
   adaptiveCardInvokeActionZodSchema.passthrough().parse(value)
   return value as AdaptiveCardInvokeAction
 }
@@ -128,7 +128,7 @@ export function validateAdaptiveCardInvokeAction (value: unknown) {
  * @param {unknown} value - The value to validate.
  * @returns {object} - The validated search query.
  */
-export function validateValueSearchQuery (value: unknown) {
+export function parseValueSearchQuery (value: unknown) {
   const queryOptionsZodSchema = z.object({
     top: z.number(),
     skip: z.number(),
@@ -153,7 +153,7 @@ export function validateValueSearchQuery (value: unknown) {
  * @param {unknown} value - The value to validate.
  * @returns {object} - The validated query.
  */
-export function validateValueQuery (value: unknown) {
+export function parseValueQuery (value: unknown) {
   const urlZodSchema = z.object({
     url: z.string().min(1)
   })
@@ -169,7 +169,7 @@ export function validateValueQuery (value: unknown) {
  * @param {unknown} value - The value to validate.
  * @returns {object} - The validated bot message preview action.
  */
-export function validatetValueBotMessagePreviewAction (value: unknown) {
+export function parseValueBotMessagePreviewAction (value: unknown) {
   const botMessagePreviewActionZodSchema = z.object({
     botMessagePreviewAction: z.string().min(1)
   })
@@ -185,7 +185,7 @@ export function validatetValueBotMessagePreviewAction (value: unknown) {
  * @param {unknown} value - The value to validate.
  * @returns {object} - The validated bot activity preview.
  */
-export function validateValueBotActivityPreview (value: unknown) {
+export function parseValueBotActivityPreview (value: unknown) {
   const botActivityPreviewZodSchema = z.object({
     botActivityPreview: z.array(activityZodSchema.partial())
   })
@@ -201,7 +201,7 @@ export function validateValueBotActivityPreview (value: unknown) {
  * @param {unknown} value - The value to validate.
  * @returns {object} - The validated command ID.
  */
-export function validateValueCommandId (value: unknown) {
+export function parseValueCommandId (value: unknown) {
   const commandIdZodSchema = z.object({
     commandId: z.string().min(1)
   })
@@ -217,7 +217,7 @@ export function validateValueCommandId (value: unknown) {
  * @param {unknown} value - The value to validate.
  * @returns {MessagingExtensionQuery} - The validated messaging extension query.
  */
-export function validateValueMessagingExtensionQuery (value: unknown): MessagingExtensionQuery {
+export function parseValueMessagingExtensionQuery (value: unknown): MessagingExtensionQuery {
   messagingExtensionQueryZodSchema.passthrough().parse(value)
   return value as MessagingExtensionQuery
 }

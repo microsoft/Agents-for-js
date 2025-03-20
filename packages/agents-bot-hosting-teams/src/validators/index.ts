@@ -3,5 +3,5 @@
  * Licensed under the MIT License.
  */
 
-export * from './activityValueValidators'
-export * from './teamsChannelDataValidator'
+export * from './activityValueParsers'
+export * from './teamsChannelDataParser'

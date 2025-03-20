@@ -1,14 +1,14 @@
 import assert from 'assert'
 import { describe, it } from 'node:test'
 import { ZodError } from 'zod'
-import { validateValueDataset } from '../../src/validators/activityValueValidators'
+import { parseValueDataset } from '../../src/validators/activityValueParsers'
 
-describe('validateValueDataset test', () => {
-  it('Validate with all properties', () => {
+describe('parseValueDataset test', () => {
+  it('Parse with all properties', () => {
     const valueObject = {
       dataset: 'dataset'
     }
-    const parsedValue = validateValueDataset(valueObject)
+    const parsedValue = parseValueDataset(valueObject)
     assert.deepEqual(parsedValue, valueObject)
   })
 
@@ -17,7 +17,7 @@ describe('validateValueDataset test', () => {
       dataset: 1
     }
     assert.throws(() => {
-      validateValueDataset(valueObject)
+      parseValueDataset(valueObject)
     }, ZodError)
   })
 })

@@ -1,11 +1,11 @@
 import assert from 'assert'
 import { describe, it } from 'node:test'
 import { ZodError } from 'zod'
-import { validateValueBotActivityPreview } from '../../src/validators/activityValueValidators'
+import { parseValueBotActivityPreview } from '../../src/validators/activityValueParsers'
 import { ActivityTypes } from '@microsoft/agents-bot-hosting'
 
-describe('validateValueBotActivityPreview test', () => {
-  it('Validate with all properties', () => {
+describe('parseValueBotActivityPreview test', () => {
+  it('Parse with all properties', () => {
     const valueObject = {
       botActivityPreview: [
         {
@@ -18,7 +18,7 @@ describe('validateValueBotActivityPreview test', () => {
         }
       ]
     }
-    const parsedValue = validateValueBotActivityPreview(valueObject)
+    const parsedValue = parseValueBotActivityPreview(valueObject)
     assert.deepEqual(parsedValue, valueObject)
   })
 
@@ -36,7 +36,7 @@ describe('validateValueBotActivityPreview test', () => {
       ]
     }
     assert.throws(() => {
-      validateValueBotActivityPreview(valueObject)
+      parseValueBotActivityPreview(valueObject)
     }, ZodError)
   })
 })

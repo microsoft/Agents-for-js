@@ -1,14 +1,14 @@
 import assert from 'assert'
 import { describe, it } from 'node:test'
 import { ZodError } from 'zod'
-import { validatetValueBotMessagePreviewAction } from '../../src/validators/activityValueValidators'
+import { parseValueBotMessagePreviewAction } from '../../src/validators/activityValueParsers'
 
 describe('validatetValueBotMessagePreviewAction test', () => {
-  it('Validate with all properties', () => {
+  it('Parse with all properties', () => {
     const valueObject = {
       botMessagePreviewAction: 'botMessagePreviewAction'
     }
-    const parsedValue = validatetValueBotMessagePreviewAction(valueObject)
+    const parsedValue = parseValueBotMessagePreviewAction(valueObject)
     assert.deepEqual(parsedValue, valueObject)
   })
 
@@ -17,7 +17,7 @@ describe('validatetValueBotMessagePreviewAction test', () => {
       botMessagePreviewAction: 1
     }
     assert.throws(() => {
-      validatetValueBotMessagePreviewAction(valueObject)
+      parseValueBotMessagePreviewAction(valueObject)
     }, ZodError)
   })
 })

@@ -1,17 +1,17 @@
 import assert from 'assert'
 import { describe, it } from 'node:test'
 import { ZodError } from 'zod'
-import { validateValueActionFeedbackLoopData } from '../../src/validators/activityValueValidators'
+import { parseValueActionFeedbackLoopData } from '../../src/validators/activityValueParsers'
 
-describe('validateValueActionFeedbackLoopData test', () => {
-  it('Validate with all properties', () => {
+describe('parseValueActionFeedbackLoopData test', () => {
+  it('Parse with all properties', () => {
     const valueObject = {
       actionValue: {
         reaction: 'like',
         feedback: 'feedback'
       }
     }
-    const parsedValue = validateValueActionFeedbackLoopData(valueObject)
+    const parsedValue = parseValueActionFeedbackLoopData(valueObject)
     assert.deepEqual(parsedValue, valueObject)
   })
 
@@ -23,7 +23,7 @@ describe('validateValueActionFeedbackLoopData test', () => {
       }
     }
     assert.throws(() => {
-      validateValueActionFeedbackLoopData(valueObject)
+      parseValueActionFeedbackLoopData(valueObject)
     }, ZodError)
   })
 
@@ -35,7 +35,7 @@ describe('validateValueActionFeedbackLoopData test', () => {
       }
     }
     assert.throws(() => {
-      validateValueActionFeedbackLoopData(valueObject)
+      parseValueActionFeedbackLoopData(valueObject)
     }, ZodError)
   })
 
@@ -47,7 +47,7 @@ describe('validateValueActionFeedbackLoopData test', () => {
       }
     }
     assert.throws(() => {
-      validateValueActionFeedbackLoopData(valueObject)
+      parseValueActionFeedbackLoopData(valueObject)
     }, ZodError)
   })
 
@@ -58,7 +58,7 @@ describe('validateValueActionFeedbackLoopData test', () => {
       }
     }
     assert.throws(() => {
-      validateValueActionFeedbackLoopData(valueObject)
+      parseValueActionFeedbackLoopData(valueObject)
     }, ZodError)
   })
 
@@ -69,7 +69,7 @@ describe('validateValueActionFeedbackLoopData test', () => {
       }
     }
     assert.throws(() => {
-      validateValueActionFeedbackLoopData(valueObject)
+      parseValueActionFeedbackLoopData(valueObject)
     }, ZodError)
   })
 })

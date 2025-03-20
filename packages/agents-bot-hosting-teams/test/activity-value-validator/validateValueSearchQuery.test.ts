@@ -1,10 +1,10 @@
 import assert from 'assert'
 import { describe, it } from 'node:test'
 import { ZodError } from 'zod'
-import { validateValueSearchQuery } from '../../src/validators/activityValueValidators'
+import { parseValueSearchQuery } from '../../src/validators/activityValueParsers'
 
-describe('validateValueSearchQuery test', () => {
-  it('Validate with all properties', () => {
+describe('parseValueSearchQuery test', () => {
+  it('Parse with all properties', () => {
     const valueObject = {
       queryText: 'queryText',
       dataset: 'dataset',
@@ -13,7 +13,7 @@ describe('validateValueSearchQuery test', () => {
         skip: 1
       }
     }
-    const parsedValue = validateValueSearchQuery(valueObject)
+    const parsedValue = parseValueSearchQuery(valueObject)
     assert.deepEqual(parsedValue, valueObject)
   })
 
@@ -27,7 +27,7 @@ describe('validateValueSearchQuery test', () => {
       }
     }
     assert.throws(() => {
-      validateValueSearchQuery(valueObject)
+      parseValueSearchQuery(valueObject)
     }, ZodError)
   })
 
@@ -40,7 +40,7 @@ describe('validateValueSearchQuery test', () => {
       }
     }
     assert.throws(() => {
-      validateValueSearchQuery(valueObject)
+      parseValueSearchQuery(valueObject)
     }, ZodError)
   })
 
@@ -54,7 +54,7 @@ describe('validateValueSearchQuery test', () => {
       }
     }
     assert.throws(() => {
-      validateValueSearchQuery(valueObject)
+      parseValueSearchQuery(valueObject)
     }, ZodError)
   })
 
@@ -67,7 +67,7 @@ describe('validateValueSearchQuery test', () => {
       }
     }
     assert.throws(() => {
-      validateValueSearchQuery(valueObject)
+      parseValueSearchQuery(valueObject)
     }, ZodError)
   })
 
@@ -81,7 +81,7 @@ describe('validateValueSearchQuery test', () => {
       }
     }
     assert.throws(() => {
-      validateValueSearchQuery(valueObject)
+      parseValueSearchQuery(valueObject)
     }, ZodError)
   })
 
@@ -94,7 +94,7 @@ describe('validateValueSearchQuery test', () => {
       }
     }
     assert.throws(() => {
-      validateValueSearchQuery(valueObject)
+      parseValueSearchQuery(valueObject)
     }, ZodError)
   })
 
@@ -108,7 +108,7 @@ describe('validateValueSearchQuery test', () => {
       }
     }
     assert.throws(() => {
-      validateValueSearchQuery(valueObject)
+      parseValueSearchQuery(valueObject)
     }, ZodError)
   })
 
@@ -122,7 +122,7 @@ describe('validateValueSearchQuery test', () => {
       }
     }
     assert.throws(() => {
-      validateValueSearchQuery(valueObject)
+      parseValueSearchQuery(valueObject)
     }, ZodError)
   })
 })
