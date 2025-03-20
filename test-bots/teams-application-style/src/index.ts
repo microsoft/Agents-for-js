@@ -13,13 +13,13 @@ server.use(express.json())
 server.use(authorizeJWT(authConfig))
 
 async function loadModule () {
-  const moduleName = process.env.botName || 'TeamsJsBot'
+  const moduleName = process.env.botName || 'teamsJsBot'
   let module
   switch (moduleName) {
-    case 'Teams':
+    case 'teamsJsBot':
       module = (await import('./teamsJsBot')).app
       return module
-    case 'Teams-SSO':
+    case 'teamsSsoBot':
       module = (await import('./teamsSsoBot')).app
       return module
     default:

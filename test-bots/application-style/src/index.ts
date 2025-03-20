@@ -14,19 +14,19 @@ async function loadModule () {
   const moduleName = process.env.botName || 'webChat'
   let module
   switch (moduleName) {
-    case 'WebChat':
+    case 'webChat':
       module = (await import('./webChat')).app
       return module
-    case 'WebChat-State':
+    case 'stateBot':
       module = (await import('./stateBot')).app
       return module
-    case 'WebChat-State-Blob':
+    case 'stateBotBlobStorage':
       module = (await import('./stateBotBlobStorage')).app
       return module
-    case 'WebChat-State-Cosmos':
+    case 'stateBotCosmosDB':
       module = (await import('./stateBotCosmosDB')).app
       return module
-    case 'WebChat-SSO':
+    case 'webChatSsoBot':
       module = (await import('./webChatSsoBot')).app
       return module
     default:
