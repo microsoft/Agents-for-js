@@ -33,5 +33,10 @@ export class RootBot extends ActivityHandler {
       }
       await next()
     })
+    this.onEndOfConversation(async (context, next) => {
+      const messageText = 'root-bot: Conversation ended'
+      await context.sendActivity(MessageFactory.text(messageText, messageText))
+      await next()
+    })
   }
 }

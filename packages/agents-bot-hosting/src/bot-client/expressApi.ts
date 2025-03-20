@@ -1,4 +1,4 @@
-import { Activity } from '@microsoft/agents-bot-activity'
+import { Activity, ActivityTypes } from '@microsoft/agents-bot-activity'
 import { ActivityHandler } from '../activityHandler'
 import { CloudAdapter } from '../cloudAdapter'
 import { Request, Response, Application } from 'express'
@@ -18,16 +18,13 @@ const handleBotResponse = (adapter: CloudAdapter, bot: ActivityHandler) => async
   const conversationReference = dataForBot[req.params!.conversationId].conversationReference
   console.log('Data for bot:', dataForBot)
 
-  // TODO delete activity from memory.
-  // Bot1.cs 174
-  //  await _conversationIdFactory.DeleteConversationReferenceAsync(conversationId, cancellationToken).ConfigureAwait(false);
-
   const callback = async (turnContext: TurnContext) => {
     activity.applyConversationReference(conversationReference)
     turnContext.activity.id = req.params!.activityId
 
-    if (activity.type === 'endOfConversation') {
+    if (activity.type === ActivityTypes.EndOfConversation) {
       await MemoryStorage.getSingleInstance().delete([activity.conversation!.id])
+      applyActivityToTurnContext(turnContext, activity)
       await bot.run(turnContext)
     } else {
       await turnContext.sendActivity(activity)
@@ -35,5 +32,20 @@ const handleBotResponse = (adapter: CloudAdapter, bot: ActivityHandler) => async
   }
 
   await adapter.continueConversation(conversationReference, callback, true)
-  // TODO send an http response
+  res.status(200).send()
+}
+
+const applyActivityToTurnContext = (turnContext : TurnContext, activity : Activity) => {
+  turnContext.activity.channelData = activity.channelData
+  turnContext.activity.code = activity.code
+  turnContext.activity.entities = activity.entities
+  turnContext.activity.locale = activity.locale
+  turnContext.activity.localTimestamp = activity.localTimestamp
+  turnContext.activity.name = activity.name
+  turnContext.activity.relatesTo = activity.relatesTo
+  turnContext.activity.replyToId = activity.replyToId
+  turnContext.activity.timestamp = activity.timestamp
+  turnContext.activity.text = activity.text
+  turnContext.activity.type = activity.type
+  turnContext.activity.value = activity.value
 }
