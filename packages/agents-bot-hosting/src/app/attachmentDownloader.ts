@@ -8,7 +8,9 @@ import { InputFile, InputFileDownloader } from './inputFileDownloader'
 import { TurnState } from './turnState'
 import { TurnContext } from '../turnContext'
 import { Attachment } from '@microsoft/agents-bot-activity'
+import { AuthProvider } from '../auth/authProvider'
 import { debug } from '../logger'
+import { loadAuthConfigFromEnv, MsalTokenProvider } from '../auth'
 
 const logger = debug('agents:attachmentDownloader')
 
@@ -26,7 +28,9 @@ export class AttachmentDownloader<TState extends TurnState = TurnState> implemen
       return Promise.resolve([])
     }
 
-    const accessToken = ''
+    const authProvider: AuthProvider = new MsalTokenProvider()
+
+    const accessToken = await authProvider.getAccessToken(loadAuthConfigFromEnv(), 'https://api.botframework.com')
 
     const files: InputFile[] = []
     for (const attachment of attachments) {
