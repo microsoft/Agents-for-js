@@ -142,7 +142,7 @@ export class TurnState<
   public deleteUserState (): void {
     const scope = this.getScope(USER_SCOPE)
     if (!scope) {
-      throw new Error()
+      throw new Error(this._stateNotLoadedString)
     }
     scope.delete()
   }
