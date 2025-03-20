@@ -10,7 +10,11 @@ import { Storage } from '../storage'
 import { AuthenticationOptions } from './oauth/authenticationOptions'
 
 export class ApplicationBuilder<TState extends TurnState = TurnState> {
-  private _options: Partial<ApplicationOptions<TState>> = {}
+  protected _options: Partial<ApplicationOptions<TState>> = {}
+
+  protected get options () {
+    return this._options
+  }
 
   public withStorage (storage: Storage): this {
     this._options.storage = storage

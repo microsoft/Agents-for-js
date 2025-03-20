@@ -5,7 +5,7 @@ import { ActivityTypes, CardFactory, MemoryStorage, MessageFactory, TurnContext,
 import { Template } from 'adaptivecards-templating'
 import * as userTemplate from '../cards/UserProfileCard.json'
 import { getUserInfo } from './userGraphClient'
-import { TeamsApplication } from '@microsoft/agents-bot-hosting-teams'
+import { TeamsApplicationBuilder } from '@microsoft/agents-bot-hosting-teams'
 
 interface ConversationData {
   promptedForUserName?: boolean;
@@ -19,13 +19,7 @@ interface UserProfile {
 
 type ApplicationTurnState = TurnState<ConversationData, UserProfile>
 const storage = new MemoryStorage()
-export const app = new TeamsApplication({
-  removeRecipientMention: false,
-  authentication: {
-    enableSSO: true,
-  },
-  storage
-})
+export const app = new TeamsApplicationBuilder<ApplicationTurnState>().withStorage(storage).withAuthentication({ enableSSO: true }).setRemoveRecipientMention(false).build()
 
 app.message('/signout', async (context: TurnContext, state: ApplicationTurnState) => {
   await app.teamsAuthManager.signOut(context)
