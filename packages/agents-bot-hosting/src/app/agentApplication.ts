@@ -16,6 +16,7 @@ import { TurnContext } from '../turnContext'
 import { ResourceResponse } from '../connector-client'
 import { debug } from '../logger'
 import { WebChatOAuthFlowAppStyle } from './oauth/webChatOAuthFlowAppStyle'
+import { MemoryStorage } from '../storage'
 
 const logger = debug('agents:agent-application')
 
@@ -43,8 +44,8 @@ export class AgentApplication<TState extends TurnState> {
       this._adapter = this._options.adapter
     }
 
-    if (this._options.storage && this._options.authentication && this._options.authentication.enableSSO) {
-      this._authManager = new WebChatOAuthFlowAppStyle(this._options.storage)
+    if (this._options.authentication && this._options.authentication.enableSSO) {
+      this._authManager = new WebChatOAuthFlowAppStyle(this._options.storage ?? new MemoryStorage())
     }
 
     if (this._options.longRunningMessages && !this._adapter && !this._options.botAppId) {
