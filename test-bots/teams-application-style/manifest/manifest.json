@@ -25,7 +25,7 @@
   "accentColor": "#FFFFFF",
   "bots": [
     {
-      "botId": "8688cafc-167b-4b60-ab37-112a11a345ea",
+      "botId": "{{BOT_CLIENT_ID}}",
       "scopes": [
         "personal",
         "team",
@@ -39,7 +39,7 @@
   ],
   "validDomains": [],
   "webApplicationInfo": {
-    "id": "8688cafc-167b-4b60-ab37-112a11a345ea",
+    "id": "{{BOT_CLIENT_ID}}",
     "resource": ""
   },
   "devicePermissions": [
