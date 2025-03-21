@@ -69,12 +69,10 @@ Use **Express** instead of Restify for compatibility with the Agents server. Fol
   6. Listen for incoming requests on the specified port.
   ```typescript
   import express, { Response } from 'express'
-  import rateLimit from 'express-rate-limit'
   import { Request, authorizeJWT } from '@microsoft/agents-bot-hosting'
 
   const app = express()
 
-  app.use(rateLimit({ validate: { xForwardedForHeader: false } }))
   app.use(express.json())
   app.use(authorizeJWT(authConfig))
 

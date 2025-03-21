@@ -3,7 +3,6 @@
 
 import express, { Response } from 'express'
 
-import rateLimit from 'express-rate-limit'
 import { Request, CloudAdapter, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv } from '@microsoft/agents-bot-hosting'
 import { version as sdkVersion } from '@microsoft/agents-bot-hosting/package.json'
 import { EchoBot } from './bot'
@@ -15,7 +14,6 @@ const myBot = new EchoBot()
 
 const app = express()
 
-app.use(rateLimit({ validate: { xForwardedForHeader: false } }))
 app.use(express.json())
 app.use(authorizeJWT(authConfig))
 

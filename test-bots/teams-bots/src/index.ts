@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 import express, { Response } from 'express'
-import rateLimit from 'express-rate-limit'
 
 import { Request, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv, UserState, MemoryStorage } from '@microsoft/agents-bot-hosting'
 import { TeamsCloudAdapter } from '@microsoft/agents-bot-hosting-teams'
@@ -38,7 +37,6 @@ const myBot = createBot(botName)
 
 const app = express()
 
-app.use(rateLimit({ validate: { xForwardedForHeader: false } }))
 app.use(express.json())
 app.use(authorizeJWT(authConfig))
 
