@@ -1,12 +1,10 @@
 import { AuthConfiguration, authorizeJWT, CloudAdapter, loadAuthConfigFromEnv, Request } from '@microsoft/agents-bot-hosting'
 import express, { Response } from 'express'
-import rateLimit from 'express-rate-limit'
 
 const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
 const adapter = new CloudAdapter(authConfig)
 
 const server = express()
-server.use(rateLimit({ validate: { xForwardedForHeader: false } }))
 server.use(express.json())
 server.use(authorizeJWT(authConfig))
 
