@@ -247,12 +247,12 @@ export class Activity {
     this.conversation = reference.conversation
     if (isIncoming) {
       this.from = reference.user
-      this.recipient = reference.bot
+      this.recipient = reference.bot ?? undefined
       if (reference.activityId) {
         this.id = reference.activityId
       }
     } else {
-      this.from = reference.bot
+      this.from = reference.bot ?? undefined
       this.recipient = reference.user
       if (reference.activityId) {
         this.replyToId = reference.activityId

@@ -772,6 +772,69 @@ describe('Activity applyConversationReference', () => {
       recipient: { id: 'bot1', name: 'Bot' }
     })
   })
+
+  it('should apply reference values for reference.bot null and isIncoming false', () => {
+    const obj = {
+      type: ActivityTypes.Message,
+      locale: undefined,
+      id: 'activity123'
+    }
+    const activity: Activity = Activity.fromObject(obj)
+    const reference: ConversationReference = {
+      activityId: 'refActivityId',
+      user: { id: 'user1', name: 'User' },
+      bot: null,
+      conversation: { id: 'conversation1' },
+      channelId: 'channel123',
+      locale: 'en-US',
+      serviceUrl: 'http://example.com'
+    }
+
+    const result = activity.applyConversationReference(reference, false)
+
+    assert.deepEqual(result, {
+      type: 'message',
+      locale: 'en-US',
+      id: 'activity123',
+      channelId: 'channel123',
+      serviceUrl: 'http://example.com',
+      conversation: { id: 'conversation1' },
+      from: undefined,
+      recipient: { id: 'user1', name: 'User' },
+      replyToId: 'refActivityId'
+    })
+  })
+
+  it('should apply reference values for reference.bot null and isIncoming true', () => {
+    const obj = {
+      type: ActivityTypes.Message,
+      id: 'activity123',
+      locale: undefined
+    }
+    const activity: Activity = Activity.fromObject(obj)
+    const reference: ConversationReference = {
+      activityId: 'refActivityId',
+      user: { id: 'user1', name: 'User' },
+      bot: null,
+      conversation: { id: 'conversation1' },
+      channelId: 'channel123',
+      locale: 'en-US',
+      serviceUrl: 'http://example.com'
+    }
+
+    const result = activity.applyConversationReference(reference, true)
+
+    assert.deepEqual(result, {
+      type: 'message',
+      id: 'refActivityId',
+      locale: 'en-US',
+      channelId: 'channel123',
+      serviceUrl: 'http://example.com',
+      conversation: { id: 'conversation1' },
+      from: { id: 'user1', name: 'User' },
+      recipient: undefined
+    })
+  })
 })
 
 describe('Activity removeRecipientMention', () => {
@@ -914,6 +977,56 @@ describe('Activity from MCS', () => {
         conversation: { id: '637f239b-2ac2-4cb4-8dd1-04d63184de69' },
         channelId: 'pva-studio',
         locale: 'en-US'
+      },
+      deliveryMode: 'expectReplies',
+      listenFor: [],
+      textHighlights: []
+    }
+    const activity: Activity = Activity.fromObject(obj)
+    assert.equal(activity.type, 'message')
+    assert.strictEqual(activity.relatesTo?.serviceUrl, undefined)
+  })
+
+  it('should deserialize an MCS activity with relatesTo.bot null', () => {
+    const obj = {
+      type: 'message',
+      id: 'eb9df230-2daa-4920-980d-e1bef52c5bfd',
+      localTimestamp: '2025-01-16T17:18:45.196-08:00',
+      localTimezone: 'America/Los_Angeles',
+      serviceUrl: 'https://directline.botframework.com/',
+      channelId: 'pva-studio',
+      from: {
+        id: 'c7292dba-1513-42bc-9ba8-4d686b21aad7',
+        aadObjectId: 'c7292dba-1513-42bc-9ba8-4d686b21aad7',
+        role: 'user'
+      },
+      conversation: { id: '637f239b-2ac2-4cb4-8dd1-04d63184de69' },
+      recipient: {
+        id: '127b164e-50eb-e1f3-9e9e-a3b54a865c16/d304c999-e0d2-ef11-8ee9-000d3a3b8fcb',
+        name: 'cr0d1_myTestAgent',
+        role: 'skill'
+      },
+      textFormat: 'plain',
+      membersAdded: [],
+      membersRemoved: [],
+      reactionsAdded: [],
+      reactionsRemoved: [],
+      locale: 'en-US',
+      text: 'echo bla',
+      attachments: [],
+      entities: [],
+      channelData: {
+        attachmentSizes: [],
+        enableDiagnostics: true,
+        testMode: 'Text',
+        clientActivityID: 'q8ijtnyqh3'
+      },
+      relatesTo: {
+        activityId: 'eb9df230-2daa-4920-980d-e1bef52c5bfd',
+        conversation: { id: '637f239b-2ac2-4cb4-8dd1-04d63184de69' },
+        channelId: 'pva-studio',
+        locale: 'en-US',
+        bot: null
       },
       deliveryMode: 'expectReplies',
       listenFor: [],
