@@ -2,7 +2,7 @@ import express, { Response } from 'express'
 import { DialogBot } from './bots/dialogBot'
 import { UserProfileDialog } from './dialogs/userProfileDialog'
 import { CloudAdapter, authorizeJWT, loadAuthConfigFromEnv, UserState, ConversationState, MemoryStorage, Request } from '@microsoft/agents-bot-hosting'
-import { version as sdkVersion } from '@microsoft/agents-bot-hosting/package.json'\
+import { version as sdkVersion } from '@microsoft/agents-bot-hosting/package.json'
 
 const authConfig = loadAuthConfigFromEnv()
 
