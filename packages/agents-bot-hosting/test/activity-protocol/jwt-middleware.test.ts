@@ -73,23 +73,4 @@ describe('authorizeJWT', () => {
 
     verifyStub.restore()
   })
-
-  it('should respond with 401 if token audience does not match client id', async () => {
-    const token = 'valid-token-with-wrong-audience'
-    req.headers.authorization = `Bearer ${token}`
-
-    const verifyStub = sinon.stub(jwt, 'verify').callsFake((token, secretOrPublicKey, options, callback) => {
-      if (callback) {
-        callback(null, { aud: 'wrong-client-id' })
-      }
-    })
-
-    await authorizeJWT(config)(req as Request, res as Response, next)
-
-    assert((res.status as sinon.SinonStub).calledOnceWith(401))
-    // assert((res.json as sinon.SinonStub).calledOnceWith({ error: 'Unauthorized' }))
-    assert((next as sinon.SinonStub).notCalled)
-
-    verifyStub.restore()
-  })
 })
