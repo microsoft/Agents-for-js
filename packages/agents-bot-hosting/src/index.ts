@@ -23,4 +23,7 @@ export * from './statusCodes'
 export * from './turnContext'
 export * from './logger'
 export * from './storage/storage'
+
+export * from './bot-client'
+
 export * from '@microsoft/agents-bot-activity'

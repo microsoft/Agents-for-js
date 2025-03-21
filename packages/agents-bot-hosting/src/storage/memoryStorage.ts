@@ -12,6 +12,7 @@ const logger = debug('agents:memory-storage')
  * A simple in-memory storage provider.
  */
 export class MemoryStorage implements Storage {
+  private static instance: MemoryStorage
   private etag: number = 1
 
   /**
@@ -19,6 +20,16 @@ export class MemoryStorage implements Storage {
    * @param memory An optional initial memory store.
    */
   constructor (private memory: { [k: string]: string } = {}) { }
+
+  /**
+   * Gets a single instance of the MemoryStorage class.
+   */
+  static getSingleInstance (): MemoryStorage {
+    if (!MemoryStorage.instance) {
+      MemoryStorage.instance = new MemoryStorage()
+    }
+    return MemoryStorage.instance
+  }
 
   /**
    * Reads storage items from memory.

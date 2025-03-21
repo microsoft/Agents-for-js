@@ -75,6 +75,11 @@ export class CloudAdapter extends BotAdapter {
     return new TurnContext(this, activity)
   }
 
+  async createTurnContextWithScope (activity: Activity, logic: BotHandler, scope: string): Promise<TurnContext> {
+    this.connectorClient = await ConnectorClient.createClientWithAuthAsync(activity.serviceUrl!, this.authConfig, this.authProvider, scope)
+    return new TurnContext(this, activity)
+  }
+
   /**
    * Sends multiple activities to the conversation.
    * @param context - The TurnContext for the current turn of the bot.
@@ -161,6 +166,9 @@ export class CloudAdapter extends BotAdapter {
     }
 
     const activity = Activity.fromObject(request.body!)
+    if (!this.isValidChannelActivity(activity)) {
+      return end(StatusCodes.BAD_REQUEST)
+    }
 
     logger.debug('Received activity: ', activity)
 
@@ -185,6 +193,25 @@ export class CloudAdapter extends BotAdapter {
     const invokeResponse = this.processTurnResults(context)
 
     return end(invokeResponse?.status ?? StatusCodes.OK, invokeResponse?.body)
+  }
+
+  private isValidChannelActivity (activity: Activity): Boolean {
+    if (activity == null) {
+      logger.warn('BadRequest: Missing activity')
+      return false
+    }
+
+    if (activity.type == null || activity.type === '') {
+      logger.warn('BadRequest: Missing activity type')
+      return false
+    }
+
+    if (activity.conversation?.id == null || activity.conversation?.id === '') {
+      logger.warn('BadRequest: Missing conversation.Id')
+      return false
+    }
+
+    return true
   }
 
   /**
@@ -239,12 +266,17 @@ export class CloudAdapter extends BotAdapter {
    * @param logic - The logic to execute.
    * @returns A promise representing the completion of the continue operation.
    */
-  async continueConversation (reference: ConversationReference, logic: (revocableContext: TurnContext) => Promise<void>): Promise<void> {
+  async continueConversation (reference: ConversationReference, logic: (revocableContext: TurnContext) => Promise<void>, isBotResponse: Boolean = false): Promise<void> {
     if (!reference || !reference.serviceUrl || (reference.conversation == null) || !reference.conversation.id) {
       throw new Error('Invalid conversation reference object')
     }
 
-    const context = this.createTurnContext(Activity.getContinuationActivity(reference), logic)
+    let context
+    if (isBotResponse) {
+      context = await this.createTurnContextWithScope(Activity.getContinuationActivity(reference), logic, 'https://api.botframework.com')
+    } else {
+      context = this.createTurnContext(Activity.getContinuationActivity(reference), logic)
+    }
     await this.runMiddleware(context, logic)
   }
 

@@ -84,6 +84,7 @@
 		},
 		{
 			"label": "build_application_style",
+
 			"type": "npm",
 			"script": "build",
 			"group": {

@@ -111,6 +111,7 @@
             ],
             "preLaunchTask": "build_teams_application_style",
             "envFile": "${workspaceFolder}/test-bots/teams-application-style/.env",
+
             "console": "integratedTerminal",
             "internalConsoleOptions": "openOnSessionStart"
         }
