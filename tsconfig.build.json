@@ -23,6 +23,9 @@
         "path": "packages/agents-bot-hosting-dialogs"
       },
       {
+        "path": "test-bots/application-style"
+      },
+      {
         "path": "test-bots/echo-bot"
       },
       {

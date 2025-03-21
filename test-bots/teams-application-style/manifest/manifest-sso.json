@@ -1,0 +1,62 @@
+{
+    "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.17/MicrosoftTeams.schema.json",
+    "version": "1.0.0",
+    "manifestVersion": "1.17",
+    "id": "44854737-5b02-4283-baaf-9400b0b6058e",
+    "name": {
+      "short": "teams-sso",
+      "full": "teams-sso teams-sso"
+    },
+    "developer": {
+      "name": "sdkteam",
+      "mpnId": "",
+      "websiteUrl": "https://copilot.sdk/",
+      "privacyUrl": "https://copilot.sdk/p",
+      "termsOfUseUrl": "https://copilot.sdk/tou"
+    },
+    "description": {
+      "short": "teams-sso",
+      "full": "teams-sso teams-sso teams-sso"
+    },
+    "icons": {
+      "outline": "icon-outline.png",
+      "color": "icon-color.png"
+    },
+    "accentColor": "#FFFFFF",
+    "bots": [
+      {
+        "botId": "{{BOT_CLIENT_ID}}",
+        "scopes": [
+          "personal",
+          "team",
+          "groupChat"
+        ],
+        "isNotificationOnly": false,
+        "supportsCalling": false,
+        "supportsVideo": false,
+        "supportsFiles": true
+      }
+    ],
+    "validDomains": [],
+    "webApplicationInfo": {
+      "id": "{{BOT_CLIENT_ID}}",
+      "resource": "{{APP_ID_URI}}"
+    },
+    "devicePermissions": [
+      "notifications"
+    ],
+    "authorization": {
+      "permissions": {
+        "resourceSpecific": [
+          {
+            "name": "OnlineMeeting.ReadBasic.Chat",
+            "type": "Delegated"
+          },
+          {
+            "name": "OnlineMeeting.ReadBasic.Chat",
+            "type": "Application"
+          }
+        ]
+      }
+    }
+  }
