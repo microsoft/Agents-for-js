@@ -21,7 +21,7 @@
         "typescript": "^5.8.2"
     },
     "devDependencies": {
-        "@types/express": "^5.0.0"
+        "@types/express": "^5.0.1"
     },
     "keywords": []
 }

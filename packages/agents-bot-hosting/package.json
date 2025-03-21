@@ -28,7 +28,7 @@
     "debug": "^4.3.7"
   },
   "devDependencies": {
-    "@types/express": "^5.0.0"
+    "@types/express": "^5.0.1"
   },
   "license": "MIT",
   "files": [
