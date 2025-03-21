@@ -45,6 +45,9 @@
       },
       {
         "path": "test-bots/custom-dialogs"
+      },
+      {
+        "path": "test-bots/teams-application-style"
       }
     ]
   }
