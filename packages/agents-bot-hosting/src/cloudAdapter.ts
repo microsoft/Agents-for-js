@@ -116,9 +116,6 @@ export class CloudAdapter extends BotAdapter {
         }
 
         if (activity.replyToId) {
-          const activityToWebChat = JSON.stringify(activity)
-          console.log('activityToWebChat', activityToWebChat)
-
           response = await this.connectorClient.replyToActivityAsync(activity.conversation.id, activity.replyToId, activity)
         } else {
           response = await this.connectorClient.sendToConversationAsync(activity.conversation.id, activity)

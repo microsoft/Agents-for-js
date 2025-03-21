@@ -5,6 +5,9 @@ import { Request, Response, Application } from 'express'
 import { MemoryStorage } from '../storage'
 import { TurnContext } from '../turnContext'
 import { v4 } from 'uuid'
+import { debug } from '../logger'
+
+const logger = debug('agents:bot-client')
 
 export const addBotApi = (app: Application, adapter: CloudAdapter, bot: ActivityHandler) => {
   app.post('/api/botresponse/v3/conversations/:conversationId/activities/:activityId', handleBotResponse(adapter, bot))
@@ -12,12 +15,13 @@ export const addBotApi = (app: Application, adapter: CloudAdapter, bot: Activity
 
 const handleBotResponse = (adapter: CloudAdapter, bot: ActivityHandler) => async (req: Request, res: Response) => {
   const activity = Activity.fromObject(req.body!)
+
   const activityFromEchoBot = JSON.stringify(activity)
-  console.log('activityFromEchoBot', activityFromEchoBot)
+  logger.debug('activityFromEchoBot: ', activityFromEchoBot)
 
   const dataForBot = await MemoryStorage.getSingleInstance().read([req.params!.conversationId])
   const conversationReference = dataForBot[req.params!.conversationId].conversationReference
-  console.log('Data for bot:', dataForBot)
+  logger.debug('memoryChanges: ', dataForBot)
 
   const callback = async (turnContext: TurnContext) => {
     activity.applyConversationReference(conversationReference)

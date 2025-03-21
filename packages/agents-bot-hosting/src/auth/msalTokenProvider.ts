@@ -115,7 +115,6 @@ export class MsalTokenProvider implements AuthProvider {
     })
 
     const pubKeyObject = new crypto.X509Certificate(fs.readFileSync(authConfig.certPemFile as string))
-    console.log(pubKeyObject.fingerprint)
 
     const cca = new ConfidentialClientApplication({
       auth: {

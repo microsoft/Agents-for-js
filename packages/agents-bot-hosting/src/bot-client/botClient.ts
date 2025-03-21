@@ -2,6 +2,9 @@ import { AuthConfiguration, MsalTokenProvider } from '../auth'
 import { Activity, RoleTypes } from '@microsoft/agents-bot-activity'
 import { MemoryStorage, StoreItem } from '../storage'
 import { v4 } from 'uuid'
+import { debug } from '../logger'
+
+const logger = debug('agents:bot-client')
 
 export interface BotClientConfig {
   botEndPoint: string
@@ -40,13 +43,13 @@ export class BotClient {
     await memory.write(changes)
 
     const memoryChanges = JSON.stringify(changes)
-    console.log('memoryChanges', memoryChanges)
+    logger.debug('memoryChanges: ', memoryChanges)
 
     const authProvider = new MsalTokenProvider()
     const token = await authProvider.getAccessToken(authConfig, this.botClientConfig.botId)
 
     const activityToEchoBot = JSON.stringify(activityCopy)
-    console.log('activityToEchoBot', activityToEchoBot)
+    logger.debug('activityToEchoBot: ', activityToEchoBot)
 
     const response = await fetch(this.botClientConfig.botEndPoint, {
       method: 'POST',
