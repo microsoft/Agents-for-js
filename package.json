@@ -36,7 +36,7 @@
   },
   "devDependencies": {
     "@types/debug": "^4.1.12",
-    "@types/express": "^5.0.0",
+    "@types/express": "^5.0.1",
     "@types/express-serve-static-core": "^5.0.5",
     "@types/node": "^22.13.10",
     "@types/sinon": "^17.0.4",
@@ -45,9 +45,9 @@
     "global": "4.4.0",
     "neostandard": "^0.12.1",
     "nerdbank-gitversioning": "^3.7.115",
-    "sinon": "^19.0.2",
+    "sinon": "^19.0.4",
     "tsx": "^4.19.3",
-    "typedoc": "^0.28.0",
+    "typedoc": "^0.28.1",
     "typescript": "^5.8.2"
   },
   "engines": {

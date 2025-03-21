@@ -16,7 +16,7 @@
   "main": "dist/index.js",
   "types" : "dist/src/index.d.ts",
   "dependencies": {
-    "@azure/storage-blob": "^12.26.0",
+    "@azure/storage-blob": "^12.27.0",
     "@microsoft/agents-bot-hosting": "file:../../packages/agents-bot-hosting"
   },
   "devDependencies": {
