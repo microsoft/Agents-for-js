@@ -12,7 +12,7 @@ import { MessagingExtensionParameter } from '../../messaging-extension/messaging
 import { MessagingExtensionQuery } from '../../messaging-extension/messagingExtensionQuery'
 import { TaskModuleResponse } from '../../task/taskModuleResponse'
 import { MessageExtensionsInvokeNames } from './messageExtensionsInvokeNames'
-import { validatetValueBotMessagePreviewAction, validateValueBotActivityPreview, validateValueCommandId, validateValueQuery } from '../../validators'
+import { parseValueBotActivityPreview, parseValueBotMessagePreviewAction, parseValueCommandId, parseValueQuery } from '../../parsers'
 import { Query } from '../query'
 
 export class MessageExtensions<TState extends TurnState> {
@@ -34,7 +34,7 @@ export class MessageExtensions<TState extends TurnState> {
     this._app.addRoute(
       selector,
       async (context, state) => {
-        const activityValueUrl = validateValueQuery(context.activity.value)
+        const activityValueUrl = parseValueQuery(context.activity.value)
         const result = await handler(context, state, activityValueUrl.url ?? '')
         if (!context.turnState.get(INVOKE_RESPONSE_KEY)) {
           const response = {
@@ -66,7 +66,7 @@ export class MessageExtensions<TState extends TurnState> {
       this._app.addRoute(
         selector,
         async (context, state) => {
-          const activityValue = validatetValueBotMessagePreviewAction(context.activity.value)
+          const activityValue = parseValueBotMessagePreviewAction(context.activity.value)
           if (context?.activity?.type !== ActivityTypes.Invoke ||
             context?.activity?.name !== SUBMIT_ACTION_INVOKE ||
             activityValue.botMessagePreviewAction !== 'edit'
@@ -76,7 +76,8 @@ export class MessageExtensions<TState extends TurnState> {
             )
           }
 
-          const activityBotActivityPreview = validateValueBotActivityPreview(context.activity.value)
+          const activityBotActivityPreview = parseValueBotActivityPreview(context.activity.value)
+          // @ts-ignore
           const result = await handler(context, state, activityBotActivityPreview.botActivityPreview[0] ?? {})
           await this.returnSubmitActionResponse(context, result)
         },
@@ -96,7 +97,7 @@ export class MessageExtensions<TState extends TurnState> {
       this._app.addRoute(
         selector,
         async (context, state) => {
-          const activityBotMessagePreviewAction = validatetValueBotMessagePreviewAction(context.activity.value)
+          const activityBotMessagePreviewAction = parseValueBotMessagePreviewAction(context.activity.value)
           if (
             context?.activity?.type !== ActivityTypes.Invoke ||
                         context?.activity?.name !== SUBMIT_ACTION_INVOKE ||
@@ -107,7 +108,8 @@ export class MessageExtensions<TState extends TurnState> {
             )
           }
 
-          const activityBotActivityPreview = validateValueBotActivityPreview(context.activity.value)
+          const activityBotActivityPreview = parseValueBotActivityPreview(context.activity.value)
+          // @ts-ignore
           await handler(context, state, activityBotActivityPreview.botActivityPreview[0] ?? {})
 
           if (!context.turnState.get(INVOKE_RESPONSE_KEY)) {
@@ -232,7 +234,7 @@ export class MessageExtensions<TState extends TurnState> {
     this._app.addRoute(
       selector,
       async (context, state) => {
-        const activityValueUrl = validateValueQuery(context.activity.value)
+        const activityValueUrl = parseValueQuery(context.activity.value)
         const result = await handler(context, state, activityValueUrl.url)
         if (!context.turnState.get(INVOKE_RESPONSE_KEY)) {
           const response: MessagingExtensionActionResponse = {
@@ -443,7 +445,7 @@ function createTaskSelector (
     return commandId
   } else if (commandId instanceof RegExp) {
     return (context: TurnContext) => {
-      const activityValue = validateValueCommandId(context.activity.value)
+      const activityValue = parseValueCommandId(context.activity.value)
       const isInvoke = context?.activity?.type === ActivityTypes.Invoke && context?.activity?.name === invokeName
       if (
         isInvoke &&
@@ -458,7 +460,7 @@ function createTaskSelector (
     }
   } else {
     return (context: TurnContext) => {
-      const activityValue = validateValueCommandId(context.activity.value)
+      const activityValue = parseValueCommandId(context.activity.value)
       const isInvoke = context?.activity?.type === ActivityTypes.Invoke && context?.activity?.name === invokeName
       return Promise.resolve(
         isInvoke &&
@@ -470,7 +472,7 @@ function createTaskSelector (
 }
 
 function matchesPreviewAction (activity: Activity, botMessagePreviewAction?: 'edit' | 'send'): boolean {
-  const activityValue = validatetValueBotMessagePreviewAction(activity.value)
+  const activityValue = parseValueBotMessagePreviewAction(activity.value)
   if (typeof activityValue.botMessagePreviewAction === 'string') {
     return activityValue.botMessagePreviewAction === botMessagePreviewAction
   } else {
