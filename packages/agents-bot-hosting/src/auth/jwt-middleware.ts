@@ -44,7 +44,7 @@ const verifyToken = async (raw: string, config: AuthConfiguration): Promise<JwtP
   return await new Promise((resolve, reject) => {
     const verifyOptions: jwt.VerifyOptions = {
       issuer: config.issuers,
-      audience: config.clientId,
+      audience: [config.clientId!, 'https://api.botframework.com'],
       ignoreExpiration: false,
       algorithms: ['RS256']
     }
@@ -56,10 +56,7 @@ const verifyToken = async (raw: string, config: AuthConfiguration): Promise<JwtP
         return
       }
       const tokenClaims = user as JwtPayload
-      if (tokenClaims.aud !== config.clientId) {
-        logger.error(`token audience ${tokenClaims.aud} does not match client id ${config.clientId}`)
-        reject(new Error('token audience does not match client id'))
-      }
+
       resolve(tokenClaims)
     })
   })
