@@ -5,7 +5,6 @@ import express, { Response } from 'express'
 import { DialogBot } from './bots/dialogBot'
 import { CloudAdapter, authorizeJWT, loadAuthConfigFromEnv, UserState, ConversationState, MemoryStorage, Request } from '@microsoft/agents-bot-hosting'
 import { version as sdkVersion } from '@microsoft/agents-bot-hosting/package.json'
-import rateLimit from 'express-rate-limit'
 import { RootDialog } from './dialogs/rootDialog'
 
 const authConfig = loadAuthConfigFromEnv()
@@ -27,7 +26,7 @@ const dialog = new RootDialog(userState)
 const myBot = new DialogBot(conversationState, userState, dialog)
 
 const app = express()
-app.use(rateLimit({ validate: { xForwardedForHeader: false } }))
+
 app.use(express.json())
 app.use(authorizeJWT(authConfig))
 
