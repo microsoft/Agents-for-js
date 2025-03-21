@@ -1,0 +1,27 @@
+{
+    "name": "multiturn-prompts-bot",
+    "version": "1.0.0",
+    "private": true,
+    "description": "Agents SKD multiturn-prompts bot for testing and development",
+    "author": "Microsoft",
+    "license": "MIT",
+    "main": "./dist/index.js",
+    "scripts": {
+        "build": "tsc --build",
+        "prestart": "npm run build",
+        "start": "node --env-file .env ./dist/index.js",
+        "prebundle": "npm run build",
+        "bundle": "esbuild dist/index.js --bundle --platform=node --metafile=dist/meta.json --outfile=dist/bundle.js --tree-shaking=true --keep-names",
+        "docker": "docker build -t botimages.azurecr.io/node-echo-bot:latest ."
+    },
+    "dependencies": {
+        "@microsoft/agents-bot-hosting-dialogs": "file:../../packages/agents-bot-hosting-dialogs",
+        "express": "^5.0.1",
+        "express-rate-limit": "^7.5.0",
+        "typescript": "^5.8.2"
+    },
+    "devDependencies": {
+        "@types/express": "^5.0.0"
+    },
+    "keywords": []
+}

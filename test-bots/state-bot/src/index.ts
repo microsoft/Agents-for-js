@@ -3,7 +3,6 @@
 
 import express, { Response } from 'express'
 
-import rateLimit from 'express-rate-limit'
 import { Request, CloudAdapter, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv, ConversationState, UserState } from '@microsoft/agents-bot-hosting'
 import { BlobsStorage, BlobsTranscriptStore } from '@microsoft/agents-bot-hosting-storage-blob'
 // import { CosmosDbPartitionedStorage, CosmosDbPartitionedStorageOptions } from '@microsoft/agents-bot-hosting-storage-cosmos'
@@ -39,14 +38,6 @@ const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
 const adapter = new CloudAdapter(authConfig)
 
 const app = express()
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  validate: {
-    xForwardedForHeader: false // Disabled for the sample
-  }
-})
-app.use(limiter)
 
 app.use(express.json())
 app.use(authorizeJWT(authConfig))

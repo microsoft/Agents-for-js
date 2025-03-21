@@ -14,7 +14,7 @@ export interface ConversationReference {
   activityId?: string
   user?: ChannelAccount
   locale?: string
-  bot?: ChannelAccount | undefined
+  bot?: ChannelAccount | undefined | null
   conversation: ConversationAccount
   channelId: string
   serviceUrl?: string | undefined
@@ -27,7 +27,7 @@ export const conversationReferenceZodSchema = z.object({
   activityId: z.string().min(1).optional(),
   user: channelAccountZodSchema.optional(),
   locale: z.string().min(1).optional(),
-  bot: channelAccountZodSchema.optional(),
+  bot: channelAccountZodSchema.optional().nullable(),
   conversation: conversationAccountZodSchema,
   channelId: z.string().min(1),
   serviceUrl: z.string().min(1).optional()

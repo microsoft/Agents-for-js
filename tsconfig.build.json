@@ -20,6 +20,9 @@
         "path": "packages/agents-bot-hosting-teams"
       },
       {
+        "path": "packages/agents-bot-hosting-dialogs"
+      },
+      {
         "path": "test-bots/application-style"
       },
       {
@@ -36,6 +39,12 @@
       },
       {
         "path": "test-bots/copilotstudio-console"
+      },
+      {
+        "path": "test-bots/multi-turn-prompt"
+      },
+      {
+        "path": "test-bots/custom-dialogs"
       }
     ]
   }

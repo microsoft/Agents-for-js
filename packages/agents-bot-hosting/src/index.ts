@@ -17,10 +17,12 @@ export * from './transcript'
 
 export * from './activityHandler'
 export * from './cloudAdapter'
+export * from './claimsIdentity'
 export * from './logger'
 export * from './messageFactory'
 export * from './statusCodes'
 export * from './turnContext'
+export * from './turnContextStateCollection'
 export * from './logger'
 export * from './storage/storage'
 

@@ -8,7 +8,7 @@ import {
   TurnContext
 }
   from '@microsoft/agents-bot-hosting'
-import { TeamsActivityHandler, TeamsInfo, TeamsMember, MeetingNotification, validateTeamsChannelData } from '@microsoft/agents-bot-hosting-teams'
+import { TeamsActivityHandler, TeamsInfo, TeamsMember, MeetingNotification, parseTeamsChannelData } from '@microsoft/agents-bot-hosting-teams'
 
 export class TeamsJsBot extends TeamsActivityHandler {
   constructor () {
@@ -25,7 +25,7 @@ export class TeamsJsBot extends TeamsActivityHandler {
         const channels = await TeamsInfo.getTeamDetails(context)
         await context.sendActivity(MessageFactory.text(`Meeting participant ${JSON.stringify(channels)}`))
       } else if (text.includes('sendMessageToTeamsChannel')) {
-        const teamsChannelData = validateTeamsChannelData(context.activity.channelData)
+        const teamsChannelData = parseTeamsChannelData(context.activity.channelData)
         const channelId = teamsChannelData.channel?.id
         if (!channelId) {
           await context.sendActivity(MessageFactory.text('channelId not found'))
@@ -46,13 +46,13 @@ export class TeamsJsBot extends TeamsActivityHandler {
         const members = await TeamsInfo.getPagedTeamMembers(context, undefined, 2)
         await context.sendActivity(MessageFactory.text(`team members ${JSON.stringify(members.members.map(m => m.email!))}`))
       } else if (text.includes('getTeamMember')) {
-        const teamsChannelData = validateTeamsChannelData(context.activity.channelData)
+        const teamsChannelData = parseTeamsChannelData(context.activity.channelData)
         const teamId = teamsChannelData.team?.id
         const member = await TeamsInfo.getTeamMember(context, teamId!, context.activity.from!.id!)
         await context.sendActivity(MessageFactory.text(`team member ${JSON.stringify(member)}`))
       } else if (text.includes('sendMeetingNotification')) {
         const notification: MeetingNotification = { type: 'targetedMeetingNotification', value: { recipients: ['rido'], surfaces: [] } }
-        const teamsChannelData = validateTeamsChannelData(context.activity.channelData)
+        const teamsChannelData = parseTeamsChannelData(context.activity.channelData)
         const meetingId = teamsChannelData.meeting?.id
         const resp = await TeamsInfo.sendMeetingNotification(context, notification, meetingId)
         await context.sendActivity(MessageFactory.text(`sendMeetingNotification ${JSON.stringify(resp)}`))
@@ -69,7 +69,7 @@ export class TeamsJsBot extends TeamsActivityHandler {
         const batchResp = await TeamsInfo.sendMessageToAllUsersInTenant(context, MessageFactory.text('msg from bot to all users'), context.adapter.authConfig.tenantId!)
         console.log(batchResp.operationId)
       } else if (text.includes('sendMessageToAllUsersInTeam')) {
-        const teamsChannelData = validateTeamsChannelData(context.activity.channelData)
+        const teamsChannelData = parseTeamsChannelData(context.activity.channelData)
         const teamId = teamsChannelData.team?.id
         const batchResp = await TeamsInfo.sendMessageToAllUsersInTeam(context, MessageFactory.text('msg from bot to all users in team'), context.adapter.authConfig.tenantId!, teamId!)
         console.log(batchResp.operationId)
