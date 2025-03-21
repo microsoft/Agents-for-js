@@ -9,22 +9,21 @@ import {
   CardFactory,
   CardImage,
   HeroCard,
+  MemoryStorage,
   MessageFactory,
-  TaskModuleAction,
   ThumbnailCard,
   TurnContext,
   TurnState
 } from '@microsoft/agents-bot-hosting'
 import { MessagingExtensionAttachment, TeamsApplication, TeamsInfo, MessagingExtensionResult } from '@microsoft/agents-bot-hosting-teams'
-import { TaskModuleUIConstants } from './models/taskModuleUIConstants'
-import { CardTaskFetchValue } from './models/cardTaskFetchValue'
-// const adaptiveCardResource = require('../cards/AdaptiveCard.json')
-const restaurantCardResource = require('./cards/RestaurantCard.json')
-
-// const baseUrl = process.env.BASE_URL?.endsWith('/') ? process.env.BASE_URL : process.env.BASE_URL + '/'
+const restaurantCardResource = require('../cards/RestaurantCard.json')
 
 type ApplicationTurnState = TurnState
-export const app = new TeamsApplication()
+const storage = new MemoryStorage()
+export const app = new TeamsApplication<ApplicationTurnState>({
+  removeRecipientMention: false,
+  storage
+})
 
 app.messageEventUpdate('editMessage', async (context: TurnContext, state: ApplicationTurnState) => {
   const reply = MessageFactory.text('You edited a message')
@@ -154,15 +153,15 @@ app.messageExtensions.selectItem(async (context: TurnContext, state: Application
   }
 })
 
-app.messageExtensions.query('', async (context: TurnContext, state: ApplicationTurnState, query: any) => {
+app.messageExtensions.query('searchQuery', async (context: TurnContext, state: ApplicationTurnState, query: any) => {
   let text = ''
 
   if (context.activity.value) {
-    if (query?.parameters?.at(0)?.name === 'initialRun') {
+    if (query?.parameters.initialRun === 'true') {
       return {}
     }
 
-    text = query?.parameters?.at(0)?.value ?? ''
+    text = query?.parameters?.searchQuery ?? ''
     switch (text) {
       case 'link':
       {
@@ -242,53 +241,19 @@ app.messageExtensions.query('', async (context: TurnContext, state: ApplicationT
   }
 })
 
-app.activity(ActivityTypes.Message, async (context: TurnContext, state: ApplicationTurnState) => {
-  if (context.activity.text?.indexOf('taskModule')! > 0) {
-    const reply = MessageFactory.attachment(getTaskModuleHeroCardOptions())
-    await context.sendActivity(reply)
-  } else if (context.activity.text?.indexOf('teamsinfo')! > 0) {
-    const channels = await TeamsInfo.getTeamChannels(context)
-    const msg1 = `Meeting Participant: ${JSON.stringify(channels)}}`
-    await context.sendActivity(MessageFactory.text(msg1))
+app.message('/teamsinfo', async (context: TurnContext, state: ApplicationTurnState) => {
+  const channels = await TeamsInfo.getTeamChannels(context)
+  const msg1 = `Meeting Participant: ${JSON.stringify(channels)}}`
+  await context.sendActivity(MessageFactory.text(msg1))
 
-    const teamDetails = await TeamsInfo.getTeamDetails(context)
-    const msg2 = `Team Details: ${JSON.stringify(teamDetails)}`
-    await context.sendActivity(MessageFactory.text(msg2))
-  } else {
-    await context.sendActivity(MessageFactory.text('type teamsinfo or taskModule'))
-  }
+  const teamDetails = await TeamsInfo.getTeamDetails(context)
+  const msg2 = `Team Details: ${JSON.stringify(teamDetails)}`
+  await context.sendActivity(MessageFactory.text(msg2))
 })
 
-function getTaskModuleHeroCardOptions (): Attachment {
-  const taskModuleActions: any = []
-  const taskModules = [
-    TaskModuleUIConstants.AdaptiveCard,
-    TaskModuleUIConstants.CustomForm,
-    TaskModuleUIConstants.YouTube
-  ]
-
-  taskModules.map((taskModule) => {
-    const stringFetchValue = new CardTaskFetchValue<string>()
-    stringFetchValue.data = taskModule.id
-
-    const taskModuleAction = new TaskModuleAction(taskModule.buttonTitle as string, stringFetchValue)
-
-    taskModuleActions.push(taskModuleAction)
-    return taskModuleAction
-  })
-
-  const heroCard: Partial<HeroCard> = {
-    title: 'Dialogs (referred to as task modules in TeamsJS v1.x) Invocation from Hero Card',
-    buttons: taskModuleActions
-  }
-
-  const attachment: Attachment = {
-    content: heroCard,
-    contentType: CardFactory.contentTypes.heroCard
-  }
-
-  return attachment
-}
+app.activity(ActivityTypes.Message, async (context: TurnContext, state: ApplicationTurnState) => {
+  await context.sendActivity(MessageFactory.text('Type "/teamsinfo"'))
+})
 
 async function findPackages (text: string): Promise<[{ item1: string, item2: string, item3: string, item4: string, item5: string }]> {
   const response = await fetch(`https://azuresearch-usnc.nuget.org/query?q=id:${text}&prerelease=true`)

@@ -470,9 +470,10 @@ function createTaskSelector (
 }
 
 function matchesPreviewAction (activity: Activity, botMessagePreviewAction?: 'edit' | 'send'): boolean {
-  const activityValue = validatetValueBotMessagePreviewAction(activity.value)
-  if (typeof activityValue.botMessagePreviewAction === 'string') {
-    return activityValue.botMessagePreviewAction === botMessagePreviewAction
+  // @ts-ignore
+  if (typeof activity?.value?.botMessagePreviewAction === 'string') {
+    // @ts-ignore
+    return activity.value.botMessagePreviewAction === botMessagePreviewAction
   } else {
     return botMessagePreviewAction === undefined
   }

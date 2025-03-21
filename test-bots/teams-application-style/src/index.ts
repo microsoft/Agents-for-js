@@ -22,6 +22,9 @@ async function loadModule () {
     case 'teamsSsoBot':
       module = (await import('./teamsSsoBot')).app
       return module
+    case 'teamsMultiFeatureBot':
+      module = (await import('./teamsMultiFeatureBot')).app
+      return module
     default:
       throw new Error(`Bot with name ${moduleName} is not recognized.`)
   }
