@@ -31,8 +31,9 @@ export class ConnectorClient {
         logger.debug('Response: ', {
           status,
           statusText,
-          data: config.config.data,
+          host: this.client.getUri(),
           url: requestConfig?.url,
+          data: config.config.data,
           method: requestConfig?.method,
         })
         return config
@@ -41,6 +42,7 @@ export class ConnectorClient {
         const { code, message, stack } = error
         const errorDetails = {
           code,
+          host: this.client.getUri(),
           url: error.config.url,
           method: error.config.method,
           data: error.config.data,
@@ -130,7 +132,7 @@ export class ConnectorClient {
     }
     const config: AxiosRequestConfig = {
       method: 'post',
-      url: `v3/conversations/${conversationId}/activities/${activityId}`,
+      url: `v3/conversations/${conversationId}/activities/${encodeURIComponent(activityId)}`,
       headers: {
         'Content-Type': 'application/json'
       },

@@ -1,27 +1,25 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { ActivityHandler, MessageFactory } from '@microsoft/agents-bot-hosting'
-import { version as sdkVersion } from '@microsoft/agents-bot-hosting/package.json'
+import { Activity, ActivityHandler, ActivityTypes, EndOfConversationCodes, MessageFactory } from '@microsoft/agents-bot-hosting'
 
 export class EchoBot extends ActivityHandler {
   constructor () {
     super()
     this.onMessage(async (context, next) => {
-      const replyText = `Echo: ${context.activity.text}`
-      await context.sendActivity(MessageFactory.text(replyText, replyText))
-      await next()
-    })
-
-    this.onMembersAdded(async (context, next) => {
-      const membersAdded = context.activity.membersAdded ?? []
-      const welcomeText = `Echo bot running on sdk ${sdkVersion}`
-      for (const member of membersAdded) {
-        if (member.id !== (context.activity.recipient?.id ?? '')) {
-          await context.sendActivity(MessageFactory.text(welcomeText, welcomeText))
-        }
+      if (context.activity.text!.includes('end') || context.activity.text!.includes('stop')) {
+        const messageText = 'echo-bot: Ending conversation...'
+        await context.sendActivity(MessageFactory.text(messageText, messageText))
+        await context.sendActivity(Activity.fromObject(
+          {
+            type: ActivityTypes.EndOfConversation,
+            code: EndOfConversationCodes.CompletedSuccessfully
+          }
+        ))
+      } else {
+        const replyText = `echo-bot: ${context.activity.text}`
+        await context.sendActivity(MessageFactory.text(replyText, replyText))
       }
-      // By calling next() you ensure that the next BotHandler is run.
       await next()
     })
   }

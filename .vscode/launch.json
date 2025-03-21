@@ -81,6 +81,22 @@
             "envFile": "${workspaceFolder}/test-bots/teams-bots/.env",
             "console": "integratedTerminal",
             "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "root-bot",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/test-bots/root-bot/src/index.ts",
+            "outFiles": [
+                "${workspaceFolder}/**/dist/**/*.js"
+            ],
+            "preLaunchTask": "build_root_bot",
+            "envFile": "${workspaceFolder}/test-bots/root-bot/.env",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "openOnSessionStart"
         }
     ]
 }
