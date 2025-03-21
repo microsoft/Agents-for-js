@@ -11,7 +11,7 @@ import { TeamsInfo } from '../teamsInfo'
 import { TeamDetails } from '../connector-client/teamDetails'
 import { TeamsPagedMembersResult } from '../connector-client/teamsPagedMembersResult'
 import { ReadReceiptInfo } from '../message-read-info/readReceipInfo'
-import { validateValueAction, validateValueContinuation } from '../validators'
+import { parseValueAction, parseValueContinuation } from '../parsers'
 import { AdaptiveCards } from './adaptive-cards'
 import { MessageReactionEvents, Messages, TeamsMessageEvents } from './messages'
 import { MessageExtensions } from './messaging-extension'
@@ -213,7 +213,7 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
     handler: (context: TurnContext, state: TState, fileConsentResponse: FileConsentCardResponse) => Promise<void>
   ): this {
     const selector = (context: TurnContext): Promise<boolean> => {
-      const valueAction = validateValueAction(context.activity.value)
+      const valueAction = parseValueAction(context.activity.value)
       return Promise.resolve(
         context.activity.type === ActivityTypes.Invoke &&
                 context.activity.name === 'fileConsent/invoke' &&
@@ -235,7 +235,7 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
     handler: (context: TurnContext, state: TState, fileConsentResponse: FileConsentCardResponse) => Promise<void>
   ): this {
     const selector = (context: TurnContext): Promise<boolean> => {
-      const valueAction = validateValueAction(context.activity.value)
+      const valueAction = parseValueAction(context.activity.value)
       return Promise.resolve(
         context.activity.type === ActivityTypes.Invoke &&
                 context.activity.name === 'fileConsent/invoke' &&
@@ -260,7 +260,7 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
       )
     }
     const handlerWrapper = async (context: TurnContext, state: TState) => {
-      const valueContinuation = validateValueContinuation(context.activity.value)
+      const valueContinuation = parseValueContinuation(context.activity.value)
       await handler(context, state, valueContinuation)
       await context.sendActivity({
         type: ActivityTypes.InvokeResponse,

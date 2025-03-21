@@ -9,7 +9,7 @@ import { TeamsApplication } from '../teamsApplication'
 import { AdaptiveCardActionExecuteResponseType } from './adaptiveCardActionExecuteResponseType'
 import { AdaptiveCardInvokeResponseType } from './adaptiveCardInvokeResponseType'
 import { AdaptiveCardSearchResult } from './adaptiveCardSearchResult'
-import { validateAdaptiveCardInvokeAction, validateValueActionExecuteSelector, validateValueDataset, validateValueSearchQuery } from '../../validators'
+import { parseAdaptiveCardInvokeAction, parseValueActionExecuteSelector, parseValueDataset, parseValueSearchQuery } from '../../parsers'
 import { Query } from '../query'
 import { AdaptiveCardsSearchParams } from './adaptiveCardsSearchParams'
 
@@ -48,7 +48,7 @@ export class AdaptiveCards<TState extends TurnState> {
             )
           }
 
-          const result = await handler(context, state, (validateAdaptiveCardInvokeAction(a.value)).data as TData ?? {} as TData)
+          const result = await handler(context, state, (parseAdaptiveCardInvokeAction(a.value)).data as TData ?? {} as TData)
           if (!context.turnState.get(INVOKE_RESPONSE_KEY)) {
             let response: AdaptiveCardInvokeResponse
             if (typeof result === 'string') {
@@ -112,7 +112,7 @@ export class AdaptiveCards<TState extends TurnState> {
           throw new Error(`Unexpected AdaptiveCards.actionSubmit() triggered for activity type: ${a?.type}`)
         }
 
-        await handler(context, state as TState, (validateAdaptiveCardInvokeAction(a.value)).data as TData ?? {} as TData)
+        await handler(context, state as TState, (parseAdaptiveCardInvokeAction(a.value)).data as TData ?? {} as TData)
       })
     })
     return this._app
@@ -136,7 +136,7 @@ export class AdaptiveCards<TState extends TurnState> {
             throw new Error(`Unexpected AdaptiveCards.search() triggered for activity type: ${a?.type}`)
           }
 
-          const validatedQuery = validateValueSearchQuery(a.value)
+          const validatedQuery = parseValueSearchQuery(a.value)
           const query: Query<AdaptiveCardsSearchParams> = {
             count: validatedQuery.queryOptions?.top ?? 25,
             skip: validatedQuery.queryOptions?.skip ?? 0,
@@ -176,7 +176,7 @@ function createActionExecuteSelector (verb: string | RegExp | RouteSelector): Ro
   } else if (verb instanceof RegExp) {
     return (context: TurnContext) => {
       const a = context?.activity
-      const valueAction = validateValueActionExecuteSelector(a.value)
+      const valueAction = parseValueActionExecuteSelector(a.value)
       const isInvoke =
                 a?.type === ActivityTypes.Invoke &&
                 a?.name === ACTION_INVOKE_NAME &&
@@ -190,11 +190,12 @@ function createActionExecuteSelector (verb: string | RegExp | RouteSelector): Ro
   } else {
     return (context: TurnContext) => {
       const a = context?.activity
-      const valueAction = validateValueActionExecuteSelector(a.value)
+      const valueAction = parseValueActionExecuteSelector(a.value)
       const isInvoke =
                 a?.type === ActivityTypes.Invoke &&
                 a?.name === ACTION_INVOKE_NAME &&
                 valueAction.action?.type === ACTION_EXECUTE_TYPE
+      // @ts-ignore
       if (isInvoke && valueAction.verb === verb) {
         return Promise.resolve(true)
       } else {
@@ -232,7 +233,7 @@ function createSearchSelector (dataset: string | RegExp | RouteSelector): RouteS
   } else if (dataset instanceof RegExp) {
     return (context: TurnContext) => {
       const a = context?.activity
-      const valueDataset = validateValueDataset(a.value)
+      const valueDataset = parseValueDataset(a.value)
       const isSearch = a?.type === ActivityTypes.Invoke && a?.name === SEARCH_INVOKE_NAME
       if (isSearch && typeof valueDataset.dataset === 'string') {
         return Promise.resolve(dataset.test(valueDataset.dataset))
@@ -243,7 +244,7 @@ function createSearchSelector (dataset: string | RegExp | RouteSelector): RouteS
   } else {
     return (context: TurnContext) => {
       const a = context?.activity
-      const valueDataset = validateValueDataset(a.value)
+      const valueDataset = parseValueDataset(a.value)
       const isSearch = a?.type === ActivityTypes.Invoke && a?.name === SEARCH_INVOKE_NAME
       return Promise.resolve(isSearch && valueDataset.dataset === dataset)
     }

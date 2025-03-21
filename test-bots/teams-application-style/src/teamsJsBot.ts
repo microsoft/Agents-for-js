@@ -10,7 +10,7 @@ import {
   TurnState,
 }
   from '@microsoft/agents-bot-hosting'
-import { TeamsInfo, TeamsMember, MeetingNotification, validateTeamsChannelData, TeamsApplication } from '@microsoft/agents-bot-hosting-teams'
+import { TeamsInfo, TeamsMember, MeetingNotification, parseTeamsChannelData, TeamsApplication } from '@microsoft/agents-bot-hosting-teams'
 
 type ApplicationTurnState = TurnState
 export const app = new TeamsApplication({
@@ -43,7 +43,7 @@ app.message('/getTeamDetails', async (context: TurnContext, state: ApplicationTu
 })
 
 app.message('/sendMessageToTeamsChannel', async (context: TurnContext, state: ApplicationTurnState) => {
-  const teamsChannelData = validateTeamsChannelData(context.activity.channelData)
+  const teamsChannelData = parseTeamsChannelData(context.activity.channelData)
   const channelId = teamsChannelData.channel?.id
   if (!channelId) {
     await context.sendActivity(MessageFactory.text('channelId not found'))
@@ -74,7 +74,7 @@ app.message('/getPagedTeamMembers', async (context: TurnContext, state: Applicat
 })
 
 app.message('/getTeamMember', async (context: TurnContext, state: ApplicationTurnState) => {
-  const teamsChannelData = validateTeamsChannelData(context.activity.channelData)
+  const teamsChannelData = parseTeamsChannelData(context.activity.channelData)
   const teamId = teamsChannelData.team?.id
   const member = await TeamsInfo.getTeamMember(context, teamId!, context.activity.from!.id!)
   await context.sendActivity(MessageFactory.text(`team member ${JSON.stringify(member)}`))
@@ -82,7 +82,7 @@ app.message('/getTeamMember', async (context: TurnContext, state: ApplicationTur
 
 app.message('/sendMeetingNotification', async (context: TurnContext, state: ApplicationTurnState) => {
   const notification: MeetingNotification = { type: 'targetedMeetingNotification', value: { recipients: ['rido'], surfaces: [] } }
-  const teamsChannelData = validateTeamsChannelData(context.activity.channelData)
+  const teamsChannelData = parseTeamsChannelData(context.activity.channelData)
   const meetingId = teamsChannelData.meeting?.id
   const resp = await TeamsInfo.sendMeetingNotification(context, notification, meetingId)
   await context.sendActivity(MessageFactory.text(`sendMeetingNotification ${JSON.stringify(resp)}`))
@@ -105,7 +105,7 @@ app.message('/sendMessageToAllUsersInTenant', async (context: TurnContext, state
 })
 
 app.message('/sendMessageToAllUsersInTeam', async (context: TurnContext, state: ApplicationTurnState) => {
-  const teamsChannelData = validateTeamsChannelData(context.activity.channelData)
+  const teamsChannelData = parseTeamsChannelData(context.activity.channelData)
   const teamId = teamsChannelData.team?.id
   const batchResp = await TeamsInfo.sendMessageToAllUsersInTeam(context, MessageFactory.text('msg from bot to all users in team'), context.adapter.authConfig.tenantId!, teamId!)
   console.log(batchResp.operationId)
