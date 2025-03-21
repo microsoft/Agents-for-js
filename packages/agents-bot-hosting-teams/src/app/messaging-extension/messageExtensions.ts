@@ -77,8 +77,7 @@ export class MessageExtensions<TState extends TurnState> {
           }
 
           const activityBotActivityPreview = parseValueBotActivityPreview(context.activity.value)
-          // @ts-ignore
-          const result = await handler(context, state, activityBotActivityPreview.botActivityPreview[0] ?? {})
+          const result = await handler(context, state, (activityBotActivityPreview as any).botActivityPreview[0] as Partial<Activity> ?? {})
           await this.returnSubmitActionResponse(context, result)
         },
         true
@@ -109,8 +108,7 @@ export class MessageExtensions<TState extends TurnState> {
           }
 
           const activityBotActivityPreview = parseValueBotActivityPreview(context.activity.value)
-          // @ts-ignore
-          await handler(context, state, activityBotActivityPreview.botActivityPreview[0] ?? {})
+          await handler(context, state, (activityBotActivityPreview as any).botActivityPreview[0] as Partial<Activity> ?? {})
 
           if (!context.turnState.get(INVOKE_RESPONSE_KEY)) {
             await context.sendActivity({

@@ -195,8 +195,7 @@ function createActionExecuteSelector (verb: string | RegExp | RouteSelector): Ro
                 a?.type === ActivityTypes.Invoke &&
                 a?.name === ACTION_INVOKE_NAME &&
                 valueAction.action?.type === ACTION_EXECUTE_TYPE
-      // @ts-ignore
-      if (isInvoke && valueAction.verb === verb) {
+      if (isInvoke && valueAction.action?.verb === verb) {
         return Promise.resolve(true)
       } else {
         return Promise.resolve(false)
