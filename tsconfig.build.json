@@ -26,6 +26,9 @@
         "path": "test-bots/application-style"
       },
       {
+        "path": "test-bots/application-style"
+      },
+      {
         "path": "test-bots/echo-bot"
       },
       {
