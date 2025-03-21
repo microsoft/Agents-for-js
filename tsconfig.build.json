@@ -32,6 +32,9 @@
         "path": "test-bots/state-bot"
       },
       {
+        "path": "test-bots/teams-application-style"
+      },
+      {
         "path": "test-bots/teams-bots"
       },
       {
