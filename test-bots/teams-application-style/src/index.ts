@@ -1,14 +1,12 @@
 import { AuthConfiguration, authorizeJWT, loadAuthConfigFromEnv, Request } from '@microsoft/agents-bot-hosting'
 import { TeamsCloudAdapter } from '@microsoft/agents-bot-hosting-teams'
 import express, { Response } from 'express'
-import rateLimit from 'express-rate-limit'
 import path from 'path'
 
 const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
 const adapter = new TeamsCloudAdapter(authConfig)
 
 const server = express()
-server.use(rateLimit({ validate: { xForwardedForHeader: false } }))
 server.use(express.json())
 server.use(authorizeJWT(authConfig))
 
