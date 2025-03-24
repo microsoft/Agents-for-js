@@ -17,7 +17,7 @@ export enum Severity {
 /**
  * Key used to store and fetch a BotTelemetryClient from TurnContextStateCollection
  */
-export const BotTelemetryClientKey = 'BotTelemetryClient'
+export const AgentTelemetryClientKey = 'BotTelemetryClient'
 
 export interface BotTelemetryClient {
   trackDependency(telemetry: TelemetryDependency);

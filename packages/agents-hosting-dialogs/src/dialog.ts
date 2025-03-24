@@ -5,7 +5,7 @@
 import { TurnContext } from '@microsoft/agents-hosting'
 import { DialogContext } from './dialogContext'
 import { Configurable } from './configurable'
-import { BotTelemetryClient, NullTelemetryClient } from './botTelemetryClient'
+import { BotTelemetryClient, NullTelemetryClient } from './agentTelemetryClient'
 import { DialogTurnResult } from './dialogTurnResult'
 import { DialogEvent } from './dialogEvent'
 import { DialogReason } from './dialogReason'

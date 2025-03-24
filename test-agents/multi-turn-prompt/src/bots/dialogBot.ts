@@ -8,7 +8,7 @@ import { UserProfileDialog } from '../dialogs/userProfileDialog'
 export class DialogBot extends ActivityHandler {
   private conversationState: AgentState
   private userState: AgentState
-  private dialog: AgentState
+  private dialog: Dialog
   private dialogState: AgentStatePropertyAccessor<DialogState>
   /**
      *

@@ -8,7 +8,7 @@ import { DialogContext } from './dialogContext'
 import { DialogTurnStateConstants } from './dialogTurnStateConstants'
 import omit from 'lodash/omit'
 import { RecognizerResult, getTopScoringIntent } from './recognizerResult'
-import { BotTelemetryClient, BotTelemetryClientKey, NullTelemetryClient } from './botTelemetryClient'
+import { BotTelemetryClient, AgentTelemetryClientKey, NullTelemetryClient } from './agentTelemetryClient'
 
 export interface RecognizerConfiguration {
   id?: string;
@@ -147,7 +147,7 @@ export class Recognizer extends Configurable implements RecognizerConfiguration 
     if (this.telemetryClient instanceof NullTelemetryClient) {
       const turnStateTelemetryClient =
                 dialogContext.context.turnState.get<BotTelemetryClient>(DialogTurnStateConstants.telemetryClient) ??
-                dialogContext.context.turnState.get<BotTelemetryClient>(BotTelemetryClientKey)
+                dialogContext.context.turnState.get<BotTelemetryClient>(AgentTelemetryClientKey)
       this.telemetryClient = turnStateTelemetryClient ?? this.telemetryClient
     }
 

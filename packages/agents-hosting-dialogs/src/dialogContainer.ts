@@ -6,7 +6,7 @@ import { Dialog } from './dialog'
 import { DialogSet } from './dialogSet'
 import { DialogContext } from './dialogContext'
 import { DialogEvents } from './dialogEvents'
-import { BotTelemetryClient, NullTelemetryClient, Severity } from './botTelemetryClient'
+import { BotTelemetryClient, NullTelemetryClient, Severity } from './agentTelemetryClient'
 import { DialogEvent } from './dialogEvent'
 
 /**

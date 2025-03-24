@@ -8,7 +8,7 @@ import { AgentState, TurnContext } from '@microsoft/agents-hosting'
  * A collection of `BotState` plugins that should be loaded or saved in parallel as a single unit.
  * See `AutoSaveStateMiddleware` for an implementation of this class.
  */
-export class BotStateSet {
+export class AgentStateSet {
   /**
      * Array of the sets `BotState` plugins.
      */
@@ -20,7 +20,7 @@ export class BotStateSet {
      * @param botStates One or more BotState plugins to register.
      */
   constructor (...botStates: AgentState[]) {
-    BotStateSet.prototype.add.apply(this, botStates)
+    AgentStateSet.prototype.add.apply(this, botStates)
   }
 
   /**

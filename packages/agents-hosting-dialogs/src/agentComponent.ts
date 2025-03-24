@@ -14,8 +14,8 @@ import { Configuration } from './configuration'
  * These components then are consumed in appropriate places by the systems that need them. When using Composer, configureServices
  * gets called automatically on the components by the bot runtime, as long as the components are registered in the configuration.
  */
-export abstract class BotComponent {
-  static z = z.custom<BotComponent>((val: any) => typeof val.configureServices === 'function', {
+export abstract class AgentComponent {
+  static z = z.custom<AgentComponent>((val: any) => typeof val.configureServices === 'function', {
     message: 'BotComponent',
   })
 

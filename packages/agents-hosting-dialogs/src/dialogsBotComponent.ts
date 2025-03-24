@@ -4,7 +4,7 @@
  */
 
 import * as z from 'zod'
-import { BotComponent } from './botComponent'
+import { AgentComponent } from './agentComponent'
 import { ServiceCollection } from './serviceCollection'
 import { Configuration } from './configuration'
 import { MemoryScope, PathResolver } from './memory'
@@ -34,7 +34,7 @@ const InitialSettings = z.record(z.unknown())
 /**
  * Bot component for bot Dialogs.
  */
-export class DialogsBotComponent extends BotComponent {
+export class DialogsBotComponent extends AgentComponent {
   /**
      * @param services Services Collection to register.
      * @param configuration Configuration for the bot component.

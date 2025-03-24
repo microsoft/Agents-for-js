@@ -2,7 +2,7 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
-export * from './botStateMemoryScope'
+export * from './agentStateMemoryScope'
 export * from './classMemoryScope'
 export * from './conversationMemoryScope'
 export * from './dialogClassMemoryScope'

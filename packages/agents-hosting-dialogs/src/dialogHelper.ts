@@ -14,7 +14,7 @@ import { DialogContext, DialogState } from './dialogContext'
 import { DialogEvents } from './dialogEvents'
 import { DialogSet } from './dialogSet'
 import { DialogStateManager, DialogStateManagerConfiguration } from './memory'
-import { BotTelemetryClient, BotTelemetryClientKey } from './botTelemetryClient'
+import { BotTelemetryClient, AgentTelemetryClientKey } from './agentTelemetryClient'
 import { DialogTurnResult } from './dialogTurnResult'
 import { DialogTurnStatus } from './dialogTurnStatus'
 
@@ -48,7 +48,7 @@ export async function runDialog (
 
   const dialogSet = new DialogSet(accessor)
   dialogSet.telemetryClient =
-        context.turnState.get<BotTelemetryClient>(BotTelemetryClientKey) ?? dialog.telemetryClient
+        context.turnState.get<BotTelemetryClient>(AgentTelemetryClientKey) ?? dialog.telemetryClient
 
   dialogSet.add(dialog)
 

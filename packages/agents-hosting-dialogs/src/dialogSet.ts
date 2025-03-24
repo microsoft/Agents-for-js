@@ -10,7 +10,7 @@ import {
 import { Dialog } from './dialog'
 import { DialogContext, DialogState } from './dialogContext'
 import { StringUtils } from './stringUtils'
-import { BotTelemetryClient, NullTelemetryClient } from './botTelemetryClient'
+import { BotTelemetryClient, NullTelemetryClient } from './agentTelemetryClient'
 
 export interface DialogDependencies {
   /**

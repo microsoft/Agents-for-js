@@ -9,7 +9,7 @@ import { DialogContext } from '../../dialogContext'
 /**
  * Base class for memory scopes based on BotState.
  */
-export class BotStateMemoryScope extends MemoryScope {
+export class AgentStateMemoryScope extends MemoryScope {
   protected stateKey: string
 
   /**

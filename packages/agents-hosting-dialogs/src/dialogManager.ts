@@ -10,7 +10,7 @@ import {
   UserState,
   TurnContextStateCollection,
 } from '@microsoft/agents-hosting'
-import { BotStateSet } from './botStateSet'
+import { AgentStateSet } from './agentStateSet'
 import { Configurable } from './configurable'
 import { DialogContainer } from './dialogContainer'
 import { DialogContext, DialogState } from './dialogContext'
@@ -129,7 +129,7 @@ export class DialogManager extends Configurable {
       context.turnState.set(key, value)
     })
 
-    const botStateSet = new BotStateSet()
+    const botStateSet = new AgentStateSet()
 
     if (!this.conversationState) {
       this.conversationState = context.turnState.get(CONVERSATION_STATE)
