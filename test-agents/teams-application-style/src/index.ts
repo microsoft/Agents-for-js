@@ -15,10 +15,10 @@ async function loadModule () {
   let module
   switch (moduleName) {
     case 'teamsJsBot':
-      module = (await import('./teamsJsBot')).app
+      module = (await import('./teamsApp')).app
       return module
     case 'teamsSsoBot':
-      module = (await import('./teamsSsoBot')).app
+      module = (await import('./teamsSsoApp')).app
       return module
     default:
       throw new Error(`Bot with name ${moduleName} is not recognized.`)

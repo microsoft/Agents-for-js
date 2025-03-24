@@ -6,9 +6,9 @@ import express, { Response } from 'express'
 import { Request, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv, UserState, MemoryStorage } from '@microsoft/agents-hosting'
 import { TeamsCloudAdapter } from '@microsoft/agents-hosting-teams'
 
-import { TeamsJsBot } from './teamsJsBot'
-import { TeamsSsoBot } from './teamsSsoBot'
-import { TeamsMultiFeatureBot } from './teamsMultiFeatureBot'
+import { TeamsHandler } from './teamsHandler'
+import { TeamsSso } from './teamsSso'
+import { TeamsMultiFeature } from './teamsMultiFeature'
 import path from 'path'
 
 const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
@@ -16,15 +16,15 @@ const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
 const createBot = (botName: string) => {
   switch (botName) {
     case 'TeamsJsBot':
-      return new TeamsJsBot()
+      return new TeamsHandler()
     case 'TeamsSsoBot':
     {
       const memoryStorage = new MemoryStorage()
       const userState = new UserState(memoryStorage)
-      return new TeamsSsoBot(userState)
+      return new TeamsSso(userState)
     }
     case 'TeamsMultiFeatureBot':
-      return new TeamsMultiFeatureBot()
+      return new TeamsMultiFeature()
     default:
       throw new Error(`Bot with name ${botName} is not recognized.`)
   }

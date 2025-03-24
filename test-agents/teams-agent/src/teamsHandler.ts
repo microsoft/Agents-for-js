@@ -10,7 +10,7 @@ import {
   from '@microsoft/agents-hosting'
 import { TeamsActivityHandler, TeamsInfo, TeamsMember, MeetingNotification, parseTeamsChannelData } from '@microsoft/agents-hosting-teams'
 
-export class TeamsJsBot extends TeamsActivityHandler {
+export class TeamsHandler extends TeamsActivityHandler {
   constructor () {
     super()
     this.onMessage(async (context) => {

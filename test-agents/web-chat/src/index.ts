@@ -6,11 +6,11 @@ import express, { Response } from 'express'
 import { Request, CloudAdapter, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv, MemoryStorage, ConversationState, UserState } from '@microsoft/agents-hosting'
 import { ConversationReference } from '@microsoft/agents-activity'
 
-import { AdaptiveCardBot } from './adaptiveCardsBot'
-import { CardFactoryBot } from './cardFactoryBot'
-import { MultiFeatureBot } from './multiFeatureBot'
-import { StateManagementBot } from './stateBot'
-import { WebChatSsoBot } from './webChatSsoBot'
+import { AdaptiveCardHandler } from './adaptiveCards'
+import { CardFactoryHandler } from './cardFactory'
+import { MultiFeatureHandler } from './multiFeature'
+import { StateManagementHandler } from './state'
+import { WebChatSsoHandler } from './webChatSso'
 
 const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
 const conversationReferences: { [key: string]: ConversationReference } = {}
@@ -18,15 +18,15 @@ const conversationReferences: { [key: string]: ConversationReference } = {}
 const createBot = (botName: string) => {
   switch (botName) {
     case 'AdaptiveCardBot':
-      return new AdaptiveCardBot()
+      return new AdaptiveCardHandler()
     case 'CardFactoryBot':
-      return new CardFactoryBot()
+      return new CardFactoryHandler()
     case 'MultiFeatureBot':
-      return new MultiFeatureBot(conversationReferences)
+      return new MultiFeatureHandler(conversationReferences)
     case 'WebChatSsoBot': {
       const memoryStorage = new MemoryStorage()
       const userState = new UserState(memoryStorage)
-      return new WebChatSsoBot(userState)
+      return new WebChatSsoHandler(userState)
     }
     case 'StateManagementBot': {
       /* AZURE BLOB STORAGE - Uncomment the code in this section to use Azure blob storage */
@@ -51,7 +51,7 @@ const createBot = (botName: string) => {
       const memoryStorage = new MemoryStorage()
       const conversationState = new ConversationState(memoryStorage)
       const userState = new UserState(memoryStorage)
-      return new StateManagementBot(conversationState, userState)
+      return new StateManagementHandler(conversationState, userState)
     }
     default:
       throw new Error(`Bot with name ${botName} is not recognized.`)

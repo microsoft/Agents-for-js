@@ -7,7 +7,7 @@ import fs from 'fs'
 import axios from 'axios'
 import { ActionTypes, Activity, ActivityTypes, Attachment, ConversationReference, EndOfConversationCodes } from '@microsoft/agents-activity'
 
-export class MultiFeatureBot extends ActivityHandler {
+export class MultiFeatureHandler extends ActivityHandler {
   conversationReferences: { [key: string]: ConversationReference }
   constructor (conversationReferences: { [key: string]: ConversationReference }) {
     super()

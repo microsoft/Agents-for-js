@@ -10,7 +10,7 @@ import ToggleVisible from '../cards/ToggleVisibleCard.json'
 
 const commandString = 'Please use one of these commands: **Card Actions** for Adaptive Card actions, **Suggested Actions** for bot suggested actions, and **ToggleVisibility** for toggling the visibility of the card.'
 
-export class AdaptiveCardBot extends ActivityHandler {
+export class AdaptiveCardHandler extends ActivityHandler {
   constructor () {
     super()
 
@@ -23,21 +23,21 @@ export class AdaptiveCardBot extends ActivityHandler {
         const text = context.activity.text?.toLowerCase() ?? ''
 
         if (text.includes('card actions')) {
-          const adaptiveCardForPersonalScope = AdaptiveCardBot.getFirstOptionsAdaptiveCard(AdaptiveCardActions, context.activity.from?.name)
+          const adaptiveCardForPersonalScope = AdaptiveCardHandler.getFirstOptionsAdaptiveCard(AdaptiveCardActions, context.activity.from?.name)
           await context.sendActivity(MessageFactory.attachment(adaptiveCardForPersonalScope))
         } else if (text.includes('suggested actions')) {
           await context.sendActivity('Please select a color from the suggested action choices.')
-          const adaptiveCardForPersonalScope = AdaptiveCardBot.getFirstOptionsAdaptiveCard(SuggestedActions, context.activity.from?.name)
+          const adaptiveCardForPersonalScope = AdaptiveCardHandler.getFirstOptionsAdaptiveCard(SuggestedActions, context.activity.from?.name)
           await context.sendActivity(MessageFactory.attachment(adaptiveCardForPersonalScope))
 
-          await AdaptiveCardBot.sendSuggestedActionsAsync(context)
+          await AdaptiveCardHandler.sendSuggestedActionsAsync(context)
         } else if (text.includes('togglevisibility')) {
-          const adaptiveCardForPersonalScope = AdaptiveCardBot.getFirstOptionsAdaptiveCard(ToggleVisible, context.activity.from?.name)
+          const adaptiveCardForPersonalScope = AdaptiveCardHandler.getFirstOptionsAdaptiveCard(ToggleVisible, context.activity.from?.name)
           await context.sendActivity(MessageFactory.attachment(adaptiveCardForPersonalScope))
         } else if (text.includes('red') || text.includes('blue') || text.includes('green')) {
-          const responseText = AdaptiveCardBot.processInput(text)
+          const responseText = AdaptiveCardHandler.processInput(text)
           await context.sendActivity(responseText)
-          await AdaptiveCardBot.sendSuggestedActionsAsync(context)
+          await AdaptiveCardHandler.sendSuggestedActionsAsync(context)
         } else {
           await context.sendActivity(MessageFactory.text(commandString))
         }

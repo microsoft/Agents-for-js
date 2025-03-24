@@ -6,7 +6,7 @@ import { Template } from 'adaptivecards-templating'
 import * as userTemplate from '../cards/UserProfileCard.json'
 import { getUserInfo } from './userGraphClient'
 
-export class WebChatSsoBot extends ActivityHandler {
+export class WebChatSsoHandler extends ActivityHandler {
   webChatOAuthFlow: WebChatOAuthFlow
 
   userState: UserState

@@ -9,26 +9,26 @@ server.use(express.json())
 server.use(authorizeJWT(authConfig))
 
 async function loadModule () {
-  const moduleName = process.env.botName || 'webChat'
+  const moduleName = process.env.agentName || 'webChat'
   let module
   switch (moduleName) {
     case 'webChat':
       module = (await import('./webChat')).app
       return module
-    case 'stateBot':
-      module = (await import('./stateBot')).app
+    case 'stateApp':
+      module = (await import('./stateApp')).app
       return module
-    case 'stateBotBlobStorage':
-      module = (await import('./stateBotBlobStorage')).app
+    case 'stateBlobApp':
+      module = (await import('./stateBlobApp')).app
       return module
-    case 'stateBotCosmosDB':
-      module = (await import('./stateBotCosmosDB')).app
+    case 'stateCosmosApp':
+      module = (await import('./stateCosmosApp')).app
       return module
-    case 'webChatSsoBot':
-      module = (await import('./webChatSsoBot')).app
+    case 'webChatSso':
+      module = (await import('./webChatSso')).app
       return module
     default:
-      throw new Error(`Bot with name ${moduleName} is not recognized.`)
+      throw new Error(`Agent with name ${moduleName} is not recognized.`)
   }
 }
 

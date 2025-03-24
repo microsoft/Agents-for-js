@@ -6,7 +6,7 @@ import { CardMessages } from './cardMessages'
 import CardFactoryCard from '../cards/CardFactoryCard.json'
 import { Activity, ActivityTypes } from '@microsoft/agents-activity'
 
-export class CardFactoryBot extends ActivityHandler {
+export class CardFactoryHandler extends ActivityHandler {
   constructor () {
     super()
 

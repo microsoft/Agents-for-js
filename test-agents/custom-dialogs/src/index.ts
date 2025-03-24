@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 import express, { Response } from 'express'
-import { DialogBot } from './bots/dialogBot'
+import { DialogHandler } from './dialogs/dialogBot'
 import { CloudAdapter, authorizeJWT, loadAuthConfigFromEnv, UserState, ConversationState, MemoryStorage, Request } from '@microsoft/agents-hosting'
 import { version as sdkVersion } from '@microsoft/agents-hosting/package.json'
 import { RootDialog } from './dialogs/rootDialog'
@@ -11,7 +11,7 @@ const authConfig = loadAuthConfigFromEnv()
 
 const adapter = new CloudAdapter(authConfig)
 
-// Define the state store for your bot. See https://aka.ms/about-bot-state to learn more about using MemoryStorage.
+// Define the state store for your agent. See https://aka.ms/about-bot-state to learn more about using MemoryStorage.
 // A bot requires a state storage system to persist the dialog and user state between messages.
 const memoryStorage = new MemoryStorage()
 
@@ -23,7 +23,7 @@ const userState = new UserState(memoryStorage)
 const dialog = new RootDialog(userState)
 
 // Create the bot's main handler.
-const myBot = new DialogBot(conversationState, userState, dialog)
+const myBot = new DialogHandler(conversationState, userState, dialog)
 
 const app = express()
 

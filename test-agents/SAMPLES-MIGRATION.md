@@ -29,7 +29,7 @@ The following classes and methods have had significant modifications, requiring 
 
 ### b. StatePropertyAccessor
 
-- Replaced by `BotStatePropertyAccessor`.
+- Replaced by `AgentStatePropertyAccessor`.
 
 ### c. Activity
 

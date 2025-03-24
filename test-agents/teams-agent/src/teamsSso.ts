@@ -7,7 +7,7 @@ import * as userTemplate from '../cards/UserProfileCard.json'
 import { getUserInfo } from './userGraphClient'
 import { TeamsOAuthFlow } from '@microsoft/agents-hosting-teams'
 
-export class TeamsSsoBot extends ActivityHandler {
+export class TeamsSso extends ActivityHandler {
   teamsOAuthFlow: TeamsOAuthFlow
   userState: UserState
   constructor (userState: UserState) {

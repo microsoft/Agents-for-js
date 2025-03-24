@@ -1,7 +1,7 @@
 import { ActivityHandler, MessageFactory, AgentClient } from '@microsoft/agents-hosting'
 import { version as sdkVersion } from '@microsoft/agents-hosting/package.json'
 
-export class RootBot extends ActivityHandler {
+export class RootHandler extends ActivityHandler {
   constructor () {
     super()
     this.onMessage(async (context, next) => {

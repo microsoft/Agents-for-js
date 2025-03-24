@@ -1,16 +1,21 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { ActivityHandler, AgentState, AgentStatePropertyAccessor, ConversationState, UserState } from '@microsoft/agents-hosting'
+import { ActivityHandler, AgentState, AgentStatePropertyAccessor, ConversationState, TurnContext, UserState } from '@microsoft/agents-hosting'
 import { Dialog, DialogState } from '@microsoft/agents-hosting-dialogs'
-import { RootDialog } from '../dialogs/rootDialog'
+import { UserProfileDialog } from './userProfileDialog'
 
-export class DialogBot extends ActivityHandler {
+export class DialogHandler extends ActivityHandler {
   private conversationState: AgentState
   private userState: AgentState
   private dialog: Dialog
   private dialogState: AgentStatePropertyAccessor<DialogState>
-
+  /**
+     *
+     * @param {ConversationState} conversationState
+     * @param {UserState} userState
+     * @param {Dialog} dialog
+     */
   constructor (conversationState: AgentState, userState: AgentState, dialog: Dialog) {
     super()
     if (!conversationState) throw new Error('[DialogBot]: Missing parameter. conversationState is required')
@@ -22,10 +27,11 @@ export class DialogBot extends ActivityHandler {
     this.dialog = dialog
     this.dialogState = this.conversationState.createProperty('DialogState')
 
-    this.onMessage(async (context, next) => {
+    this.onMessage(async (context: TurnContext, next) => {
       console.log('Running dialog with Message Activity.')
 
-      await (this.dialog as RootDialog).run(context, this.dialogState)
+      // Run the Dialog with the new message Activity.
+      await (this.dialog as UserProfileDialog).run(context, this.dialogState)
 
       await next()
     })

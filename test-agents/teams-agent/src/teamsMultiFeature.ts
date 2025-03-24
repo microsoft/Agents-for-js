@@ -25,12 +25,12 @@ const adaptiveCardResource = require('../cards/AdaptiveCard.json')
 const restaurantCardResource = require('../cards/RestaurantCard.json')
 
 const baseUrl = process.env.BASE_URL?.endsWith('/') ? process.env.BASE_URL : process.env.BASE_URL + '/'
-export class TeamsMultiFeatureBot extends TeamsActivityHandler {
+export class TeamsMultiFeature extends TeamsActivityHandler {
   constructor () {
     super()
     this.onMessage(async (context, next) => {
       if (context.activity.text?.indexOf('taskModule')! > 0) {
-        const reply = MessageFactory.attachment(TeamsMultiFeatureBot.getTaskModuleHeroCardOptions())
+        const reply = MessageFactory.attachment(TeamsMultiFeature.getTaskModuleHeroCardOptions())
         await context.sendActivity(reply)
       } else if (context.activity.text?.indexOf('teamsinfo')! > 0) {
         const channels = await TeamsInfo.getTeamChannels(context)

@@ -13,7 +13,7 @@ interface UserProfile {
   name?: string;
 }
 
-export class StateManagementBot extends ActivityHandler {
+export class StateManagementHandler extends ActivityHandler {
   conversationState: ConversationState
   userState: UserState
   conversationDataAccessor: AgentStatePropertyAccessor<ConversationData>
