@@ -6,7 +6,7 @@ import express, { Response } from 'express'
 import { Request, CloudAdapter, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv, ConversationState, UserState } from '@microsoft/agents-hosting'
 import { BlobsStorage, BlobsTranscriptStore } from '@microsoft/agents-hosting-storage-blob'
 // import { CosmosDbPartitionedStorage, CosmosDbPartitionedStorageOptions } from '@microsoft/agents-hosting-storage-cosmos'
-import { StateManagementBot } from './bot'
+import { StateManagementAgent } from './agent'
 
 /* AZURE BLOB STORAGE - Uncomment the code in this section to use Azure blob storage */
 const blobStorage = new BlobsStorage(process.env.BLOB_STORAGE_CONNECTION_STRING!, process.env.BLOB_CONTAINER_ID!)
@@ -33,7 +33,7 @@ const userState = new UserState(blobStorage)
 // const conversationState = new ConversationState(memoryStorage)
 // const userState = new UserState(memoryStorage)
 
-const myBot = new StateManagementBot(conversationState, userState, blobTranscriptStore)
+const myBot = new StateManagementAgent(conversationState, userState, blobTranscriptStore)
 const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
 const adapter = new CloudAdapter(authConfig)
 

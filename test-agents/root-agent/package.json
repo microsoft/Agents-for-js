@@ -1,8 +1,7 @@
 {
-  "name": "root-bot",
+  "name": "root-agent",
   "version": "1.0.0",
   "private": true,
-  "description": "Agents SKD root bot for testing and development",
   "author": "Microsoft",
   "license": "MIT",
   "main": "./dist/index.js",

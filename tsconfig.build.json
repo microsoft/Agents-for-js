@@ -26,16 +26,16 @@
         "path": "test-agents/application-style"
       },
       {
-        "path": "test-agents/echo-bot"
+        "path": "test-agents/empty-agent"
       },
       {
         "path": "test-agents/web-chat"
       },
       {
-        "path": "test-agents/state-bot"
+        "path": "test-agents/state-agent"
       },
       {
-        "path": "test-agents/teams-bots"
+        "path": "test-agents/teams-agent"
       },
       {
         "path": "test-agents/copilotstudio-console"
@@ -50,7 +50,7 @@
         "path": "test-agents/teams-application-style"
       },
       {
-        "path": "test-agents/root-bot"
+        "path": "test-agents/root-agent"
       }
     ]
   }

@@ -1,8 +1,8 @@
 {
-  "name": "echobot",
+  "name": "empty-agent",
   "version": "1.0.0",
   "private": true,
-  "description": "Agents SKD echobot for testing and development",
+  "description": "Agent for testing and development",
   "author": "Microsoft",
   "license": "MIT",
   "main": "./dist/index.js",

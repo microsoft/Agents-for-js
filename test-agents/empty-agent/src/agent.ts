@@ -3,12 +3,12 @@
 
 import { Activity, ActivityHandler, ActivityTypes, EndOfConversationCodes, MessageFactory } from '@microsoft/agents-hosting'
 
-export class EchoBot extends ActivityHandler {
+export class EmptyAgent extends ActivityHandler {
   constructor () {
     super()
     this.onMessage(async (context, next) => {
       if (context.activity.text!.includes('end') || context.activity.text!.includes('stop')) {
-        const messageText = 'echo-bot: Ending conversation...'
+        const messageText = 'agent: Ending conversation...'
         await context.sendActivity(MessageFactory.text(messageText, messageText))
         await context.sendActivity(Activity.fromObject(
           {
@@ -17,7 +17,7 @@ export class EchoBot extends ActivityHandler {
           }
         ))
       } else {
-        const replyText = `echo-bot: ${context.activity.text}`
+        const replyText = `agent: ${context.activity.text}`
         await context.sendActivity(MessageFactory.text(replyText, replyText))
       }
       await next()

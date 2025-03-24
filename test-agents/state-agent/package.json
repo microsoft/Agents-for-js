@@ -1,8 +1,8 @@
 {
-  "name": "statebot",
+  "name": "stateagent",
   "version": "1.0.0",
   "private": true,
-  "description": "AgentsSDK state bot sample",
+  "description": "AgentsSDK state sample",
   "author": "Microsoft",
   "license": "MIT",
   "main": "./dist/index.js",

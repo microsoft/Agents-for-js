@@ -1,8 +1,7 @@
 {
-  "name": "teams-bots",
+  "name": "teams-agent",
   "version": "1.0.0",
   "private": true,
-  "description": "Agents SKD teams bots for testing and development",
   "author": "Microsoft",
   "license": "MIT",
   "main": "./dist/index.js",

@@ -5,12 +5,12 @@ import express, { Response } from 'express'
 
 import { Request, CloudAdapter, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv } from '@microsoft/agents-hosting'
 import { version as sdkVersion } from '@microsoft/agents-hosting/package.json'
-import { EchoBot } from './bot'
+import { EmptyAgent } from './agent'
 
 const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
 
 const adapter = new CloudAdapter(authConfig)
-const myBot = new EchoBot()
+const myBot = new EmptyAgent()
 
 const app = express()
 

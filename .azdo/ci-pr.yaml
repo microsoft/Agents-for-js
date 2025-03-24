@@ -44,11 +44,4 @@ steps:
       testResultsFiles: 'test-report.xml'
       mergeTestResults: true
       failTaskOnFailedTests: true
-      testRunTitle: 'Node Tests'
-      
-- script: |
-    for dir in ./test-agents/*/; do
-      echo "Building $dir"
-      (cd "$dir" && npm i && npm run build)
-    done
-  displayName: 'Build sample projects'
+      testRunTitle: 'Node Tests'      
