@@ -11,12 +11,12 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/test-bots/echo-bot/src/index.ts",
+            "program": "${workspaceFolder}/test-agents/echo-bot/src/index.ts",
             "outFiles": [
                 "${workspaceFolder}/**/dist/**/*.js"
             ],
             "preLaunchTask": "build_echo",
-            "envFile": "${workspaceFolder}/test-bots/echo-bot/.env",
+            "envFile": "${workspaceFolder}/test-agents/echo-bot/.env",
             "console": "integratedTerminal",
             "internalConsoleOptions": "openOnSessionStart"
         },
@@ -27,12 +27,12 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/test-bots/copilotstudio-console/src/index.ts",
+            "program": "${workspaceFolder}/test-agents/copilotstudio-console/src/index.ts",
             "outFiles": [
                 "${workspaceFolder}/**/dist/**/*.js"
             ],
             "preLaunchTask": "build_copilot_client",
-            "envFile": "${workspaceFolder}/test-bots/copilotstudio-console/.env",
+            "envFile": "${workspaceFolder}/test-agents/copilotstudio-console/.env",
             "console": "integratedTerminal"
         },
         {
@@ -42,12 +42,12 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/test-bots/web-chat/src/index.ts",
+            "program": "${workspaceFolder}/test-agents/web-chat/src/index.ts",
             "outFiles": [
                 "${workspaceFolder}/**/dist/**/*.js"
             ],
             "preLaunchTask": "build_webchat",
-            "envFile": "${workspaceFolder}/test-bots/web-chat/.env",
+            "envFile": "${workspaceFolder}/test-agents/web-chat/.env",
             "console": "integratedTerminal"
         },
         {
@@ -57,12 +57,12 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/test-bots/state-bot/src/index.ts",
+            "program": "${workspaceFolder}/test-agents/state-bot/src/index.ts",
             "outFiles": [
                 "${workspaceFolder}/**/dist/**/*.js"
             ],
             "preLaunchTask": "build_state",
-            "envFile": "${workspaceFolder}/test-bots/state-bot/.env",
+            "envFile": "${workspaceFolder}/test-agents/state-bot/.env",
             "console": "integratedTerminal",
             "internalConsoleOptions": "openOnSessionStart"
         },
@@ -73,12 +73,12 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/test-bots/teams-bots/src/index.ts",
+            "program": "${workspaceFolder}/test-agents/teams-bots/src/index.ts",
             "outFiles": [
                 "${workspaceFolder}/**/dist/**/*.js"
             ],
             "preLaunchTask": "build_teams",
-            "envFile": "${workspaceFolder}/test-bots/teams-bots/.env",
+            "envFile": "${workspaceFolder}/test-agents/teams-bots/.env",
             "console": "integratedTerminal",
             "internalConsoleOptions": "openOnSessionStart"
         },
@@ -89,12 +89,12 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/test-bots/application-style/src/index.ts",
+            "program": "${workspaceFolder}/test-agents/application-style/src/index.ts",
             "outFiles": [
                 "${workspaceFolder}/**/dist/**/*.js"
             ],
             "preLaunchTask": "build_application_style",
-            "envFile": "${workspaceFolder}/test-bots/application-style/.env",
+            "envFile": "${workspaceFolder}/test-agents/application-style/.env",
             "console": "integratedTerminal",
             "internalConsoleOptions": "openOnSessionStart"
         },
@@ -105,12 +105,12 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/test-bots/teams-application-style/src/index.ts",
+            "program": "${workspaceFolder}/test-agents/teams-application-style/src/index.ts",
             "outFiles": [
                 "${workspaceFolder}/**/dist/**/*.js"
             ],
             "preLaunchTask": "build_teams_application_style",
-            "envFile": "${workspaceFolder}/test-bots/teams-application-style/.env",
+            "envFile": "${workspaceFolder}/test-agents/teams-application-style/.env",
 
             "console": "integratedTerminal",
             "internalConsoleOptions": "openOnSessionStart"

@@ -30,7 +30,7 @@
   "license": "MIT",
   "workspaces": [
     "packages/*",
-    "test-bots/*"
+    "test-agents/*"
   ],
   "dependencies": {
   },

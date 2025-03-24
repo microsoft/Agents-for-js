@@ -23,31 +23,31 @@
         "path": "packages/agents-hosting-dialogs"
       },
       {
-        "path": "test-bots/application-style"
+        "path": "test-agents/application-style"
       },
       {
-        "path": "test-bots/echo-bot"
+        "path": "test-agents/echo-bot"
       },
       {
-        "path": "test-bots/web-chat"
+        "path": "test-agents/web-chat"
       },
       {
-        "path": "test-bots/state-bot"
+        "path": "test-agents/state-bot"
       },
       {
-        "path": "test-bots/teams-bots"
+        "path": "test-agents/teams-bots"
       },
       {
-        "path": "test-bots/copilotstudio-console"
+        "path": "test-agents/copilotstudio-console"
       },
       {
-        "path": "test-bots/multi-turn-prompt"
+        "path": "test-agents/multi-turn-prompt"
       },
       {
-        "path": "test-bots/custom-dialogs"
+        "path": "test-agents/custom-dialogs"
       },
       {
-        "path": "test-bots/teams-application-style"
+        "path": "test-agents/teams-application-style"
       }
     ]
   }

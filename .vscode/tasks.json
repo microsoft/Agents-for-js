@@ -24,7 +24,7 @@
 				"build_packages"
 			],
 			"problemMatcher": [],
-			"path": "test-bots/echo-bot"
+			"path": "test-agents/echo-bot"
 		},
 		{
 			"label": "build_webchat",
@@ -38,7 +38,7 @@
 				"build_packages"
 			],
 			"problemMatcher": [],
-			"path": "test-bots/web-chat"
+			"path": "test-agents/web-chat"
 		},
 		{
 			"label": "build_copilot_client",
@@ -52,7 +52,7 @@
 			"dependsOn": [
 				"build_packages"
 			],
-			"path": "test-bots/copilotstudio-console"
+			"path": "test-agents/copilotstudio-console"
 		},
 		{
 			"label": "build_state",
@@ -66,7 +66,7 @@
 			"dependsOn": [
 				"build_packages"
 			],
-			"path": "test-bots/state-bot"
+			"path": "test-agents/state-bot"
 		},
 		{
 			"label": "build_teams",
@@ -80,7 +80,7 @@
 			"dependsOn": [
 				"build_packages"
 			],
-			"path": "test-bots/teams-bots"
+			"path": "test-agents/teams-bots"
 		},
 		{
 			"label": "build_application_style",
@@ -95,7 +95,7 @@
 			"dependsOn": [
 				"build_packages"
 			],
-			"path": "test-bots/application-style"
+			"path": "test-agents/application-style"
 		},
 		{
 			"label": "build_teams_application_style",
@@ -109,7 +109,7 @@
 			"dependsOn": [
 				"build_packages"
 			],
-			"path": "test-bots/teams-application-style"
+			"path": "test-agents/teams-application-style"
 		}
 	]
 }

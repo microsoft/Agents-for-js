@@ -1,4 +1,4 @@
-# @microsoft/agents-for-js test-bots
+# @microsoft/agents-for-js test-agents
 
 This folder contains some samples we use for testing the packages (we call those _tamples_ 😋)
 
