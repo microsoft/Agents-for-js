@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { TurnState, TurnContext, AgentApplication } from '@microsoft/agents-bot-hosting'
-import { ActivityTypes } from '@microsoft/agents-bot-activity'
-import { BlobsStorage, BlobsTranscriptStore } from '@microsoft/agents-bot-hosting-storage-blob'
+import { TurnState, TurnContext, AgentApplication } from '@microsoft/agents-hosting'
+import { ActivityTypes } from '@microsoft/agents-activity'
+import { BlobsStorage, BlobsTranscriptStore } from '@microsoft/agents-hosting-storage-blob'
 
 const blobStorage = new BlobsStorage(process.env.BLOB_STORAGE_CONNECTION_STRING!, process.env.BLOB_CONTAINER_ID!)
 const blobTranscriptStore = new BlobsTranscriptStore(process.env.BLOB_STORAGE_CONNECTION_STRING!, process.env.BLOB_CONTAINER_ID!)

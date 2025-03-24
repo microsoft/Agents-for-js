@@ -3,8 +3,8 @@
 
 import express, { Response } from 'express'
 
-import { Request, CloudAdapter, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv } from '@microsoft/agents-bot-hosting'
-import { version as sdkVersion } from '@microsoft/agents-bot-hosting/package.json'
+import { Request, CloudAdapter, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv } from '@microsoft/agents-hosting'
+import { version as sdkVersion } from '@microsoft/agents-hosting/package.json'
 import { EchoBot } from './bot'
 
 const authConfig: AuthConfiguration = loadAuthConfigFromEnv()

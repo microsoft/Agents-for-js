@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { ActivityHandler, BotState, BotStatePropertyAccessor, ConversationState, UserState } from '@microsoft/agents-bot-hosting'
-import { Dialog, DialogState } from '@microsoft/agents-bot-hosting-dialogs'
+import { ActivityHandler, BotState, BotStatePropertyAccessor, ConversationState, UserState } from '@microsoft/agents-hosting'
+import { Dialog, DialogState } from '@microsoft/agents-hosting-dialogs'
 import { RootDialog } from '../dialogs/rootDialog'
 
 export class DialogBot extends ActivityHandler {

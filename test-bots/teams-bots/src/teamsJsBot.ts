@@ -7,8 +7,8 @@ import {
   MessageFactory,
   TurnContext
 }
-  from '@microsoft/agents-bot-hosting'
-import { TeamsActivityHandler, TeamsInfo, TeamsMember, MeetingNotification, parseTeamsChannelData } from '@microsoft/agents-bot-hosting-teams'
+  from '@microsoft/agents-hosting'
+import { TeamsActivityHandler, TeamsInfo, TeamsMember, MeetingNotification, parseTeamsChannelData } from '@microsoft/agents-hosting-teams'
 
 export class TeamsJsBot extends TeamsActivityHandler {
   constructor () {

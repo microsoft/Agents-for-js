@@ -9,8 +9,8 @@ import {
   TurnContext,
   TurnState,
 }
-  from '@microsoft/agents-bot-hosting'
-import { TeamsInfo, TeamsMember, MeetingNotification, parseTeamsChannelData, TeamsApplication } from '@microsoft/agents-bot-hosting-teams'
+  from '@microsoft/agents-hosting'
+import { TeamsInfo, TeamsMember, MeetingNotification, parseTeamsChannelData, TeamsApplication } from '@microsoft/agents-hosting-teams'
 
 type ApplicationTurnState = TurnState
 export const app = new TeamsApplication({

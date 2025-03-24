@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { ActivityHandler, CardFactory, MessageFactory, TurnContext, UserState, WebChatOAuthFlow } from '@microsoft/agents-bot-hosting'
+import { ActivityHandler, CardFactory, MessageFactory, TurnContext, UserState, WebChatOAuthFlow } from '@microsoft/agents-hosting'
 import { Template } from 'adaptivecards-templating'
 import * as userTemplate from '../cards/UserProfileCard.json'
 import { getUserInfo } from './userGraphClient'

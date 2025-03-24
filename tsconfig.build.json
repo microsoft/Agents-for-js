@@ -2,25 +2,25 @@
     "files": [],
     "references": [
       {
-        "path": "packages/agents-bot-activity"
+        "path": "packages/agents-activity"
       },
       {
-        "path": "packages/agents-bot-hosting"
+        "path": "packages/agents-hosting"
       },
       {
         "path": "packages/agents-copilotstudio-client"
       },
       {
-        "path": "packages/agents-bot-hosting-storage-blob"
+        "path": "packages/agents-hosting-storage-blob"
       },
       {
-        "path": "packages/agents-bot-hosting-storage-cosmos"
+        "path": "packages/agents-hosting-storage-cosmos"
       },
       {
-        "path": "packages/agents-bot-hosting-teams"
+        "path": "packages/agents-hosting-teams"
       },
       {
-        "path": "packages/agents-bot-hosting-dialogs"
+        "path": "packages/agents-hosting-dialogs"
       },
       {
         "path": "test-bots/application-style"

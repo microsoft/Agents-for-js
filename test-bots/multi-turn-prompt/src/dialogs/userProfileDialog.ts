@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { MessageFactory, Channels, BotStatePropertyAccessor, TurnContext, UserState, Attachment } from '@microsoft/agents-bot-hosting'
+import { MessageFactory, Channels, BotStatePropertyAccessor, TurnContext, UserState, Attachment } from '@microsoft/agents-hosting'
 import {
   AttachmentPrompt,
   ChoiceFactory,
@@ -15,7 +15,7 @@ import {
   TextPrompt,
   WaterfallDialog,
   WaterfallStepContext
-} from '@microsoft/agents-bot-hosting-dialogs'
+} from '@microsoft/agents-hosting-dialogs'
 import { UserProfile } from '../userProfile'
 
 const ATTACHMENT_PROMPT = 'ATTACHMENT_PROMPT'

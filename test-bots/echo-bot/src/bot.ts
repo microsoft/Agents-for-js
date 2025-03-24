@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { Activity, ActivityHandler, ActivityTypes, EndOfConversationCodes, MessageFactory } from '@microsoft/agents-bot-hosting'
+import { Activity, ActivityHandler, ActivityTypes, EndOfConversationCodes, MessageFactory } from '@microsoft/agents-hosting'
 
 export class EchoBot extends ActivityHandler {
   constructor () {

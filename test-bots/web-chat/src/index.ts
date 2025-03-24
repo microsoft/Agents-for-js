@@ -3,8 +3,8 @@
 
 import express, { Response } from 'express'
 
-import { Request, CloudAdapter, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv, MemoryStorage, ConversationState, UserState } from '@microsoft/agents-bot-hosting'
-import { ConversationReference } from '@microsoft/agents-bot-activity'
+import { Request, CloudAdapter, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv, MemoryStorage, ConversationState, UserState } from '@microsoft/agents-hosting'
+import { ConversationReference } from '@microsoft/agents-activity'
 
 import { AdaptiveCardBot } from './adaptiveCardsBot'
 import { CardFactoryBot } from './cardFactoryBot'

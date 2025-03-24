@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { BotStatePropertyAccessor, TurnContext, UserState } from '@microsoft/agents-bot-hosting'
+import { BotStatePropertyAccessor, TurnContext, UserState } from '@microsoft/agents-hosting'
 
 import {
   ComponentDialog,
@@ -12,7 +12,7 @@ import {
   TextPrompt,
   WaterfallDialog,
   WaterfallStepContext
-} from '@microsoft/agents-bot-hosting-dialogs'
+} from '@microsoft/agents-hosting-dialogs'
 import { SlotDetails } from './slotDetails'
 import { SlotFillingDialog } from './slotFillingDialog'
 

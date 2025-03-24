@@ -1,5 +1,5 @@
-import { ActivityHandler, MessageFactory, BotClient } from '@microsoft/agents-bot-hosting'
-import { version as sdkVersion } from '@microsoft/agents-bot-hosting/package.json'
+import { ActivityHandler, MessageFactory, BotClient } from '@microsoft/agents-hosting'
+import { version as sdkVersion } from '@microsoft/agents-hosting/package.json'
 
 export class RootBot extends ActivityHandler {
   constructor () {

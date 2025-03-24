@@ -1,5 +1,5 @@
-import { AuthConfiguration, authorizeJWT, loadAuthConfigFromEnv, Request } from '@microsoft/agents-bot-hosting'
-import { TeamsCloudAdapter } from '@microsoft/agents-bot-hosting-teams'
+import { AuthConfiguration, authorizeJWT, loadAuthConfigFromEnv, Request } from '@microsoft/agents-hosting'
+import { TeamsCloudAdapter } from '@microsoft/agents-hosting-teams'
 import express, { Response } from 'express'
 import path from 'path'
 

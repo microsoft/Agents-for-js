@@ -12,7 +12,7 @@ import {
   TaskModuleAction,
   ThumbnailCard,
   TurnContext
-} from '@microsoft/agents-bot-hosting'
+} from '@microsoft/agents-hosting'
 import { TaskModuleIds } from './models/taskModuleIds'
 import { TaskModuleUIConstants } from './models/taskModuleUIConstants'
 import { UISettings } from './models/uiSettings'
@@ -20,7 +20,7 @@ import { TaskModuleResponseFactory } from './models/taskModuleResponseFactory'
 import { AdaptiveCardTaskFetchValue } from './models/adaptiveCardTaskFetchValue'
 import { CardTaskFetchValue } from './models/cardTaskFetchValue'
 import * as AdaptiveCards from 'adaptivecards'
-import { AppBasedLinkQuery, MessagingExtensionAttachment, MessagingExtensionQuery, MessagingExtensionResponse, TaskModuleRequest, TaskModuleResponse, TaskModuleTaskInfo, TeamsActivityHandler, TeamsInfo } from '@microsoft/agents-bot-hosting-teams'
+import { AppBasedLinkQuery, MessagingExtensionAttachment, MessagingExtensionQuery, MessagingExtensionResponse, TaskModuleRequest, TaskModuleResponse, TaskModuleTaskInfo, TeamsActivityHandler, TeamsInfo } from '@microsoft/agents-hosting-teams'
 const adaptiveCardResource = require('../cards/AdaptiveCard.json')
 const restaurantCardResource = require('../cards/RestaurantCard.json')
 

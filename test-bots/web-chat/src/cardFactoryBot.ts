@@ -1,10 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { ActivityHandler } from '@microsoft/agents-bot-hosting'
+import { ActivityHandler } from '@microsoft/agents-hosting'
 import { CardMessages } from './cardMessages'
 import CardFactoryCard from '../cards/CardFactoryCard.json'
-import { Activity, ActivityTypes } from '@microsoft/agents-bot-activity'
+import { Activity, ActivityTypes } from '@microsoft/agents-activity'
 
 export class CardFactoryBot extends ActivityHandler {
   constructor () {

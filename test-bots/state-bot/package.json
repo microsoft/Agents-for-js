@@ -16,8 +16,8 @@
     "url": "https://github.com"
   },
   "dependencies": {
-    "@microsoft/agents-bot-hosting-storage-blob": "file:../../packages/agents-bot-hosting-storage-blob",
-    "@microsoft/agents-bot-hosting-storage-cosmos": "file:../../packages/agents-bot-hosting-storage-cosmos",
+    "@microsoft/agents-hosting-storage-blob": "file:../../packages/agents-hosting-storage-blob",
+    "@microsoft/agents-hosting-storage-cosmos": "file:../../packages/agents-hosting-storage-cosmos",
     "express": "^5.0.1"
   },
   "devDependencies": {

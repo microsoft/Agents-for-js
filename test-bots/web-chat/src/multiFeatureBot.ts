@@ -1,11 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { ActivityHandler, CardFactory, MessageFactory, TurnContext } from '@microsoft/agents-bot-hosting'
+import { ActivityHandler, CardFactory, MessageFactory, TurnContext } from '@microsoft/agents-hosting'
 import path from 'path'
 import fs from 'fs'
 import axios from 'axios'
-import { ActionTypes, Activity, ActivityTypes, Attachment, ConversationReference, EndOfConversationCodes } from '@microsoft/agents-bot-activity'
+import { ActionTypes, Activity, ActivityTypes, Attachment, ConversationReference, EndOfConversationCodes } from '@microsoft/agents-activity'
 
 export class MultiFeatureBot extends ActivityHandler {
   conversationReferences: { [key: string]: ConversationReference }

@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { TurnState, TurnContext, AgentApplication } from '@microsoft/agents-bot-hosting'
-import { ActivityTypes } from '@microsoft/agents-bot-activity'
-import { CosmosDbPartitionedStorage, CosmosDbPartitionedStorageOptions } from '@microsoft/agents-bot-hosting-storage-cosmos'
+import { TurnState, TurnContext, AgentApplication } from '@microsoft/agents-hosting'
+import { ActivityTypes } from '@microsoft/agents-activity'
+import { CosmosDbPartitionedStorage, CosmosDbPartitionedStorageOptions } from '@microsoft/agents-hosting-storage-cosmos'
 
 const cosmosDbStorageOptions = {
   databaseId: process.env.COSMOS_DATABASE_ID || 'botsDB',

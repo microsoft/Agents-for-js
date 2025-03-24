@@ -1,4 +1,4 @@
-# Migration to @microsoft/agents-bot-hosting
+# Migration to @microsoft/agents-hosting
 
 This document outlines the necessary migrations to adapt BotBuilder samples for use with the Agents SDK.
 These are the main steps to considerate:
@@ -7,9 +7,9 @@ These are the main steps to considerate:
 
 Update required packages to use the new SDK libraries:  
 - `botframework-schema` → `@microsoft/agents-activity-schema`  
-- `botbuilder` → `@microsoft/agents-bot-hosting`  
-- `botbuilder-azure-blobs` → `@microsoft/agents-bot-hosting-storage-blob`  
-- `botbuilder-azure` `CosmosDB` → `@microsoft/agents-bot-hosting-storage-cosmos`  
+- `botbuilder` → `@microsoft/agents-hosting`  
+- `botbuilder-azure-blobs` → `@microsoft/agents-hosting-storage-blob`  
+- `botbuilder-azure` `CosmosDB` → `@microsoft/agents-hosting-storage-cosmos`  
 
 ## 2. Update Classes and Methods 
 
@@ -69,7 +69,7 @@ Use **Express** instead of Restify for compatibility with the Agents server. Fol
   6. Listen for incoming requests on the specified port.
   ```typescript
   import express, { Response } from 'express'
-  import { Request, authorizeJWT } from '@microsoft/agents-bot-hosting'
+  import { Request, authorizeJWT } from '@microsoft/agents-hosting'
 
   const app = express()
 

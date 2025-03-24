@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { TurnState, MemoryStorage, TurnContext, ApplicationBuilder } from '@microsoft/agents-bot-hosting'
-import { ActivityTypes } from '@microsoft/agents-bot-activity'
+import { TurnState, MemoryStorage, TurnContext, ApplicationBuilder } from '@microsoft/agents-hosting'
+import { ActivityTypes } from '@microsoft/agents-activity'
 
 interface ConversationData {
   promptedForUserName: boolean;

@@ -3,8 +3,8 @@
 
 import express, { Response } from 'express'
 
-import { Request, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv, UserState, MemoryStorage } from '@microsoft/agents-bot-hosting'
-import { TeamsCloudAdapter } from '@microsoft/agents-bot-hosting-teams'
+import { Request, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv, UserState, MemoryStorage } from '@microsoft/agents-hosting'
+import { TeamsCloudAdapter } from '@microsoft/agents-hosting-teams'
 
 import { TeamsJsBot } from './teamsJsBot'
 import { TeamsSsoBot } from './teamsSsoBot'

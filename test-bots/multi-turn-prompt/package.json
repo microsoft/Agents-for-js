@@ -15,7 +15,7 @@
         "docker": "docker build -t botimages.azurecr.io/node-echo-bot:latest ."
     },
     "dependencies": {
-        "@microsoft/agents-bot-hosting-dialogs": "file:../../packages/agents-bot-hosting-dialogs",
+        "@microsoft/agents-hosting-dialogs": "file:../../packages/agents-hosting-dialogs",
         "express": "^5.0.1",
         "typescript": "^5.8.2"
     },

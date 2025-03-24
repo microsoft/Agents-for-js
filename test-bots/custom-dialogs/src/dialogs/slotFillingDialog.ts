@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { ActivityTypes } from '@microsoft/agents-bot-hosting'
-import { Dialog, DialogContext, DialogReason } from '@microsoft/agents-bot-hosting-dialogs'
+import { ActivityTypes } from '@microsoft/agents-hosting'
+import { Dialog, DialogContext, DialogReason } from '@microsoft/agents-hosting-dialogs'
 import { SlotDetails } from './slotDetails'
 
 const SlotName = 'slot'

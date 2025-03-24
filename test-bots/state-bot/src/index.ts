@@ -3,9 +3,9 @@
 
 import express, { Response } from 'express'
 
-import { Request, CloudAdapter, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv, ConversationState, UserState } from '@microsoft/agents-bot-hosting'
-import { BlobsStorage, BlobsTranscriptStore } from '@microsoft/agents-bot-hosting-storage-blob'
-// import { CosmosDbPartitionedStorage, CosmosDbPartitionedStorageOptions } from '@microsoft/agents-bot-hosting-storage-cosmos'
+import { Request, CloudAdapter, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv, ConversationState, UserState } from '@microsoft/agents-hosting'
+import { BlobsStorage, BlobsTranscriptStore } from '@microsoft/agents-hosting-storage-blob'
+// import { CosmosDbPartitionedStorage, CosmosDbPartitionedStorageOptions } from '@microsoft/agents-hosting-storage-cosmos'
 import { StateManagementBot } from './bot'
 
 /* AZURE BLOB STORAGE - Uncomment the code in this section to use Azure blob storage */

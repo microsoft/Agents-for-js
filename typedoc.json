@@ -1,12 +1,12 @@
 {
     "entryPoints": [
 
-      "./packages/agents-bot-activity/index.ts",
+      "./packages/agents-activity/index.ts",
       "./packages/agents-copilotstudio-client/index.ts",
-      "./packages/agents-bot-hosting/index.ts",
-      "./packages/agents-bot-hosting-storage-blob/index.ts",
-      "./packages/agents-bot-hosting-storage-cosmos/index.ts",
-      "./packages/agents-bot-hosting-teams/index.ts",
+      "./packages/agents-hosting/index.ts",
+      "./packages/agents-hosting-storage-blob/index.ts",
+      "./packages/agents-hosting-storage-cosmos/index.ts",
+      "./packages/agents-hosting-teams/index.ts",
     ],
     "out": "docs",
     "exclude": ["**/node_modules/**", "**/test/**"],

@@ -15,7 +15,7 @@
     "docker": "docker build -t botimages.azurecr.io/node-echo-bot:latest ."
   },
   "dependencies": {
-    "@microsoft/agents-bot-hosting": "file:../../packages/agents-bot-hosting",
+    "@microsoft/agents-hosting": "file:../../packages/agents-hosting",
     "@microsoft/microsoft-graph-client": "^3.0.7",
     "adaptivecards-templating": "^2.3.1",
     "express": "^5.0.1"

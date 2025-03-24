@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { ActivityHandler, ConversationState, TurnContext, UserState, BotStatePropertyAccessor } from '@microsoft/agents-bot-hosting'
+import { ActivityHandler, ConversationState, TurnContext, UserState, BotStatePropertyAccessor } from '@microsoft/agents-hosting'
 
 interface ConversationData {
   promptedForUserName: boolean;
