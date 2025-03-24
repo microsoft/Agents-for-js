@@ -48,6 +48,9 @@
       },
       {
         "path": "test-agents/teams-application-style"
+      },
+      {
+        "path": "test-agents/root-bot"
       }
     ]
   }

@@ -1,4 +1,4 @@
-import { ActivityHandler, MessageFactory, BotClient } from '@microsoft/agents-hosting'
+import { ActivityHandler, MessageFactory, AgentClient } from '@microsoft/agents-hosting'
 import { version as sdkVersion } from '@microsoft/agents-hosting/package.json'
 
 export class RootBot extends ActivityHandler {
@@ -8,7 +8,7 @@ export class RootBot extends ActivityHandler {
       const text = context.activity.text
 
       if (text?.startsWith('agent')) {
-        const botClient: BotClient = new BotClient('Bot1')
+        const botClient: AgentClient = new AgentClient('Bot1')
 
         const activityStarts = JSON.stringify(context.activity)
         console.log('activityStarts', activityStarts)

@@ -3,7 +3,7 @@
 
 import express, { Response } from 'express'
 
-import { Request, CloudAdapter, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv, addBotApi } from '@microsoft/agents-hosting'
+import { Request, CloudAdapter, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv, configureResponseController } from '@microsoft/agents-hosting'
 import { version as sdkVersion } from '@microsoft/agents-hosting/package.json'
 import { RootBot } from './bot'
 const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
@@ -21,7 +21,7 @@ app.post('/api/messages', async (req: Request, res: Response) => {
   await adapter.process(req, res, async (context) => await myBot.run(context))
 })
 
-addBotApi(app, adapter, myBot)
+configureResponseController(app, adapter, myBot)
 
 const port = process.env.PORT || 3978
 app.listen(port, () => {
