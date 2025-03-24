@@ -2,7 +2,7 @@ import { strict as assert } from 'assert'
 import { describe, it } from 'node:test'
 import { AttachmentData, AttachmentInfo, MessageFactory, ResourceResponse, TurnContext } from '../../../src'
 import { Activity, ActivityTypes, ConversationReference, DeliveryModes } from '@microsoft/agents-activity'
-import { BotAdapter } from '../../../src/botAdapter'
+import { BaseAdapter } from '../../../src/baseAdapter'
 
 const activityId = 'activity ID'
 
@@ -28,7 +28,7 @@ const testTraceMessage: Activity = Activity.fromObject(
   }
 )
 
-class SimpleAdapter extends BotAdapter {
+class SimpleAdapter extends BaseAdapter {
   getAttachmentInfo (attachmentId: string): Promise<AttachmentInfo> {
     throw new Error('Method not implemented.')
   }

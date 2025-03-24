@@ -1,6 +1,6 @@
 /** * Copyright (c) Microsoft Corporation. All rights reserved. * Licensed under the MIT License. */
 import { INVOKE_RESPONSE_KEY } from './activityHandler'
-import { BotAdapter } from './botAdapter'
+import { BaseAdapter } from './baseAdapter'
 import { Activity, ActivityTypes, ConversationReference, DeliveryModes, InputHints } from '@microsoft/agents-activity'
 import { ResourceResponse } from './connector-client/resourceResponse'
 import { TurnContextStateCollection } from './turnContextStateCollection'
@@ -36,7 +36,7 @@ export interface TurnContext {}
  * Represents the context object for a turn of a bot.
  */
 export class TurnContext {
-  private readonly _adapter?: BotAdapter
+  private readonly _adapter?: BaseAdapter
   private readonly _activity?: Activity
   private readonly _respondedRef: { responded: boolean } = { responded: false }
   private readonly _turnState = new TurnContextStateCollection()
@@ -51,9 +51,9 @@ export class TurnContext {
    * @param adapterOrContext The adapter or context for the turn.
    * @param request The activity for the turn.
    */
-  constructor (adapterOrContext: BotAdapter, request: Activity)
+  constructor (adapterOrContext: BaseAdapter, request: Activity)
   constructor (adapterOrContext: TurnContext)
-  constructor (adapterOrContext: BotAdapter | TurnContext, request?: Activity) {
+  constructor (adapterOrContext: BaseAdapter | TurnContext, request?: Activity) {
     if (adapterOrContext instanceof TurnContext) {
       adapterOrContext.copyTo(this)
     } else {
@@ -262,8 +262,8 @@ export class TurnContext {
   /**
    * Gets the adapter for the turn.
    */
-  get adapter (): BotAdapter {
-    return this._adapter as BotAdapter
+  get adapter (): BaseAdapter {
+    return this._adapter as BaseAdapter
   }
 
   /**

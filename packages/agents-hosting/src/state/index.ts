@@ -1,4 +1,4 @@
 export * from './userState'
 export * from './conversationState'
-export * from './botStatePropertyAccesor'
-export * from './botState'
+export * from './agentStatePropertyAccesor'
+export * from './agentState'

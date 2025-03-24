@@ -14,8 +14,7 @@
   },
   "description": "Microsoft 365 Agents SDK for JavaScript",
   "keywords": [
-    "Agents",
-    "bot"
+    "Agents"
   ],
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",

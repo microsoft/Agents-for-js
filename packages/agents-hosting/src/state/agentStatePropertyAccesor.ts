@@ -4,18 +4,18 @@
  */
 
 import { TurnContext } from '../turnContext'
-import { BotState } from './botState'
+import { AgentState } from './agentState'
 
 /**
- * Provides access to a bot state property.
+ * Provides access to an Agent state property.
  */
-export class BotStatePropertyAccessor<T = any> {
+export class AgentStatePropertyAccessor<T = any> {
   /**
-   * Creates a new instance of BotStatePropertyAccessor.
-   * @param botState The bot state.
+   * Creates a new instance of AgentStatePropertyAccessor.
+   * @param state The agent state.
    * @param name The name of the property.
    */
-  constructor (protected readonly state: BotState, public readonly name: string) { }
+  constructor (protected readonly state: AgentState, public readonly name: string) { }
 
   /**
    * Deletes the property from the state.

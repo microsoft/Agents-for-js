@@ -43,8 +43,8 @@ export const loadAuthConfigFromEnv: () => AuthConfiguration = () => {
 }
 
 /**
- * Loads the bot authentication configuration from environment variables.
- * @returns The bot authentication configuration.
+ * Loads the agent authentication configuration from environment variables.
+ * @returns The agent authentication configuration.
  * @throws Will throw an error if MicrosoftAppId is not provided in production.
  */
 export const loadBotAuthConfigFromEnv: () => AuthConfiguration = () => {

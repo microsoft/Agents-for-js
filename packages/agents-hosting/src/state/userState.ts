@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { BotState } from './botState'
+import { AgentState } from './agentState'
 import { Storage } from '../storage/storage'
 import { TurnContext } from '../turnContext'
 import { Activity } from '@microsoft/agents-activity'
@@ -11,7 +11,7 @@ import { Activity } from '@microsoft/agents-activity'
 /**
  * Manages the state of a user.
  */
-export class UserState extends BotState {
+export class UserState extends AgentState {
   /**
     * Creates a new instance of UserState.
     * @param storage The storage provider.

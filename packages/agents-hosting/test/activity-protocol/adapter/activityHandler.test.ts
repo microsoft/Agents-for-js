@@ -3,10 +3,10 @@ import { strict as assert } from 'assert'
 import { afterEach, describe, it } from 'node:test'
 import { ActivityHandler, TurnContext } from '../../../src'
 import { Activity, ActivityTypes } from '@microsoft/agents-activity'
-import { BotAdapter } from '../../../src/botAdapter'
+import { BaseAdapter } from '../../../src/baseAdapter'
 
 // @ts-expect-error
-class SimpleAdapter extends BotAdapter {}
+class SimpleAdapter extends BaseAdapter {}
 
 describe('ActivityHandler', function () {
   const adapter = new SimpleAdapter()

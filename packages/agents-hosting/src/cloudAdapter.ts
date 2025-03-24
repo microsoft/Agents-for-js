@@ -4,7 +4,7 @@
  */
 
 import { BotHandler, INVOKE_RESPONSE_KEY } from './activityHandler'
-import { BotAdapter } from './botAdapter'
+import { BaseAdapter } from './baseAdapter'
 import { TurnContext } from './turnContext'
 import { Response } from 'express'
 import { Request } from './auth/request'
@@ -27,7 +27,7 @@ const logger = debug('agents:cloud-adapter')
 /**
  * Adapter for handling cloud-based bot interactions.
  */
-export class CloudAdapter extends BotAdapter {
+export class CloudAdapter extends BaseAdapter {
   public connectorClient!: ConnectorClient
 
   /**

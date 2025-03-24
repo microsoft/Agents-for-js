@@ -11,7 +11,7 @@ import { AuthenticationOptions } from './oauth/authenticationOptions'
 
 export interface ApplicationOptions<TState extends TurnState> {
   adapter?: CloudAdapter;
-  botAppId?: string;
+  agentAppId?: string;
   storage?: Storage;
   startTypingTimer: boolean;
   longRunningMessages: boolean;

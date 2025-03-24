@@ -4,7 +4,7 @@
  */
 
 import { TurnState } from './turnState'
-import { BotAdapter } from '../botAdapter'
+import { BaseAdapter } from '../baseAdapter'
 import { Activity, ActivityTypes, ConversationReference } from '@microsoft/agents-activity'
 import { ApplicationOptions } from './applicationOptions'
 import { RouteSelector } from './routeSelector'
@@ -28,7 +28,7 @@ export class AgentApplication<TState extends TurnState> {
   protected readonly _routes: AppRoute<TState>[] = []
   protected readonly _beforeTurn: ApplicationEventHandler<TState>[] = []
   protected readonly _afterTurn: ApplicationEventHandler<TState>[] = []
-  private readonly _adapter?: BotAdapter
+  private readonly _adapter?: BaseAdapter
   private _typingTimer: any
   private readonly _authManager?: WebChatOAuthFlowAppStyle
 
@@ -48,14 +48,14 @@ export class AgentApplication<TState extends TurnState> {
       this._authManager = new WebChatOAuthFlowAppStyle(this._options.storage ?? new MemoryStorage())
     }
 
-    if (this._options.longRunningMessages && !this._adapter && !this._options.botAppId) {
+    if (this._options.longRunningMessages && !this._adapter && !this._options.agentAppId) {
       throw new Error(
-        'The Application.longRunningMessages property is unavailable because no adapter or botAppId was configured.'
+        'The Application.longRunningMessages property is unavailable because no adapter or agentAppId was configured.'
       )
     }
   }
 
-  public get adapter (): BotAdapter {
+  public get adapter (): BaseAdapter {
     if (!this._adapter) {
       throw new Error(
         'The Application.adapter property is unavailable because it was not configured when creating the Application.'
@@ -128,9 +128,9 @@ export class AgentApplication<TState extends TurnState> {
       )
     }
 
-    if (!this.options.botAppId) {
+    if (!this.options.agentAppId) {
       console.warn(
-        "Calling Application.continueConversationAsync() without a configured 'botAppId'. In production environments, a 'botAppId' is required."
+        "Calling Application.continueConversationAsync() without a configured 'agentAppId'. In production environments, a 'agentAppId' is required."
       )
     }
 

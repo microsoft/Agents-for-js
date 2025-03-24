@@ -294,7 +294,7 @@ export class TurnState<
   protected onComputeStorageKeys (context: TurnContext): Promise<Record<string, string>> {
     const activity = context.activity
     const channelId = activity?.channelId
-    const botId = activity?.recipient?.id
+    const agentId = activity?.recipient?.id
     const conversationId = activity?.conversation?.id
     const userId = activity?.from?.id
 
@@ -302,7 +302,7 @@ export class TurnState<
       throw new Error('missing context.activity.channelId')
     }
 
-    if (!botId) {
+    if (!agentId) {
       throw new Error('missing context.activity.recipient.id')
     }
 
@@ -315,9 +315,9 @@ export class TurnState<
     }
 
     const keys: Record<string, string> = {}
-    keys[CONVERSATION_SCOPE] = `${channelId}/${botId}/conversations/${conversationId}`
-    keys[USER_SCOPE] = `${channelId}/${botId}/users/${userId}`
-    keys[SSO_SCOPE] = `${channelId}/${botId}/sso`
+    keys[CONVERSATION_SCOPE] = `${channelId}/${agentId}/conversations/${conversationId}`
+    keys[USER_SCOPE] = `${channelId}/${agentId}/users/${userId}`
+    keys[SSO_SCOPE] = `${channelId}/${agentId}/sso`
     return Promise.resolve(keys)
   }
 

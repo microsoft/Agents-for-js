@@ -1,11 +1,11 @@
 import { test, describe, beforeEach } from 'node:test'
 import assert from 'node:assert'
 import { TurnContext, MemoryStorage } from '../../../src'
-import { BotState } from '../../../src/state/botState'
+import { AgentState } from '../../../src/state/agentState'
 import { StoreItem } from '../../../src/storage/storage'
 
 describe('BotState', () => {
-  let botState: BotState
+  let botState: AgentState
   let mockContext: TurnContext
   let storage: MemoryStorage
 
@@ -13,7 +13,7 @@ describe('BotState', () => {
 
   beforeEach(() => {
     storage = new MemoryStorage()
-    botState = new BotState(storage, storageKeyFactory)
+    botState = new AgentState(storage, storageKeyFactory)
 
     mockContext = {
       turnState: new Map(),

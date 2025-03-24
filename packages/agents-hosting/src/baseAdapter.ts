@@ -19,7 +19,7 @@ const logger = debug('agents:bot-adapter')
 /**
  * Base class for all bot adapters, providing middleware and error handling capabilities.
  */
-export abstract class BotAdapter {
+export abstract class BaseAdapter {
   protected middleware: MiddlewareSet = new MiddlewareSet()
 
   private turnError: (context: TurnContext, error: Error) => Promise<void> = async (context: TurnContext, error: Error) => {

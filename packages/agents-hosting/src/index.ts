@@ -26,6 +26,6 @@ export * from './turnContextStateCollection'
 export * from './logger'
 export * from './storage/storage'
 
-export * from './bot-client'
+export * from './agent-client'
 
 export * from '@microsoft/agents-activity'

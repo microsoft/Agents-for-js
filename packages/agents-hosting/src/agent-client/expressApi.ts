@@ -7,21 +7,20 @@ import { TurnContext } from '../turnContext'
 import { v4 } from 'uuid'
 import { debug } from '../logger'
 
-const logger = debug('agents:bot-client')
+const logger = debug('agents:agent-client')
 
-export const addBotApi = (app: Application, adapter: CloudAdapter, bot: ActivityHandler) => {
-  app.post('/api/botresponse/v3/conversations/:conversationId/activities/:activityId', handleBotResponse(adapter, bot))
+export const configureResponseController = (app: Application, adapter: CloudAdapter, agent: ActivityHandler) => {
+  app.post('/api/botresponse/v3/conversations/:conversationId/activities/:activityId', handleResponse(adapter, agent))
 }
 
-const handleBotResponse = (adapter: CloudAdapter, bot: ActivityHandler) => async (req: Request, res: Response) => {
+const handleResponse = (adapter: CloudAdapter, handler: ActivityHandler) => async (req: Request, res: Response) => {
   const activity = Activity.fromObject(req.body!)
 
-  const activityFromEchoBot = JSON.stringify(activity)
-  logger.debug('activityFromEchoBot: ', activityFromEchoBot)
+  logger.debug('received response: ', activity)
 
-  const dataForBot = await MemoryStorage.getSingleInstance().read([req.params!.conversationId])
-  const conversationReference = dataForBot[req.params!.conversationId].conversationReference
-  logger.debug('memoryChanges: ', dataForBot)
+  const requestData = await MemoryStorage.getSingleInstance().read([req.params!.conversationId])
+  const conversationReference = requestData[req.params!.conversationId].conversationReference
+  logger.debug('memoryChanges: ', requestData)
 
   const callback = async (turnContext: TurnContext) => {
     activity.applyConversationReference(conversationReference)
@@ -32,7 +31,7 @@ const handleBotResponse = (adapter: CloudAdapter, bot: ActivityHandler) => async
       await MemoryStorage.getSingleInstance().delete([activity.conversation!.id])
 
       applyActivityToTurnContext(turnContext, activity)
-      await bot.run(turnContext)
+      await handler.run(turnContext)
 
       response = v4().replace(/-/g, '')
     } else {

@@ -2,11 +2,11 @@ import { strict as assert } from 'assert'
 import { describe, it } from 'node:test'
 import { TurnContext } from '../../../src'
 import { Activity } from '@microsoft/agents-activity'
-import { BotAdapter } from '../../../src/botAdapter'
+import { BaseAdapter } from '../../../src/baseAdapter'
 import { MiddlewareSet } from '../../../src/middlewareSet'
 
 // @ts-expect-error
-class SimpleAdapter extends BotAdapter {}
+class SimpleAdapter extends BaseAdapter {}
 
 const testMessage: Activity = Activity.fromObject({ text: 'test', type: 'message' })
 

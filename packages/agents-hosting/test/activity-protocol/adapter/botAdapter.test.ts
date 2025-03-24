@@ -3,12 +3,12 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 import { createSandbox, SinonSandbox, fake, SinonSpy } from 'sinon'
 import { TurnContext } from '../../../src'
 import { Activity } from '@microsoft/agents-activity'
-import { BotAdapter } from '../../../src/botAdapter'
+import { BaseAdapter } from '../../../src/baseAdapter'
 
 const testMessage: Activity = Activity.fromObject({ text: 'test', type: 'message' })
 
 // @ts-expect-error
-class SimpleAdapter extends BotAdapter {
+class SimpleAdapter extends BaseAdapter {
   async processRequest (activity: Activity, next: any) {
     const context = new TurnContext(this, activity)
     return await this.runMiddleware(context, next)

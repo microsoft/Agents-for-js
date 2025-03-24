@@ -5,7 +5,7 @@ import { Attachment } from '@microsoft/agents-activity'
 import { UserTokenClient } from './userTokenClient'
 import { CloudAdapter } from '../cloudAdapter'
 import { CardFactory } from '../cards/cardFactory'
-import { BotStatePropertyAccessor } from '../state/botStatePropertyAccesor'
+import { AgentStatePropertyAccessor } from '../state/agentStatePropertyAccesor'
 import { UserState } from '../state/userState'
 import { TurnContext } from '../turnContext'
 import { MessageFactory } from '../messageFactory'
@@ -25,7 +25,7 @@ class FlowState {
 export class WebChatOAuthFlow {
   userTokenClient?: UserTokenClient
   state: FlowState | null
-  flowStateAccessor: BotStatePropertyAccessor<FlowState | null>
+  flowStateAccessor: AgentStatePropertyAccessor<FlowState | null>
 
   /**
    * Creates a new instance of WebChatOAuthFlow.

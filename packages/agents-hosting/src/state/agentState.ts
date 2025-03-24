@@ -6,24 +6,24 @@
 import { Storage, StorageKeyFactory, StoreItem } from '../storage/storage'
 import { TurnContext } from '../turnContext'
 import { createHash } from 'node:crypto'
-import { BotStatePropertyAccessor } from './botStatePropertyAccesor'
+import { AgentStatePropertyAccessor } from './agentStatePropertyAccesor'
 import { debug } from '../logger'
 
-const logger = debug('agents:bot-state')
+const logger = debug('agents:state')
 
-export interface CachedBotState {
+export interface CachedAgentState {
   state: { [id: string]: any }
   hash: string
 }
 
 /**
- * Manages the state of a bot.
+ * Manages the state of an Agent.
  */
-export class BotState {
+export class AgentState {
   private readonly stateKey = Symbol('state')
 
   /**
-    * Creates a new instance of BotState.
+    * Creates a new instance of AgentState.
     * @param storage The storage provider.
     * @param storageKey The storage key factory.
     */
@@ -34,8 +34,8 @@ export class BotState {
    * @param name The name of the property.
    * @returns A property accessor for the specified property.
    */
-  createProperty<T = any>(name: string): BotStatePropertyAccessor<T> {
-    const prop: BotStatePropertyAccessor<T> = new BotStatePropertyAccessor<T>(this, name)
+  createProperty<T = any>(name: string): AgentStatePropertyAccessor<T> {
+    const prop: AgentStatePropertyAccessor<T> = new AgentStatePropertyAccessor<T>(this, name)
     return prop
   }
 
@@ -46,7 +46,7 @@ export class BotState {
    * @returns A promise that resolves to the loaded state.
    */
   public async load (context: TurnContext, force = false): Promise<any> {
-    const cached: CachedBotState = context.turnState.get(this.stateKey)
+    const cached: CachedAgentState = context.turnState.get(this.stateKey)
 
     if (force || !cached || !cached.state) {
       const key = await this.storageKey(context)
@@ -70,7 +70,7 @@ export class BotState {
    * @returns A promise that resolves when the save operation is complete.
    */
   public async saveChanges (context: TurnContext, force = false): Promise<void> {
-    let cached: CachedBotState = context.turnState.get(this.stateKey)
+    let cached: CachedAgentState = context.turnState.get(this.stateKey)
     if (force || (cached && cached.hash !== this.calculateChangeHash(cached?.state))) {
       if (!cached) {
         cached = { state: {}, hash: '' }
@@ -118,7 +118,7 @@ export class BotState {
    * @returns The state, or undefined if the state is not found.
    */
   public get (context: TurnContext): any | undefined {
-    const cached: CachedBotState = context.turnState.get(this.stateKey)
+    const cached: CachedAgentState = context.turnState.get(this.stateKey)
 
     return typeof cached === 'object' && typeof cached.state === 'object' ? cached.state : undefined
   }
