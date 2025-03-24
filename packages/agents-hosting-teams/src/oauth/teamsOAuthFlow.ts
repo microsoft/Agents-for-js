@@ -8,7 +8,7 @@ import {
   debug,
   CloudAdapter,
   CardFactory,
-  BotStatePropertyAccessor,
+  AgentStatePropertyAccessor,
   UserState,
   TurnContext,
   MessageFactory,
@@ -31,7 +31,7 @@ class FlowState {
 export class TeamsOAuthFlow {
   userTokenClient?: TeamsUserTokenClient
   state: FlowState | null
-  flowStateAccessor: BotStatePropertyAccessor<FlowState | null>
+  flowStateAccessor: AgentStatePropertyAccessor<FlowState | null>
   tokenExchangeId: string | null = null
 
   /**

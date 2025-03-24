@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { ActivityHandler, ConversationState, TurnContext, UserState, BotStatePropertyAccessor } from '@microsoft/agents-hosting'
+import { ActivityHandler, ConversationState, TurnContext, UserState, AgentStatePropertyAccessor } from '@microsoft/agents-hosting'
 import { BlobsTranscriptStore } from '@microsoft/agents-hosting-storage-blob'
 
 interface ConversationData {
@@ -17,8 +17,8 @@ interface UserProfile {
 export class StateManagementBot extends ActivityHandler {
   conversationState: ConversationState
   userState: UserState
-  conversationDataAccessor: BotStatePropertyAccessor<ConversationData>
-  userProfileAccessor: BotStatePropertyAccessor<UserProfile>
+  conversationDataAccessor: AgentStatePropertyAccessor<ConversationData>
+  userProfileAccessor: AgentStatePropertyAccessor<UserProfile>
   transcriptStore: BlobsTranscriptStore
 
   constructor (conversationState: ConversationState, userState: UserState, transcriptStore: BlobsTranscriptStore) {

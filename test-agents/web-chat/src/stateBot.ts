@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { ActivityHandler, ConversationState, TurnContext, UserState, BotStatePropertyAccessor } from '@microsoft/agents-hosting'
+import { ActivityHandler, ConversationState, TurnContext, UserState, AgentStatePropertyAccessor } from '@microsoft/agents-hosting'
 
 interface ConversationData {
   promptedForUserName: boolean;
@@ -16,8 +16,8 @@ interface UserProfile {
 export class StateManagementBot extends ActivityHandler {
   conversationState: ConversationState
   userState: UserState
-  conversationDataAccessor: BotStatePropertyAccessor<ConversationData>
-  userProfileAccessor: BotStatePropertyAccessor<UserProfile>
+  conversationDataAccessor: AgentStatePropertyAccessor<ConversationData>
+  userProfileAccessor: AgentStatePropertyAccessor<UserProfile>
 
   constructor (conversationState: ConversationState, userState: UserState) {
     super()

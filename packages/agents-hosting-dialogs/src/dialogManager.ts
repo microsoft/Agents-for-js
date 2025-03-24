@@ -5,7 +5,7 @@
 
 import {
   TurnContext,
-  BotState,
+  AgentState,
   ConversationState,
   UserState,
   TurnContextStateCollection,
@@ -30,7 +30,7 @@ export interface DialogManagerResult {
 }
 
 export interface DialogManagerConfiguration {
-  conversationState: BotState;
+  conversationState: AgentState;
   rootDialog: Dialog;
   userState?: UserState;
   expireAfter?: number;

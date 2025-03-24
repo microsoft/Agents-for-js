@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { BotStatePropertyAccessor, TurnContext, UserState } from '@microsoft/agents-hosting'
+import { AgentStatePropertyAccessor, TurnContext, UserState } from '@microsoft/agents-hosting'
 
 import {
   ComponentDialog,
@@ -17,7 +17,7 @@ import { SlotDetails } from './slotDetails'
 import { SlotFillingDialog } from './slotFillingDialog'
 
 export class RootDialog extends ComponentDialog {
-  private userStateAccessor: BotStatePropertyAccessor<SlotDetails>
+  private userStateAccessor: AgentStatePropertyAccessor<SlotDetails>
 
   constructor (userState: UserState) {
     super('root')
@@ -65,7 +65,7 @@ export class RootDialog extends ComponentDialog {
     this.initialDialogId = 'root'
   }
 
-  async run (context: TurnContext, accessor: BotStatePropertyAccessor) {
+  async run (context: TurnContext, accessor: AgentStatePropertyAccessor) {
     const dialogSet = new DialogSet(accessor)
     dialogSet.add(this)
 

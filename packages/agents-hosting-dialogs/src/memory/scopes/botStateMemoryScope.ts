@@ -2,7 +2,7 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
-import { BotState } from '@microsoft/agents-hosting'
+import { AgentState } from '@microsoft/agents-hosting'
 import { MemoryScope } from './memoryScope'
 import { DialogContext } from '../../dialogContext'
 
@@ -28,7 +28,7 @@ export class BotStateMemoryScope extends MemoryScope {
      * @returns Memory for the scope.
      */
   getMemory (dialogContext: DialogContext): object {
-    const botState: BotState = dialogContext.context.turnState.get(this.stateKey)
+    const botState: AgentState = dialogContext.context.turnState.get(this.stateKey)
     if (botState) {
       return botState.get(dialogContext.context)
     }
@@ -59,7 +59,7 @@ export class BotStateMemoryScope extends MemoryScope {
      * @returns A Promise that represents the work queued to execute.
      */
   async load (dialogContext: DialogContext, force = false): Promise<void> {
-    const botState: BotState = dialogContext.context.turnState.get(this.stateKey)
+    const botState: AgentState = dialogContext.context.turnState.get(this.stateKey)
     if (botState) {
       await botState.load(dialogContext.context, force)
     }
@@ -74,7 +74,7 @@ export class BotStateMemoryScope extends MemoryScope {
      * @returns A Promise that represents the work queued to execute.
      */
   async saveChanges (dialogContext: DialogContext, force = false): Promise<void> {
-    const botState: BotState = dialogContext.context.turnState.get(this.stateKey)
+    const botState: AgentState = dialogContext.context.turnState.get(this.stateKey)
     if (botState) {
       await botState.saveChanges(dialogContext.context, force)
     }

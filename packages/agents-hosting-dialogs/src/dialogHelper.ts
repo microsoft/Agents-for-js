@@ -6,7 +6,7 @@
 import {
   Activity,
   ActivityTypes,
-  BotStatePropertyAccessor,
+  AgentStatePropertyAccessor,
   TurnContext
 } from '@microsoft/agents-hosting'
 import { Dialog } from './dialog'
@@ -28,7 +28,7 @@ import { DialogTurnStatus } from './dialogTurnStatus'
 export async function runDialog (
   dialog: Dialog,
   context: TurnContext,
-  accessor: BotStatePropertyAccessor<DialogState>
+  accessor: AgentStatePropertyAccessor<DialogState>
 ): Promise<void> {
   if (!dialog) {
     throw new Error('runDialog(): missing dialog')

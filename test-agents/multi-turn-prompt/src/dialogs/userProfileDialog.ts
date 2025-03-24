@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { MessageFactory, Channels, BotStatePropertyAccessor, TurnContext, UserState, Attachment } from '@microsoft/agents-hosting'
+import { MessageFactory, Channels, AgentStatePropertyAccessor, TurnContext, UserState, Attachment } from '@microsoft/agents-hosting'
 import {
   AttachmentPrompt,
   ChoiceFactory,
@@ -27,7 +27,7 @@ const USER_PROFILE = 'USER_PROFILE'
 const WATERFALL_DIALOG = 'WATERFALL_DIALOG'
 
 export class UserProfileDialog extends ComponentDialog {
-  private userProfile: BotStatePropertyAccessor<UserProfile>
+  private userProfile: AgentStatePropertyAccessor<UserProfile>
 
   constructor (userState: UserState) {
     super('userProfileDialog')
@@ -59,7 +59,7 @@ export class UserProfileDialog extends ComponentDialog {
      * @param {*} turnContext
      * @param {*} accessor
      */
-  public async run (turnContext: TurnContext, accessor: BotStatePropertyAccessor) {
+  public async run (turnContext: TurnContext, accessor: AgentStatePropertyAccessor) {
     const dialogSet = new DialogSet(accessor)
     dialogSet.add(this)
 

@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 import {
-  BotStatePropertyAccessor,
+  AgentStatePropertyAccessor,
   TurnContext
 } from '@microsoft/agents-hosting'
 
@@ -33,7 +33,7 @@ export interface DialogDependencies {
  */
 export class DialogSet {
   private readonly dialogs: { [id: string]: Dialog } = {}
-  private readonly dialogState: BotStatePropertyAccessor<DialogState>
+  private readonly dialogState: AgentStatePropertyAccessor<DialogState>
   private _telemetryClient: BotTelemetryClient
   private _version: string
 
@@ -47,7 +47,7 @@ export class DialogSet {
      *
      * @param dialogState (Optional) state property used to persist the sets dialog stack.
      */
-  constructor (dialogState?: BotStatePropertyAccessor<DialogState>) {
+  constructor (dialogState?: AgentStatePropertyAccessor<DialogState>) {
     this.dialogState = dialogState
   }
 
