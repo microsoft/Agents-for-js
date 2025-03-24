@@ -6,7 +6,7 @@
 /**
  * Enum representing the type of bot.
  */
-export enum BotType {
+export enum AgentType {
   /**
    * Represents a published bot.
    */

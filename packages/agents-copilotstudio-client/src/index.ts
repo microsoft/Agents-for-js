@@ -1,4 +1,4 @@
-export * from './botType'
+export * from './agentType'
 export * from './connectionSettings'
 export * from './copilotStudioClient'
 export * from './directToEngineConnectionSettings'

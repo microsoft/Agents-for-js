@@ -17,10 +17,10 @@ export class ConnectionSettings {
   public cloud: string = ''
   /** The custom Power Platform cloud URL, if any. */
   public customPowerPlatformCloud?: string
-  /** The identifier of the bot. */
-  public botIdentifier?: string
-  /** The type of the Copilot bot. */
-  public copilotBotType?: string
+  /** The identifier of the agent. */
+  public agentIdentifier?: string
+  /** The type of the Copilot agent. */
+  public copilotAgentType?: string
 }
 
 /**
@@ -34,7 +34,7 @@ export const loadCopilotStudioConnectionSettingsFromEnv: () => ConnectionSetting
     environmentId: process.env.environmentId ?? '',
     cloud: process.env.cloud,
     customPowerPlatformCloud: process.env.customPowerPlatformCloud,
-    botIdentifier: process.env.botIdentifier,
-    copilotBotType: process.env.copilotBotType
+    agentIdentifier: process.env.agentIdentifier,
+    copilotAgentType: process.env.copilotAgentType
   } as ConnectionSettings
 }

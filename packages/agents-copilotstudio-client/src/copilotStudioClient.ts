@@ -52,7 +52,7 @@ export class CopilotStudioClient {
         results.push(result)
         return results
       }
-      this.logger('Bot is typing...')
+      this.logger('Agent is typing...')
       result += value
 
       return await processEvents(await reader.read())

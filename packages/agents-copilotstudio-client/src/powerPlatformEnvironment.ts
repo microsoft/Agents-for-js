@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { BotType } from './botType'
+import { AgentType } from './agentType'
 import { ConnectionSettings } from './connectionSettings'
 import { PowerPlatformCloud } from './powerPlatformCloud'
 
@@ -39,8 +39,8 @@ export function getCopilotStudioConnectionUrl (
     throw new Error('EnvironmentId must be provided')
   }
 
-  if (settings.botIdentifier === undefined || settings.botIdentifier.trim() === '') {
-    throw new Error('BotIdentifier must be provided')
+  if (settings.agentIdentifier === undefined || settings.agentIdentifier.trim() === '') {
+    throw new Error('AgentIdentifier must be provided')
   }
 
   if (cloudSetting !== PowerPlatformCloud.Unknown) {
@@ -57,22 +57,22 @@ export function getCopilotStudioConnectionUrl (
     }
   }
 
-  let botType: BotType
+  let agentType: AgentType
 
-  if (settings.copilotBotType && settings.copilotBotType.trim() !== '') {
-    if (!Object.values(BotType).includes(settings.copilotBotType as unknown as BotType)) {
-      throw new Error('Invalid BotType enum key')
+  if (settings.copilotAgentType && settings.copilotAgentType.trim() !== '') {
+    if (!Object.values(AgentType).includes(settings.copilotAgentType as unknown as AgentType)) {
+      throw new Error('Invalid AgentType enum key')
     } else {
-      botType = BotType[settings.copilotBotType as keyof typeof BotType]
+      agentType = AgentType[settings.copilotAgentType as keyof typeof AgentType]
     }
   } else {
-    botType = BotType.Published
+    agentType = AgentType.Published
   }
 
   settings.customPowerPlatformCloud = isNotEmptyCustomPowerPlatformCloud ? settings.customPowerPlatformCloud : 'api.unknown.powerplatform.com'
 
   const host = getEnvironmentEndpoint(cloudValue, settings.environmentId, settings.customPowerPlatformCloud)
-  return createUri(settings.botIdentifier, host, botType, conversationId)
+  return createUri(settings.agentIdentifier, host, agentType, conversationId)
 }
 
 function isValidUri (uri: string): boolean {
@@ -85,20 +85,20 @@ function isValidUri (uri: string): boolean {
 }
 
 function createUri (
-  botIdentifier: string,
+  agentIdentifier: string,
   host: string,
-  botType: BotType,
+  agentType: AgentType,
   conversationId?: string
 ): string {
-  const botPathName = botType === BotType.Published ? 'dataverse-backed' : 'prebuilt'
+  const agentPathName = agentType === AgentType.Published ? 'dataverse-backed' : 'prebuilt'
 
   const url = new URL(`https://${host}`)
   url.searchParams.set('api-version', ApiVersion)
 
   if (!conversationId) {
-    url.pathname = `/copilotstudio/${botPathName}/authenticated/bots/${botIdentifier}/conversations`
+    url.pathname = `/copilotstudio/${agentPathName}/authenticated/bots/${agentIdentifier}/conversations`
   } else {
-    url.pathname = `/copilotstudio/${botPathName}/authenticated/bots/${botIdentifier}/conversations/${conversationId}`
+    url.pathname = `/copilotstudio/${agentPathName}/authenticated/bots/${agentIdentifier}/conversations/${conversationId}`
   }
 
   return url.toString()

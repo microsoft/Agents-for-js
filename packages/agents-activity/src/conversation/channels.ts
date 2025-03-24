@@ -4,7 +4,7 @@
  */
 
 /**
- * Enum representing the different channels a bot can communicate through.
+ * Enum representing the different channels an agent can communicate through.
  */
 export enum Channels {
   Alexa = 'alexa',
