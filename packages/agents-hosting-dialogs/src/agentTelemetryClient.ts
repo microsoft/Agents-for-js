@@ -15,11 +15,11 @@ export enum Severity {
 }
 
 /**
- * Key used to store and fetch a BotTelemetryClient from TurnContextStateCollection
+ * Key used to store and fetch a AgentTelemetryClientKey from TurnContextStateCollection
  */
-export const AgentTelemetryClientKey = 'BotTelemetryClient'
+export const AgentTelemetryClientKey = 'AgentTelemetryClient'
 
-export interface BotTelemetryClient {
+export interface AgentTelemetryClient {
   trackDependency(telemetry: TelemetryDependency);
   trackEvent(telemetry: TelemetryEvent);
   trackException(telemetry: TelemetryException);
@@ -27,7 +27,7 @@ export interface BotTelemetryClient {
   flush();
 }
 
-export interface BotPageViewTelemetryClient {
+export interface AgentPageViewTelemetryClient {
   trackPageView(telemetry: TelemetryPageView);
 }
 
@@ -68,9 +68,9 @@ export interface TelemetryPageView {
 }
 
 /**
- * A null bot telemetry client that implements BotTelemetryClient.
+ * A null bot telemetry client that implements AgentTelemetryClient.
  */
-export class NullTelemetryClient implements BotTelemetryClient, BotPageViewTelemetryClient {
+export class NullTelemetryClient implements AgentTelemetryClient, AgentPageViewTelemetryClient {
   /**
      * Logs an Application Insights page view.
      *
@@ -125,16 +125,16 @@ export class NullTelemetryClient implements BotTelemetryClient, BotPageViewTelem
 }
 
 /**
- * Logs a DialogView using the BotTelemetryClient.trackPageView method on the BotTelemetryClient if BotPageViewTelemetryClient has been implemented.
+ * Logs a DialogView using the AgentTelemetryClient.trackPageView method on the AgentTelemetryClient if AgentPageViewTelemetryClient has been implemented.
  * Alternatively logs the information out via TrackTrace.
  *
- * @param telemetryClient TelemetryClient that implements BotTelemetryClient.
+ * @param telemetryClient TelemetryClient that implements AgentTelemetryClient.
  * @param dialogName Name of the dialog to log the entry / start for.
  * @param properties Named string values you can use to search and classify events.
  * @param metrics Measurements associated with this event.
  */
 export function telemetryTrackDialogView (
-  telemetryClient: BotTelemetryClient,
+  telemetryClient: AgentTelemetryClient,
   dialogName: string,
   properties?: { [key: string]: any },
   metrics?: { [key: string]: number }
@@ -142,14 +142,14 @@ export function telemetryTrackDialogView (
   if (!clientSupportsTrackDialogView(telemetryClient)) {
     throw new TypeError('"telemetryClient" parameter does not have methods trackPageView() or trackTrace()')
   }
-  if (instanceOfBotPageViewTelemetryClient(telemetryClient)) {
+  if (instanceOfAgentPageViewTelemetryClient(telemetryClient)) {
     telemetryClient.trackPageView({ name: dialogName, properties, metrics })
   } else {
     telemetryClient.trackTrace({ message: 'Dialog View: ' + dialogName, severityLevel: Severity.Information })
   }
 }
 
-function instanceOfBotPageViewTelemetryClient (object: any): object is BotPageViewTelemetryClient {
+function instanceOfAgentPageViewTelemetryClient (object: any): object is AgentPageViewTelemetryClient {
   return 'trackPageView' in object
 }
 

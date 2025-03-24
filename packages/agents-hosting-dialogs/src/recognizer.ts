@@ -8,11 +8,11 @@ import { DialogContext } from './dialogContext'
 import { DialogTurnStateConstants } from './dialogTurnStateConstants'
 import omit from 'lodash/omit'
 import { RecognizerResult, getTopScoringIntent } from './recognizerResult'
-import { BotTelemetryClient, AgentTelemetryClientKey, NullTelemetryClient } from './agentTelemetryClient'
+import { AgentTelemetryClient, AgentTelemetryClientKey, NullTelemetryClient } from './agentTelemetryClient'
 
 export interface RecognizerConfiguration {
   id?: string;
-  telemetryClient?: BotTelemetryClient;
+  telemetryClient?: AgentTelemetryClient;
 }
 
 /**
@@ -20,7 +20,7 @@ export interface RecognizerConfiguration {
  */
 export class Recognizer extends Configurable implements RecognizerConfiguration {
   id?: string
-  telemetryClient: BotTelemetryClient = new NullTelemetryClient()
+  telemetryClient: AgentTelemetryClient = new NullTelemetryClient()
 
   /**
      * To recognize intents and entities in a users utterance.
@@ -146,8 +146,8 @@ export class Recognizer extends Configurable implements RecognizerConfiguration 
   ): void {
     if (this.telemetryClient instanceof NullTelemetryClient) {
       const turnStateTelemetryClient =
-                dialogContext.context.turnState.get<BotTelemetryClient>(DialogTurnStateConstants.telemetryClient) ??
-                dialogContext.context.turnState.get<BotTelemetryClient>(AgentTelemetryClientKey)
+                dialogContext.context.turnState.get<AgentTelemetryClient>(DialogTurnStateConstants.telemetryClient) ??
+                dialogContext.context.turnState.get<AgentTelemetryClient>(AgentTelemetryClientKey)
       this.telemetryClient = turnStateTelemetryClient ?? this.telemetryClient
     }
 

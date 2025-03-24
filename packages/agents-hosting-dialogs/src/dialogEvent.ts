@@ -1,4 +1,4 @@
-import { BotTelemetryClient } from './agentTelemetryClient'
+import { AgentTelemetryClient } from './agentTelemetryClient'
 
 export interface DialogEvent {
   /**
@@ -26,5 +26,5 @@ export interface DialogConfiguration {
   /**
        * Telemetry client the dialog should use.
        */
-  telemetryClient?: BotTelemetryClient;
+  telemetryClient?: AgentTelemetryClient;
 }

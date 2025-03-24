@@ -14,7 +14,7 @@ import { DialogContext, DialogState } from './dialogContext'
 import { DialogEvents } from './dialogEvents'
 import { DialogSet } from './dialogSet'
 import { DialogStateManager, DialogStateManagerConfiguration } from './memory'
-import { BotTelemetryClient, AgentTelemetryClientKey } from './agentTelemetryClient'
+import { AgentTelemetryClient, AgentTelemetryClientKey } from './agentTelemetryClient'
 import { DialogTurnResult } from './dialogTurnResult'
 import { DialogTurnStatus } from './dialogTurnStatus'
 
@@ -23,7 +23,7 @@ import { DialogTurnStatus } from './dialogTurnStatus'
  *
  * @param dialog The Dialog to run.
  * @param context TurnContext object for the current turn of conversation with the user.
- * @param accessor Defined methods for accessing the state property created in a BotState object.
+ * @param accessor Defined methods for accessing the state property created in a State object.
  */
 export async function runDialog (
   dialog: Dialog,
@@ -48,7 +48,7 @@ export async function runDialog (
 
   const dialogSet = new DialogSet(accessor)
   dialogSet.telemetryClient =
-        context.turnState.get<BotTelemetryClient>(AgentTelemetryClientKey) ?? dialog.telemetryClient
+        context.turnState.get<AgentTelemetryClient>(AgentTelemetryClientKey) ?? dialog.telemetryClient
 
   dialogSet.add(dialog)
 

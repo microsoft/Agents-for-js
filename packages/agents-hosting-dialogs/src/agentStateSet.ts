@@ -12,29 +12,29 @@ export class AgentStateSet {
   /**
      * Array of the sets `BotState` plugins.
      */
-  readonly botStates: AgentState[] = []
+  readonly agentStates: AgentState[] = []
 
   /**
      * Creates a new BotStateSet instance.
      *
-     * @param botStates One or more BotState plugins to register.
+     * @param agentStates One or more BotState plugins to register.
      */
-  constructor (...botStates: AgentState[]) {
-    AgentStateSet.prototype.add.apply(this, botStates)
+  constructor (...agentStates: AgentState[]) {
+    AgentStateSet.prototype.add.apply(this, agentStates)
   }
 
   /**
      * Registers one or more `BotState` plugins with the set.
      *
-     * @param botStates One or more BotState plugins to register.
-     * @returns The updated BotStateSet.
+     * @param agentStates One or more AgentState plugins to register.
+     * @returns The updated AgentStateSet.
      */
-  add (...botStates: AgentState[]): this {
-    botStates.forEach((botstate: AgentState) => {
-      if (typeof botstate.load === 'function' && typeof botstate.saveChanges === 'function') {
-        this.botStates.push(botstate)
+  add (...agentStates: AgentState[]): this {
+    agentStates.forEach((agentstate: AgentState) => {
+      if (typeof agentstate.load === 'function' && typeof agentstate.saveChanges === 'function') {
+        this.agentStates.push(agentstate)
       } else {
-        throw new Error("BotStateSet: a object was added that isn't an instance of BotState.")
+        throw new Error("AgentStateSet: a object was added that isn't an instance of AgentStateSet.")
       }
     })
 
@@ -51,7 +51,7 @@ export class AgentStateSet {
      * @param force (Optional) If `true` the cache will be bypassed and the state will always be read in directly from storage. Defaults to `false`.
      */
   async loadAll (context: TurnContext, force = false): Promise<void> {
-    const promises: Promise<any>[] = this.botStates.map((botstate: AgentState) => botstate.load(context, force))
+    const promises: Promise<any>[] = this.agentStates.map((agentstate: AgentState) => agentstate.load(context, force))
 
     await Promise.all(promises)
   }
@@ -66,8 +66,8 @@ export class AgentStateSet {
      * @param force (Optional) if `true` the state will always be written out regardless of its change state. Defaults to `false`.
      */
   async saveAllChanges (context: TurnContext, force = false): Promise<void> {
-    const promises: Promise<void>[] = this.botStates.map((botstate: AgentState) =>
-      botstate.saveChanges(context, force)
+    const promises: Promise<void>[] = this.agentStates.map((agentstate: AgentState) =>
+      agentstate.saveChanges(context, force)
     )
 
     await Promise.all(promises)

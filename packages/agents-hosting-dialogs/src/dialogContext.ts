@@ -77,7 +77,7 @@ export class DialogContext {
      * Creates an new instance of the DialogContext class.
      *
      * @param dialogs The DialogSet for which to create the dialog context.
-     * @param contextOrDialogContext The TurnContext object for the current turn of the bot.
+     * @param contextOrDialogContext The TurnContext object for the current turn.
      * @param state The state object to use to read and write DialogState to storage.
      * @remarks
      * Passing in a DialogContext instance will clone the dialog context.
@@ -99,7 +99,7 @@ export class DialogContext {
      * Creates an new instance of the DialogContext class.
      *
      * @param dialogs The DialogSet for which to create the dialog context.
-     * @param contextOrDialogContext The TurnContext or DialogContext for the current turn of the bot.
+     * @param contextOrDialogContext The TurnContext or DialogContext for the current turn.
      * @param state The state object to use to read and write DialogState to storage.
      * @remarks Passing in a DialogContext instance will clone the dialog context.
      */

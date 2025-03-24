@@ -6,7 +6,7 @@
 import { ComponentRegistration } from './componentRegistration'
 import { ServiceCollection } from './serviceCollection'
 import { noOpConfiguration } from './configuration'
-import { DialogsBotComponent } from './dialogsBotComponent'
+import { DialogsAgentComponent } from './dialogsAgentComponent'
 import { ComponentMemoryScopes, ComponentPathResolvers, MemoryScope, PathResolver } from './memory'
 
 /**
@@ -26,7 +26,7 @@ export class DialogsComponentRegistration
   constructor () {
     super()
 
-    new DialogsBotComponent().configureServices(this.services, noOpConfiguration)
+    new DialogsAgentComponent().configureServices(this.services, noOpConfiguration)
   }
 
   /**

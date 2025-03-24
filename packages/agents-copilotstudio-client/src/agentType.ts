@@ -4,15 +4,15 @@
  */
 
 /**
- * Enum representing the type of bot.
+ * Enum representing the type of agent.
  */
 export enum AgentType {
   /**
-   * Represents a published bot.
+   * Represents a published agent.
    */
   Published = 0,
   /**
-   * Represents a prebuilt bot.
+   * Represents a prebuilt agent.
    */
   Prebuilt = 1
 }

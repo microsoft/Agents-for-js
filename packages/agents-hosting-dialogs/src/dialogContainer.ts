@@ -6,7 +6,7 @@ import { Dialog } from './dialog'
 import { DialogSet } from './dialogSet'
 import { DialogContext } from './dialogContext'
 import { DialogEvents } from './dialogEvents'
-import { BotTelemetryClient, NullTelemetryClient, Severity } from './agentTelemetryClient'
+import { AgentTelemetryClient, NullTelemetryClient, Severity } from './agentTelemetryClient'
 import { DialogEvent } from './dialogEvent'
 
 /**
@@ -86,8 +86,8 @@ export abstract class DialogContainer<O extends object = {}> extends Dialog<O> {
 
     // Check for change of previously stored hash
     if (current && current !== dialogContext.activeDialog.version) {
-      // Give bot an opportunity to handle the change.
-      // - If bot handles it the changeHash will have been updated as to avoid triggering the
+      // Give agent an opportunity to handle the change.
+      // - If agent handles it the changeHash will have been updated as to avoid triggering the
       //   change again.
       await dialogContext.emitEvent(DialogEvents.versionChanged, this.id, true, false)
     }
@@ -97,7 +97,7 @@ export abstract class DialogContainer<O extends object = {}> extends Dialog<O> {
      * Set the telemetry client, and also apply it to all child dialogs.
      * Future dialogs added to the component will also inherit this client.
      */
-  set telemetryClient (client: BotTelemetryClient) {
+  set telemetryClient (client: AgentTelemetryClient) {
     this._telemetryClient = client ?? new NullTelemetryClient()
     if (this.dialogs.telemetryClient !== this._telemetryClient) {
       this.dialogs.telemetryClient = this._telemetryClient
@@ -109,7 +109,7 @@ export abstract class DialogContainer<O extends object = {}> extends Dialog<O> {
      *
      * @returns The BotTelemetryClient to use for logging.
      */
-  get telemetryClient (): BotTelemetryClient {
+  get telemetryClient (): AgentTelemetryClient {
     return this._telemetryClient
   }
 }

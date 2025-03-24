@@ -5,7 +5,7 @@
 import { TurnContext } from '@microsoft/agents-hosting'
 import { DialogContext } from './dialogContext'
 import { Configurable } from './configurable'
-import { BotTelemetryClient, NullTelemetryClient } from './agentTelemetryClient'
+import { AgentTelemetryClient, NullTelemetryClient } from './agentTelemetryClient'
 import { DialogTurnResult } from './dialogTurnResult'
 import { DialogEvent } from './dialogEvent'
 import { DialogReason } from './dialogReason'
@@ -31,7 +31,7 @@ export abstract class Dialog<O extends object = {}> extends Configurable {
      * The telemetry client for logging events.
      * Default this to the NullTelemetryClient, which does nothing.
      */
-  protected _telemetryClient: BotTelemetryClient = new NullTelemetryClient()
+  protected _telemetryClient: AgentTelemetryClient = new NullTelemetryClient()
 
   /**
      * Creates a new instance of the Dialog class.
@@ -67,21 +67,21 @@ export abstract class Dialog<O extends object = {}> extends Configurable {
   /**
      * Gets the telemetry client for this dialog.
      *
-     * @returns The BotTelemetryClient to use for logging.
+     * @returns The AgentTelemetryClient to use for logging.
      */
-  get telemetryClient (): BotTelemetryClient {
+  get telemetryClient (): AgentTelemetryClient {
     return this._telemetryClient
   }
 
   /**
      * Sets the telemetry client for this dialog.
      */
-  set telemetryClient (client: BotTelemetryClient) {
+  set telemetryClient (client: AgentTelemetryClient) {
     this._telemetryClient = client || new NullTelemetryClient()
   }
 
   /**
-     * An encoded string used to aid in the detection of bot changes on re-deployment.
+     * An encoded string used to aid in the detection of agent changes on re-deployment.
      *
      * @remarks
      * This defaults to returning the dialogs [id](#id) but can be overridden to provide more

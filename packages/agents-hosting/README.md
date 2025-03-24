@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `@microsoft/agents-hosting` package provides the necessary tools and components to host and manage Microsoft Agents as Bots. This package includes a compatible API to migrate a bot using `botbuilder` from the BotFramework SDK.
+The `@microsoft/agents-hosting` package provides the necessary tools and components to create and host Microsoft Agents. This package includes a compatible API to migrate a bot using `botbuilder` from the BotFramework SDK.
 
 ## Installation
 

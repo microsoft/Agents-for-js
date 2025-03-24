@@ -129,7 +129,7 @@ export class DialogManager extends Configurable {
       context.turnState.set(key, value)
     })
 
-    const botStateSet = new AgentStateSet()
+    const agentStateSet = new AgentStateSet()
 
     if (!this.conversationState) {
       this.conversationState = context.turnState.get(CONVERSATION_STATE)
@@ -140,7 +140,7 @@ export class DialogManager extends Configurable {
     if (!this.conversationState) {
       throw new Error("DialogManager.onTurn: the bot's 'conversationState' has not been configured.")
     }
-    botStateSet.add(this.conversationState)
+    agentStateSet.add(this.conversationState)
 
     if (!this.userState) {
       this.userState = context.turnState.get(USER_STATE)
@@ -149,7 +149,7 @@ export class DialogManager extends Configurable {
     }
 
     if (this.userState) {
-      botStateSet.add(this.userState)
+      agentStateSet.add(this.userState)
     }
 
     // Get last access
@@ -177,7 +177,7 @@ export class DialogManager extends Configurable {
     const turnResult = await internalRun(context, this._rootDialogId, dc, this.stateConfiguration)
 
     // Save BotState changes
-    await botStateSet.saveAllChanges(dc.context, false)
+    await agentStateSet.saveAllChanges(dc.context, false)
 
     return { turnResult }
   }
