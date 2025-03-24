@@ -14,10 +14,10 @@ import { ResourceResponse } from './connector-client/resourceResponse'
 import { AttachmentData } from './connector-client/attachmentData'
 import { AttachmentInfo } from './connector-client/attachmentInfo'
 
-const logger = debug('agents:bot-adapter')
+const logger = debug('agents:base-adapter')
 
 /**
- * Base class for all bot adapters, providing middleware and error handling capabilities.
+ * Base class for all adapters, providing middleware and error handling capabilities.
  */
 export abstract class BaseAdapter {
   protected middleware: MiddlewareSet = new MiddlewareSet()
@@ -34,11 +34,11 @@ export abstract class BaseAdapter {
     )
 
     // Send a message to the user
-    await context.sendActivity('The bot encountered an error or bug.')
-    await context.sendActivity('To continue to run this bot, please fix the bot source code.')
+    await context.sendActivity('The agent encountered an error or bug.')
+    await context.sendActivity('To continue to run this agent, please fix the source code.')
   }
 
-  readonly BotIdentityKey = Symbol('BotIdentity')
+  readonly AgentIdentityKey = Symbol('AgentIdentity')
   readonly ConnectorClientKey = Symbol('ConnectorClient')
   readonly OAuthScopeKey = Symbol('OAuthScope')
 
@@ -47,7 +47,7 @@ export abstract class BaseAdapter {
 
   /**
    * Sends a set of activities to the conversation.
-   * @param context - The TurnContext for the current turn of the bot.
+   * @param context - The TurnContext for the current turn.
    * @param activities - The activities to send.
    * @returns A promise representing the array of ResourceResponses for the sent activities.
    */
@@ -55,7 +55,7 @@ export abstract class BaseAdapter {
 
   /**
    * Updates an existing activity.
-   * @param context - The TurnContext for the current turn of the bot.
+   * @param context - The TurnContext for the current turn.
    * @param activity - The activity to update.
    * @returns A promise representing the ResourceResponse for the updated activity.
    */
@@ -63,7 +63,7 @@ export abstract class BaseAdapter {
 
   /**
    * Deletes an existing activity.
-   * @param context - The TurnContext for the current turn of the bot.
+   * @param context - The TurnContext for the current turn.
    * @param reference - The conversation reference of the activity to delete.
    * @returns A promise representing the completion of the delete operation.
    */
@@ -141,7 +141,7 @@ export abstract class BaseAdapter {
 
   /**
    * Runs the middleware pipeline in sequence.
-   * @param context - The TurnContext for the current turn of the bot.
+   * @param context - The TurnContext for the current turn.
    * @param next - The next function to call in the pipeline.
    * @returns A promise representing the completion of the middleware pipeline.
    */

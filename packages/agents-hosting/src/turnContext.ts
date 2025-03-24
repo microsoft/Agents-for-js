@@ -23,9 +23,9 @@ export type UpdateActivityHandler = (context: TurnContext, activity: Activity, n
 export type DeleteActivityHandler = (context: TurnContext, reference: ConversationReference, next: () => Promise<void>) => Promise<void>
 
 /**
- * Key for the bot callback handler.
+ * Key for the agent callback handler.
  */
-export const BotCallbackHandlerKey = 'botCallbackHandler'
+export const AgentCallbackHandlerKey = 'agentCallbackHandler'
 
 /**
  * Interface for TurnContext.
@@ -33,7 +33,7 @@ export const BotCallbackHandlerKey = 'botCallbackHandler'
 export interface TurnContext {}
 
 /**
- * Represents the context object for a turn of a bot.
+ * Represents the context object for a turn of an Agent.
  */
 export class TurnContext {
   private readonly _adapter?: BaseAdapter

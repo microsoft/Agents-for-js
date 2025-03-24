@@ -17,102 +17,102 @@ import { tokenResponseEventName } from './tokenResponseEventName'
 /** Symbol key for invoke response */
 export const INVOKE_RESPONSE_KEY = Symbol('invokeResponse')
 
-/** Type definition for bot handler function */
-export type BotHandler = (context: TurnContext, next: () => Promise<void>) => Promise<any>
+/** Type definition for agent handler function */
+export type AgentHandler = (context: TurnContext, next: () => Promise<void>) => Promise<any>
 
 const logger = debug('agents:activity-handler')
 
 /** * Handles various activity types and dispatches them to the appropriate handlers. */
 export class ActivityHandler {
-  protected readonly handlers: { [type: string]: BotHandler[] } = {}
+  protected readonly handlers: { [type: string]: AgentHandler[] } = {}
 
   /** * Registers a handler for the Turn activity type. */
-  onTurn (handler: BotHandler): this {
+  onTurn (handler: AgentHandler): this {
     return this.on('Turn', handler)
   }
 
   /** * Registers a handler for the MembersAdded activity type. */
-  onMembersAdded (handler: BotHandler): this {
+  onMembersAdded (handler: AgentHandler): this {
     return this.on('MembersAdded', handler)
   }
 
   /** * Registers a handler for the MembersRemoved activity type. */
-  onMembersRemoved (handler: BotHandler): this {
+  onMembersRemoved (handler: AgentHandler): this {
     return this.on('MembersRemoved', handler)
   }
 
   /** * Registers a handler for the Message activity type. */
-  onMessage (handler: BotHandler): this {
+  onMessage (handler: AgentHandler): this {
     return this.on('Message', handler)
   }
 
   /** * Registers a handler for the MessageUpdate activity type. */
-  onMessageUpdate (handler: BotHandler): this {
+  onMessageUpdate (handler: AgentHandler): this {
     return this.on('MessageUpdate', handler)
   }
 
   /** * Registers a handler for the MessageDelete activity type. */
-  onMessageDelete (handler: BotHandler): this {
+  onMessageDelete (handler: AgentHandler): this {
     return this.on('MessageDelete', handler)
   }
 
   /** * Registers a handler for the ConversationUpdate activity type. */
-  onConversationUpdate (handler: BotHandler): this {
+  onConversationUpdate (handler: AgentHandler): this {
     return this.on('ConversationUpdate', handler)
   }
 
   /** * Registers a handler for the MessageReaction activity type. */
-  onMessageReaction (handler: BotHandler): this {
+  onMessageReaction (handler: AgentHandler): this {
     return this.on('MessageReaction', handler)
   }
 
   /** * Registers a handler for the ReactionsAdded activity type. */
-  onReactionsAdded (handler: BotHandler): this {
+  onReactionsAdded (handler: AgentHandler): this {
     return this.on('ReactionsAdded', handler)
   }
 
   /** * Registers a handler for the ReactionsRemoved activity type. */
-  onReactionsRemoved (handler: BotHandler): this {
+  onReactionsRemoved (handler: AgentHandler): this {
     return this.on('ReactionsRemoved', handler)
   }
 
   /** * Registers a handler for the Typing activity type. */
-  onTyping (handler: BotHandler): this {
+  onTyping (handler: AgentHandler): this {
     return this.on('Typing', handler)
   }
 
   /** * Registers a handler for the InstallationUpdate activity type. */
-  onInstallationUpdate (handler: BotHandler): this {
+  onInstallationUpdate (handler: AgentHandler): this {
     return this.on('InstallationUpdate', handler)
   }
 
   /** * Registers a handler for the InstallationUpdateAdd activity type. */
-  onInstallationUpdateAdd (handler: BotHandler): this {
+  onInstallationUpdateAdd (handler: AgentHandler): this {
     return this.on('InstallationUpdateAdd', handler)
   }
 
   /** * Registers a handler for the InstallationUpdateRemove activity type. */
-  onInstallationUpdateRemove (handler: BotHandler): this {
+  onInstallationUpdateRemove (handler: AgentHandler): this {
     return this.on('InstallationUpdateRemove', handler)
   }
 
   /** * Registers a handler for the EndOfConversation activity type. */
-  onEndOfConversation (handler: BotHandler): this {
+  onEndOfConversation (handler: AgentHandler): this {
     return this.on('EndOfConversation', handler)
   }
 
   /** * Registers a handler for the SignInInvoke activity type. */
-  onSignInInvoke (handler: BotHandler): this {
+  onSignInInvoke (handler: AgentHandler): this {
     return this.on('SignInInvoke', handler)
   }
 
   /** * Registers a handler for unrecognized activity types. */
-  onUnrecognizedActivityType (handler: BotHandler): this {
+  onUnrecognizedActivityType (handler: AgentHandler): this {
     return this.on('UnrecognizedActivityType', handler)
   }
 
   /** * Registers an activity event handler for the _dialog_ event, emitted as the last event for an incoming activity. */
-  onDialog (handler: BotHandler): this {
+  onDialog (handler: AgentHandler): this {
     return this.on('Default', handler)
   }
 
@@ -414,7 +414,7 @@ export class ActivityHandler {
   }
 
   /** * Registers a handler for a specific activity type. */
-  protected on (type: string, handler: BotHandler) {
+  protected on (type: string, handler: AgentHandler) {
     if (!this.handlers[type]) {
       this.handlers[type] = [handler]
     } else {

@@ -8,7 +8,7 @@ export class MessageFactory {
   /**
    * Creates a text message activity.
    * @param text The text of the message.
-   * @param speak (Optional) The text to be spoken by the bot.
+   * @param speak (Optional) The text to be spoken by the agent.
    * @param inputHint (Optional) The input hint for the message.
    * @returns The created text message activity.
    */
@@ -30,7 +30,7 @@ export class MessageFactory {
    * Creates a message activity with suggested actions.
    * @param actions The suggested actions.
    * @param text (Optional) The text of the message.
-   * @param speak (Optional) The text to be spoken by the bot.
+   * @param speak (Optional) The text to be spoken by the agent.
    * @param inputHint (Optional) The input hint for the message.
    * @returns The created message activity with suggested actions.
    */
@@ -71,7 +71,7 @@ export class MessageFactory {
    * Creates a message activity with a single attachment.
    * @param attachment The attachment to include in the message.
    * @param text (Optional) The text of the message.
-   * @param speak (Optional) The text to be spoken by the bot.
+   * @param speak (Optional) The text to be spoken by the agent.
    * @param inputHint (Optional) The input hint for the message.
    * @returns The created message activity with an attachment.
    */
@@ -88,7 +88,7 @@ export class MessageFactory {
    * Creates a message activity with a list of attachments.
    * @param attachments The list of attachments to include in the message.
    * @param text (Optional) The text of the message.
-   * @param speak (Optional) The text to be spoken by the bot.
+   * @param speak (Optional) The text to be spoken by the agent.
    * @param inputHint (Optional) The input hint for the message.
    * @returns The created message activity with a list of attachments.
    */
@@ -105,7 +105,7 @@ export class MessageFactory {
    * Creates a message activity with a carousel of attachments.
    * @param attachments The list of attachments to include in the carousel.
    * @param text (Optional) The text of the message.
-   * @param speak (Optional) The text to be spoken by the bot.
+   * @param speak (Optional) The text to be spoken by the agent.
    * @param inputHint (Optional) The input hint for the message.
    * @returns The created message activity with a carousel of attachments.
    */
@@ -124,7 +124,7 @@ export class MessageFactory {
    * @param contentType The content type of the attachment.
    * @param name (Optional) The name of the attachment.
    * @param text (Optional) The text of the message.
-   * @param speak (Optional) The text to be spoken by the bot.
+   * @param speak (Optional) The text to be spoken by the agent.
    * @param inputHint (Optional) The input hint for the message.
    * @returns The created message activity with content from a URL.
    */
@@ -149,7 +149,7 @@ export class MessageFactory {
  * @param attachmentLayout The layout for the attachments.
  * @param attachments The list of attachments to include in the message.
  * @param text (Optional) The text of the message.
- * @param speak (Optional) The text to be spoken by the bot.
+ * @param speak (Optional) The text to be spoken by the agent.
  * @param inputHint (Optional) The input hint for the message.
  * @returns The created message activity with attachments.
  */

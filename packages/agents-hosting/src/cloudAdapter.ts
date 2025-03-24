@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { BotHandler, INVOKE_RESPONSE_KEY } from './activityHandler'
+import { AgentHandler, INVOKE_RESPONSE_KEY } from './activityHandler'
 import { BaseAdapter } from './baseAdapter'
 import { TurnContext } from './turnContext'
 import { Response } from 'express'
@@ -25,7 +25,7 @@ import { AttachmentData } from './connector-client/attachmentData'
 const logger = debug('agents:cloud-adapter')
 
 /**
- * Adapter for handling cloud-based bot interactions.
+ * Adapter for handling agent interactions.
  */
 export class CloudAdapter extends BaseAdapter {
   public connectorClient!: ConnectorClient
@@ -71,18 +71,18 @@ export class CloudAdapter extends BaseAdapter {
    * @param logic - The logic to execute.
    * @returns The created TurnContext.
    */
-  createTurnContext (activity: Activity, logic: BotHandler): TurnContext {
+  createTurnContext (activity: Activity, logic: AgentHandler): TurnContext {
     return new TurnContext(this, activity)
   }
 
-  async createTurnContextWithScope (activity: Activity, logic: BotHandler, scope: string): Promise<TurnContext> {
+  async createTurnContextWithScope (activity: Activity, logic: AgentHandler, scope: string): Promise<TurnContext> {
     this.connectorClient = await ConnectorClient.createClientWithAuthAsync(activity.serviceUrl!, this.authConfig, this.authProvider, scope)
     return new TurnContext(this, activity)
   }
 
   /**
    * Sends multiple activities to the conversation.
-   * @param context - The TurnContext for the current turn of the bot.
+   * @param context - The TurnContext for the current turn.
    * @param activities - The activities to send.
    * @returns A promise representing the array of ResourceResponses for the sent activities.
    */
@@ -216,7 +216,7 @@ export class CloudAdapter extends BaseAdapter {
 
   /**
    * Updates an activity.
-   * @param context - The TurnContext for the current turn of the bot.
+   * @param context - The TurnContext for the current turn.
    * @param activity - The activity to update.
    * @returns A promise representing the ResourceResponse for the updated activity.
    */
@@ -244,7 +244,7 @@ export class CloudAdapter extends BaseAdapter {
 
   /**
    * Deletes an activity.
-   * @param context - The TurnContext for the current turn of the bot.
+   * @param context - The TurnContext for the current turn.
    * @param reference - The conversation reference of the activity to delete.
    * @returns A promise representing the completion of the delete operation.
    */
@@ -266,13 +266,13 @@ export class CloudAdapter extends BaseAdapter {
    * @param logic - The logic to execute.
    * @returns A promise representing the completion of the continue operation.
    */
-  async continueConversation (reference: ConversationReference, logic: (revocableContext: TurnContext) => Promise<void>, isBotResponse: Boolean = false): Promise<void> {
+  async continueConversation (reference: ConversationReference, logic: (revocableContext: TurnContext) => Promise<void>, isResponse: Boolean = false): Promise<void> {
     if (!reference || !reference.serviceUrl || (reference.conversation == null) || !reference.conversation.id) {
       throw new Error('Invalid conversation reference object')
     }
 
     let context
-    if (isBotResponse) {
+    if (isResponse) {
       context = await this.createTurnContextWithScope(Activity.getContinuationActivity(reference), logic, 'https://api.botframework.com')
     } else {
       context = this.createTurnContext(Activity.getContinuationActivity(reference), logic)
@@ -282,7 +282,7 @@ export class CloudAdapter extends BaseAdapter {
 
   /**
  * Processes the turn results and returns an InvokeResponse if applicable.
- * @param context - The TurnContext for the current turn of the bot.
+ * @param context - The TurnContext for the current turn.
  * @returns The InvokeResponse if applicable, otherwise undefined.
  */
   protected processTurnResults (context: TurnContext): InvokeResponse | undefined {
@@ -296,7 +296,7 @@ export class CloudAdapter extends BaseAdapter {
       }
     }
 
-    // Handle Invoke scenarios where the bot will return a specific body and return code.
+    // Handle Invoke scenarios where the agent will return a specific body and return code.
     if (context.activity.type === ActivityTypes.Invoke) {
       const activityInvokeResponse = context.turnState.get<Activity>(INVOKE_RESPONSE_KEY)
       if (!activityInvokeResponse) {
@@ -346,7 +346,7 @@ export class CloudAdapter extends BaseAdapter {
 
   /**
    * Creates a conversation.
-   * @param botAppId - The bot application ID.
+   * @param agentAppId - The agent application ID.
    * @param channelId - The channel ID.
    * @param serviceUrl - The service URL.
    * @param audience - The audience.
@@ -355,7 +355,7 @@ export class CloudAdapter extends BaseAdapter {
    * @returns A promise representing the completion of the create operation.
    */
   async createConversationAsync (
-    botAppId: string,
+    agentAppId: string,
     channelId: string,
     serviceUrl: string,
     audience: string,

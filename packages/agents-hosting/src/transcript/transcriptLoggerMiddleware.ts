@@ -8,7 +8,7 @@ import { debug } from '../logger'
 const appLogger = debug('agents:rest-client')
 
 /**
- * Middleware for logging bot conversations to a transcript logger.
+ * Middleware for logging agent conversations to a transcript logger.
  */
 export class TranscriptLoggerMiddleware implements Middleware {
   private logger: TranscriptLogger
@@ -27,7 +27,7 @@ export class TranscriptLoggerMiddleware implements Middleware {
   }
 
   /**
-   * Called each time the bot processes a turn.
+   * Called each time the agent processes a turn.
    * @param context The context object for the turn.
    * @param next The next middleware or handler to call.
    */
