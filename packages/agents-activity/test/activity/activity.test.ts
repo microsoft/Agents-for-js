@@ -588,7 +588,7 @@ describe('Activities from Emulator', () => {
         "membersAdded": [
           {
             "id": "28be1e20-a5d5-11ef-8fa6-db006ff0c234",
-            "name": "Bot"
+            "name": "Agent"
           },
           {
             "id": "ef4db06d-3b1a-4cea-aac8-7b460ce06196",
@@ -604,8 +604,8 @@ describe('Activities from Emulator', () => {
         "localTimestamp": "2024-11-18T10:36:31-08:00",
         "recipient": {
           "id": "28be1e20-a5d5-11ef-8fa6-db006ff0c234",
-          "name": "Bot",
-          "role": "bot"
+          "name": "Agent",
+          "role": "agent"
         },
         "timestamp": "2024-11-18T18:36:31.267Z",
         "from": {
@@ -643,7 +643,7 @@ describe('Activity getConversationReference', () => {
       conversation: {
         id: 'id'
       },
-      recipient: { id: 'bot1', name: 'Bot' },
+      recipient: { id: 'agent1', name: 'Agent' },
       channelId: 'channel123',
       serviceUrl: 'http://example.com'
     }
@@ -658,7 +658,7 @@ describe('Activity getConversationReference', () => {
       type: ActivityTypes.Message,
       channelId: 'channelId',
       serviceUrl: 'http://example.com',
-      recipient: { id: 'bot1', name: 'Bot' },
+      recipient: { id: 'agent1', name: 'Agent' },
       conversation: { id: 'conversation1' }
     }
     const activity: Activity = Activity.fromObject(obj)
@@ -671,7 +671,7 @@ describe('Activity getConversationReference', () => {
     const obj = {
       type: ActivityTypes.Message,
       serviceUrl: 'serviceUrl',
-      recipient: { id: 'bot1', name: 'Bot' },
+      recipient: { id: 'agent1', name: 'Agent' },
       channelId: 'channel123',
       conversation: { id: 'conversation1' }
     }
@@ -686,7 +686,7 @@ describe('Activity getConversationReference', () => {
       type: ActivityTypes.Message,
       id: 'activity123',
       from: { id: 'user1', name: 'User' },
-      recipient: { id: 'bot1', name: 'Bot' },
+      recipient: { id: 'agent1', name: 'Agent' },
       conversation: { id: 'conversation1' },
       channelId: 'channel123',
       locale: 'en-US',
@@ -698,7 +698,7 @@ describe('Activity getConversationReference', () => {
     const expected: ConversationReference = {
       activityId: 'activity123',
       user: { id: 'user1', name: 'User' },
-      bot: { id: 'bot1', name: 'Bot' },
+      bot: { id: 'agent1', name: 'Agent' },
       conversation: { id: 'conversation1' },
       channelId: 'channel123',
       locale: 'en-US',
@@ -720,7 +720,7 @@ describe('Activity applyConversationReference', () => {
     const reference: ConversationReference = {
       activityId: 'refActivityId',
       user: { id: 'user1', name: 'User' },
-      bot: { id: 'bot1', name: 'Bot' },
+      bot: { id: 'agent1', name: 'Agent' },
       conversation: { id: 'conversation1' },
       channelId: 'channel123',
       locale: 'en-US',
@@ -736,7 +736,7 @@ describe('Activity applyConversationReference', () => {
       channelId: 'channel123',
       serviceUrl: 'http://example.com',
       conversation: { id: 'conversation1' },
-      from: { id: 'bot1', name: 'Bot' },
+      from: { id: 'agent1', name: 'Agent' },
       recipient: { id: 'user1', name: 'User' },
       replyToId: 'refActivityId'
     })
@@ -752,7 +752,7 @@ describe('Activity applyConversationReference', () => {
     const reference: ConversationReference = {
       activityId: 'refActivityId',
       user: { id: 'user1', name: 'User' },
-      bot: { id: 'bot1', name: 'Bot' },
+      bot: { id: 'agent1', name: 'Agent' },
       conversation: { id: 'conversation1' },
       channelId: 'channel123',
       locale: 'en-US',
@@ -769,7 +769,7 @@ describe('Activity applyConversationReference', () => {
       serviceUrl: 'http://example.com',
       conversation: { id: 'conversation1' },
       from: { id: 'user1', name: 'User' },
-      recipient: { id: 'bot1', name: 'Bot' }
+      recipient: { id: 'agent1', name: 'Agent' }
     })
   })
 
@@ -840,15 +840,15 @@ describe('Activity applyConversationReference', () => {
 describe('Activity removeRecipientMention', () => {
   it('should remove the mention text when the recipient ID matches', () => {
     const mention: Mention = {
-      mentioned: { id: 'bot1', name: 'Bot' },
-      text: 'bot123',
+      mentioned: { id: 'agent1', name: 'Agent' },
+      text: 'agent123',
       type: 'mention'
     }
     const obj = {
       type: ActivityTypes.Message,
       entities: [mention],
-      recipient: { id: 'bot1', name: 'Bot' },
-      text: 'bot123 Hello, how can I help you?'
+      recipient: { id: 'agent1', name: 'Agent' },
+      text: 'agent123 Hello, how can I help you?'
     }
     const activity: Activity = Activity.fromObject(obj)
     activity.entities = [mention as unknown as Entity]
@@ -859,8 +859,8 @@ describe('Activity removeRecipientMention', () => {
 
   it('should return an empty string if recipient is null', () => {
     const mention: Mention = {
-      mentioned: { id: 'bot1', name: 'Bot' },
-      text: 'bot123',
+      mentioned: { id: 'agent1', name: 'Agent' },
+      text: 'agent123',
       type: 'mention'
     }
     const obj = {
@@ -869,7 +869,7 @@ describe('Activity removeRecipientMention', () => {
       recipient: {
         id: 'id'
       },
-      text: 'bot123 Hello, how can I help you?'
+      text: 'agent123 Hello, how can I help you?'
     }
     const activity: Activity = Activity.fromObject(obj)
     // @ts-expect-error
@@ -880,8 +880,8 @@ describe('Activity removeRecipientMention', () => {
 
   it('should return an empty string if recipient has no ID', () => {
     const mention: Mention = {
-      mentioned: { id: 'bot1', name: 'Bot' },
-      text: 'bot123',
+      mentioned: { id: 'agent1', name: 'Agent' },
+      text: 'agent123',
       type: 'mention'
     }
     const obj = {
@@ -890,7 +890,7 @@ describe('Activity removeRecipientMention', () => {
       recipient: {
         id: 'id'
       },
-      text: 'bot123 Hello, how can I help you?'
+      text: 'agent123 Hello, how can I help you?'
     }
     const activity: Activity = Activity.fromObject(obj)
     // @ts-expect-error
@@ -903,7 +903,7 @@ describe('Activity removeRecipientMention', () => {
     const obj = {
       type: ActivityTypes.Message,
       entities: [],
-      recipient: { id: 'bot1', name: 'Bot' },
+      recipient: { id: 'agent1', name: 'Agent' },
       text: 'Hello, how can I help you?'
     }
     const activity: Activity = Activity.fromObject(obj)
@@ -917,7 +917,7 @@ describe('Activity getReplyConversationReference', () => {
     const obj = {
       type: ActivityTypes.Message,
       from: { id: 'user1', name: 'User' },
-      recipient: { id: 'bot123', name: 'Bot' },
+      recipient: { id: 'agent123', name: 'Agent' },
       conversation: { id: 'conversation1' },
       channelId: 'testChannel',
       serviceUrl: 'http://test.service.url'
@@ -928,7 +928,7 @@ describe('Activity getReplyConversationReference', () => {
     assert.deepEqual(result, {
       activityId: 'reply123',
       user: { id: 'user1', name: 'User' },
-      bot: { id: 'bot123', name: 'Bot' },
+      bot: { id: 'agent123', name: 'Agent' },
       conversation: { id: 'conversation1' },
       channelId: 'testChannel',
       serviceUrl: 'http://test.service.url',

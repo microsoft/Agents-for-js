@@ -8,7 +8,7 @@ export class RootHandler extends ActivityHandler {
       const text = context.activity.text
 
       if (text?.startsWith('starts')) {
-        const botClient: AgentClient = new AgentClient('Bot1')
+        const botClient: AgentClient = new AgentClient('Agent1')
 
         const activityStarts = JSON.stringify(context.activity)
         console.log('activityStarts', activityStarts)

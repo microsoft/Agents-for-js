@@ -128,7 +128,7 @@ app.message('/msgAllMembers', async (context: TurnContext, state: ApplicationTur
 
 app.activity(ActivityTypes.Message, async (context: TurnContext, state: ApplicationTurnState) => {
   await context.sendActivities([
-    MessageFactory.text('Welcome to teams-js-bot1'),
+    MessageFactory.text('Welcome to teams-js-agent1'),
     MessageFactory.text(`options: 
       /getMember,
       /getMeetingInfo,

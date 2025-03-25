@@ -284,7 +284,7 @@ describe('TurnContext', { timeout: 5000 }, function () {
     const conversationReference: ConversationReference = {
       activityId: '1234',
       user: { id: 'user1', name: 'User' },
-      bot: { id: 'bot1', name: 'Bot' },
+      bot: { id: 'agent1', name: 'Agent' },
       conversation: { id: 'conversation1' },
       channelId: 'channel123',
       locale: 'en-US',
