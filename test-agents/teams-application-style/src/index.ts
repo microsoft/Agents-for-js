@@ -11,17 +11,17 @@ server.use(express.json())
 server.use(authorizeJWT(authConfig))
 
 async function loadModule () {
-  const moduleName = process.env.botName || 'teamsJsBot'
+  const moduleName = process.env.botName || 'TeamsJsAgent'
   let module
   switch (moduleName) {
-    case 'teamsJsBot':
+    case 'TeamsJsAgent':
       module = (await import('./teamsApp')).app
       return module
-    case 'teamsSsoBot':
+    case 'TeamsSsoAgent':
       module = (await import('./teamsSsoApp')).app
       return module
     default:
-      throw new Error(`Bot with name ${moduleName} is not recognized.`)
+      throw new Error(`Agent with name ${moduleName} is not recognized.`)
   }
 }
 

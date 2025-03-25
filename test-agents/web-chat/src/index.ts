@@ -17,13 +17,13 @@ const conversationReferences: { [key: string]: ConversationReference } = {}
 
 const createBot = (botName: string) => {
   switch (botName) {
-    case 'AdaptiveCardBot':
+    case 'AdaptiveCardAgent':
       return new AdaptiveCardHandler()
-    case 'CardFactoryBot':
+    case 'cardFactoryAgent':
       return new CardFactoryHandler()
-    case 'MultiFeatureBot':
+    case 'MultiFeatureAgent':
       return new MultiFeatureHandler(conversationReferences)
-    case 'WebChatSsoBot': {
+    case 'webChatSSOAgent': {
       const memoryStorage = new MemoryStorage()
       const userState = new UserState(memoryStorage)
       return new WebChatSsoHandler(userState)
