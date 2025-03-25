@@ -7,7 +7,7 @@ export class RootHandler extends ActivityHandler {
     this.onMessage(async (context, next) => {
       const text = context.activity.text
 
-      if (text?.startsWith('starts')) {
+      if (text?.startsWith('to-echo-agent')) {
         const botClient: AgentClient = new AgentClient('Agent1')
 
         const activityStarts = JSON.stringify(context.activity)
