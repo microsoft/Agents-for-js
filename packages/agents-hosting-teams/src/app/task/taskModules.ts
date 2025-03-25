@@ -4,9 +4,9 @@
  */
 
 import { Activity, ActivityTypes, Channels, INVOKE_RESPONSE_KEY, InvokeResponse, RouteSelector, TurnContext, TurnState } from '@microsoft/agents-hosting'
-import { ConfigResponse } from '../../bot-config/configResponse'
+import { ConfigResponse } from '../../agent-config/configResponse'
 import { TeamsApplication } from '../teamsApplication'
-import { BotConfigAuth } from '../../bot-config/botConfigAuth'
+import { AgentConfigAuth } from '../../agent-config/agentConfigAuth'
 import { TaskModuleResponse } from '../../task/taskModuleResponse'
 import { TaskModuleTaskInfo } from '../../task/taskModuleTaskInfo'
 import { TaskModuleInvokeNames } from './taskModuleInvokeNames'
@@ -136,7 +136,7 @@ export class TaskModules<TState extends TurnState> {
   }
 
   public configFetch<TData extends Record<string, any>>(
-    handler: (context: TurnContext, state: TState, data: TData) => Promise<BotConfigAuth | TaskModuleResponse>
+    handler: (context: TurnContext, state: TState, data: TData) => Promise<AgentConfigAuth | TaskModuleResponse>
   ): TeamsApplication<TState> {
     const selector = (context: TurnContext) => {
       const { CONFIG_FETCH_INVOKE_NAME } = TaskModuleInvokeNames
@@ -173,7 +173,7 @@ export class TaskModules<TState extends TurnState> {
   }
 
   public configSubmit<TData extends Record<string, any>>(
-    handler: (context: TurnContext, state: TState, data: TData) => Promise<BotConfigAuth | TaskModuleResponse>
+    handler: (context: TurnContext, state: TState, data: TData) => Promise<AgentConfigAuth | TaskModuleResponse>
   ): TeamsApplication<TState> {
     const selector = (context: TurnContext) => {
       const { CONFIG_SUBMIT_INVOKE_NAME } = TaskModuleInvokeNames

@@ -4,7 +4,7 @@
  */
 
 export * from './adaptive-cards'
-export * from './bot-config'
+export * from './agent-config'
 export * from './channel-data'
 export * from './connector-client'
 export * from './file'
