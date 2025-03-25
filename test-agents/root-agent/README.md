@@ -1,3 +1,3 @@
 # root-agent
 
-A bot to call other bots
+An agent to call other agents

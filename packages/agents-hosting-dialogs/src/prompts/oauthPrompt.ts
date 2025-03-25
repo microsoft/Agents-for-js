@@ -68,8 +68,8 @@ export interface OAuthPromptSettings {
  * be waiting on.
  *
  * > [!NOTE]
- * > You should avoid persisting the access token with your bots other state. The Bot Frameworks
- * > SSO service will securely store the token on your behalf. If you store it in your bots state
+ * > You should avoid persisting the access token with your agents other state. The Bot Frameworks
+ * > SSO service will securely store the token on your behalf. If you store it in your agents state
  * > it could expire or be revoked in between turns.
  * >
  * > When calling the prompt from within a waterfall step you should use the token within the step
@@ -77,7 +77,7 @@ export interface OAuthPromptSettings {
  *
  * #### Prompt Usage
  *
- * When used with your bots `DialogSet` you can simply add a new instance of the prompt as a named
+ * When used with your agents `DialogSet` you can simply add a new instance of the prompt as a named
  * dialog using `DialogSet.add()`. You can then start the prompt from a waterfall step using either
  * `DialogContext.beginDialog()` or `DialogContext.prompt()`. The user will be prompted to signin as
  * needed and their access token will be passed as an argument to the callers next waterfall step:
@@ -350,7 +350,7 @@ export class OAuthPrompt extends Dialog {
           this.getTokenExchangeInvokeResponse(
             StatusCodes.BAD_REQUEST,
             'The bot received an InvokeActivity with a TokenExchangeInvokeRequest containing a ConnectionName that does not match the ConnectionName' +
-                            'expected by the bots active OAuthPrompt. Ensure these names match when sending the InvokeActivityInvalid ConnectionName in the TokenExchangeInvokeRequest'
+                            'expected by the agent active OAuthPrompt. Ensure these names match when sending the InvokeActivityInvalid ConnectionName in the TokenExchangeInvokeRequest'
           )
         )
       } else {

@@ -1,5 +1,5 @@
-# teams-bot
+# teams-agent
 
-Bot to validate Teams specific features. 
+Agent to validate Teams specific features. 
 
-There are different bots in the same project: teamsJSBot, teamsMultiFeatureBot and teamsSSOBot. Configure which one to use with the botName variable in the .env file
+There are different agents in the same project: TeamsJsAgent, TeamsMultiFeatureAgent and TeamsSsoAgent. Configure which one to use with the botName variable in the .env file
