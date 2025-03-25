@@ -1,3 +1,10 @@
 # root-agent
 
-A bot to call other bots
+An agent to call other bots
+
+## Configuration
+
+To call another bot you need add the next configuration variables
+
+```env
+```
