@@ -6,7 +6,6 @@ import { TurnContext } from '@microsoft/agents-hosting'
 import { Dialog } from './dialog'
 import { DialogContext } from './dialogContext'
 import { DialogContainer } from './dialogContainer'
-import { telemetryTrackDialogView } from './agentTelemetryClient'
 import { DialogTurnResult } from './dialogTurnResult'
 import { DialogReason } from './dialogReason'
 import { DialogInstance } from './dialogInstance'
@@ -49,8 +48,6 @@ export class ComponentDialog<O extends object = {}> extends DialogContainer<O> {
      */
   async beginDialog (outerDialogContext: DialogContext, options?: O): Promise<DialogTurnResult> {
     await this.checkForVersionChange(outerDialogContext)
-
-    telemetryTrackDialogView(this.telemetryClient, this.id)
 
     // Start the inner dialog.
     const innerDC: DialogContext = this.createChildContext(outerDialogContext)

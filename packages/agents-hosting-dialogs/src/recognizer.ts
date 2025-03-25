@@ -5,14 +5,11 @@
 import { Activity } from '@microsoft/agents-hosting'
 import { Configurable } from './configurable'
 import { DialogContext } from './dialogContext'
-import { DialogTurnStateConstants } from './dialogTurnStateConstants'
 import omit from 'lodash/omit'
 import { RecognizerResult, getTopScoringIntent } from './recognizerResult'
-import { AgentTelemetryClient, AgentTelemetryClientKey, NullTelemetryClient } from './agentTelemetryClient'
 
 export interface RecognizerConfiguration {
   id?: string;
-  telemetryClient?: AgentTelemetryClient;
 }
 
 /**
@@ -20,8 +17,6 @@ export interface RecognizerConfiguration {
  */
 export class Recognizer extends Configurable implements RecognizerConfiguration {
   id?: string
-  telemetryClient: AgentTelemetryClient = new NullTelemetryClient()
-
   /**
      * To recognize intents and entities in a users utterance.
      *
@@ -128,33 +123,5 @@ export class Recognizer extends Configurable implements RecognizerConfiguration 
       }
     }
     return Object.keys(additionalProperties).length > 0 ? JSON.stringify(additionalProperties) : ''
-  }
-
-  /**
-     * Tracks an event with the event name provided using the TelemetryClient attaching the properties/metrics.
-     *
-     * @param {DialogContext} dialogContext Dialog context.
-     * @param {string} eventName The name of the event to track.
-     * @param {Record<string, string>} telemetryProperties The properties to be included as part of the event tracking.
-     * @param {Record<string, number>} telemetryMetrics The metrics to be included as part of the event tracking.
-     */
-  protected trackRecognizerResult (
-    dialogContext: DialogContext,
-    eventName: string,
-    telemetryProperties?: Record<string, string>,
-    telemetryMetrics?: Record<string, number>
-  ): void {
-    if (this.telemetryClient instanceof NullTelemetryClient) {
-      const turnStateTelemetryClient =
-                dialogContext.context.turnState.get<AgentTelemetryClient>(DialogTurnStateConstants.telemetryClient) ??
-                dialogContext.context.turnState.get<AgentTelemetryClient>(AgentTelemetryClientKey)
-      this.telemetryClient = turnStateTelemetryClient ?? this.telemetryClient
-    }
-
-    this.telemetryClient.trackEvent({
-      name: eventName,
-      properties: telemetryProperties,
-      metrics: telemetryMetrics,
-    })
   }
 }

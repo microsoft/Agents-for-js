@@ -10,7 +10,6 @@ import {
 import { Dialog } from './dialog'
 import { DialogContext, DialogState } from './dialogContext'
 import { StringUtils } from './stringUtils'
-import { AgentTelemetryClient, NullTelemetryClient } from './agentTelemetryClient'
 
 export interface DialogDependencies {
   /**
@@ -34,7 +33,6 @@ export interface DialogDependencies {
 export class DialogSet {
   private readonly dialogs: { [id: string]: Dialog } = {}
   private readonly dialogState: AgentStatePropertyAccessor<DialogState>
-  private _telemetryClient: AgentTelemetryClient
   private _version: string
 
   /**
@@ -116,11 +114,6 @@ export class DialogSet {
       }
     }
 
-    // If a telemetry client has already been set on this dialogSet, also set it on new dialogs as they are added.
-    if (this._telemetryClient) {
-      dialog.telemetryClient = this._telemetryClient
-    }
-
     // Save dialog reference
     this.dialogs[dialog.id] = dialog
 
@@ -171,23 +164,5 @@ export class DialogSet {
      */
   getDialogs (): Dialog[] {
     return Object.values(this.dialogs)
-  }
-
-  /**
-     * Set the telemetry client for this dialog set and apply it to all current dialogs.
-     *
-     * @returns The AgentTelemetryClient to use for logging.
-     */
-  get telemetryClient (): AgentTelemetryClient {
-    return this._telemetryClient
-  }
-
-  /**
-     * Set the telemetry client for this dialog set and apply it to all current dialogs.
-     * Future dialogs added to the set will also inherit this client.
-     */
-  set telemetryClient (client: AgentTelemetryClient) {
-    this._telemetryClient = client ?? new NullTelemetryClient()
-    Object.values(this.dialogs).forEach((dialog) => (dialog.telemetryClient = this._telemetryClient))
   }
 }

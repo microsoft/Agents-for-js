@@ -81,7 +81,6 @@ export class DialogManager extends Configurable {
     this.dialogs = new DialogSet()
     if (value) {
       this._rootDialogId = value.id
-      this.dialogs.telemetryClient = value.telemetryClient
       this.dialogs.add(value)
       this.registerContainerDialogs(this.rootDialog, false)
     } else {

@@ -6,7 +6,6 @@ import { Dialog } from './dialog'
 import { DialogSet } from './dialogSet'
 import { DialogContext } from './dialogContext'
 import { DialogEvents } from './dialogEvents'
-import { AgentTelemetryClient, NullTelemetryClient, Severity } from './agentTelemetryClient'
 import { DialogEvent } from './dialogEvent'
 
 /**
@@ -48,10 +47,6 @@ export abstract class DialogContainer<O extends object = {}> extends Dialog<O> {
     const handled = await super.onDialogEvent(dialogContext, event)
     if (!handled && event.name === DialogEvents.versionChanged) {
       const traceMessage = `Unhandled dialog event: ${event.name}. Active Dialog: ${dialogContext.activeDialog.id}`
-      dialogContext.dialogs.telemetryClient.trackTrace({
-        message: traceMessage,
-        severityLevel: Severity.Warning,
-      })
       await dialogContext.context.sendTraceActivity(traceMessage)
     }
     return handled
@@ -91,25 +86,5 @@ export abstract class DialogContainer<O extends object = {}> extends Dialog<O> {
       //   change again.
       await dialogContext.emitEvent(DialogEvents.versionChanged, this.id, true, false)
     }
-  }
-
-  /**
-     * Set the telemetry client, and also apply it to all child dialogs.
-     * Future dialogs added to the component will also inherit this client.
-     */
-  set telemetryClient (client: AgentTelemetryClient) {
-    this._telemetryClient = client ?? new NullTelemetryClient()
-    if (this.dialogs.telemetryClient !== this._telemetryClient) {
-      this.dialogs.telemetryClient = this._telemetryClient
-    }
-  }
-
-  /**
-     * Get the current telemetry client.
-     *
-     * @returns The BotTelemetryClient to use for logging.
-     */
-  get telemetryClient (): AgentTelemetryClient {
-    return this._telemetryClient
   }
 }

@@ -1,5 +1,3 @@
-import { AgentTelemetryClient } from './agentTelemetryClient'
-
 export interface DialogEvent {
   /**
        * Flag indicating whether the event will be bubbled to the parent `DialogContext`.
@@ -22,9 +20,4 @@ export interface DialogConfiguration {
        * Static id of the dialog.
        */
   id?: string;
-
-  /**
-       * Telemetry client the dialog should use.
-       */
-  telemetryClient?: AgentTelemetryClient;
 }

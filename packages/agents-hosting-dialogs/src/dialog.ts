@@ -5,7 +5,6 @@
 import { TurnContext } from '@microsoft/agents-hosting'
 import { DialogContext } from './dialogContext'
 import { Configurable } from './configurable'
-import { AgentTelemetryClient, NullTelemetryClient } from './agentTelemetryClient'
 import { DialogTurnResult } from './dialogTurnResult'
 import { DialogEvent } from './dialogEvent'
 import { DialogReason } from './dialogReason'
@@ -26,12 +25,6 @@ export abstract class Dialog<O extends object = {}> extends Configurable {
      * processing for the current turn, is still active, and is waiting for more input.
      */
   static EndOfTurn: DialogTurnResult = { status: DialogTurnStatus.waiting }
-
-  /**
-     * The telemetry client for logging events.
-     * Default this to the NullTelemetryClient, which does nothing.
-     */
-  protected _telemetryClient: AgentTelemetryClient = new NullTelemetryClient()
 
   /**
      * Creates a new instance of the Dialog class.
@@ -62,22 +55,6 @@ export abstract class Dialog<O extends object = {}> extends Configurable {
      */
   set id (value: string) {
     this._id = value
-  }
-
-  /**
-     * Gets the telemetry client for this dialog.
-     *
-     * @returns The AgentTelemetryClient to use for logging.
-     */
-  get telemetryClient (): AgentTelemetryClient {
-    return this._telemetryClient
-  }
-
-  /**
-     * Sets the telemetry client for this dialog.
-     */
-  set telemetryClient (client: AgentTelemetryClient) {
-    this._telemetryClient = client || new NullTelemetryClient()
   }
 
   /**

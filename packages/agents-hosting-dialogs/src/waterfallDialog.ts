@@ -3,14 +3,12 @@
  * Licensed under the MIT License.
  */
 import { v4 as uuidv4 } from 'uuid'
-import { ActivityTypes, TurnContext } from '@microsoft/agents-hosting'
+import { ActivityTypes } from '@microsoft/agents-hosting'
 import { Dialog } from './dialog'
 import { DialogContext } from './dialogContext'
 import { WaterfallStepContext } from './waterfallStepContext'
-import { telemetryTrackDialogView } from './agentTelemetryClient'
 import { DialogTurnResult } from './dialogTurnResult'
 import { DialogReason } from './dialogReason'
-import { DialogInstance } from './dialogInstance'
 
 /**
  * Function signature of an individual waterfall step.
@@ -83,16 +81,6 @@ export class WaterfallDialog<O extends object = {}> extends Dialog<O> {
       instanceId: uuidv4(),
     }
 
-    this.telemetryClient.trackEvent({
-      name: 'WaterfallStart',
-      properties: {
-        DialogId: this.id,
-        InstanceId: (state.values as Record<string, any>)['instanceId'],
-      },
-    })
-
-    telemetryTrackDialogView(this.telemetryClient, this.id)
-
     // Run the first step
     return await this.runStep(dialogContext, 0, DialogReason.beginCalled)
   }
@@ -144,17 +132,6 @@ export class WaterfallDialog<O extends object = {}> extends Dialog<O> {
      * @returns A promise with the DialogTurnResult.
      */
   protected async onStep (step: WaterfallStepContext<O>): Promise<DialogTurnResult> {
-    // Log Waterfall Step event.
-    const stepName = this.waterfallStepName(step.index)
-
-    const state: WaterfallDialogState = step.activeDialog.state as WaterfallDialogState
-
-    const properties = {
-      DialogId: this.id,
-      InstanceId: (state.values as Record<string, any>)['instanceId'],
-      StepName: stepName,
-    }
-    this.telemetryClient.trackEvent({ name: 'WaterfallStep', properties })
     return await this.steps[step.index](step)
   }
 
@@ -202,38 +179,6 @@ export class WaterfallDialog<O extends object = {}> extends Dialog<O> {
     } else {
       // End of waterfall so just return to parent
       return await dc.endDialog(result)
-    }
-  }
-
-  /**
-     * Called when the dialog is ending.
-     *
-     * @param context Context for the current turn of conversation.
-     * @param instance The instance of the current dialog.
-     * @param reason The reason the dialog is ending.
-     */
-  async endDialog (context: TurnContext, instance: DialogInstance, reason: DialogReason): Promise<void> {
-    const state: WaterfallDialogState = instance.state as WaterfallDialogState
-    const instanceId = (state.values as Record<string, any>)['instanceId']
-    if (reason === DialogReason.endCalled) {
-      this.telemetryClient.trackEvent({
-        name: 'WaterfallComplete',
-        properties: {
-          DialogId: this.id,
-          InstanceId: instanceId,
-        },
-      })
-    } else if (reason === DialogReason.cancelCalled) {
-      const index = state.stepIndex
-      const stepName = this.waterfallStepName(index)
-      this.telemetryClient.trackEvent({
-        name: 'WaterfallCancel',
-        properties: {
-          DialogId: this.id,
-          StepName: stepName,
-          InstanceId: instanceId,
-        },
-      })
     }
   }
 
