@@ -2,7 +2,7 @@
     "name": "node-teams-application-style",
     "version": "1.0.0",
     "private": true,
-    "description": "Bot Builder application style bot sample",
+    "description": "Agent Builder application style agent sample",
     "author": "Microsoft",
     "license": "MIT",
     "main": "./dist/index.js",
