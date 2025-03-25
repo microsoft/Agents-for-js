@@ -7,7 +7,7 @@ import { ActivityTypes } from '@microsoft/agents-hosting'
 describe('parseValueBotActivityPreview test', () => {
   it('Parse with all properties', () => {
     const valueObject = {
-      botActivityPreview: [
+      activityPreview: [
         {
           type: ActivityTypes.Invoke,
           text: 'test 1'

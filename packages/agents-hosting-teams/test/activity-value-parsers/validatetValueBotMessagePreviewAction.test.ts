@@ -6,15 +6,15 @@ import { parseValueMessagePreviewAction } from '../../src/parsers/activityValueP
 describe('validatetValueBotMessagePreviewAction test', () => {
   it('Parse with all properties', () => {
     const valueObject = {
-      botMessagePreviewAction: 'botMessagePreviewAction'
+      messagePreviewAction: 'messagePreviewAction'
     }
     const parsedValue = parseValueMessagePreviewAction(valueObject)
     assert.deepEqual(parsedValue, valueObject)
   })
 
-  it('Should throw with not string botMessagePreviewAction', () => {
+  it('Should throw with not string messagePreviewAction', () => {
     const valueObject = {
-      botMessagePreviewAction: 1
+      messagePreviewAction: 1
     }
     assert.throws(() => {
       parseValueMessagePreviewAction(valueObject)
