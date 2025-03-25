@@ -4,16 +4,16 @@
  */
 
 /**
- * Type representing the bot message preview type.
+ * Type representing the message preview type.
  */
-export type BotMessagePreviewType = 'message' | 'continue'
+export type MessagePreviewType = 'message' | 'continue'
 
 /**
  * Interface representing the base response of a task module.
  */
 export interface TaskModuleResponseBase {
   /**
-   * The type of the bot message preview.
+   * The type of the message preview.
    */
-  type?: BotMessagePreviewType
+  type?: MessagePreviewType
 }

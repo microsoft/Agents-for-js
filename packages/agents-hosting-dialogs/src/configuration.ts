@@ -10,7 +10,7 @@ export interface Configuration {
 }
 
 /**
- * Useful for shimming BotComponents into ComponentRegistrations
+ * Useful for shimming Components into ComponentRegistrations
  */
 export const noOpConfiguration: Configuration = {
   get (_path) {

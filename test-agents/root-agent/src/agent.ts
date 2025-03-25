@@ -8,12 +8,12 @@ export class RootHandler extends ActivityHandler {
       const text = context.activity.text
 
       if (text?.startsWith('to-echo-agent')) {
-        const botClient: AgentClient = new AgentClient('Agent1')
+        const agentClient: AgentClient = new AgentClient('Agent1')
 
         const activityStarts = JSON.stringify(context.activity)
         console.log('activityStarts', activityStarts)
 
-        await botClient.postActivity(context.activity, context.adapter.authConfig)
+        await agentClient.postActivity(context.activity, context.adapter.authConfig)
       } else if (text?.startsWith('agent:')) {
         await context.sendActivity(context.activity)
       } else {

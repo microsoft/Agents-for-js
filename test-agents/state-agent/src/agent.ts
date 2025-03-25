@@ -78,7 +78,7 @@ export class StateManagementAgent extends ActivityHandler {
       const membersAdded = context.activity.membersAdded!
       for (let cnt = 0; cnt < membersAdded.length; ++cnt) {
         if (membersAdded[cnt].id !== context.activity.recipient!.id) {
-          await context.sendActivity('Welcome to State Bot Sample. Type anything to get started.')
+          await context.sendActivity('Welcome to State Agent Sample. Type anything to get started.')
         }
       }
 

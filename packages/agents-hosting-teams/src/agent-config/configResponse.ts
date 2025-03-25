@@ -8,7 +8,7 @@ import { AgentConfigAuth } from './agentConfigAuth'
 import { CacheInfo } from './cacheInfo'
 
 /**
- * Represents the configuration response configuration which can be either BotConfigAuth or TaskModuleResponse.
+ * Represents the configuration response configuration which can be either AgentConfigAuth or TaskModuleResponse.
  */
 export type ConfigResponseConfig = AgentConfigAuth | TaskModuleResponse
 

@@ -26,7 +26,7 @@ const adapter = new TeamsCloudAdapter(authConfig)
 ```
 
 ```ts
-// bot.ts
+// agent.ts
 export class TeamsMultiFeatureAgent extends TeamsActivityHandler {
     constructor () {
         super()

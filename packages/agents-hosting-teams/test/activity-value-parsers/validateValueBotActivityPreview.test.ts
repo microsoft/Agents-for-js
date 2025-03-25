@@ -1,7 +1,7 @@
 import assert from 'assert'
 import { describe, it } from 'node:test'
 import { ZodError } from 'zod'
-import { parseValueBotActivityPreview } from '../../src/parsers/activityValueParsers'
+import { parseValueActivityPreview } from '../../src/parsers/activityValueParsers'
 import { ActivityTypes } from '@microsoft/agents-hosting'
 
 describe('parseValueBotActivityPreview test', () => {
@@ -18,7 +18,7 @@ describe('parseValueBotActivityPreview test', () => {
         }
       ]
     }
-    const parsedValue = parseValueBotActivityPreview(valueObject)
+    const parsedValue = parseValueActivityPreview(valueObject)
     assert.deepEqual(parsedValue, valueObject)
   })
 
@@ -36,7 +36,7 @@ describe('parseValueBotActivityPreview test', () => {
       ]
     }
     assert.throws(() => {
-      parseValueBotActivityPreview(valueObject)
+      parseValueActivityPreview(valueObject)
     }, ZodError)
   })
 })

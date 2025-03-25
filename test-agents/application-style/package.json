@@ -2,7 +2,6 @@
     "name": "node-application-style",
     "version": "1.0.0",
     "private": true,
-    "description": "Bot Builder application style Agent sample",
     "author": "Microsoft",
     "license": "MIT",
     "main": "./dist/index.js",

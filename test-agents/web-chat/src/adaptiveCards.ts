@@ -8,7 +8,7 @@ import AdaptiveCardActions from '../cards/AdaptiveCardActions.json'
 import SuggestedActions from '../cards/SuggestedActions.json'
 import ToggleVisible from '../cards/ToggleVisibleCard.json'
 
-const commandString = 'Please use one of these commands: **Card Actions** for Adaptive Card actions, **Suggested Actions** for bot suggested actions, and **ToggleVisibility** for toggling the visibility of the card.'
+const commandString = 'Please use one of these commands: **Card Actions** for Adaptive Card actions, **Suggested Actions** for suggested actions, and **ToggleVisibility** for toggling the visibility of the card.'
 
 export class AdaptiveCardHandler extends ActivityHandler {
   constructor () {

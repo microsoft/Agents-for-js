@@ -22,9 +22,9 @@ export class MultiFeatureHandler extends ActivityHandler {
             await context.sendActivity('Welcome to the Multi Feature sample!')
             await context.sendActivity('For attachments, if you send "Display Attachment options" you would see the options. You can also send me an attachment and I will save it, and alternatively, I can send you an attachment.')
             await context.sendActivity('You can also send "wait" and watch me typing, or send "end" or "stop" to finish the conversation.')
-            await context.sendActivity('Navigate to http://<your-bot-server>/api/notify to proactively message everyone who has previously messaged this bot. Remember to add an Authorization header with your Bearer token')
+            await context.sendActivity('Navigate to http://<your-server>/api/notify to proactively message everyone who has previously messaged this agent. Remember to add an Authorization header with your Bearer token')
 
-            // By calling next() you ensure that the next BotHandler is run.
+            // By calling next() you ensure that the next Handler is run.
             await next()
           }
         }
@@ -70,7 +70,7 @@ export class MultiFeatureHandler extends ActivityHandler {
         if ((context.activity.attachments != null) && context.activity.attachments.length > 0) {
           const validAttachments = context.activity.attachments.filter((a: { contentType: string }) => a.contentType !== 'text/html')
           if (validAttachments.length > 0) {
-            // The user sent an attachment and the bot should handle the incoming attachment.
+            // The user sent an attachment and the agent should handle the incoming attachment.
             await this.handleIncomingAttachment(context, validAttachments)
           } else {
             const reply: Activity = new Activity(ActivityTypes.Message)
@@ -80,7 +80,7 @@ export class MultiFeatureHandler extends ActivityHandler {
         }
       }
 
-      // By calling next() you ensure that the next BotHandler is run.
+      // By calling next() you ensure that the next Handler is run.
       await next()
     })
 
@@ -103,7 +103,7 @@ export class MultiFeatureHandler extends ActivityHandler {
     })
 
     this.onInstallationUpdateAdd(async (context, next) => {
-      const installationText = 'Hi I\'m the multi feature demo bot. This message is being sent because I was installed'
+      const installationText = 'Hi I\'m the multi feature demo agent. This message is being sent because I was installed'
       if (context.activity.conversation?.conversationType !== undefined && context.activity.conversation.conversationType !== 'personal') {
         if (context.activity.conversation.conversationType === 'channel') {
           const channelName: string = (context.activity.channelData as { team: { name: string } }).team.name
@@ -124,17 +124,17 @@ export class MultiFeatureHandler extends ActivityHandler {
       if ((context.activity.conversation != null) && context.activity.conversation.conversationType !== 'personal') {
         return
       } else {
-        await context.sendActivity(MessageFactory.text('You uninstalled the multi feature demo bot.'))
+        await context.sendActivity(MessageFactory.text('You uninstalled the multi feature demo agent.'))
       }
       await next()
     })
 
     this.onEndOfConversation(async (context, next) => {
-      // This will be called if the root bot is ending the conversation.  Sending additional messages should be
+      // This will be called if the root agent is ending the conversation.  Sending additional messages should be
       // avoided as the conversation may have been deleted.
       // Perform cleanup of resources if needed.
 
-      // By calling next() you ensure that the next BotHandler is run.
+      // By calling next() you ensure that the next Handler is run.
       await next()
     })
 
@@ -202,7 +202,7 @@ export class MultiFeatureHandler extends ActivityHandler {
       throw new Error('Invalid Attachment name: undefined')
     }
 
-    // Local file path for the bot to save the attachment.
+    // Local file path for the agent to save the attachment.
     const localFileName = path.join(__dirname, attachment.name)
 
     try {
@@ -250,7 +250,7 @@ export class MultiFeatureHandler extends ActivityHandler {
       reply.attachments = [this.getInternetAttachment()]
       reply.text = 'This is an internet attachment.'
     } else {
-      // The user did not enter input that this bot was built to handle.
+      // The user did not enter input that this agent was built to handle.
       reply.text = 'Your input was not recognized, please try again.'
     }
     await turnContext.sendActivity(reply)

@@ -176,7 +176,7 @@ export class DialogSet {
   /**
      * Set the telemetry client for this dialog set and apply it to all current dialogs.
      *
-     * @returns The BotTelemetryClient to use for logging.
+     * @returns The AgentTelemetryClient to use for logging.
      */
   get telemetryClient (): AgentTelemetryClient {
     return this._telemetryClient

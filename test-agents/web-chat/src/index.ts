@@ -15,7 +15,7 @@ import { WebChatSsoHandler } from './webChatSso'
 const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
 const conversationReferences: { [key: string]: ConversationReference } = {}
 
-const createBot = (agentName: string) => {
+const createAgent = (agentName: string) => {
   switch (agentName) {
     case 'AdaptiveCardAgent':
       return new AdaptiveCardHandler()
@@ -28,7 +28,7 @@ const createBot = (agentName: string) => {
       const userState = new UserState(memoryStorage)
       return new WebChatSsoHandler(userState)
     }
-    case 'StateManagementBot': {
+    case 'StateManagementAgent': {
       /* AZURE BLOB STORAGE - Uncomment the code in this section to use Azure blob storage */
       // const blobStorage = new AzureBlobStorage(process.env.BLOB_STORAGE_CONNECTION_STRING!, process.env.BLOB_CONTAINER_ID!)
       // const conversationState = new ConversationState(blobStorage)
@@ -37,8 +37,8 @@ const createBot = (agentName: string) => {
 
       /* COSMOSDB STORAGE - Uncomment the code in this section to use CosmosDB storage */
       // const cosmosDbStorageOptions = {
-      //   databaseId: process.env.COSMOS_DATABASE_ID || 'botsDB',
-      //   containerId: process.env.COSMOS_CONTAINER_ID || 'botState',
+      //   databaseId: process.env.COSMOS_DATABASE_ID || 'agentsDB',
+      //   containerId: process.env.COSMOS_CONTAINER_ID || 'agentState',
       //   cosmosClientOptions: {
       //     endpoint: process.env.COSMOS_ENDPOINT!,
       //     key: process.env.COSMOS_KEY!,
@@ -61,7 +61,7 @@ const createBot = (agentName: string) => {
 const adapter = new CloudAdapter(authConfig)
 
 const agentName = process.env.agentName || 'MultiFeatureAgent'
-const myAgent = createBot(agentName)
+const myAgent = createAgent(agentName)
 
 const app = express()
 

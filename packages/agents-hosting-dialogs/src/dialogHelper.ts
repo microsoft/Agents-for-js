@@ -104,7 +104,7 @@ export async function internalRun (
     }
   }
 
-  // save all state scopes to their respective botState locations.
+  // save all state scopes to their respective agentState locations.
   await dialogStateManager.saveAllChanges()
 
   // return the redundant result because the DialogManager contract expects it
@@ -144,12 +144,12 @@ export function getActiveDialogContext (dialogContext: DialogContext): DialogCon
 
 // Helper to send a trace activity with a memory snapshot of the active dialog DC.
 const sendStateSnapshotTrace = async (dialogContext: DialogContext): Promise<void> => {
-  const traceLabel = 'Bot State'
+  const traceLabel = 'Agent State'
 
   // Send trace of memory
   const snapshot = getActiveDialogContext(dialogContext).state.getMemorySnapshot()
   const traceActivity = new Activity(ActivityTypes.Trace)
-  traceActivity.name = 'BotState'
+  traceActivity.name = 'AgentState'
   traceActivity.label = 'https://www.botframework.com/schemas/botState'
   traceActivity.value = snapshot
   traceActivity.label = traceLabel

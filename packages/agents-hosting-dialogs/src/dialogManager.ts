@@ -121,7 +121,7 @@ export class DialogManager extends Configurable {
   async onTurn (context: TurnContext): Promise<DialogManagerResult> {
     // Ensure properly configured
     if (!this._rootDialogId) {
-      throw new Error("DialogManager.onTurn: the bot's 'rootDialog' has not been configured.")
+      throw new Error("DialogManager.onTurn: the agent's 'rootDialog' has not been configured.")
     }
 
     // Copy initial turn state to context
@@ -138,7 +138,7 @@ export class DialogManager extends Configurable {
     }
 
     if (!this.conversationState) {
-      throw new Error("DialogManager.onTurn: the bot's 'conversationState' has not been configured.")
+      throw new Error("DialogManager.onTurn: the agent's 'conversationState' has not been configured.")
     }
     agentStateSet.add(this.conversationState)
 
@@ -176,7 +176,7 @@ export class DialogManager extends Configurable {
     // Call the common dialog "continue/begin" execution pattern shared with the classic RunAsync extension method
     const turnResult = await internalRun(context, this._rootDialogId, dc, this.stateConfiguration)
 
-    // Save BotState changes
+    // Save agentState changes
     await agentStateSet.saveAllChanges(dc.context, false)
 
     return { turnResult }

@@ -17,8 +17,8 @@ const userState = new UserState(blobStorage)
 
 /* COSMOSDB STORAGE - Uncomment the code in this section to use CosmosDB storage */
 // const cosmosDbStorageOptions = {
-//   databaseId: process.env.COSMOS_DATABASE_ID || 'botsDB',
-//   containerId: process.env.COSMOS_CONTAINER_ID || 'botState',
+//   databaseId: process.env.COSMOS_DATABASE_ID || 'agentsDB',
+//   containerId: process.env.COSMOS_CONTAINER_ID || 'agentsState',
 //   cosmosClientOptions: {
 //     endpoint: process.env.COSMOS_ENDPOINT!,
 //     key: process.env.COSMOS_KEY!,

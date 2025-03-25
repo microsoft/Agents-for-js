@@ -68,7 +68,7 @@ export interface TelemetryPageView {
 }
 
 /**
- * A null bot telemetry client that implements AgentTelemetryClient.
+ * A null telemetry client that implements AgentTelemetryClient.
  */
 export class NullTelemetryClient implements AgentTelemetryClient, AgentPageViewTelemetryClient {
   /**

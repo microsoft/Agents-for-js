@@ -34,7 +34,7 @@ export interface TaskModuleTaskInfo {
    */
   fallbackUrl?: string
   /**
-   * The completion bot ID of the task module.
+   * The completion agent ID of the task module.
    */
-  completionBotId?: string
+  completionAgentId?: string
 }

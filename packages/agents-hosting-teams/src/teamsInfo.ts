@@ -111,10 +111,10 @@ export class TeamsInfo {
    * @param {TurnContext} context - The turn context.
    * @param {Activity} activity - The activity to send.
    * @param {string} teamsChannelId - The Teams channel ID.
-   * @param {string} [botAppId] - The bot application ID.
+   * @param {string} [appId] - The application ID.
    * @returns {Promise<[ConversationReference, string]>} - The conversation reference and new activity ID.
    */
-  static async sendMessageToTeamsChannel (context: TurnContext, activity: Activity, teamsChannelId: string, botAppId?: string): Promise<[ConversationReference, string]> {
+  static async sendMessageToTeamsChannel (context: TurnContext, activity: Activity, teamsChannelId: string, appId?: string): Promise<[ConversationReference, string]> {
     if (!context) {
       throw new Error('TurnContext cannot be null')
     }
@@ -139,9 +139,9 @@ export class TeamsInfo {
 
     let conversationReference: Partial<ConversationReference>
     let newActivityId: string
-    if (botAppId && context.adapter instanceof CloudAdapter) {
+    if (appId && context.adapter instanceof CloudAdapter) {
       await context.adapter.createConversationAsync(
-        botAppId,
+        appId,
         Channels.Msteams,
         context.activity.serviceUrl!,
         'https://api.botframework.com',

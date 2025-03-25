@@ -6,11 +6,11 @@
 import { SuggestedActions } from '@microsoft/agents-hosting'
 
 /**
- * Represents the bot configuration for authentication.
+ * Represents the agent configuration for authentication.
  */
 export interface AgentConfigAuth {
   /**
-   * Optional suggested actions for the bot.
+   * Optional suggested actions for the agent.
    */
   suggestedActions?: SuggestedActions
   /**

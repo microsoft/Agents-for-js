@@ -88,7 +88,7 @@ export class DialogContext {
      * Creates an new instance of the DialogContext class.
      *
      * @param dialogs The DialogSet for which to create the dialog context.
-     * @param contextOrDialogContext The DialogContext object for the current turn of the bot.
+     * @param contextOrDialogContext The DialogContext object for the current turn.
      * @param state The state object to use to read and write DialogState to storage.
      * @remarks
      * Passing in a DialogContext instance will clone the dialog context.
@@ -405,7 +405,7 @@ export class DialogContext {
      * The DialogTurnResult.status of returned object describes
      * the status of the dialog stack after this method completes.
      *
-     * Typically, you would call this from within your bot's turn handler.
+     * Typically, you would call this from within your agent's turn handler.
      *
      */
   async continueDialog (): Promise<DialogTurnResult> {
@@ -443,13 +443,13 @@ export class DialogContext {
      *
      * @param result Optional. A result to pass to the parent logic. This might be the next dialog
      *      on the stack, or if this was the last dialog on the stack, a parent dialog context or
-     *      the bot's turn handler.
+     *      the agent's turn handler.
      * @returns {Promise<DialogTurnResult>} a promise resolving to the dialog turn result.
      * @remarks
      * The _parent_ dialog is the next dialog on the dialog stack, if there is one. This method
      * calls the parent's Dialog.resumeDialog method,
      * passing the result returned by the ending dialog. If there is no parent dialog, the turn ends
-     * and the result is available to the bot through the returned object's
+     * and the result is available to the agent through the returned object's
      * DialogTurnResult.result property.
      *
      * The DialogTurnResult.status of returned object describes

@@ -13,9 +13,9 @@ export class DialogHandler extends ActivityHandler {
 
   constructor (conversationState: AgentState, userState: AgentState, dialog: Dialog) {
     super()
-    if (!conversationState) throw new Error('[DialogBot]: Missing parameter. conversationState is required')
-    if (!userState) throw new Error('[DialogBot]: Missing parameter. userState is required')
-    if (!dialog) throw new Error('[DialogBot]: Missing parameter. dialog is required')
+    if (!conversationState) throw new Error('[Dialog]: Missing parameter. conversationState is required')
+    if (!userState) throw new Error('[Dialog]: Missing parameter. userState is required')
+    if (!dialog) throw new Error('[Dialog]: Missing parameter. dialog is required')
 
     this.conversationState = conversationState as ConversationState
     this.userState = userState as UserState

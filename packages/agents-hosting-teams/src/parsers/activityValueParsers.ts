@@ -185,36 +185,36 @@ export function parseValueQuery (value: unknown): {
 }
 
 /**
- * Validates the given value as a bot message preview action.
+ * Validates the given value as an activity message preview action.
  *
  * @param {unknown} value - The value to validate.
- * @returns {object} - The validated bot message preview action.
+ * @returns {object} - The validated message preview action.
  */
-export function parseValueBotMessagePreviewAction (value: unknown): {
-  botMessagePreviewAction: string;
+export function parseValueMessagePreviewAction (value: unknown): {
+  messagePreviewAction: string;
 } {
-  const botMessagePreviewActionZodSchema = z.object({
-    botMessagePreviewAction: z.string().min(1)
+  const messagePreviewActionZodSchema = z.object({
+    messagePreviewAction: z.string().min(1)
   })
-  const parsedValue = botMessagePreviewActionZodSchema.passthrough().parse(value)
+  const parsedValue = messagePreviewActionZodSchema.passthrough().parse(value)
   return {
-    botMessagePreviewAction: parsedValue.botMessagePreviewAction
+    messagePreviewAction: parsedValue.messagePreviewAction
   }
 }
 
 /**
- * Validates the given value as a bot activity preview.
+ * Validates the given value as an activity preview.
  *
  * @param {unknown} value - The value to validate.
- * @returns {object} - The validated bot activity preview.
+ * @returns {object} - The validated activity preview.
  */
-export function parseValueBotActivityPreview (value: unknown): object {
-  const botActivityPreviewZodSchema = z.object({
-    botActivityPreview: z.array(activityZodSchema.partial())
+export function parseValueActivityPreview (value: unknown): object {
+  const activityPreviewZodSchema = z.object({
+    activityPreview: z.array(activityZodSchema.partial())
   })
-  const parsedValue = botActivityPreviewZodSchema.passthrough().parse(value)
+  const parsedValue = activityPreviewZodSchema.passthrough().parse(value)
   return {
-    botActivityPreview: parsedValue.botActivityPreview
+    activityPreview: parsedValue.activityPreview
   }
 }
 

@@ -190,9 +190,9 @@ export abstract class Prompt<T> extends Dialog {
   /**
      * Called when a prompt dialog is pushed onto the dialog stack and is being activated.
      *
-     * @param dialogContext The [DialogContext](xref:botbuilder-dialogs.DialogContext) for the current
+     * @param dialogContext The DialogContext for the current
      * turn of the conversation.
-     * @param options Optional. [PromptOptions](xref:botbuilder-dialogs.PromptOptions),
+     * @param options Optional. PromptOptions,
      * additional information to pass to the prompt being started.
      * @returns A `Promise` representing the asynchronous operation.
      * @remarks
@@ -223,7 +223,7 @@ export abstract class Prompt<T> extends Dialog {
   /**
      * Called when a prompt dialog is the active dialog and the user replied with a new activity.
      *
-     * @param dialogContext The [DialogContext](xref:botbuilder-dialogs.DialogContext) for the current turn of conversation.
+     * @param dialogContext The DialogContext for the current turn of conversation.
      * @returns A `Promise` representing the asynchronous operation.
      * @remarks
      * If the task is successful, the result indicates whether the dialog is still
@@ -283,8 +283,8 @@ export abstract class Prompt<T> extends Dialog {
   /**
      * Called before an event is bubbled to its parent.
      *
-     * @param dialogContext The [DialogContext](xref:botbuilder-dialogs.DialogContext) for the current turn of conversation.
-     * @param event [DialogEvent](xref:botbuilder-dialogs.DialogEvent), the event being raised.
+     * @param dialogContext The DialogContext for the current turn of conversation.
+     * @param event DialogEvent, the event being raised.
      * @returns Whether the event is handled by the current dialog and further processing should stop.
      * @remarks
      * This is a good place to perform interception of an event as returning `true` will prevent
@@ -333,9 +333,9 @@ export abstract class Prompt<T> extends Dialog {
   /**
      * Called when a prompt dialog has been requested to re-prompt the user for input.
      *
-     * @param context [TurnContext](xref:botbuilder-core.TurnContext), context for the current
+     * @param context TurnContext, context for the current
      * turn of conversation with the user.
-     * @param instance [DialogInstance](xref:botbuilder-dialogs.DialogInstance), the instance
+     * @param instance DialogInstance, the instance
      * of the dialog on the stack.
      * @returns A `Promise` representing the asynchronous operation.
      */

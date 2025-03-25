@@ -401,12 +401,12 @@ export class TeamsActivityHandler extends ActivityHandler {
     context: TurnContext,
     action: MessagingExtensionAction
   ): Promise<MessagingExtensionActionResponse> {
-    if (action.botMessagePreviewAction) {
-      switch (action.botMessagePreviewAction) {
+    if (action.messagePreviewAction) {
+      switch (action.messagePreviewAction) {
         case 'edit':
-          return await this.handleTeamsMessagingExtensionBotMessagePreviewEdit(context, action)
+          return await this.handleTeamsMessagingExtensionMessagePreviewEdit(context, action)
         case 'send':
-          return await this.handleTeamsMessagingExtensionBotMessagePreviewSend(context, action)
+          return await this.handleTeamsMessagingExtensionMessagePreviewSend(context, action)
         default:
           throw new Error('BadRequest')
       }
@@ -429,12 +429,12 @@ export class TeamsActivityHandler extends ActivityHandler {
   }
 
   /**
-   * Handles messaging extension bot message preview edit.
+   * Handles messaging extension message preview edit.
    * @param {TurnContext} _context - The context object for the turn.
    * @param {MessagingExtensionAction} _action - The messaging extension action.
    * @returns {Promise<MessagingExtensionActionResponse>} The messaging extension action response.
    */
-  protected async handleTeamsMessagingExtensionBotMessagePreviewEdit (
+  protected async handleTeamsMessagingExtensionMessagePreviewEdit (
     _context: TurnContext,
     _action: MessagingExtensionAction
   ): Promise<MessagingExtensionActionResponse> {
@@ -442,12 +442,12 @@ export class TeamsActivityHandler extends ActivityHandler {
   }
 
   /**
-   * Handles messaging extension bot message preview send.
+   * Handles messaging extension message preview send.
    * @param {TurnContext} _context - The context object for the turn.
    * @param {MessagingExtensionAction} _action - The messaging extension action.
    * @returns {Promise<MessagingExtensionActionResponse>} The messaging extension action response.
    */
-  protected async handleTeamsMessagingExtensionBotMessagePreviewSend (
+  protected async handleTeamsMessagingExtensionMessagePreviewSend (
     _context: TurnContext,
     _action: MessagingExtensionAction
   ): Promise<MessagingExtensionActionResponse> {

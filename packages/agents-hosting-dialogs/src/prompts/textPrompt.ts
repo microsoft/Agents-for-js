@@ -22,10 +22,10 @@ export class TextPrompt extends Prompt<string> {
   /**
      * Prompts the user for input.
      *
-     * @param context [TurnContext](xref:botbuilder-core.TurnContext), context for the current
+     * @param context TurnContext, context for the current
      * turn of conversation with the user.
      * @param state Contains state for the current instance of the prompt on the dialog stack.
-     * @param options A [PromptOptions](xref:botbuilder-dialogs.PromptOptions) object constructed
+     * @param options A PromptOptions object constructed
      * from the options initially provided in the call to Prompt.
      * @param isRetry `true` if this is the first time this prompt dialog instance
      * on the stack is prompting the user for input; otherwise, false.
@@ -47,10 +47,10 @@ export class TextPrompt extends Prompt<string> {
   /**
      * Attempts to recognize the user's input.
      *
-     * @param context [TurnContext](xref:botbuilder-core.TurnContext), context for the current
+     * @param context TurnContext, context for the current
      * turn of conversation with the user.
      * @param _state Contains state for the current instance of the prompt on the dialog stack.
-     * @param _options A [PromptOptions](xref:botbuilder-dialogs.PromptOptions) object constructed
+     * @param _options A PromptOptions object constructed
      * from the options initially provided in the call to Prompt.
      * @returns A `Promise` representing the asynchronous operation.
      */
@@ -67,9 +67,9 @@ export class TextPrompt extends Prompt<string> {
   /**
      * Called before an event is bubbled to its parent.
      *
-     * @param _dc The [DialogContext](xref:botbuilder-dialogs.DialogContext) for the current
+     * @param _dc The DialogContext for the current
      * turn of conversation.
-     * @param _event [DialogEvent](xref:botbuilder-dialogs.DialogEvent), the event being raised.
+     * @param _event DialogEvent, the event being raised.
      * @returns Whether the event is handled by the current dialog and further processing should stop.
      * @remarks
      * This is a good place to perform interception of an event as returning `true` will prevent

@@ -13,9 +13,9 @@ import { MessageActionsPayload } from '../message-actions-payload/messageActions
 export type CommandContext = 'message' | 'compose' | 'commandbox'
 
 /**
- * Types of actions for bot message previews.
+ * Types of actions for message previews.
  */
-export type BotMessagePreviewActionType = 'edit' | 'send'
+export type MessagePreviewActionType = 'edit' | 'send'
 
 /**
  * Represents an action for a messaging extension.
@@ -30,13 +30,13 @@ export interface MessagingExtensionAction extends TaskModuleRequest {
    */
   commandContext?: CommandContext
   /**
-   * The type of action for the bot message preview.
+   * The type of action for the agent message preview.
    */
-  botMessagePreviewAction?: BotMessagePreviewActionType
+  messagePreviewAction?: MessagePreviewActionType
   /**
-   * A list of activities for the bot activity preview.
+   * A list of activities for the agent activity preview.
    */
-  botActivityPreview?: Activity[]
+  activityPreview?: Activity[]
   /**
    * The payload of the message actions.
    */

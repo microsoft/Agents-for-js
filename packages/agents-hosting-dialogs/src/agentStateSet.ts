@@ -5,26 +5,26 @@
 import { AgentState, TurnContext } from '@microsoft/agents-hosting'
 
 /**
- * A collection of `BotState` plugins that should be loaded or saved in parallel as a single unit.
+ * A collection of `AgentState` plugins that should be loaded or saved in parallel as a single unit.
  * See `AutoSaveStateMiddleware` for an implementation of this class.
  */
 export class AgentStateSet {
   /**
-     * Array of the sets `BotState` plugins.
+     * Array of the sets `AgentState` plugins.
      */
   readonly agentStates: AgentState[] = []
 
   /**
-     * Creates a new BotStateSet instance.
+     * Creates a new AgentStateSet instance.
      *
-     * @param agentStates One or more BotState plugins to register.
+     * @param agentStates One or more AgentState plugins to register.
      */
   constructor (...agentStates: AgentState[]) {
     AgentStateSet.prototype.add.apply(this, agentStates)
   }
 
   /**
-     * Registers one or more `BotState` plugins with the set.
+     * Registers one or more `AgentState` plugins with the set.
      *
      * @param agentStates One or more AgentState plugins to register.
      * @returns The updated AgentStateSet.
@@ -42,7 +42,7 @@ export class AgentStateSet {
   }
 
   /**
-     * Calls `BotState.load()` on all of the BotState plugins in the set.
+     * Calls `AgentState.load()` on all of the AgentState plugins in the set.
      *
      * @remarks
      * This will trigger all of the plugins to read in their state in parallel.
@@ -57,7 +57,7 @@ export class AgentStateSet {
   }
 
   /**
-     * Calls `BotState.saveChanges()` on all of the BotState plugins in the set.
+     * Calls `AgentState.saveChanges()` on all of the AgentState plugins in the set.
      *
      * @remarks
      * This will trigger all of the plugins to write out their state in parallel.
