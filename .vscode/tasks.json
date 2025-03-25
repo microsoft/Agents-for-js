@@ -13,7 +13,7 @@
 			"detail": "tsc --build --verbose tsconfig.build.json"
 		},
 		{
-			"label": "build_echo",
+			"label": "build_empty",
 			"type": "npm",
 			"script": "build",
 			"group": {
@@ -24,7 +24,7 @@
 				"build_packages"
 			],
 			"problemMatcher": [],
-			"path": "test-agents/echo-bot"
+			"path": "test-agents/empty-agent"
 		},
 		{
 			"label": "build_webchat",

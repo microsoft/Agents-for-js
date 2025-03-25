@@ -13,8 +13,7 @@
   },
   "description": "Microsoft 365 Agents SDK for JavaScript",
   "keywords": [
-    "Agents",
-    "bot"
+    "Agents"
   ],
   "private": true,
   "type": "module",

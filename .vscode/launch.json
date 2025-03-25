@@ -7,16 +7,16 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "echo-bot",
+            "name": "empty-agent",
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/test-agents/echo-bot/src/index.ts",
+            "program": "${workspaceFolder}/test-agents/empty-agent/src/index.ts",
             "outFiles": [
                 "${workspaceFolder}/**/dist/**/*.js"
             ],
-            "preLaunchTask": "build_echo",
-            "envFile": "${workspaceFolder}/test-agents/echo-bot/.env",
+            "preLaunchTask": "build_empty",
+            "envFile": "${workspaceFolder}/test-agents/empty-agent/.env",
             "console": "integratedTerminal",
             "internalConsoleOptions": "openOnSessionStart"
         },
