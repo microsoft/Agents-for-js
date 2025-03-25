@@ -77,7 +77,7 @@ Use **Express** instead of Restify for compatibility with the Agents server. Fol
   app.use(authorizeJWT(authConfig))
 
   app.post('/api/messages', async (req: Request, res: Response) => {
-    await adapter.process(req, res, async (context) => await myBot.run(context))
+    await adapter.process(req, res, async (context) => await myAgent.run(context))
   })
 
   const port = process.env.PORT || 3978
