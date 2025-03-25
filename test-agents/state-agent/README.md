@@ -1,4 +1,4 @@
-# state-bot
+# state-agent
 
 Bot used to validate different storage providers: Memory, Blobs or Cosmos.
 

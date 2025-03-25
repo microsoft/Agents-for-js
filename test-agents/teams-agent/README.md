@@ -1,4 +1,4 @@
-# teams-bot
+# teams-agent
 
 Bot to validate Teams specific features. 
 
