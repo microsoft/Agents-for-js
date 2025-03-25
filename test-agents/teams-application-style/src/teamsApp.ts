@@ -19,7 +19,7 @@ export const app = new TeamsApplication({
 
 app.conversationUpdate('membersAdded', async (context: TurnContext, state: ApplicationTurnState) => {
   const membersAdded = context.activity.membersAdded ?? []
-  const welcomeText = 'Hello from teams-js-bot!'
+  const welcomeText = 'Hello from teamsApp!'
   for (const member of membersAdded) {
     if (member.id !== (context.activity.recipient?.id ?? '')) {
       await context.sendActivity(MessageFactory.text(welcomeText, welcomeText))
@@ -49,7 +49,7 @@ app.message('/sendMessageToTeamsChannel', async (context: TurnContext, state: Ap
     await context.sendActivity(MessageFactory.text('channelId not found'))
     return
   }
-  const sentResult = await TeamsInfo.sendMessageToTeamsChannel(context, MessageFactory.text('msg from bot to channel'), channelId!, context.adapter.authConfig.clientId)
+  const sentResult = await TeamsInfo.sendMessageToTeamsChannel(context, MessageFactory.text('msg from agent to channel'), channelId!, context.adapter.authConfig.clientId)
   await context.sendActivity(MessageFactory.text(`sebt ${JSON.stringify(sentResult)}`))
 })
 
@@ -96,18 +96,18 @@ app.message('/sendMessageToListOfUsers', async (context: TurnContext, state: App
       users.push({ id: m.id! })
     }
   })
-  await TeamsInfo.sendMessageToListOfUsers(context, MessageFactory.text('msg from bot to list of users'), context.adapter.authConfig.tenantId!, users)
+  await TeamsInfo.sendMessageToListOfUsers(context, MessageFactory.text('msg from agent to list of users'), context.adapter.authConfig.tenantId!, users)
 })
 
 app.message('/sendMessageToAllUsersInTenant', async (context: TurnContext, state: ApplicationTurnState) => {
-  const batchResp = await TeamsInfo.sendMessageToAllUsersInTenant(context, MessageFactory.text('msg from bot to all users'), context.adapter.authConfig.tenantId!)
+  const batchResp = await TeamsInfo.sendMessageToAllUsersInTenant(context, MessageFactory.text('msg from agent to all users'), context.adapter.authConfig.tenantId!)
   console.log(batchResp.operationId)
 })
 
 app.message('/sendMessageToAllUsersInTeam', async (context: TurnContext, state: ApplicationTurnState) => {
   const teamsChannelData = parseTeamsChannelData(context.activity.channelData)
   const teamId = teamsChannelData.team?.id
-  const batchResp = await TeamsInfo.sendMessageToAllUsersInTeam(context, MessageFactory.text('msg from bot to all users in team'), context.adapter.authConfig.tenantId!, teamId!)
+  const batchResp = await TeamsInfo.sendMessageToAllUsersInTeam(context, MessageFactory.text('msg from agent to all users in team'), context.adapter.authConfig.tenantId!, teamId!)
   console.log(batchResp.operationId)
 })
 
@@ -119,7 +119,7 @@ app.message('/sendMessageToListOfChannels', async (context: TurnContext, state: 
       users.push({ id: m.id! })
     }
   })
-  await TeamsInfo.sendMessageToListOfChannels(context, MessageFactory.text('msg from bot to list of channels'), context.adapter.authConfig.tenantId!, users)
+  await TeamsInfo.sendMessageToListOfChannels(context, MessageFactory.text('msg from agent to list of channels'), context.adapter.authConfig.tenantId!, users)
 })
 
 app.message('/msgAllMembers', async (context: TurnContext, state: ApplicationTurnState) => {
@@ -128,7 +128,7 @@ app.message('/msgAllMembers', async (context: TurnContext, state: ApplicationTur
 
 app.activity(ActivityTypes.Message, async (context: TurnContext, state: ApplicationTurnState) => {
   await context.sendActivities([
-    MessageFactory.text('Welcome to teams-js-agent1'),
+    MessageFactory.text('Welcome to teamsApp!'),
     MessageFactory.text(`options: 
       /getMember,
       /getMeetingInfo,
@@ -151,7 +151,7 @@ async function messageAllMembers (context: TurnContext) {
   const membersResult = await TeamsInfo.getPagedMembers(context, 2)
   await Promise.all(membersResult.members.map(async (member) => {
     const message = MessageFactory.text(
-      `Hello ${member.givenName} ${member.surname}. I'm a Teams conversation bot. from ${author.email}`
+      `Hello ${member.givenName} ${member.surname}. I'm a Teams conversation agent. from ${author.email}`
     )
 
     const convoParams: ConversationParameters = {

@@ -4,13 +4,13 @@
  */
 
 import { TaskModuleResponse } from '../task/taskModuleResponse'
-import { BotConfigAuth } from './botConfigAuth'
+import { AgentConfigAuth } from './agentConfigAuth'
 import { CacheInfo } from './cacheInfo'
 
 /**
  * Represents the configuration response configuration which can be either BotConfigAuth or TaskModuleResponse.
  */
-export type ConfigResponseConfig = BotConfigAuth | TaskModuleResponse
+export type ConfigResponseConfig = AgentConfigAuth | TaskModuleResponse
 
 /**
  * Represents the configuration response.

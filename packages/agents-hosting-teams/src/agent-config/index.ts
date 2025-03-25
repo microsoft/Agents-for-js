@@ -3,6 +3,6 @@
  * Licensed under the MIT License.
  */
 
-export * from './botConfigAuth'
+export * from './agentConfigAuth'
 export * from './cacheInfo'
 export * from './configResponse'

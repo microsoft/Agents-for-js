@@ -6,7 +6,7 @@
 import { MessagingExtensionResult } from './messagingExtensionResult'
 import { TaskModuleContinueResponse } from '../task/taskModuleContinueResponse'
 import { TaskModuleMessageResponse } from '../task/taskModuleMessageResponse'
-import { CacheInfo } from '../bot-config/cacheInfo'
+import { CacheInfo } from '../agent-config/cacheInfo'
 
 /**
  * Represents the response of a messaging extension action.

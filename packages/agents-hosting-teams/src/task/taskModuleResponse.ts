@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { CacheInfo } from '../bot-config/cacheInfo'
+import { CacheInfo } from '../agent-config/cacheInfo'
 import { TaskModuleContinueResponse } from './taskModuleContinueResponse'
 import { TaskModuleMessageResponse } from './taskModuleMessageResponse'
 

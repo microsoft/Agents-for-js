@@ -132,7 +132,7 @@ export class TeamsMultiFeature extends TeamsActivityHandler {
     const packages = await this.findPackages(text)
 
     // We take every row of the results and wrap them in cards wrapped in MessagingExtensionAttachment objects.
-    // The Preview is optional, if it includes a Tap, that will trigger the OnTeamsMessagingExtensionSelectItem event back on this bot.
+    // The Preview is optional, if it includes a Tap, that will trigger the OnTeamsMessagingExtensionSelectItem event back on this agent.
     const attachments: MessagingExtensionAttachment[] = packages.map(({ item1, item2, item3, item4, item5 }) => {
       const cardValue = `{"packageId": "${item1}", "version": "${item2}", "description": "${item3}", "projectUrl": "${item4}", "iconUrl": "${item5}"}`
 
