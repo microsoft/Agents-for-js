@@ -80,7 +80,7 @@
 			"dependsOn": [
 				"build_packages"
 			],
-			"path": "test-agents/teams-bots"
+			"path": "test-agents/teams-agent"
 		},
 		{
 			"label": "build_application_style",

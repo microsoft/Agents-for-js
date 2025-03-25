@@ -13,27 +13,27 @@ import path from 'path'
 
 const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
 
-const createBot = (botName: string) => {
-  switch (botName) {
-    case 'TeamsJsBot':
+const createAgent = (agentName: string) => {
+  switch (agentName) {
+    case 'TeamsHandler':
       return new TeamsHandler()
-    case 'TeamsSsoBot':
+    case 'TeamsSso':
     {
       const memoryStorage = new MemoryStorage()
       const userState = new UserState(memoryStorage)
       return new TeamsSso(userState)
     }
-    case 'TeamsMultiFeatureBot':
+    case 'TeamsMultiFeature':
       return new TeamsMultiFeature()
     default:
-      throw new Error(`Bot with name ${botName} is not recognized.`)
+      throw new Error(`Agent with name ${agentName} is not recognized.`)
   }
 }
 
 const adapter = new TeamsCloudAdapter(authConfig)
 
-const botName = process.env.botName || 'TeamsJsBot'
-const myBot = createBot(botName)
+const agentName = process.env.agentName || 'TeamsHandler'
+const myAgent = createAgent(agentName)
 
 const app = express()
 
@@ -57,7 +57,7 @@ app.post('/CustomForm', (_req) => {
 })
 
 app.post('/api/messages', async (req: Request, res: Response) => {
-  await adapter.process(req, res, async (context) => await myBot.run(context))
+  await adapter.process(req, res, async (context) => await myAgent.run(context))
 })
 
 const port = process.env.PORT || 3978

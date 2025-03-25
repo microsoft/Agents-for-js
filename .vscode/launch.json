@@ -69,16 +69,16 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "teams-bot",
+            "name": "teams-agent",
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/test-agents/teams-bots/src/index.ts",
+            "program": "${workspaceFolder}/test-agents/teams-agent/src/index.ts",
             "outFiles": [
                 "${workspaceFolder}/**/dist/**/*.js"
             ],
             "preLaunchTask": "build_teams",
-            "envFile": "${workspaceFolder}/test-agents/teams-bots/.env",
+            "envFile": "${workspaceFolder}/test-agents/teams-agent/.env",
             "console": "integratedTerminal",
             "internalConsoleOptions": "openOnSessionStart"
         },

@@ -31,7 +31,7 @@ export class TeamsHandler extends TeamsActivityHandler {
           await context.sendActivity(MessageFactory.text('channelId not found'))
           return
         }
-        const sentResult = await TeamsInfo.sendMessageToTeamsChannel(context, MessageFactory.text('msg from bot to channel'), channelId!, context.adapter.authConfig.clientId)
+        const sentResult = await TeamsInfo.sendMessageToTeamsChannel(context, MessageFactory.text('msg from agent to channel'), channelId!, context.adapter.authConfig.clientId)
         await context.sendActivity(MessageFactory.text(`sebt ${JSON.stringify(sentResult)}`))
       } else if (text.includes('getTeamChannels')) {
         const channels = await TeamsInfo.getTeamChannels(context)
@@ -64,14 +64,14 @@ export class TeamsHandler extends TeamsActivityHandler {
             users.push({ id: m.id! })
           }
         })
-        await TeamsInfo.sendMessageToListOfUsers(context, MessageFactory.text('msg from bot to list of users'), context.adapter.authConfig.tenantId!, users)
+        await TeamsInfo.sendMessageToListOfUsers(context, MessageFactory.text('msg from agent to list of users'), context.adapter.authConfig.tenantId!, users)
       } else if (text.includes('sendMessageToAllUsersInTenant')) {
-        const batchResp = await TeamsInfo.sendMessageToAllUsersInTenant(context, MessageFactory.text('msg from bot to all users'), context.adapter.authConfig.tenantId!)
+        const batchResp = await TeamsInfo.sendMessageToAllUsersInTenant(context, MessageFactory.text('msg from agent to all users'), context.adapter.authConfig.tenantId!)
         console.log(batchResp.operationId)
       } else if (text.includes('sendMessageToAllUsersInTeam')) {
         const teamsChannelData = parseTeamsChannelData(context.activity.channelData)
         const teamId = teamsChannelData.team?.id
-        const batchResp = await TeamsInfo.sendMessageToAllUsersInTeam(context, MessageFactory.text('msg from bot to all users in team'), context.adapter.authConfig.tenantId!, teamId!)
+        const batchResp = await TeamsInfo.sendMessageToAllUsersInTeam(context, MessageFactory.text('msg from agent to all users in team'), context.adapter.authConfig.tenantId!, teamId!)
         console.log(batchResp.operationId)
       } else if (text.includes('sendMessageToListOfChannels')) {
         const members = await TeamsInfo.getPagedMembers(context, 2)
@@ -81,25 +81,25 @@ export class TeamsHandler extends TeamsActivityHandler {
             users.push({ id: m.id! })
           }
         })
-        await TeamsInfo.sendMessageToListOfChannels(context, MessageFactory.text('msg from bot to list of channels'), context.adapter.authConfig.tenantId!, users)
+        await TeamsInfo.sendMessageToListOfChannels(context, MessageFactory.text('msg from agent to list of channels'), context.adapter.authConfig.tenantId!, users)
       } else if (text.includes('msg all_members')) {
         await this.messageAllMembers(context)
       } else {
         await context.sendActivities([
-          MessageFactory.text('Welcome to teams-js-bot1'),
+          MessageFactory.text('Welcome to teams-handler'),
           MessageFactory.text('options: getMember, getMeetingInfo, getMeetingParticipant, sendMeetingNotification,  sendMessageToAllUsersInTenant, getTeamChannels, getTeamDetails, getPagedTeamMembers, getPagedMembers, sendMessageToTeamsChannel, sendMessageToListOfUsers, sendMessageToAllUsersInTenant, msg all_members')])
       }
     })
 
     this.onMembersAdded(async (context, next) => {
       const membersAdded = context.activity.membersAdded ?? []
-      const welcomeText = 'Hello from teams-js-bot!'
+      const welcomeText = 'Hello from teams-handler!'
       for (const member of membersAdded) {
         if (member.id !== (context.activity.recipient?.id ?? '')) {
           await context.sendActivity(MessageFactory.text(welcomeText, welcomeText))
         }
       }
-      // By calling next() you ensure that the next BotHandler is run.
+      // By calling next() you ensure that the next AgentHandler is run.
       await next()
     })
   }
@@ -109,7 +109,7 @@ export class TeamsHandler extends TeamsActivityHandler {
     const membersResult = await TeamsInfo.getPagedMembers(context, 2)
     await Promise.all(membersResult.members.map(async (member) => {
       const message = MessageFactory.text(
-        `Hello ${member.givenName} ${member.surname}. I'm a Teams conversation bot. from ${author.email}`
+        `Hello ${member.givenName} ${member.surname}. I'm a Teams conversation agent. from ${author.email}`
       )
 
       const convoParams: ConversationParameters = {
