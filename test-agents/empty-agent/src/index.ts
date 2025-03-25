@@ -10,7 +10,7 @@ import { EmptyAgent } from './agent'
 const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
 
 const adapter = new CloudAdapter(authConfig)
-const myBot = new EmptyAgent()
+const myAgent = new EmptyAgent()
 
 const app = express()
 
@@ -20,7 +20,7 @@ app.use(authorizeJWT(authConfig))
 app.post('/api/messages', async (req: Request, res: Response) => {
   // console.log(req.body)
   console.log('req.user', req.user)
-  await adapter.process(req, res, async (context) => await myBot.run(context))
+  await adapter.process(req, res, async (context) => await myAgent.run(context))
 })
 
 const port = process.env.PORT || 39783

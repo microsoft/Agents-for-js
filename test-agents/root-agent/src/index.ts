@@ -10,7 +10,7 @@ const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
 
 const adapter = new CloudAdapter(authConfig)
 
-const myBot = new RootHandler()
+const myAgent = new RootHandler()
 
 const app = express()
 
@@ -18,10 +18,10 @@ app.use(express.json())
 app.use(authorizeJWT(authConfig))
 
 app.post('/api/messages', async (req: Request, res: Response) => {
-  await adapter.process(req, res, async (context) => await myBot.run(context))
+  await adapter.process(req, res, async (context) => await myAgent.run(context))
 })
 
-configureResponseController(app, adapter, myBot)
+configureResponseController(app, adapter, myAgent)
 
 const port = process.env.PORT || 3978
 app.listen(port, () => {

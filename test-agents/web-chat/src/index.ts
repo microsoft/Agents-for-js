@@ -15,15 +15,15 @@ import { WebChatSsoHandler } from './webChatSso'
 const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
 const conversationReferences: { [key: string]: ConversationReference } = {}
 
-const createBot = (botName: string) => {
-  switch (botName) {
+const createBot = (agentName: string) => {
+  switch (agentName) {
     case 'AdaptiveCardAgent':
       return new AdaptiveCardHandler()
-    case 'cardFactoryAgent':
+    case 'CardFactoryAgent':
       return new CardFactoryHandler()
     case 'MultiFeatureAgent':
       return new MultiFeatureHandler(conversationReferences)
-    case 'webChatSSOAgent': {
+    case 'WebChatSSOAgent': {
       const memoryStorage = new MemoryStorage()
       const userState = new UserState(memoryStorage)
       return new WebChatSsoHandler(userState)
@@ -54,14 +54,14 @@ const createBot = (botName: string) => {
       return new StateManagementHandler(conversationState, userState)
     }
     default:
-      throw new Error(`Bot with name ${botName} is not recognized.`)
+      throw new Error(`Agent with name ${agentName} is not recognized.`)
   }
 }
 
 const adapter = new CloudAdapter(authConfig)
 
-const botName = process.env.botName || 'MultiFeatureBot'
-const myBot = createBot(botName)
+const agentName = process.env.agentName || 'MultiFeatureAgent'
+const myAgent = createBot(agentName)
 
 const app = express()
 
@@ -82,7 +82,7 @@ app.get('/api/notify', async (_req: Request, res: Response) => {
 })
 
 app.post('/api/messages', async (req: Request, res: Response) => {
-  await adapter.process(req, res, async (context) => await myBot.run(context))
+  await adapter.process(req, res, async (context) => await myAgent.run(context))
 })
 
 const port = process.env.PORT || 3978

@@ -13,8 +13,8 @@ import path from 'path'
 
 const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
 
-const createBot = (botName: string) => {
-  switch (botName) {
+const createBot = (agentName: string) => {
+  switch (agentName) {
     case 'TeamsJsAgent':
       return new TeamsHandler()
     case 'TeamsSsoAgent':
@@ -26,14 +26,14 @@ const createBot = (botName: string) => {
     case 'TeamsMultiFeatureAgent':
       return new TeamsMultiFeature()
     default:
-      throw new Error(`Agent with name ${botName} is not recognized.`)
+      throw new Error(`Agent with name ${agentName} is not recognized.`)
   }
 }
 
 const adapter = new TeamsCloudAdapter(authConfig)
 
-const botName = process.env.botName || 'TeamsJsAgent'
-const myBot = createBot(botName)
+const agentName = process.env.agentName || 'TeamsJsAgent'
+const myAgent = createBot(agentName)
 
 const app = express()
 
@@ -57,7 +57,7 @@ app.post('/CustomForm', (_req) => {
 })
 
 app.post('/api/messages', async (req: Request, res: Response) => {
-  await adapter.process(req, res, async (context) => await myBot.run(context))
+  await adapter.process(req, res, async (context) => await myAgent.run(context))
 })
 
 const port = process.env.PORT || 3978

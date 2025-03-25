@@ -86,7 +86,7 @@ export class TeamsHandler extends TeamsActivityHandler {
         await this.messageAllMembers(context)
       } else {
         await context.sendActivities([
-          MessageFactory.text('Welcome to teams-js-bot1'),
+          MessageFactory.text('Welcome to teams-js-agent1'),
           MessageFactory.text('options: getMember, getMeetingInfo, getMeetingParticipant, sendMeetingNotification,  sendMessageToAllUsersInTenant, getTeamChannels, getTeamDetails, getPagedTeamMembers, getPagedMembers, sendMessageToTeamsChannel, sendMessageToListOfUsers, sendMessageToAllUsersInTenant, msg all_members')])
       }
     })

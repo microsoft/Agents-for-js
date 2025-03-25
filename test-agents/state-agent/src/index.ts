@@ -33,7 +33,7 @@ const userState = new UserState(blobStorage)
 // const conversationState = new ConversationState(memoryStorage)
 // const userState = new UserState(memoryStorage)
 
-const myBot = new StateManagementAgent(conversationState, userState, blobTranscriptStore)
+const myAgent = new StateManagementAgent(conversationState, userState, blobTranscriptStore)
 const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
 const adapter = new CloudAdapter(authConfig)
 
@@ -43,7 +43,7 @@ app.use(express.json())
 app.use(authorizeJWT(authConfig))
 
 app.post('/api/messages', async (req: Request, res: Response) => {
-  await adapter.process(req, res, async (context) => await myBot.run(context))
+  await adapter.process(req, res, async (context) => await myAgent.run(context))
 })
 
 const port = process.env.PORT || 3978
