@@ -87,7 +87,7 @@ export abstract class Dialog<O extends object = {}> extends Configurable {
      * This defaults to returning the dialogs [id](#id) but can be overridden to provide more
      * precise change detection logic. Any dialog on the stack that has its version change will
      * result in a `versionChanged` event will be raised. If this event is not handled by the bot,
-     * an error will be thrown resulting in the bots error handler logic being run.
+     * an error will be thrown resulting in the agent error handler logic being run.
      *
      * Returning an empty string will disable version tracking for the component all together.
      * @returns Unique string which should only change when dialog has changed in a way that should restart the dialog.
