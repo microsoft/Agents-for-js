@@ -12,7 +12,7 @@ const authConfig = loadAuthConfigFromEnv()
 const adapter = new CloudAdapter(authConfig)
 
 // Define the state store for your agent. See https://aka.ms/about-bot-state to learn more about using MemoryStorage.
-// A bot requires a state storage system to persist the dialog and user state between messages.
+// An Agent requires a state storage system to persist the dialog and user state between messages.
 const memoryStorage = new MemoryStorage()
 
 // Create conversation and user state with in-memory storage provider.
@@ -22,7 +22,7 @@ const userState = new UserState(memoryStorage)
 // Create the main dialog.
 const dialog = new RootDialog(userState)
 
-// Create the bot's main handler.
+// Create the agent's main handler.
 const myBot = new DialogHandler(conversationState, userState, dialog)
 
 const app = express()

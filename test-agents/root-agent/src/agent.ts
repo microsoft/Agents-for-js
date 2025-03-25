@@ -7,17 +7,17 @@ export class RootHandler extends ActivityHandler {
     this.onMessage(async (context, next) => {
       const text = context.activity.text
 
-      if (text?.startsWith('agent')) {
+      if (text?.startsWith('starts')) {
         const botClient: AgentClient = new AgentClient('Bot1')
 
         const activityStarts = JSON.stringify(context.activity)
         console.log('activityStarts', activityStarts)
 
         await botClient.postActivity(context.activity, context.adapter.authConfig)
-      } else if (text?.startsWith('echo-bot:')) {
+      } else if (text?.startsWith('agent:')) {
         await context.sendActivity(context.activity)
       } else {
-        await context.sendActivity(MessageFactory.text(`root-bot: ${context.activity.text}`))
+        await context.sendActivity(MessageFactory.text(`root-agent: ${context.activity.text}`))
       }
 
       await next()
@@ -25,7 +25,7 @@ export class RootHandler extends ActivityHandler {
 
     this.onMembersAdded(async (context, next) => {
       const membersAdded = context.activity.membersAdded ?? []
-      const welcomeText = `Root bot running on sdk ${sdkVersion}`
+      const welcomeText = `Root Agent running on sdk ${sdkVersion}`
       for (const member of membersAdded) {
         if (member.id !== (context.activity.recipient?.id ?? '')) {
           await context.sendActivity(MessageFactory.text(welcomeText, welcomeText))
@@ -34,7 +34,7 @@ export class RootHandler extends ActivityHandler {
       await next()
     })
     this.onEndOfConversation(async (context, next) => {
-      const messageText = 'root-bot: Conversation ended'
+      const messageText = 'root-agent: Conversation ended'
       await context.sendActivity(MessageFactory.text(messageText, messageText))
       await next()
     })

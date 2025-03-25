@@ -15,24 +15,24 @@ const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
 
 const createBot = (botName: string) => {
   switch (botName) {
-    case 'TeamsJsBot':
+    case 'TeamsJsAgent':
       return new TeamsHandler()
-    case 'TeamsSsoBot':
+    case 'TeamsSsoAgent':
     {
       const memoryStorage = new MemoryStorage()
       const userState = new UserState(memoryStorage)
       return new TeamsSso(userState)
     }
-    case 'TeamsMultiFeatureBot':
+    case 'TeamsMultiFeatureAgent':
       return new TeamsMultiFeature()
     default:
-      throw new Error(`Bot with name ${botName} is not recognized.`)
+      throw new Error(`Agent with name ${botName} is not recognized.`)
   }
 }
 
 const adapter = new TeamsCloudAdapter(authConfig)
 
-const botName = process.env.botName || 'TeamsJsBot'
+const botName = process.env.botName || 'TeamsJsAgent'
 const myBot = createBot(botName)
 
 const app = express()

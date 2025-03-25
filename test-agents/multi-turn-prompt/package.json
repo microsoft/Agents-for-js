@@ -1,8 +1,8 @@
 {
-    "name": "multiturn-prompts-bot",
+    "name": "multiturn-prompts-agent",
     "version": "1.0.0",
     "private": true,
-    "description": "Agents SKD multiturn-prompts bot for testing and development",
+    "description": "Agents SKD multiturn-prompts Agent for testing and development",
     "author": "Microsoft",
     "license": "MIT",
     "main": "./dist/index.js",

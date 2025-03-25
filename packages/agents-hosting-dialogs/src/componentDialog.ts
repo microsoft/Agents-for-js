@@ -20,7 +20,7 @@ const PERSISTED_DIALOG_STATE = 'dialogs'
  * @remarks
  * Component dialogs let you break your bot's logic up into components that can themselves be added
  * as a dialog to another `ComponentDialog` or `DialogSet`. Components can also be exported as part
- * of a node package and used within other bots.
+ * of a node package and used within other agents.
  *
  * @param O (Optional) options that can be passed into the `DialogContext.beginDialog()` method.
  */

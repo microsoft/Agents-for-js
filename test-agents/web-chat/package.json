@@ -1,8 +1,8 @@
 {
-  "name": "webchat-bots",
+  "name": "webchat-agents",
   "version": "1.0.0",
   "private": true,
-  "description": "Agents SKD webchat bots for testing and development",
+  "description": "Agents SKD webchat for testing and development",
   "author": "Microsoft",
   "license": "MIT",
   "main": "./dist/index.js",
