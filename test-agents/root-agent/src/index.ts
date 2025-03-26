@@ -3,14 +3,20 @@
 
 import express, { Response } from 'express'
 
-import { Request, CloudAdapter, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv, configureResponseController } from '@microsoft/agents-hosting'
+import { Request, CloudAdapter, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv, configureResponseController, UserState, ConversationState } from '@microsoft/agents-hosting'
 import { version as sdkVersion } from '@microsoft/agents-hosting/package.json'
-import { RootHandler } from './agent'
+import { RootHandlerWithBlobStorageMemory } from './agent'
+import { BlobsStorage } from '@microsoft/agents-hosting-storage-blob'
+
 const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
+
+const blobStorage = new BlobsStorage(process.env.BLOB_STORAGE_CONNECTION_STRING!, process.env.BLOB_CONTAINER_ID!)
+const conversationState = new ConversationState(blobStorage)
+const userState = new UserState(blobStorage)
 
 const adapter = new CloudAdapter(authConfig)
 
-const myAgent = new RootHandler()
+const myAgent = new RootHandlerWithBlobStorageMemory(conversationState, userState)
 
 const app = express()
 
