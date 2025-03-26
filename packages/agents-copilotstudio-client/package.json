@@ -11,7 +11,7 @@
     "email": "agentssdk@microsoft.com",
     "url": "https://aka.ms/Agents"
   },
-  "description": "Microsoft Copilot Studio Client for JavaScript",
+  "description": "Microsoft Copilot Studio Client for JavaScript. Copilot Studio Client.",
   "keywords": [
     "Agents",
     "copilotstudio",
