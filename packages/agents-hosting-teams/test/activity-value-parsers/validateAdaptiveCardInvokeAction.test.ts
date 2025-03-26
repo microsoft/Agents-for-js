@@ -38,15 +38,17 @@ describe('parseAdaptiveCardInvokeAction test', () => {
     }, ZodError)
   })
 
-  it('Should throw with no id', () => {
+  it('Should not throw without id', () => {
     const adaptiveCardInvokeActionObject = {
       type: 'type',
       verb: 'verb',
       data: { x: 'data' }
     }
-    assert.throws(() => {
-      parseAdaptiveCardInvokeAction(adaptiveCardInvokeActionObject)
-    }, ZodError)
+    const result = parseAdaptiveCardInvokeAction(adaptiveCardInvokeActionObject)
+    assert.equal(result.id, undefined)
+    assert.equal(result.type, 'type')
+    assert.equal(result.verb, 'verb')
+    assert.deepEqual(result.data, { x: 'data' })
   })
 
   it('Should throw with no string id', () => {
