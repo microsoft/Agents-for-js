@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { Activity, ActivityTypes, AdaptiveCardInvokeAction, AdaptiveCardInvokeResponse, CardFactory, INVOKE_RESPONSE_KEY, InvokeResponse, MessageFactory, RouteSelector, TurnContext, TurnState } from '@microsoft/agents-hosting'
+import { Activity, ActivityTypes, AdaptiveCardInvokeResponse, CardFactory, INVOKE_RESPONSE_KEY, InvokeResponse, MessageFactory, RouteSelector, TurnContext, TurnState } from '@microsoft/agents-hosting'
 import { AdaptiveCard } from './adaptiveCard'
 import { TeamsApplication } from '../teamsApplication'
 import { AdaptiveCardActionExecuteResponseType } from './adaptiveCardActionExecuteResponseType'
@@ -38,17 +38,18 @@ export class AdaptiveCards<TState extends TurnState> {
         selector,
         async (context, state) => {
           const a = context?.activity
+          const invokeAction = parseValueActionExecuteSelector(a.value)
           if (
             a?.type !== ActivityTypes.Invoke ||
                         a?.name !== ACTION_INVOKE_NAME ||
-                        (a?.value as AdaptiveCardInvokeAction).type !== ACTION_EXECUTE_TYPE
+                        (invokeAction.action.type !== ACTION_EXECUTE_TYPE)
           ) {
             throw new Error(
                             `Unexpected AdaptiveCards.actionExecute() triggered for activity type: ${a?.type}`
             )
           }
 
-          const result = await handler(context, state, (parseAdaptiveCardInvokeAction(a.value)).data as TData ?? {} as TData)
+          const result = await handler(context, state, (invokeAction.action as TData) ?? {} as TData)
           if (!context.turnState.get(INVOKE_RESPONSE_KEY)) {
             let response: AdaptiveCardInvokeResponse
             if (typeof result === 'string') {

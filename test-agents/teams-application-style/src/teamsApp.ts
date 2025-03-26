@@ -3,6 +3,7 @@
 
 import {
   ActivityTypes,
+  CardFactory,
   CloudAdapter,
   ConversationParameters,
   MessageFactory,
@@ -11,10 +12,33 @@ import {
 }
   from '@microsoft/agents-hosting'
 import { TeamsInfo, TeamsMember, MeetingNotification, parseTeamsChannelData, TeamsApplication } from '@microsoft/agents-hosting-teams'
+import { AdaptiveCard } from '@microsoft/agents-hosting-teams/dist/src/app/adaptive-cards'
 
 type ApplicationTurnState = TurnState
 export const app = new TeamsApplication({
   removeRecipientMention: false
+})
+
+app.adaptiveCards.actionExecute('doStuff', async (context, state, data) => {
+  const card = {
+    type: 'AdaptiveCard',
+    body: [
+      {
+        type: 'TextBlock',
+        size: 'Medium',
+        weight: 'Bolder',
+        text: '✅[ACK] Test'
+      },
+      {
+        type: 'TextBlock',
+        text: 'doStuff action executed',
+        wrap: true
+      }
+    ],
+    $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
+    version: '1.4'
+  }
+  return card as AdaptiveCard
 })
 
 app.conversationUpdate('membersAdded', async (context: TurnContext, state: ApplicationTurnState) => {
@@ -25,6 +49,35 @@ app.conversationUpdate('membersAdded', async (context: TurnContext, state: Appli
       await context.sendActivity(MessageFactory.text(welcomeText, welcomeText))
     }
   }
+})
+
+app.message('/acInvoke', async (context: TurnContext, state: ApplicationTurnState) => {
+  const card = {
+    type: 'AdaptiveCard',
+    body: [
+      {
+        type: 'TextBlock',
+        size: 'Medium',
+        weight: 'Bolder',
+        text: 'Test Adaptive Card'
+      },
+      {
+        type: 'TextBlock',
+        text: 'Click the button to execute an action',
+        wrap: true
+      }
+    ],
+    actions: [
+      {
+        type: 'Action.Execute',
+        title: 'Do Stuff',
+        verb: 'doStuff'
+      }
+    ],
+    $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
+    version: '1.4'
+  }
+  await context.sendActivity(MessageFactory.attachment(CardFactory.adaptiveCard(card)))
 })
 
 app.message('/getMeetingParticipant', async (context: TurnContext, state: ApplicationTurnState) => {
@@ -142,6 +195,7 @@ app.activity(ActivityTypes.Message, async (context: TurnContext, state: Applicat
       /sendMessageToTeamsChannel,
       /sendMessageToListOfUsers,
       /sendMessageToAllUsersInTenant,
+      /acInvoke,
       /msgAllMembers`
     )])
 })

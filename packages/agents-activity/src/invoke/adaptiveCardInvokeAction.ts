@@ -32,7 +32,7 @@ export interface AdaptiveCardInvokeAction {
  */
 export const adaptiveCardInvokeActionZodSchema = z.object({
   type: z.string().min(1),
-  id: z.string().min(1),
+  id: z.string().optional(),
   verb: z.string().min(1),
   data: z.record(z.string().min(1), z.any())
 })
