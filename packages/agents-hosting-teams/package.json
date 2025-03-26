@@ -5,7 +5,7 @@
   "homepage": "https://github.com/microsoft/Agents-for-js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/microsoft/Agents-for-js.git"
+    "url": "git+https://github.com/microsoft/Agents-for-js.git"
   },
   "author": {
     "name": "Microsoft",

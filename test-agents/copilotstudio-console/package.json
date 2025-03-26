@@ -20,7 +20,6 @@
     "@azure/msal-node": "^3.4.1",
     "open": "^10.1.0"
   },
-  "devDependencies": {
-  },
+  "devDependencies": {},
   "keywords": []
 }

@@ -5,7 +5,7 @@
   "homepage": "https://github.com/microsoft/Agents-for-js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/microsoft/Agents-for-js"
+    "url": "git+https://github.com/microsoft/Agents-for-js.git"
   },
   "author": {
     "name": "Microsoft",
@@ -17,7 +17,7 @@
     "Agents"
   ],
   "main": "dist/src/index.js",
-  "types" : "dist/src/index.d.ts",
+  "types": "dist/src/index.d.ts",
   "dependencies": {
     "uuid": "^11.1.0",
     "zod": "^3.24.2"
@@ -35,7 +35,7 @@
     ".": {
       "import": "./dist/src/index.js",
       "require": "./dist/src/index.js"
-    },  
+    },
     "./package.json": "./package.json"
   },
   "engines": {
