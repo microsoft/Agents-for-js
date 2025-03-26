@@ -241,6 +241,17 @@ app.messageExtensions.query('searchQuery', async (context: TurnContext, state: A
   }
 })
 
+app.messageExtensions.submitAction('createCard', async (context: TurnContext, state: ApplicationTurnState, data: any) => {
+  const heroCard = CardFactory.heroCard(data.title, data.text)
+  const attachment = { contentType: heroCard.contentType, content: heroCard.content, preview: heroCard }
+
+  return {
+    type: 'result',
+    attachmentLayout: 'list',
+    attachments: [attachment]
+  }
+})
+
 app.message('/teamsinfo', async (context: TurnContext, state: ApplicationTurnState) => {
   const channels = await TeamsInfo.getTeamChannels(context)
   const msg1 = `Meeting Participant: ${JSON.stringify(channels)}}`
