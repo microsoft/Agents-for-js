@@ -16,7 +16,7 @@ export interface AdaptiveCardInvokeAction {
   /**
    * The unique identifier of the action.
    */
-  id: string
+  id?: string
   /**
    * The verb associated with the action.
    */
@@ -32,7 +32,7 @@ export interface AdaptiveCardInvokeAction {
  */
 export const adaptiveCardInvokeActionZodSchema = z.object({
   type: z.string().min(1),
-  id: z.string().min(1),
+  id: z.string().optional(),
   verb: z.string().min(1),
   data: z.record(z.string().min(1), z.any())
 })
