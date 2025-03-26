@@ -16,7 +16,7 @@ export interface AdaptiveCardInvokeAction {
   /**
    * The unique identifier of the action.
    */
-  id: string
+  id?: string
   /**
    * The verb associated with the action.
    */

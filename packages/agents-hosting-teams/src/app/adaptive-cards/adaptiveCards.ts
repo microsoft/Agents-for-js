@@ -45,7 +45,7 @@ export class AdaptiveCards<TState extends TurnState> {
                         (invokeAction.action.type !== ACTION_EXECUTE_TYPE)
           ) {
             throw new Error(
-                            `Unexpected AdaptiveCards.actionExecute() triggered for activity type: ${a?.type}`
+                            `Unexpected AdaptiveCards.actionExecute() triggered for activity type: ${invokeAction.action.type}`
             )
           }
 
