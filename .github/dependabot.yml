@@ -7,10 +7,10 @@
 version: 2
 updates:
  - package-ecosystem: "devcontainers"
-   directory: "/packages"
+   directory: "/"
    schedule:
      interval: weekly
  - package-ecosystem: "npm"
-   directory: "/packages"
+   directory: "/"
    schedule:
      interval: daily
