@@ -12,7 +12,7 @@
     "email": "agentssdk@microsoft.com",
     "url": "https://aka.ms/Agents"
   },
-  "description": "Microsoft 365 Agents SDK for JavaScript",
+  "description": "Microsoft 365 Agents SDK for JavaScript. Activity Protocol serialization and deserialization.",
   "keywords": [
     "Agents"
   ],
