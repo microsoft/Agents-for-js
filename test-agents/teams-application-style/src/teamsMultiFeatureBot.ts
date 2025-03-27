@@ -20,8 +20,11 @@ import { TeamsApplication, TeamsInfo, TaskModuleTaskInfo, MessagingExtensionAtta
 import { TaskModuleUIConstants } from './models/taskModuleUIConstants'
 import { CardTaskFetchValue } from './models/cardTaskFetchValue'
 import { UISettings } from './models/uiSettings'
+import { TaskModuleIds } from './models/taskModuleIds'
 const restaurantCardResource = require('../cards/RestaurantCard.json')
 const adaptiveCardResource = require('../cards/AdaptiveCard.json')
+
+const baseUrl = process.env.BASE_URL?.endsWith('/') ? process.env.BASE_URL : process.env.BASE_URL + '/'
 
 type ApplicationTurnState = TurnState
 const storage = new MemoryStorage()
@@ -273,11 +276,28 @@ app.message('/taskModule', async (context: TurnContext, state: ApplicationTurnSt
   await context.sendActivity(reply)
 })
 
-app.taskModules.fetch('AdaptiveCard', async (context: TurnContext, state: ApplicationTurnState, data: any) => {
+app.taskModules.fetch(['AdaptiveCard', 'YouTube', 'CustomForm'], async (context: TurnContext, state: ApplicationTurnState, data: any) => {
   let taskInfo: TaskModuleTaskInfo = {}
 
-  taskInfo = setTaskInfo(TaskModuleUIConstants.AdaptiveCard)
-  taskInfo.card = createAdaptiveCardAttachment()
+  switch (data.data) {
+    case TaskModuleIds.AdaptiveCard: {
+      taskInfo = setTaskInfo(TaskModuleUIConstants.AdaptiveCard)
+      taskInfo.card = createAdaptiveCardAttachment()
+      break
+    }
+
+    case TaskModuleIds.YouTube: {
+      taskInfo = setTaskInfo(TaskModuleUIConstants.YouTube)
+      taskInfo.url = taskInfo.fallbackUrl = baseUrl + TaskModuleIds.YouTube
+      break
+    }
+
+    case TaskModuleIds.CustomForm: {
+      taskInfo = setTaskInfo(TaskModuleUIConstants.CustomForm)
+      taskInfo.url = taskInfo.fallbackUrl = baseUrl + TaskModuleIds.CustomForm
+      break
+    }
+  }
 
   return taskInfo
 })
@@ -337,16 +357,26 @@ function getAdaptiveCard (): MessagingExtensionResult {
 }
 
 function getTaskModuleHeroCardOptions (): Attachment {
-  const taskModule = TaskModuleUIConstants.AdaptiveCard
+  const taskModuleActions: any = []
+  const taskModules = [
+    TaskModuleUIConstants.AdaptiveCard,
+    TaskModuleUIConstants.CustomForm,
+    TaskModuleUIConstants.YouTube
+  ]
 
-  const stringFetchValue = new CardTaskFetchValue<string>()
-  stringFetchValue.data = taskModule.id
+  taskModules.map((taskModule) => {
+    const stringFetchValue = new CardTaskFetchValue<string>()
+    stringFetchValue.data = taskModule.id
 
-  const taskModuleAction = new TaskModuleAction(taskModule.buttonTitle as string, stringFetchValue)
+    const taskModuleAction = new TaskModuleAction(taskModule.buttonTitle as string, stringFetchValue)
+
+    taskModuleActions.push(taskModuleAction)
+    return taskModuleAction
+  })
 
   const heroCard: Partial<HeroCard> = {
     title: 'Dialogs (referred to as task modules in TeamsJS v1.x) Invocation from Hero Card',
-    buttons: [taskModuleAction]
+    buttons: taskModuleActions
   }
 
   const attachment: Attachment = {

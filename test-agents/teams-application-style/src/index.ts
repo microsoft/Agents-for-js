@@ -37,6 +37,20 @@ server.post('/api/messages', async (req: Request, res: Response) => {
   })
 })
 
+server.get('/YouTube', (_req, res) => {
+  const filePath = path.join(__dirname, '../pages/youtube.html')
+  res.sendFile(filePath)
+})
+
+server.get('/CustomForm', (_req, res) => {
+  const filePath = path.join(__dirname, '../pages/customForm.html')
+  res.sendFile(filePath)
+})
+
+server.post('/CustomForm', (_req) => {
+  console.log('Data is being sent to the teams handler when this endpoint is called by teams')
+})
+
 const port = process.env.PORT || 3978
 server.listen(port, () => {
   console.log(`\nServer listening to port ${port} for appId ${authConfig.clientId} debug ${process.env.DEBUG}`)
