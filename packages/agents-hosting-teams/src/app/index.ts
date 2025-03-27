@@ -1,3 +1,3 @@
-export * from './adaptive-cards'
+export * from './adaptive-cards-actions'
 export * from './teamsApplication'
 export * from './teamsApplicationBuilder'

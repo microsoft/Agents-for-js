@@ -12,7 +12,7 @@ import { TeamDetails } from '../connector-client/teamDetails'
 import { TeamsPagedMembersResult } from '../connector-client/teamsPagedMembersResult'
 import { ReadReceiptInfo } from '../message-read-info/readReceipInfo'
 import { parseValueAction, parseValueContinuation } from '../parsers'
-import { AdaptiveCards } from './adaptive-cards'
+import { AdaptiveCardsActions } from './adaptive-cards-actions'
 import { MessageReactionEvents, Messages, TeamsMessageEvents } from './messages'
 import { MessageExtensions } from './messaging-extension'
 import { Meetings } from './meeting'
@@ -25,7 +25,7 @@ const logger = debug('agents:teams-application')
 export class TeamsApplication<TState extends TurnState> extends AgentApplication<TState> {
   private readonly _teamsOptions: TeamsApplicationOptions<TState>
   private readonly _invokeRoutes: AppRoute<TState>[] = []
-  private readonly _adaptiveCards: AdaptiveCards<TState>
+  private readonly _adaptiveCards: AdaptiveCardsActions<TState>
   private readonly _messages: Messages<TState>
   private readonly _messageExtensions: MessageExtensions<TState>
   private readonly _meetings: Meetings<TState>
@@ -44,7 +44,7 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
       this._teamsAuthManager = new TeamsOAuthFlowAppStyle(options?.storage ?? new MemoryStorage())
     }
 
-    this._adaptiveCards = new AdaptiveCards<TState>(this)
+    this._adaptiveCards = new AdaptiveCardsActions<TState>(this)
     this._messages = new Messages<TState>(this)
     this._messageExtensions = new MessageExtensions<TState>(this)
     this._meetings = new Meetings<TState>(this)
@@ -59,7 +59,7 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
     return this._taskModules
   }
 
-  public get adaptiveCards (): AdaptiveCards<TState> {
+  public get adaptiveCards (): AdaptiveCardsActions<TState> {
     return this._adaptiveCards
   }
 

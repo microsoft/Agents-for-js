@@ -11,14 +11,14 @@ import { AdaptiveCardInvokeResponseType } from './adaptiveCardInvokeResponseType
 import { AdaptiveCardSearchResult } from './adaptiveCardSearchResult'
 import { parseAdaptiveCardInvokeAction, parseValueActionExecuteSelector, parseValueDataset, parseValueSearchQuery } from '../../parsers'
 import { Query } from '../query'
-import { AdaptiveCardsSearchParams } from './adaptiveCardsSearchParams'
+import { AdaptiveCardsSearchParams } from '../../adaptive-cards'
 
 export const ACTION_INVOKE_NAME = 'adaptiveCard/action'
 const ACTION_EXECUTE_TYPE = 'Action.Execute'
 const DEFAULT_ACTION_SUBMIT_FILTER = 'verb'
 const SEARCH_INVOKE_NAME = 'application/search'
 
-export class AdaptiveCards<TState extends TurnState> {
+export class AdaptiveCardsActions<TState extends TurnState> {
   private readonly _app: TeamsApplication<TState>
 
   public constructor (app: TeamsApplication<TState>) {

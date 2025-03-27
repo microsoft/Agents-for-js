@@ -11,8 +11,7 @@ import {
   TurnState,
 }
   from '@microsoft/agents-hosting'
-import { TeamsInfo, TeamsMember, MeetingNotification, parseTeamsChannelData, TeamsApplication } from '@microsoft/agents-hosting-teams'
-import { AdaptiveCard } from '@microsoft/agents-hosting-teams/dist/src/app/adaptive-cards'
+import { TeamsInfo, TeamsMember, MeetingNotification, parseTeamsChannelData, TeamsApplication, AdaptiveCard } from '@microsoft/agents-hosting-teams'
 
 type ApplicationTurnState = TurnState
 export const app = new TeamsApplication({
