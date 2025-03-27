@@ -7,6 +7,7 @@ import { Request, CloudAdapter, authorizeJWT, AuthConfiguration, loadAuthConfigF
 import { version as sdkVersion } from '@microsoft/agents-hosting/package.json'
 import { RootHandlerWithBlobStorageMemory } from './agent'
 import { BlobsStorage } from '@microsoft/agents-hosting-storage-blob'
+import { ConversationData, UserProfile } from './memoryData'
 
 const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
 
@@ -16,7 +17,9 @@ const userState = new UserState(blobStorage)
 
 const adapter = new CloudAdapter(authConfig)
 
-const myAgent = new RootHandlerWithBlobStorageMemory(conversationState, userState)
+const conversationDataAccessor = conversationState.createProperty<ConversationData>('conversationData')
+const userProfileAccessor = userState.createProperty<UserProfile>('userProfile')
+const myAgent = new RootHandlerWithBlobStorageMemory(conversationState, userState, conversationDataAccessor, userProfileAccessor)
 
 const app = express()
 
@@ -29,6 +32,9 @@ app.post('/api/messages', async (req: Request, res: Response) => {
 
 configureResponseController(app, adapter, myAgent)
 
+// export const configureResponseController = (app: Application, adapter: CloudAdapter, agent: ActivityHandler, conversationState: ConversationState) => {
+//   app.post('/api/botresponse/v3/conversations/:conversationId/activities/:activityId', handleResponse(adapter, agent, conversationState))
+// }
 const port = process.env.PORT || 3978
 app.listen(port, () => {
   console.log(`\nRootBot to port ${port} on sdk ${sdkVersion} for appId ${authConfig.clientId} debug ${process.env.DEBUG}`)
