@@ -4,21 +4,21 @@
   "homepage": "https://github.com/microsoft/Agents-for-js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/microsoft/Agents-for-js"
+    "url": "git+https://github.com/microsoft/Agents-for-js.git"
   },
   "author": {
     "name": "Microsoft",
     "email": "agentssdk@microsoft.com",
     "url": "https://aka.ms/Agents"
   },
-  "description": "Microsoft Copilot Studio Client for JavaScript",
+  "description": "Microsoft Copilot Studio Client for JavaScript. Copilot Studio Client.",
   "keywords": [
     "Agents",
     "copilotstudio",
     "powerplatform"
   ],
   "main": "dist/src/index.js",
-  "types" : "dist/src/index.d.ts",
+  "types": "dist/src/index.d.ts",
   "dependencies": {
     "@microsoft/agents-activity": "file:../agents-activity",
     "axios": "^1.8.2",

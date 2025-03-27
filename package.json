@@ -4,7 +4,7 @@
   "homepage": "https://github.com/microsoft/Agents-for-js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/microsoft/Agents-for-js"
+    "url": "git+https://github.com/microsoft/Agents-for-js.git"
   },
   "author": {
     "name": "Microsoft",
@@ -32,8 +32,7 @@
     "packages/*",
     "test-agents/*"
   ],
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/debug": "^4.1.12",
     "@types/express": "^5.0.1",

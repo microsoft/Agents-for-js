@@ -5,7 +5,7 @@
   "homepage": "https://github.com/microsoft/Agents-for-js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/microsoft/Agents-for-js"
+    "url": "git+https://github.com/microsoft/Agents-for-js.git"
   },
   "author": {
     "name": "Microsoft",
@@ -14,13 +14,12 @@
   },
   "description": "Microsoft 365 Agents SDK State Blob Storage support.",
   "main": "dist/index.js",
-  "types" : "dist/src/index.d.ts",
+  "types": "dist/src/index.d.ts",
   "dependencies": {
     "@azure/storage-blob": "^12.27.0",
     "@microsoft/agents-hosting": "file:../../packages/agents-hosting"
   },
-  "devDependencies": {
-  },
+  "devDependencies": {},
   "license": "MIT",
   "files": [
     "README.md",
