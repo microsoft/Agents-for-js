@@ -458,13 +458,16 @@ function createTaskSelector (
     }
   } else {
     return (context: TurnContext) => {
-      const activityValue = parseValueCommandId(context.activity.value)
-      const isInvoke = context?.activity?.type === ActivityTypes.Invoke && context?.activity?.name === invokeName
-      return Promise.resolve(
-        isInvoke &&
-                    activityValue.commandId === commandId &&
-                    matchesPreviewAction(context.activity, messagePreviewAction)
-      )
+      if (!context.activity.name?.includes('task')) {
+        const activityValue = parseValueCommandId(context.activity.value)
+        const isInvoke = context?.activity?.type === ActivityTypes.Invoke && context?.activity?.name === invokeName
+        return Promise.resolve(
+          isInvoke &&
+                      activityValue.commandId === commandId &&
+                      matchesPreviewAction(context.activity, messagePreviewAction)
+        )
+      }
+      return Promise.resolve(false)
     }
   }
 }
