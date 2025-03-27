@@ -9,8 +9,6 @@ This package contains Teams specific features, such as:
 
 ## Installation
 
-To install the necessary dependencies, run the following command:
-
 ```bash
 npm install @microsoft/agents-hosting-teams
 ```
