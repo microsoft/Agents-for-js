@@ -32,9 +32,6 @@ app.post('/api/messages', async (req: Request, res: Response) => {
 
 configureResponseController(app, adapter, myAgent)
 
-// export const configureResponseController = (app: Application, adapter: CloudAdapter, agent: ActivityHandler, conversationState: ConversationState) => {
-//   app.post('/api/botresponse/v3/conversations/:conversationId/activities/:activityId', handleResponse(adapter, agent, conversationState))
-// }
 const port = process.env.PORT || 3978
 app.listen(port, () => {
   console.log(`\nRootBot to port ${port} on sdk ${sdkVersion} for appId ${authConfig.clientId} debug ${process.env.DEBUG}`)
