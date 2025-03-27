@@ -37,7 +37,7 @@
     "@types/debug": "^4.1.12",
     "@types/express": "^5.0.1",
     "@types/express-serve-static-core": "^5.0.5",
-    "@types/node": "^22.13.13",
+    "@types/node": "^22.13.14",
     "@types/sinon": "^17.0.4",
     "@types/uuid": "^10.0.0",
     "eslint": "^9.23.0",
