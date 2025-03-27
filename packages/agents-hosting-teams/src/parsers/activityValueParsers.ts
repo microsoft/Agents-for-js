@@ -190,15 +190,15 @@ export function parseValueQuery (value: unknown): {
  * @param {unknown} value - The value to validate.
  * @returns {object} - The validated message preview action.
  */
-export function parseValueMessagePreviewAction (value: unknown): {
-  messagePreviewAction: string;
+export function parseValueBotMessagePreviewAction (value: unknown): {
+  botMessagePreviewAction: string;
 } {
-  const messagePreviewActionZodSchema = z.object({
-    messagePreviewAction: z.string().min(1)
+  const botMessagePreviewActionZodSchema = z.object({
+    botMessagePreviewAction: z.string().min(1)
   })
-  const parsedValue = messagePreviewActionZodSchema.passthrough().parse(value)
+  const parsedValue = botMessagePreviewActionZodSchema.passthrough().parse(value)
   return {
-    messagePreviewAction: parsedValue.messagePreviewAction
+    botMessagePreviewAction: parsedValue.botMessagePreviewAction
   }
 }
 
@@ -208,13 +208,13 @@ export function parseValueMessagePreviewAction (value: unknown): {
  * @param {unknown} value - The value to validate.
  * @returns {object} - The validated activity preview.
  */
-export function parseValueActivityPreview (value: unknown): object {
-  const activityPreviewZodSchema = z.object({
-    activityPreview: z.array(activityZodSchema.partial())
+export function parseValueBotActivityPreview (value: unknown): object {
+  const botActivityPreviewZodSchema = z.object({
+    botActivityPreview: z.array(activityZodSchema.partial())
   })
-  const parsedValue = activityPreviewZodSchema.passthrough().parse(value)
+  const parsedValue = botActivityPreviewZodSchema.passthrough().parse(value)
   return {
-    activityPreview: parsedValue.activityPreview
+    botActivityPreview: parsedValue.botActivityPreview
   }
 }
 

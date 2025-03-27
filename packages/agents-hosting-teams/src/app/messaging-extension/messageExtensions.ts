@@ -12,7 +12,7 @@ import { MessagingExtensionParameter } from '../../messaging-extension/messaging
 import { MessagingExtensionQuery } from '../../messaging-extension/messagingExtensionQuery'
 import { TaskModuleResponse } from '../../task/taskModuleResponse'
 import { MessageExtensionsInvokeNames } from './messageExtensionsInvokeNames'
-import { parseValueActivityPreview, parseValueMessagePreviewAction, parseValueCommandId, parseValueQuery } from '../../parsers'
+import { parseValueBotActivityPreview, parseValueBotMessagePreviewAction, parseValueCommandId, parseValueQuery } from '../../parsers'
 import { Query } from '../query'
 
 export class MessageExtensions<TState extends TurnState> {
@@ -66,17 +66,17 @@ export class MessageExtensions<TState extends TurnState> {
       this._app.addRoute(
         selector,
         async (context, state) => {
-          const activityValue = parseValueMessagePreviewAction(context.activity.value)
+          const activityValue = parseValueBotMessagePreviewAction(context.activity.value)
           if (context?.activity?.type !== ActivityTypes.Invoke ||
             context?.activity?.name !== SUBMIT_ACTION_INVOKE ||
-            activityValue.messagePreviewAction !== 'edit'
+            activityValue.botMessagePreviewAction !== 'edit'
           ) {
             throw new Error(
                             `Unexpected MessageExtensions.messagePreviewEdit() triggered for activity type: ${context?.activity?.type}`
             )
           }
 
-          const activityActivityPreview = parseValueActivityPreview(context.activity.value)
+          const activityActivityPreview = parseValueBotActivityPreview(context.activity.value)
           const result = await handler(context, state, (activityActivityPreview as any).botActivityPreview[0] as Partial<Activity> ?? {})
           await this.returnSubmitActionResponse(context, result)
         },
@@ -96,18 +96,18 @@ export class MessageExtensions<TState extends TurnState> {
       this._app.addRoute(
         selector,
         async (context, state) => {
-          const activityMessagePreviewAction = parseValueMessagePreviewAction(context.activity.value)
+          const activityMessagePreviewAction = parseValueBotMessagePreviewAction(context.activity.value)
           if (
             context?.activity?.type !== ActivityTypes.Invoke ||
                         context?.activity?.name !== SUBMIT_ACTION_INVOKE ||
-                        activityMessagePreviewAction.messagePreviewAction !== 'send'
+                        activityMessagePreviewAction.botMessagePreviewAction !== 'send'
           ) {
             throw new Error(
                             `Unexpected MessageExtensions.messagePreviewSend() triggered for activity type: ${context?.activity?.type}`
             )
           }
 
-          const activityActivityPreview = parseValueActivityPreview(context.activity.value)
+          const activityActivityPreview = parseValueBotActivityPreview(context.activity.value)
           await handler(context, state, (activityActivityPreview as any).botActivityPreview[0] as Partial<Activity> ?? {})
 
           if (!context.turnState.get(INVOKE_RESPONSE_KEY)) {
@@ -470,9 +470,9 @@ function createTaskSelector (
 }
 
 function matchesPreviewAction (activity: Activity, messagePreviewAction?: 'edit' | 'send'): boolean {
-  const activityValue = parseValueMessagePreviewAction(activity.value)
-  if (typeof activityValue.messagePreviewAction === 'string') {
-    return activityValue.messagePreviewAction === messagePreviewAction
+  if ('botMessagePreviewAction' in (activity?.value as any)) {
+    const activityValue = parseValueBotMessagePreviewAction(activity.value)
+    return activityValue.botMessagePreviewAction === messagePreviewAction
   } else {
     return messagePreviewAction === undefined
   }
