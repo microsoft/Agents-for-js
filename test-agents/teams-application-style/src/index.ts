@@ -20,6 +20,9 @@ async function loadModule () {
     case 'teamsSsoApp':
       module = (await import('./teamsSsoApp')).app
       return module
+    case 'teamsMultiFeatureBot':
+      module = (await import('./teamsMultiFeatureBot')).app
+      return module
     default:
       throw new Error(`Agent with name ${moduleName} is not recognized.`)
   }
