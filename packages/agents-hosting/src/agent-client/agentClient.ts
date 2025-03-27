@@ -1,8 +1,8 @@
 import { AuthConfiguration, MsalTokenProvider } from '../auth'
 import { Activity, RoleTypes } from '@microsoft/agents-activity'
-import { MemoryStorage, StoreItem } from '../storage'
 import { v4 } from 'uuid'
 import { debug } from '../logger'
+import { MemoryStorage, StoreItem } from '../storage'
 
 const logger = debug('agents:agent-client')
 
@@ -41,7 +41,6 @@ export class AgentClient {
       conversationReference: activity.getConversationReference()
     }
     await memory.write(changes)
-
     const memoryChanges = JSON.stringify(changes)
     logger.debug('memoryChanges: ', memoryChanges)
 

@@ -7,29 +7,29 @@
     "license": "MIT",
     "main": "./dist/index.js",
     "scripts": {
-      "prebuild": "npm i",
-      "build": "tsc --build",
-      "prestart": "npm run build",
-      "start": "node --env-file .env ./dist/index.js",    
-      "prebundle": "npm run build",
-      "bundle": "esbuild ./src/index.js --bundle --platform=node --metafile=dist/meta.json --outfile=dist/bundle.cjs --tree-shaking=true --keep-names",
-      "predocker": "npm run bundle",
-      "docker": "docker build -t \"$npm_package_name:$npm_package_version\" ."
+        "prebuild": "npm i",
+        "build": "tsc --build",
+        "prestart": "npm run build",
+        "start": "node --env-file .env ./dist/index.js",
+        "prebundle": "npm run build",
+        "bundle": "esbuild ./src/index.js --bundle --platform=node --metafile=dist/meta.json --outfile=dist/bundle.cjs --tree-shaking=true --keep-names",
+        "predocker": "npm run bundle",
+        "docker": "docker build -t \"$npm_package_name:$npm_package_version\" ."
     },
     "repository": {
-      "type": "git",
-      "url": "https://github.com"
+        "type": "git",
+        "url": "https://github.com"
     },
     "dependencies": {
-      "@microsoft/agents-hosting": "file:../../packages/agents-hosting",
-      "@microsoft/agents-hosting-storage-blob": "file:../../packages/agents-hosting-storage-blob",
-      "@microsoft/agents-hosting-storage-cosmos": "file:../../packages/agents-hosting-storage-cosmos",
-      "express": "^5.0.1"
+        "@microsoft/agents-hosting": "file:../../packages/agents-hosting",
+        "@microsoft/agents-hosting-storage-blob": "file:../../packages/agents-hosting-storage-blob",
+        "@microsoft/agents-hosting-storage-cosmos": "file:../../packages/agents-hosting-storage-cosmos",
+        "express": "^5.0.1"
     },
     "devDependencies": {
-      "@types/express": "^5.0.1",
-      "typescript": "^5.7.2",
-       "esbuild": "^0.25.0"
+        "@types/express": "^5.0.1",
+        "typescript": "^5.7.2",
+        "esbuild": "^0.25.0"
     },
     "keywords": []
-  }
+}
