@@ -1,4 +1,4 @@
-import { ActivityHandler, AgentClient, UserState, ConversationState, AgentStatePropertyAccessor, TurnContext } from '@microsoft/agents-hosting'
+import { ActivityHandler, AgentClient, UserState, ConversationState, AgentStatePropertyAccessor, TurnContext, ConversationReference } from '@microsoft/agents-hosting'
 import { version as sdkVersion } from '@microsoft/agents-hosting/package.json'
 import { ConversationData, UserProfile } from './memoryData'
 
@@ -23,20 +23,23 @@ export class RootHandlerWithBlobStorageMemory extends ActivityHandler {
 
     this.onMessage(async (context, next) => {
       const userProfile = await this.userProfileAccessor.get(context, {})
-      const conversationData = await this.conversationDataAccessor.get(context, { nameRequested: false })
+      const conversationData = await this.conversationDataAccessor.get(context, { nameRequested: false, conversationReference: {} as ConversationReference })
       if (!userProfile.name) {
         if (conversationData.nameRequested && !context.activity.text?.startsWith('agent:')) {
           userProfile.name = context.activity.text
-          await context.sendActivity(`Thanks ${userProfile.name}. You are now talking with the Agent1. Type end or stop to finish the conversation.`)
+          await context.sendActivity(`Thanks ${userProfile.name}. You are now talking with the echo-agent. Type end or stop to finish the conversation.`)
         } else {
-          await context.sendActivity('Type your name to start talking with the Agent1. Type `end` or `stop` to finish the conversation.')
+          await context.sendActivity('Type your name to start talking with the echo-agent. Type end or stop to finish the conversation.')
           conversationData.nameRequested = true
         }
       } else {
         const agentClient: AgentClient = new AgentClient('Agent1')
 
+        const activityStarts = JSON.stringify(context.activity)
+        console.log('activityStarts', activityStarts)
+
         context.activity.text = `${userProfile.name}: ${context.activity.text}`
-        await agentClient.postActivity(context.activity, context.adapter.authConfig)
+        await agentClient.postActivity(context.activity, context.adapter.authConfig, this.conversationState, context)
       }
 
       await next()
@@ -53,7 +56,7 @@ export class RootHandlerWithBlobStorageMemory extends ActivityHandler {
     })
 
     this.onEndOfConversation(async (context, next) => {
-      const conversationData = await this.conversationDataAccessor.get(context, { nameRequested: false })
+      const conversationData = await this.conversationDataAccessor.get(context, { nameRequested: false, conversationReference: {} as ConversationReference })
       const userProfile = await this.userProfileAccessor.get(context, {})
       conversationData.nameRequested = false
 

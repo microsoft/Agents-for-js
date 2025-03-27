@@ -1,4 +1,4 @@
-import { Activity, ActivityTypes } from '@microsoft/agents-activity'
+import { Activity, ActivityTypes, ConversationReference } from '@microsoft/agents-activity'
 import { ActivityHandler } from '../activityHandler'
 import { CloudAdapter } from '../cloudAdapter'
 import { Request, Response, Application } from 'express'
@@ -7,30 +7,39 @@ import { TurnContext } from '../turnContext'
 import { v4 } from 'uuid'
 import { normalizeIncomingActivity } from '../activityWireCompat'
 import { debug } from '../logger'
+import { ConversationState } from '../state'
 
 const logger = debug('agents:agent-client')
 
-export const configureResponseController = (app: Application, adapter: CloudAdapter, agent: ActivityHandler) => {
-  app.post('/api/agentresponse/v3/conversations/:conversationId/activities/:activityId', handleResponse(adapter, agent))
+interface ConversationReferenceState {
+  conversationReference: ConversationReference
 }
 
-const handleResponse = (adapter: CloudAdapter, handler: ActivityHandler) => async (req: Request, res: Response) => {
+export const configureResponseController = (app: Application, adapter: CloudAdapter, agent: ActivityHandler, conversationState: ConversationState) => {
+  app.post('/api/agentresponse/v3/conversations/:conversationId/activities/:activityId', handleResponse(adapter, agent, conversationState))
+}
+
+const handleResponse = (adapter: CloudAdapter, handler: ActivityHandler, conversationState: ConversationState) => async (req: Request, res: Response) => {
   const incoming = normalizeIncomingActivity(req.body!)
   const activity = Activity.fromObject(incoming)
 
   logger.debug('received response: ', activity)
+
+  const myTurnContext = new TurnContext(adapter, activity)
+  const conversationDataAccessor = conversationState.createProperty<ConversationReferenceState>(req.params!.conversationId)
+  const conversationRefState = await conversationDataAccessor.get(myTurnContext, undefined, { channelId: activity.channelId!, conversationId: req.params!.conversationId })
 
   const requestData = await MemoryStorage.getSingleInstance().read([req.params!.conversationId])
   const conversationReference = requestData[req.params!.conversationId].conversationReference
   logger.debug('memoryChanges: ', requestData)
 
   const callback = async (turnContext: TurnContext) => {
-    activity.applyConversationReference(conversationReference)
+    activity.applyConversationReference(conversationRefState.conversationReference)
     turnContext.activity.id = req.params!.activityId
 
     let response
     if (activity.type === ActivityTypes.EndOfConversation) {
-      await MemoryStorage.getSingleInstance().delete([activity.conversation!.id])
+      await conversationDataAccessor.delete(turnContext, { channelId: activity.channelId!, conversationId: activity.conversation!.id })
 
       applyActivityToTurnContext(turnContext, activity)
       await handler.run(turnContext)
