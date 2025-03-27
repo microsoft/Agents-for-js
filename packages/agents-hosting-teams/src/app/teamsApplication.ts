@@ -37,7 +37,8 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
     this._teamsOptions = {
       ...super.options,
       removeRecipientMention:
-                options?.removeRecipientMention !== undefined ? options.removeRecipientMention : true
+                options?.removeRecipientMention !== undefined ? options.removeRecipientMention : true,
+      taskModules: options?.taskModules
     }
 
     if (options?.storage && options?.authentication && options?.authentication.enableSSO) {
