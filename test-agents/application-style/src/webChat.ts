@@ -52,11 +52,10 @@ app.message('/runtime', async (context: TurnContext, state: ApplicationTurnState
 app.conversationUpdate('membersAdded', async (context: TurnContext, state: ApplicationTurnState) => {
   await state.load(context, storage)
   await context.sendActivity('Welcome to the conversation!')
-  await context.sendActivity(JSON.stringify(context.activity.membersAdded))
-  await context.sendActivity(JSON.stringify(state))
 })
 
 // Listen for ANY message to be received. MUST BE AFTER ANY OTHER MESSAGE HANDLERS
+// If there is more than one app.activity defined the first one is used and the others are dismissed
 app.activity(ActivityTypes.Message, async (context: TurnContext, state: ApplicationTurnState) => {
   // Increment count state
   let count = state.conversation.count ?? 0
@@ -66,13 +65,25 @@ app.activity(ActivityTypes.Message, async (context: TurnContext, state: Applicat
   await context.sendActivity(`[${count}] you said: ${context.activity.text}`)
 })
 
+// Listen with Regex. Regex should match an Activity Type
 // app.activity(/^message/, async (context: TurnContext, state: ApplicationTurnState) => {
 //   await context.sendActivity(`Matched with regex: ${context.activity.type}`)
 // })
 
+// Listen with a fuction
 // app.activity(
 //   async (context: TurnContext) => Promise.resolve(context.activity.type === 'message'),
 //   async (context, state) => {
 //     await context.sendActivity(`Matched function: ${context.activity.type}`)
+//   }
+// )
+
+// Listen with an array of types
+// app.activity(
+//   // types
+//   [/^message/, async (context: TurnContext) => Promise.resolve(context.activity.text === 'test')],
+//   // handler
+//   async (context, state) => {
+//     await context.sendActivity(`You said: ${context.activity.text}`)
 //   }
 // )
