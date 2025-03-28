@@ -11,14 +11,14 @@ import { AdaptiveCardInvokeResponseType } from './adaptiveCardInvokeResponseType
 import { AdaptiveCardSearchResult } from './adaptiveCardSearchResult'
 import { parseAdaptiveCardInvokeAction, parseValueActionExecuteSelector, parseValueDataset, parseValueSearchQuery } from '../../parsers'
 import { Query } from '../query'
-import { AdaptiveCardsSearchParams } from './adaptiveCardsSearchParams'
+import { AdaptiveCardsSearchParams } from '../../adaptive-cards'
 
 export const ACTION_INVOKE_NAME = 'adaptiveCard/action'
 const ACTION_EXECUTE_TYPE = 'Action.Execute'
 const DEFAULT_ACTION_SUBMIT_FILTER = 'verb'
 const SEARCH_INVOKE_NAME = 'application/search'
 
-export class AdaptiveCards<TState extends TurnState> {
+export class AdaptiveCardsActions<TState extends TurnState> {
   private readonly _app: TeamsApplication<TState>
 
   public constructor (app: TeamsApplication<TState>) {
@@ -137,14 +137,14 @@ export class AdaptiveCards<TState extends TurnState> {
             throw new Error(`Unexpected AdaptiveCards.search() triggered for activity type: ${a?.type}`)
           }
 
-          const validatedQuery = parseValueSearchQuery(a.value)
+          const parsedQuery = parseValueSearchQuery(a.value)
           const query: Query<AdaptiveCardsSearchParams> = {
-            count: validatedQuery.queryOptions?.top ?? 25,
-            skip: validatedQuery.queryOptions?.skip ?? 0,
+            count: parsedQuery.queryOptions?.top ?? 25,
+            skip: parsedQuery.queryOptions?.skip ?? 0,
 
             parameters: {
-              queryText: validatedQuery.queryText ?? '',
-              dataset: validatedQuery.dataset ?? ''
+              queryText: parsedQuery.queryText ?? '',
+              dataset: parsedQuery.dataset ?? ''
 
             }
           }

@@ -22,5 +22,4 @@ export * from './teamsActivityHandler'
 export * from './teamsCloudAdapter'
 export * from './teamsInfo'
 
-export * from './app/teamsApplication'
-export * from './app/teamsApplicationBuilder'
+export * from './app'
