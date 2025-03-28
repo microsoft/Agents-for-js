@@ -1,4 +1,4 @@
-import { ActivityHandler, AgentClient, UserState, ConversationState, AgentStatePropertyAccessor, TurnContext } from '@microsoft/agents-hosting'
+import { ActivityHandler, AgentClient, UserState, ConversationState, AgentStatePropertyAccessor, TurnContext, ConversationReference } from '@microsoft/agents-hosting'
 import { version as sdkVersion } from '@microsoft/agents-hosting/package.json'
 import { ConversationData, UserProfile } from './memoryData'
 
@@ -23,7 +23,7 @@ export class RootHandlerWithBlobStorageMemory extends ActivityHandler {
 
     this.onMessage(async (context, next) => {
       const userProfile = await this.userProfileAccessor.get(context, {})
-      const conversationData = await this.conversationDataAccessor.get(context, { nameRequested: false })
+      const conversationData = await this.conversationDataAccessor.get(context, { nameRequested: false, conversationReference: {} as ConversationReference })
       if (!userProfile.name) {
         if (conversationData.nameRequested && !context.activity.text?.startsWith('agent:')) {
           userProfile.name = context.activity.text
@@ -39,7 +39,7 @@ export class RootHandlerWithBlobStorageMemory extends ActivityHandler {
         console.log('activityStarts', activityStarts)
 
         context.activity.text = `${userProfile.name}: ${context.activity.text}`
-        await agentClient.postActivity(context.activity, context.adapter.authConfig)
+        await agentClient.postActivity(context.activity, context.adapter.authConfig, this.conversationState, context)
       }
 
       await next()
@@ -56,7 +56,7 @@ export class RootHandlerWithBlobStorageMemory extends ActivityHandler {
     })
 
     this.onEndOfConversation(async (context, next) => {
-      const conversationData = await this.conversationDataAccessor.get(context, { nameRequested: false })
+      const conversationData = await this.conversationDataAccessor.get(context, { nameRequested: false, conversationReference: {} as ConversationReference })
       const userProfile = await this.userProfileAccessor.get(context, {})
       conversationData.nameRequested = false
 
