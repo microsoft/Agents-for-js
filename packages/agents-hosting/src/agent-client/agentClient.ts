@@ -1,6 +1,5 @@
 import { AuthConfiguration, MsalTokenProvider } from '../auth'
 import { Activity, ConversationReference, RoleTypes } from '@microsoft/agents-activity'
-// import { MemoryStorage, StoreItem } from '../storage'
 import { v4 } from 'uuid'
 import { debug } from '../logger'
 import { ConversationState } from '../state'

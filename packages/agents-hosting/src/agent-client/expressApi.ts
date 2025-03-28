@@ -2,7 +2,6 @@ import { Activity, ActivityTypes, ConversationReference } from '@microsoft/agent
 import { ActivityHandler } from '../activityHandler'
 import { CloudAdapter } from '../cloudAdapter'
 import { Request, Response, Application } from 'express'
-import { MemoryStorage } from '../storage'
 import { TurnContext } from '../turnContext'
 import { v4 } from 'uuid'
 import { debug } from '../logger'
