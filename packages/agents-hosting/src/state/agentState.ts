@@ -16,6 +16,12 @@ export interface CachedAgentState {
   hash: string
 }
 
+export interface CustomKey {
+  channelId: string;
+  conversationId: string;
+  // TODO: namespace needs to be added
+}
+
 /**
  * Manages the state of an Agent.
  */
@@ -45,11 +51,11 @@ export class AgentState {
    * @param force Whether to force loading the state.
    * @returns A promise that resolves to the loaded state.
    */
-  public async load (context: TurnContext, force = false): Promise<any> {
+  public async load (context: TurnContext, force = false, customKey?: CustomKey): Promise<any> {
     const cached: CachedAgentState = context.turnState.get(this.stateKey)
 
     if (force || !cached || !cached.state) {
-      const key = await this.storageKey(context)
+      const key: string = await this.getStorageOrCustomKey(customKey, context)
       logger.info(`Reading storage with key ${key}`)
       const storedItem = await this.storage.read([key])
 
@@ -69,7 +75,7 @@ export class AgentState {
    * @param force Whether to force saving the state.
    * @returns A promise that resolves when the save operation is complete.
    */
-  public async saveChanges (context: TurnContext, force = false): Promise<void> {
+  public async saveChanges (context: TurnContext, force = false, customKey?: CustomKey): Promise<void> {
     let cached: CachedAgentState = context.turnState.get(this.stateKey)
     if (force || (cached && cached.hash !== this.calculateChangeHash(cached?.state))) {
       if (!cached) {
@@ -78,7 +84,8 @@ export class AgentState {
       cached.state.eTag = '*'
       const changes: StoreItem = {} as StoreItem
 
-      const key = await this.storageKey(context)
+      const key: string = await this.getStorageOrCustomKey(customKey, context)
+
       changes[key] = cached.state
 
       logger.info(`Writing storage with key ${key}`)
@@ -88,6 +95,17 @@ export class AgentState {
     }
   }
 
+  private async getStorageOrCustomKey (customKey: CustomKey | undefined, context: TurnContext) {
+    let key: string | undefined
+    if (customKey && customKey.channelId && customKey.conversationId) {
+      // TODO check ConversationState.ts line 40. This line below should follow the same pattern
+      key = `${customKey!.channelId}/conversations/${customKey!.conversationId}`
+    } else {
+      key = await this.storageKey(context)
+    }
+    return key
+  }
+
   /**
    * Clears the state from the turn context.
    * @param context The turn context.
@@ -95,6 +113,7 @@ export class AgentState {
    */
   public async clear (context: TurnContext): Promise<void> {
     const emptyObjectToForceSave = { state: {}, hash: '' }
+
     context.turnState.set(this.stateKey, emptyObjectToForceSave)
   }
 
@@ -103,11 +122,11 @@ export class AgentState {
    * @param context The turn context.
    * @returns A promise that resolves when the delete operation is complete.
    */
-  public async delete (context: TurnContext): Promise<void> {
+  public async delete (context: TurnContext, customKey?: CustomKey): Promise<void> {
     if (context.turnState.has(this.stateKey)) {
       context.turnState.delete(this.stateKey)
     }
-    const key = await this.storageKey(context)
+    const key = await this.getStorageOrCustomKey(customKey, context)
     logger.info(`Deleting storage with key ${key}`)
     await this.storage.delete([key])
   }

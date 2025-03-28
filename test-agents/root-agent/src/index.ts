@@ -30,7 +30,7 @@ app.post('/api/messages', async (req: Request, res: Response) => {
   await adapter.process(req, res, async (context) => await myAgent.run(context))
 })
 
-configureResponseController(app, adapter, myAgent)
+configureResponseController(app, adapter, myAgent, conversationState)
 
 const port = process.env.PORT || 3978
 app.listen(port, () => {

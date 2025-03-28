@@ -4,7 +4,7 @@
  */
 
 import { TurnContext } from '../turnContext'
-import { AgentState } from './agentState'
+import { AgentState, CustomKey } from './agentState'
 
 /**
  * Provides access to an Agent state property.
@@ -22,8 +22,8 @@ export class AgentStatePropertyAccessor<T = any> {
    * @param context The turn context.
    * @returns A promise that resolves when the delete operation is complete.
    */
-  async delete (context: TurnContext): Promise<void> {
-    const obj: any = await this.state.load(context)
+  async delete (context: TurnContext, customKey?: CustomKey): Promise<void> {
+    const obj: any = await this.state.load(context, false, customKey)
     if (Object.prototype.hasOwnProperty.call(obj, this.name)) {
       delete obj[this.name]
     }
@@ -35,8 +35,8 @@ export class AgentStatePropertyAccessor<T = any> {
    * @param defaultValue The default value to return if the property is not found.
    * @returns A promise that resolves to the value of the property.
    */
-  async get (context: TurnContext, defaultValue?: T): Promise<T> {
-    const obj: any = await this.state.load(context)
+  async get (context: TurnContext, defaultValue?: T, customKey?: CustomKey): Promise<T> {
+    const obj: any = await this.state.load(context, false, customKey)
     if (!Object.prototype.hasOwnProperty.call(obj, this.name) && defaultValue !== undefined) {
       const clone: any =
         typeof defaultValue === 'object' || Array.isArray(defaultValue)
@@ -54,8 +54,8 @@ export class AgentStatePropertyAccessor<T = any> {
    * @param value The value to set.
    * @returns A promise that resolves when the set operation is complete.
    */
-  async set (context: TurnContext, value: T): Promise<void> {
-    const obj: any = await this.state.load(context)
+  async set (context: TurnContext, value: T, customKey?: CustomKey): Promise<void> {
+    const obj: any = await this.state.load(context, false, customKey)
     obj[this.name] = value
   }
 }
