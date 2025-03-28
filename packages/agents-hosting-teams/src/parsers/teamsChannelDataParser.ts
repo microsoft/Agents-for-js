@@ -6,10 +6,10 @@
 import { TeamsChannelData, teamsChannelDataZodSchema } from '../channel-data'
 
 /**
- * Validates the given object as TeamsChannelData.
+ * Parses the given object as TeamsChannelData.
  *
- * @param {object} o - The object to validate.
- * @returns {TeamsChannelData} - The validated TeamsChannelData.
+ * @param {object} o - The object to parse.
+ * @returns {TeamsChannelData} - The parsed TeamsChannelData.
  */
 export function parseTeamsChannelData (o: object): TeamsChannelData {
   teamsChannelDataZodSchema.passthrough().parse(o)

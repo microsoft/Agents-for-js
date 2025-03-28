@@ -9,10 +9,10 @@ import { MessagingExtensionQuery, messagingExtensionQueryZodSchema } from '../me
 import { adaptiveCardsSearchParamsZodSchema } from '../adaptive-cards'
 
 /**
- * Validates the given value as a value action.
+ * Parses the given value as a value action.
  *
- * @param {unknown} value - The value to validate.
- * @returns {string} - The validated value action.
+ * @param {unknown} value - The value to parse.
+ * @returns {string} - The parsed value action.
  */
 export function parseValueAction (value: unknown): string {
   const valueActionZodSchema = z.object({
@@ -23,10 +23,10 @@ export function parseValueAction (value: unknown): string {
 }
 
 /**
- * Validates the given value as a value action name.
+ * Parses the given value as a value action name.
  *
- * @param {unknown} value - The value to validate.
- * @returns {string} - The validated value action name.
+ * @param {unknown} value - The value to parse.
+ * @returns {string} - The parsed value action name.
  */
 export function parseValueActionName (value: unknown): string {
   const valueActionNameZodSchema = z.object({
@@ -37,10 +37,10 @@ export function parseValueActionName (value: unknown): string {
 }
 
 /**
- * Validates the given value as a value continuation.
+ * Parses the given value as a value continuation.
  *
- * @param {unknown} value - The value to validate.
- * @returns {string} - The validated value continuation.
+ * @param {unknown} value - The value to parse.
+ * @returns {string} - The parsed value continuation.
  */
 export function parseValueContinuation (value: unknown): string {
   const valueContinuationZodSchema = z.object({
@@ -51,10 +51,10 @@ export function parseValueContinuation (value: unknown): string {
 }
 
 /**
- * Validates the given value as a value action execute selector.
+ * Parses the given value as a value action execute selector.
  *
- * @param {unknown} value - The value to validate.
- * @returns {object} - The validated value action execute selector.
+ * @param {unknown} value - The value to parse.
+ * @returns {object} - The parsed value action execute selector.
  */
 export function parseValueActionExecuteSelector (value: unknown): {
   action: {
@@ -79,10 +79,10 @@ export function parseValueActionExecuteSelector (value: unknown): {
 }
 
 /**
- * Validates the given value as a dataset.
+ * Parses the given value as a dataset.
  *
- * @param {unknown} value - The value to validate.
- * @returns {object} - The validated dataset.
+ * @param {unknown} value - The value to parse.
+ * @returns {object} - The parsed dataset.
  */
 export function parseValueDataset (value: unknown): {
   dataset: string;
@@ -97,10 +97,10 @@ export function parseValueDataset (value: unknown): {
 }
 
 /**
- * Validates the given value as action feedback loop data.
+ * Parses the given value as action feedback loop data.
  *
- * @param {unknown} value - The value to validate.
- * @returns {object} - The validated action feedback loop data.
+ * @param {unknown} value - The value to parse.
+ * @returns {object} - The parsed action feedback loop data.
  */
 export function parseValueActionFeedbackLoopData (value: unknown): {
   actionValue: {
@@ -124,10 +124,10 @@ export function parseValueActionFeedbackLoopData (value: unknown): {
 }
 
 /**
- * Validates the given value as an adaptive card invoke action.
+ * Parses the given value as an adaptive card invoke action.
  *
- * @param {unknown} value - The value to validate.
- * @returns {AdaptiveCardInvokeAction} - The validated adaptive card invoke action.
+ * @param {unknown} value - The value to parse.
+ * @returns {AdaptiveCardInvokeAction} - The parsed adaptive card invoke action.
  */
 export function parseAdaptiveCardInvokeAction (value: unknown): AdaptiveCardInvokeAction {
   adaptiveCardInvokeActionZodSchema.passthrough().parse(value)
@@ -135,10 +135,10 @@ export function parseAdaptiveCardInvokeAction (value: unknown): AdaptiveCardInvo
 }
 
 /**
- * Validates the given value as a search query.
+ * Parses the given value as a search query.
  *
- * @param {unknown} value - The value to validate.
- * @returns {object} - The validated search query.
+ * @param {unknown} value - The value to parse.
+ * @returns {object} - The parsed search query.
  */
 export function parseValueSearchQuery (value: unknown): {
   queryOptions: {
@@ -167,10 +167,10 @@ export function parseValueSearchQuery (value: unknown): {
 }
 
 /**
- * Validates the given value as a query.
+ * Parses the given value as a query.
  *
- * @param {unknown} value - The value to validate.
- * @returns {object} - The validated query.
+ * @param {unknown} value - The value to parse.
+ * @returns {object} - The parsed query.
  */
 export function parseValueQuery (value: unknown): {
   url: string;
@@ -185,10 +185,10 @@ export function parseValueQuery (value: unknown): {
 }
 
 /**
- * Validates the given value as an activity message preview action.
+ * Parses the given value as an activity message preview action.
  *
- * @param {unknown} value - The value to validate.
- * @returns {object} - The validated message preview action.
+ * @param {unknown} value - The value to parse.
+ * @returns {object} - The parsed message preview action.
  */
 export function parseValueBotMessagePreviewAction (value: unknown): {
   botMessagePreviewAction: string;
@@ -203,10 +203,10 @@ export function parseValueBotMessagePreviewAction (value: unknown): {
 }
 
 /**
- * Validates the given value as an activity preview.
+ * Parses the given value as an activity preview.
  *
- * @param {unknown} value - The value to validate.
- * @returns {object} - The validated activity preview.
+ * @param {unknown} value - The value to parse.
+ * @returns {object} - The parsed activity preview.
  */
 export function parseValueBotActivityPreview (value: unknown): object {
   const botActivityPreviewZodSchema = z.object({
@@ -219,10 +219,10 @@ export function parseValueBotActivityPreview (value: unknown): object {
 }
 
 /**
- * Validates the given value as a command ID.
+ * Parses the given value as a command ID.
  *
- * @param {unknown} value - The value to validate.
- * @returns {object} - The validated command ID.
+ * @param {unknown} value - The value to parse.
+ * @returns {object} - The parsed command ID.
  */
 export function parseValueCommandId (value: unknown): {
   commandId: string;
@@ -237,10 +237,10 @@ export function parseValueCommandId (value: unknown): {
 }
 
 /**
- * Validates the given value as a messaging extension query.
+ * Parses the given value as a messaging extension query.
  *
- * @param {unknown} value - The value to validate.
- * @returns {MessagingExtensionQuery} - The validated messaging extension query.
+ * @param {unknown} value - The value to parse.
+ * @returns {MessagingExtensionQuery} - The parsed messaging extension query.
  */
 export function parseValueMessagingExtensionQuery (value: unknown): MessagingExtensionQuery {
   messagingExtensionQueryZodSchema.passthrough().parse(value)

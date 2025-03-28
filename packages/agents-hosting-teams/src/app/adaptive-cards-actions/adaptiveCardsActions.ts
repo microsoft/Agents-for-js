@@ -137,14 +137,14 @@ export class AdaptiveCardsActions<TState extends TurnState> {
             throw new Error(`Unexpected AdaptiveCards.search() triggered for activity type: ${a?.type}`)
           }
 
-          const validatedQuery = parseValueSearchQuery(a.value)
+          const parsedQuery = parseValueSearchQuery(a.value)
           const query: Query<AdaptiveCardsSearchParams> = {
-            count: validatedQuery.queryOptions?.top ?? 25,
-            skip: validatedQuery.queryOptions?.skip ?? 0,
+            count: parsedQuery.queryOptions?.top ?? 25,
+            skip: parsedQuery.queryOptions?.skip ?? 0,
 
             parameters: {
-              queryText: validatedQuery.queryText ?? '',
-              dataset: validatedQuery.dataset ?? ''
+              queryText: parsedQuery.queryText ?? '',
+              dataset: parsedQuery.dataset ?? ''
 
             }
           }

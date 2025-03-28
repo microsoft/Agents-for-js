@@ -3,7 +3,7 @@ import { describe, it } from 'node:test'
 import { ZodError } from 'zod'
 import { parseValueAction } from '../../src/parsers/activityValueParsers'
 
-describe('validateValueAction test', () => {
+describe('parseValueAction test', () => {
   it('Parse with all properties', () => {
     const valueObject = {
       action: 'action'
