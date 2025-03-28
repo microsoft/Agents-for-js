@@ -36,7 +36,7 @@ const handleResponse = (adapter: CloudAdapter, handler: ActivityHandler, convers
 
     let response
     if (activity.type === ActivityTypes.EndOfConversation) {
-      await MemoryStorage.getSingleInstance().delete([activity.conversation!.id])
+      await conversationDataAccessor.delete(turnContext, { channelId: activity.channelId!, conversationId: activity.conversation!.id })
 
       applyActivityToTurnContext(turnContext, activity)
       await handler.run(turnContext)

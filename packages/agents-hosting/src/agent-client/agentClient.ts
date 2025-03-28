@@ -67,7 +67,7 @@ export class AgentClient {
       body: JSON.stringify(activityCopy)
     })
     if (!response.ok) {
-      await conversationDataAccessor.delete(context)
+      await conversationDataAccessor.delete(context, { channelId: activityCopy.channelId!, conversationId: activityCopy.conversation!.id })
       throw new Error(`Failed to post activity to agent: ${response.statusText}`)
     }
     return response.statusText
