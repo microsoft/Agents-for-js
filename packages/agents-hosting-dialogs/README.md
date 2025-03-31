@@ -64,8 +64,7 @@ dialogs.add(new WaterfallDialog(DIALOG_ONE, [
 ]));
 ```
 
-Finally, from somewhere in your agents's code, invoke your dialog by name:
-
+Finally, from somewhere in your agents' code, invoke your dialog by name:
 ```javascript
 // Receive and process incoming events into TurnContext objects in the normal way
 adapter.processActivity(req, res, async (turnContext) => {
