@@ -17,6 +17,7 @@ export { AttachmentLayoutTypes } from './attachment/attachmentLayoutTypes'
 
 export { ChannelAccount } from './conversation/channelAccount'
 export { Channels } from './conversation/channels'
+export { ConversationParameters } from './conversation/conversationParameters'
 export { ConversationAccount } from './conversation/conversationAccount'
 export { ConversationReference } from './conversation/conversationReference'
 export { EndOfConversationCodes } from './conversation/endOfConversationCodes'
