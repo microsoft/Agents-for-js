@@ -18,5 +18,5 @@ export const CallerIdConstants = {
   /**
    * Bot-to-bot prefix for caller ID.
    */
-  BotToBotPrefix: 'urn:botframework:aadappid:'
+  AgentPrefix: 'urn:botframework:aadappid:'
 }
