@@ -19,14 +19,17 @@ export interface AuthConfiguration {
 
 /**
  * Loads the authentication configuration from environment variables.
- * ```env
+ * ```
+ * tenantId=your-tenant-id
  * clientId=your-client-id
  * clientSecret=your-client-secret
- * tenantId=your-tenant-id
+ *
  * certPemFile=your-cert-pem-file
  * certKeyFile=your-cert-key-file
- * connectionName=your-connection-name
+ *
  * FICClientId=your-FIC-client-id
+ *
+ * connectionName=your-connection-name
  * ```
  * @remarks
  * - `clientId` is required
@@ -55,7 +58,7 @@ export const loadAuthConfigFromEnv: () => AuthConfiguration = () => {
 
 /**
  * Loads the agent authentication configuration from previouus version environment variables.
- * ```env
+ * ```
  * MicrosoftAppId=your-client-id
  * MicrosoftAppPassword=your-client-secret
  * MicrosoftAppTenantId=your-tenant-id
