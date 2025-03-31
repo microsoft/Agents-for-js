@@ -54,6 +54,11 @@ export class ConnectorClient {
     )
   }
 
+  private static getProductInfo (): string {
+    const version = require('../../../package.json').version
+    return `Microsoft-Agents/1.0 Microsoft-Agent-SDK/${version} NodeJS-${process.platform}/${process.version}`
+  }
+
   /**
    * Creates a new instance of ConnectorClient with authentication.
    * @param baseURL - The base URL for the API.
@@ -68,10 +73,12 @@ export class ConnectorClient {
     authProvider: AuthProvider,
     scope: string
   ): Promise<ConnectorClient> {
+    const productInfo = ConnectorClient.getProductInfo()
     const axiosInstance = axios.create({
       baseURL,
       headers: {
-        Accept: 'application/json'
+        Accept: 'application/json',
+        'User-Agent': productInfo
       }
     })
 
