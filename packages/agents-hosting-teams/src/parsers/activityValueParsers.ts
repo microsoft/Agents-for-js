@@ -190,7 +190,7 @@ export function parseValueQuery (value: unknown): {
  * @param {unknown} value - The value to parse.
  * @returns {object} - The parsed message preview action.
  */
-export function parseValueBotMessagePreviewAction (value: unknown): {
+export function parseValueAgentMessagePreviewAction (value: unknown): {
   botMessagePreviewAction: string;
 } {
   const botMessagePreviewActionZodSchema = z.object({
@@ -208,7 +208,7 @@ export function parseValueBotMessagePreviewAction (value: unknown): {
  * @param {unknown} value - The value to parse.
  * @returns {object} - The parsed activity preview.
  */
-export function parseValueBotActivityPreview (value: unknown): object {
+export function parseValueAgentActivityPreview (value: unknown): object {
   const botActivityPreviewZodSchema = z.object({
     botActivityPreview: z.array(activityZodSchema.partial())
   })

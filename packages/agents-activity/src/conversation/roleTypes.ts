@@ -10,7 +10,7 @@ import { z } from 'zod'
  */
 export enum RoleTypes {
   User = 'user',
-  Bot = 'bot',
+  Agent = 'bot',
   Skill = 'skill',
 }
 

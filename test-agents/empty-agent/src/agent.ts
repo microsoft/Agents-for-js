@@ -17,7 +17,7 @@ export class EmptyAgent extends ActivityHandler {
           }
         ))
       } else {
-        const replyText = `agent: ${context.activity.text}`
+        const replyText = `empty-agent: ${context.activity.text}`
         await context.sendActivity(MessageFactory.text(replyText, replyText))
       }
       await next()

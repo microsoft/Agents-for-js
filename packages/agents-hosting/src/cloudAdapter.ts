@@ -339,7 +339,7 @@ export class CloudAdapter extends BaseAdapter {
       tenantId: conversationParameters.tenantId,
     }
     activity.channelData = conversationParameters.channelData
-    activity.recipient = conversationParameters.bot
+    activity.recipient = conversationParameters.agent
 
     return activity
   }

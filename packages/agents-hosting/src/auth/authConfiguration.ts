@@ -19,6 +19,17 @@ export interface AuthConfiguration {
 
 /**
  * Loads the authentication configuration from environment variables.
+ * ```env
+ * clientId=your-client-id
+ * clientSecret=your-client-secret
+ * tenantId=your-tenant-id
+ * certPemFile=your-cert-pem-file
+ * certKeyFile=your-cert-key-file
+ * connectionName=your-connection-name
+ * FICClientId=your-FIC-client-id
+ * ```
+ * @remarks
+ * - `clientId` is required
  * @returns The authentication configuration.
  * @throws Will throw an error if clientId is not provided in production.
  */
@@ -43,11 +54,16 @@ export const loadAuthConfigFromEnv: () => AuthConfiguration = () => {
 }
 
 /**
- * Loads the agent authentication configuration from environment variables.
+ * Loads the agent authentication configuration from previouus version environment variables.
+ * ```env
+ * MicrosoftAppId=your-client-id
+ * MicrosoftAppPassword=your-client-secret
+ * MicrosoftAppTenantId=your-tenant-id
+ * ```
  * @returns The agent authentication configuration.
  * @throws Will throw an error if MicrosoftAppId is not provided in production.
  */
-export const loadBotAuthConfigFromEnv: () => AuthConfiguration = () => {
+export const loadPrevAuthConfigFromEnv: () => AuthConfiguration = () => {
   if (process.env.MicrosoftAppId === undefined && process.env.NODE_ENV === 'production') {
     throw new Error('ClientId required in production')
   }
@@ -61,8 +77,8 @@ export const loadBotAuthConfigFromEnv: () => AuthConfiguration = () => {
     FICClientId: process.env.MicrosoftAppClientId,
     issuers: [
       'https://api.botframework.com',
-        `https://sts.windows.net/${process.env.MicrosoftAppTenantId}/`,
-        `https://login.microsoftonline.com/${process.env.MicrosoftAppTenantId}/v2.0`
+      `https://sts.windows.net/${process.env.MicrosoftAppTenantId}/`,
+      `https://login.microsoftonline.com/${process.env.MicrosoftAppTenantId}/v2.0`
     ]
   }
 }

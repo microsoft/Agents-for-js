@@ -12,12 +12,12 @@ export enum EndOfConversationCodes {
   Unknown = 'unknown',
   CompletedSuccessfully = 'completedSuccessfully',
   UserCancelled = 'userCancelled',
-  BotTimedOut = 'botTimedOut',
-  BotIssuedInvalidMessage = 'botIssuedInvalidMessage',
+  AgentTimedOut = 'agentTimedOut',
+  AgentIssuedInvalidMessage = 'agentIssuedInvalidMessage',
   ChannelFailed = 'channelFailed',
 }
 
 /**
  * Zod schema for validating end of conversation codes.
  */
-export const endOfConversationCodesZodSchema = z.enum(['unknown', 'completedSuccessfully', 'userCancelled', 'botTimedOut', 'botIssuedInvalidMessage', 'channelFailed'])
+export const endOfConversationCodesZodSchema = z.enum(['unknown', 'completedSuccessfully', 'userCancelled', 'agentTimedOut', 'agentIssuedInvalidMessage', 'channelFailed'])

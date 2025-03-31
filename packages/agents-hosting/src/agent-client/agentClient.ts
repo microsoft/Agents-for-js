@@ -56,7 +56,7 @@ export class AgentClient {
         Authorization: `Bearer ${token}`,
         'x-ms-conversation-id': activityCopy.conversation!.id
       },
-      body: JSON.stringify(activityCopy)
+      body: activityCopy.toJsonString()
     })
     if (!response.ok) {
       throw new Error(`Failed to post activity to agent: ${response.statusText}`)

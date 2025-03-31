@@ -16,7 +16,7 @@ export interface ConversationParameters {
   /**
    * The bot account initiating the conversation.
    */
-  bot: ChannelAccount
+  agent: ChannelAccount
   /**
    * The members to include in the conversation.
    */

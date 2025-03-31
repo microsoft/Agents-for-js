@@ -10,7 +10,7 @@ import { debug } from '../logger'
 const logger = debug('agents:agent-client')
 
 export const configureResponseController = (app: Application, adapter: CloudAdapter, agent: ActivityHandler) => {
-  app.post('/api/botresponse/v3/conversations/:conversationId/activities/:activityId', handleResponse(adapter, agent))
+  app.post('/api/agentresponse/v3/conversations/:conversationId/activities/:activityId', handleResponse(adapter, agent))
 }
 
 const handleResponse = (adapter: CloudAdapter, handler: ActivityHandler) => async (req: Request, res: Response) => {

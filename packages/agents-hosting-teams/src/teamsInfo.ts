@@ -134,7 +134,7 @@ export class TeamsInfo {
         },
       },
       activity,
-      bot: context.activity.recipient,
+      agent: context.activity.recipient,
     } as ConversationParameters
 
     let conversationReference: Partial<ConversationReference>
