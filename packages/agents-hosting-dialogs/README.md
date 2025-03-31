@@ -11,7 +11,7 @@ of useful prompts that provide type checking and validation of input.
 ## How to use
 
 ```javascript
-// Import some of the capabities from the module. 
+// Import some of the capabilities from the module. 
 const { DialogSet, WaterfallDialog } = require("@microsoft/agents-hosting-dialogs");
 ```
 
