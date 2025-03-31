@@ -18,7 +18,7 @@
   "dependencies": {
     "@microsoft/agents-hosting-storage-blob": "file:../../packages/agents-hosting-storage-blob",
     "@microsoft/agents-hosting-storage-cosmos": "file:../../packages/agents-hosting-storage-cosmos",
-    "express": "^5.0.1"
+    "express": "^5.1.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.1"
