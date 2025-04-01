@@ -10,6 +10,7 @@ import { ConversationResourceResponse } from './conversationResourceResponse'
 import { ResourceResponse } from './resourceResponse'
 import { AttachmentInfo } from './attachmentInfo'
 import { AttachmentData } from './attachmentData'
+import { rep, rev } from './jsonAgentReplacerReviver'
 
 const logger = debug('agents:connector-client')
 
@@ -25,6 +26,29 @@ export class ConnectorClient {
    */
   protected constructor (client: AxiosInstance) {
     this.client = client
+    this.client.interceptors.request.use((config) => {
+      const { method, url, data } = config
+      logger.debug('Request: ', {
+        method,
+        host: this.client.getUri(),
+        url,
+        data
+      })
+      return config
+    }, (error) => {
+      const { code, message, stack } = error
+      const errorDetails = {
+        code,
+        host: this.client.getUri(),
+        url: error.config.url,
+        method: error.config.method,
+        data: error.config.data,
+        message,
+        stack
+      }
+      logger.error('Request Error: ', errorDetails)
+      return Promise.reject(errorDetails)
+    })
     this.client.interceptors.response.use(
       (config) => {
         const { status, statusText, config: requestConfig } = config
@@ -49,6 +73,7 @@ export class ConnectorClient {
           message,
           stack,
         }
+        logger.error('Response Error: ', errorDetails)
         return Promise.reject(errorDetails)
       }
     )
@@ -72,7 +97,19 @@ export class ConnectorClient {
       baseURL,
       headers: {
         Accept: 'application/json'
-      }
+      },
+      transformRequest: [
+        (data, headers) => {
+          return JSON.stringify(data, rep)
+        }],
+      transformResponse: [
+        (data) => {
+          if (data === '') {
+            return data
+          }
+          return JSON.parse(data, rev)
+        }
+      ]
     })
 
     const token = await authProvider.getAccessToken(authConfig, scope)
