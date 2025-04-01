@@ -16,7 +16,7 @@ export const CallerIdConstants = {
    */
   USGovChannel: 'urn:botframework:azureusgov',
   /**
-   * Bot-to-bot prefix for caller ID.
+   * Agent prefix for caller ID.
    */
   AgentPrefix: 'urn:botframework:aadappid:'
 }
