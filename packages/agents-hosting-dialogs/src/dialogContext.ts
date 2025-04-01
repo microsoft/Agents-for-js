@@ -325,8 +325,6 @@ export class DialogContext {
      * @param promptOrOptions The text of the initial prompt to send the user,
      *      the activity to send as the initial prompt, or
      *      the object with which to format the prompt dialog.
-     * @param choices Optional. Array of choices for the user to choose from,
-     *      for use with a ChoicePrompt.
      *
      * @remarks
      * This helper method formats the object to use as the `options` parameter, and then calls
