@@ -57,7 +57,7 @@ export const loadAuthConfigFromEnv: () => AuthConfiguration = () => {
 }
 
 /**
- * Loads the agent authentication configuration from previouus version environment variables.
+ * Loads the agent authentication configuration from previous version environment variables.
  * ```
  * MicrosoftAppId=your-client-id
  * MicrosoftAppPassword=your-client-secret
