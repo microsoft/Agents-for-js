@@ -2,7 +2,7 @@ import { strict as assert } from 'assert'
 import { describe, it } from 'node:test'
 import { ChannelAccount, ConversationAccount, ConversationReference, RoleTypes } from '../../src'
 import { conversationReferenceZodSchema } from '../../src/conversation/conversationReference'
-import { rev } from '../../src/activityJsonOverrides'
+
 describe('ConversationReference', () => {
   it('should create a ConversationReference with valid properties', () => {
     const channelAccount: ChannelAccount = { id: '123', name: 'user1', role: RoleTypes.User }
@@ -70,7 +70,7 @@ describe('ConversationReference json deserialization', () => {
         "role": "user"
     },
     "locale": "locale",
-    "bot": {
+    "agent": {
         "id": "123",
         "name": "user1",
         "role": "user"
@@ -100,7 +100,7 @@ describe('ConversationReference json deserialization', () => {
       role: RoleTypes.User,
       properties: 'test'
     }
-    const conversationRef: ConversationReference = conversationReferenceZodSchema.parse(JSON.parse(json, rev))
+    const conversationRef: ConversationReference = conversationReferenceZodSchema.parse(JSON.parse(json))
     assert.equal(conversationRef.activityId, 'activityId')
     assert.deepEqual(conversationRef.user, channelAccount)
     assert.strictEqual(conversationRef.locale, 'locale')

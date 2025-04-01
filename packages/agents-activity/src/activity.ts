@@ -24,7 +24,7 @@ import { EndOfConversationCodes, endOfConversationCodesZodSchema } from './conve
 import { DeliveryModes, deliveryModesZodSchema } from './deliveryModes'
 import { Channels } from './conversation/channels'
 import { Mention } from './entity/mention'
-import { rep, rev } from './activityJsonOverrides'
+
 /**
  * Zod schema for validating an Activity object.
  */
@@ -149,7 +149,7 @@ export class Activity {
    * @returns The created Activity instance.
    */
   static fromJson (json: string): Activity {
-    return this.fromObject(JSON.parse(json, rev))
+    return this.fromObject(JSON.parse(json))
   }
 
   /**
@@ -263,7 +263,7 @@ export class Activity {
   }
 
   public clone (): Activity {
-    const activityCopy = JSON.parse(JSON.stringify(this, rep))
+    const activityCopy = JSON.parse(JSON.stringify(this))
 
     for (const key in activityCopy) {
       if (typeof activityCopy[key] === 'string' && !isNaN(Date.parse(activityCopy[key]))) {
@@ -333,6 +333,6 @@ export class Activity {
   }
 
   public toJsonString (): string {
-    return JSON.stringify(this, rep)
+    return JSON.stringify(this)
   }
 }

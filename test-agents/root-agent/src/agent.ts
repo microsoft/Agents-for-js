@@ -27,9 +27,9 @@ export class RootHandlerWithBlobStorageMemory extends ActivityHandler {
       if (!userProfile.name) {
         if (conversationData.nameRequested && !context.activity.text?.startsWith('agent:')) {
           userProfile.name = context.activity.text
-          await context.sendActivity(`Thanks ${userProfile.name}. You are now talking with the echo-agent. Type end or stop to finish the conversation.`)
+          await context.sendActivity(`Thanks ${userProfile.name}. You are now talking with the Agent1. Type end or stop to finish the conversation.`)
         } else {
-          await context.sendActivity('Type your name to start talking with the echo-agent. Type end or stop to finish the conversation.')
+          await context.sendActivity('Type your name to start talking with the Agent1. Type `end` or `stop` to finish the conversation.')
           conversationData.nameRequested = true
         }
       } else {
