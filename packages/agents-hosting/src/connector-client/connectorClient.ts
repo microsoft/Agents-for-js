@@ -3,7 +3,7 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
 import { AuthConfiguration } from '../auth/authConfiguration'
 import { AuthProvider } from '../auth/authProvider'
 import { debug } from '../logger'
-import { Activity, normalizeIncomingPayload, normalizeOutgoingActivity } from '@microsoft/agents-activity'
+import { Activity, normalizeOutgoingPayload } from '@microsoft/agents-activity'
 import { ConversationsResult } from './conversationsResult'
 import { ConversationParameters } from './conversationParameters'
 import { ConversationResourceResponse } from './conversationResourceResponse'
@@ -25,29 +25,6 @@ export class ConnectorClient {
    */
   protected constructor (client: AxiosInstance) {
     this.client = client
-    this.client.interceptors.request.use((config) => {
-      const { method, url, data } = config
-      logger.debug('Request: ', {
-        method,
-        host: this.client.getUri(),
-        url,
-        data
-      })
-      return config
-    }, (error) => {
-      const { code, message, stack } = error
-      const errorDetails = {
-        code,
-        host: this.client.getUri(),
-        url: error.config.url,
-        method: error.config.method,
-        data: error.config.data,
-        message,
-        stack
-      }
-      logger.error('Request Error: ', errorDetails)
-      return Promise.reject(errorDetails)
-    })
     this.client.interceptors.response.use(
       (config) => {
         const { status, statusText, config: requestConfig } = config
@@ -72,7 +49,6 @@ export class ConnectorClient {
           message,
           stack,
         }
-        logger.error('Response Error: ', errorDetails)
         return Promise.reject(errorDetails)
       }
     )
@@ -99,16 +75,16 @@ export class ConnectorClient {
       },
       transformRequest: [
         (data, headers) => {
-          return normalizeOutgoingActivity(data)
+          return JSON.stringify(normalizeOutgoingPayload(data))
         }],
-      transformResponse: [
-        (data) => {
-          if (data === '') {
-            return data
-          }
-          return normalizeIncomingPayload(data)
-        }
-      ]
+      // transformResponse: [
+      //   (data) => {
+      //     if (data === '') {
+      //       return data
+      //     }
+      //     return JSON.parse(normalizeIncomingPayload(data))
+      //   }
+      // ]
     })
 
     const token = await authProvider.getAccessToken(authConfig, scope)

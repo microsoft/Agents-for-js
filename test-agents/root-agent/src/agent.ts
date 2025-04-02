@@ -35,9 +35,6 @@ export class RootHandlerWithBlobStorageMemory extends ActivityHandler {
       } else {
         const agentClient: AgentClient = new AgentClient('Agent1')
 
-        const activityStarts = JSON.stringify(context.activity)
-        console.log('activityStarts', activityStarts)
-
         context.activity.text = `${userProfile.name}: ${context.activity.text}`
         await agentClient.postActivity(context.activity, context.adapter.authConfig)
       }
