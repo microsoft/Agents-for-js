@@ -11,7 +11,7 @@ import { Request } from './auth/request'
 import { ConnectorClient } from './connector-client/connectorClient'
 import { AuthConfiguration } from './auth/authConfiguration'
 import { AuthProvider } from './auth/authProvider'
-import { Activity, ActivityEventNames, ActivityTypes, Channels, ConversationReference, DeliveryModes } from '@microsoft/agents-activity'
+import { Activity, ActivityEventNames, ActivityTypes, Channels, ConversationReference, DeliveryModes, normalizeIncomingPayload } from '@microsoft/agents-activity'
 import { ResourceResponse } from './connector-client/resourceResponse'
 import { MsalTokenProvider } from './auth/msalTokenProvider'
 import { ConversationParameters } from './connector-client/conversationParameters'
@@ -164,8 +164,8 @@ export class CloudAdapter extends BaseAdapter {
       }
       res.end()
     }
-
-    const activity = Activity.fromObject(request.body!)
+    const incoming = normalizeIncomingPayload(request.body!)
+    const activity = Activity.fromObject(incoming)
     if (!this.isValidChannelActivity(activity)) {
       return end(StatusCodes.BAD_REQUEST)
     }

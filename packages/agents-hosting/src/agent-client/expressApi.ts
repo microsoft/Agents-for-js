@@ -1,4 +1,4 @@
-import { Activity, ActivityTypes } from '@microsoft/agents-activity'
+import { Activity, ActivityTypes, normalizeIncomingPayload } from '@microsoft/agents-activity'
 import { ActivityHandler } from '../activityHandler'
 import { CloudAdapter } from '../cloudAdapter'
 import { Request, Response, Application } from 'express'
@@ -14,7 +14,8 @@ export const configureResponseController = (app: Application, adapter: CloudAdap
 }
 
 const handleResponse = (adapter: CloudAdapter, handler: ActivityHandler) => async (req: Request, res: Response) => {
-  const activity = Activity.fromObject(req.body!)
+  const incoming = normalizeIncomingPayload(req.body!)
+  const activity = Activity.fromObject(incoming)
 
   logger.debug('received response: ', activity)
 
