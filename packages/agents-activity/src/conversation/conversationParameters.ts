@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { Activity, ChannelAccount } from '@microsoft/agents-activity'
+import { Activity, ChannelAccount } from '../'
 
 /**
  * Represents the parameters for creating a conversation.

@@ -20,6 +20,7 @@ export { Channels } from './conversation/channels'
 export { ConversationAccount } from './conversation/conversationAccount'
 export { ConversationReference } from './conversation/conversationReference'
 export { EndOfConversationCodes } from './conversation/endOfConversationCodes'
+export { ConversationParameters } from './conversation/conversationParameters'
 export { RoleTypes } from './conversation/roleTypes'
 
 export { Entity } from './entity/entity'
