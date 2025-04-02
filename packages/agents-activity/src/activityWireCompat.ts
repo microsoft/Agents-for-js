@@ -1,5 +1,11 @@
-// the property 'agent' is used in the activity wire protocol to refer to the bot
-
+/**
+ * @private
+ * Normalizes an incoming payload by converting the `bot` property in `relatesTo` to `agent`.
+ * This ensures compatibility with the activity wire protocol.
+ *
+ * @param payload - The incoming payload object to normalize.
+ * @returns The normalized payload object with `bot` replaced by `agent` in `relatesTo`.
+ */
 export function normalizeIncomingPayload (payload: any): object {
   if (payload['relatesTo'] && payload['relatesTo']['bot']) {
     const relatesTo = payload['relatesTo']
@@ -10,6 +16,14 @@ export function normalizeIncomingPayload (payload: any): object {
   return payload
 }
 
+/**
+ * @private
+ * Normalizes an outgoing payload by converting the `agent` property in `relatesTo` to `bot`.
+ * This ensures compatibility with the activity wire protocol.
+ *
+ * @param payload - The outgoing payload object to normalize.
+ * @returns The normalized payload object with `agent` replaced by `bot` in `relatesTo`.
+ */
 export function normalizeOutgoingPayload (payload: any): object {
   if (payload['relatesTo'] && payload['relatesTo']['agent']) {
     const relatesTo = payload['relatesTo']
