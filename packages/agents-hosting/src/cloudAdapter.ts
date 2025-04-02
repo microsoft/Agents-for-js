@@ -11,7 +11,7 @@ import { Request } from './auth/request'
 import { ConnectorClient } from './connector-client/connectorClient'
 import { AuthConfiguration } from './auth/authConfiguration'
 import { AuthProvider } from './auth/authProvider'
-import { Activity, ActivityEventNames, ActivityTypes, Channels, ConversationReference, DeliveryModes, normalizeIncomingPayload } from '@microsoft/agents-activity'
+import { Activity, ActivityEventNames, ActivityTypes, Channels, ConversationReference, DeliveryModes } from '@microsoft/agents-activity'
 import { ResourceResponse } from './connector-client/resourceResponse'
 import { MsalTokenProvider } from './auth/msalTokenProvider'
 import { ConversationParameters } from './connector-client/conversationParameters'
@@ -21,6 +21,7 @@ import { StatusCodes } from './statusCodes'
 import { InvokeResponse } from './invoke/invokeResponse'
 import { AttachmentInfo } from './connector-client/attachmentInfo'
 import { AttachmentData } from './connector-client/attachmentData'
+import { normalizeIncomingPayload } from './activityWireCompat'
 
 const logger = debug('agents:cloud-adapter')
 

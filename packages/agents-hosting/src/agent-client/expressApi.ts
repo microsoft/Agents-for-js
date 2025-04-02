@@ -1,10 +1,11 @@
-import { Activity, ActivityTypes, normalizeIncomingPayload } from '@microsoft/agents-activity'
+import { Activity, ActivityTypes } from '@microsoft/agents-activity'
 import { ActivityHandler } from '../activityHandler'
 import { CloudAdapter } from '../cloudAdapter'
 import { Request, Response, Application } from 'express'
 import { MemoryStorage } from '../storage'
 import { TurnContext } from '../turnContext'
 import { v4 } from 'uuid'
+import { normalizeIncomingPayload } from '../activityWireCompat'
 import { debug } from '../logger'
 
 const logger = debug('agents:agent-client')

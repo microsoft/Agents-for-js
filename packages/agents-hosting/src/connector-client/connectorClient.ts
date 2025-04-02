@@ -3,14 +3,14 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
 import { AuthConfiguration } from '../auth/authConfiguration'
 import { AuthProvider } from '../auth/authProvider'
 import { debug } from '../logger'
-import { Activity, normalizeOutgoingPayload } from '@microsoft/agents-activity'
+import { Activity } from '@microsoft/agents-activity'
 import { ConversationsResult } from './conversationsResult'
 import { ConversationParameters } from './conversationParameters'
 import { ConversationResourceResponse } from './conversationResourceResponse'
 import { ResourceResponse } from './resourceResponse'
 import { AttachmentInfo } from './attachmentInfo'
 import { AttachmentData } from './attachmentData'
-
+import { normalizeOutgoingPayload } from '../activityWireCompat'
 const logger = debug('agents:connector-client')
 
 /**

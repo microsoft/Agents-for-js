@@ -1,6 +1,6 @@
 import assert from 'assert'
 import { describe, it } from 'node:test'
-import { normalizeIncomingPayload, normalizeOutgoingPayload } from '../../src'
+import { normalizeIncomingPayload, normalizeOutgoingPayload } from '../../src/activityWireCompat'
 
 describe('Incoming Activity Wire Compat', () => {
   it('Should translate bot to agent', () => {
