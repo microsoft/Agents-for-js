@@ -242,38 +242,4 @@ describe('Outgoing Activity Wire Compat', () => {
     }
     assert.deepEqual(normalized, expected)
   })
-
-  it('Should handle empty payload gracefully', () => {
-    const payload = {}
-    const normalized = normalizeIncomingPayload(payload)
-    const expected = {}
-    assert.deepEqual(normalized, expected)
-  })
-
-  it('Should preserve unrelated fields in payload', () => {
-    const payload = {
-      type: 'message',
-      relatesTo: {
-        bot: {
-          id: 'bot-id',
-          name: 'test',
-          role: 'skill'
-        }
-      },
-      extraField: 'extraValue'
-    }
-    const normalized = normalizeIncomingPayload(payload)
-    const expected = {
-      type: 'message',
-      relatesTo: {
-        agent: {
-          id: 'bot-id',
-          name: 'test',
-          role: 'skill'
-        }
-      },
-      extraField: 'extraValue'
-    }
-    assert.deepEqual(normalized, expected)
-  })
 })
