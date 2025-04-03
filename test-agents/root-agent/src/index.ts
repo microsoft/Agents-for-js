@@ -7,7 +7,7 @@ import { Request, CloudAdapter, authorizeJWT, AuthConfiguration, loadAuthConfigF
 import { version as sdkVersion } from '@microsoft/agents-hosting/package.json'
 import { RootHandlerWithBlobStorageMemory } from './agent'
 import { BlobsStorage } from '@microsoft/agents-hosting-storage-blob'
-import { ConversationData, UserProfile } from './memoryData'
+import { ConversationData, UserProfile } from './conversationState'
 
 const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
 
