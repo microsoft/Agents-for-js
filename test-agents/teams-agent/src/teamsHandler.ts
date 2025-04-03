@@ -125,7 +125,7 @@ export class TeamsHandler extends TeamsActivityHandler {
         context.adapter.authConfig.clientId!,
         context.activity.channelId!,
         context.activity.serviceUrl!,
-        'http://api.botframework.com',
+        'https://api.botframework.com',
         convoParams,
         async (context: TurnContext) => {
           const ref = context.activity.getConversationReference()

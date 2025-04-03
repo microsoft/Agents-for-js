@@ -75,15 +75,7 @@ export class ConnectorClient {
       transformRequest: [
         (data, headers) => {
           return JSON.stringify(normalizeOutgoingPayload(data))
-        }],
-      // transformResponse: [
-      //   (data) => {
-      //     if (data === '') {
-      //       return data
-      //     }
-      //     return JSON.parse(normalizeIncomingPayload(data))
-      //   }
-      // ]
+        }]
     })
 
     const token = await authProvider.getAccessToken(authConfig, scope)
