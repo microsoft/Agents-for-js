@@ -117,7 +117,7 @@ export interface PromptRecognizerResult<T> {
  * > validator sends a custom re-prompt to the user using `prompt.context.sendActivity()`. In that
  * > case the prompts default re-rpompt logic will not be run.
  * @param T Type of recognizer result being validated.
- * @param PromptValidator.prompt Contextual information containing the recognizer result and original options passed to the prompt.
+ * @param prompt Contextual information containing the recognizer result and original options passed to the prompt.
  */
 export type PromptValidator<T> = (prompt: PromptValidatorContext<T>) => Promise<boolean>
 

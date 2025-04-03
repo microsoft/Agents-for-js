@@ -14,7 +14,7 @@ import { DialogReason } from './dialogReason'
  * Function signature of an individual waterfall step.
  *
  * @param O (Optional) type of dialog options passed into the step.
- * @param WaterfallStep.step Contextual information for the current step being executed.
+ * @param step Contextual information for the current step being executed.
  */
 export type WaterfallStep<O extends object = {}> = (step: WaterfallStepContext<O>) => Promise<DialogTurnResult>
 

@@ -12,8 +12,8 @@ export interface Token {
 /**
  * Signature for an alternate word breaker.
  *
- * @param TokenizerFunction.text The text to be tokenized.
- * @param TokenizerFunction.locale (Optional) locale of the text if known.
+ * @param text The text to be tokenized.
+ * @param locale (Optional) locale of the text if known.
  */
 export type TokenizerFunction = (text: string, locale?: string) => Token[]
 
