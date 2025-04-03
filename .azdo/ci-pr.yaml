@@ -30,6 +30,9 @@ steps:
 - script: node setVersion.js
   displayName: set version
 
+- script: npm run lint
+  displayName: lint
+
 - script: npm run build
   displayName: build
 
