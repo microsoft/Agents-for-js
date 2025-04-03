@@ -28,9 +28,8 @@ const handleResponse = (adapter: CloudAdapter, handler: ActivityHandler, convers
   const conversationDataAccessor = conversationState.createProperty<ConversationReferenceState>(req.params!.conversationId)
   const conversationRefState = await conversationDataAccessor.get(myTurnContext, undefined, { channelId: activity.channelId!, conversationId: req.params!.conversationId })
 
-  const coinversationRef = JSON.stringify(conversationRefState.conversationReference)
-  console.log('coinversationRef', coinversationRef)
-
+  const conversationRef = JSON.stringify(conversationRefState.conversationReference)
+  console.log('conversationRef', conversationRef)
   const callback = async (turnContext: TurnContext) => {
     activity.applyConversationReference(conversationRefState.conversationReference)
     turnContext.activity.id = req.params!.activityId
