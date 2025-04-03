@@ -2,7 +2,6 @@ import { Activity, ActivityTypes, ConversationReference } from '@microsoft/agent
 import { ActivityHandler } from '../activityHandler'
 import { CloudAdapter } from '../cloudAdapter'
 import { Request, Response, Application } from 'express'
-import { MemoryStorage } from '../storage'
 import { TurnContext } from '../turnContext'
 import { v4 } from 'uuid'
 import { normalizeIncomingActivity } from '../activityWireCompat'
@@ -29,9 +28,8 @@ const handleResponse = (adapter: CloudAdapter, handler: ActivityHandler, convers
   const conversationDataAccessor = conversationState.createProperty<ConversationReferenceState>(req.params!.conversationId)
   const conversationRefState = await conversationDataAccessor.get(myTurnContext, undefined, { channelId: activity.channelId!, conversationId: req.params!.conversationId })
 
-  const requestData = await MemoryStorage.getSingleInstance().read([req.params!.conversationId])
-  const conversationReference = requestData[req.params!.conversationId].conversationReference
-  logger.debug('memoryChanges: ', requestData)
+  const coinversationRef = JSON.stringify(conversationRefState.conversationReference)
+  console.log('coinversationRef', coinversationRef)
 
   const callback = async (turnContext: TurnContext) => {
     activity.applyConversationReference(conversationRefState.conversationReference)
@@ -51,7 +49,7 @@ const handleResponse = (adapter: CloudAdapter, handler: ActivityHandler, convers
     res.status(200).send(response)
   }
 
-  await adapter.continueConversation(conversationReference, callback, true)
+  await adapter.continueConversation(conversationRefState.conversationReference, callback, true)
 }
 
 const applyActivityToTurnContext = (turnContext : TurnContext, activity : Activity) => {
