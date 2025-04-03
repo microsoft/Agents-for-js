@@ -178,7 +178,7 @@ export class Activity {
       locale: reference.locale,
       serviceUrl: reference.serviceUrl,
       conversation: reference.conversation,
-      recipient: reference.bot,
+      recipient: reference.agent,
       from: reference.user,
       relatesTo: reference
     }
@@ -223,7 +223,7 @@ export class Activity {
     return {
       activityId: this.getAppropriateReplyToId(),
       user: this.from,
-      bot: this.recipient,
+      agent: this.recipient,
       conversation: this.conversation,
       channelId: this.channelId,
       locale: this.locale,
@@ -247,12 +247,12 @@ export class Activity {
     this.conversation = reference.conversation
     if (isIncoming) {
       this.from = reference.user
-      this.recipient = reference.bot ?? undefined
+      this.recipient = reference.agent ?? undefined
       if (reference.activityId) {
         this.id = reference.activityId
       }
     } else {
-      this.from = reference.bot ?? undefined
+      this.from = reference.agent ?? undefined
       this.recipient = reference.user
       if (reference.activityId) {
         this.replyToId = reference.activityId
@@ -330,5 +330,9 @@ export class Activity {
     reference.activityId = replyId
 
     return reference
+  }
+
+  public toJsonString (): string {
+    return JSON.stringify(this)
   }
 }

@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { Activity, ChannelAccount } from '@microsoft/agents-activity'
+import { Activity, ChannelAccount } from '../'
 
 /**
  * Represents the parameters for creating a conversation.
@@ -16,7 +16,7 @@ export interface ConversationParameters {
   /**
    * The bot account initiating the conversation.
    */
-  bot: ChannelAccount
+  agent?: ChannelAccount
   /**
    * The members to include in the conversation.
    */

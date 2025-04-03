@@ -3,14 +3,13 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
 import { AuthConfiguration } from '../auth/authConfiguration'
 import { AuthProvider } from '../auth/authProvider'
 import { debug } from '../logger'
-import { Activity } from '@microsoft/agents-activity'
+import { Activity, ConversationParameters } from '@microsoft/agents-activity'
 import { ConversationsResult } from './conversationsResult'
-import { ConversationParameters } from './conversationParameters'
 import { ConversationResourceResponse } from './conversationResourceResponse'
 import { ResourceResponse } from './resourceResponse'
 import { AttachmentInfo } from './attachmentInfo'
 import { AttachmentData } from './attachmentData'
-
+import { normalizeOutgoingActivity } from '../activityWireCompat'
 const logger = debug('agents:connector-client')
 
 /**
@@ -72,7 +71,11 @@ export class ConnectorClient {
       baseURL,
       headers: {
         Accept: 'application/json'
-      }
+      },
+      transformRequest: [
+        (data, headers) => {
+          return JSON.stringify(normalizeOutgoingActivity(data))
+        }]
     })
 
     const token = await authProvider.getAccessToken(authConfig, scope)
@@ -103,6 +106,7 @@ export class ConnectorClient {
    * @returns The conversation resource response.
    */
   public async createConversationAsync (body: ConversationParameters): Promise<ConversationResourceResponse> {
+    // const payload = normalizeOutgoingConvoParams(body)
     const config: AxiosRequestConfig = {
       method: 'post',
       url: '/v3/conversations',

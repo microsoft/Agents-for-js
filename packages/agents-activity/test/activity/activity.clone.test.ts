@@ -76,7 +76,7 @@ describe('Activity class', () => {
     const convRefExpected: ConversationReference = {
       activityId: 'activityId',
       user: clonedActivity.from,
-      bot: recipient,
+      agent: recipient,
       conversation,
       channelId,
       locale: clonedActivity.locale,

@@ -27,6 +27,7 @@ app.use(express.json())
 app.use(authorizeJWT(authConfig))
 
 app.post('/api/messages', async (req: Request, res: Response) => {
+  console.log('jwt claims: ', req.user)
   await adapter.process(req, res, async (context) => await myAgent.run(context))
 })
 

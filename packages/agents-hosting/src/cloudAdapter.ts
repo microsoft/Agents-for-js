@@ -11,16 +11,16 @@ import { Request } from './auth/request'
 import { ConnectorClient } from './connector-client/connectorClient'
 import { AuthConfiguration } from './auth/authConfiguration'
 import { AuthProvider } from './auth/authProvider'
-import { Activity, ActivityEventNames, ActivityTypes, Channels, ConversationReference, DeliveryModes } from '@microsoft/agents-activity'
+import { Activity, ActivityEventNames, ActivityTypes, Channels, ConversationReference, DeliveryModes, ConversationParameters } from '@microsoft/agents-activity'
 import { ResourceResponse } from './connector-client/resourceResponse'
 import { MsalTokenProvider } from './auth/msalTokenProvider'
-import { ConversationParameters } from './connector-client/conversationParameters'
 import * as uuid from 'uuid'
 import { debug } from './logger'
 import { StatusCodes } from './statusCodes'
 import { InvokeResponse } from './invoke/invokeResponse'
 import { AttachmentInfo } from './connector-client/attachmentInfo'
 import { AttachmentData } from './connector-client/attachmentData'
+import { normalizeIncomingActivity } from './activityWireCompat'
 
 const logger = debug('agents:cloud-adapter')
 
@@ -164,8 +164,8 @@ export class CloudAdapter extends BaseAdapter {
       }
       res.end()
     }
-
-    const activity = Activity.fromObject(request.body!)
+    const incoming = normalizeIncomingActivity(request.body!)
+    const activity = Activity.fromObject(incoming)
     if (!this.isValidChannelActivity(activity)) {
       return end(StatusCodes.BAD_REQUEST)
     }
@@ -339,7 +339,7 @@ export class CloudAdapter extends BaseAdapter {
       tenantId: conversationParameters.tenantId,
     }
     activity.channelData = conversationParameters.channelData
-    activity.recipient = conversationParameters.bot
+    activity.recipient = conversationParameters.agent
 
     return activity
   }

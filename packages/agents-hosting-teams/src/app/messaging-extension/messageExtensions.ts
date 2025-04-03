@@ -12,7 +12,7 @@ import { MessagingExtensionParameter } from '../../messaging-extension/messaging
 import { MessagingExtensionQuery } from '../../messaging-extension/messagingExtensionQuery'
 import { TaskModuleResponse } from '../../task/taskModuleResponse'
 import { MessageExtensionsInvokeNames } from './messageExtensionsInvokeNames'
-import { parseValueBotActivityPreview, parseValueBotMessagePreviewAction, parseValueCommandId, parseValueQuery } from '../../parsers'
+import { parseValueAgentActivityPreview, parseValueAgentMessagePreviewAction, parseValueCommandId, parseValueQuery } from '../../parsers'
 import { Query } from '../query'
 
 export class MessageExtensions<TState extends TurnState> {
@@ -66,7 +66,7 @@ export class MessageExtensions<TState extends TurnState> {
       this._app.addRoute(
         selector,
         async (context, state) => {
-          const activityValue = parseValueBotMessagePreviewAction(context.activity.value)
+          const activityValue = parseValueAgentMessagePreviewAction(context.activity.value)
           if (context?.activity?.type !== ActivityTypes.Invoke ||
             context?.activity?.name !== SUBMIT_ACTION_INVOKE ||
             activityValue.botMessagePreviewAction !== 'edit'
@@ -76,7 +76,7 @@ export class MessageExtensions<TState extends TurnState> {
             )
           }
 
-          const activityActivityPreview = parseValueBotActivityPreview(context.activity.value)
+          const activityActivityPreview = parseValueAgentActivityPreview(context.activity.value)
           const result = await handler(context, state, (activityActivityPreview as any).botActivityPreview[0] as Partial<Activity> ?? {})
           await this.returnSubmitActionResponse(context, result)
         },
@@ -96,7 +96,7 @@ export class MessageExtensions<TState extends TurnState> {
       this._app.addRoute(
         selector,
         async (context, state) => {
-          const activityMessagePreviewAction = parseValueBotMessagePreviewAction(context.activity.value)
+          const activityMessagePreviewAction = parseValueAgentMessagePreviewAction(context.activity.value)
           if (
             context?.activity?.type !== ActivityTypes.Invoke ||
                         context?.activity?.name !== SUBMIT_ACTION_INVOKE ||
@@ -107,7 +107,7 @@ export class MessageExtensions<TState extends TurnState> {
             )
           }
 
-          const activityActivityPreview = parseValueBotActivityPreview(context.activity.value)
+          const activityActivityPreview = parseValueAgentActivityPreview(context.activity.value)
           await handler(context, state, (activityActivityPreview as any).botActivityPreview[0] as Partial<Activity> ?? {})
 
           if (!context.turnState.get(INVOKE_RESPONSE_KEY)) {
@@ -474,7 +474,7 @@ function createTaskSelector (
 
 function matchesPreviewAction (activity: Activity, messagePreviewAction?: 'edit' | 'send'): boolean {
   if ('botMessagePreviewAction' in (activity?.value as any)) {
-    const activityValue = parseValueBotMessagePreviewAction(activity.value)
+    const activityValue = parseValueAgentMessagePreviewAction(activity.value)
     return activityValue.botMessagePreviewAction === messagePreviewAction
   } else {
     return messagePreviewAction === undefined

@@ -345,7 +345,7 @@ describe('Activity object deserialization', () => {
     const from: ChannelAccount = {
       id: '123',
       name: 'myChannel',
-      role: RoleTypes.Bot
+      role: RoleTypes.Agent
     }
     const obj = {
       type: ActivityTypes.Message,
@@ -362,7 +362,7 @@ describe('Activity object deserialization', () => {
     assert.strictEqual(a1.from?.id, '123')
     assert.strictEqual(a1.from?.name, 'myChannel')
     assert.strictEqual(a1.from?.role, 'bot')
-    assert.strictEqual(a1.from?.role, RoleTypes.Bot)
+    assert.strictEqual(a1.from?.role, RoleTypes.Agent)
   })
 
   it('Deserialize with unknown type and text', () => {
@@ -698,7 +698,7 @@ describe('Activity getConversationReference', () => {
     const expected: ConversationReference = {
       activityId: 'activity123',
       user: { id: 'user1', name: 'User' },
-      bot: { id: 'bot1', name: 'Bot' },
+      agent: { id: 'bot1', name: 'Bot' },
       conversation: { id: 'conversation1' },
       channelId: 'channel123',
       locale: 'en-US',
@@ -720,7 +720,7 @@ describe('Activity applyConversationReference', () => {
     const reference: ConversationReference = {
       activityId: 'refActivityId',
       user: { id: 'user1', name: 'User' },
-      bot: { id: 'bot1', name: 'Bot' },
+      agent: { id: 'bot1', name: 'Bot' },
       conversation: { id: 'conversation1' },
       channelId: 'channel123',
       locale: 'en-US',
@@ -752,7 +752,7 @@ describe('Activity applyConversationReference', () => {
     const reference: ConversationReference = {
       activityId: 'refActivityId',
       user: { id: 'user1', name: 'User' },
-      bot: { id: 'bot1', name: 'Bot' },
+      agent: { id: 'bot1', name: 'Bot' },
       conversation: { id: 'conversation1' },
       channelId: 'channel123',
       locale: 'en-US',
@@ -783,7 +783,7 @@ describe('Activity applyConversationReference', () => {
     const reference: ConversationReference = {
       activityId: 'refActivityId',
       user: { id: 'user1', name: 'User' },
-      bot: null,
+      agent: null,
       conversation: { id: 'conversation1' },
       channelId: 'channel123',
       locale: 'en-US',
@@ -815,7 +815,7 @@ describe('Activity applyConversationReference', () => {
     const reference: ConversationReference = {
       activityId: 'refActivityId',
       user: { id: 'user1', name: 'User' },
-      bot: null,
+      agent: null,
       conversation: { id: 'conversation1' },
       channelId: 'channel123',
       locale: 'en-US',
@@ -928,7 +928,7 @@ describe('Activity getReplyConversationReference', () => {
     assert.deepEqual(result, {
       activityId: 'reply123',
       user: { id: 'user1', name: 'User' },
-      bot: { id: 'bot123', name: 'Bot' },
+      agent: { id: 'bot123', name: 'Bot' },
       conversation: { id: 'conversation1' },
       channelId: 'testChannel',
       serviceUrl: 'http://test.service.url',

@@ -21,7 +21,7 @@ describe('ConversationReference', () => {
       activityId: 'activityId',
       user: channelAccount,
       locale: 'locale',
-      bot: channelAccount,
+      agent: channelAccount,
       conversation: convAccount,
       channelId: 'channelId',
       serviceUrl: 'serviceUrl'
@@ -29,7 +29,7 @@ describe('ConversationReference', () => {
     assert.equal(conversationRef.activityId, 'activityId')
     assert.equal(conversationRef.user, channelAccount)
     assert.strictEqual(conversationRef.locale, 'locale')
-    assert.equal(conversationRef.bot, channelAccount)
+    assert.equal(conversationRef.agent, channelAccount)
     assert.strictEqual(conversationRef.conversation, convAccount)
     assert.strictEqual(conversationRef.channelId, 'channelId')
     assert.equal(conversationRef.serviceUrl, 'serviceUrl')
@@ -38,7 +38,7 @@ describe('ConversationReference', () => {
   it('should throw an error if bot is missing', () => {
     // @ts-expect-error
     const conversationRef: ConversationReference = { }
-    assert.strictEqual(conversationRef.bot, undefined)
+    assert.strictEqual(conversationRef.agent, undefined)
   })
 
   it('should throw an error if conversation is missing', () => {
@@ -70,7 +70,7 @@ describe('ConversationReference json deserialization', () => {
         "role": "user"
     },
     "locale": "locale",
-    "bot": {
+    "agent": {
         "id": "123",
         "name": "user1",
         "role": "user"
@@ -104,7 +104,7 @@ describe('ConversationReference json deserialization', () => {
     assert.equal(conversationRef.activityId, 'activityId')
     assert.deepEqual(conversationRef.user, channelAccount)
     assert.strictEqual(conversationRef.locale, 'locale')
-    assert.deepEqual(conversationRef.bot, channelAccount)
+    assert.deepEqual(conversationRef.agent, channelAccount)
     assert.deepEqual(conversationRef.conversation, convAccount)
     assert.strictEqual(conversationRef.channelId, 'channelId')
     assert.equal(conversationRef.serviceUrl, 'serviceUrl')

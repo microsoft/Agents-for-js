@@ -21,6 +21,6 @@ describe('CallerIdConstants', function () {
   it('CallerIdConstants.BotToBotPrefix should match value in botframework activity spec', function () {
     // Expected value derived from:
     // https://github.com/microsoft/botframework-sdk/blob/13be0336527fcc0e52d505ae38bd36a73742e74b/specs/botframework-activity/botframework-activity.md#bot-framework
-    assert.strictEqual(CallerIdConstants.BotToBotPrefix, 'urn:botframework:aadappid:')
+    assert.strictEqual(CallerIdConstants.AgentPrefix, 'urn:botframework:aadappid:')
   })
 })

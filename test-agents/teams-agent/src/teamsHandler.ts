@@ -115,7 +115,7 @@ export class TeamsHandler extends TeamsActivityHandler {
       const convoParams: ConversationParameters = {
         members: [{ id: member.id }],
         isGroup: false,
-        bot: context.activity.recipient!,
+        agent: context.activity.recipient!,
         tenantId: context.activity.conversation!.tenantId,
         activity: message,
         channelData: context.activity.channelData
@@ -125,7 +125,7 @@ export class TeamsHandler extends TeamsActivityHandler {
         context.adapter.authConfig.clientId!,
         context.activity.channelId!,
         context.activity.serviceUrl!,
-        'http://api.botframework.com',
+        'https://api.botframework.com',
         convoParams,
         async (context: TurnContext) => {
           const ref = context.activity.getConversationReference()

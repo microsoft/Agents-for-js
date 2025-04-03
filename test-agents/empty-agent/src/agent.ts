@@ -17,8 +17,12 @@ export class EmptyAgent extends ActivityHandler {
           }
         ))
       } else {
-        const replyText = `agent: ${context.activity.text}`
+        const replyText = `empty-agent: ${context.activity.text}`
         await context.sendActivity(MessageFactory.text(replyText, replyText))
+        const actWithRT = new Activity(ActivityTypes.Message)
+        actWithRT.relatesTo = context.activity.getConversationReference()
+        actWithRT.text = 'empty-agent: This is a reply with relatesTo'
+        await context.sendActivity(actWithRT)
       }
       await next()
     })
