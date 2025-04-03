@@ -46,7 +46,8 @@ const verifyToken = async (raw: string, config: AuthConfiguration): Promise<JwtP
       issuer: config.issuers,
       audience: [config.clientId!, 'https://api.botframework.com'],
       ignoreExpiration: false,
-      algorithms: ['RS256']
+      algorithms: ['RS256'],
+      clockTolerance: 300
     }
 
     jwt.verify(raw, getKey, verifyOptions, (err, user) => {
