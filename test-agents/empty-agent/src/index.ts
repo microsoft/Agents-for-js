@@ -23,7 +23,7 @@ app.post('/api/messages', async (req: Request, res: Response) => {
   await adapter.process(req, res, async (context) => await myAgent.run(context))
 })
 
-const port = process.env.PORT || 39783
+const port = process.env.PORT || 3978
 app.listen(port, () => {
   console.log(`\nServer listening to port ${port} on sdk ${sdkVersion} for appId ${authConfig.clientId} debug ${process.env.DEBUG}`)
 }).on('error', console.error)
