@@ -2,7 +2,6 @@
   "name": "webchat-agents",
   "version": "1.0.0",
   "private": true,
-  "description": "Agents SKD webchat for testing and development",
   "author": "Microsoft",
   "license": "MIT",
   "main": "./dist/index.js",
@@ -12,17 +11,13 @@
     "start": "node --env-file .env ./dist/index.js",
     "prebundle": "npm run build",
     "bundle": "esbuild dist/index.js --bundle --platform=node --metafile=dist/meta.json --outfile=dist/bundle.js --tree-shaking=true --keep-names",
-    "docker": "docker build -t botagents.azurecr.io/node-echo-bot:latest ."
+    "predocker": "npm run bundle",
+    "docker": "docker build -t \"$npm_package_name:$npm_package_version\" ."
   },
   "dependencies": {
     "@microsoft/agents-hosting": "file:../../packages/agents-hosting",
     "@microsoft/microsoft-graph-client": "^3.0.7",
     "adaptivecards-templating": "^2.3.1",
     "express": "^5.0.1"
-  },
-  "devDependencies": {
-    "@microsoft/microsoft-graph-types": "^2.40.0",
-    "@types/express": "^5.0.1"
-  },
-  "keywords": []
+  }
 }

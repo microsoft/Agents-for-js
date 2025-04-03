@@ -22,9 +22,6 @@
     "@microsoft/agents-hosting": "file:../agents-hosting",
     "zod": "^3.24.2"
   },
-  "devDependencies": {
-    "@types/express": "^5.0.1"
-  },
   "license": "MIT",
   "files": [
     "README.md",

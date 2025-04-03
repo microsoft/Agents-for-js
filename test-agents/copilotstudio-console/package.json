@@ -2,7 +2,6 @@
   "name": "copilotstudio-console",
   "version": "1.0.0",
   "private": true,
-  "description": "Agents SKD copilot studio agent for testing and development",
   "author": "Microsoft",
   "license": "MIT",
   "main": "./dist/index.js",
@@ -19,7 +18,5 @@
     "@microsoft/agents-copilot-studio": "file:../../packages/agents-copilotstudio-client",
     "@azure/msal-node": "^3.4.1",
     "open": "^10.1.0"
-  },
-  "devDependencies": {},
-  "keywords": []
+  }
 }

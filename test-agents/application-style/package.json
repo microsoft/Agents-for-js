@@ -15,20 +15,10 @@
         "predocker": "npm run bundle",
         "docker": "docker build -t \"$npm_package_name:$npm_package_version\" ."
     },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com"
-    },
     "dependencies": {
         "@microsoft/agents-hosting": "file:../../packages/agents-hosting",
         "@microsoft/agents-hosting-storage-blob": "file:../../packages/agents-hosting-storage-blob",
         "@microsoft/agents-hosting-storage-cosmos": "file:../../packages/agents-hosting-storage-cosmos",
         "express": "^5.0.1"
-    },
-    "devDependencies": {
-        "@types/express": "^5.0.1",
-        "typescript": "^5.7.2",
-        "esbuild": "^0.25.0"
-    },
-    "keywords": []
+    }
 }

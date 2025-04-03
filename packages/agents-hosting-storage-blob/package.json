@@ -19,7 +19,6 @@
     "@azure/storage-blob": "^12.27.0",
     "@microsoft/agents-hosting": "file:../../packages/agents-hosting"
   },
-  "devDependencies": {},
   "license": "MIT",
   "files": [
     "README.md",

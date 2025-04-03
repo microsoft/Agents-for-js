@@ -26,9 +26,6 @@
     "axios": "^1.8.2",
     "debug": "^4.3.7"
   },
-  "devDependencies": {
-    "@types/express": "^5.0.1"
-  },
   "license": "MIT",
   "files": [
     "README.md",
