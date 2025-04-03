@@ -9,7 +9,7 @@ import { ConversationResourceResponse } from './conversationResourceResponse'
 import { ResourceResponse } from './resourceResponse'
 import { AttachmentInfo } from './attachmentInfo'
 import { AttachmentData } from './attachmentData'
-import { normalizeOutgoingPayload } from '../activityWireCompat'
+import { normalizeOutgoingActivity } from '../activityWireCompat'
 const logger = debug('agents:connector-client')
 
 /**
@@ -74,7 +74,7 @@ export class ConnectorClient {
       },
       transformRequest: [
         (data, headers) => {
-          return JSON.stringify(normalizeOutgoingPayload(data))
+          return JSON.stringify(normalizeOutgoingActivity(data))
         }]
     })
 
@@ -106,6 +106,7 @@ export class ConnectorClient {
    * @returns The conversation resource response.
    */
   public async createConversationAsync (body: ConversationParameters): Promise<ConversationResourceResponse> {
+    // const payload = normalizeOutgoingConvoParams(body)
     const config: AxiosRequestConfig = {
       method: 'post',
       url: '/v3/conversations',

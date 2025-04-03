@@ -6,7 +6,7 @@
  * @param payload - The incoming payload object to normalize.
  * @returns The normalized payload object with `bot` replaced by `agent` in `relatesTo`.
  */
-export function normalizeIncomingPayload (payload: any): object {
+export function normalizeIncomingActivity (payload: any): object {
   if (payload['relatesTo'] && payload['relatesTo']['bot']) {
     const relatesTo = payload['relatesTo']
     const ov = relatesTo['bot']
@@ -24,7 +24,7 @@ export function normalizeIncomingPayload (payload: any): object {
  * @param payload - The outgoing payload object to normalize.
  * @returns The normalized payload object with `agent` replaced by `bot` in `relatesTo`.
  */
-export function normalizeOutgoingPayload (payload: any): object {
+export function normalizeOutgoingActivity (payload: any): object {
   if (payload['relatesTo'] && payload['relatesTo']['agent']) {
     const relatesTo = payload['relatesTo']
     const ov = relatesTo['agent']

@@ -20,7 +20,7 @@ import { StatusCodes } from './statusCodes'
 import { InvokeResponse } from './invoke/invokeResponse'
 import { AttachmentInfo } from './connector-client/attachmentInfo'
 import { AttachmentData } from './connector-client/attachmentData'
-import { normalizeIncomingPayload } from './activityWireCompat'
+import { normalizeIncomingActivity } from './activityWireCompat'
 
 const logger = debug('agents:cloud-adapter')
 
@@ -164,7 +164,7 @@ export class CloudAdapter extends BaseAdapter {
       }
       res.end()
     }
-    const incoming = normalizeIncomingPayload(request.body!)
+    const incoming = normalizeIncomingActivity(request.body!)
     const activity = Activity.fromObject(incoming)
     if (!this.isValidChannelActivity(activity)) {
       return end(StatusCodes.BAD_REQUEST)

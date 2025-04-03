@@ -1,6 +1,6 @@
 import assert from 'assert'
 import { describe, it } from 'node:test'
-import { normalizeIncomingPayload, normalizeOutgoingPayload } from '../../src/activityWireCompat'
+import { normalizeIncomingActivity, normalizeOutgoingActivity } from '../../src/activityWireCompat'
 
 describe('Incoming Activity Wire Compat', () => {
   it('Should translate bot to agent', () => {
@@ -14,7 +14,7 @@ describe('Incoming Activity Wire Compat', () => {
         }
       }
     }
-    const normalized = normalizeIncomingPayload(payload)
+    const normalized = normalizeIncomingActivity(payload)
     const expected = {
       type: 'message',
       relatesTo: {
@@ -33,7 +33,7 @@ describe('Incoming Activity Wire Compat', () => {
       type: 'message',
       foo: 'bar'
     }
-    const normalized = normalizeIncomingPayload(payload)
+    const normalized = normalizeIncomingActivity(payload)
     const expected = {
       type: 'message',
       foo: 'bar'
@@ -43,7 +43,7 @@ describe('Incoming Activity Wire Compat', () => {
 
   it('Should handle empty payload gracefully', () => {
     const payload = {}
-    const normalized = normalizeIncomingPayload(payload)
+    const normalized = normalizeIncomingActivity(payload)
     const expected = {}
     assert.deepEqual(normalized, expected)
   })
@@ -60,7 +60,7 @@ describe('Incoming Activity Wire Compat', () => {
       },
       extraField: 'extraValue'
     }
-    const normalized = normalizeIncomingPayload(payload)
+    const normalized = normalizeIncomingActivity(payload)
     const expected = {
       type: 'message',
       relatesTo: {
@@ -79,7 +79,7 @@ describe('Incoming Activity Wire Compat', () => {
     const payload = {
       relatesTo: {}
     }
-    const normalized = normalizeIncomingPayload(payload)
+    const normalized = normalizeIncomingActivity(payload)
     const expected = {
       relatesTo: {}
     }
@@ -94,7 +94,7 @@ describe('Incoming Activity Wire Compat', () => {
       },
       extraField: 'extraValue'
     }
-    const normalized = normalizeIncomingPayload(payload)
+    const normalized = normalizeIncomingActivity(payload)
     const expected = {
       type: 'message',
       relatesTo: {
@@ -112,7 +112,7 @@ describe('Incoming Activity Wire Compat', () => {
         bot: true
       }
     }
-    const normalized = normalizeIncomingPayload(payload)
+    const normalized = normalizeIncomingActivity(payload)
     const expected = {
       type: 'message',
       relatesTo: {
@@ -135,7 +135,7 @@ describe('Outgoing Activity Wire Compat', () => {
         }
       }
     }
-    const normalized = normalizeOutgoingPayload(payload)
+    const normalized = normalizeOutgoingActivity(payload)
     const expected = {
       type: 'message',
       relatesTo: {
@@ -154,7 +154,7 @@ describe('Outgoing Activity Wire Compat', () => {
       type: 'message',
       foo: 'bar'
     }
-    const normalized = normalizeOutgoingPayload(payload)
+    const normalized = normalizeOutgoingActivity(payload)
     const expected = {
       type: 'message',
       foo: 'bar'
@@ -164,7 +164,7 @@ describe('Outgoing Activity Wire Compat', () => {
 
   it('Should handle empty payload gracefully', () => {
     const payload = {}
-    const normalized = normalizeOutgoingPayload(payload)
+    const normalized = normalizeOutgoingActivity(payload)
     const expected = {}
     assert.deepEqual(normalized, expected)
   })
@@ -181,7 +181,7 @@ describe('Outgoing Activity Wire Compat', () => {
       },
       extraField: 'extraValue'
     }
-    const normalized = normalizeOutgoingPayload(payload)
+    const normalized = normalizeOutgoingActivity(payload)
     const expected = {
       type: 'message',
       relatesTo: {
@@ -200,7 +200,7 @@ describe('Outgoing Activity Wire Compat', () => {
     const payload = {
       relatesTo: {}
     }
-    const normalized = normalizeOutgoingPayload(payload)
+    const normalized = normalizeOutgoingActivity(payload)
     const expected = {
       relatesTo: {}
     }
@@ -215,7 +215,7 @@ describe('Outgoing Activity Wire Compat', () => {
       },
       extraField: 'extraValue'
     }
-    const normalized = normalizeOutgoingPayload(payload)
+    const normalized = normalizeOutgoingActivity(payload)
     const expected = {
       type: 'message',
       relatesTo: {
@@ -233,7 +233,7 @@ describe('Outgoing Activity Wire Compat', () => {
         agent: true
       }
     }
-    const normalized = normalizeOutgoingPayload(payload)
+    const normalized = normalizeOutgoingActivity(payload)
     const expected = {
       type: 'message',
       relatesTo: {

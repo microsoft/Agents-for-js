@@ -5,7 +5,7 @@ import { Request, Response, Application } from 'express'
 import { MemoryStorage } from '../storage'
 import { TurnContext } from '../turnContext'
 import { v4 } from 'uuid'
-import { normalizeIncomingPayload } from '../activityWireCompat'
+import { normalizeIncomingActivity } from '../activityWireCompat'
 import { debug } from '../logger'
 
 const logger = debug('agents:agent-client')
@@ -15,7 +15,7 @@ export const configureResponseController = (app: Application, adapter: CloudAdap
 }
 
 const handleResponse = (adapter: CloudAdapter, handler: ActivityHandler) => async (req: Request, res: Response) => {
-  const incoming = normalizeIncomingPayload(req.body!)
+  const incoming = normalizeIncomingActivity(req.body!)
   const activity = Activity.fromObject(incoming)
 
   logger.debug('received response: ', activity)
