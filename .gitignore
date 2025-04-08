@@ -5,3 +5,4 @@ dist/
 *.pem
 test-report.xml
 tsconfig.tsbuildinfo
+devTools/

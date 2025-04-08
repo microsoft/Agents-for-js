@@ -18,7 +18,9 @@ interface UserProfile {
 
 type ApplicationTurnState = TurnState<ConversationData, UserProfile>
 const storage = new MemoryStorage()
-export const app = new AgentApplicationBuilder<ApplicationTurnState>().withStorage(storage).withAuthentication({ enableSSO: true }).build()
+export const app = new AgentApplicationBuilder<ApplicationTurnState>()
+  .withStorage(storage)
+  .withAuthentication({ enableSSO: true, ssoConnectionName: process.env.connectionName }).build()
 
 app.message('/signout', async (context: TurnContext, state: ApplicationTurnState) => {
   await app.authManager.signOut(context, state)

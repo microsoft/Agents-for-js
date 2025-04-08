@@ -15,7 +15,7 @@ import { AppRoute } from './appRoute'
 import { TurnContext } from '../turnContext'
 import { ResourceResponse } from '../connector-client'
 import { debug } from '../logger'
-import { WebChatOAuthFlowAppStyle } from './oauth/webChatOAuthFlowAppStyle'
+import { UserAuthorization } from './oauth/userAuthorization'
 import { MemoryStorage } from '../storage'
 
 const logger = debug('agents:agent-application')
@@ -30,7 +30,7 @@ export class AgentApplication<TState extends TurnState> {
   protected readonly _afterTurn: ApplicationEventHandler<TState>[] = []
   private readonly _adapter?: BaseAdapter
   private _typingTimer: any
-  private readonly _authManager?: WebChatOAuthFlowAppStyle
+  private readonly _userAuthorization?: UserAuthorization
 
   public constructor (options?: Partial<AgentApplicationOptions<TState>>) {
     this._options = {
@@ -44,8 +44,8 @@ export class AgentApplication<TState extends TurnState> {
       this._adapter = this._options.adapter
     }
 
-    if (this._options.authentication && this._options.authentication.enableSSO) {
-      this._authManager = new WebChatOAuthFlowAppStyle(this._options.storage ?? new MemoryStorage())
+    if (this._options.authentication && this._options.authentication.enableSSO && this._options.authentication.ssoConnectionName) {
+      this._userAuthorization = new UserAuthorization(this._options.storage ?? new MemoryStorage(), this._options.authentication.ssoConnectionName)
     }
 
     if (this._options.longRunningMessages && !this._adapter && !this._options.agentAppId) {
@@ -65,14 +65,14 @@ export class AgentApplication<TState extends TurnState> {
     return this._adapter
   }
 
-  public get authManager (): WebChatOAuthFlowAppStyle {
-    if (!this._authManager) {
+  public get userAuthorization (): UserAuthorization {
+    if (!this._userAuthorization) {
       throw new Error(
         'The Application.authentication property is unavailable because no authentication options were configured.'
       )
     }
 
-    return this._authManager
+    return this._userAuthorization
   }
 
   public get options (): AgentApplicationOptions<TState> {
