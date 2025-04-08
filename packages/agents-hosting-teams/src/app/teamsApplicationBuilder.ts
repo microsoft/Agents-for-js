@@ -3,11 +3,11 @@
  * Licensed under the MIT License.
  */
 
-import { ApplicationBuilder, TurnState } from '@microsoft/agents-hosting'
+import { AgentApplicationBuilder, TurnState } from '@microsoft/agents-hosting'
 import { TeamsApplication } from './teamsApplication'
 import { TeamsApplicationOptions } from './teamsApplicationOptions'
 
-export class TeamsApplicationBuilder<TState extends TurnState> extends ApplicationBuilder<TState> {
+export class TeamsApplicationBuilder<TState extends TurnState> extends AgentApplicationBuilder<TState> {
   private _teamsOptions: Partial<TeamsApplicationOptions<TState>> = super.options
 
   public setRemoveRecipientMention (removeRecipientMention: boolean): this {

@@ -23,7 +23,7 @@ export const app = new AgentApplicationBuilder<ApplicationTurnState>()
   .withAuthentication({ enableSSO: true, ssoConnectionName: process.env.connectionName }).build()
 
 app.message('/signout', async (context: TurnContext, state: ApplicationTurnState) => {
-  await app.authManager.signOut(context, state)
+  await app.userAuthorization.signOut(context, state)
   await context.sendActivity(MessageFactory.text('User signed out'))
 })
 
@@ -74,7 +74,7 @@ app.activity(ActivityTypes.Message, async (context: TurnContext, state: Applicat
 })
 
 async function getToken (context: TurnContext, state: ApplicationTurnState): Promise<void> {
-  const userToken = await app.authManager.getOAuthToken(context, state)
+  const userToken = await app.userAuthorization.getOAuthToken(context, state)
   if (userToken.length !== 0) {
     await sendLoggedUserInfo(context, userToken)
   }
