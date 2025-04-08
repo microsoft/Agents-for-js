@@ -16,6 +16,7 @@ export * from './storage'
 export * from './transcript'
 
 export * from './activityHandler'
+export * from './baseAdapter'
 export * from './cloudAdapter'
 export * from './claimsIdentity'
 export * from './logger'

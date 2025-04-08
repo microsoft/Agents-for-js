@@ -1,93 +1,173 @@
 import { strict as assert } from 'assert'
-import { describe, it } from 'node:test'
-import { TurnState } from './../../../src/app'
-import { TurnStateProperty } from './../../../src/app/turnStateProperty'
-import { BaseAdapter } from '../../../src/baseAdapter'
-import { Activity, ConversationReference } from '@microsoft/agents-activity'
-import { TurnContext, ResourceResponse, AttachmentData, AttachmentInfo } from '../../../src'
+import { describe, it, beforeEach } from 'node:test'
+import { TurnState } from './../../../src/app/turnState'
+
 // import { createTestTurnContextAndState } from './internals/testing/TestUtilities'
-// import { TestAdapter } from 'botbuilder'
+// import { TeamsAdapter } from './TeamsAdapter'
+import { Activity } from '@microsoft/agents-activity'
+import { TestAdapter, createTestTurnContextAndState } from '../testStubs'
 
-class TestAdapter extends BaseAdapter {
-  sendActivities (context: TurnContext, activities: Activity[]): Promise<ResourceResponse[]> {
-    throw new Error('Method not implemented.')
-  }
+describe('TurnState', () => {
+  let adapter: TestAdapter
+  let activity: Partial<Activity>
+  let turnState: TurnState
 
-  updateActivity (context: TurnContext, activity: Activity): Promise<ResourceResponse | void> {
-    throw new Error('Method not implemented.')
-  }
-
-  deleteActivity (context: TurnContext, reference: Partial<ConversationReference>): Promise<void> {
-    throw new Error('Method not implemented.')
-  }
-
-  continueConversation (reference: Partial<ConversationReference>, logic: (revocableContext: TurnContext) => Promise<void>): Promise<void> {
-    throw new Error('Method not implemented.')
-  }
-
-  uploadAttachment (conversationId: string, attachmentData: AttachmentData): Promise<ResourceResponse> {
-    throw new Error('Method not implemented.')
-  }
-
-  getAttachmentInfo (attachmentId: string): Promise<AttachmentInfo> {
-    throw new Error('Method not implemented.')
-  }
-
-  getAttachment (attachmentId: string, viewId: string): Promise<NodeJS.ReadableStream> {
-    throw new Error('Method not implemented.')
-  }
-}
-
-const createTestTurnContextAndState = (adapter: TestAdapter, activity: Partial<Activity>): [TurnContext, TurnState] => {
-  const context = new TurnContext(adapter, activity as Activity)
-  const state = new TurnState()
-  return [context, state]
-}
-
-describe('TurnStateProperty', () => {
-  it('should throw an error when TurnState is missing state scope named scope', () => {
-    const state = new TurnState()
-    const scopeName = 'scope'
-    const propertyName = 'propertyName'
-    const createTurnStateProperty = () => {
-      const res = new TurnStateProperty(state, scopeName, propertyName)
-      return res
-    }
-    assert.throws(createTurnStateProperty, 'TurnStateProperty: TurnState missing state scope named "scope".')
-  })
-
-  it('should set the turn state property', async () => {
-    const adapter = new TestAdapter()
-    const [context, state] = await createTestTurnContextAndState(adapter, {
+  beforeEach(() => {
+    adapter = new TestAdapter()
+    turnState = new TurnState()
+    activity = Activity.fromObject({
       type: 'message',
       from: {
         id: 'test',
         name: 'test'
+      },
+      conversation: {
+        id: 'test'
+      },
+      channelId: 'test',
+      recipient: {
+        id: 'test'
       }
     })
-    const propertyName = 'tempStateProperty'
-    const turnStateProperty = new TurnStateProperty(state, 'temp', propertyName)
-
-    await turnStateProperty.set(context, 'someValue')
-    const value = await turnStateProperty.get(context)
-    assert.equal(value, 'someValue')
   })
 
-  it('should delete the turn state property', async () => {
-    const adapter = new TestAdapter()
-    const [context, state] = await createTestTurnContextAndState(adapter, {
-      type: 'message',
-      from: {
-        id: 'test',
-        name: 'test'
-      }
+  describe('conversation', () => {
+    it("should throw an error if TurnState hasn't been loaded", () => {
+      assert.throws(() => turnState.conversation, new Error("TurnState hasn't been loaded. Call load() first."))
     })
-    const propertyName = 'tempStateProperty'
-    const turnStateProperty = new TurnStateProperty(state, 'temp', propertyName)
 
-    await turnStateProperty.set(context, 'someValue')
-    await turnStateProperty.delete()
-    const value = await turnStateProperty.get(context)
-    assert.notEqual(value, 'someValue')
+    it('should get and set the conversation state', async () => {
+      const [context] = await createTestTurnContextAndState(adapter, activity)
+      const conversationState = { prop: 'value' }
+
+      await turnState.load(context)
+
+      // Set the conversation state
+      turnState.conversation = conversationState
+      // Get the conversation state
+      const retrievedConversationState = turnState.conversation
+
+      // Assert that the retrieved conversation state is the same as the original conversation state
+      assert.equal(retrievedConversationState, conversationState)
+    })
+  })
+
+  describe('temp', () => {
+    it("should throw an error if TurnState hasn't been loaded", () => {
+      assert.throws(() => turnState.temp, new Error("TurnState hasn't been loaded. Call load() first."))
+    })
+
+    it('should get and set the temp state', async () => {
+      const [context, turnState] = await createTestTurnContextAndState(adapter, activity)
+      turnState.load(context)
+      //   const tempState = {
+      //     actionOutputs: {},
+      //     authTokens: {},
+      //     input: context.activity.text,
+      //     inputFiles: undefined,
+      //     lastOutput: ''
+      //   }
+      // Get the temp state
+      const retrievedTempState = turnState.temp
+
+      // Assert that the retrieved temp state is the same as the original temp state
+      assert.deepEqual(retrievedTempState, {})
+    })
+  })
+
+  describe('user', () => {
+    it("should throw an error if TurnState hasn't been loaded", () => {
+      assert.throws(() => turnState.user, new Error("TurnState hasn't been loaded. Call load() first."))
+    })
+
+    it('should get and set the user state', async () => {
+      const [context, turnState] = await createTestTurnContextAndState(adapter, activity)
+      // Mock the user state
+      turnState.load(context)
+      const userState = { prop: 'value' }
+      // Set the user state
+      turnState.user = userState
+
+      // Get the user state
+      const retrievedUserState = turnState.user
+
+      // Assert that the retrieved user state is the same as the original user state
+      assert.equal(retrievedUserState, userState)
+    })
+  })
+
+  describe('deleteConversationState', () => {
+    it("should throw an error if TurnState hasn't been loaded", () => {
+      assert.throws(
+        () => turnState.deleteConversationState(),
+        new Error("TurnState hasn't been loaded. Call load() first.")
+      )
+    })
+
+    it('should delete the conversation state', async () => {
+      const [context, turnState] = await createTestTurnContextAndState(adapter, activity)
+      // Mock the user state
+      turnState.load(context)
+      // Mock the conversation state
+      const conversationState = { prop: 'value' }
+
+      // Set the conversation state
+      turnState.conversation = conversationState
+
+      // Delete the conversation state
+      turnState.deleteConversationState()
+
+      // Get the conversation state
+      const retrievedConversationState = turnState.conversation
+
+      // Assert that the conversation state is undefined
+      assert.deepEqual(retrievedConversationState, {})
+    })
+  })
+
+  describe('deleteTempState', () => {
+    it("should throw an error if TurnState hasn't been loaded", () => {
+      assert.throws(
+        () => turnState.deleteTempState(),
+        new Error("TurnState hasn't been loaded. Call load() first.")
+      )
+    })
+
+    it('should delete the temp state', async () => {
+      const [context, turnState] = await createTestTurnContextAndState(adapter, activity)
+
+      turnState.load(context)
+
+      // Delete the temp state
+      turnState.deleteTempState()
+
+      // Get the temp state
+      const retrievedTempState = turnState.temp
+
+      // Assert that the temp state is undefined
+      assert.deepEqual(retrievedTempState, {})
+    })
+  })
+
+  describe('deleteUserState', () => {
+    it('should delete the user state', async () => {
+      const [context, turnState] = await createTestTurnContextAndState(adapter, activity)
+
+      turnState.load(context)
+      // Mock the user state
+      const userState = { prop: 'value' }
+
+      // Set the user state
+      turnState.user = userState
+
+      // Delete the user state
+      turnState.deleteUserState()
+
+      // Get the user state
+      const retrievedUserState = turnState.user
+
+      // Assert that the user state is undefined
+      assert.deepEqual(retrievedUserState, {})
+    })
   })
 })
