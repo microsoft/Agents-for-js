@@ -1,10 +1,10 @@
 import { test, describe, beforeEach } from 'node:test'
 import assert from 'node:assert'
-import { TurnContext, MemoryStorage } from '../../../src'
-import { AgentState } from '../../../src/state/agentState'
-import { StoreItem } from '../../../src/storage/storage'
+import { TurnContext, MemoryStorage } from '../../'
+import { AgentState } from '../../state/agentState'
+import { StoreItem } from '../../storage/storage'
 
-describe('BotState', () => {
+describe('AgentState', () => {
   let botState: AgentState
   let mockContext: TurnContext
   let storage: MemoryStorage

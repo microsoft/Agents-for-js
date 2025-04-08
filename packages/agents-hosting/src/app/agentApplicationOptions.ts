@@ -9,7 +9,7 @@ import { TurnState } from './turnState'
 import { Storage } from '../storage'
 import { AuthenticationOptions } from './oauth/authenticationOptions'
 
-export interface ApplicationOptions<TState extends TurnState> {
+export interface AgentApplicationOptions<TState extends TurnState> {
   adapter?: CloudAdapter;
   agentAppId?: string;
   storage?: Storage;

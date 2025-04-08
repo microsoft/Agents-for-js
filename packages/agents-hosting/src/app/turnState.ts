@@ -198,8 +198,8 @@ export class TurnState<
     scope.value[name] = value
   }
 
-  public load (context: TurnContext, storage?: Storage): Promise<boolean> {
-    if (this._isLoaded) {
+  public load (context: TurnContext, storage?: Storage, force: boolean = false): Promise<boolean> {
+    if (this._isLoaded && !force) {
       return Promise.resolve(false)
     }
 

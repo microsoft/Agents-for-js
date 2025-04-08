@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { TurnState, MemoryStorage, TurnContext, ApplicationBuilder } from '@microsoft/agents-hosting'
+import { TurnState, MemoryStorage, TurnContext, AgentApplicationBuilder } from '@microsoft/agents-hosting'
 import { ActivityTypes } from '@microsoft/agents-activity'
 
 interface ConversationData {
@@ -18,7 +18,7 @@ type ApplicationTurnState = TurnState<ConversationData, UserProfile>
 
 // Define storage and application
 const storage = new MemoryStorage()
-export const app = new ApplicationBuilder<ApplicationTurnState>().withStorage(storage).build()
+export const app = new AgentApplicationBuilder<ApplicationTurnState>().withStorage(storage).build()
 
 app.conversationUpdate('membersAdded', async (context: TurnContext, state: ApplicationTurnState) => {
   await state.load(context, storage)

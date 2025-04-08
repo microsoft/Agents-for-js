@@ -5,4 +5,5 @@
 
 export interface AuthenticationOptions {
   enableSSO: boolean;
+  ssoConnectionName?: string;
 }

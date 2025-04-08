@@ -6,7 +6,7 @@
 import { TurnState } from './turnState'
 import { BaseAdapter } from '../baseAdapter'
 import { Activity, ActivityTypes, ConversationReference } from '@microsoft/agents-activity'
-import { ApplicationOptions } from './applicationOptions'
+import { AgentApplicationOptions } from './agentApplicationOptions'
 import { RouteSelector } from './routeSelector'
 import { RouteHandler } from './routeHandler'
 import { ConversationUpdateEvents } from './conversationUpdateEvents'
@@ -24,7 +24,7 @@ const TYPING_TIMER_DELAY = 1000
 type ApplicationEventHandler<TState extends TurnState> = (context: TurnContext, state: TState) => Promise<boolean>
 
 export class AgentApplication<TState extends TurnState> {
-  protected readonly _options: ApplicationOptions<TState>
+  protected readonly _options: AgentApplicationOptions<TState>
   protected readonly _routes: AppRoute<TState>[] = []
   protected readonly _beforeTurn: ApplicationEventHandler<TState>[] = []
   protected readonly _afterTurn: ApplicationEventHandler<TState>[] = []
@@ -32,7 +32,7 @@ export class AgentApplication<TState extends TurnState> {
   private _typingTimer: any
   private readonly _authManager?: WebChatOAuthFlowAppStyle
 
-  public constructor (options?: Partial<ApplicationOptions<TState>>) {
+  public constructor (options?: Partial<AgentApplicationOptions<TState>>) {
     this._options = {
       ...options,
       turnStateFactory: options?.turnStateFactory || (() => new TurnState() as TState),
@@ -75,7 +75,7 @@ export class AgentApplication<TState extends TurnState> {
     return this._authManager
   }
 
-  public get options (): ApplicationOptions<TState> {
+  public get options (): AgentApplicationOptions<TState> {
     return this._options
   }
 

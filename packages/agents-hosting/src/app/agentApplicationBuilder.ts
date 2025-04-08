@@ -4,13 +4,13 @@
  */
 
 import { AgentApplication } from './agentApplication'
-import { ApplicationOptions } from './applicationOptions'
+import { AgentApplicationOptions } from './agentApplicationOptions'
 import { TurnState } from './turnState'
 import { Storage } from '../storage'
 import { AuthenticationOptions } from './oauth/authenticationOptions'
 
-export class ApplicationBuilder<TState extends TurnState = TurnState> {
-  protected _options: Partial<ApplicationOptions<TState>> = {}
+export class AgentApplicationBuilder<TState extends TurnState = TurnState> {
+  protected _options: Partial<AgentApplicationOptions<TState>> = {}
 
   protected get options () {
     return this._options

@@ -1,0 +1,21 @@
+log Listening on 39713
+log Teams App Test Tool is being launched for you to debug the Teams app: http://localhost:39713
+debug started web socket client
+debug started web socket client
+debug stopping web socket client
+debug stopping web socket client
+debug started web socket client
+debug started web socket client
+log InternalServiceError: Request failed with status code 408
+    at exports.UserBotError (/workspaces/Agents-for-js/node_modules/@microsoft/teams-app-test-tool/dist/index.js:8:973250)
+    at ConversationUpdateUserBotAccessor.handleAxiosError (/workspaces/Agents-for-js/node_modules/@microsoft/teams-app-test-tool/dist/index.js:8:942889)
+    at ConversationUpdateUserBotAccessor.sendActivity (/workspaces/Agents-for-js/node_modules/@microsoft/teams-app-test-tool/dist/index.js:8:942165)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async ConversationUpdateUserBotAccessor.sendInstallationMemberAddedActivity (/workspaces/Agents-for-js/node_modules/@microsoft/teams-app-test-tool/dist/index.js:8:944496) {
+  code: 'UserBotError',
+  innerHttpError: { statusCode: 408, body: '' }
+}
+debug stopping web socket client
+debug stopping web socket client
+debug started web socket client
+debug started web socket client
