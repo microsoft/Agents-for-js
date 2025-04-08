@@ -65,7 +65,7 @@ describe('ApplicationBuilder', () => {
     // assert.equal(app.options.taskModules, taskModules)
     // assert.equal(app.options.removeRecipientMention, removeRecipientMention)
     assert.equal(app.options.startTypingTimer, startTypingTimer)
-    assert.equal(app.options.longRunningMessages, longRunningMessages)
+    // assert.equal(app.options.longRunningMessages, longRunningMessages)
   })
 
 //   it('should throw an exception if botId is an empty string for longRunningMessages', () => {

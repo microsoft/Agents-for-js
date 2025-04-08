@@ -1,8 +1,8 @@
 import { test, describe, beforeEach } from 'node:test'
 import assert from 'node:assert'
-import { TurnContext, MemoryStorage } from '../../'
-import { AgentState } from '../../state/agentState'
-import { StoreItem } from '../../storage/storage'
+import { TurnContext, MemoryStorage } from '../../../src'
+import { AgentState } from '../../../src/state/agentState'
+import { StoreItem } from '../../../src/storage/storage'
 
 describe('AgentState', () => {
   let botState: AgentState
