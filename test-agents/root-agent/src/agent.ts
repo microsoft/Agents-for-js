@@ -1,6 +1,7 @@
-import { ActivityHandler, AgentClient, UserState, ConversationState, AgentStatePropertyAccessor, TurnContext, ConversationReference } from '@microsoft/agents-hosting'
+import { ActivityHandler, AgentClient, UserState, ConversationState, AgentStatePropertyAccessor, TurnContext } from '@microsoft/agents-hosting'
 import { version as sdkVersion } from '@microsoft/agents-hosting/package.json'
 import { ConversationData, UserProfile } from './state'
+import { ConversationReference } from '@microsoft/agents-activity'
 
 export class RootHandlerWithBlobStorageMemory extends ActivityHandler {
   conversationState: ConversationState

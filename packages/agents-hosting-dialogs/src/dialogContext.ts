@@ -2,7 +2,7 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
-import { Activity, TurnContext, TurnContextStateCollection } from '@microsoft/agents-hosting'
+import { TurnContext, TurnContextStateCollection } from '@microsoft/agents-hosting'
 import { Dialog } from './dialog'
 import { DialogSet } from './dialogSet'
 import { PromptOptions } from './prompts'
@@ -18,6 +18,7 @@ import { DialogEvent } from './dialogEvent'
 import { DialogTurnResult } from './dialogTurnResult'
 import { DialogTurnStatus } from './dialogTurnStatus'
 import { Choice } from './choices'
+import { Activity } from '@microsoft/agents-activity'
 
 /**
  * Wraps a promise in a try-catch that automatically enriches errors with extra dialog context.

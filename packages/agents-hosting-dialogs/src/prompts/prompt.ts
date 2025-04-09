@@ -2,7 +2,7 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
-import { Activity, ActivityTypes, InputHints, MessageFactory, TurnContext } from '@microsoft/agents-hosting'
+import { MessageFactory, TurnContext } from '@microsoft/agents-hosting'
 import { Choice, ChoiceFactory, ChoiceFactoryOptions } from '../choices'
 import { Dialog } from '../dialog'
 import { DialogContext } from '../dialogContext'
@@ -10,6 +10,7 @@ import { DialogInstance } from '../dialogInstance'
 import { DialogTurnResult } from '../dialogTurnResult'
 import { DialogReason } from '../dialogReason'
 import { DialogEvent } from '../dialogEvent'
+import { Activity, ActivityTypes, InputHints } from '@microsoft/agents-activity'
 
 /**
  * Controls the way that choices for a `ChoicePrompt` or yes/no options for a `ConfirmPrompt` are

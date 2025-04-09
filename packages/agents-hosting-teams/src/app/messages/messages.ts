@@ -3,7 +3,8 @@
  * Licensed under the MIT License.
  */
 
-import { Activity, ActivityTypes, Channels, INVOKE_RESPONSE_KEY, InvokeResponse, TurnContext, TurnState } from '@microsoft/agents-hosting'
+import { Activity, ActivityTypes, Channels } from '@microsoft/agents-activity'
+import { INVOKE_RESPONSE_KEY, InvokeResponse, TurnContext, TurnState } from '@microsoft/agents-hosting'
 import { TeamsApplication } from '../teamsApplication'
 import { TaskModuleTaskInfo } from '../../task/taskModuleTaskInfo'
 import { TaskModuleResponse } from '../../task/taskModuleResponse'

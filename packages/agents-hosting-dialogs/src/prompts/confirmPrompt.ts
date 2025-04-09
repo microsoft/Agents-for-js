@@ -3,10 +3,11 @@
  * Licensed under the MIT License.
  */
 import * as Recognizers from '@microsoft/recognizers-text-choice'
-import { Activity, TurnContext } from '@microsoft/agents-hosting'
+import { TurnContext } from '@microsoft/agents-hosting'
 import { Choice, ChoiceFactoryOptions, recognizeChoices } from '../choices'
 import { ListStyle, Prompt, PromptOptions, PromptRecognizerResult, PromptValidator } from './prompt'
 import { PromptCultureModels } from './promptCultureModels'
+import { Activity } from '@microsoft/agents-activity'
 
 // Need ChoiceDefaultsProperty so we can set choiceDefaults dynamically with lambda
 interface ChoiceDefaultsConfirmPrompt {

@@ -1,11 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+import { ActivityTypes, ConversationParameters } from '@microsoft/agents-activity'
 import {
-  ActivityTypes,
   CardFactory,
   CloudAdapter,
-  ConversationParameters,
   MessageFactory,
   TurnContext,
   TurnState,

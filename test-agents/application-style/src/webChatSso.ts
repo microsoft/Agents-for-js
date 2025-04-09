@@ -1,10 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { ActivityTypes, AgentApplicationBuilder, CardFactory, MemoryStorage, MessageFactory, TurnContext, TurnState } from '@microsoft/agents-hosting'
+import { AgentApplicationBuilder, CardFactory, MemoryStorage, MessageFactory, TurnContext, TurnState } from '@microsoft/agents-hosting'
 import { Template } from 'adaptivecards-templating'
 import * as userTemplate from '../cards/UserProfileCard.json'
 import { getUserInfo } from './userGraphClient'
+import { ActivityTypes } from '@microsoft/agents-activity'
 
 interface ConversationData {
   promptedForUserName: boolean;

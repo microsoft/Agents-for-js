@@ -1,6 +1,7 @@
 /** * Copyright (c) Microsoft Corporation. All rights reserved. * Licensed under the MIT License. */
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios'
-import { Activity, ChannelAccount, ConnectorClient, AuthConfiguration, AuthProvider } from '@microsoft/agents-hosting'
+import { Activity, ChannelAccount } from '@microsoft/agents-activity'
+import { ConnectorClient, AuthConfiguration, AuthProvider } from '@microsoft/agents-hosting'
 import { TeamsChannelAccount } from './teamsChannelAccount'
 import { TeamsPagedMembersResult } from './teamsPagedMembersResult'
 import { TeamDetails } from './teamDetails'

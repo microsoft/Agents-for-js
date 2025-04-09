@@ -2,10 +2,11 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
-import { Activity, TurnContext } from '@microsoft/agents-hosting'
+import { TurnContext } from '@microsoft/agents-hosting'
 import { ChoiceFactory, ChoiceFactoryOptions, FindChoicesOptions, FoundChoice, recognizeChoices } from '../choices'
 import { ListStyle, Prompt, PromptOptions, PromptRecognizerResult, PromptValidator } from './prompt'
 import { PromptCultureModels } from './promptCultureModels'
+import { Activity } from '@microsoft/agents-activity'
 
 // Need ChoiceDefaultsProperty so we can set choiceDefaults dynamically with lambda
 interface ChoiceDefaultsChoicePrompt {

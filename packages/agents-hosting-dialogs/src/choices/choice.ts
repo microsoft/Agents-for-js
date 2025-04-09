@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { CardAction } from '@microsoft/agents-hosting'
+import { CardAction } from '@microsoft/agents-activity'
 
 /**
  * An instance of a choice that can be used to render a choice to a user or recognize something a

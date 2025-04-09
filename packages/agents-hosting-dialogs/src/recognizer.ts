@@ -2,7 +2,7 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
-import { Activity } from '@microsoft/agents-hosting'
+import { Activity } from '@microsoft/agents-activity'
 import { Configurable } from './configurable'
 import { DialogContext } from './dialogContext'
 import omit from 'lodash/omit'

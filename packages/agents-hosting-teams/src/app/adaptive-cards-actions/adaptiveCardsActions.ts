@@ -3,7 +3,8 @@
  * Licensed under the MIT License.
  */
 
-import { Activity, ActivityTypes, AdaptiveCardInvokeResponse, CardFactory, INVOKE_RESPONSE_KEY, InvokeResponse, MessageFactory, RouteSelector, TurnContext, TurnState } from '@microsoft/agents-hosting'
+import { Activity, ActivityTypes } from '@microsoft/agents-activity'
+import { AdaptiveCardInvokeResponse, CardFactory, INVOKE_RESPONSE_KEY, InvokeResponse, MessageFactory, RouteSelector, TurnContext, TurnState } from '@microsoft/agents-hosting'
 import { AdaptiveCard } from './adaptiveCard'
 import { TeamsApplication } from '../teamsApplication'
 import { AdaptiveCardActionExecuteResponseType } from './adaptiveCardActionExecuteResponseType'

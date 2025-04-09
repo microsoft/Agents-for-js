@@ -14,11 +14,12 @@ import { TeamsMember } from './connector-client/teamsMember'
 import { BatchOperationStateResponse } from './connector-client/batchOperationStateResponse'
 import { BatchFailedEntriesResponse } from './connector-client/batchFailedEntriesResponse'
 import { CancelOperationResponse } from './connector-client/cancelOperationResponse'
-import { Activity, Channels, ConversationReference, CloudAdapter, ConversationParameters, TurnContext } from '@microsoft/agents-hosting'
+import { Activity, Channels, ConversationReference, ConversationParameters } from '@microsoft/agents-activity'
 import { TeamsConnectorClient } from './connector-client/teamsConnectorClient'
 import { ChannelInfo } from './channel-data'
 import { parseTeamsChannelData } from './parsers/teamsChannelDataParser'
 import { BatchOperationResponse } from './connector-client/batchOperationResponse'
+import { CloudAdapter, TurnContext } from '@microsoft/agents-hosting'
 
 export class TeamsInfo {
   /**

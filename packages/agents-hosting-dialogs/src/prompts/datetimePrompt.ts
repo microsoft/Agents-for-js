@@ -3,8 +3,9 @@
  * Licensed under the MIT License.
  */
 import * as Recognizers from '@microsoft/recognizers-text-date-time'
-import { Activity, InputHints, TurnContext } from '@microsoft/agents-hosting'
+import { TurnContext } from '@microsoft/agents-hosting'
 import { Prompt, PromptOptions, PromptRecognizerResult, PromptValidator } from './prompt'
+import { Activity, InputHints } from '@microsoft/agents-activity'
 
 /**
  * Result returned by the `DateTimePrompt`.

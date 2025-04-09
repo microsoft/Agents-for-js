@@ -1,4 +1,4 @@
-import { Activity, ActivityTypes } from '@microsoft/agents-hosting'
+import { Activity, ActivityTypes } from '@microsoft/agents-activity'
 import assert from 'assert'
 import { describe, it } from 'node:test'
 import { parseTeamsChannelData } from '../../src/parsers/teamsChannelDataParser'

@@ -28,5 +28,3 @@ export * from './logger'
 export * from './storage/storage'
 
 export * from './agent-client'
-
-export * from '@microsoft/agents-activity'

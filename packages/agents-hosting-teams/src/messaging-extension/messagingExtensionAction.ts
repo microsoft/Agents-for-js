@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { Activity } from '@microsoft/agents-hosting'
+import { Activity } from '@microsoft/agents-activity'
 import { TaskModuleRequest } from '../task/taskModuleRequest'
 import { MessageActionsPayload } from '../message-actions-payload/messageActionsPayload'
 

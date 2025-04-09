@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { ChannelAccount } from '@microsoft/agents-hosting'
+import { ChannelAccount } from '@microsoft/agents-activity'
 
 /**
  * Represents a Teams channel account.

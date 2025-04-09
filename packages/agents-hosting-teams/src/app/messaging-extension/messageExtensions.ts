@@ -2,8 +2,8 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
-
-import { Activity, ActivityTypes, INVOKE_RESPONSE_KEY, InvokeResponse, RouteSelector, TurnContext, TurnState } from '@microsoft/agents-hosting'
+import { Activity, ActivityTypes } from '@microsoft/agents-activity'
+import { INVOKE_RESPONSE_KEY, InvokeResponse, RouteSelector, TurnContext, TurnState } from '@microsoft/agents-hosting'
 import { TeamsApplication } from '../teamsApplication'
 import { TaskModuleTaskInfo } from '../../task/taskModuleTaskInfo'
 import { MessagingExtensionResult } from '../../messaging-extension/messagingExtensionResult'
