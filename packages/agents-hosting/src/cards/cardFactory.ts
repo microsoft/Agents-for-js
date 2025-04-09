@@ -236,15 +236,15 @@ export class CardFactory {
    * @param text The optional text for the card.
    * @returns The sign-in card attachment.
    */
-  static signinCard(title: string, url: string, text?: string): Attachment {
+  static signinCard (title: string, url: string, text?: string): Attachment {
     const card: SigninCard = {
-      buttons: [{ type: ActionTypes.Signin, title: title, value: url, channelData: undefined }],
-    };
+      buttons: [{ type: ActionTypes.Signin, title, value: url, channelData: undefined }],
+    }
     if (text) {
-      card.text = text;
+      card.text = text
     }
 
-    return { contentType: CardFactory.contentTypes.signinCard, content: card };
+    return { contentType: CardFactory.contentTypes.signinCard, content: card }
   }
 
   /**

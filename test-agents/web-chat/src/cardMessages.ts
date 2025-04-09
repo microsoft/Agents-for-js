@@ -180,9 +180,9 @@ export class CardMessages {
       'Sign in',
       'https://login.microsoftonline.com/',
       'Please sign in to continue'
-    );
+    )
 
-    await CardMessages.sendActivity(context, card);
+    await CardMessages.sendActivity(context, card)
   }
 
   static async sendThumbnailCard (context: TurnContext) {
