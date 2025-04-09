@@ -5,6 +5,7 @@ import { describe, it, beforeEach } from 'node:test'
 import { AgentApplication } from './../../../src/app'
 import { createTestTurnContextAndState, TestAdapter } from '../testStubs'
 import { Activity, ActivityTypes } from '@microsoft/agents-activity'
+import { MessageFactory } from '../../../src/messageFactory'
 
 const testActivity = Activity.fromObject({
   type: 'message',
@@ -18,7 +19,9 @@ const testActivity = Activity.fromObject({
   channelId: 'test',
   recipient: {
     id: 'test'
-  }
+  },
+  serviceUrl: 'test',
+  text: '/yo'
 })
 
 describe('Application', () => {
@@ -49,11 +52,10 @@ describe('Application', () => {
       called = true
     })
     const [context] = await createTestTurnContextAndState(testAdapter, testActivity)
-    context.sendActivity('test').then(async () => {
-      const handled = await app.run(context)
-      assert.equal(called, true)
-      assert.equal(handled, true)
-    })
+    const handled = await app.run(context)
+    await context.sendActivity('test')
+    assert.equal(called, true)
+    assert.equal(handled, true)
   })
 
   it('should route to a message handler', async () => {
@@ -65,11 +67,10 @@ describe('Application', () => {
       called = true
     })
     const [context] = await createTestTurnContextAndState(testAdapter, testActivity)
-    context.sendActivity('/yo').then(async () => {
-      const handled = await app.run(context)
-      assert.equal(called, true)
-      assert.equal(handled, true)
-    })
+    const handled = await app.run(context)
+    await context.sendActivity(MessageFactory.text('/yo'))
+    assert.equal(called, true)
+    assert.equal(handled, true)
   })
 
   it('should ignore sencond message', async () => {
@@ -86,10 +87,9 @@ describe('Application', () => {
       timesCalled++
     })
     const [context] = await createTestTurnContextAndState(testAdapter, testActivity)
-    context.sendActivity('/yo').then(async () => {
-      const handled = await app.run(context)
-      assert.equal(timesCalled, 1)
-      assert.equal(handled, true)
-    })
+    const handled = await app.run(context)
+    await context.sendActivity('/yo')
+    assert.equal(timesCalled, 1)
+    assert.equal(handled, true)
   })
 })

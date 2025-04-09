@@ -2,8 +2,16 @@ import { AttachmentData, AttachmentInfo, BaseAdapter, ResourceResponse, TurnCont
 import { Activity, ConversationReference } from '@microsoft/agents-activity'
 
 export class TestAdapter extends BaseAdapter {
-  sendActivities (context: TurnContext, activities: Activity[]): Promise<ResourceResponse[]> {
-    throw new Error('Method not implemented.')
+  async sendActivities (context: TurnContext, activities: Activity[]): Promise<ResourceResponse[]> {
+    const responses: ResourceResponse[] = []
+    for (const activity of activities) {
+      if (activity.type === 'delay') {
+        const delayMs = parseInt(activity.value as string, 10)
+        await new Promise((resolve) => setTimeout(resolve, delayMs))
+      }
+      responses.push({ id: activity.id } as ResourceResponse)
+    }
+    return responses
   }
 
   updateActivity (context: TurnContext, activity: Activity): Promise<ResourceResponse | void> {
