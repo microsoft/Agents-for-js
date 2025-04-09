@@ -58,10 +58,40 @@ describe('Application', () => {
     assert.equal(handled, true)
   })
 
-  it('should route to a message handler', async () => {
+  it('should route to a message handler with string', async () => {
     let called = false
 
     app.message('/yo', async (context, state) => {
+      assert.notEqual(context, undefined)
+      assert.notEqual(state, undefined)
+      called = true
+    })
+    const [context] = await createTestTurnContextAndState(testAdapter, testActivity)
+    const handled = await app.run(context)
+    await context.sendActivity(MessageFactory.text('/yo'))
+    assert.equal(called, true)
+    assert.equal(handled, true)
+  })
+
+  it('should route to a act handler with regex', async () => {
+    let called = false
+
+    app.activity(/^message/, async (context, state) => {
+      assert.notEqual(context, undefined)
+      assert.notEqual(state, undefined)
+      called = true
+    })
+    const [context] = await createTestTurnContextAndState(testAdapter, testActivity)
+    const handled = await app.run(context)
+    await context.sendActivity(MessageFactory.text('/yo'))
+    assert.equal(called, true)
+    assert.equal(handled, true)
+  })
+
+  it('should route to a msg handler with regex', async () => {
+    let called = false
+
+    app.message(/^\/yo/, async (context, state) => {
       assert.notEqual(context, undefined)
       assert.notEqual(state, undefined)
       called = true
@@ -82,6 +112,26 @@ describe('Application', () => {
       timesCalled++
     })
     app.message('/yo', async (context2, state2) => {
+      assert.notEqual(context2, undefined)
+      assert.notEqual(state2, undefined)
+      timesCalled++
+    })
+    const [context] = await createTestTurnContextAndState(testAdapter, testActivity)
+    const handled = await app.run(context)
+    await context.sendActivity('/yo')
+    assert.equal(timesCalled, 1)
+    assert.equal(handled, true)
+  })
+
+  it('should ignore sencond message with act', async () => {
+    let timesCalled = 0
+
+    app.message('/yo', async (context, state) => {
+      assert.notEqual(context, undefined)
+      assert.notEqual(state, undefined)
+      timesCalled++
+    })
+    app.activity(ActivityTypes.Message, async (context2, state2) => {
       assert.notEqual(context2, undefined)
       assert.notEqual(state2, undefined)
       timesCalled++

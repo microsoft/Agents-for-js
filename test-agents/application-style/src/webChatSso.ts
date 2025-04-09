@@ -35,6 +35,7 @@ app.message('/signin', async (context: TurnContext, state: ApplicationTurnState)
 
 app.message('/getUserProfile', async (context: TurnContext, state: ApplicationTurnState) => {
   await context.sendActivity(MessageFactory.text(`User is: ${state.user.name}`))
+  await getToken(context, state)
 })
 
 app.conversationUpdate('membersAdded', async (context: TurnContext, state: ApplicationTurnState) => {
