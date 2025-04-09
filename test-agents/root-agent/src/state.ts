@@ -1,4 +1,4 @@
-import { ConversationReference } from '@microsoft/agents-hosting'
+import { ConversationReference } from '@microsoft/agents-activity'
 
 export interface ConversationData {
   nameRequested: boolean

@@ -4,8 +4,6 @@
  */
 
 import {
-  Activity,
-  ActivityTypes,
   AgentStatePropertyAccessor,
   TurnContext
 } from '@microsoft/agents-hosting'
@@ -16,6 +14,7 @@ import { DialogSet } from './dialogSet'
 import { DialogStateManager, DialogStateManagerConfiguration } from './memory'
 import { DialogTurnResult } from './dialogTurnResult'
 import { DialogTurnStatus } from './dialogTurnStatus'
+import { Activity, ActivityTypes } from '@microsoft/agents-activity'
 
 /**
  * Runs a dialog from a given context and accessor.

@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { CardAction } from '@microsoft/agents-hosting'
+import { CardAction } from '@microsoft/agents-activity'
 
 /**
  * Interface representing suggested actions for a tab.

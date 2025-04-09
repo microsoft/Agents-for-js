@@ -2,11 +2,9 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
-
+import { ActionTypes, Activity, InputHints } from '@microsoft/agents-activity'
 import {
-  ActionTypes,
-  Activity,
-  InputHints,
+
   MessageFactory,
   TurnContext,
 } from '@microsoft/agents-hosting'

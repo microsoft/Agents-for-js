@@ -16,6 +16,7 @@ export * from './storage'
 export * from './transcript'
 
 export * from './activityHandler'
+export * from './baseAdapter'
 export * from './cloudAdapter'
 export * from './claimsIdentity'
 export * from './logger'
@@ -27,5 +28,3 @@ export * from './logger'
 export * from './storage/storage'
 
 export * from './agent-client'
-
-export * from '@microsoft/agents-activity'

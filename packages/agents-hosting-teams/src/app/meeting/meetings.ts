@@ -2,8 +2,8 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
-
-import { ActivityTypes, TurnContext, TurnState } from '@microsoft/agents-hosting'
+import { ActivityTypes } from '@microsoft/agents-activity'
+import { TurnContext, TurnState } from '@microsoft/agents-hosting'
 import { TeamsApplication } from '../teamsApplication'
 import { MeetingParticipantsEventDetails } from '../../meeting/meetingParticipantsEventDetails'
 import { MeetingEndEventDetails } from '../../meeting/meetingEndEventDetails'

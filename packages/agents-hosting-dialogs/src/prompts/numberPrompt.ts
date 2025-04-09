@@ -6,8 +6,9 @@
 import Globalize from 'globalize'
 import { recognizeNumber } from '@microsoft/recognizers-text-number'
 import * as locales from '../i18n'
-import { InputHints, TurnContext } from '@microsoft/agents-hosting'
+import { TurnContext } from '@microsoft/agents-hosting'
 import { Prompt, PromptOptions, PromptRecognizerResult, PromptValidator } from './prompt'
+import { InputHints } from '@microsoft/agents-activity'
 
 // Load all registered locales into Globalize library
 Object.values(locales).forEach((locale) => Globalize.load(locale))

@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { Attachment } from '@microsoft/agents-hosting'
+import { Attachment } from '@microsoft/agents-activity'
 
 /**
  * Interface representing the task module task information.

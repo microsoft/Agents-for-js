@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 import { v4 as uuidv4 } from 'uuid'
-import { ActivityTypes } from '@microsoft/agents-hosting'
+import { ActivityTypes } from '@microsoft/agents-activity'
 import { Dialog } from './dialog'
 import { DialogContext } from './dialogContext'
 import { WaterfallStepContext } from './waterfallStepContext'

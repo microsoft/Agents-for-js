@@ -2,10 +2,11 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
-import { InputHints, TurnContext } from '@microsoft/agents-hosting'
+import { TurnContext } from '@microsoft/agents-hosting'
 import { Prompt, PromptOptions, PromptRecognizerResult, PromptValidator } from './prompt'
 import { DialogContext } from '../dialogContext'
 import { DialogEvent } from '../dialogEvent'
+import { InputHints } from '@microsoft/agents-activity'
 
 /**
  * Prompts a user to enter some text.

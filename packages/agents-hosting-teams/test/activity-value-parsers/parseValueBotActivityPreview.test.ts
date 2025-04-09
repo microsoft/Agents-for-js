@@ -2,7 +2,7 @@ import assert from 'assert'
 import { describe, it } from 'node:test'
 import { ZodError } from 'zod'
 import { parseValueAgentActivityPreview } from '../../src/parsers/activityValueParsers'
-import { ActivityTypes } from '@microsoft/agents-hosting'
+import { ActivityTypes } from '@microsoft/agents-activity'
 
 describe('parseValueBotActivityPreview test', () => {
   it('Parse with all properties', () => {

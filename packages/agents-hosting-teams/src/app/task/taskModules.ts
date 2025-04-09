@@ -3,7 +3,8 @@
  * Licensed under the MIT License.
  */
 
-import { Activity, ActivityTypes, Channels, INVOKE_RESPONSE_KEY, InvokeResponse, RouteSelector, TurnContext, TurnState } from '@microsoft/agents-hosting'
+import { Activity, ActivityTypes, Channels } from '@microsoft/agents-activity'
+import { INVOKE_RESPONSE_KEY, InvokeResponse, RouteSelector, TurnContext, TurnState } from '@microsoft/agents-hosting'
 import { ConfigResponse } from '../../agent-config/configResponse'
 import { TeamsApplication } from '../teamsApplication'
 import { AgentConfigAuth } from '../../agent-config/agentConfigAuth'

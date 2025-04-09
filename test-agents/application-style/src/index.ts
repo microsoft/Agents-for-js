@@ -8,7 +8,7 @@ const server = express()
 server.use(express.json())
 server.use(authorizeJWT(authConfig))
 
-async function loadModule () {
+async function loadApp () {
   const moduleName = process.env.agentName || 'webChat'
   let module
   switch (moduleName) {
@@ -34,7 +34,7 @@ async function loadModule () {
 
 server.post('/api/messages', async (req: Request, res: Response) => {
   await adapter.process(req, res, async (context) => {
-    const app = await loadModule()
+    const app = await loadApp()
     await app.run(context)
   })
 })

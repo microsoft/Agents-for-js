@@ -2,9 +2,6 @@
 // Licensed under the MIT License.
 
 import {
-  ActionTypes,
-  Attachment,
-  CardAction,
   CardFactory,
   CardImage,
   HeroCard,
@@ -21,6 +18,7 @@ import { AdaptiveCardTaskFetchValue } from './models/adaptiveCardTaskFetchValue'
 import { CardTaskFetchValue } from './models/cardTaskFetchValue'
 import * as AdaptiveCards from 'adaptivecards'
 import { AppBasedLinkQuery, MessagingExtensionAttachment, MessagingExtensionQuery, MessagingExtensionResponse, TaskModuleRequest, TaskModuleResponse, TaskModuleTaskInfo, TeamsActivityHandler, TeamsInfo } from '@microsoft/agents-hosting-teams'
+import { ActionTypes, Attachment, CardAction } from '@microsoft/agents-activity'
 const adaptiveCardResource = require('../cards/AdaptiveCard.json')
 const restaurantCardResource = require('../cards/RestaurantCard.json')
 

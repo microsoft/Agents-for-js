@@ -1,5 +1,7 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
-// Licensed under the MIT License.
+/**
+ * Copyright (c) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License.
+ */
 
 import { Attachment } from '@microsoft/agents-activity'
 import { UserTokenClient } from '../../oauth/userTokenClient'
@@ -11,16 +13,50 @@ import { debug } from '../../logger'
 import { TurnState } from '../turnState'
 import { Storage } from '../../storage'
 
-const logger = debug('agents:web-chat-oauth-flow')
+const logger = debug('agents:user-authorization')
 
-export class WebChatOAuthFlowAppStyle {
+/**
+ * Handles user authorization and OAuth token management.
+ * This class provides functionality for obtaining OAuth tokens, initiating sign-in flows,
+ * and managing user authentication state.
+ */
+export class UserAuthorization {
+  /**
+   * Client for user token operations.
+   * Used to obtain tokens, sign-in resources, and handle sign-out.
+   */
   userTokenClient?: UserTokenClient
+
+  /**
+   * Storage system used for maintaining state between turns.
+   */
   storage: Storage
 
-  constructor (storage: Storage) {
+  connectionName: string
+
+  /**
+   * Creates a new instance of UserAuthorization.
+   * @param {Storage} storage - The storage system to use for state management.
+   */
+  constructor (storage: Storage, connectionName: string) {
     this.storage = storage
+    this.connectionName = connectionName
   }
 
+  /**
+   * Gets an OAuth token for the current user.
+   * This method handles the complete OAuth flow including:
+   * - Initializing SSO state if needed
+   * - Checking for existing valid tokens
+   * - Handling expired auth flows
+   * - Initiating new auth flows
+   * - Processing auth responses
+   *
+   * @param {TurnContext} context - The context object for the current turn.
+   * @param {TurnState} state - The state object for the current turn.
+   * @returns {Promise<string>} A promise that resolves to the OAuth token string, or an empty string if the flow is still in progress.
+   * @throws {Error} If the connection name is not configured in the auth settings.
+   */
   public async getOAuthToken (context: TurnContext, state: TurnState) : Promise<string> {
     if (Object.keys(state.sso).length === 0) {
       state.sso.flowStarted = false
@@ -40,7 +76,7 @@ export class WebChatOAuthFlowAppStyle {
 
     let retVal: string = ''
     const authConfig = context.adapter.authConfig
-    if (authConfig.connectionName === undefined) {
+    if (this.connectionName === undefined) {
       throw new Error('connectionName is not set in the auth config, review your environment variables')
     }
     const adapter = context.adapter as CloudAdapter
@@ -79,6 +115,13 @@ export class WebChatOAuthFlowAppStyle {
     return retVal
   }
 
+  /**
+   * Signs out the current user.
+   * This method clears the user's token and resets the SSO state.
+   *
+   * @param {TurnContext} context - The context object for the current turn.
+   * @param {TurnState} state - The state object for the current turn.
+   */
   async signOut (context: TurnContext, state: TurnState) {
     await this.userTokenClient!.signOut(context.activity.from?.id!, context.adapter.authConfig.connectionName!, context.activity.channelId!)
     state.sso!.flowStarted = false

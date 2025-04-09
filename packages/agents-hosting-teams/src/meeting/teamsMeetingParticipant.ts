@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { ConversationAccount } from '@microsoft/agents-hosting'
+import { ConversationAccount } from '@microsoft/agents-activity'
 import { Meeting } from './meeting'
 import { TeamsChannelAccount } from '../connector-client/teamsChannelAccount'
 

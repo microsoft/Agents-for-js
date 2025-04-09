@@ -2,13 +2,14 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
-import { Activity, InputHints, TurnContext, ActivityTypes } from '@microsoft/agents-hosting'
+import { TurnContext } from '@microsoft/agents-hosting'
 import { Dialog } from '../dialog'
 import { DialogContext } from '../dialogContext'
 import { PromptOptions, PromptRecognizerResult, PromptValidator } from './prompt'
 import { DialogInstance } from '../dialogInstance'
 import { DialogReason } from '../dialogReason'
 import { DialogTurnResult } from '../dialogTurnResult'
+import { Activity, ActivityTypes, InputHints } from '@microsoft/agents-activity'
 
 /**
  * Waits for an activity to be received.

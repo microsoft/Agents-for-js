@@ -2,8 +2,8 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
-
-import { Activity, ActivityTypes, AgentApplication, AppRoute, ConversationReference, debug, MemoryStorage, RouteHandler, RouteSelector, TurnContext, TurnState } from '@microsoft/agents-hosting'
+import { Activity, ActivityTypes, ConversationReference } from '@microsoft/agents-activity'
+import { AgentApplication, AppRoute, debug, MemoryStorage, RouteHandler, RouteSelector, TurnContext, TurnState } from '@microsoft/agents-hosting'
 import { TeamsApplicationOptions } from './teamsApplicationOptions'
 import { FileConsentCardResponse } from '../file/fileConsentCardResponse'
 import { ChannelInfo } from '../channel-data/channelInfo'

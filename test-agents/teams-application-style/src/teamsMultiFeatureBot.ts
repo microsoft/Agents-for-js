@@ -2,10 +2,6 @@
 // Licensed under the MIT License.
 
 import {
-  ActionTypes,
-  ActivityTypes,
-  Attachment,
-  CardAction,
   CardFactory,
   CardImage,
   HeroCard,
@@ -21,6 +17,7 @@ import { TaskModuleUIConstants } from './models/taskModuleUIConstants'
 import { CardTaskFetchValue } from './models/cardTaskFetchValue'
 import { UISettings } from './models/uiSettings'
 import { TaskModuleIds } from './models/taskModuleIds'
+import { ActionTypes, ActivityTypes, Attachment, CardAction } from '@microsoft/agents-activity'
 const restaurantCardResource = require('../cards/RestaurantCard.json')
 const adaptiveCardResource = require('../cards/AdaptiveCard.json')
 

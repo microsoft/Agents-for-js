@@ -1,7 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { Activity, ActivityHandler, ActivityTypes, EndOfConversationCodes, MessageFactory } from '@microsoft/agents-hosting'
+import { Activity, ActivityTypes, EndOfConversationCodes } from '@microsoft/agents-activity'
+import { ActivityHandler, MessageFactory } from '@microsoft/agents-hosting'
 
 export class EmptyAgent extends ActivityHandler {
   constructor () {

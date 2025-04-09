@@ -1,10 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { ActivityTypes, ApplicationBuilder, CardFactory, MemoryStorage, MessageFactory, TurnContext, TurnState } from '@microsoft/agents-hosting'
+import { AgentApplicationBuilder, CardFactory, MemoryStorage, MessageFactory, TurnContext, TurnState } from '@microsoft/agents-hosting'
 import { Template } from 'adaptivecards-templating'
 import * as userTemplate from '../cards/UserProfileCard.json'
 import { getUserInfo } from './userGraphClient'
+import { ActivityTypes } from '@microsoft/agents-activity'
 
 interface ConversationData {
   promptedForUserName: boolean;
@@ -18,10 +19,12 @@ interface UserProfile {
 
 type ApplicationTurnState = TurnState<ConversationData, UserProfile>
 const storage = new MemoryStorage()
-export const app = new ApplicationBuilder<ApplicationTurnState>().withStorage(storage).withAuthentication({ enableSSO: true }).build()
+export const app = new AgentApplicationBuilder<ApplicationTurnState>()
+  .withStorage(storage)
+  .withAuthentication({ enableSSO: true, ssoConnectionName: process.env.connectionName }).build()
 
 app.message('/signout', async (context: TurnContext, state: ApplicationTurnState) => {
-  await app.authManager.signOut(context, state)
+  await app.userAuthorization.signOut(context, state)
   await context.sendActivity(MessageFactory.text('User signed out'))
 })
 
@@ -32,6 +35,7 @@ app.message('/signin', async (context: TurnContext, state: ApplicationTurnState)
 
 app.message('/getUserProfile', async (context: TurnContext, state: ApplicationTurnState) => {
   await context.sendActivity(MessageFactory.text(`User is: ${state.user.name}`))
+  await getToken(context, state)
 })
 
 app.conversationUpdate('membersAdded', async (context: TurnContext, state: ApplicationTurnState) => {
@@ -72,7 +76,7 @@ app.activity(ActivityTypes.Message, async (context: TurnContext, state: Applicat
 })
 
 async function getToken (context: TurnContext, state: ApplicationTurnState): Promise<void> {
-  const userToken = await app.authManager.getOAuthToken(context, state)
+  const userToken = await app.userAuthorization.getOAuthToken(context, state)
   if (userToken.length !== 0) {
     await sendLoggedUserInfo(context, userToken)
   }

@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { SuggestedActions } from '@microsoft/agents-hosting'
+import { SuggestedActions } from '@microsoft/agents-activity'
 
 /**
  * Represents the agent configuration for authentication.

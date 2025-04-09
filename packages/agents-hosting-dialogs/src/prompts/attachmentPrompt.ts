@@ -2,8 +2,9 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
-import { Attachment, InputHints, TurnContext } from '@microsoft/agents-hosting'
+import { TurnContext } from '@microsoft/agents-hosting'
 import { Prompt, PromptOptions, PromptRecognizerResult, PromptValidator } from './prompt'
+import { Attachment, InputHints } from '@microsoft/agents-activity'
 
 /**
  * Prompts a user to upload attachments like images.

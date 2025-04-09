@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+import { ConversationParameters } from '@microsoft/agents-activity'
 import {
   CloudAdapter,
-  ConversationParameters,
   MessageFactory,
   TurnContext
 }

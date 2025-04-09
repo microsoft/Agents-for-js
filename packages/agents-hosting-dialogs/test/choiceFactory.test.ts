@@ -1,7 +1,8 @@
 import { strict as assert } from 'assert'
 import { describe, it } from 'node:test'
-import { ActionTypes, Activity, MessageFactory } from '@microsoft/agents-hosting'
+import { MessageFactory } from '@microsoft/agents-hosting'
 import { ChoiceFactory, Choice } from '../src/choices'
+import { ActionTypes, Activity } from '@microsoft/agents-activity'
 
 function assertActivity (received: Activity, expected: Activity): void {
   assert(received)

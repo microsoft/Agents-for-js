@@ -6,10 +6,67 @@
 import { TurnContext } from '../turnContext'
 import { AgentState, CustomKey } from './agentState'
 
+export interface StatePropertyAccessor<T = any> {
+  /**
+   * Deletes the persisted property from its backing storage object.
+   *
+   * @remarks
+   * The properties backing storage object SHOULD be loaded into memory on first access.
+   *
+   * ```JavaScript
+   * await myProperty.delete(context);
+   * ```
+   * @param context Context for the current turn of conversation with the user.
+   */
+  delete(context: TurnContext): Promise<void>;
+
+  /**
+   * Reads a persisted property from its backing storage object.
+   *
+   * @remarks
+   * The properties backing storage object SHOULD be loaded into memory on first access.
+   *
+   * If the property does not currently exist on the storage object and a `defaultValue` has been
+   * specified, a clone of the `defaultValue` SHOULD be copied to the storage object. If a
+   * `defaultValue` has not been specified then a value of `undefined` SHOULD be returned.
+   *
+   * ```JavaScript
+   * const value = await myProperty.get(context, { count: 0 });
+   * ```
+   * @param context Context for the current turn of conversation with the user.
+   */
+  get(context: TurnContext): Promise<T | undefined>;
+
+  /**
+   * Reads a persisted property from its backing storage object.
+   *
+   * @param context Context for the current turn of conversation with the user.
+   * @param defaultValue (Optional) default value to copy to the backing storage object if the property isn't found.
+   */
+  get(context: TurnContext, defaultValue: T): Promise<T>;
+
+  /**
+   * Assigns a new value to the properties backing storage object.
+   *
+   * @remarks
+   * The properties backing storage object SHOULD be loaded into memory on first access.
+   *
+   * Depending on the state systems implementation, an additional step may be required to
+   * persist the actual changes to disk.
+   *
+   * ```JavaScript
+   * await myProperty.set(context, value);
+   * ```
+   * @param context Context for the current turn of conversation with the user.
+   * @param value Value to assign.
+   */
+  set(context: TurnContext, value: T): Promise<void>;
+}
+
 /**
  * Provides access to an Agent state property.
  */
-export class AgentStatePropertyAccessor<T = any> {
+export class AgentStatePropertyAccessor<T = any> implements StatePropertyAccessor<T> {
   /**
    * Creates a new instance of AgentStatePropertyAccessor.
    * @param state The agent state.
