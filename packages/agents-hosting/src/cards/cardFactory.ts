@@ -15,6 +15,7 @@ import { VideoCard } from './videoCard'
 import { CardImage } from './cardImage'
 import { OAuthCard } from '../oauth/oauthCard'
 import { SigningResource } from '../oauth/signingResource'
+import { SigninCard } from './signinCard'
 
 /**
  * Factory class for creating various types of cards.
@@ -226,6 +227,24 @@ export class CardFactory {
     }
 
     return { contentType: CardFactory.contentTypes.oauthCard, content: card }
+  }
+
+  /**
+   * Creates a sign-in card attachment.
+   * @param title The title of the card.
+   * @param url The URL for the sign-in button.
+   * @param text The optional text for the card.
+   * @returns The sign-in card attachment.
+   */
+  static signinCard(title: string, url: string, text?: string): Attachment {
+    const card: SigninCard = {
+      buttons: [{ type: ActionTypes.Signin, title: title, value: url, channelData: undefined }],
+    };
+    if (text) {
+      card.text = text;
+    }
+
+    return { contentType: CardFactory.contentTypes.signinCard, content: card };
   }
 
   /**

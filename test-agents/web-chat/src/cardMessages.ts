@@ -1,6 +1,3 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
-// Licensed under the MIT License.
-
 import { ActionTypes, Activity, ActivityTypes, Attachment } from '@microsoft/agents-activity'
 import { CardFactory, TurnContext } from '@microsoft/agents-hosting'
 
@@ -17,7 +14,7 @@ export class CardMessages {
       { type: ActionTypes.ImBack, title: '5. Receipt Card', value: '5' },
       // { type: ActionTypes.ImBack, title: '6. oAuth Card [NotImplemented]', value: '6' }, // TODO still pending
       { type: ActionTypes.ImBack, title: '7. o365Connector Card', value: '7' },
-      // { type: ActionTypes.ImBack, title: '8. Signin Card [NotImplemented]', value: '8' }, // TODO still pending
+      { type: ActionTypes.ImBack, title: '8. Signin Card', value: '8' },
       { type: ActionTypes.ImBack, title: '9. Thumbnail Card', value: '9' },
       { type: ActionTypes.ImBack, title: '10. Video Card', value: '10' },
     ]
@@ -179,8 +176,13 @@ export class CardMessages {
   }
 
   static async sendSigninCard (context: TurnContext) {
-    // TODO still pending
-    throw new Error('NotImplemented')
+    const card = CardFactory.signinCard(
+      'Sign in',
+      'https://login.microsoftonline.com/',
+      'Please sign in to continue'
+    );
+
+    await CardMessages.sendActivity(context, card);
   }
 
   static async sendThumbnailCard (context: TurnContext) {
