@@ -11,7 +11,7 @@ export interface SigningResource {
   /**
    * The link for signing in.
    */
-  singingLink: string,
+  signingLink: string,
   /**
    * The resource for token exchange.
    */

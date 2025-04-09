@@ -217,7 +217,7 @@ export class CardFactory {
    */
   static oauthCard (connectionName: string, title: string, text: string, signingResource: SigningResource) : Attachment {
     const card: Partial<OAuthCard> = {
-      buttons: [{ type: ActionTypes.Signin, title, value: signingResource.singingLink, channelData: undefined }],
+      buttons: [{ type: ActionTypes.Signin, title, value: signingResource.signingLink, channelData: undefined }],
       connectionName,
       tokenExchangeResource: signingResource.tokenExchangeResource,
       tokenPostResource: signingResource.tokenPostResource,
