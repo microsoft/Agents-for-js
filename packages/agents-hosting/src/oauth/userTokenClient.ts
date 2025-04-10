@@ -6,6 +6,7 @@ import { SigningResource } from './signingResource'
 import { Activity } from '@microsoft/agents-activity'
 import { debug } from '../logger'
 import { TokenExchangeRequest } from './tokenExchangeRequest'
+import { normalizeTokenExchangeState } from '../activityWireCompat'
 
 const logger = debug('agents:userTokenClient')
 
@@ -80,12 +81,13 @@ export class UserTokenClient {
   async getSignInResource (appId: string, cnxName: string, activity: Activity) : Promise<SigningResource> {
     try {
       const tokenExchangeState = {
-        ConnectionName: cnxName,
-        Conversation: activity.getConversationReference(),
-        RelatesTo: activity.RelatesTo,
-        MsAppId: appId
+        connectionName: cnxName,
+        conversation: activity.getConversationReference(),
+        relatesTo: activity.RelatesTo,
+        msAppId: appId
       }
-      const state = Buffer.from(JSON.stringify(tokenExchangeState)).toString('base64')
+      const tokenExchangeStateNormalized = normalizeTokenExchangeState(tokenExchangeState)
+      const state = Buffer.from(JSON.stringify(tokenExchangeStateNormalized)).toString('base64')
       const params = { state }
       const response = await this.client.get('/api/botsignin/GetSignInResource', { params })
       return response.data as SigningResource

@@ -33,3 +33,13 @@ export function normalizeOutgoingActivity (payload: any): object {
   }
   return payload
 }
+
+export function normalizeTokenExchangeState (payload: any): object {
+  if (payload['conversation'] && payload['conversation']['agent']) {
+    const conversation = payload['conversation']
+    const ov = conversation['agent']
+    delete conversation['agent']
+    conversation['bot'] = ov
+  }
+  return payload
+}
