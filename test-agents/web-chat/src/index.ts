@@ -23,7 +23,7 @@ const createAgent = (agentName: string) => {
       return new CardFactoryHandler()
     case 'MultiFeatureAgent':
       return new MultiFeatureHandler(conversationReferences)
-    case 'WebChatSSOAgent': {
+    case 'webChatSso': {
       const memoryStorage = new MemoryStorage()
       const userState = new UserState(memoryStorage)
       return new WebChatSsoHandler(userState)

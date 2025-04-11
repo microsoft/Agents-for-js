@@ -11,7 +11,7 @@ import { TurnContext } from '../turnContext'
 import { MessageFactory } from '../messageFactory'
 import { debug } from '../logger'
 
-const logger = debug('agents:web-chat-oauth-flow')
+const logger = debug('agents:oauth-flow')
 
 class FlowState {
   public flowStarted: boolean = false
@@ -44,10 +44,11 @@ export class WebChatOAuthFlow {
   public async getOAuthToken (context: TurnContext) : Promise<string> {
     this.state = await this.getUserState(context)
     if (this.state!.userToken !== '') {
+      logger.info('Token available in UseState')
       return this.state.userToken
     }
     if (this.state?.flowExpires !== 0 && Date.now() > this.state.flowExpires) {
-      logger.warn('Sign-in flow expired')
+      logger.info('flow expired')
       this.state.flowStarted = false
       this.state.userToken = ''
       await context.sendActivity(MessageFactory.text('Sign-in session expired. Please try again.'))
@@ -66,23 +67,25 @@ export class WebChatOAuthFlow {
     if (this.state!.flowStarted === true) {
       const userToken = await this.userTokenClient.getUserToken(authConfig.connectionName!, context.activity.channelId!, context.activity.from?.id!)
       if (userToken !== null) {
-        logger.info('Token obtained')
+        logger.info('Token retrieved from service')
         this.state.userToken = userToken.token
         this.state.flowStarted = false
       } else {
         const code = context.activity.text as string
+        logger.info('Token not available from service, sending magic code ' + code)
         const userToken = await this.userTokenClient!.getUserToken(authConfig.connectionName!, context.activity.channelId!, context.activity.from?.id!, code)
         if (userToken !== null) {
           logger.info('Token obtained with code')
           this.state.userToken = userToken.token
           this.state.flowStarted = false
         } else {
-          logger.error('Sign in failed')
+          logger.info('Token service returned null token')
           await context.sendActivity(MessageFactory.text('Sign in failed'))
         }
       }
       retVal = this.state.userToken
     } else if (this.state!.flowStarted === false) {
+      logger.info('Starting OAuth flow')
       const signingResource = await this.userTokenClient.getSignInResource(authConfig.clientId!, authConfig.connectionName!, context.activity)
       const oCard: Attachment = CardFactory.oauthCard(authConfig.connectionName!, 'Sign in', '', signingResource)
       await context.sendActivity(MessageFactory.attachment(oCard))

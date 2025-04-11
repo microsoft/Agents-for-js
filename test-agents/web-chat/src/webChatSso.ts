@@ -15,6 +15,15 @@ export class WebChatSsoHandler extends ActivityHandler {
     this.userState = userState
     this.webChatOAuthFlow = new WebChatOAuthFlow(userState)
 
+    this.onConversationUpdate(async (context, next) => {
+      await context.sendActivity('Welcome to the Web Chat SSO sample. Type "signin" to sign in or "signout" to sign out.')
+      const userToken = await this.webChatOAuthFlow.getOAuthToken(context)
+      if (userToken.length !== 0) {
+        await this.sendLoggedUserInfo(context, userToken)
+      }
+      await next()
+    })
+
     this.onMessage(async (context, next) => {
       if (context.activity.text === 'signout') {
         await this.webChatOAuthFlow.signOut(context)

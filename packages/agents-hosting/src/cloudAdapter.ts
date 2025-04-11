@@ -166,6 +166,8 @@ export class CloudAdapter extends BaseAdapter {
     }
     const incoming = normalizeIncomingActivity(request.body!)
     const activity = Activity.fromObject(incoming)
+    logger.info(`--> Processing incoming activity, type:${activity.type} channel:${activity.channelId}`)
+
     if (!this.isValidChannelActivity(activity)) {
       return end(StatusCodes.BAD_REQUEST)
     }
@@ -180,6 +182,7 @@ export class CloudAdapter extends BaseAdapter {
       const context = this.createTurnContext(activity, logic)
       await this.runMiddleware(context, logic)
       const invokeResponse = this.processTurnResults(context)
+      logger.debug('Activity Response (invoke/expect replies): ', invokeResponse)
       return end(invokeResponse?.status ?? StatusCodes.OK, JSON.stringify(invokeResponse?.body), true)
     }
 
@@ -286,6 +289,7 @@ export class CloudAdapter extends BaseAdapter {
  * @returns The InvokeResponse if applicable, otherwise undefined.
  */
   protected processTurnResults (context: TurnContext): InvokeResponse | undefined {
+    logger.info('<--Sending back turn results')
     // Handle ExpectedReplies scenarios where all activities have been buffered and sent back at once in an invoke response.
     if (context.activity.deliveryMode === DeliveryModes.ExpectReplies) {
       return {

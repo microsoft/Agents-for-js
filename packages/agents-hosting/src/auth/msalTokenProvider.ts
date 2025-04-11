@@ -13,7 +13,7 @@ import fs from 'fs'
 import crypto from 'crypto'
 
 const audience = 'api://AzureADTokenExchange'
-const logger = debug('agents:msal-token-provider')
+const logger = debug('agents:msal')
 
 /**
  * Provides tokens using MSAL.

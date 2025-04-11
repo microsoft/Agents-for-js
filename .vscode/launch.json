@@ -48,7 +48,8 @@
             ],
             "preLaunchTask": "build_webchat",
             "envFile": "${workspaceFolder}/test-agents/web-chat/.env",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "openOnSessionStart"
         },
         {
             "type": "node",

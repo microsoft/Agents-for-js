@@ -131,6 +131,7 @@ export class ConnectorClient {
     activityId: string,
     body: Activity
   ): Promise<ResourceResponse> {
+    logger.debug(`Replying to activity: ${activityId} in conversation: ${conversationId}`)
     if (!conversationId || !activityId) {
       throw new Error('conversationId and activityId are required')
     }
@@ -157,6 +158,7 @@ export class ConnectorClient {
     conversationId: string,
     body: Activity
   ): Promise<ResourceResponse> {
+    logger.debug(`Send to conversation: ${conversationId} activity: ${body.id}`)
     if (!conversationId) {
       throw new Error('conversationId is required')
     }
