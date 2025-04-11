@@ -89,9 +89,9 @@ export class TeamsOAuthFlow {
     const contFlowActivity = context.activity
     const authConfig = context.adapter.authConfig
     const tokenExchangeRequest = contFlowActivity.value as TokenExchangeRequest
-    if (this.tokenExchangeId === tokenExchangeRequest.id) {
-      return '' // dedupe
-    }
+    // if (this.tokenExchangeId === tokenExchangeRequest.id) {
+    //   return '' // dedupe
+    // }
     this.tokenExchangeId = tokenExchangeRequest.id!
     const userTokenReq = await this.userTokenClient?.exchangeTokenAsync(contFlowActivity.from?.id!, authConfig.connectionName!, contFlowActivity.channelId!, tokenExchangeRequest)
     logger.info('Token obtained')

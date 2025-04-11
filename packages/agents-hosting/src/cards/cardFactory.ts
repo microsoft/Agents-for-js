@@ -220,7 +220,7 @@ export class CardFactory {
       buttons: [{
         type: ActionTypes.Signin,
         title,
-        value: signingResource.signingLink,
+        value: signingResource.signInLink,
         channelData: undefined
       }],
       connectionName,
