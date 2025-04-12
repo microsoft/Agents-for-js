@@ -37,7 +37,7 @@ export class TeamsSso extends ActivityHandler {
 
     this.onSignInInvoke(async (context, next) => {
       const token = await this.teamsOAuthFlow.continueFlow(context)
-      if (token !== '') {
+      if (token !== undefined && token !== '') {
         await this.sendLoggedUserInfo(context, token)
       }
       await next()

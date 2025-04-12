@@ -22,6 +22,9 @@ class FlowState {
   public flowExpires: number = 0
 }
 
+interface TokenVerifyState {
+  state: string
+}
 /**
  * Manages the OAuth flow for Teams.
  */
@@ -61,10 +64,12 @@ export class TeamsOAuthFlow {
     const accessToken = await adapter.authProvider.getAccessToken(authConfig, scope)
     this.userTokenClient = new TeamsUserTokenClient(accessToken)
     const retVal: string = ''
-    await context.sendActivities([MessageFactory.text('authorizing user'), new Activity(ActivityTypes.Typing)])
+    // await context.sendActivities([MessageFactory.text('authorizing user'), new Activity(ActivityTypes.Typing)])
     const signingResource: SigningResource = await this.userTokenClient.getSignInResource(authConfig.clientId!, authConfig.connectionName!, context.activity)
-    const oCard: Attachment = CardFactory.oauthCard(authConfig.connectionName as string, 'Sign in', '', signingResource)
-    await context.sendActivity(MessageFactory.attachment(oCard))
+    const oCard: Attachment = CardFactory.oauthCard(authConfig.connectionName as string, 'Sign in', 'login', signingResource)
+    const cardActivity : Activity = MessageFactory.attachment(oCard)
+    cardActivity.channelData = context.activity.channelData
+    await context.sendActivity(cardActivity)
     this.state.flowStarted = true
     this.state.flowExpires = Date.now() + 30000
     await this.flowStateAccessor.set(context, this.state)
@@ -88,18 +93,39 @@ export class TeamsOAuthFlow {
     this.state = await this.getUserState(context)
     const contFlowActivity = context.activity
     const authConfig = context.adapter.authConfig
-    const tokenExchangeRequest = contFlowActivity.value as TokenExchangeRequest
-    // if (this.tokenExchangeId === tokenExchangeRequest.id) {
-    //   return '' // dedupe
-    // }
-    this.tokenExchangeId = tokenExchangeRequest.id!
-    const userTokenReq = await this.userTokenClient?.exchangeTokenAsync(contFlowActivity.from?.id!, authConfig.connectionName!, contFlowActivity.channelId!, tokenExchangeRequest)
-    logger.info('Token obtained')
-    this.state!.userToken = userTokenReq.token
-    this.state!.flowStarted = false
-    await context.sendActivity(MessageFactory.text('User signed in' + new Date().toISOString()))
-    await this.flowStateAccessor.set(context, this.state)
-    return this.state?.userToken!
+
+    if (contFlowActivity.type === ActivityTypes.Invoke && contFlowActivity.name === 'signin/verifyState') {
+      logger.info('Continuing OAuth flow with verifyState')
+      const tokenVerifyState = contFlowActivity.value as TokenVerifyState
+      const magicCode = tokenVerifyState.state
+      const result = await this.userTokenClient?.getUserToken(authConfig.connectionName!, contFlowActivity.channelId!, contFlowActivity.from?.id!, magicCode)
+      return result?.token
+    }
+
+    if (contFlowActivity.type === ActivityTypes.Invoke && contFlowActivity.name === 'signin/tokenExchange') {
+      logger.info('Continuing OAuth flow with tokenExchange')
+      const tokenExchangeRequest = contFlowActivity.value as TokenExchangeRequest
+      // if (this.tokenExchangeId === tokenExchangeRequest.id) {
+      //   return '' // dedupe
+      // }
+      this.tokenExchangeId = tokenExchangeRequest.id!
+      const userTokenResp = await this.userTokenClient?.exchangeTokenAsync(contFlowActivity.from?.id!, authConfig.connectionName!, contFlowActivity.channelId!, tokenExchangeRequest)
+      if (userTokenResp?.token) {
+        logger.info('Token exchanged')
+        this.state!.userToken = userTokenResp.token
+        this.state!.flowStarted = false
+        await context.sendActivity(MessageFactory.text('User signed in' + new Date().toISOString()))
+        await this.flowStateAccessor.set(context, this.state)
+        return this.state?.userToken!
+      } else {
+        logger.warn('Token exchange failed')
+        this.state!.flowStarted = true
+        this.state!.userToken = ''
+        await context.sendActivity(MessageFactory.text('Exchange failed. Please try again.'))
+        return ''
+      }
+    }
+    return ''
   }
 
   /**
