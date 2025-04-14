@@ -3,11 +3,10 @@
 
 import express, { Response } from 'express'
 
-import { Request, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv, UserState, MemoryStorage } from '@microsoft/agents-hosting'
+import { Request, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv } from '@microsoft/agents-hosting'
 import { TeamsCloudAdapter } from '@microsoft/agents-hosting-teams'
 
 import { TeamsHandler } from './teamsHandler'
-import { TeamsSso } from './teamsSso'
 import { TeamsMultiFeature } from './teamsMultiFeature'
 import path from 'path'
 
@@ -17,12 +16,6 @@ const createAgent = (agentName: string) => {
   switch (agentName) {
     case 'TeamsHandler':
       return new TeamsHandler()
-    case 'TeamsSso':
-    {
-      const memoryStorage = new MemoryStorage()
-      const userState = new UserState(memoryStorage)
-      return new TeamsSso(userState)
-    }
     case 'TeamsMultiFeature':
       return new TeamsMultiFeature()
     default:
