@@ -1,20 +1,19 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { ActivityHandler, CardFactory, MessageFactory, TurnContext, UserState } from '@microsoft/agents-hosting'
+import { ActivityHandler, CardFactory, MessageFactory, OAuthFlow, TurnContext, UserState } from '@microsoft/agents-hosting'
 import { Template } from 'adaptivecards-templating'
 import * as userTemplate from '../cards/UserProfileCard.json'
 import { getUserInfo } from './userGraphClient'
-import { TeamsOAuthFlow } from '@microsoft/agents-hosting-teams'
 import { Activity } from '@microsoft/agents-activity'
 
 export class TeamsSso extends ActivityHandler {
-  teamsOAuthFlow: TeamsOAuthFlow
+  teamsOAuthFlow: OAuthFlow
   userState: UserState
   constructor (userState: UserState) {
     super()
     this.userState = userState
-    this.teamsOAuthFlow = new TeamsOAuthFlow(userState)
+    this.teamsOAuthFlow = new OAuthFlow(userState)
 
     this.onMessage(async (context, next) => {
       const activity = context.activity as Activity

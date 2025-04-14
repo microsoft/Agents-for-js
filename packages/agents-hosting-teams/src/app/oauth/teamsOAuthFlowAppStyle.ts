@@ -10,14 +10,14 @@ import {
   SigningResource,
   TokenExchangeRequest,
   TurnState,
-  Storage
+  Storage,
+  UserTokenClient
 } from '@microsoft/agents-hosting'
-import { TeamsUserTokenClient } from '../../oauth'
 
 const logger = debug('agents:teams-oauth-flow-app-style')
 
 export class TeamsOAuthFlowAppStyle {
-  userTokenClient?: TeamsUserTokenClient
+  userTokenClient?: UserTokenClient
   tokenExchangeId: string | null = null
   storage: Storage
   appState: TurnState | null = null
@@ -48,7 +48,7 @@ export class TeamsOAuthFlowAppStyle {
     }
     const scope = 'https://api.botframework.com'
     const accessToken = await adapter.authProvider.getAccessToken(authConfig, scope)
-    this.userTokenClient = new TeamsUserTokenClient(accessToken)
+    this.userTokenClient = new UserTokenClient(accessToken)
     const retVal: string = ''
     await context.sendActivities([MessageFactory.text('authorizing user'), new Activity(ActivityTypes.Typing)])
     const signingResource: SigningResource = await this.userTokenClient.getSignInResource(authConfig.clientId!, authConfig.connectionName!, context.activity)

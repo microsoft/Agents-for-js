@@ -12,7 +12,7 @@ import {
   SigningResource,
   TokenExchangeRequest,
   UserTokenClient
-} from '@microsoft/agents-hosting'
+} from '../'
 
 const logger = debug('agents:teams-oauth-flow')
 
@@ -28,7 +28,7 @@ interface TokenVerifyState {
 /**
  * Manages the OAuth flow for Teams.
  */
-export class TeamsOAuthFlow {
+export class OAuthFlow {
   userTokenClient?: UserTokenClient
   state: FlowState | null
   flowStateAccessor: AgentStatePropertyAccessor<FlowState | null>
