@@ -7,7 +7,7 @@ import { Request, CloudAdapter, authorizeJWT, AuthConfiguration, loadAuthConfigF
 import { ConversationReference } from '@microsoft/agents-activity'
 
 import { AdaptiveCardHandler } from './adaptiveCards'
-import { CardFactoryHandler } from './cardFactory'
+import { CardFactoryHandler } from './cardFactoryHandler'
 import { MultiFeatureHandler } from './multiFeature'
 import { StateManagementHandler } from './state'
 import { WebChatSsoHandler } from './webChatSso'
