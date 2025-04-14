@@ -13,8 +13,9 @@ import {
   TokenExchangeRequest,
   UserTokenClient
 } from '../'
+import { TokenResponse } from './tokenResponse'
 
-const logger = debug('agents:teams-oauth-flow')
+const logger = debug('agents:oauth-flow')
 
 class FlowState {
   public flowStarted: boolean = false
@@ -35,7 +36,7 @@ export class OAuthFlow {
   tokenExchangeId: string | null = null
 
   /**
-   * Creates a new instance of TeamsOAuthFlow.
+   * Creates a new instance of OAuthFlow.
    * @param userState The user state.
    */
   constructor (userState: UserState) {
@@ -48,11 +49,18 @@ export class OAuthFlow {
    * @param context The turn context.
    * @returns A promise that resolves to the user token.
    */
-  public async beginFlow (context: TurnContext): Promise<string> {
+  public async beginFlow (context: TurnContext): Promise<TokenResponse> {
+    logger.info('Starting OAuth flow')
     this.state = await this.getUserState(context)
 
     if (this.state.userToken !== '') {
-      return this.state.userToken
+      logger.info('Token found in user state')
+      return {
+        channelId: context.activity.channelId!,
+        connectionName: context.adapter.authConfig.connectionName!,
+        token: this.state.userToken,
+        expires: this.state.flowExpires
+      }
     }
 
     const adapter = context.adapter as CloudAdapter
@@ -63,8 +71,22 @@ export class OAuthFlow {
     const scope = 'https://api.botframework.com'
     const accessToken = await adapter.authProvider.getAccessToken(authConfig, scope)
     this.userTokenClient = new UserTokenClient(accessToken)
-    const retVal: string = ''
-    // await context.sendActivities([MessageFactory.text('authorizing user'), new Activity(ActivityTypes.Typing)])
+
+    const token = await this.userTokenClient.getUserToken(authConfig.connectionName!, context.activity.channelId!, context.activity.from?.id!)
+    if (token?.token) {
+      this.state.userToken = token.token
+      this.state.flowStarted = false
+      this.state.flowExpires = 0
+      await this.flowStateAccessor.set(context, this.state)
+      logger.info('User token retrieved successfully from service')
+      return {
+        channelId: context.activity.channelId!,
+        connectionName: context.adapter.authConfig.connectionName!,
+        token: this.state.userToken,
+        expires: this.state.flowExpires
+      }
+    }
+
     const signingResource: SigningResource = await this.userTokenClient.getSignInResource(authConfig.clientId!, authConfig.connectionName!, context.activity)
     const oCard: Attachment = CardFactory.oauthCard(authConfig.connectionName as string, 'Sign in', 'login', signingResource)
     const cardActivity : Activity = MessageFactory.attachment(oCard)
@@ -72,8 +94,13 @@ export class OAuthFlow {
     this.state.flowStarted = true
     this.state.flowExpires = Date.now() + 30000
     await this.flowStateAccessor.set(context, this.state)
-    logger.info('OAuth flow started')
-    return retVal
+    logger.info('OAuth begin flow completed, waiting for user to sign in')
+    return {
+      channelId: context.activity.channelId!,
+      connectionName: context.adapter.authConfig.connectionName!,
+      token: null,
+      expires: this.state.flowExpires
+    }
   }
 
   /**
@@ -81,13 +108,13 @@ export class OAuthFlow {
    * @param context The turn context.
    * @returns A promise that resolves to the user token.
    */
-  public async continueFlow (context: TurnContext): Promise<string> {
+  public async continueFlow (context: TurnContext): Promise<string | null> {
     if (this.state?.flowExpires !== 0 && Date.now() > this.state!.flowExpires) {
-      logger.warn('Sign-in flow expired')
+      logger.warn('Flow expired')
       this.state!.flowStarted = false
       this.state!.userToken = ''
       await context.sendActivity(MessageFactory.text('Sign-in session expired. Please try again.'))
-      return ''
+      return null
     }
     this.state = await this.getUserState(context)
     const contFlowActivity = context.activity
@@ -127,10 +154,10 @@ export class OAuthFlow {
         this.state!.flowStarted = true
         this.state!.userToken = ''
         await context.sendActivity(MessageFactory.text('Exchange failed. Please try again.'))
-        return ''
+        return null
       }
     }
-    return ''
+    return null
   }
 
   /**
@@ -140,7 +167,6 @@ export class OAuthFlow {
    */
   public async signOut (context: TurnContext): Promise<void> {
     await this.userTokenClient?.signOut(context.activity.from?.id as string, context.adapter.authConfig.connectionName as string, context.activity.channelId as string)
-    await context.sendActivity(MessageFactory.text('User signed out'))
     this.state!.userToken = ''
     this.state!.flowExpires = 0
     await this.flowStateAccessor.set(context, this.state)

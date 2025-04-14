@@ -1,4 +1,4 @@
-export * from './oauthCard'
+export * from './oAuthCard'
 export * from './signingResource'
 export * from './tokenExchangeResource'
 export * from './tokenPostResource'

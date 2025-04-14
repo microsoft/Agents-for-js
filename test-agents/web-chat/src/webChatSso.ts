@@ -7,26 +7,26 @@ import * as userTemplate from '../cards/UserProfileCard.json'
 import { getUserInfo } from './userGraphClient'
 
 export class WebChatSsoHandler extends ActivityHandler {
-  webChatOAuthFlow: OAuthFlow
+  oAuthFlow: OAuthFlow
 
   userState: UserState
   constructor (userState: UserState) {
     super()
     this.userState = userState
-    this.webChatOAuthFlow = new OAuthFlow(userState)
+    this.oAuthFlow = new OAuthFlow(userState)
 
     this.onConversationUpdate(async (context, next) => {
       await context.sendActivity('Welcome to the Web Chat SSO sample. Type "signin" to sign in or "signout" to sign out.')
-      const userToken = await this.webChatOAuthFlow.beginFlow(context)
-      if (userToken.length !== 0) {
-        await this.sendLoggedUserInfo(context, userToken)
+      const tokenResponse = await this.oAuthFlow.beginFlow(context)
+      if (tokenResponse.token !== null) {
+        await this.sendLoggedUserInfo(context, tokenResponse.token)
       }
       await next()
     })
 
     this.onMessage(async (context, next) => {
       if (context.activity.text === 'signout') {
-        await this.webChatOAuthFlow.signOut(context)
+        await this.oAuthFlow.signOut(context)
         await context.sendActivity(MessageFactory.text('User signed out'))
         return
       } else if (context.activity.text === 'signin') {
@@ -36,19 +36,29 @@ export class WebChatSsoHandler extends ActivityHandler {
         if (code.toString().length !== 6) {
           await context.sendActivity(MessageFactory.text('Please enter "signin" to sign in or "signour" to sign out'))
         } else {
-          const token = await this.webChatOAuthFlow.continueFlow(context)
-          await this.sendLoggedUserInfo(context, token)
+          const token = await this.oAuthFlow.continueFlow(context)
+          if (token !== null) {
+            await this.sendLoggedUserInfo(context, token)
+          }
         }
       }
 
       await next()
     })
+
+    this.onSignInInvoke(async (context, next) => {
+      const token = await this.oAuthFlow.continueFlow(context)
+      if (token !== null) {
+        await this.sendLoggedUserInfo(context, token)
+      }
+      await next()
+    })
   }
 
   async beginOAuthFlow (context: TurnContext): Promise<void> {
-    const userToken = await this.webChatOAuthFlow.beginFlow(context)
-    if (userToken.length !== 0) {
-      await this.sendLoggedUserInfo(context, userToken)
+    const tokenResponse = await this.oAuthFlow.beginFlow(context)
+    if (tokenResponse.token !== null) {
+      await this.sendLoggedUserInfo(context, tokenResponse.token)
     }
   }
 

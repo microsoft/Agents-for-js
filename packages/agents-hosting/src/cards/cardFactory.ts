@@ -13,7 +13,7 @@ import { O365ConnectorCard } from './o365ConnectorCard'
 import { ThumbnailCard } from './thumbnailCard'
 import { VideoCard } from './videoCard'
 import { CardImage } from './cardImage'
-import { OAuthCard } from '../oauth/oauthCard'
+import { OAuthCard } from '../oauth/oAuthCard'
 import { SigningResource } from '../oauth/signingResource'
 import { SigninCard } from './signinCard'
 
