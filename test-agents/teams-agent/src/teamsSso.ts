@@ -6,6 +6,7 @@ import { Template } from 'adaptivecards-templating'
 import * as userTemplate from '../cards/UserProfileCard.json'
 import { getUserInfo } from './userGraphClient'
 import { TeamsOAuthFlow } from '@microsoft/agents-hosting-teams'
+import { Activity } from '@microsoft/agents-activity'
 
 export class TeamsSso extends ActivityHandler {
   teamsOAuthFlow: TeamsOAuthFlow
@@ -16,14 +17,22 @@ export class TeamsSso extends ActivityHandler {
     this.teamsOAuthFlow = new TeamsOAuthFlow(userState)
 
     this.onMessage(async (context, next) => {
-      if (context.activity.text === 'signout') {
+      const activity = context.activity as Activity
+      if (activity.text === 'signout') {
         await this.teamsOAuthFlow.signOut(context)
         return
       }
-      if (context.activity.text === 'signin') {
+      if (activity.text === 'signin') {
         const userToken = await this.teamsOAuthFlow.beginFlow(context)
         if (userToken !== '') {
           await this.sendLoggedUserInfo(context, userToken)
+        }
+        return
+      }
+      if (/^\d{6}$/.test(activity.text!)) {
+        const token = await this.teamsOAuthFlow.continueFlow(context)
+        if (token !== undefined && token !== '') {
+          await this.sendLoggedUserInfo(context, token)
         }
         return
       }

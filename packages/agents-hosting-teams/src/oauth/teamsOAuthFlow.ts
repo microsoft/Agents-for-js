@@ -68,7 +68,7 @@ export class TeamsOAuthFlow {
     const signingResource: SigningResource = await this.userTokenClient.getSignInResource(authConfig.clientId!, authConfig.connectionName!, context.activity)
     const oCard: Attachment = CardFactory.oauthCard(authConfig.connectionName as string, 'Sign in', 'login', signingResource)
     const cardActivity : Activity = MessageFactory.attachment(oCard)
-    cardActivity.channelData = context.activity.channelData
+    // cardActivity.channelData = context.activity.channelData
     await context.sendActivity(cardActivity)
     this.state.flowStarted = true
     this.state.flowExpires = Date.now() + 30000
@@ -93,6 +93,12 @@ export class TeamsOAuthFlow {
     this.state = await this.getUserState(context)
     const contFlowActivity = context.activity
     const authConfig = context.adapter.authConfig
+
+    if (contFlowActivity.type === ActivityTypes.Message) {
+      const magicCode = contFlowActivity.text as string
+      const result = await this.userTokenClient?.getUserToken(authConfig.connectionName!, contFlowActivity.channelId!, contFlowActivity.from?.id!, magicCode)
+      return result?.token
+    }
 
     if (contFlowActivity.type === ActivityTypes.Invoke && contFlowActivity.name === 'signin/verifyState') {
       logger.info('Continuing OAuth flow with verifyState')
