@@ -10,9 +10,9 @@ import {
   TurnContext,
   MessageFactory,
   SigningResource,
-  TokenExchangeRequest
+  TokenExchangeRequest,
+  UserTokenClient
 } from '@microsoft/agents-hosting'
-import { TeamsUserTokenClient } from './teamsUserTokenClient'
 
 const logger = debug('agents:teams-oauth-flow')
 
@@ -29,7 +29,7 @@ interface TokenVerifyState {
  * Manages the OAuth flow for Teams.
  */
 export class TeamsOAuthFlow {
-  userTokenClient?: TeamsUserTokenClient
+  userTokenClient?: UserTokenClient
   state: FlowState | null
   flowStateAccessor: AgentStatePropertyAccessor<FlowState | null>
   tokenExchangeId: string | null = null
@@ -62,13 +62,12 @@ export class TeamsOAuthFlow {
     }
     const scope = 'https://api.botframework.com'
     const accessToken = await adapter.authProvider.getAccessToken(authConfig, scope)
-    this.userTokenClient = new TeamsUserTokenClient(accessToken)
+    this.userTokenClient = new UserTokenClient(accessToken)
     const retVal: string = ''
     // await context.sendActivities([MessageFactory.text('authorizing user'), new Activity(ActivityTypes.Typing)])
     const signingResource: SigningResource = await this.userTokenClient.getSignInResource(authConfig.clientId!, authConfig.connectionName!, context.activity)
     const oCard: Attachment = CardFactory.oauthCard(authConfig.connectionName as string, 'Sign in', 'login', signingResource)
     const cardActivity : Activity = MessageFactory.attachment(oCard)
-    // cardActivity.channelData = context.activity.channelData
     await context.sendActivity(cardActivity)
     this.state.flowStarted = true
     this.state.flowExpires = Date.now() + 30000
