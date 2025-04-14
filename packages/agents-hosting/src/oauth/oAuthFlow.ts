@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+import { debug } from './../logger'
 import { Activity, ActivityTypes, Attachment } from '@microsoft/agents-activity'
 import {
-  debug,
   CloudAdapter,
   CardFactory,
   AgentStatePropertyAccessor,

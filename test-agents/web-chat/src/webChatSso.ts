@@ -36,7 +36,8 @@ export class WebChatSsoHandler extends ActivityHandler {
         if (code.toString().length !== 6) {
           await context.sendActivity(MessageFactory.text('Please enter "signin" to sign in or "signour" to sign out'))
         } else {
-          await this.webChatOAuthFlow.continueFlow(context)
+          const token = await this.webChatOAuthFlow.continueFlow(context)
+          await this.sendLoggedUserInfo(context, token)
         }
       }
 
