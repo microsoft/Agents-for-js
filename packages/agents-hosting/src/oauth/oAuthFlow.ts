@@ -39,10 +39,11 @@ export class OAuthFlow {
    * Creates a new instance of OAuthFlow.
    * @param userState The user state.
    */
-  constructor (userState: UserState, absOauthConnectionName: string) {
+  constructor (userState: UserState, absOauthConnectionName: string, tokenClient?: UserTokenClient) {
     this.state = null
     this.flowStateAccessor = userState.createProperty('flowState')
     this.absOauthConnectionName = absOauthConnectionName
+    this.userTokenClient = tokenClient
   }
 
   /**
@@ -69,9 +70,11 @@ export class OAuthFlow {
     if (this.absOauthConnectionName === '') {
       throw new Error('connectionName is not set in the auth config, review your environment variables')
     }
-    const scope = 'https://api.botframework.com'
-    const accessToken = await adapter.authProvider.getAccessToken(authConfig, scope)
-    this.userTokenClient = new UserTokenClient(accessToken)
+    if (this.userTokenClient === undefined) {
+      const scope = 'https://api.botframework.com'
+      const accessToken = await adapter.authProvider.getAccessToken(authConfig, scope)
+      this.userTokenClient = new UserTokenClient(accessToken)
+    }
 
     const token = await this.userTokenClient.getUserToken(this.absOauthConnectionName, context.activity.channelId!, context.activity.from?.id!)
     if (token?.token) {
@@ -83,7 +86,7 @@ export class OAuthFlow {
       return {
         channelId: context.activity.channelId!,
         connectionName: this.absOauthConnectionName,
-        token: this.state.userToken,
+        token: token?.token,
         expires: this.state.flowExpires
       }
     }
@@ -124,7 +127,7 @@ export class OAuthFlow {
     if (contFlowActivity.type === ActivityTypes.Message) {
       const magicCode = contFlowActivity.text as string
       const result = await this.userTokenClient?.getUserToken(this.absOauthConnectionName, contFlowActivity.channelId!, contFlowActivity.from?.id!, magicCode)
-      return result?.token
+      return result?.token!
     }
 
     if (contFlowActivity.type === ActivityTypes.Invoke && contFlowActivity.name === 'signin/verifyState') {
@@ -132,7 +135,7 @@ export class OAuthFlow {
       const tokenVerifyState = contFlowActivity.value as TokenVerifyState
       const magicCode = tokenVerifyState.state
       const result = await this.userTokenClient?.getUserToken(this.absOauthConnectionName, contFlowActivity.channelId!, contFlowActivity.from?.id!, magicCode)
-      return result?.token
+      return result?.token!
     }
 
     if (contFlowActivity.type === ActivityTypes.Invoke && contFlowActivity.name === 'signin/tokenExchange') {

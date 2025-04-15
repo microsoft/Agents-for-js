@@ -88,14 +88,14 @@ export class UserAuthorization {
       const userToken = await this.userTokenClient.getUserToken(authConfig.connectionName!, context.activity.channelId!, context.activity.from?.id!)
       if (userToken !== null) {
         logger.info('Token obtained')
-        state.sso.userToken = userToken.token
+        state.sso.userToken = userToken.token!
         state.sso.flowStarted = false
       } else {
         const code = context.activity.text as string
         const userToken = await this.userTokenClient!.getUserToken(authConfig.connectionName!, context.activity.channelId!, context.activity.from?.id!, code)
         if (userToken !== null) {
           logger.info('Token obtained with code')
-          state.sso.userToken = userToken.token
+          state.sso.userToken = userToken.token!
           state.sso.flowStarted = false
         } else {
           logger.error('Sign in failed')

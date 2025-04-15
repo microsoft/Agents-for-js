@@ -7,6 +7,7 @@ import { Activity } from '@microsoft/agents-activity'
 import { debug } from '../logger'
 import { TokenExchangeRequest } from './tokenExchangeRequest'
 import { normalizeTokenExchangeState } from '../activityWireCompat'
+import { TokenResponse } from './tokenResponse'
 
 const logger = debug('agents:userTokenClient')
 
@@ -40,7 +41,7 @@ export class UserTokenClient {
    * @param code The optional code.
    * @returns A promise that resolves to the user token.
    */
-  async getUserToken (connectionName: string, channelId: string, userId: string, code?: string) {
+  async getUserToken (connectionName: string, channelId: string, userId: string, code?: string) : Promise<TokenResponse | null> {
     try {
       const params = { connectionName, channelId, userId, code }
       const response = await this.client.get('/api/usertoken/GetToken', { params })
