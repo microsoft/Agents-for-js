@@ -1,10 +1,8 @@
 import { strict as assert } from 'assert'
 import { describe, it, beforeEach, afterEach } from 'node:test'
-import { MemoryStorage, OAuthFlow, TokenResponse, TurnContext, UserState, UserTokenClient } from './../../src'
+import { MemoryStorage, OAuthFlow, SigningResource, TurnContext, UserState, UserTokenClient } from './../../src'
 import { TestAdapter } from './testStubs'
 import { Activity, ActivityTypes } from '@microsoft/agents-activity'
-import { AxiosInstance } from 'axios'
-import { SigningResource } from '../oauth/signingResource'
 import sinon from 'sinon'
 
 const testActivity = Activity.fromObject({
@@ -22,12 +20,11 @@ const testActivity = Activity.fromObject({
   }
 })
 
-const testSigninResource = {
+const testSigninResource : SigningResource = {
   signInLink: 'https://test.com',
-  tokenExchangeId: 'testTokenExchangeId',
   tokenExchangeResource: {
     id: 'testTokenExchangeId',
-    url: 'https://test.com',
+    uri: 'https://test.com',
   },
   tokenPostResource: {
     sasUrl: 'https://test.com',
