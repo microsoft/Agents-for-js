@@ -6,8 +6,9 @@ import { SigningResource } from './signingResource'
 import { Activity } from '@microsoft/agents-activity'
 import { debug } from '../logger'
 import { TokenExchangeRequest } from './tokenExchangeRequest'
+import { getProductInfo } from '../getProductInfo'
 
-const logger = debug('agents:userTokenClient')
+const logger = debug('agents:user-token-client')
 
 /**
  * Client for managing user tokens.
@@ -24,7 +25,8 @@ export class UserTokenClient {
     const axiosInstance = axios.create({
       baseURL,
       headers: {
-        Accept: 'application/json'
+        Accept: 'application/json',
+        'User-Agent': getProductInfo(),
       }
     })
     axiosInstance.defaults.headers.common.Authorization = `Bearer ${token}`

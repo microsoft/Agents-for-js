@@ -10,6 +10,7 @@ import { ResourceResponse } from './resourceResponse'
 import { AttachmentInfo } from './attachmentInfo'
 import { AttachmentData } from './attachmentData'
 import { normalizeOutgoingActivity } from '../activityWireCompat'
+import { getProductInfo } from '../getProductInfo'
 const logger = debug('agents:connector-client')
 
 /**
@@ -71,7 +72,7 @@ export class ConnectorClient {
       baseURL,
       headers: {
         Accept: 'application/json',
-        'User-Agent': ConnectorClient.getProductInfo(),
+        'User-Agent': getProductInfo(),
       },
       transformRequest: [
         (data, headers) => {
@@ -84,12 +85,6 @@ export class ConnectorClient {
       axiosInstance.defaults.headers.common.Authorization = `Bearer ${token}`
     }
     return new ConnectorClient(axiosInstance)
-  }
-
-  protected static getProductInfo (): string {
-    const version = require('../../../package.json').version
-    const os = require('os')
-    return `agents-sdk-js/${version} nodejs/${process.version} ${os.platform()}-${os.arch()}/${os.release()}`
   }
 
   /**
