@@ -20,7 +20,7 @@
   "types": "dist/src/index.d.ts",
   "dependencies": {
     "@microsoft/agents-activity": "file:../agents-activity",
-    "@azure/msal-node": "^3.5.0",
+    "@azure/msal-node": "^3.5.1",
     "jsonwebtoken": "^9.0.2",
     "jwks-rsa": "^3.2.0",
     "axios": "^1.8.2",
