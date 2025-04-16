@@ -47,4 +47,14 @@ describe('Activity with timestamp', () => {
     const expectedDate = new Date('2024-11-18T10:36:31-08:00')
     assert.equal(a.localTimestamp?.toString(), expectedDate.toString())
   })
+
+  it('from object with timestamp as date', () => {
+    const obj = { type: 'message', timestamp: new Date(), text: 'my Text' }
+    const a = Activity.fromObject(obj)
+    const t = typeof a.timestamp
+    assert.strictEqual(t, 'object')
+    assert.strictEqual(a.type, 'message')
+    assert.strictEqual(a.type, ActivityTypes.Message)
+    assert.equal(a.timestamp?.toLocaleString(), obj.timestamp.toLocaleString())
+  })
 })
