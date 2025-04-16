@@ -13,6 +13,8 @@ import { normalizeOutgoingActivity } from '../activityWireCompat'
 import { getProductInfo } from '../getProductInfo'
 const logger = debug('agents:connector-client')
 
+export { getProductInfo }
+
 /**
  * ConnectorClient is a client for interacting with the Microsoft Connector API.
  */
