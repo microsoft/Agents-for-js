@@ -1,3 +1,3 @@
-const version = require('../../../package.json').version
-const os = require('os')
-export const getProductInfo = () : string => `agents-sdk-js/${version} nodejs/${process.version} ${os.platform()}-${os.arch()}/${os.release()}`
+import pjson from '../../../package.json'
+import os from 'os'
+export const getProductInfo = () : string => `agents-sdk-js/${pjson.version} nodejs/${process.version} ${os.platform()}-${os.arch()}/${os.release()}`

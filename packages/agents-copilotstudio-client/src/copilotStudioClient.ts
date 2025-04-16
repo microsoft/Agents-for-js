@@ -9,6 +9,8 @@ import { getCopilotStudioConnectionUrl } from './powerPlatformEnvironment'
 import { Activity, ActivityTypes, ConversationAccount } from '@microsoft/agents-activity'
 import { ExecuteTurnRequest } from './executeTurnRequest'
 import createDebug, { Debugger } from 'debug'
+import pjson from './../package.json'
+import os from 'os'
 
 interface streamRead {
   done: boolean,
@@ -81,9 +83,7 @@ export class CopilotStudioClient {
   }
 
   private static getProductInfo (): string {
-    const version = require('../../../package.json').version
-    const os = require('os')
-    return `CopilotStudioClient.agents-sdk-js/${version} nodejs/${process.version}  ${os.platform()}-${os.arch()}/${os.release()}`
+    return `CopilotStudioClient.agents-sdk-js/${pjson.version} nodejs/${process.version}  ${os.platform()}-${os.arch()}/${os.release()}`
   }
 
   public async startConversationAsync (emitStartConversationEvent: boolean = true): Promise<Activity> {
