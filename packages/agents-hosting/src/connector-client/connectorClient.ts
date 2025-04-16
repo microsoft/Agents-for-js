@@ -70,7 +70,8 @@ export class ConnectorClient {
     const axiosInstance = axios.create({
       baseURL,
       headers: {
-        Accept: 'application/json'
+        Accept: 'application/json',
+        'User-Agent': ConnectorClient.getProductInfo(),
       },
       transformRequest: [
         (data, headers) => {
@@ -83,6 +84,12 @@ export class ConnectorClient {
       axiosInstance.defaults.headers.common.Authorization = `Bearer ${token}`
     }
     return new ConnectorClient(axiosInstance)
+  }
+
+  protected static getProductInfo (): string {
+    const version = require('../../../package.json').version
+    const os = require('os')
+    return `agents-sdk-js/${version} nodejs/${process.version}  ${os.platform()}-${os.arch()}/${os.release()}`
   }
 
   /**

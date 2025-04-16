@@ -33,7 +33,8 @@ export class TeamsConnectorClient extends ConnectorClient {
     const axiosInstance = axios.create({
       baseURL,
       headers: {
-        Accept: 'application/json'
+        Accept: 'application/json',
+        'User-Agent': ConnectorClient.getProductInfo(),
       }
     })
 

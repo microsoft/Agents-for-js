@@ -80,6 +80,12 @@ export class CopilotStudioClient {
     return activities
   }
 
+  private static getProductInfo (): string {
+    const version = require('../../../package.json').version
+    const os = require('os')
+    return `agents-sdk-js/${version} nodejs/${process.version}  ${os.platform()}-${os.arch()}/${os.release()}`
+  }
+
   public async startConversationAsync (emitStartConversationEvent: boolean = true): Promise<Activity> {
     const uriStart: string = getCopilotStudioConnectionUrl(this.settings)
     const body = { emitStartConversationEvent }
@@ -89,7 +95,8 @@ export class CopilotStudioClient {
       url: uriStart,
       headers: {
         Accept: 'text/event-stream',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'User-Agent': CopilotStudioClient.getProductInfo(),
       },
       data: body,
       responseType: 'stream',
