@@ -83,7 +83,7 @@ export class CopilotStudioClient {
   private static getProductInfo (): string {
     const version = require('../../../package.json').version
     const os = require('os')
-    return `agents-sdk-js/${version} nodejs/${process.version}  ${os.platform()}-${os.arch()}/${os.release()}`
+    return `CopilotStudioClient.agents-sdk-js/${version} nodejs/${process.version}  ${os.platform()}-${os.arch()}/${os.release()}`
   }
 
   public async startConversationAsync (emitStartConversationEvent: boolean = true): Promise<Activity> {
