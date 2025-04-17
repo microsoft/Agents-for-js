@@ -9,7 +9,7 @@ import { getCopilotStudioConnectionUrl } from './powerPlatformEnvironment'
 import { Activity, ActivityTypes, ConversationAccount } from '@microsoft/agents-activity'
 import { ExecuteTurnRequest } from './executeTurnRequest'
 import createDebug, { Debugger } from 'debug'
-import pjson from './../package.json'
+import pjson from '@microsoft/agents-copilotstudio-client/package.json'
 import os from 'os'
 
 interface streamRead {
