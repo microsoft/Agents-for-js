@@ -1,7 +1,7 @@
 /** * Copyright (c) Microsoft Corporation. All rights reserved. * Licensed under the MIT License. */
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios'
 import { Activity, ChannelAccount } from '@microsoft/agents-activity'
-import { ConnectorClient, AuthConfiguration, AuthProvider } from '@microsoft/agents-hosting'
+import { ConnectorClient, AuthConfiguration, AuthProvider, getProductInfo } from '@microsoft/agents-hosting'
 import { TeamsChannelAccount } from './teamsChannelAccount'
 import { TeamsPagedMembersResult } from './teamsPagedMembersResult'
 import { TeamDetails } from './teamDetails'
@@ -33,7 +33,8 @@ export class TeamsConnectorClient extends ConnectorClient {
     const axiosInstance = axios.create({
       baseURL,
       headers: {
-        Accept: 'application/json'
+        Accept: 'application/json',
+        'User-Agent': getProductInfo(),
       }
     })
 

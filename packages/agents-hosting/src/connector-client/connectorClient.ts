@@ -10,7 +10,10 @@ import { ResourceResponse } from './resourceResponse'
 import { AttachmentInfo } from './attachmentInfo'
 import { AttachmentData } from './attachmentData'
 import { normalizeOutgoingActivity } from '../activityWireCompat'
+import { getProductInfo } from '../getProductInfo'
 const logger = debug('agents:connector-client')
+
+export { getProductInfo }
 
 /**
  * ConnectorClient is a client for interacting with the Microsoft Connector API.
@@ -70,7 +73,8 @@ export class ConnectorClient {
     const axiosInstance = axios.create({
       baseURL,
       headers: {
-        Accept: 'application/json'
+        Accept: 'application/json',
+        'User-Agent': getProductInfo(),
       },
       transformRequest: [
         (data, headers) => {
