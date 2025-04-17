@@ -2,9 +2,7 @@
 // Licensed under the MIT License.
 
 import { CardAction } from '@microsoft/agents-activity'
-import { TokenExchangeResource } from './tokenExchangeResource'
-import { TokenPostResource } from './tokenPostResource'
-
+import { TokenExchangeResource, TokenPostResource } from './signingResource'
 /**
  * Represents an OAuth card.
  */

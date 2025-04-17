@@ -3,7 +3,6 @@
 import { debug } from './../logger'
 import { Activity, ActivityTypes, Attachment } from '@microsoft/agents-activity'
 import {
-  CloudAdapter,
   CardFactory,
   AgentStatePropertyAccessor,
   UserState,
@@ -13,13 +12,12 @@ import {
   TokenExchangeRequest,
   UserTokenClient
 } from '../'
-import { TokenResponse } from './tokenResponse'
+import { TokenRequestStatus, TokenResponse } from './tokenResponse'
 
 const logger = debug('agents:oauth-flow')
 
-class FlowState {
+export class FlowState {
   public flowStarted: boolean = false
-  public userToken: string = ''
   public flowExpires: number = 0
 }
 
@@ -55,43 +53,22 @@ export class OAuthFlow {
     logger.info('Starting OAuth flow')
     this.state = await this.getUserState(context)
 
-    if (this.state.userToken !== '') {
-      logger.info('Token found in user state')
-      return {
-        channelId: context.activity.channelId!,
-        connectionName: this.absOauthConnectionName!,
-        token: this.state.userToken,
-        expires: this.state.flowExpires
-      }
-    }
-
-    const adapter = context.adapter as CloudAdapter
     const authConfig = context.adapter.authConfig
     if (this.absOauthConnectionName === '') {
       throw new Error('connectionName is not set in the auth config, review your environment variables')
     }
-    if (this.userTokenClient === undefined) {
-      const scope = 'https://api.botframework.com'
-      const accessToken = await adapter.authProvider.getAccessToken(authConfig, scope)
-      this.userTokenClient = new UserTokenClient(accessToken)
-    }
+    await this.initializeTokenClient(context)
 
-    const token = await this.userTokenClient.getUserToken(this.absOauthConnectionName, context.activity.channelId!, context.activity.from?.id!)
-    if (token?.token) {
-      this.state.userToken = token.token
+    const tokenResponse = await this.userTokenClient!.getUserToken(this.absOauthConnectionName, context.activity.channelId!, context.activity.from?.id!)
+    if (tokenResponse?.status === TokenRequestStatus.Success) {
       this.state.flowStarted = false
       this.state.flowExpires = 0
       await this.flowStateAccessor.set(context, this.state)
       logger.info('User token retrieved successfully from service')
-      return {
-        channelId: context.activity.channelId!,
-        connectionName: this.absOauthConnectionName,
-        token: token?.token,
-        expires: this.state.flowExpires
-      }
+      return tokenResponse
     }
 
-    const signingResource: SigningResource = await this.userTokenClient.getSignInResource(authConfig.clientId!, this.absOauthConnectionName, context.activity)
+    const signingResource: SigningResource = await this.userTokenClient!.getSignInResource(authConfig.clientId!, this.absOauthConnectionName, context.activity)
     const oCard: Attachment = CardFactory.oauthCard(this.absOauthConnectionName, 'Sign in', 'login', signingResource)
     const cardActivity : Activity = MessageFactory.attachment(oCard)
     await context.sendActivity(cardActivity)
@@ -100,10 +77,8 @@ export class OAuthFlow {
     await this.flowStateAccessor.set(context, this.state)
     logger.info('OAuth begin flow completed, waiting for user to sign in')
     return {
-      channelId: context.activity.channelId!,
-      connectionName: this.absOauthConnectionName,
-      token: null,
-      expires: this.state.flowExpires
+      token: undefined,
+      status: TokenRequestStatus.InProgress
     }
   }
 
@@ -112,56 +87,50 @@ export class OAuthFlow {
    * @param context The turn context.
    * @returns A promise that resolves to the user token.
    */
-  public async continueFlow (context: TurnContext): Promise<string | null> {
+  public async continueFlow (context: TurnContext): Promise<TokenResponse | null> {
+    this.state = await this.getUserState(context)
+    await this.initializeTokenClient(context)
     if (this.state?.flowExpires !== 0 && Date.now() > this.state!.flowExpires) {
       logger.warn('Flow expired')
       this.state!.flowStarted = false
-      this.state!.userToken = ''
       await context.sendActivity(MessageFactory.text('Sign-in session expired. Please try again.'))
       return null
     }
-    this.state = await this.getUserState(context)
     const contFlowActivity = context.activity
-    // const authConfig = context.adapter.authConfig
-
     if (contFlowActivity.type === ActivityTypes.Message) {
       const magicCode = contFlowActivity.text as string
-      const result = await this.userTokenClient?.getUserToken(this.absOauthConnectionName, contFlowActivity.channelId!, contFlowActivity.from?.id!, magicCode)
-      return result?.token!
+      const result = await this.userTokenClient?.getUserToken(this.absOauthConnectionName, contFlowActivity.channelId!, contFlowActivity.from?.id!, magicCode)!
+      return result
     }
 
     if (contFlowActivity.type === ActivityTypes.Invoke && contFlowActivity.name === 'signin/verifyState') {
       logger.info('Continuing OAuth flow with verifyState')
       const tokenVerifyState = contFlowActivity.value as TokenVerifyState
       const magicCode = tokenVerifyState.state
-      const result = await this.userTokenClient?.getUserToken(this.absOauthConnectionName, contFlowActivity.channelId!, contFlowActivity.from?.id!, magicCode)
-      return result?.token!
+      const result = await this.userTokenClient?.getUserToken(this.absOauthConnectionName, contFlowActivity.channelId!, contFlowActivity.from?.id!, magicCode)!
+      return result
     }
 
     if (contFlowActivity.type === ActivityTypes.Invoke && contFlowActivity.name === 'signin/tokenExchange') {
       logger.info('Continuing OAuth flow with tokenExchange')
       const tokenExchangeRequest = contFlowActivity.value as TokenExchangeRequest
-      // if (this.tokenExchangeId === tokenExchangeRequest.id) {
-      //   return '' // dedupe
-      // }
+      if (this.tokenExchangeId === tokenExchangeRequest.id) { // dedupe
+        return { status: TokenRequestStatus.InProgress, token: undefined }
+      }
       this.tokenExchangeId = tokenExchangeRequest.id!
       const userTokenResp = await this.userTokenClient?.exchangeTokenAsync(contFlowActivity.from?.id!, this.absOauthConnectionName, contFlowActivity.channelId!, tokenExchangeRequest)
-      if (userTokenResp?.token) {
+      if (userTokenResp?.status === TokenRequestStatus.Success) {
         logger.info('Token exchanged')
-        this.state!.userToken = userTokenResp.token
         this.state!.flowStarted = false
-        await context.sendActivity(MessageFactory.text('User signed in' + new Date().toISOString()))
         await this.flowStateAccessor.set(context, this.state)
-        return this.state?.userToken!
+        return userTokenResp
       } else {
         logger.warn('Token exchange failed')
         this.state!.flowStarted = true
-        this.state!.userToken = ''
-        await context.sendActivity(MessageFactory.text('Exchange failed. Please try again.'))
-        return null
+        return { status: TokenRequestStatus.Failed, token: undefined }
       }
     }
-    return null
+    return { status: TokenRequestStatus.Failed, token: undefined }
   }
 
   /**
@@ -170,8 +139,9 @@ export class OAuthFlow {
    * @returns A promise that resolves when the sign-out operation is complete.
    */
   public async signOut (context: TurnContext): Promise<void> {
+    this.state = await this.getUserState(context)
+    await this.initializeTokenClient(context)
     await this.userTokenClient?.signOut(context.activity.from?.id as string, this.absOauthConnectionName, context.activity.channelId as string)
-    this.state!.userToken = ''
     this.state!.flowExpires = 0
     await this.flowStateAccessor.set(context, this.state)
     logger.info('User signed out successfully')
@@ -188,5 +158,13 @@ export class OAuthFlow {
       userProfile = new FlowState()
     }
     return userProfile
+  }
+
+  private async initializeTokenClient (context: TurnContext) {
+    if (this.userTokenClient === undefined) {
+      const scope = 'https://api.botframework.com'
+      const accessToken = await context.adapter.authProvider.getAccessToken(context.adapter.authConfig, scope)
+      this.userTokenClient = new UserTokenClient(accessToken)
+    }
   }
 }

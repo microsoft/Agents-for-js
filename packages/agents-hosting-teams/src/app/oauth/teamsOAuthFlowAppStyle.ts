@@ -11,7 +11,8 @@ import {
   TokenExchangeRequest,
   TurnState,
   Storage,
-  UserTokenClient
+  UserTokenClient,
+  TokenRequestStatus
 } from '@microsoft/agents-hosting'
 
 const logger = debug('agents:teams-oauth-flow-app-style')
@@ -61,7 +62,7 @@ export class TeamsOAuthFlowAppStyle {
     return retVal
   }
 
-  public async continueFlow (context: TurnContext): Promise<string> {
+  public async continueFlow (context: TurnContext) {
     if (this.appState!.sso!.userToken !== '') {
       return ''
     }
@@ -81,12 +82,14 @@ export class TeamsOAuthFlowAppStyle {
     }
     this.tokenExchangeId = tokenExchangeRequest.id!
     const userTokenReq = await this.userTokenClient?.exchangeTokenAsync(contFlowActivity.from?.id!, authConfig.connectionName!, contFlowActivity.channelId!, tokenExchangeRequest)
-    logger.info('Token obtained')
-    this.appState!.sso!.userToken = userTokenReq.token
-    this.appState!.sso!.flowStarted = false
-    await context.sendActivity(MessageFactory.text('User signed in ' + new Date().toISOString()))
-    await this.appState!.save(context, this.storage)
-    return this.appState!.sso?.userToken!
+    if (userTokenReq?.status === TokenRequestStatus.Success) {
+      logger.info('Token obtained')
+      // this.appState!.sso!.userToken = userTokenReq.token
+      this.appState!.sso!.flowStarted = false
+      await context.sendActivity(MessageFactory.text('User signed in ' + new Date().toISOString()))
+      await this.appState!.save(context, this.storage)
+      return this.appState!.sso?.userToken!
+    }
   }
 
   public async signOut (context: TurnContext): Promise<void> {
