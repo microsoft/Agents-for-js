@@ -3,7 +3,6 @@ import { describe, it, beforeEach, afterEach } from 'node:test'
 import { CloudAdapter, FlowState, MemoryStorage, OAuthFlow, SigningResource, TokenRequestStatus, TurnContext, UserState, UserTokenClient } from './../../src'
 import { Activity, ActivityTypes } from '@microsoft/agents-activity'
 import sinon from 'sinon'
-import { create } from 'domain'
 
 const createTestActivity = () => Activity.fromObject({
   type: ActivityTypes.Message,
@@ -37,7 +36,7 @@ describe('OAuthFlow', () => {
   const userState = new UserState(new MemoryStorage())
   const fakseUserTokenClient = new UserTokenClient('fakeToken')
   const fakeAdapter = new CloudAdapter({ clientId: 'fakeClientId', clientSecret: 'fakeClientSecret', issuers: [] })
-  const context = new TurnContext(fakeAdapter, createTestActivity()) 
+  const context = new TurnContext(fakeAdapter, createTestActivity())
   let oAuthFlow: OAuthFlow
   let mockUserTokenClient: sinon.SinonMock
   let mockTurnContext: sinon.SinonMock
