@@ -3,9 +3,9 @@
  * Licensed under the MIT License.
  */
 
+import { Activity, ActivityTypes, ConversationReference } from '@microsoft/agents-activity'
 import { TurnState } from './turnState'
 import { BaseAdapter } from '../baseAdapter'
-import { Activity, ActivityTypes, ConversationReference } from '@microsoft/agents-activity'
 import { AgentApplicationOptions } from './agentApplicationOptions'
 import { RouteSelector } from './routeSelector'
 import { RouteHandler } from './routeHandler'
@@ -15,7 +15,7 @@ import { AppRoute } from './appRoute'
 import { TurnContext } from '../turnContext'
 import { ResourceResponse } from '../connector-client'
 import { debug } from '../logger'
-import { UserAuthorization } from './oauth/userAuthorization'
+import { UserIdentity } from './oauth/userIdentity'
 import { MemoryStorage } from '../storage'
 
 const logger = debug('agents:agent-application')
@@ -30,7 +30,7 @@ export class AgentApplication<TState extends TurnState> {
   protected readonly _afterTurn: ApplicationEventHandler<TState>[] = []
   private readonly _adapter?: BaseAdapter
   private _typingTimer: any
-  private readonly _userAuthorization?: UserAuthorization
+  private readonly _userIdentity?: UserIdentity
 
   public constructor (options?: Partial<AgentApplicationOptions<TState>>) {
     this._options = {
@@ -45,7 +45,7 @@ export class AgentApplication<TState extends TurnState> {
     }
 
     if (this._options.authentication && this._options.authentication.enableSSO && this._options.authentication.ssoConnectionName) {
-      this._userAuthorization = new UserAuthorization(this._options.storage ?? new MemoryStorage(), this._options.authentication.ssoConnectionName)
+      this._userIdentity = new UserIdentity(this._options.storage ?? new MemoryStorage(), this._options.authentication.ssoConnectionName)
     }
 
     if (this._options.longRunningMessages && !this._adapter && !this._options.agentAppId) {
@@ -65,14 +65,14 @@ export class AgentApplication<TState extends TurnState> {
     return this._adapter
   }
 
-  public get userAuthorization (): UserAuthorization {
-    if (!this._userAuthorization) {
+  public get userIdentity (): UserIdentity {
+    if (!this._userIdentity) {
       throw new Error(
         'The Application.authentication property is unavailable because no authentication options were configured.'
       )
     }
 
-    return this._userAuthorization
+    return this._userIdentity
   }
 
   public get options (): AgentApplicationOptions<TState> {
@@ -129,9 +129,7 @@ export class AgentApplication<TState extends TurnState> {
     }
 
     if (!this.options.agentAppId) {
-      console.warn(
-        "Calling Application.continueConversationAsync() without a configured 'agentAppId'. In production environments, a 'agentAppId' is required."
-      )
+      logger.warn("Calling Application.continueConversationAsync() without a configured 'agentAppId'. In production environments, a 'agentAppId' is required.")
     }
 
     let reference: ConversationReference

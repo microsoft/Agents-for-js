@@ -7,7 +7,7 @@ import { CloudAdapter } from '../cloudAdapter'
 import { InputFileDownloader } from './inputFileDownloader'
 import { TurnState } from './turnState'
 import { Storage } from '../storage'
-import { UserAuthorizationOptions } from './oauth/userAuthorizationOptions'
+import { UserIdentityOptions } from './oauth/userIdentity'
 
 export interface AgentApplicationOptions<TState extends TurnState> {
   adapter?: CloudAdapter;
@@ -17,5 +17,5 @@ export interface AgentApplicationOptions<TState extends TurnState> {
   longRunningMessages: boolean;
   turnStateFactory: () => TState;
   fileDownloaders?: InputFileDownloader<TState>[];
-  authentication?: UserAuthorizationOptions;
+  authentication?: UserIdentityOptions;
 }

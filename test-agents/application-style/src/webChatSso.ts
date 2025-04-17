@@ -1,11 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+import { ActivityTypes } from '@microsoft/agents-activity'
 import { AgentApplicationBuilder, CardFactory, MemoryStorage, MessageFactory, TurnContext, TurnState } from '@microsoft/agents-hosting'
 import { Template } from 'adaptivecards-templating'
 import * as userTemplate from '../cards/UserProfileCard.json'
 import { getUserInfo } from './userGraphClient'
-import { ActivityTypes } from '@microsoft/agents-activity'
 
 interface ConversationData {
   promptedForUserName: boolean;
@@ -21,10 +21,11 @@ type ApplicationTurnState = TurnState<ConversationData, UserProfile>
 const storage = new MemoryStorage()
 export const app = new AgentApplicationBuilder<ApplicationTurnState>()
   .withStorage(storage)
-  .withAuthentication({ enableSSO: true, ssoConnectionName: process.env.connectionName }).build()
+  .withAuthentication({ enableSSO: true, ssoConnectionName: process.env.connectionName })
+  .build()
 
 app.message('/signout', async (context: TurnContext, state: ApplicationTurnState) => {
-  await app.userAuthorization.signOut(context, state)
+  await app.userIdentity.signOut(context, state)
   await context.sendActivity(MessageFactory.text('User signed out'))
 })
 
@@ -76,7 +77,7 @@ app.activity(ActivityTypes.Message, async (context: TurnContext, state: Applicat
 })
 
 async function getToken (context: TurnContext, state: ApplicationTurnState): Promise<void> {
-  const userToken = await app.userAuthorization.getOAuthToken(context, state)
+  const userToken = await app.userIdentity.getOAuthToken(context, state)
   if (userToken.length !== 0) {
     await sendLoggedUserInfo(context, userToken)
   }
