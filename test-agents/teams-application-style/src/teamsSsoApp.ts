@@ -32,7 +32,7 @@ app.message('/signin', async (context: TurnContext, state: ApplicationTurnState)
     await sendLoggedUserInfo(context, userToken).then(async () => {
       const token = await app.teamsAuthManager.continueFlow(context)
       if (token !== '') {
-        await sendLoggedUserInfo(context, token)
+        await sendLoggedUserInfo(context, token!)
       }
     })
   }
@@ -61,7 +61,7 @@ app.message('/loggedUserInfo', async (context: TurnContext, state: ApplicationTu
 app.activity(ActivityTypes.Invoke, async (context: TurnContext, state: ApplicationTurnState) => {
   const token = await app.teamsAuthManager.continueFlow(context)
   if (token !== '') {
-    await sendLoggedUserInfo(context, token)
+    await sendLoggedUserInfo(context, token!)
   }
 })
 
