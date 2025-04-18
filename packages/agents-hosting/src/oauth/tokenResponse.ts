@@ -19,6 +19,8 @@ export enum TokenRequestStatus {
    * Indicates that the token request is pending.
    */
   InProgress = 'InProgress',
+
+  Expired = 'Expired',
 }
 
 /**

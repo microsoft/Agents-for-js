@@ -154,6 +154,17 @@ export class AgentApplication<TState extends TurnState> {
     return this
   }
 
+  public onSignInSuccess (handler: (context: TurnContext, state: TurnState) => void): this {
+    if (this._userIdentity) {
+      this._userIdentity.onSignInSuccess(handler)
+    } else {
+      throw new Error(
+        'The Application.authentication property is unavailable because no authentication options were configured.'
+      )
+    }
+    return this
+  }
+
   public async run (turnContext: TurnContext): Promise<boolean> {
     return await this.startLongRunningCall(turnContext, async (context) => {
       this.startTypingTimer(context)

@@ -44,6 +44,11 @@ export class OAuthFlow {
     this.userTokenClient = tokenClient
   }
 
+  public async getUserToken (context: TurnContext): Promise<TokenResponse> {
+    await this.initializeTokenClient(context)
+    return await this.userTokenClient?.getUserToken(this.absOauthConnectionName, context.activity.channelId!, context.activity.from?.id!)!
+  }
+
   /**
    * Begins the OAuth flow.
    * @param context The turn context.
@@ -87,14 +92,14 @@ export class OAuthFlow {
    * @param context The turn context.
    * @returns A promise that resolves to the user token.
    */
-  public async continueFlow (context: TurnContext): Promise<TokenResponse | null> {
+  public async continueFlow (context: TurnContext): Promise<TokenResponse> {
     this.state = await this.getUserState(context)
     await this.initializeTokenClient(context)
     if (this.state?.flowExpires !== 0 && Date.now() > this.state!.flowExpires) {
       logger.warn('Flow expired')
       this.state!.flowStarted = false
       await context.sendActivity(MessageFactory.text('Sign-in session expired. Please try again.'))
-      return null
+      return { status: TokenRequestStatus.Expired, token: undefined }
     }
     const contFlowActivity = context.activity
     if (contFlowActivity.type === ActivityTypes.Message) {
