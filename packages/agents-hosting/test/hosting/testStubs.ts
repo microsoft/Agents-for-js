@@ -1,4 +1,4 @@
-import { AttachmentData, AttachmentInfo, BaseAdapter, ResourceResponse, TurnContext, TurnState } from '../../src'
+import { AttachmentData, AttachmentInfo, BaseAdapter, ResourceResponse, TurnContext } from '../../src'
 import { Activity, ConversationReference } from '@microsoft/agents-activity'
 
 export class TestAdapter extends BaseAdapter {
@@ -37,11 +37,4 @@ export class TestAdapter extends BaseAdapter {
   getAttachment (attachmentId: string, viewId: string): Promise<NodeJS.ReadableStream> {
     throw new Error('Method not implemented.')
   }
-}
-
-export const createTestTurnContextAndState = async (adapter: TestAdapter, activity: Partial<Activity>): Promise<[TurnContext, TurnState]> => {
-  const context = new TurnContext(adapter, activity as Activity)
-  const state = new TurnState()
-  await state.load(context)
-  return [context, state]
 }

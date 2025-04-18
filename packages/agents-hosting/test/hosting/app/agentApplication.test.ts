@@ -3,9 +3,10 @@ import sinon from 'sinon'
 import { describe, it, beforeEach } from 'node:test'
 
 import { AgentApplication } from './../../../src/app'
-import { createTestTurnContextAndState, TestAdapter } from '../testStubs'
+import { TestAdapter } from '../testStubs'
 import { Activity, ActivityTypes } from '@microsoft/agents-activity'
 import { MessageFactory } from '../../../src/messageFactory'
+import { TurnContext } from '../../../src/turnContext'
 
 const testActivity = Activity.fromObject({
   type: 'message',
@@ -51,7 +52,7 @@ describe('Application', () => {
       assert.notEqual(state, undefined)
       called = true
     })
-    const [context] = await createTestTurnContextAndState(testAdapter, testActivity)
+    const context = new TurnContext(testAdapter, testActivity)
     const handled = await app.run(context)
     await context.sendActivity('test')
     assert.equal(called, true)
@@ -66,7 +67,7 @@ describe('Application', () => {
       assert.notEqual(state, undefined)
       called = true
     })
-    const [context] = await createTestTurnContextAndState(testAdapter, testActivity)
+    const context = new TurnContext(testAdapter, testActivity)
     const handled = await app.run(context)
     await context.sendActivity(MessageFactory.text('/yo'))
     assert.equal(called, true)
@@ -81,7 +82,7 @@ describe('Application', () => {
       assert.notEqual(state, undefined)
       called = true
     })
-    const [context] = await createTestTurnContextAndState(testAdapter, testActivity)
+    const context = new TurnContext(testAdapter, testActivity)
     const handled = await app.run(context)
     await context.sendActivity(MessageFactory.text('/yo'))
     assert.equal(called, true)
@@ -96,7 +97,7 @@ describe('Application', () => {
       assert.notEqual(state, undefined)
       called = true
     })
-    const [context] = await createTestTurnContextAndState(testAdapter, testActivity)
+    const context = new TurnContext(testAdapter, testActivity)
     const handled = await app.run(context)
     await context.sendActivity(MessageFactory.text('/yo'))
     assert.equal(called, true)
@@ -116,7 +117,7 @@ describe('Application', () => {
       assert.notEqual(state2, undefined)
       timesCalled++
     })
-    const [context] = await createTestTurnContextAndState(testAdapter, testActivity)
+    const context = new TurnContext(testAdapter, testActivity)
     const handled = await app.run(context)
     await context.sendActivity('/yo')
     assert.equal(timesCalled, 1)
@@ -136,7 +137,7 @@ describe('Application', () => {
       assert.notEqual(state2, undefined)
       timesCalled++
     })
-    const [context] = await createTestTurnContextAndState(testAdapter, testActivity)
+    const context = new TurnContext(testAdapter, testActivity)
     const handled = await app.run(context)
     await context.sendActivity('/yo')
     assert.equal(timesCalled, 1)

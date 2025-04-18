@@ -1,9 +1,10 @@
 import { strict as assert } from 'assert'
-import { describe, it } from 'node:test'
+import { describe, it, beforeEach } from 'node:test'
 import { TurnState } from '../../../src/app/turnState'
 import { TurnStateProperty } from '../../../src/app/turnStateProperty'
 import { Activity } from '@microsoft/agents-activity'
-import { TestAdapter, createTestTurnContextAndState } from '../testStubs'
+import { TestAdapter } from '../testStubs'
+import { TurnContext } from '../../../src/turnContext'
 
 const testActivity = Activity.fromObject({
   type: 'message',
@@ -21,6 +22,15 @@ const testActivity = Activity.fromObject({
 })
 
 describe('TurnStateProperty', () => {
+  let context: TurnContext
+  let state: TurnState
+  beforeEach(async () => {
+    context = new TurnContext(new TestAdapter(), testActivity)
+    state = new TurnState()
+    await state.load(context)
+  })
+  // Reset the TurnState instance before each test
+
   it('should throw an error when TurnState is missing state scope named scope', () => {
     const state = new TurnState()
     const scopeName = 'scope'
@@ -33,8 +43,6 @@ describe('TurnStateProperty', () => {
   })
 
   it('should set the turn state property', async () => {
-    const adapter = new TestAdapter()
-    const [context, state] = await createTestTurnContextAndState(adapter, testActivity)
     const propertyName = 'tempStateProperty'
     const turnStateProperty = new TurnStateProperty(state, 'temp', propertyName)
 
@@ -44,8 +52,6 @@ describe('TurnStateProperty', () => {
   })
 
   it('should delete the turn state property', async () => {
-    const adapter = new TestAdapter()
-    const [context, state] = await createTestTurnContextAndState(adapter, testActivity)
     const propertyName = 'tempStateProperty'
     const turnStateProperty = new TurnStateProperty(state, 'temp', propertyName)
 
