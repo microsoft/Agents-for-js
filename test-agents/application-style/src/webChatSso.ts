@@ -13,33 +13,31 @@ export const app = new AgentApplicationBuilder()
   .withAuthentication({ enableSSO: true, ssoConnectionName: process.env.connectionName })
   .build()
 
-app.message('/signout', async (context: TurnContext, state) => {
+const me = async (context: TurnContext, state: TurnState) : Promise<void> => {
+  await showGraphProfile(context, state)
+}
+
+const signin = async (context: TurnContext, state: TurnState) : Promise<void> => {
+  await app.userIdentity.authenticate(context, state)
+  await context.sendActivity(MessageFactory.text('User signed in'))
+}
+
+const signout = async (context: TurnContext, state: TurnState) : Promise<void> => {
   await app.userIdentity.signOut(context, state)
   await context.sendActivity(MessageFactory.text('User signed out'))
-})
+}
 
-app.message('/signin', async (context: TurnContext, state) => {
-  await app.userIdentity.authenticate(context, state)
-})
+const welcome = async (context: TurnContext, state: TurnState) : Promise<void> => {
+  await context.sendActivity(MessageFactory.text('Welcome to the Web Chat SSO sample!'))
+  await context.sendActivity(MessageFactory.text('Please enter "/signin" to sign in or "/signout" to sign out'))
+}
 
-app.message('/me', async (context: TurnContext, state) => {
-  await showGraphProfile(context, state)
-})
-
-app.conversationUpdate('membersAdded', async (context: TurnContext, state) => {
-  await state.load(context, storage)
-  const membersAdded = context.activity.membersAdded!
-  for (let cnt = 0; cnt < membersAdded.length; ++cnt) {
-    if (membersAdded[cnt].id !== context.activity.recipient!.id) {
-      await context.sendActivity(MessageFactory.text('Please enter "/signin" to sign in or "/signout" to sign out'))
-      await context.sendActivity(MessageFactory.text('You can also save your user name, just type anything and I will ask What is your name'))
-    }
-  }
-})
-
-app.activity(ActivityTypes.Invoke, async (context: TurnContext, state) => {
-  await app.userIdentity.authenticate(context, state)
-})
+app.message('/me', me)
+app.message('/signout', signout)
+app.message('/signin', signin)
+app.message('/help', welcome)
+app.activity(ActivityTypes.Invoke, signin)
+app.conversationUpdate('membersAdded', welcome)
 
 app.onSignInSuccess(async (context: TurnContext, state) => {
   await context.sendActivity(MessageFactory.text('User signed in successfully'))
