@@ -27,6 +27,9 @@ async function loadApp () {
     case 'webChatSso':
       module = (await import('./webChatSso')).app
       return module
+    case 'cardsAgent':
+      module = (await import('./cardsAgent')).cardAgent
+      return module
     default:
       throw new Error(`Agent with name ${moduleName} is not recognized.`)
   }
