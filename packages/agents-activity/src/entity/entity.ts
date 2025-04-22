@@ -24,4 +24,4 @@ export interface Entity {
  */
 export const entityZodSchema = z.object({
   type: z.string().min(1)
-})
+}).passthrough()
