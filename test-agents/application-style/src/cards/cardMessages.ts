@@ -7,8 +7,8 @@ export class CardMessages {
     // In this code the emulator is accounted for with the 'title' parameter, but in other channels you may
     // need to provide a value for other parameters like 'text' or 'displayText'.
     const buttons = [
-      { type: ActionTypes.ImBack, title: '1. Adaptive Card', value: '/1' },
-      { type: ActionTypes.ImBack, title: '2. Animation Card', value: '/2' },
+      { type: ActionTypes.ImBack, title: '1. Adaptive Card', value: '1' },
+      { type: ActionTypes.ImBack, title: '2. Animation Card', value: '2' },
       { type: ActionTypes.ImBack, title: '3. Audio Card', value: '3' },
       { type: ActionTypes.ImBack, title: '4. Hero Card', value: '4' },
       { type: ActionTypes.ImBack, title: '5. Receipt Card', value: '5' },
@@ -16,7 +16,7 @@ export class CardMessages {
       { type: ActionTypes.ImBack, title: '7. o365Connector Card', value: '7' },
       { type: ActionTypes.ImBack, title: '8. Signin Card', value: '8' },
       { type: ActionTypes.ImBack, title: '9. Thumbnail Card', value: '9' },
-      { type: ActionTypes.ImBack, title: '10. Video Card', value: '10' },
+      { type: ActionTypes.ImBack, title: '10. Video Card', value: '/ten' },
     ]
 
     const card = CardFactory.heroCard('', undefined,
