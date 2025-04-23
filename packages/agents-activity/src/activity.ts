@@ -55,7 +55,7 @@ export const activityZodSchema = z.object({
   summary: z.string().min(1).optional(),
   suggestedActions: suggestedActionsZodSchema.optional(),
   attachments: z.array(attachmentZodSchema).optional(),
-  entities: z.array(entityZodSchema).optional(),
+  entities: z.array(entityZodSchema.passthrough()).optional(),
   channelData: z.any().optional(),
   action: z.string().min(1).optional(),
   replyToId: z.string().min(1).optional(),
