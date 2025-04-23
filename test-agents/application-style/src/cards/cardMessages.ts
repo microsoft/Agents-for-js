@@ -1,5 +1,5 @@
 import { ActionTypes, Activity, ActivityTypes, Attachment } from '@microsoft/agents-activity'
-import { CardFactory, TurnContext } from '@microsoft/agents-hosting'
+import { CardFactory, MessageFactory, TurnContext } from '@microsoft/agents-hosting'
 
 export class CardMessages {
   static async sendIntroCard (context: TurnContext): Promise<void> {
@@ -17,6 +17,7 @@ export class CardMessages {
       { type: ActionTypes.ImBack, title: '8. Signin Card', value: '8' },
       { type: ActionTypes.ImBack, title: '9. Thumbnail Card', value: '9' },
       { type: ActionTypes.ImBack, title: '10. Video Card', value: '/ten' },
+      { type: ActionTypes.ImBack, title: '11. Invoke Card', value: '/eleven' },
     ]
 
     const card = CardFactory.heroCard('', undefined,
@@ -219,6 +220,35 @@ export class CardMessages {
     )
 
     await CardMessages.sendActivity(context, card)
+  }
+
+  static async sendCardWithInvoke (context: TurnContext): Promise<void> {
+    const card = {
+      type: 'AdaptiveCard',
+      body: [
+        {
+          type: 'TextBlock',
+          size: 'Medium',
+          weight: 'Bolder',
+          text: 'Test Adaptive Card'
+        },
+        {
+          type: 'TextBlock',
+          text: 'Click the button to execute an action',
+          wrap: true
+        }
+      ],
+      actions: [
+        {
+          type: 'Action.Execute',
+          title: 'Do Stuff',
+          verb: 'doStuff'
+        }
+      ],
+      $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
+      version: '1.4'
+    }
+    await context.sendActivity(MessageFactory.attachment(CardFactory.adaptiveCard(card)))
   }
 
   private static async sendActivity (context: TurnContext, card: Attachment): Promise<void> {

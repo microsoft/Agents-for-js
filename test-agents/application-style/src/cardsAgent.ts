@@ -30,6 +30,7 @@ cardAgent.message('7', async (t, s) => await CardMessages.sendO365ConnectorCard(
 cardAgent.message('8', async (t, s) => await CardMessages.sendSigninCard(t))
 cardAgent.message('9', async (t, s) => await CardMessages.sendThumbnailCard(t))
 cardAgent.message('/ten', async (t, s) => await CardMessages.sendVideoCard(t))
+cardAgent.message('/eleven', async (t, s) => await CardMessages.sendCardWithInvoke(t))
 
 cardAgent.message('/cardActions', async (t, s) => {
   const template: AdaptiveCardsTemplating.Template = new AdaptiveCardsTemplating.Template(AdaptiveCardActions)
@@ -61,15 +62,16 @@ cardAgent.message('/suggestedActions', async (t, s) => {
 })
 
 cardAgent.activity('message', async (t, s) => {
+  const text = t.activity.text?.toLowerCase() ?? ''
   if (t.activity.value != null) {
     const submittedData = JSON.stringify(t.activity.value, null, 2)
     const replyText = `Data Submitted:\n${submittedData}`
 
     await t.sendActivity(MessageFactory.text(replyText))
-  }
-  const text = t.activity.text?.toLowerCase() ?? ''
-  if (text.includes('red') || text.includes('blue') || text.includes('green')) {
+  } else if (text.includes('red') || text.includes('blue') || text.includes('green')) {
     const replyText = `I agree, ${text} is the best color!`
     await t.sendActivity(MessageFactory.text(replyText))
+  } else {
+    await t.sendActivity('Welcome to the Cards Agent! type /cards or /cardActions or /suggestedActions.')
   }
 })

@@ -21,7 +21,7 @@ describe('Attachment', () => {
   })
 
   it('should throw an error if contentType is missing', () => {
-    // @ts-expect-error
+    // ts-expect-error
     const attachment: Attachment = { }
     assert.strictEqual(attachment.contentType, undefined)
   })

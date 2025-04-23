@@ -4,7 +4,7 @@
 import { ActivityTypes } from '@microsoft/agents-activity'
 import { AgentApplicationBuilder, CardFactory, MemoryStorage, MessageFactory, TokenRequestStatus, TurnContext, TurnState } from '@microsoft/agents-hosting'
 import { Template } from 'adaptivecards-templating'
-import * as userTemplate from '../cards/UserProfileCard.json'
+import * as userTemplate from './cards/UserProfileCard.json'
 import { getUserInfo } from './userGraphClient'
 
 const storage = new MemoryStorage()

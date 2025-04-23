@@ -9,7 +9,7 @@ import { z } from 'zod'
  * Interface representing an attachment.
  */
 export interface Attachment {
-  contentType: string
+  contentType?: string
   contentUrl?: string
   content?: unknown
   name?: string
@@ -20,7 +20,7 @@ export interface Attachment {
  * Zod schema for validating attachments.
  */
 export const attachmentZodSchema = z.object({
-  contentType: z.string().min(1),
+  contentType: z.string().min(1).optional(),
   contentUrl: z.string().min(1).optional(),
   content: z.unknown().optional(),
   name: z.string().min(1).optional(),
