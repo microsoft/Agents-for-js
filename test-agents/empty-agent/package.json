@@ -15,7 +15,6 @@
     "docker": "docker build -t \"$npm_package_name:$npm_package_version\" ."
   },
   "dependencies": {
-    "@microsoft/agents-hosting": "file:../../packages/agents-hosting",
-    "express": "^5.1.0"
+    "@microsoft/agents-hosting-express": "file:../../packages/agents-hosting-express"
   }
 }

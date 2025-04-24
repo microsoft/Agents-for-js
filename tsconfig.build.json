@@ -8,6 +8,9 @@
         "path": "packages/agents-hosting"
       },
       {
+        "path": "packages/agents-hosting-express"
+      },
+      {
         "path": "packages/agents-copilotstudio-client"
       },
       {
