@@ -29,6 +29,23 @@ const logger = debug('agents:agent-application')
 const TYPING_TIMER_DELAY = 1000
 type ApplicationEventHandler<TState extends TurnState> = (context: TurnContext, state: TState) => Promise<boolean>
 
+/**
+ * Executes the application logic for a given turn context.
+ *
+ * @param turnContext - The context for the current turn of the conversation.
+ * @returns A promise that resolves when the application logic has completed.
+ *
+ * @remarks
+ * This method is the entry point for processing a turn in the conversation.
+ * It delegates the actual processing to the `runInternal` method, which handles
+ * the core logic for routing and executing handlers.
+ *
+ * Example usage:
+ * ```typescript
+ * const app = new AgentApplication();
+ * await app.run(turnContext);
+ * ```
+ */
 export class AgentApplication<TState extends TurnState> {
   protected readonly _options: AgentApplicationOptions<TState>
   protected readonly _routes: AppRoute<TState>[] = []
@@ -85,6 +102,24 @@ export class AgentApplication<TState extends TurnState> {
     return this._options
   }
 
+  /**
+   * Sets an error handler for the application.
+   *
+   * @param handler - The error handler function to be called when an error occurs.
+   * @returns The current instance of the application.
+   *
+   * @remarks
+   * This method allows you to handle any errors that occur during turn processing.
+   * The handler will receive the turn context and the error that occurred.
+   *
+   * Example usage:
+   * ```typescript
+   * app.error(async (context, error) => {
+   *   console.error(`An error occurred: ${error.message}`);
+   *   await context.sendActivity('Sorry, something went wrong!');
+   * });
+   * ```
+   */
   public error (handler: (context: TurnContext, error: Error) => Promise<void>): this {
     if (this._adapter) {
       this._adapter.onTurnError = handler
@@ -93,11 +128,49 @@ export class AgentApplication<TState extends TurnState> {
     return this
   }
 
+  /**
+   * Adds a new route to the application for handling activities.
+   *
+   * @param selector - The selector function that determines if a route should handle the current activity.
+   * @param handler - The handler function that will be called if the selector returns true.
+   * @returns The current instance of the application.
+   *
+   * @remarks
+   * Routes are evaluated in the order they are added. The first route with a selector that returns true will be used.
+   *
+   * Example usage:
+   * ```typescript
+   * app.addRoute(
+   *   async (context) => context.activity.type === ActivityTypes.Message,
+   *   async (context, state) => {
+   *     await context.sendActivity('I received your message');
+   *   }
+   * );
+   * ```
+   */
   public addRoute (selector: RouteSelector, handler: RouteHandler<TState>): this {
     this._routes.push({ selector, handler })
     return this
   }
 
+  /**
+   * Adds a handler for specific activity types.
+   *
+   * @param type - The activity type(s) to handle. Can be a string, RegExp, RouteSelector, or array of these types.
+   * @param handler - The handler function that will be called when the specified activity type is received.
+   * @returns The current instance of the application.
+   *
+   * @remarks
+   * This method allows you to register handlers for specific activity types such as 'message', 'conversationUpdate', etc.
+   * You can specify multiple activity types by passing an array.
+   *
+   * Example usage:
+   * ```typescript
+   * app.activity(ActivityTypes.Message, async (context, state) => {
+   *   await context.sendActivity('I received your message');
+   * });
+   * ```
+   */
   public activity (
     type: string | RegExp | RouteSelector | (string | RegExp | RouteSelector)[],
     handler: (context: TurnContext, state: TState) => Promise<void>
@@ -109,6 +182,29 @@ export class AgentApplication<TState extends TurnState> {
     return this
   }
 
+  /**
+   * Adds a handler for conversation update events.
+   *
+   * @param event - The conversation update event to handle (e.g., 'membersAdded', 'membersRemoved').
+   * @param handler - The handler function that will be called when the specified event occurs.
+   * @returns The current instance of the application.
+   * @throws Error if the handler is not a function.
+   *
+   * @remarks
+   * Conversation update events occur when the state of a conversation changes, such as when members join or leave.
+   *
+   * Example usage:
+   * ```typescript
+   * app.conversationUpdate('membersAdded', async (context, state) => {
+   *   const membersAdded = context.activity.membersAdded;
+   *   for (const member of membersAdded) {
+   *     if (member.id !== context.activity.recipient.id) {
+   *       await context.sendActivity('Hello and welcome!');
+   *     }
+   *   }
+   * });
+   * ```
+   */
   public conversationUpdate (
     event: ConversationUpdateEvents,
     handler: (context: TurnContext, state: TState) => Promise<void>
@@ -124,6 +220,13 @@ export class AgentApplication<TState extends TurnState> {
     return this
   }
 
+  /**
+   * Continues a conversation asynchronously.
+   * @param conversationReferenceOrContext - The conversation reference or turn context.
+   * @param logic - The logic to execute during the conversation.
+   * @returns A promise that resolves when the conversation logic has completed.
+   * @throws Error if the adapter is not configured.
+   */
   protected async continueConversationAsync (
     conversationReferenceOrContext: ConversationReference | TurnContext,
     logic: (context: TurnContext) => Promise<void>
@@ -149,6 +252,31 @@ export class AgentApplication<TState extends TurnState> {
     await this._adapter.continueConversation(reference, logic)
   }
 
+  /**
+   * Adds a handler for message activities that match the specified keyword or pattern.
+   *
+   * @param keyword - The keyword, pattern, or selector function to match against message text.
+   *                  Can be a string, RegExp, RouteSelector, or array of these types.
+   * @param handler - The handler function that will be called when a matching message is received.
+   * @returns The current instance of the application.
+   *
+   * @remarks
+   * This method allows you to register handlers for specific message patterns.
+   * If keyword is a string, it matches messages containing that string.
+   * If keyword is a RegExp, it tests the message text against the regular expression.
+   * If keyword is a function, it calls the function with the context to determine if the message matches.
+   *
+   * Example usage:
+   * ```typescript
+   * app.message('hello', async (context, state) => {
+   *   await context.sendActivity('Hello there!');
+   * });
+   *
+   * app.message(/help., async (context, state) => {
+   *   await context.sendActivity('How can I help you?');
+   * });
+   * ```
+   */
   public message (
     keyword: string | RegExp | RouteSelector | (string | RegExp | RouteSelector)[],
     handler: (context: TurnContext, state: TState) => Promise<void>
@@ -160,6 +288,24 @@ export class AgentApplication<TState extends TurnState> {
     return this
   }
 
+  /**
+   * Sets a handler to be called when a user successfully signs in.
+   *
+   * @param handler - The handler function to be called after successful sign-in.
+   * @returns The current instance of the application.
+   * @throws Error if authentication options were not configured.
+   *
+   * @remarks
+   * This method allows you to perform actions after a user has successfully authenticated.
+   * The handler will receive the turn context and state.
+   *
+   * Example usage:
+   * ```typescript
+   * app.onSignInSuccess(async (context, state) => {
+   *   await context.sendActivity('You have successfully signed in!');
+   * });
+   * ```
+   */
   public onSignInSuccess (handler: (context: TurnContext, state: TurnState) => void): this {
     if (this._userIdentity) {
       this._userIdentity.onSignInSuccess(handler)
@@ -171,11 +317,28 @@ export class AgentApplication<TState extends TurnState> {
     return this
   }
 
-  public async run2 (turnContext:TurnContext): Promise<void> {
-    await this.run(turnContext)
+  /**
+   * Executes the application logic for a given turn context.
+   *
+   * @param turnContext - The context for the current turn of the conversation.
+   * @returns A promise that resolves when the application logic has completed.
+   *
+   * @remarks
+   * This method is the entry point for processing a turn in the conversation.
+   * It delegates the actual processing to the `runInternal` method, which handles
+   * the core logic for routing and executing handlers.
+   *
+   * Example usage:
+   * ```typescript
+   * const app = new AgentApplication();
+   * await app.run(turnContext);
+   * ```
+   */
+  public async run (turnContext:TurnContext): Promise<void> {
+    await this.runInternal(turnContext) // to change the retu
   }
 
-  public async run (turnContext: TurnContext): Promise<boolean> {
+  private async runInternal (turnContext: TurnContext): Promise<boolean> {
     return await this.startLongRunningCall(turnContext, async (context) => {
       this.startTypingTimer(context)
       try {
@@ -232,6 +395,27 @@ export class AgentApplication<TState extends TurnState> {
     })
   }
 
+  /**
+   * Sends a proactive message to a conversation.
+   *
+   * @param context - The turn context or conversation reference to use.
+   * @param activityOrText - The activity or text to send.
+   * @param speak - Optional text to be spoken by the bot on a speech-enabled channel.
+   * @param inputHint - Optional input hint for the activity.
+   * @returns A promise that resolves to the resource response from sending the activity.
+   *
+   * @remarks
+   * This method allows you to send messages proactively to a conversation, outside the normal turn flow.
+   *
+   * Example usage:
+   * ```typescript
+   * // With conversation reference
+   * await app.sendProactiveActivity(conversationReference, 'Important notification!');
+   *
+   * // From an existing context
+   * await app.sendProactiveActivity(turnContext, 'Important notification!');
+   * ```
+   */
   public async sendProactiveActivity (
     context: TurnContext | ConversationReference,
     activityOrText: string | Activity,
@@ -246,6 +430,28 @@ export class AgentApplication<TState extends TurnState> {
     return response
   }
 
+  /**
+   * Starts a typing indicator timer for the current turn context.
+   *
+   * @param context - The turn context for the current conversation.
+   * @returns void
+   *
+   * @remarks
+   * This method starts a timer that sends typing activity indicators to the user
+   * at regular intervals. The typing indicator continues until a message is sent
+   * or the timer is explicitly stopped.
+   *
+   * The typing indicator helps provide feedback to users that the agent is processing
+   * their message, especially when responses might take time to generate.
+   *
+   * Example usage:
+   * ```typescript
+   * app.startTypingTimer(turnContext);
+   * // Do some processing...
+   * await turnContext.sendActivity('Response after processing');
+   * // Typing timer automatically stops when sending a message
+   * ```
+   */
   public startTypingTimer (context: TurnContext): void {
     if (context.activity.type === ActivityTypes.Message && !this._typingTimer) {
       let timerRunning = true
@@ -284,6 +490,23 @@ export class AgentApplication<TState extends TurnState> {
     }
   }
 
+  /**
+   * Stops the typing indicator timer if it's currently running.
+   *
+   * @returns void
+   *
+   * @remarks
+   * This method clears the typing indicator timer to prevent further typing indicators
+   * from being sent. It's typically called automatically when a message is sent, but
+   * can also be called manually to stop the typing indicator.
+   *
+   * Example usage:
+   * ```typescript
+   * app.startTypingTimer(turnContext);
+   * // Do some processing...
+   * app.stopTypingTimer(); // Manually stop the typing indicator
+   * ```
+   */
   public stopTypingTimer (): void {
     if (this._typingTimer) {
       clearTimeout(this._typingTimer)
@@ -291,6 +514,26 @@ export class AgentApplication<TState extends TurnState> {
     }
   }
 
+  /**
+   * Adds an event handler for specified turn events.
+   *
+   * @param event - The turn event(s) to handle. Can be 'beforeTurn', 'afterTurn', or other custom events.
+   * @param handler - The handler function that will be called when the event occurs.
+   * @returns The current instance of the application.
+   *
+   * @remarks
+   * Turn events allow you to execute logic before or after the main turn processing.
+   * Handlers added for 'beforeTurn' are executed before routing logic.
+   * Handlers added for 'afterTurn' are executed after routing logic.
+   *
+   * Example usage:
+   * ```typescript
+   * app.turn('beforeTurn', async (context, state) => {
+   *   console.log('Processing before turn');
+   *   return true; // Continue execution
+   * });
+   * ```
+   */
   public turn (
     event: TurnEvents | TurnEvents[],
     handler: (context: TurnContext, state: TState) => Promise<boolean>
@@ -310,6 +553,24 @@ export class AgentApplication<TState extends TurnState> {
     return this
   }
 
+  /**
+   * Starts the server to listen for incoming requests.
+   *
+   * @param server - The Express application instance to use for the server.
+   * @returns void
+   *
+   * @remarks
+   * This method sets up the necessary routes for handling bot requests and starts
+   * the server listening on the port specified in the environment (or 3978 by default).
+   * It configures JWT authorization middleware and sets up the message endpoint.
+   *
+   * Example usage:
+   * ```typescript
+   * const app = new AgentApplication();
+   * const expressApp = express().use(express.json());
+   * app.startServer(expressApp);
+   * ```
+   */
   public startServer (server: Application) {
     const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
     const adapter = new CloudAdapter(authConfig)
@@ -318,7 +579,7 @@ export class AgentApplication<TState extends TurnState> {
 
     server.post('/api/messages', async (req: Request, res: Response) =>
       await adapter.process(req, res, async (context) =>
-        await this.run2(context)
+        await this.run(context)
       )
     )
 
