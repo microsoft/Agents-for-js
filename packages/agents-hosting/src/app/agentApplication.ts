@@ -310,7 +310,7 @@ export class AgentApplication<TState extends TurnState> {
     return this
   }
 
-  protected startServer (server: Application) {
+  public startServer (server: Application) {
     const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
 
     const adapter = new CloudAdapter(authConfig)
