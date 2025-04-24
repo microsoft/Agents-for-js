@@ -5,10 +5,9 @@ import express from 'express'
 import { AgentApplication, MemoryStorage, TurnContext, TurnState } from '@microsoft/agents-hosting'
 
 class EmptyAgentHost extends AgentApplication<TurnState> {
-  counter = -1
   constructor () {
     super({ startTypingTimer: true, storage: new MemoryStorage() })
-    this.counter = 0
+
     this.conversationUpdate('membersAdded', this.help)
     this.message('/help', this.help)
     this.message('/diag', this.diag)
@@ -17,15 +16,18 @@ class EmptyAgentHost extends AgentApplication<TurnState> {
 
   help = async (ctx: TurnContext) => {
     const version = (await import('@microsoft/agents-hosting/package.json')).version
-    await ctx.sendActivity(`Empty Agent running on sdk ${version}`)
+    await ctx.sendActivity(`Empty Agent running on node sdk ${version}`)
   }
 
-  echo = async (ctx: TurnContext) => {
-    await ctx.sendActivity(`[${this.counter++}]You said ${ctx.activity.text}`)
+  echo = async (ctx: TurnContext, state: TurnState) => {
+    let counter: number = state.getValue('conversation.counter') || 0
+    await ctx.sendActivity(`[${counter++}]You said: ${ctx.activity.text}`)
+    state.setValue('conversation.counter', counter)
   }
 
-  diag = async (ctx: TurnContext) => {
-    await ctx.sendActivity(JSON.stringify(ctx.turnState, null, 2))
+  diag = async (ctx: TurnContext, state: TurnState) => {
+    const md = (text: string) => '```\n' + text + '\n```'
+    await ctx.sendActivity(md(JSON.stringify(state, null, 2)))
   }
 }
 

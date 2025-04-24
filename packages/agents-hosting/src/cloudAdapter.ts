@@ -164,6 +164,9 @@ export class CloudAdapter extends BaseAdapter {
       }
       res.end()
     }
+    if (!request.body) {
+      throw new TypeError('`request.body` parameter required, make sure express.json() is used as middleware')
+    }
     const incoming = normalizeIncomingActivity(request.body!)
     const activity = Activity.fromObject(incoming)
     logger.info(`--> Processing incoming activity, type:${activity.type} channel:${activity.channelId}`)

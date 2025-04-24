@@ -312,10 +312,8 @@ export class AgentApplication<TState extends TurnState> {
 
   public startServer (server: Application) {
     const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
-
     const adapter = new CloudAdapter(authConfig)
 
-    // server.use(server.json())
     server.use(authorizeJWT(authConfig))
 
     server.post('/api/messages', async (req: Request, res: Response) =>
