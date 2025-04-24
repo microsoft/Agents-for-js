@@ -16,12 +16,12 @@ class EmptyAgentHost extends AgentApplication<TurnState> {
 
   help = async (ctx: TurnContext) => {
     const version = (await import('@microsoft/agents-hosting/package.json')).version
-    await ctx.sendActivity(`Empty Agent running on node sdk ${version}`)
+    await ctx.sendActivity(`Empty Agent running on node sdk ${version}, hi Axel`)
   }
 
   echo = async (ctx: TurnContext, state: TurnState) => {
     let counter: number = state.getValue('conversation.counter') || 0
-    await ctx.sendActivity(`[${counter++}]You said: ${ctx.activity.text}`)
+    await ctx.sendActivity(`[${counter++}]You said now: ${ctx.activity.text}`)
     state.setValue('conversation.counter', counter)
   }
 

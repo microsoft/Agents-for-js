@@ -4,7 +4,6 @@
  */
 
 import { Activity, ActivityTypes, ConversationReference } from '@microsoft/agents-activity'
-import { version } from '@microsoft/agents-activity/package.json'
 import { TurnState } from './turnState'
 import { BaseAdapter } from '../baseAdapter'
 import { AgentApplicationOptions } from './agentApplicationOptions'
@@ -18,11 +17,6 @@ import { ResourceResponse } from '../connector-client'
 import { debug } from '../logger'
 import { UserIdentity } from './oauth/userIdentity'
 import { MemoryStorage } from '../storage'
-import { AuthConfiguration, loadAuthConfigFromEnv, Request } from '../auth'
-import { CloudAdapter } from '../cloudAdapter'
-import { authorizeJWT } from '../auth/jwt-middleware'
-
-import { Response, Application } from 'express'
 
 const logger = debug('agents:agent-application')
 
@@ -551,42 +545,6 @@ export class AgentApplication<TState extends TurnState> {
       }
     })
     return this
-  }
-
-  /**
-   * Starts the server to listen for incoming requests.
-   *
-   * @param server - The Express application instance to use for the server.
-   * @returns void
-   *
-   * @remarks
-   * This method sets up the necessary routes for handling bot requests and starts
-   * the server listening on the port specified in the environment (or 3978 by default).
-   * It configures JWT authorization middleware and sets up the message endpoint.
-   *
-   * Example usage:
-   * ```typescript
-   * const app = new AgentApplication();
-   * const expressApp = express().use(express.json());
-   * app.startServer(expressApp);
-   * ```
-   */
-  public startServer (server: Application) {
-    const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
-    const adapter = new CloudAdapter(authConfig)
-
-    server.use(authorizeJWT(authConfig))
-
-    server.post('/api/messages', async (req: Request, res: Response) =>
-      await adapter.process(req, res, async (context) =>
-        await this.run(context)
-      )
-    )
-
-    const port = process.env.PORT || 3978
-    server.listen(port, () => {
-      console.log(`\nServer listening to port ${port} on sdk ${version} for appId ${authConfig.clientId} debug ${process.env.DEBUG}`)
-    }).on('error', console.error)
   }
 
   protected async callEventHandlers (
