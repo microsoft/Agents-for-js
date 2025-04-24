@@ -6,7 +6,7 @@ import { CardMessages } from './cards/cardMessages'
 import CardFactoryCard from './cards/CardFactoryCard.json'
 import AdaptiveCardActions from './cards/AdaptiveCardActions.json'
 import * as AdaptiveCardsTemplating from 'adaptivecards-templating'
-import { Attachment } from '@microsoft/agents-activity'
+import { Activity, ActivityTypes, Attachment } from '@microsoft/agents-activity'
 
 const storage = new MemoryStorage()
 export const cardAgent: AgentApplication<TurnState> = new AgentApplicationBuilder<TurnState>().withStorage(storage).build()
@@ -74,4 +74,18 @@ cardAgent.activity('message', async (t, s) => {
   } else {
     await t.sendActivity('Welcome to the Cards Agent! type /cards or /cardActions or /suggestedActions.')
   }
+})
+
+cardAgent.activity(ActivityTypes.Invoke, async (t, s) => {
+  await t.sendActivity(JSON.stringify(t.activity, null, 2))
+  const response = new Activity(ActivityTypes.InvokeResponse)
+  response.value = {
+    status: 200,
+    body: {
+      message: 'Invoke received'
+    }
+  }
+  // const confRef = t.activity.getConversationReference()
+  // response.applyConversationReference(confRef, false)
+  await t.sendActivity(response)
 })
