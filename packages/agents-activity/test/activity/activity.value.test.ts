@@ -2,7 +2,7 @@ import { strict as assert } from 'assert'
 import { describe, it } from 'node:test'
 import { Activity } from '../../src'
 
-describe('vale any roundtrip', () => {
+describe('value any roundtrip', () => {
   it('should roundtrip a json string', () => {
     const jsonWithString = { type: 'type', value: '{"a": "b"}' }
     const act = Activity.fromObject(jsonWithString)
