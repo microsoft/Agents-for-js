@@ -329,7 +329,7 @@ export class AgentApplication<TState extends TurnState> {
    * ```
    */
   public async run (turnContext:TurnContext): Promise<void> {
-    await this.runInternal(turnContext) // to change the retu
+    await this.runInternal(turnContext)
   }
 
   /**
