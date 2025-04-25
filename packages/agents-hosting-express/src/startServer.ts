@@ -39,9 +39,9 @@ export const startServer = (agent: AgentApplication<TurnState>, authConfiguratio
   server.use(express.json())
   server.use(authorizeJWT(authConfig))
 
-  server.post('/api/messages', async (req: Request, res: Response) =>
-    await adapter.process(req, res, async (context) =>
-      await agent.run(context)
+  server.post('/api/messages', (req: Request, res: Response) =>
+    adapter.process(req, res, (context) =>
+      agent.run(context)
     )
   )
 
