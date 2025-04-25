@@ -14,17 +14,30 @@ import { ignoreError, isStatusCodeError } from './ignoreError'
  * Options for configuring the BlobsStorage.
  */
 export interface BlobsStorageOptions {
+  /**
+   * Optional Azure Storage pipeline options to customize request behavior
+   */
   storagePipelineOptions?: StoragePipelineOptions;
 }
 
 /**
  * A class that implements the Storage interface using Azure Blob Storage.
+ * Provides persistence for bot state data using Azure's Blob Storage service.
  */
 export class BlobsStorage implements Storage {
   private readonly _containerClient: ContainerClient
   private readonly _concurrency = Infinity
   private _initializePromise?: Promise<unknown>
 
+  /**
+   * Creates a new instance of the BlobsStorage class.
+   *
+   * @param connectionString The Azure Storage connection string
+   * @param containerName The name of the Blob container to use
+   * @param options Optional configuration settings for the storage provider
+   * @param url Optional URL to the blob service (used instead of connectionString if provided)
+   * @param credential Optional credential for authentication (used with url if provided)
+   */
   constructor (
     connectionString: string,
     containerName: string,
@@ -71,6 +84,13 @@ export class BlobsStorage implements Storage {
     return this._initializePromise
   }
 
+  /**
+   * Reads storage items from blob storage.
+   *
+   * @param keys Array of item keys to read
+   * @returns A promise that resolves to a StoreItems object containing the retrieved items
+   * @throws Will throw if keys parameter is invalid or if there's an error reading from storage
+   */
   async read (keys: string[]): Promise<StoreItems> {
     z.object({ keys: z.array(z.string()) }).parse({ keys })
 
@@ -102,6 +122,13 @@ export class BlobsStorage implements Storage {
     return results.reduce((acc, { key, value }) => (value ? { ...acc, [key]: value } : acc), {})
   }
 
+  /**
+   * Writes storage items to blob storage.
+   *
+   * @param changes The items to write to storage
+   * @returns A promise that resolves when the write operation is complete
+   * @throws Will throw if there's a validation error, eTag conflict, or other storage error
+   */
   async write (changes: StoreItems): Promise<void> {
     z.record(z.unknown()).parse(changes)
 
@@ -127,6 +154,13 @@ export class BlobsStorage implements Storage {
     )
   }
 
+  /**
+   * Deletes storage items from blob storage.
+   *
+   * @param keys Array of item keys to delete
+   * @returns A promise that resolves when the delete operation is complete
+   * @throws Will throw if keys parameter is invalid
+   */
   async delete (keys: string[]): Promise<void> {
     z.object({ keys: z.array(z.string()) }).parse({ keys })
 

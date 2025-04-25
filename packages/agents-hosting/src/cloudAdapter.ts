@@ -25,15 +25,23 @@ import { normalizeIncomingActivity } from './activityWireCompat'
 const logger = debug('agents:cloud-adapter')
 
 /**
- * Adapter for handling agent interactions.
+ * Adapter for handling agent interactions with various channels through cloud-based services.
+ *
+ * CloudAdapter processes incoming HTTP requests from Microsoft Bot Framework channels,
+ * authenticates them, and generates outgoing responses. It manages the communication
+ * flow between agents and users across different channels, handling activities, attachments,
+ * and conversation continuations.
  */
 export class CloudAdapter extends BaseAdapter {
+  /**
+   * Client for connecting to the Bot Framework Connector service
+   */
   public connectorClient!: ConnectorClient
 
   /**
    * Creates an instance of CloudAdapter.
-   * @param authConfig - The authentication configuration.
-   * @param authProvider - The authentication provider.
+   * @param authConfig - The authentication configuration for securing communications
+   * @param authProvider - Optional custom authentication provider. If not specified, a default MsalTokenProvider will be used
    */
   constructor (authConfig: AuthConfiguration, authProvider?: AuthProvider) {
     super()
@@ -47,6 +55,14 @@ export class CloudAdapter extends BaseAdapter {
     }
   }
 
+  /**
+   * Creates a connector client for a specific service URL and scope.
+   *
+   * @param serviceUrl - The URL of the service to connect to
+   * @param scope - The authentication scope to use
+   * @returns A promise that resolves to a ConnectorClient instance
+   * @protected
+   */
   protected async createConnectorClient (
     serviceUrl: string,
     scope: string
@@ -59,6 +75,12 @@ export class CloudAdapter extends BaseAdapter {
     )
   }
 
+  /**
+   * Sets the connector client on the turn context.
+   *
+   * @param context - The current turn context
+   * @protected
+   */
   protected setConnectorClient (
     context: TurnContext
   ) {

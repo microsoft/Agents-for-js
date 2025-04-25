@@ -11,34 +11,63 @@ import { debug } from '../logger'
 
 const logger = debug('agents:state')
 
+/**
+ * Represents agent state that has been cached in the turn context.
+ * Used internally to track state changes and avoid unnecessary storage operations.
+ */
 export interface CachedAgentState {
-  state: { [id: string]: any }
-  hash: string
+  /**
+   * The state object containing all properties and their values
+   */
+  state: { [id: string]: any };
+  /**
+   * Hash of the state used to detect changes
+   */
+  hash: string;
 }
 
+/**
+ * Represents a custom key for storing state in a specific location.
+ * Allows state to be persisted with channel and conversation identifiers
+ * independent of the current context.
+ */
 export interface CustomKey {
+  /**
+   * The ID of the channel where the state should be stored
+   */
   channelId: string;
+  /**
+   * The ID of the conversation where the state should be stored
+   */
   conversationId: string;
   // TODO: namespace needs to be added
 }
 
 /**
- * Manages the state of an Agent.
+ * Manages the state of an Agent across turns in a conversation.
+ *
+ * AgentState provides functionality to persist and retrieve state data using
+ * a storage provider. It handles caching state in the turn context for performance,
+ * calculating change hashes to detect modifications, and managing property accessors
+ * for typed access to state properties.
  */
 export class AgentState {
   private readonly stateKey = Symbol('state')
 
   /**
-    * Creates a new instance of AgentState.
-    * @param storage The storage provider.
-    * @param storageKey The storage key factory.
-    */
+   * Creates a new instance of AgentState.
+   *
+   * @param storage The storage provider used to persist state between turns
+   * @param storageKey A factory function that generates keys for storing state data
+   */
   constructor (protected storage: Storage, protected storageKey: StorageKeyFactory) { }
 
   /**
    * Creates a property accessor for the specified property.
-   * @param name The name of the property.
-   * @returns A property accessor for the specified property.
+   * Property accessors provide typed access to properties within the state object.
+   *
+   * @param name The name of the property to access
+   * @returns A property accessor for the specified property
    */
   createProperty<T = any>(name: string): AgentStatePropertyAccessor<T> {
     const prop: AgentStatePropertyAccessor<T> = new AgentStatePropertyAccessor<T>(this, name)
@@ -46,10 +75,13 @@ export class AgentState {
   }
 
   /**
-   * Loads the state from storage.
-   * @param context The turn context.
-   * @param force Whether to force loading the state.
-   * @returns A promise that resolves to the loaded state.
+   * Loads the state from storage into the turn context.
+   * If state is already cached in the turn context and force is not set, the cached version will be used.
+   *
+   * @param context The turn context to load state into
+   * @param force If true, forces a reload from storage even if state is cached
+   * @param customKey Optional custom storage key to use instead of the default
+   * @returns A promise that resolves to the loaded state object
    */
   public async load (context: TurnContext, force = false, customKey?: CustomKey): Promise<any> {
     const cached: CachedAgentState = context.turnState.get(this.stateKey)
@@ -70,10 +102,13 @@ export class AgentState {
   }
 
   /**
-   * Saves the state to storage.
-   * @param context The turn context.
-   * @param force Whether to force saving the state.
-   * @returns A promise that resolves when the save operation is complete.
+   * Saves the state to storage if it has changed since it was loaded.
+   * Change detection uses a hash of the state object to determine if saving is necessary.
+   *
+   * @param context The turn context containing the state to save
+   * @param force If true, forces a save to storage even if no changes are detected
+   * @param customKey Optional custom storage key to use instead of the default
+   * @returns A promise that resolves when the save operation is complete
    */
   public async saveChanges (context: TurnContext, force = false, customKey?: CustomKey): Promise<void> {
     let cached: CachedAgentState = context.turnState.get(this.stateKey)
@@ -95,6 +130,14 @@ export class AgentState {
     }
   }
 
+  /**
+   * Determines whether to use a custom key or generate one from the context.
+   *
+   * @param customKey Optional custom key with channel and conversation IDs
+   * @param context The turn context used to generate a key if no custom key is provided
+   * @returns The storage key to use
+   * @private
+   */
   private async getStorageOrCustomKey (customKey: CustomKey | undefined, context: TurnContext) {
     let key: string | undefined
     if (customKey && customKey.channelId && customKey.conversationId) {
@@ -107,9 +150,12 @@ export class AgentState {
   }
 
   /**
-   * Clears the state from the turn context.
-   * @param context The turn context.
-   * @returns A promise that resolves when the clear operation is complete.
+   * Clears the state by setting it to an empty object in the turn context.
+   * Note: This does not remove the state from storage, it only clears the in-memory representation.
+   * Call saveChanges() after this to persist the empty state to storage.
+   *
+   * @param context The turn context containing the state to clear
+   * @returns A promise that resolves when the clear operation is complete
    */
   public async clear (context: TurnContext): Promise<void> {
     const emptyObjectToForceSave = { state: {}, hash: '' }
@@ -118,9 +164,11 @@ export class AgentState {
   }
 
   /**
-   * Deletes the state from storage.
-   * @param context The turn context.
-   * @returns A promise that resolves when the delete operation is complete.
+   * Deletes the state from both the turn context and storage.
+   *
+   * @param context The turn context containing the state to delete
+   * @param customKey Optional custom storage key to use instead of the default
+   * @returns A promise that resolves when the delete operation is complete
    */
   public async delete (context: TurnContext, customKey?: CustomKey): Promise<void> {
     if (context.turnState.has(this.stateKey)) {
@@ -132,9 +180,10 @@ export class AgentState {
   }
 
   /**
-   * Gets the state from the turn context.
-   * @param context The turn context.
-   * @returns The state, or undefined if the state is not found.
+   * Gets the state from the turn context without loading it from storage.
+   *
+   * @param context The turn context containing the state to get
+   * @returns The state object, or undefined if no state is found in the turn context
    */
   public get (context: TurnContext): any | undefined {
     const cached: CachedAgentState = context.turnState.get(this.stateKey)
@@ -143,9 +192,12 @@ export class AgentState {
   }
 
   /**
-   * Calculates the change hash for the specified item.
-   * @param item The item to calculate the hash for.
-   * @returns The calculated hash.
+   * Calculates a hash for the specified state object to detect changes.
+   * The eTag property is excluded from the hash calculation.
+   *
+   * @param item The state object to calculate the hash for
+   * @returns A string hash representing the state
+   * @private
    */
   private readonly calculateChangeHash = (item: StoreItem): string => {
     const { eTag, ...rest } = item

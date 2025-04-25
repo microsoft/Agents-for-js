@@ -12,13 +12,28 @@ import { TaskModuleResponse } from '../../task/taskModuleResponse'
 import { TaskModuleTaskInfo } from '../../task/taskModuleTaskInfo'
 import { TaskModuleInvokeNames } from './taskModuleInvokeNames'
 
+/**
+ * Manages task modules for Teams applications, handling fetch and submit operations.
+ * @template TState Type extending TurnState to be used by the application
+ */
 export class TaskModules<TState extends TurnState> {
   private readonly _app: TeamsApplication<TState>
 
+  /**
+   * Creates a new TaskModules instance.
+   * @param app The TeamsApplication instance to associate with this TaskModules instance
+   */
   public constructor (app: TeamsApplication<TState>) {
     this._app = app
   }
 
+  /**
+   * Handles task module fetch requests, which occur when a task module is initially requested.
+   * @template TData Type of data expected in the task module request
+   * @param verb Identifier for the task module (string, RegExp, or RouteSelector)
+   * @param handler Function to handle the task module fetch request
+   * @returns The TeamsApplication instance for chaining
+   */
   public fetch<TData extends Record<string, any> = Record<string, any>>(
     verb: string | RegExp | RouteSelector | (string | RegExp | RouteSelector)[],
     handler: (context: TurnContext, state: TState, data: TData) => Promise<TaskModuleTaskInfo | string>
@@ -72,6 +87,13 @@ export class TaskModules<TState extends TurnState> {
     return this._app
   }
 
+  /**
+   * Handles task module submit requests, which occur when a task module form is submitted.
+   * @template TData Type of data expected in the task module submit request
+   * @param verb Identifier for the task module (string, RegExp, or RouteSelector)
+   * @param handler Function to handle the task module submit request
+   * @returns The TeamsApplication instance for chaining
+   */
   public submit<TData extends Record<string, any> = Record<string, any>>(
     verb: string | RegExp | RouteSelector | (string | RegExp | RouteSelector)[],
     handler: (
@@ -136,6 +158,12 @@ export class TaskModules<TState extends TurnState> {
     return this._app
   }
 
+  /**
+   * Handles configuration fetch requests for agent configuration in Teams.
+   * @template TData Type of data expected in the configuration fetch request
+   * @param handler Function to handle the configuration fetch request
+   * @returns The TeamsApplication instance for chaining
+   */
   public configFetch<TData extends Record<string, any>>(
     handler: (context: TurnContext, state: TState, data: TData) => Promise<AgentConfigAuth | TaskModuleResponse>
   ): TeamsApplication<TState> {
@@ -173,6 +201,12 @@ export class TaskModules<TState extends TurnState> {
     return this._app
   }
 
+  /**
+   * Handles configuration submit requests for agent configuration in Teams.
+   * @template TData Type of data expected in the configuration submit request
+   * @param handler Function to handle the configuration submit request
+   * @returns The TeamsApplication instance for chaining
+   */
   public configSubmit<TData extends Record<string, any>>(
     handler: (context: TurnContext, state: TState, data: TData) => Promise<AgentConfigAuth | TaskModuleResponse>
   ): TeamsApplication<TState> {
@@ -211,6 +245,13 @@ export class TaskModules<TState extends TurnState> {
   }
 }
 
+/**
+ * Creates a route selector for task modules based on the provided verb and invoke name.
+ * @param verb Identifier for the task module (string, RegExp, or RouteSelector)
+ * @param filterField Field name to filter on in the task data
+ * @param invokeName Name of the invoke activity
+ * @returns A RouteSelector function
+ */
 function createTaskSelector (
   verb: string | RegExp | RouteSelector,
   filterField: string,

@@ -9,13 +9,29 @@ import { MeetingParticipantsEventDetails } from '../../meeting/meetingParticipan
 import { MeetingEndEventDetails } from '../../meeting/meetingEndEventDetails'
 import { MeetingStartEventDetails } from '../../meeting/meetingStartEventDetails'
 
+/**
+ * Handles Teams meeting-related events in applications.
+ * Provides methods for registering handlers for meeting start, end, and participant changes.
+ * @template TState Type extending TurnState to be used by the application
+ */
 export class Meetings<TState extends TurnState> {
   private readonly _app: TeamsApplication<TState>
 
+  /**
+   * Creates a new Meetings instance.
+   * @param app The TeamsApplication instance to associate with this Meetings instance
+   */
   public constructor (app: TeamsApplication<TState>) {
     this._app = app
   }
 
+  /**
+   * Registers a handler for meeting start events.
+   * This event occurs when a Teams meeting begins.
+   *
+   * @param handler Function to handle the meeting start event
+   * @returns The TeamsApplication instance for chaining
+   */
   public start (
     handler: (context: TurnContext, state: TState, meeting: MeetingStartEventDetails) => Promise<void>
   ): TeamsApplication<TState> {
@@ -37,6 +53,13 @@ export class Meetings<TState extends TurnState> {
     return this._app
   }
 
+  /**
+   * Registers a handler for meeting end events.
+   * This event occurs when a Teams meeting ends.
+   *
+   * @param handler Function to handle the meeting end event
+   * @returns The TeamsApplication instance for chaining
+   */
   public end (
     handler: (context: TurnContext, state: TState, meeting: MeetingEndEventDetails) => Promise<void>
   ): TeamsApplication<TState> {
@@ -58,6 +81,13 @@ export class Meetings<TState extends TurnState> {
     return this._app
   }
 
+  /**
+   * Registers a handler for participant join events.
+   * This event occurs when participants join a Teams meeting.
+   *
+   * @param handler Function to handle the participants join event
+   * @returns The TeamsApplication instance for chaining
+   */
   public participantsJoin (
     handler: (context: TurnContext, state: TState, meeting: MeetingParticipantsEventDetails) => Promise<void>
   ): TeamsApplication<TState> {
@@ -79,6 +109,13 @@ export class Meetings<TState extends TurnState> {
     return this._app
   }
 
+  /**
+   * Registers a handler for participant leave events.
+   * This event occurs when participants leave a Teams meeting.
+   *
+   * @param handler Function to handle the participants leave event
+   * @returns The TeamsApplication instance for chaining
+   */
   public participantsLeave (
     handler: (context: TurnContext, state: TState, meeting: MeetingParticipantsEventDetails) => Promise<void>
   ): TeamsApplication<TState> {
