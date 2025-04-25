@@ -95,7 +95,11 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
     return this
   }
 
-  public async run (turnContext: TurnContext): Promise<boolean> {
+  public async run (turnContext: TurnContext): Promise<void> {
+    await this.runInternalTeams(turnContext)
+  }
+
+  private async runInternalTeams (turnContext: TurnContext): Promise<boolean> {
     return await this.startLongRunningCall(turnContext, async (context) => {
       this.startTypingTimer(context)
       try {
