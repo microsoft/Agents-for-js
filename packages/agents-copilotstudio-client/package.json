@@ -21,7 +21,7 @@
   "types": "dist/src/index.d.ts",
   "dependencies": {
     "@microsoft/agents-activity": "file:../agents-activity",
-    "axios": "^1.8.2",
+    "axios": "^1.9.0",
     "debug": "^4.3.7"
   },
   "license": "MIT",
