@@ -4,7 +4,7 @@
 import { startServer } from '@microsoft/agents-hosting-express'
 import { AgentApplication, MemoryStorage, TurnContext, TurnState } from '@microsoft/agents-hosting'
 
-class EmptyAgentHost extends AgentApplication<TurnState> {
+class EmptyAgent extends AgentApplication<TurnState> {
   constructor () {
     super({ startTypingTimer: true, storage: new MemoryStorage() })
 
@@ -16,7 +16,7 @@ class EmptyAgentHost extends AgentApplication<TurnState> {
 
   help = async (ctx: TurnContext) => {
     const version = (await import('@microsoft/agents-hosting/package.json')).version
-    await ctx.sendActivity(`Empty Agent running on node sdk ${version}, hi Axel`)
+    await ctx.sendActivity(`Empty Agent running on node sdk ${version}`)
   }
 
   echo = async (ctx: TurnContext, state: TurnState) => {
@@ -31,4 +31,4 @@ class EmptyAgentHost extends AgentApplication<TurnState> {
   }
 }
 
-startServer(new EmptyAgentHost())
+startServer(new EmptyAgent())
