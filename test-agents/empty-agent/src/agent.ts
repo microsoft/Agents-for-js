@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { expressHost } from '@microsoft/agents-hosting-express'
+import { startServer } from '@microsoft/agents-hosting-express'
 import { AgentApplication, MemoryStorage, TurnContext, TurnState } from '@microsoft/agents-hosting'
 
 class EmptyAgentHost extends AgentApplication<TurnState> {
@@ -31,4 +31,4 @@ class EmptyAgentHost extends AgentApplication<TurnState> {
   }
 }
 
-expressHost(new EmptyAgentHost())
+startServer(new EmptyAgentHost())

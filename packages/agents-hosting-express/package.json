@@ -19,7 +19,7 @@
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
   "dependencies": {
-    "@microsoft/agents-activity-hosting": "file:../agents-hosting",
+    "@microsoft/agents-hosting": "file:../agents-hosting",
     "express": "^5.1.0"
   },
   "license": "MIT",
