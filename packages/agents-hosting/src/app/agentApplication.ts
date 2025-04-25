@@ -332,7 +332,17 @@ export class AgentApplication<TState extends TurnState> {
     await this.runInternal(turnContext) // to change the retu
   }
 
-  private async runInternal (turnContext: TurnContext): Promise<boolean> {
+  /**
+   * Executes the application logic for a given turn context.
+   * @private
+   * @param turnContext - The context for the current turn of the conversation.
+   * @returns A promise that resolves to true if a handler was executed, false otherwise.
+   *
+   * @remarks
+   * This method is the core logic for processing a turn in the conversation.
+   * It handles routing and executing handlers based on the activity type and content.
+   */
+  public async runInternal (turnContext: TurnContext): Promise<boolean> {
     return await this.startLongRunningCall(turnContext, async (context) => {
       this.startTypingTimer(context)
       try {

@@ -53,7 +53,7 @@ describe('Application', () => {
       called = true
     })
     const context = new TurnContext(testAdapter, testActivity)
-    const handled = await app.run(context)
+    const handled = await app.runInternal(context)
     await context.sendActivity('test')
     assert.equal(called, true)
     assert.equal(handled, true)
@@ -68,7 +68,7 @@ describe('Application', () => {
       called = true
     })
     const context = new TurnContext(testAdapter, testActivity)
-    const handled = await app.run(context)
+    const handled = await app.runInternal(context)
     await context.sendActivity(MessageFactory.text('/yo'))
     assert.equal(called, true)
     assert.equal(handled, true)
@@ -83,7 +83,7 @@ describe('Application', () => {
       called = true
     })
     const context = new TurnContext(testAdapter, testActivity)
-    const handled = await app.run(context)
+    const handled = await app.runInternal(context)
     await context.sendActivity(MessageFactory.text('/yo'))
     assert.equal(called, true)
     assert.equal(handled, true)
@@ -98,7 +98,7 @@ describe('Application', () => {
       called = true
     })
     const context = new TurnContext(testAdapter, testActivity)
-    const handled = await app.run(context)
+    const handled = await app.runInternal(context)
     await context.sendActivity(MessageFactory.text('/yo'))
     assert.equal(called, true)
     assert.equal(handled, true)
@@ -118,7 +118,7 @@ describe('Application', () => {
       timesCalled++
     })
     const context = new TurnContext(testAdapter, testActivity)
-    const handled = await app.run(context)
+    const handled = await app.runInternal(context)
     await context.sendActivity('/yo')
     assert.equal(timesCalled, 1)
     assert.equal(handled, true)
@@ -138,7 +138,7 @@ describe('Application', () => {
       timesCalled++
     })
     const context = new TurnContext(testAdapter, testActivity)
-    const handled = await app.run(context)
+    const handled = await app.runInternal(context)
     await context.sendActivity('/yo')
     assert.equal(timesCalled, 1)
     assert.equal(handled, true)
