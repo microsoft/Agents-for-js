@@ -9,20 +9,39 @@ import { debug } from '../logger'
 const logger = debug('agents:memory-storage')
 
 /**
- * A simple in-memory storage provider.
+ * A simple in-memory storage provider that implements the Storage interface.
+ *
+ * This class provides a volatile storage solution that keeps data in memory,
+ * which means data is lost when the process terminates. It's primarily useful for:
+ * - Development and testing scenarios
+ * - Simple applications that don't require data persistence across restarts
+ * - Stateless environments where external storage isn't available
+ *
+ * MemoryStorage supports optimistic concurrency control through eTags and
+ * can be used as a singleton through the getSingleInstance() method to
+ * share state across different parts of an application.
  */
 export class MemoryStorage implements Storage {
   private static instance: MemoryStorage
+  /**
+   * Counter used to generate unique eTags for stored items
+   */
   private etag: number = 1
 
   /**
    * Creates a new instance of the MemoryStorage class.
-   * @param memory An optional initial memory store.
+   *
+   * @param memory An optional initial memory store to seed the storage with data
    */
   constructor (private memory: { [k: string]: string } = {}) { }
 
   /**
-   * Gets a single instance of the MemoryStorage class.
+   * Gets a single shared instance of the MemoryStorage class.
+   *
+   * Using this method ensures that the same storage instance is used across
+   * the application, allowing for shared state without passing references.
+   *
+   * @returns The singleton instance of MemoryStorage
    */
   static getSingleInstance (): MemoryStorage {
     if (!MemoryStorage.instance) {
@@ -33,9 +52,10 @@ export class MemoryStorage implements Storage {
 
   /**
    * Reads storage items from memory.
-   * @param keys The keys of the items to read.
-   * @returns A promise that resolves to the read items.
-   * @throws Will throw an error if keys are not provided.
+   *
+   * @param keys The keys of the items to read
+   * @returns A promise that resolves to the read items
+   * @throws Will throw an error if keys are not provided or the array is empty
    */
   async read (keys: string[]): Promise<StoreItem> {
     if (!keys || keys.length === 0) {
@@ -56,9 +76,15 @@ export class MemoryStorage implements Storage {
 
   /**
    * Writes storage items to memory.
-   * @param changes The items to write.
-   * @returns A promise that resolves when the write operation is complete.
-   * @throws Will throw an error if changes are not provided.
+   *
+   * This method supports optimistic concurrency control through eTags.
+   * If an item has an eTag, it will only be updated if the existing item
+   * has the same eTag. If an item has an eTag of '*' or no eTag, it will
+   * always be written regardless of the current state.
+   *
+   * @param changes The items to write, indexed by key
+   * @returns A promise that resolves when the write operation is complete
+   * @throws Will throw an error if changes are not provided or if there's an eTag conflict
    */
   async write (changes: StoreItem): Promise<void> {
     if (!changes || changes.length === 0) {
@@ -83,8 +109,9 @@ export class MemoryStorage implements Storage {
 
   /**
    * Deletes storage items from memory.
-   * @param keys The keys of the items to delete.
-   * @returns A promise that resolves when the delete operation is complete.
+   *
+   * @param keys The keys of the items to delete
+   * @returns A promise that resolves when the delete operation is complete
    */
   async delete (keys: string[]): Promise<void> {
     logger.info(`Deleting keys: ${keys.join(', ')}`)
@@ -94,9 +121,16 @@ export class MemoryStorage implements Storage {
   }
 
   /**
-   * Saves an item to memory.
-   * @param key The key of the item to save.
-   * @param item The item to save.
+   * Saves an item to memory with a new eTag.
+   *
+   * This private method handles the details of:
+   * - Creating a clone of the item to prevent modification of the original
+   * - Generating a new eTag for optimistic concurrency control
+   * - Converting the item to a JSON string for storage
+   *
+   * @param key The key of the item to save
+   * @param item The item to save
+   * @private
    */
   private saveItem (key: string, item: unknown): void {
     const clone = Object.assign({}, item, { eTag: (this.etag++).toString() })

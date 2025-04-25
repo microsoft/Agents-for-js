@@ -6,6 +6,15 @@
 import { TurnContext } from '../turnContext'
 import { AgentState, CustomKey } from './agentState'
 
+/**
+ * Interface for accessing a property in state storage with type safety.
+ *
+ * The interface defines standard methods for working with persisted state properties,
+ * allowing property access with strong typing to reduce errors when working with
+ * complex state objects.
+ *
+ * @typeparam T The type of the property being accessed
+ */
 export interface StatePropertyAccessor<T = any> {
   /**
    * Deletes the persisted property from its backing storage object.
@@ -64,20 +73,56 @@ export interface StatePropertyAccessor<T = any> {
 }
 
 /**
- * Provides access to an Agent state property.
+ * Provides typed access to an Agent state property with automatic state loading.
+ *
+ * The AgentStatePropertyAccessor simplifies working with state by abstracting
+ * the details of loading state from storage and manipulating specific properties.
+ * It automatically handles:
+ *
+ * - Loading state when needed
+ * - Deep cloning of default values to prevent reference issues
+ * - Type checking for properties (when using TypeScript)
+ * - Ensuring properties exist before access
+ *
+ * Property accessors are created through the AgentState.createProperty() method:
+ *
+ * ```typescript
+ * // Create a property accessor for a user profile
+ * const userProfile = userState.createProperty<UserProfile>("userProfile");
+ *
+ * // Get the profile with a default if not exists
+ * const profile = await userProfile.get(context, { name: "", preferences: {} });
+ *
+ * // Update a value
+ * profile.preferences.theme = "dark";
+ *
+ * // Save the change
+ * await userProfile.set(context, profile);
+ *
+ * // Later, call userState.saveChanges(context) to persist to storage
+ * ```
+ *
+ * @typeparam T The type of the property being accessed
  */
 export class AgentStatePropertyAccessor<T = any> implements StatePropertyAccessor<T> {
   /**
    * Creates a new instance of AgentStatePropertyAccessor.
-   * @param state The agent state.
-   * @param name The name of the property.
+   *
+   * @param state The agent state object that will contain this property
+   * @param name The name of the property in the state object
    */
   constructor (protected readonly state: AgentState, public readonly name: string) { }
 
   /**
    * Deletes the property from the state.
-   * @param context The turn context.
-   * @returns A promise that resolves when the delete operation is complete.
+   *
+   * This removes the property from the state object but does not automatically
+   * persist the change to storage. Call state.saveChanges() afterwards to
+   * persist changes.
+   *
+   * @param context The turn context
+   * @param customKey Optional custom key for storing the state in a specific location
+   * @returns A promise that resolves when the delete operation is complete
    */
   async delete (context: TurnContext, customKey?: CustomKey): Promise<void> {
     const obj: any = await this.state.load(context, false, customKey)
@@ -88,9 +133,15 @@ export class AgentStatePropertyAccessor<T = any> implements StatePropertyAccesso
 
   /**
    * Gets the value of the property from the state.
-   * @param context The turn context.
-   * @param defaultValue The default value to return if the property is not found.
-   * @returns A promise that resolves to the value of the property.
+   *
+   * If the property doesn't exist and a default value is provided, a deep clone
+   * of the default value will be stored in state and returned. This ensures that
+   * modifications to the returned object will be properly tracked.
+   *
+   * @param context The turn context
+   * @param defaultValue Optional default value to use if the property doesn't exist
+   * @param customKey Optional custom key for storing the state in a specific location
+   * @returns A promise that resolves to the value of the property or undefined
    */
   async get (context: TurnContext, defaultValue?: T, customKey?: CustomKey): Promise<T> {
     const obj: any = await this.state.load(context, false, customKey)
@@ -107,9 +158,14 @@ export class AgentStatePropertyAccessor<T = any> implements StatePropertyAccesso
 
   /**
    * Sets the value of the property in the state.
-   * @param context The turn context.
-   * @param value The value to set.
-   * @returns A promise that resolves when the set operation is complete.
+   *
+   * This updates the property in the in-memory state object but does not automatically
+   * persist the change to storage. Call state.saveChanges() afterwards to persist changes.
+   *
+   * @param context The turn context
+   * @param value The value to set
+   * @param customKey Optional custom key for storing the state in a specific location
+   * @returns A promise that resolves when the set operation is complete
    */
   async set (context: TurnContext, value: T, customKey?: CustomKey): Promise<void> {
     const obj: any = await this.state.load(context, false, customKey)
