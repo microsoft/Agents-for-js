@@ -13,7 +13,7 @@ import { AgentState, CustomKey } from './agentState'
  * allowing property access with strong typing to reduce errors when working with
  * complex state objects.
  *
- * @typeparam T The type of the property being accessed
+ * @typeParam T The type of the property being accessed
  */
 export interface StatePropertyAccessor<T = any> {
   /**
@@ -102,7 +102,7 @@ export interface StatePropertyAccessor<T = any> {
  * // Later, call userState.saveChanges(context) to persist to storage
  * ```
  *
- * @typeparam T The type of the property being accessed
+ * @typeParam T The type of the property being accessed
  */
 export class AgentStatePropertyAccessor<T = any> implements StatePropertyAccessor<T> {
   /**
