@@ -20,5 +20,6 @@ export * from './parsers'
 export * from './teamsActivityHandler'
 export * from './teamsCloudAdapter'
 export * from './teamsInfo'
-
+export * from './query'
+export * from './messaging-extension'
 export * from './app'

@@ -1,15 +1,9 @@
 {
-    "entryPoints": [
-
-      "./packages/agents-activity/index.ts",
-      "./packages/agents-copilotstudio-client/index.ts",
-      "./packages/agents-hosting/index.ts",
-      "./packages/agents-hosting-express/index.ts",
-      "./packages/agents-hosting-dialogs/index.ts",
-      "./packages/agents-hosting-storage-blob/index.ts",
-      "./packages/agents-hosting-storage-cosmos/index.ts",
-      "./packages/agents-hosting-teams/index.ts",
-    ],
+    "entryPointStrategy": "packages",
+    "entryPoints": ["packages/*"],
+    "packageOptions": {
+        "entryPoints": ["src/index.ts"]
+    },
     "out": "docs",
     "exclude": ["**/node_modules/**", "**/test/**"],
     "excludeExternals": true,
@@ -17,5 +11,5 @@
     "excludeProtected": false,
     "excludeNotDocumented": false,
     "includeVersion": true,
-    "readme": "none"
+    "readme": "README.md",
   }

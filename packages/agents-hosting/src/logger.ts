@@ -4,7 +4,7 @@ import createDebug, { Debugger } from 'debug'
  * Logger class that provides colored logging functionality using the debug package.
  * Supports different log levels: info, warn, error, and debug.
  */
-class Logger {
+export class Logger {
   private loggers: { [level: string]: Debugger } = {}
   private readonly levelColors: { [level: string]: string } = {
     info: '2', // Green

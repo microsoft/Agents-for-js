@@ -1,3 +1,6 @@
 export * from './adaptiveCard'
 export * from './adaptiveCardsActions'
 export * from './adaptiveCardsOptions'
+export * from './adaptiveCardInvokeResponseType'
+export * from './adaptiveCardActionExecuteResponseType'
+export * from './adaptiveCardSearchResult'

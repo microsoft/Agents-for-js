@@ -136,7 +136,6 @@ export class ServiceCollection {
      * Register a factory (that expects the initial value that is not undefined) for a key.
      *
      * @param key key of the instance being provided
-     * @param instance instance to provide
      * @returns this for chaining
      */
   composeFactory<InstanceType>(key: string, factory: Factory<InstanceType, true>): this

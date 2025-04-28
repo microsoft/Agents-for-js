@@ -21,7 +21,7 @@ import { MemoryStorage } from '../storage'
 const logger = debug('agents:agent-application')
 
 const TYPING_TIMER_DELAY = 1000
-type ApplicationEventHandler<TState extends TurnState> = (context: TurnContext, state: TState) => Promise<boolean>
+export type ApplicationEventHandler<TState extends TurnState> = (context: TurnContext, state: TState) => Promise<boolean>
 
 /**
  * Executes the application logic for a given turn context.

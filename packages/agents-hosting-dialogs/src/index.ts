@@ -3,6 +3,7 @@
  * Licensed under the MIT License.
  */
 
+export * from './agentComponent'
 export * from './componentDialog'
 export * from './configurable'
 export * from './converter'
@@ -27,5 +28,9 @@ export * from './dialogTurnStatus'
 export * from './dialogEvent'
 export * from './dialogReason'
 export * from './dialogInstance'
+export * from './recognizerResult'
+export * from './serviceCollection'
+export * from './configuration'
+export * from './intentScore'
 
 export { runDialog } from './dialogHelper'

@@ -4,7 +4,7 @@
  */
 
 import { Storage, StoreItems } from '../storage'
-import { Memory } from './memory'
+import { AppMemory } from './appMemory'
 import { InputFile } from './inputFileDownloader'
 import { TurnStateEntry } from './turnStateEntry'
 import { TurnContext } from '../turnContext'
@@ -74,7 +74,7 @@ export class TurnState<
     TUserState = DefaultUserState,
     TTempState = DefaultTempState,
     TSSOState = DefaultSSOState
-> implements Memory {
+> implements AppMemory {
   private _scopes: Record<string, TurnStateEntry> = {}
   private _isLoaded = false
   private _loadingPromise?: Promise<boolean>

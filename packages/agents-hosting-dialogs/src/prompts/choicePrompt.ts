@@ -9,7 +9,7 @@ import { PromptCultureModels } from './promptCultureModels'
 import { Activity } from '@microsoft/agents-activity'
 
 // Need ChoiceDefaultsProperty so we can set choiceDefaults dynamically with lambda
-interface ChoiceDefaultsChoicePrompt {
+export interface ChoiceDefaultsChoicePrompt {
   [locale: string]: ChoiceFactoryOptions;
 }
 

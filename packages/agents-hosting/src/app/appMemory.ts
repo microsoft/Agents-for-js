@@ -7,7 +7,7 @@
  * Interface for memory operations that provides a way to store and retrieve values by path.
  * Allows components to persist state data during a conversation.
  */
-export interface Memory {
+export interface AppMemory {
   /**
    * Deletes a value at the specified path.
    * @param path The path to the value to delete
