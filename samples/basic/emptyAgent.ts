@@ -6,7 +6,7 @@ import { AgentApplication, MemoryStorage, TurnContext, TurnState, Storage } from
 
 class EmptyAgent extends AgentApplication<TurnState> {
   constructor (storage?: Storage) {
-    super({ startTypingTimer: true, storage })
+    super({ storage })
 
     this.conversationUpdate('membersAdded', this.help)
     this.message('/help', this.help)
