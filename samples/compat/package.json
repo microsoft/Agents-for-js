@@ -4,8 +4,8 @@
         "watch": "tsx --env-file-if-exists .env watch state.ts"
     },
     "dependencies": {
-    "@microsoft/agents-hosting-express": "file:../../packages/agents-hosting-express",
-    "@microsoft/microsoft-graph-client": "^3.0.7",
-    "adaptivecards-templating": "^2.3.1"
+      "@microsoft/agents-hosting-express": "file:../../packages/agents-hosting-express",
+      "@microsoft/microsoft-graph-client": "^3.0.7",
+      "adaptivecards-templating": "^2.3.1"
   }
 }

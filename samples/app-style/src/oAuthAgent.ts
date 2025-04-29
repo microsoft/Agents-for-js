@@ -22,9 +22,8 @@ class OAuthAgent extends AgentApplication<TurnState> {
 
     this._storage = storage!
 
-    // Register handlers
-    this.message('/logout', this._handleSignOut)
     this.message('/login', this._handleSignIn)
+    this.message('/logout', this._handleSignOut)
     this.message('/me', this._handleProfileRequest)
     this.conversationUpdate('membersAdded', this._handleMembersAdded)
     this.activity(ActivityTypes.Invoke, this._handleInvoke)
@@ -38,19 +37,19 @@ class OAuthAgent extends AgentApplication<TurnState> {
   }
 
   private _handleSignIn = async (context: TurnContext, state: TurnState): Promise<void> => {
-    await this.userIdentity.authenticate(context, state)
+    const tokenResponse = await this.userIdentity.authenticate(context, state)
+    await context.sendActivity(MessageFactory.text(`Auth flow status: ${tokenResponse.status}`))
   }
 
-  private _handleProfileRequest = async (context: TurnContext, state: TurnState): Promise<void> => {
-    await this._showGraphProfile(context, state)
-  }
+  private _handleProfileRequest = (context: TurnContext, state: TurnState): Promise<void> =>
+    this._showGraphProfile(context, state)
 
   private _handleMembersAdded = async (context: TurnContext, state: TurnState): Promise<void> => {
-    await state.load(context, this._storage)
+    // await state.load(context, this._storage)
     const membersAdded = context.activity.membersAdded!
     for (let cnt = 0; cnt < membersAdded.length; ++cnt) {
       if (membersAdded[cnt].id !== context.activity.recipient!.id) {
-        await context.sendActivity(MessageFactory.text('Enter "/login" to sign in or "/logout" to sign out'))
+        await context.sendActivity(MessageFactory.text('Enter "/login" to sign in or "/logout" to sign out. /me to see your profile.'))
         await context.sendActivity(MessageFactory.text('You can also save your user name, just type anything and I will ask What is your name'))
       }
     }
@@ -74,7 +73,7 @@ class OAuthAgent extends AgentApplication<TurnState> {
         await context.sendActivity(MessageFactory.text('Enter a valid code'))
       }
     } else {
-      await context.sendActivity(MessageFactory.text('Enter "/login" to sign in or "/logout" to sign out'))
+      await context.sendActivity(MessageFactory.text('You said: ' + context.activity.text))
     }
   }
 

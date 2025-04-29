@@ -1,7 +1,6 @@
 {
     "scripts": {
-        "start": "tsx --env-file-if-exists .env src/empty-agent.ts",
-        "watch": "tsx --env-file-if-exists .env"
+        "watch": "tsx watch --env-file-if-exists .env"
     },
     "dependencies": {
     "@microsoft/agents-hosting-express": "file:../../packages/agents-hosting-express"
