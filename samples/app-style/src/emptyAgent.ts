@@ -15,8 +15,8 @@ class EmptyAgent extends AgentApplication<TurnState> {
   }
 
   help = async (ctx: TurnContext) => {
-    const version = (await import('@microsoft/agents-hosting/package.json')).version
-    await ctx.sendActivity(`Empty Agent running on node sdk ${version}`)
+    await ctx.sendActivity(`Welcome to the Empty Agent sample. Type /help for help, /diag for diagnostics, 
+                            or send a message to see the echo feature in action.`)
   }
 
   echo = async (ctx: TurnContext, state: TurnState) => {
@@ -26,6 +26,8 @@ class EmptyAgent extends AgentApplication<TurnState> {
   }
 
   diag = async (ctx: TurnContext, state: TurnState) => {
+    const version = (await import('@microsoft/agents-hosting/package.json')).version
+    await ctx.sendActivity(`Empty Agent running on node sdk ${version}`)
     const md = (text: string) => '```\n' + text + '\n```'
     await ctx.sendActivity(md(JSON.stringify(state, null, 2)))
   }
