@@ -5,7 +5,6 @@ import { startServer } from '@microsoft/agents-hosting-express'
 import { ActivityTypes } from '@microsoft/agents-activity'
 import { AgentApplication, CardFactory, MemoryStorage, MessageFactory, TokenRequestStatus, TurnContext, TurnState, Storage } from '@microsoft/agents-hosting'
 import { Template } from 'adaptivecards-templating'
-import * as userTemplate from './../_resources/UserProfileCard.json'
 import { getUserInfo } from '../_shared/userGraphClient'
 
 class OAuthAgent extends AgentApplication<TurnState> {
@@ -80,6 +79,7 @@ class OAuthAgent extends AgentApplication<TurnState> {
   private async _showGraphProfile (context: TurnContext, state: TurnState): Promise<void> {
     const userTokenResponse = await this.userIdentity.getToken(context)
     if (userTokenResponse.status === TokenRequestStatus.Success) {
+      const userTemplate = require('./../_resources/UserProfileCard.json')
       const template = new Template(userTemplate)
       const userInfo = await getUserInfo(userTokenResponse.token!)
       const card = template.expand(userInfo)

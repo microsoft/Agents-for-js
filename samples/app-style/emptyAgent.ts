@@ -2,11 +2,11 @@
 // Licensed under the MIT License.
 
 import { startServer } from '@microsoft/agents-hosting-express'
-import { AgentApplication, MemoryStorage, TurnContext, TurnState } from '@microsoft/agents-hosting'
+import { AgentApplication, MemoryStorage, TurnContext, TurnState, Storage } from '@microsoft/agents-hosting'
 
 class EmptyAgent extends AgentApplication<TurnState> {
-  constructor () {
-    super({ startTypingTimer: true, storage: new MemoryStorage() })
+  constructor (storage?: Storage) {
+    super({ startTypingTimer: true, storage })
 
     this.conversationUpdate('membersAdded', this.help)
     this.message('/help', this.help)
@@ -33,4 +33,4 @@ class EmptyAgent extends AgentApplication<TurnState> {
   }
 }
 
-startServer(new EmptyAgent())
+startServer(new EmptyAgent(new MemoryStorage()))

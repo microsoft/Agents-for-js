@@ -36,6 +36,9 @@ steps:
 - script: npm run build
   displayName: build
 
+- script: npm run build:samples
+  displayName: build samples
+
 - script: npm run test
   displayName: tests
 

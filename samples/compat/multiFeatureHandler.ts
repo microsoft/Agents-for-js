@@ -1,12 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import axios from 'axios'
 import { startServer } from '@microsoft/agents-hosting-express'
 import { ActivityHandler, CardFactory, MessageFactory, TurnContext } from '@microsoft/agents-hosting'
 import { ActionTypes, Activity, ActivityTypes, Attachment, EndOfConversationCodes } from '@microsoft/agents-activity'
-const path = require('path')
-const fs = require('fs')
+import path from 'path'
+import fs from 'fs'
+import axios from 'axios'
 
 export class MultiFeatureHandler extends ActivityHandler {
   // conversationReferences: { [key: string]: ConversationReference }
@@ -212,7 +212,7 @@ export class MultiFeatureHandler extends ActivityHandler {
           return value !== undefined && value.type === 'Buffer' ? Buffer.from(value.data) : value
         })
       }
-      fs.writeFile(localFileName, response.data, (fsError: any) => {
+      fs.writeFile(localFileName, response.data, (fsError) => {
         if (fsError != null) {
           throw fsError
         }
