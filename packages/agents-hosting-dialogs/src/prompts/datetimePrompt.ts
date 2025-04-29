@@ -23,8 +23,8 @@ export interface DateTimeResolution {
   type: string;
 
   /**
-     * Value of the specified [type](#type) that's a reasonable approximation given the ambiguity
-     * of the [timex](#timex).
+     * Value of the specified type that's a reasonable approximation given the ambiguity
+     * of the timex.
      */
   value: string;
 }
