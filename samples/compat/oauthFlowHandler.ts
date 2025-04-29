@@ -4,8 +4,7 @@
 import { startServer } from '@microsoft/agents-hosting-express'
 import { ActivityHandler, CardFactory, MessageFactory, TurnContext, UserState, OAuthFlow, TokenRequestStatus, MemoryStorage } from '@microsoft/agents-hosting'
 import { Template } from 'adaptivecards-templating'
-import * as userTemplate from './../../_resources/UserProfileCard.json'
-import { getUserInfo } from './userGraphClient'
+import { getUserInfo } from './../_shared/userGraphClient'
 
 export class OAuthFlowHanlder extends ActivityHandler {
   oAuthFlow: OAuthFlow
@@ -68,6 +67,7 @@ export class OAuthFlowHanlder extends ActivityHandler {
   }
 
   async sendLoggedUserInfo (context: TurnContext, token:string): Promise<void> {
+    const userTemplate = require('./../_resources/UserProfileCard.json')
     const template = new Template(userTemplate)
     const userInfo = await getUserInfo(token)
     const card = template.expand(userInfo)

@@ -1,8 +1,0 @@
-{
-    "scripts": {
-        "watch": "tsx watch --env-file-if-exists .env"
-    },
-    "dependencies": {
-    "@microsoft/agents-hosting-express": "file:../../packages/agents-hosting-express"
-  }
-}

@@ -5,8 +5,8 @@ import { startServer } from '@microsoft/agents-hosting-express'
 import { ActivityTypes } from '@microsoft/agents-activity'
 import { AgentApplication, CardFactory, MemoryStorage, MessageFactory, TokenRequestStatus, TurnContext, TurnState, Storage } from '@microsoft/agents-hosting'
 import { Template } from 'adaptivecards-templating'
-import * as userTemplate from './../../_resources/UserProfileCard.json'
-import { getUserInfo } from './userGraphClient'
+import * as userTemplate from './../_resources/UserProfileCard.json'
+import { getUserInfo } from '../_shared/userGraphClient'
 
 class OAuthAgent extends AgentApplication<TurnState> {
   private readonly _storage: Storage
