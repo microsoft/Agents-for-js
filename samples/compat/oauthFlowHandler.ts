@@ -40,7 +40,7 @@ export class OAuthFlowHanlder extends ActivityHandler {
             await context.sendActivity(MessageFactory.text('Invalid code. Please try again.'))
           }
         } else {
-          await context.sendActivity(MessageFactory.text('Please enter "signin" to sign in or "signour" to sign out'))
+          await context.sendActivity(MessageFactory.text('Please enter "signin" to sign in or "signout" to sign out'))
         }
       }
 
