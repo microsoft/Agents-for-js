@@ -79,7 +79,7 @@ class OAuthAgent extends AgentApplication<TurnState> {
   private async _showGraphProfile (context: TurnContext, state: TurnState): Promise<void> {
     const userTokenResponse = await this.userIdentity.getToken(context)
     if (userTokenResponse.status === TokenRequestStatus.Success) {
-      const userTemplate = require('./../_resources/UserProfileCard.json')
+      const userTemplate = (await import('./../_resources/UserProfileCard.json'))
       const template = new Template(userTemplate)
       const userInfo = await getUserInfo(userTokenResponse.token!)
       const card = template.expand(userInfo)

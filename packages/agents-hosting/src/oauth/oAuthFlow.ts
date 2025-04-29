@@ -46,6 +46,7 @@ export class OAuthFlow {
 
   public async getUserToken (context: TurnContext): Promise<TokenResponse> {
     await this.initializeTokenClient(context)
+    logger.info('Get token from user token service')
     return await this.userTokenClient?.getUserToken(this.absOauthConnectionName, context.activity.channelId!, context.activity.from?.id!)!
   }
 

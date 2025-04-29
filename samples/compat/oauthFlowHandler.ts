@@ -67,7 +67,7 @@ export class OAuthFlowHanlder extends ActivityHandler {
   }
 
   async sendLoggedUserInfo (context: TurnContext, token:string): Promise<void> {
-    const userTemplate = require('./../_resources/UserProfileCard.json')
+    const userTemplate = (await import('./../_resources/UserProfileCard.json'))
     const template = new Template(userTemplate)
     const userInfo = await getUserInfo(token)
     const card = template.expand(userInfo)
