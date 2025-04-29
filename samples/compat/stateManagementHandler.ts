@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 import { startServer } from '@microsoft/agents-hosting-express'
-import { ActivityHandler, ConversationState, TurnContext, UserState, AgentStatePropertyAccessor, MemoryStorage } from '@microsoft/agents-hosting'
+import { ActivityHandler, ConversationState, TurnContext, UserState, AgentStatePropertyAccessor, MemoryStorage, Storage } from '@microsoft/agents-hosting'
 
 interface ConversationData {
   promptedForUserName: boolean;
@@ -19,12 +19,11 @@ export class StateManagementHandler extends ActivityHandler {
   conversationDataAccessor: AgentStatePropertyAccessor<ConversationData>
   userProfileAccessor: AgentStatePropertyAccessor<UserProfile>
 
-  constructor () {
+  constructor (storage: Storage) {
     super()
 
-    const memoryStorage = new MemoryStorage()
-    this.conversationState = new ConversationState(memoryStorage)
-    this.userState = new UserState(memoryStorage)
+    this.conversationState = new ConversationState(storage)
+    this.userState = new UserState(storage)
 
     this.conversationDataAccessor = this.conversationState.createProperty<ConversationData>('conversationData')
     this.userProfileAccessor = this.userState.createProperty<UserProfile>('userProfile')
@@ -86,4 +85,4 @@ export class StateManagementHandler extends ActivityHandler {
     await this.userState.saveChanges(context, false)
   }
 }
-startServer(new StateManagementHandler())
+startServer(new StateManagementHandler(new MemoryStorage()))

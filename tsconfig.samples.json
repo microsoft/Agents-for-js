@@ -4,6 +4,6 @@
     "outDir": "./dist/samples/",
     "rootDir": "./samples"
   },
-  "include": ["samples/**/*.ts"],
+  "include": ["samples/**/*.ts", "samples/_resources/*.json"],
   "exclude": ["node_modules"]
 }

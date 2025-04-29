@@ -23,7 +23,7 @@ export class MultiFeatureHandler extends ActivityHandler {
             await context.sendActivity('Welcome to the Multi Feature sample!')
             await context.sendActivity('For attachments, if you send "Display Attachment options" you would see the options. You can also send me an attachment and I will save it, and alternatively, I can send you an attachment.')
             await context.sendActivity('You can also send "wait" and watch me typing, or send "end" or "stop" to finish the conversation.')
-            await context.sendActivity('Navigate to http://<your-server>/api/notify to proactively message everyone who has previously messaged this agent. Remember to add an Authorization header with your Bearer token')
+            // await context.sendActivity('Navigate to http://<your-server>/api/notify to proactively message everyone who has previously messaged this agent. Remember to add an Authorization header with your Bearer token')
 
             // By calling next() you ensure that the next Handler is run.
             await next()
