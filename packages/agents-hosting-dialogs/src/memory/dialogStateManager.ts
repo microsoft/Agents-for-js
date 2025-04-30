@@ -435,7 +435,7 @@ export class DialogStateManager {
      * Track when specific paths are changed.
      *
      * @param paths Paths to track.
-     * @returns Normalized paths to pass to [anyPathChanged()](#anypathchanged).
+     * @returns Normalized paths to pass to `anyPathChanged` method.
      */
   trackPaths (paths: string[]): string[] {
     const allPaths: string[] = []
@@ -459,7 +459,7 @@ export class DialogStateManager {
      * Check to see if any path has changed since watermark.
      *
      * @param counter Time counter to compare to.
-     * @param paths Paths from [trackPaths()](#trackpaths) to check.
+     * @param paths Paths from `trackPaths` method to check.
      * @returns True if any path has changed since counter.
      */
   anyPathChanged (counter: number, paths: string[]): boolean {
