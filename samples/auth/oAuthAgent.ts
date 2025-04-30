@@ -52,8 +52,19 @@ class OAuthAgent extends AgentApplication<TurnState> {
     await context.sendActivity(MessageFactory.text(`Auth flow status: ${tokenResponse.status}`))
   }
 
-  private _profileRequest = (context: TurnContext, state: TurnState): Promise<void> =>
-    this._showGraphProfile(context, state)
+  private _profileRequest = async (context: TurnContext, state: TurnState): Promise<void> => {
+    const userTokenResponse = await this.authorization.getToken(context)
+    if (userTokenResponse.status === TokenRequestStatus.Success) {
+      const userTemplate = (await import('./../_resources/UserProfileCard.json'))
+      const template = new Template(userTemplate)
+      const userInfo = await getUserInfo(userTokenResponse.token!)
+      const card = template.expand(userInfo)
+      const activity = MessageFactory.attachment(CardFactory.adaptiveCard(card))
+      await context.sendActivity(activity)
+    } else {
+      await context.sendActivity(MessageFactory.text(' token not available. Enter "/login" to sign in.'))
+    }
+  }
 
   private _pullRequests = async (context: TurnContext, state: TurnState): Promise<void> => {
     const userTokenResponse = await this.authorization.getToken(context, 'github')
@@ -109,20 +120,6 @@ class OAuthAgent extends AgentApplication<TurnState> {
       }
     } else {
       await context.sendActivity(MessageFactory.text('You said.' + context.activity.text))
-    }
-  }
-
-  private async _showGraphProfile (context: TurnContext, state: TurnState): Promise<void> {
-    const userTokenResponse = await this.authorization.getToken(context)
-    if (userTokenResponse.status === TokenRequestStatus.Success) {
-      const userTemplate = (await import('./../_resources/UserProfileCard.json'))
-      const template = new Template(userTemplate)
-      const userInfo = await getUserInfo(userTokenResponse.token!)
-      const card = template.expand(userInfo)
-      const activity = MessageFactory.attachment(CardFactory.adaptiveCard(card))
-      await context.sendActivity(activity)
-    } else {
-      await context.sendActivity(MessageFactory.text(' token not available. Enter "/login" to sign in.'))
     }
   }
 }
