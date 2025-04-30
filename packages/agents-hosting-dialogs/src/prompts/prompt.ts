@@ -91,7 +91,7 @@ export interface PromptOptions {
  */
 export interface PromptRecognizerResult<T> {
   /**
-     * If `true` the users utterance was successfully recognized and value contains the
+     * If `true` the user's utterance was successfully recognized and value contains the
      * recognized result.
      */
   succeeded: boolean;
