@@ -20,7 +20,7 @@ interface UserProfile {
 
 type ApplicationTurnState = TurnState<ConversationData, UserProfile>
 const storage = new MemoryStorage()
-export const app = new TeamsApplicationBuilder<ApplicationTurnState>().withStorage(storage).withAuthentication({ }).setRemoveRecipientMention(false).build()
+export const app = new TeamsApplicationBuilder<ApplicationTurnState>().withStorage(storage).withAuthorization({ default: { name: 'SSO' } }).setRemoveRecipientMention(false).build()
 
 app.message('/signout', async (context: TurnContext, state: ApplicationTurnState) => {
   await app.teamsAuthManager.signOut(context)
