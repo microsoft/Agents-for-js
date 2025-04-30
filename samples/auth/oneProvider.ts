@@ -4,7 +4,7 @@
 import { startServer } from '@microsoft/agents-hosting-express'
 import { AgentApplication, MemoryStorage, MessageFactory, TokenRequestStatus, TurnContext, TurnState } from '@microsoft/agents-hosting'
 
-class NoAuthDemo extends AgentApplication<TurnState> {
+class OneProvider extends AgentApplication<TurnState> {
   constructor () {
     super({
       storage: new MemoryStorage(),
@@ -42,4 +42,4 @@ class NoAuthDemo extends AgentApplication<TurnState> {
   }
 }
 
-startServer(new NoAuthDemo())
+startServer(new OneProvider())
