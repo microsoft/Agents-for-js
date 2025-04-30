@@ -86,7 +86,7 @@ describe('OAuthFlow', () => {
     oAuthFlow.absOauthConnectionName = ''
     await assert.rejects(async () => {
       await oAuthFlow.beginFlow(context)
-    }, new Error('connectionName is not set in the auth config, review your environment variables'))
+    }, new Error('connectionName is not set'))
   })
 
   it('should retrieve token using valid magic code from text during continueFlow', async () => {

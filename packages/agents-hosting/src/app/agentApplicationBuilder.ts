@@ -49,18 +49,18 @@ export class AgentApplicationBuilder<TState extends TurnState = TurnState> {
    * @param startTypingTimer Whether to show typing indicators
    * @returns This builder instance for chaining
    */
-  public setStartTypingTimer (startTypingTimer: boolean): this {
-    this._options.startTypingTimer = startTypingTimer
-    return this
-  }
+  // public setStartTypingTimer (startTypingTimer: boolean): this {
+  //   this._options.startTypingTimer = startTypingTimer
+  //   return this
+  // }
 
   /**
    * Sets authentication options for the AgentApplication.
-   * @param authenticationOptions The user identity authentication options
+   * @param authHandlers The user identity authentication options
    * @returns This builder instance for chaining
    */
-  public withAuthentication (authenticationOptions: AuthorizationHandlers): this {
-    this._options.authorization = authenticationOptions
+  public withAuthorization (authHandlers: AuthorizationHandlers): this {
+    this._options.authorization = authHandlers
     return this
   }
 

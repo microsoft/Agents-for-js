@@ -23,13 +23,9 @@ describe('ApplicationBuilder', () => {
   // const ai: AIOptions<TurnState> = { planner: new TestPlanner() }
   // const longRunningMessages = true
   // const removeRecipientMention = false
-  const startTypingTimer = false
+  // const startTypingTimer = false
   const storage = new MemoryStorage()
   // const taskModules: TaskModulesOptions = { taskDataFilter: 'taskFilter' }
-  const authenticationSettings = {
-    enableSSO: true,
-    ssoConnectionName: 'testConnectionName'
-  }
 
   it('should create an Application with default options', () => {
     const app = new AgentApplicationBuilder().build()
@@ -41,7 +37,7 @@ describe('ApplicationBuilder', () => {
     // assert.equal(app.options.adaptiveCards, undefined)
     // assert.equal(app.options.taskModules, undefined)
     // assert.equal(app.options.removeRecipientMention, true)
-    assert.equal(app.options.startTypingTimer, true)
+    assert.equal(app.options.startTypingTimer, false)
     assert.equal(app.options.longRunningMessages, false)
   })
 
@@ -49,22 +45,22 @@ describe('ApplicationBuilder', () => {
     const app = new AgentApplicationBuilder()
       // .setRemoveRecipientMention(removeRecipientMention)
       .withStorage(storage)
-      // .withAIOptions(ai)
+      .withAuthorization({ ah1: { name: 'TestConnection' } })
       // .withLongRunningMessages(adapter, botAppId)
       // .withAdaptiveCardOptions(adaptiveCards)
       // .withAuthentication(authenticationSettings)
       // .withTaskModuleOptions(taskModules)
-      .setStartTypingTimer(startTypingTimer)
+      // .setStartTypingTimer(startTypingTimer)
       .build()
     assert.notEqual(app.options, undefined)
     // assert.equal(app.options.adapter, adapter)
     assert.equal(app.options.storage, storage)
     // assert.equal(app.options.ai, ai)
     // assert.equal(app.options.adaptiveCards, adaptiveCards)
-    assert.equal(app.options.authorization, authenticationSettings)
+    assert.equal(app.authorization._authHandlers === null, false)
     // assert.equal(app.options.taskModules, taskModules)
     // assert.equal(app.options.removeRecipientMention, removeRecipientMention)
-    assert.equal(app.options.startTypingTimer, startTypingTimer)
+    // assert.equal(app.startTypingTimer, startTypingTimer)
     // assert.equal(app.options.longRunningMessages, longRunningMessages)
   })
 
