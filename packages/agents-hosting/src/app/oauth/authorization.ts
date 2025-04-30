@@ -33,6 +33,9 @@ export class Authorization {
    * @param {Storage} storage - The storage system to use for state management.
    */
   constructor (storage: Storage, authHandlers: AuthorizationHandlers) {
+    if (storage === undefined || storage === null) {
+      throw new Error('Storage is required for UserAuthorization')
+    }
     const userState = new UserState(storage)
     if (authHandlers === undefined || Object.keys(authHandlers).length === 0) {
       throw new Error('The authorization does not have any auth handlers')

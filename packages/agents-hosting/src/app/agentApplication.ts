@@ -84,7 +84,7 @@ export class AgentApplication<TState extends TurnState> {
   public get authorization (): Authorization {
     if (!this._authorization) {
       throw new Error(
-        'The Application.authentication property is unavailable because no authentication options were configured.'
+        'The Application.authorization property is unavailable because no authentication options were configured.'
       )
     }
 
