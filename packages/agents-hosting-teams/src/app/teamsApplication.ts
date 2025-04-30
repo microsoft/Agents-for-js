@@ -41,7 +41,7 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
       taskModules: options?.taskModules
     }
 
-    if (options?.storage && options?.authentication && options?.authentication.enableSSO) {
+    if (options?.storage && options?.authorization) {
       this._teamsAuthManager = new TeamsOAuthFlowAppStyle(options?.storage ?? new MemoryStorage())
     }
 
