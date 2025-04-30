@@ -63,18 +63,23 @@ class OAuthAgent extends AgentApplication<TurnState> {
 
       const userTemplate = (await import('./../_resources/UserProfileCard.json'))
       const template = new Template(userTemplate)
-      const userInfo = ghProf
-      const card = template.expand(userInfo)
+      const card = template.expand(ghProf)
       const activity = MessageFactory.attachment(CardFactory.adaptiveCard(card))
       await context.sendActivity(activity)
 
       const prs = await getPullRequests('microsoft', 'agents', userTokenResponse.token)
       for (const pr of prs) {
-        // const prCard = (await import('./../_resources/PullRequestCard.json'))
-        // const template = new Template(prCard)
-        // const card = template.expand(pr)
-        // const activity = MessageFactory.attachment(CardFactory.adaptiveCard(card))
-        await context.sendActivity(`pr ${pr.id} ${pr.title} ${pr.url}`)
+        const prCard = (await import('./../_resources/PullRequestCard.json'))
+        const template = new Template(prCard)
+        const toExpand = {
+          $root: {
+            title: pr.title,
+            url: pr.url,
+            id: pr.id,
+          }
+        }
+        const card = template.expand(toExpand)
+        await context.sendActivity(MessageFactory.attachment(CardFactory.adaptiveCard(card)))
       }
     } else {
       const tokenResponse = await this.authorization.beginOrContinueFlow(context, state, 'github')
