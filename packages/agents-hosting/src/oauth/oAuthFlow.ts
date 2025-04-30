@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 import { debug } from './../logger'
-import { Activity, ActivityTypes, Attachment } from '@microsoft/agents-activity'
+import { ActivityTypes, Attachment } from '@microsoft/agents-activity'
 import {
   CardFactory,
   AgentStatePropertyAccessor,
@@ -25,29 +25,38 @@ interface TokenVerifyState {
   state: string
 }
 /**
- * Manages the OAuth flow for Teams.
+ * Manages the OAuth flow
  */
 export class OAuthFlow {
-  userTokenClient?: UserTokenClient
+  userTokenClient: UserTokenClient
   state: FlowState | null
   flowStateAccessor: AgentStatePropertyAccessor<FlowState | null>
   tokenExchangeId: string | null = null
   absOauthConnectionName: string
+  cardTitle: string = 'Sign in'
+  cardText: string = 'login'
   /**
    * Creates a new instance of OAuthFlow.
    * @param userState The user state.
    */
-  constructor (userState: UserState, absOauthConnectionName: string, tokenClient?: UserTokenClient) {
-    this.state = null
+  constructor (userState: UserState, absOauthConnectionName: string, tokenClient?: UserTokenClient, cardTitle?: string, cardText?: string) {
+    this.state = new FlowState()
     this.flowStateAccessor = userState.createProperty('flowState')
     this.absOauthConnectionName = absOauthConnectionName
-    this.userTokenClient = tokenClient
+    this.userTokenClient = tokenClient ?? null!
+    this.cardTitle = cardTitle ?? this.cardTitle
+    this.cardText = cardText ?? this.cardText
   }
 
   public async getUserToken (context: TurnContext): Promise<TokenResponse> {
     await this.initializeTokenClient(context)
     logger.info('Get token from user token service')
-    return await this.userTokenClient?.getUserToken(this.absOauthConnectionName, context.activity.channelId!, context.activity.from?.id!)!
+    const activity = context.activity
+    if (activity.channelId && activity.from && activity.from.id) {
+      return await this.userTokenClient.getUserToken(this.absOauthConnectionName, activity.channelId, activity.from.id)
+    } else {
+      throw new Error('UserTokenService requires channelId and from to be set')
+    }
   }
 
   /**
@@ -56,16 +65,14 @@ export class OAuthFlow {
    * @returns A promise that resolves to the user token.
    */
   public async beginFlow (context: TurnContext): Promise<TokenResponse> {
-    logger.info('Starting OAuth flow')
     this.state = await this.getUserState(context)
-
-    const authConfig = context.adapter.authConfig
     if (this.absOauthConnectionName === '') {
-      throw new Error('connectionName is not set in the auth config, review your environment variables')
+      throw new Error('connectionName is not set')
     }
+    logger.info('Starting OAuth flow for connectionName:', this.absOauthConnectionName)
     await this.initializeTokenClient(context)
 
-    const tokenResponse = await this.userTokenClient!.getUserToken(this.absOauthConnectionName, context.activity.channelId!, context.activity.from?.id!)
+    const tokenResponse = await this.userTokenClient.getUserToken(this.absOauthConnectionName, context.activity.channelId!, context.activity.from?.id!)
     if (tokenResponse?.status === TokenRequestStatus.Success) {
       this.state.flowStarted = false
       this.state.flowExpires = 0
@@ -74,10 +81,10 @@ export class OAuthFlow {
       return tokenResponse
     }
 
-    const signingResource: SigningResource = await this.userTokenClient!.getSignInResource(authConfig.clientId!, this.absOauthConnectionName, context.activity)
-    const oCard: Attachment = CardFactory.oauthCard(this.absOauthConnectionName, 'Sign in', 'login', signingResource)
-    const cardActivity : Activity = MessageFactory.attachment(oCard)
-    await context.sendActivity(cardActivity)
+    const authConfig = context.adapter.authConfig
+    const signingResource: SigningResource = await this.userTokenClient.getSignInResource(authConfig.clientId!, this.absOauthConnectionName, context.activity)
+    const oCard: Attachment = CardFactory.oauthCard(this.absOauthConnectionName, this.cardTitle, this.cardText, signingResource)
+    await context.sendActivity(MessageFactory.attachment(oCard))
     this.state.flowStarted = true
     this.state.flowExpires = Date.now() + 30000
     await this.flowStateAccessor.set(context, this.state)
@@ -167,7 +174,7 @@ export class OAuthFlow {
   }
 
   private async initializeTokenClient (context: TurnContext) {
-    if (this.userTokenClient === undefined) {
+    if (this.userTokenClient === undefined || this.userTokenClient === null) {
       const scope = 'https://api.botframework.com'
       const accessToken = await context.adapter.authProvider.getAccessToken(context.adapter.authConfig, scope)
       this.userTokenClient = new UserTokenClient(accessToken)

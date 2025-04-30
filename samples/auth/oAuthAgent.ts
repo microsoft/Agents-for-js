@@ -6,6 +6,7 @@ import { ActivityTypes } from '@microsoft/agents-activity'
 import { AgentApplication, CardFactory, MemoryStorage, MessageFactory, TokenRequestStatus, TurnContext, TurnState, Storage } from '@microsoft/agents-hosting'
 import { Template } from 'adaptivecards-templating'
 import { getUserInfo } from '../_shared/userGraphClient'
+import { getCurrentProfile, getPullRequests } from '../_shared/githubApiClient'
 
 class OAuthAgent extends AgentApplication<TurnState> {
   private readonly _storage: Storage
@@ -13,71 +14,101 @@ class OAuthAgent extends AgentApplication<TurnState> {
   constructor (storage?: Storage) {
     super({
       storage,
-      authentication: {
-        enableSSO: true,
-        ssoConnectionName: process.env.connectionName
+      authorization: {
+        graph: { title: 'Login to Microsoft Graph', text: 'login to Graph>' },
+        github: { title: 'Login to GitHub', text: 'login to GitHub' }
       }
     })
 
     this._storage = storage!
 
-    this.message('/login', this._handleSignIn)
-    this.message('/logout', this._handleSignOut)
-    this.message('/me', this._handleProfileRequest)
-    this.conversationUpdate('membersAdded', this._handleMembersAdded)
-    this.activity(ActivityTypes.Invoke, this._handleInvoke)
+    this.message('/login', this._signIn)
+    this.message('/status', this._status)
+    this.message('/logout', this._signOut)
+    this.message('/me', this._profileRequest)
+    this.message('/prs', this._pullRequests)
+    this.conversationUpdate('membersAdded', this._status)
+    this.activity(ActivityTypes.Invoke, this._invoke)
     this.onSignInSuccess(this._handleSignInSuccess)
-    this.activity(ActivityTypes.Message, this._handleMessage)
+    this.activity(ActivityTypes.Message, this._message)
   }
 
-  private _handleSignOut = async (context: TurnContext, state: TurnState): Promise<void> => {
-    await this.userIdentity.signOut(context, state)
+  private _status = async (context: TurnContext, state: TurnState): Promise<void> => {
+    const github = await this.authorization.getToken(context, 'github')
+    const graph = await this.authorization.getToken(context, 'graph')
+    const status = `GitHub flow status: ${github.status} ${github.token?.length}  
+                    Graph flow status: ${graph.status} ${graph.token?.length}`
+    await context.sendActivity(MessageFactory.text(status))
+    await context.sendActivity(MessageFactory.text('Enter "/login" to sign in or "/logout" to sign out. /me to see your profile. /prs to see your pull requests.'))
+  }
+
+  private _signOut = async (context: TurnContext, state: TurnState): Promise<void> => {
+    await this.authorization.signOut(context, state)
     await context.sendActivity(MessageFactory.text('User signed out'))
   }
 
-  private _handleSignIn = async (context: TurnContext, state: TurnState): Promise<void> => {
-    const tokenResponse = await this.userIdentity.authenticate(context, state)
+  private _signIn = async (context: TurnContext, state: TurnState): Promise<void> => {
+    const tokenResponse = await this.authorization.beginOrContinueFlow(context, state)
     await context.sendActivity(MessageFactory.text(`Auth flow status: ${tokenResponse.status}`))
   }
 
-  private _handleProfileRequest = (context: TurnContext, state: TurnState): Promise<void> =>
+  private _profileRequest = (context: TurnContext, state: TurnState): Promise<void> =>
     this._showGraphProfile(context, state)
 
-  private _handleMembersAdded = async (context: TurnContext, state: TurnState): Promise<void> => {
-    // await state.load(context, this._storage)
-    const membersAdded = context.activity.membersAdded!
-    for (let cnt = 0; cnt < membersAdded.length; ++cnt) {
-      if (membersAdded[cnt].id !== context.activity.recipient!.id) {
-        await context.sendActivity(MessageFactory.text('Enter "/login" to sign in or "/logout" to sign out. /me to see your profile.'))
-        await context.sendActivity(MessageFactory.text('You can also save your user name, just type anything and I will ask What is your name'))
+  private _pullRequests = async (context: TurnContext, state: TurnState): Promise<void> => {
+    const userTokenResponse = await this.authorization.getToken(context, 'github')
+    if (userTokenResponse.status === TokenRequestStatus.Success && userTokenResponse.token) {
+      const ghProf = await getCurrentProfile(userTokenResponse.token)
+      console.log('GitHub profile', ghProf)
+
+      const userTemplate = (await import('./../_resources/UserProfileCard.json'))
+      const template = new Template(userTemplate)
+      const userInfo = ghProf
+      const card = template.expand(userInfo)
+      const activity = MessageFactory.attachment(CardFactory.adaptiveCard(card))
+      await context.sendActivity(activity)
+
+      const prs = await getPullRequests('microsoft', 'agents', userTokenResponse.token)
+      for (const pr of prs) {
+        // const prCard = (await import('./../_resources/PullRequestCard.json'))
+        // const template = new Template(prCard)
+        // const card = template.expand(pr)
+        // const activity = MessageFactory.attachment(CardFactory.adaptiveCard(card))
+        await context.sendActivity(`pr ${pr.id} ${pr.title} ${pr.url}`)
       }
+    } else {
+      const tokenResponse = await this.authorization.beginOrContinueFlow(context, state, 'github')
+      console.warn('GitHub token not available after flow.' + tokenResponse.status)
     }
   }
 
-  private _handleInvoke = async (context: TurnContext, state: TurnState): Promise<void> => {
-    await this.userIdentity.authenticate(context, state)
+  private _invoke = async (context: TurnContext, state: TurnState): Promise<void> => {
+    await this.authorization.beginOrContinueFlow(context, state)
   }
 
-  private _handleSignInSuccess = async (context: TurnContext, state: TurnState): Promise<void> => {
-    await context.sendActivity(MessageFactory.text('User signed in successfully'))
-    await this._showGraphProfile(context, state)
+  private _handleSignInSuccess = async (context: TurnContext, state: TurnState, id?: string): Promise<void> => {
+    await context.sendActivity(MessageFactory.text('User signed in successfully in ' + id))
   }
 
-  private _handleMessage = async (context: TurnContext, state: TurnState): Promise<void> => {
-    if (this.userIdentity.oAuthFlow.state?.flowStarted === true) {
-      const code = Number(context.activity.text)
-      if (code.toString().length === 6) {
-        await this.userIdentity.authenticate(context, state)
-      } else {
-        await context.sendActivity(MessageFactory.text('Enter a valid code'))
+  private _message = async (context: TurnContext, state: TurnState): Promise<void> => {
+    const isMagicCode = context.activity.text?.match(/^\d{6}$/)
+    if (isMagicCode) {
+      for (const ah in this.authorization._authHandlers) {
+        const flow = this.authorization._authHandlers[ah].flow
+        if (flow?.state?.flowStarted) {
+          const tresp = await this.authorization.beginOrContinueFlow(context, state, ah)
+          if (tresp.status !== TokenRequestStatus.Success) {
+            await context.sendActivity(MessageFactory.text('Failed to complete the flow ' + ah))
+          }
+        }
       }
     } else {
-      await context.sendActivity(MessageFactory.text('You said: ' + context.activity.text))
+      await context.sendActivity(MessageFactory.text('You said.' + context.activity.text))
     }
   }
 
   private async _showGraphProfile (context: TurnContext, state: TurnState): Promise<void> {
-    const userTokenResponse = await this.userIdentity.getToken(context)
+    const userTokenResponse = await this.authorization.getToken(context)
     if (userTokenResponse.status === TokenRequestStatus.Success) {
       const userTemplate = (await import('./../_resources/UserProfileCard.json'))
       const template = new Template(userTemplate)

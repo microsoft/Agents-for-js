@@ -15,8 +15,7 @@ import { AppRoute } from './appRoute'
 import { TurnContext } from '../turnContext'
 import { ResourceResponse } from '../connector-client'
 import { debug } from '../logger'
-import { UserIdentity } from './oauth/userIdentity'
-import { MemoryStorage } from '../storage'
+import { Authorization } from './oauth/authorization'
 
 const logger = debug('agents:agent-application')
 
@@ -46,14 +45,14 @@ export class AgentApplication<TState extends TurnState> {
   protected readonly _beforeTurn: ApplicationEventHandler<TState>[] = []
   protected readonly _afterTurn: ApplicationEventHandler<TState>[] = []
   private readonly _adapter?: BaseAdapter
+  private readonly _authorization?: Authorization
   private _typingTimer: any
-  private readonly _userIdentity?: UserIdentity
 
   public constructor (options?: Partial<AgentApplicationOptions<TState>>) {
     this._options = {
       ...options,
       turnStateFactory: options?.turnStateFactory || (() => new TurnState() as TState),
-      startTypingTimer: options?.startTypingTimer !== undefined ? options.startTypingTimer : true,
+      startTypingTimer: options?.startTypingTimer !== undefined ? options.startTypingTimer : false,
       longRunningMessages: options?.longRunningMessages !== undefined ? options.longRunningMessages : false
     }
 
@@ -61,8 +60,8 @@ export class AgentApplication<TState extends TurnState> {
       this._adapter = this._options.adapter
     }
 
-    if (this._options.authentication && this._options.authentication.enableSSO && this._options.authentication.ssoConnectionName) {
-      this._userIdentity = new UserIdentity(this._options.storage ?? new MemoryStorage(), this._options.authentication.ssoConnectionName)
+    if (this._options.authorization) {
+      this._authorization = new Authorization(this._options.storage!, this._options.authorization)
     }
 
     if (this._options.longRunningMessages && !this._adapter && !this._options.agentAppId) {
@@ -82,14 +81,14 @@ export class AgentApplication<TState extends TurnState> {
     return this._adapter
   }
 
-  public get userIdentity (): UserIdentity {
-    if (!this._userIdentity) {
+  public get authorization (): Authorization {
+    if (!this._authorization) {
       throw new Error(
         'The Application.authentication property is unavailable because no authentication options were configured.'
       )
     }
 
-    return this._userIdentity
+    return this._authorization
   }
 
   public get options (): AgentApplicationOptions<TState> {
@@ -300,9 +299,9 @@ export class AgentApplication<TState extends TurnState> {
    * });
    * ```
    */
-  public onSignInSuccess (handler: (context: TurnContext, state: TurnState) => void): this {
-    if (this._userIdentity) {
-      this._userIdentity.onSignInSuccess(handler)
+  public onSignInSuccess (handler: (context: TurnContext, state: TurnState, id?: string) => void): this {
+    if (this.options.authorization) {
+      this.authorization.onSignInSuccess(handler)
     } else {
       throw new Error(
         'The Application.authentication property is unavailable because no authentication options were configured.'
