@@ -10,16 +10,16 @@ import { getUserInfo } from './userGraphClient'
 const storage = new MemoryStorage()
 export const app = new AgentApplicationBuilder()
   .withStorage(storage)
-  .withAuthentication({ enableSSO: true, ssoConnectionName: process.env.connectionName })
+  .withAuthentication({ })
   .build()
 
 app.message('/signout', async (context: TurnContext, state) => {
-  await app.userIdentity.signOut(context, state)
+  await app.authorization.signOut(context, state)
   await context.sendActivity(MessageFactory.text('User signed out'))
 })
 
 app.message('/signin', async (context: TurnContext, state) => {
-  await app.userIdentity.authenticate(context, state)
+  await app.authorization.beginOrContinueFlow(context, state)
 })
 
 app.message('/me', async (context: TurnContext, state) => {
@@ -38,7 +38,7 @@ app.conversationUpdate('membersAdded', async (context: TurnContext, state) => {
 })
 
 app.activity(ActivityTypes.Invoke, async (context: TurnContext, state) => {
-  await app.userIdentity.authenticate(context, state)
+  await app.authorization.beginOrContinueFlow(context, state)
 })
 
 app.onSignInSuccess(async (context: TurnContext, state) => {
@@ -47,10 +47,10 @@ app.onSignInSuccess(async (context: TurnContext, state) => {
 })
 
 app.activity(ActivityTypes.Message, async (context: TurnContext, state) => {
-  if (app.userIdentity.oAuthFlow.state?.flowStarted === true) {
+  if (app.authorization.getFlowState() === true) {
     const code = Number(context.activity.text)
     if (code.toString().length === 6) {
-      await app.userIdentity.authenticate(context, state)
+      await app.authorization.beginOrContinueFlow(context, state)
     } else {
       await context.sendActivity(MessageFactory.text('Please enter a valid code'))
     }
@@ -60,7 +60,7 @@ app.activity(ActivityTypes.Message, async (context: TurnContext, state) => {
 })
 
 async function showGraphProfile (context: TurnContext, state: TurnState): Promise<void> {
-  const userTokenResponse = await app.userIdentity.getToken(context)
+  const userTokenResponse = await app.authorization.getToken(context)
   if (userTokenResponse.status === TokenRequestStatus.Success) {
     const template = new Template(userTemplate)
     const userInfo = await getUserInfo(userTokenResponse.token!)
