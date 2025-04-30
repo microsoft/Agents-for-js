@@ -9,7 +9,7 @@ class OneProvider extends AgentApplication<TurnState> {
     super({
       storage: new MemoryStorage(),
       authorization: {
-        aad: { name: 'SSOSelf' }
+        default: { name: 'SSOSelf' }
       }
     })
     this.conversationUpdate('membersAdded', this._status)
