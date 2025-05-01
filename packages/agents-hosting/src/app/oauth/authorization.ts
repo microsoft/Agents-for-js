@@ -59,7 +59,7 @@ export class Authorization {
     this._authHandlers = authHandlers
     for (const ah in this._authHandlers) {
       if (this._authHandlers![ah].name === undefined && process.env[ah + '_connectionName'] === undefined) {
-        throw new Error(`Environment variable ${ah}_connectionName not set in autorization and not found in env vars.`)
+        throw new Error(`AuthHandler name ${ah}_connectionName not set in autorization and not found in env vars.`)
       }
       const currentAuthHandler = this._authHandlers![ah]
       currentAuthHandler.name = currentAuthHandler.name ?? process.env[ah + '_connectionName'] as string
