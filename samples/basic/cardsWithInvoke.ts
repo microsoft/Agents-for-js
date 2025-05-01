@@ -22,11 +22,11 @@ const sendCardWithInvoke = async (context: TurnContext, state: TurnState): Promi
       ],
       actions: [
         {
-          type: 'Action.Submit',
+          type: 'Action.Execute',
           title: 'Click me',
           verb: 'doStuff',
           data: {
-            action: 'invoke'
+            action: 'my action'
           }
         }
       ]
