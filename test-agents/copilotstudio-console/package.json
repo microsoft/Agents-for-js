@@ -17,6 +17,6 @@
     "@microsoft/agents-activity": "file:../../packages/agents-activity",
     "@microsoft/agents-copilot-studio": "file:../../packages/agents-copilotstudio-client",
     "@azure/msal-node": "^3.5.1",
-    "open": "^10.1.1"
+    "open": "^10.1.2"
   }
 }
