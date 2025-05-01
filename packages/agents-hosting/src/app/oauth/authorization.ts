@@ -68,7 +68,7 @@ export class Authorization {
       currentAuthHandler.auto = currentAuthHandler.auto ?? process.env[ah + '_connectionAuto'] === 'true'
       currentAuthHandler.flow = new OAuthFlow(userState, currentAuthHandler.name, null!, currentAuthHandler.title, currentAuthHandler.text)
     }
-    logger.info('Authorization handlers configured:', this._authHandlers)
+    logger.info('Authorization handlers configured with', this._authHandlers.length, 'handlers')
   }
 
   /**

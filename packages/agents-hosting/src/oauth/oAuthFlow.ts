@@ -8,7 +8,6 @@ import {
   UserState,
   TurnContext,
   MessageFactory,
-  SigningResource,
   TokenExchangeRequest,
   UserTokenClient
 } from '../'
@@ -82,7 +81,7 @@ export class OAuthFlow {
     }
 
     const authConfig = context.adapter.authConfig
-    const signingResource: SigningResource = await this.userTokenClient.getSignInResource(authConfig.clientId!, this.absOauthConnectionName, context.activity)
+    const signingResource = await this.userTokenClient.getSignInResource(authConfig.clientId!, this.absOauthConnectionName, context.activity.getConversationReference(), context.activity.relatesTo)
     const oCard: Attachment = CardFactory.oauthCard(this.absOauthConnectionName, this.cardTitle, this.cardText, signingResource)
     await context.sendActivity(MessageFactory.attachment(oCard))
     this.state.flowStarted = true

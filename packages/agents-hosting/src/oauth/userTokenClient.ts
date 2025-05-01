@@ -3,7 +3,7 @@
 
 import axios, { AxiosInstance } from 'axios'
 import { SigningResource } from './signingResource'
-import { Activity } from '@microsoft/agents-activity'
+import { ConversationReference } from '@microsoft/agents-activity'
 import { debug } from '../logger'
 import { TokenExchangeRequest } from './tokenExchangeRequest'
 import { normalizeTokenExchangeState } from '../activityWireCompat'
@@ -86,12 +86,12 @@ export class UserTokenClient {
    * @param activity The activity.
    * @returns A promise that resolves to the signing resource.
    */
-  async getSignInResource (appId: string, cnxName: string, activity: Activity) : Promise<SigningResource> {
+  async getSignInResource (appId: string, cnxName: string, conversationReference: ConversationReference, relatesTo?: ConversationReference) : Promise<SigningResource> {
     try {
       const tokenExchangeState = {
         connectionName: cnxName,
-        conversation: activity.getConversationReference(),
-        relatesTo: activity.RelatesTo,
+        conversation: conversationReference,
+        relatesTo,
         msAppId: appId
       }
       const tokenExchangeStateNormalized = normalizeTokenExchangeState(tokenExchangeState)
