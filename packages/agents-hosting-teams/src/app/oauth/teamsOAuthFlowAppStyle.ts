@@ -52,7 +52,7 @@ export class TeamsOAuthFlowAppStyle {
     this.userTokenClient = new UserTokenClient(accessToken)
     const retVal: string = ''
     await context.sendActivities([MessageFactory.text('authorizing user'), new Activity(ActivityTypes.Typing)])
-    const signingResource: SigningResource = await this.userTokenClient.getSignInResource(authConfig.clientId!, authConfig.connectionName!, context.activity)
+    const signingResource: SigningResource = await this.userTokenClient.getSignInResource(authConfig.clientId!, authConfig.connectionName!, context.activity.getConversationReference(), context.activity.relatesTo)
     const oCard: Attachment = CardFactory.oauthCard(authConfig.connectionName as string, 'Sign in', '', signingResource)
     await context.sendActivity(MessageFactory.attachment(oCard))
     state.sso.flowStarted = true
