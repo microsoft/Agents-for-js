@@ -9,7 +9,22 @@ import { PromptCultureModels } from './promptCultureModels'
 import { Activity } from '@microsoft/agents-activity'
 
 // Need ChoiceDefaultsProperty so we can set choiceDefaults dynamically with lambda
+
+/**
+ * Represents a dictionary of default choice options for different locales.
+ *
+ * @remarks
+ * This interface is used to define the default options for rendering choices in prompts,
+ * such as separators, inline options, and whether to include numbers.
+ */
 export interface ChoiceDefaultsChoicePrompt {
+  /**
+   * A mapping of locale strings to their corresponding choice factory options.
+   *
+   * @remarks
+   * Each locale key maps to a `ChoiceFactoryOptions` object that defines the
+   * default behavior for rendering choices in that locale.
+   */
   [locale: string]: ChoiceFactoryOptions;
 }
 
@@ -17,12 +32,12 @@ export interface ChoiceDefaultsChoicePrompt {
  * Prompts a user to select from a list of choices.
  *
  * @remarks
- * By default the prompt will return to the calling dialog a `FoundChoice` object containing the
+ * By default the prompt will return to the calling dialog a {@link FoundChoice} object containing the
  * choice that was selected.
  */
 export class ChoicePrompt extends Prompt<FoundChoice> {
   /**
-     * A dictionary of Default Choices based on [[PromptCultureModels.getSupportedCultures()]].
+     * A dictionary of Default Choices based on {@link PromptCultureModels.getSupportedCultures | PromptCultureModels.getSupportedCultures method}.
      * Can be replaced by user using the constructor that contains choiceDefaults.
      */
   private choiceDefaults: ChoiceDefaultsChoicePrompt
@@ -47,7 +62,7 @@ export class ChoicePrompt extends Prompt<FoundChoice> {
   choiceOptions: ChoiceFactoryOptions | undefined
 
   /**
-     * Additional options passed to the underlying `recognizeChoices()` function.
+     * Additional options passed to the underlying {@link recognizeChoices | recognizeChoices function }.
      */
   recognizerOptions: FindChoicesOptions | undefined
 
