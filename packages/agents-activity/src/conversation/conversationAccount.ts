@@ -10,13 +10,44 @@ import { roleTypeZodSchema, RoleTypes } from './roleTypes'
  * Interface representing a conversation account.
  */
 export interface ConversationAccount {
+  /**
+   * The unique identifier of the conversation account.
+   */
   id: string
+
+  /**
+   * The type of the conversation (e.g., personal, group, etc.).
+   */
   conversationType?: string
+
+  /**
+   * The tenant ID associated with the conversation account.
+   */
   tenantId?: string
+
+  /**
+   * Indicates whether the conversation is a group.
+   */
   isGroup?: boolean
+
+  /**
+   * The name of the conversation account.
+   */
   name?: string
+
+  /**
+   * The Azure Active Directory object ID of the conversation account.
+   */
   aadObjectId?: string
+
+  /**
+   * The role of the conversation account.
+   */
   role?: RoleTypes | string
+
+  /**
+   * Additional properties of the conversation account.
+   */
   properties?: unknown
 }
 
