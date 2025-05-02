@@ -42,7 +42,7 @@ export class AgentStateSet {
   }
 
   /**
-     * Calls `AgentState.load()` on all of the AgentState plugins in the set.
+     * Calls the {@link AgentState.load | AgentState.load method} on all of the AgentState plugins in the set.
      *
      * @remarks
      * This will trigger all of the plugins to read in their state in parallel.
@@ -57,7 +57,7 @@ export class AgentStateSet {
   }
 
   /**
-     * Calls `AgentState.saveChanges()` on all of the AgentState plugins in the set.
+     * Calls {@link AgentState.saveChanges | AgentState.saveChanges method} on all of the AgentState plugins in the set.
      *
      * @remarks
      * This will trigger all of the plugins to write out their state in parallel.
