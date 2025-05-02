@@ -10,38 +10,38 @@ export class DialogPath {
   /**
    * Counter of emitted events.
    */
-  static readonly eventCounter = 'dialog.eventCounter'
+  static readonly eventCounter: string = 'dialog.eventCounter'
   /**
    * Currently expected properties.
    */
-  static readonly expectedProperties = 'dialog.expectedProperties'
+  static readonly expectedProperties: string = 'dialog.expectedProperties'
   /**
    * Default operation to use for entities where there is no identified operation entity.
    */
-  static readonly defaultOperation = 'dialog.defaultOperation'
+  static readonly defaultOperation: string = 'dialog.defaultOperation'
 
   /**
    * Last surfaced entity ambiguity event.
    */
-  static readonly lastEvent = 'dialog.lastEvent'
+  static readonly lastEvent: string = 'dialog.lastEvent'
 
   /**
    * Currently required properties.
    */
-  static readonly requiredProperties = 'dialog.requiredProperties'
+  static readonly requiredProperties: string = 'dialog.requiredProperties'
 
   /**
    * Number of retries for the current Ask.
    */
-  static readonly retries = 'dialog.retries'
+  static readonly retries: string = 'dialog.retries'
 
   /**
    * Last intent.
    */
-  static readonly lastIntent = 'dialog.lastIntent'
+  static readonly lastIntent: string = 'dialog.lastIntent'
 
   /**
    * Last trigger event: defined in FormEvent, ask, clarifyEntity etc.
    */
-  static readonly lastTriggerEvent = 'dialog.lastTriggerEvent'
+  static readonly lastTriggerEvent: string = 'dialog.lastTriggerEvent'
 }
