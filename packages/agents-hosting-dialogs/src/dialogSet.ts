@@ -26,7 +26,7 @@ export interface DialogDependencies {
  * persist the dialog stack for the set:
  *
  * To interact with the sets dialogs you can call createcontext with the
- * current `TurnContext`. That will create a `DialogContext` that can be used to start or continue
+ * current {@link TurnContext}. That will create a {@link DialogContext} that can be used to start or continue
  * execution of the sets dialogs:
  *
  */
@@ -39,8 +39,8 @@ export class DialogSet {
      * Creates a new DialogSet instance.
      *
      * @remarks
-     * If the `dialogState` property is not passed in, calls to createcontext
-     * will return an error.  You will need to create a `DialogContext` for the set manually and
+     * If the `dialogState` parameter is not passed in, calls to {@link DialogSet.createcontext |createContext}
+     * will return an error.  You will need to create a {@link DialogContext} for the set manually and
      * pass in your own state object for persisting the sets dialog stack:
      *
      * @param dialogState (Optional) state property used to persist the sets dialog stack.
@@ -75,7 +75,7 @@ export class DialogSet {
      * Adds a new dialog or prompt to the set.
      *
      * @remarks
-     * If the `Dialog.id` being added already exists in the set, the dialogs id will be updated to
+     * If the {@link Dialog.id} being added already exists in the set, the dialogs id will be updated to
      * include a suffix which makes it unique. So adding 2 dialogs named "duplicate" to the set
      * would result in the first one having an id of "duplicate" and the second one having an id
      * of "duplicate2".
@@ -146,10 +146,6 @@ export class DialogSet {
 
   /**
      * Finds a dialog that was previously added to the set using add.
-     *
-     * @remarks
-     * This example finds a dialog named "greeting":
-     *
      * @param dialogId ID of the dialog or prompt to lookup.
      * @returns The dialog if found; otherwise undefined.
      */
