@@ -86,6 +86,11 @@ export class CopilotStudioClient {
     return `CopilotStudioClient.agents-sdk-js/${pjson.version} nodejs/${process.version}  ${os.platform()}-${os.arch()}/${os.release()}`
   }
 
+  /**
+   * Starts a new conversation with the Copilot Studio service.
+   * @param emitStartConversationEvent Whether to emit a start conversation event. Defaults to true.
+   * @returns A promise that resolves to the initial activity of the conversation.
+   */
   public async startConversationAsync (emitStartConversationEvent: boolean = true): Promise<Activity> {
     const uriStart: string = getCopilotStudioConnectionUrl(this.settings)
     const body = { emitStartConversationEvent }
@@ -109,6 +114,12 @@ export class CopilotStudioClient {
     return act
   }
 
+  /**
+   * Sends a question to the Copilot Studio service and retrieves the response activities.
+   * @param question The question to ask.
+   * @param conversationId The ID of the conversation. Defaults to the current conversation ID.
+   * @returns A promise that resolves to an array of activities containing the responses.
+   */
   public async askQuestionAsync (question: string, conversationId: string = this.conversationId) {
     const conversationAccount: ConversationAccount = {
       id: conversationId
