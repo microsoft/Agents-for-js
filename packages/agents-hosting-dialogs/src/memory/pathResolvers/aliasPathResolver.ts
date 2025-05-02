@@ -4,6 +4,10 @@
  */
 import { PathResolver } from './pathResolver'
 
+/**
+ * A class that resolves paths by replacing an alias with a specified prefix and optional postfix.
+ * This is useful for transforming paths that use shorthand aliases into fully qualified paths.
+ */
 export class AliasPathResolver implements PathResolver {
   private readonly alias: string
   private readonly prefix: string
