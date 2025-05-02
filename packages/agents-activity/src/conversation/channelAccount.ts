@@ -10,10 +10,29 @@ import { roleTypeZodSchema, RoleTypes } from './roleTypes'
  * Interface representing a channel account.
  */
 export interface ChannelAccount {
+  /**
+   * The unique identifier of the channel account.
+   */
   id?: string
+
+  /**
+   * The name of the channel account.
+   */
   name?: string
+
+  /**
+   * The Azure Active Directory object ID of the channel account.
+   */
   aadObjectId?: string
+
+  /**
+   * The role of the channel account.
+   */
   role?: RoleTypes | string
+
+  /**
+   * Additional properties of the channel account.
+   */
   properties?: unknown
 }
 
