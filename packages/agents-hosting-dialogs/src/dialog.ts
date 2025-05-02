@@ -82,12 +82,12 @@ export abstract class Dialog<O extends object = {}> extends Configurable {
      * @remarks
      * Derived dialogs must override this method.
      *
-     * The DialogContext calls this method when it creates
-     * a new DialogInstance for this dialog, pushes it
+     * The {@link DialogContext} calls this method when it creates
+     * a new {@link DialogInstance} for this dialog, pushes it
      * onto the dialog stack, and starts the dialog.
      *
      * A dialog that represents a single-turn conversation should await
-     * DialogContext.endDialog before exiting this method.
+     * {@link DialogContext.endDialog} before exiting this method.
      *
      */
   abstract beginDialog (dc: DialogContext, options?: O): Promise<DialogTurnResult>
@@ -101,11 +101,11 @@ export abstract class Dialog<O extends object = {}> extends Configurable {
      * Derived dialogs that support multiple-turn conversations should override this method.
      * By default, this method signals that the dialog is complete and returns.
      *
-     * The DialogContext calls this method when it continues
+     * The {@link DialogContext} calls this method when it continues
      * the dialog.
      *
      * To signal to the dialog context that this dialog has completed, await
-     * DialogContext.endDialog before exiting this method.
+     * {@link DialogContext.endDialog} before exiting this method.
      *
      * @returns {Promise<DialogTurnResult>} A promise resolving to the dialog turn result.
      */
@@ -125,13 +125,13 @@ export abstract class Dialog<O extends object = {}> extends Configurable {
      * Derived dialogs that support multiple-turn conversations should override this method.
      * By default, this method signals that the dialog is complete and returns.
      *
-     * The DialogContext calls this method when it resumes
+     * The {@link DialogContext} calls this method when it resumes
      * the dialog. If the previous dialog on the stack returned a value, that value is in the `result`
      * parameter.
      *
-     * To start a _child_ dialog, use DialogContext.beginDialog or DialogContext.prompt; however, this dialog will not
+     * To start a _child_ dialog, use {@link DialogContext.beginDialog} or {@link DialogContext.prompt}; however, this dialog will not
      * necessarily be the one that started the child dialog.
-     * To signal to the dialog context that this dialog has completed, await DialogContext.endDialog before exiting this method.
+     * To signal to the dialog context that this dialog has completed, await {@link DialogContext.endDialog} before exiting this method.
      *
      * @returns {Promise<DialogTurnResult>} A promise resolving to the dialog turn result.
      */
@@ -141,7 +141,7 @@ export abstract class Dialog<O extends object = {}> extends Configurable {
   }
 
   /**
-     * When overridden in a derived class, reprompts the user for input.
+     * When overridden in a derived class, prompts the user again for input.
      *
      * @param _context The context object for the turn.
      * @param _instance Current state information for this dialog.
@@ -150,7 +150,7 @@ export abstract class Dialog<O extends object = {}> extends Configurable {
      * Derived dialogs that support validation and re-prompt logic should override this method.
      * By default, this method has no effect.
      *
-     * The DialogContext calls this method when the current
+     * The {@link DialogContext} calls this method when the current
      * dialog should re-request input from the user. This method is implemented for prompt dialogs.
      *
      */
@@ -169,7 +169,7 @@ export abstract class Dialog<O extends object = {}> extends Configurable {
      * Derived dialogs that need to perform logging or cleanup before ending should override this method.
      * By default, this method has no effect.
      *
-     * The DialogContext calls this method when the current
+     * The {@link DialogContext} calls this method when the current
      * dialog is ending.
      *
      */
@@ -178,7 +178,8 @@ export abstract class Dialog<O extends object = {}> extends Configurable {
   }
 
   /**
-     * Called when an event has been raised, using `DialogContext.emitEvent()`, by either the current dialog or a dialog that the current dialog started.
+     * Called when an event has been raised, using {@link DialogContext.emitEvent | DialogContext.emitEvent method },
+     * by either the current dialog or a dialog that the current dialog started.
      *
      * @param dialogContext - The dialog context for the current turn of conversation.
      * @param event - The event being raised.
