@@ -9,8 +9,19 @@ import { z } from 'zod'
  * Enum representing text format types.
  */
 export enum TextFormatTypes {
+  /**
+   * Represents text formatted using Markdown.
+   */
   Markdown = 'markdown',
+
+  /**
+   * Represents plain text without any formatting.
+   */
   Plain = 'plain',
+
+  /**
+   * Represents text formatted using XML.
+   */
   Xml = 'xml',
 }
 
