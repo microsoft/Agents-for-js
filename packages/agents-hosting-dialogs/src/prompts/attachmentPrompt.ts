@@ -10,7 +10,7 @@ import { Attachment, InputHints } from '@microsoft/agents-activity'
  * Prompts a user to upload attachments like images.
  *
  * @remarks
- * By default the prompt will return to the calling dialog an `Attachment[]`.
+ * By default the prompt will return to the calling dialog an {@link Attachment[]}.
  */
 export class AttachmentPrompt extends Prompt<Attachment[]> {
   // eslint-disable-next-line @typescript-eslint/no-useless-constructor
