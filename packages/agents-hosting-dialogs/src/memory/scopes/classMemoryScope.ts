@@ -7,22 +7,26 @@ import { ScopePath } from '../scopePath'
 import { DialogContext } from '../../dialogContext'
 import { Dialog } from '../../dialog'
 
+/**
+ * A memory scope that provides access to the properties of the active dialog.
+ * This scope binds to the active dialog and clones its properties for use in memory.
+ */
 export class ClassMemoryScope extends MemoryScope {
   /**
-     * Initializes a new instance of the ClassMemoryScope class.
-     *
-     * @param name Name of the scope class.
-     */
+   * Initializes a new instance of the ClassMemoryScope class.
+   *
+   * @param name - Name of the scope class. Defaults to `ScopePath.class`.
+   */
   constructor (name = ScopePath.class) {
     super(name, false)
   }
 
   /**
-     * Gets the backing memory for this scope.
-     *
-     * @param dialogContext The DialogContext object for this turn.
-     * @returns The memory for the scope.
-     */
+   * Gets the backing memory for this scope.
+   *
+   * @param dialogContext - The DialogContext object for this turn.
+   * @returns The memory for the scope, containing cloned properties of the active dialog.
+   */
   getMemory (dialogContext: DialogContext): object {
     // if active dialog is a container dialog then "dialog" binds to it
     if (dialogContext.activeDialog) {
@@ -52,11 +56,11 @@ export class ClassMemoryScope extends MemoryScope {
   }
 
   /**
-     * Override to find the dialog instance referenced by the scope.
-     *
-     * @param dialogContext Current dialog context.
-     * @returns The dialog instance referenced by the scope.
-     */
+   * Override to find the dialog instance referenced by the scope.
+   *
+   * @param dialogContext - Current dialog context.
+   * @returns The dialog instance referenced by the scope, or undefined if not found.
+   */
   protected onFindDialog (dialogContext: DialogContext): Dialog | undefined {
     return dialogContext.findDialog(dialogContext.activeDialog.id)
   }
