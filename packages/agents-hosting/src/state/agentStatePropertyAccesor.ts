@@ -84,7 +84,7 @@ export interface StatePropertyAccessor<T = any> {
  * - Type checking for properties (when using TypeScript)
  * - Ensuring properties exist before access
  *
- * Property accessors are created through the AgentState.createProperty() method:
+ * Property accessors are created through the {@link AgentState.createProperty} method:
  *
  * ```typescript
  * // Create a property accessor for a user profile
