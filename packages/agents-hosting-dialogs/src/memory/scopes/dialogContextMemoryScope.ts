@@ -7,20 +7,24 @@ import { DialogContext } from '../../dialogContext'
 import { MemoryScope } from './memoryScope'
 import { ScopePath } from '../scopePath'
 
+/**
+ * A memory scope that provides access to the dialog context.
+ * This scope includes information about the active dialog, its parent, and the dialog stack.
+ */
 export class DialogContextMemoryScope extends MemoryScope {
   /**
-     * Initializes a new instance of the `DialogContextMemoryScope` class.
-     */
+   * Initializes a new instance of the `DialogContextMemoryScope` class.
+   */
   constructor () {
     super(ScopePath.dialogContext, false)
   }
 
   /**
-     * Gets the backing memory for this scope.
-     *
-     * @param dialogContext The `DialogContext` object for this turn.
-     * @returns Memory for the scope.
-     */
+   * Gets the backing memory for this scope.
+   *
+   * @param dialogContext - The `DialogContext` object for this turn.
+   * @returns An object containing the dialog stack, active dialog ID, and parent dialog ID.
+   */
   getMemory (dialogContext: DialogContext): Record<'stack' | 'activeDialog' | 'parent', unknown> {
     const stack = []
     let currentDialogContext: DialogContext | undefined = dialogContext
