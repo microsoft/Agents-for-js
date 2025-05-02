@@ -12,22 +12,23 @@ import { DialogContext } from '../../dialogContext'
 const TURN_STATE = 'turn'
 
 /**
- * TurnMemoryScope represents memory scoped to the current turn.
+ * A memory scope that provides access to the turn's state.
+ * This scope is used to store and retrieve information specific to the current turn.
  */
 export class TurnMemoryScope extends MemoryScope {
   /**
-     * Initializes a new instance of the TurnMemoryScope class.
-     */
+   * Initializes a new instance of the TurnMemoryScope class.
+   */
   constructor () {
     super(ScopePath.turn, true)
   }
 
   /**
-     * Get the backing memory for this scope.
-     *
-     * @param dialogContext The DialogContext for this turn.
-     * @returns The memory for the scope.
-     */
+   * Gets the backing memory for this scope.
+   *
+   * @param dialogContext - The DialogContext object for this turn.
+   * @returns The memory for the scope.
+   */
   getMemory (dialogContext: DialogContext): object {
     let memory = dialogContext.context.turnState.get(TURN_STATE)
     if (typeof memory !== 'object') {
@@ -39,11 +40,11 @@ export class TurnMemoryScope extends MemoryScope {
   }
 
   /**
-     * Changes the backing object for the memory scope.
-     *
-     * @param dialogContext The DialogContext for this turn.
-     * @param memory Memory object to set for the scope.
-     */
+   * Changes the backing object for the memory scope.
+   *
+   * @param dialogContext - The DialogContext object for this turn.
+   * @param memory - Memory object to set for the scope.
+   */
   setMemory (dialogContext: DialogContext, memory: object): void {
     if (memory === undefined) {
       throw new Error('TurnMemoryScope.setMemory: undefined memory object passed in.')
