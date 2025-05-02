@@ -8,7 +8,7 @@ import { Prompt, PromptOptions, PromptRecognizerResult, PromptValidator } from '
 import { Activity, InputHints } from '@microsoft/agents-activity'
 
 /**
- * Result returned by the `DateTimePrompt`.
+ * Result returned by the {@link DateTimePrompt}.
  */
 export interface DateTimeResolution {
   /**
@@ -33,7 +33,7 @@ export interface DateTimeResolution {
  * Prompts a user to enter a datetime expression.
  *
  * @remarks
- * By default the prompt will return to the calling dialog a `DateTimeResolution[]`.
+ * By default the prompt will return to the calling dialog a {@link DateTimeResolution | DateTimeResolution[] }.
  */
 export class DateTimePrompt extends Prompt<DateTimeResolution[]> {
   /**
@@ -44,9 +44,9 @@ export class DateTimePrompt extends Prompt<DateTimeResolution[]> {
   /**
      * Creates a new DateTimePrompt instance.
      *
-     * @param dialogId Unique ID of the dialog within its parent `DialogSet` or `ComponentDialog`.
+     * @param dialogId Unique ID of the dialog within its parent {@link DialogSet} or {@link ComponentDialog}.
      * @param validator (Optional) validator that will be called each time the user responds to the prompt.
-     * @param defaultLocale (Optional) locale to use if `TurnContext.activity.locale` is not specified. Defaults to a value of `en-us`.
+     * @param defaultLocale (Optional) locale to use if {@link TurnContext.activity.locale} is not specified. Defaults to a value of `en-us`.
      */
   constructor (dialogId: string, validator?: PromptValidator<DateTimeResolution[]>, defaultLocale?: string) {
     super(dialogId, validator)
