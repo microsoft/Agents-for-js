@@ -9,7 +9,14 @@ import { z } from 'zod'
  * Enum representing the layout types for attachments.
  */
 export enum AttachmentLayoutTypes {
+  /**
+   * Displays attachments in a list format.
+   */
   List = 'list',
+
+  /**
+   * Displays attachments in a carousel format.
+   */
   Carousel = 'carousel',
 }
 
