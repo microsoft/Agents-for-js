@@ -6,6 +6,13 @@
  * Score plus any extra information about an intent.
  */
 export interface IntentScore {
-  score?: number;
-  [key: string]: unknown;
+  /**
+   * Optional. The confidence score of the intent, ranging from 0.0 to 1.0.
+   */
+  score?: number
+
+  /**
+   * Additional properties related to the intent.
+   */
+  [key: string]: unknown
 }
