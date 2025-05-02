@@ -11,12 +11,39 @@ import { ConversationAccount, conversationAccountZodSchema } from './conversatio
  * Interface representing a reference to a conversation.
  */
 export interface ConversationReference {
+  /**
+   * The ID of the activity. Optional.
+   */
   activityId?: string
+
+  /**
+   * The user involved in the conversation. Optional.
+   */
   user?: ChannelAccount
+
+  /**
+   * The locale of the conversation. Optional.
+   */
   locale?: string
+
+  /**
+   * The agent involved in the conversation. Can be undefined or null. Optional.
+   */
   agent?: ChannelAccount | undefined | null
+
+  /**
+   * The conversation account details.
+   */
   conversation: ConversationAccount
+
+  /**
+   * The ID of the channel where the conversation is taking place.
+   */
   channelId: string
+
+  /**
+   * The service URL for the conversation. Optional.
+   */
   serviceUrl?: string | undefined
 }
 
