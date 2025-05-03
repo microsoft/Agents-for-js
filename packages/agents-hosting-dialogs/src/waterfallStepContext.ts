@@ -10,12 +10,38 @@ import { DialogTurnResult } from './dialogTurnResult'
  * Values passed to the `WaterfallStepContext` constructor.
  */
 export interface WaterfallStepInfo<O extends object> {
-  index: number;
-  options: O;
-  reason: DialogReason;
-  result: any;
-  values: object;
-  onNext(result?: any): Promise<DialogTurnResult>;
+  /**
+   * The index of the current step in the waterfall dialog.
+   */
+  index: number
+
+  /**
+   * The options passed to the waterfall dialog when it was started.
+   */
+  options: O
+
+  /**
+   * The reason the current step is being executed.
+   */
+  reason: DialogReason
+
+  /**
+   * The result returned by the previous step or dialog.
+   */
+  result: any
+
+  /**
+   * A dictionary of values shared across all steps in the waterfall dialog.
+   */
+  values: object
+
+  /**
+   * A function to proceed to the next step in the waterfall dialog.
+   *
+   * @param result Optional result to pass to the next step.
+   * @returns A promise resolving to the result of the next dialog turn.
+   */
+  onNext(result?: any): Promise<DialogTurnResult>
 }
 
 /**
