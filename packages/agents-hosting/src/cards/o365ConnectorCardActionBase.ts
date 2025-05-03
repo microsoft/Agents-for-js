@@ -11,7 +11,7 @@
  * - `HttpPOST`: Represents an action to make an HTTP POST request.
  * - `ActionCard`: Represents an action that opens a card with additional actions or inputs.
  */
-export type O365ConnectorCardActionType = 'ViewAction' | 'OpenUri' | 'HttpPOST' | 'ActionCard';
+export type O365ConnectorCardActionType = 'ViewAction' | 'OpenUri' | 'HttpPOST' | 'ActionCard'
 
 /**
  * Represents a base action in an O365 connector card.
