@@ -1,6 +1,6 @@
 import { strict as assert } from 'assert'
 import { describe, it, beforeEach, afterEach } from 'node:test'
-import { CloudAdapter, FlowState, MemoryStorage, OAuthFlow, SigningResource, TokenRequestStatus, TurnContext, UserState, UserTokenClient } from './../../src'
+import { CloudAdapter, FlowState, MemoryStorage, OAuthFlow, SignInResource, TokenRequestStatus, TurnContext, UserState, UserTokenClient } from './../../src'
 import { Activity, ActivityTypes } from '@microsoft/agents-activity'
 import sinon from 'sinon'
 
@@ -21,7 +21,7 @@ const createTestActivity = () => Activity.fromObject({
   text: 'testText'
 })
 
-const testSigninResource : SigningResource = {
+const testSigninResource : SignInResource = {
   signInLink: 'https://test.com',
   tokenExchangeResource: {
     id: 'testTokenExchangeId',
@@ -34,7 +34,7 @@ const testSigninResource : SigningResource = {
 
 describe('OAuthFlow', () => {
   const userState = new UserState(new MemoryStorage())
-  const fakseUserTokenClient = new UserTokenClient('fakeToken')
+  const fakseUserTokenClient = new UserTokenClient('fakeToken', '123')
   const fakeAdapter = new CloudAdapter({ clientId: 'fakeClientId', clientSecret: 'fakeClientSecret', issuers: [] })
   const context = new TurnContext(fakeAdapter, createTestActivity())
   let oAuthFlow: OAuthFlow

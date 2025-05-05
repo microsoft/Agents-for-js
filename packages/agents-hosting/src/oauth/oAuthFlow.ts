@@ -8,10 +8,9 @@ import {
   UserState,
   TurnContext,
   MessageFactory,
-  TokenExchangeRequest,
-  UserTokenClient
 } from '../'
-import { TokenRequestStatus, TokenResponse } from './tokenResponse'
+import { UserTokenClient } from './userTokenClient'
+import { TokenExchangeRequest, TokenRequestStatus, TokenResponse } from './userTokenClient.types'
 
 const logger = debug('agents:oauth-flow')
 
@@ -71,27 +70,20 @@ export class OAuthFlow {
     logger.info('Starting OAuth flow for connectionName:', this.absOauthConnectionName)
     await this.initializeTokenClient(context)
 
-    const tokenResponse = await this.userTokenClient.getUserToken(this.absOauthConnectionName, context.activity.channelId!, context.activity.from?.id!)
-    if (tokenResponse?.status === TokenRequestStatus.Success) {
+    const act = context.activity
+    const output = await this.userTokenClient.getTokenOrSignInResource(act.from?.id!, this.absOauthConnectionName, act.channelId!, act.getConversationReference(), act.relatesTo!, undefined!)
+    if (output && output.tokenResponse) {
       this.state.flowStarted = false
       this.state.flowExpires = 0
       await this.flowStateAccessor.set(context, this.state)
-      logger.info('User token retrieved successfully from service')
-      return tokenResponse
+      return output.tokenResponse
     }
-
-    const authConfig = context.adapter.authConfig
-    const signingResource = await this.userTokenClient.getSignInResource(authConfig.clientId!, this.absOauthConnectionName, context.activity.getConversationReference(), context.activity.relatesTo)
-    const oCard: Attachment = CardFactory.oauthCard(this.absOauthConnectionName, this.cardTitle, this.cardText, signingResource)
+    const oCard: Attachment = CardFactory.oauthCard(this.absOauthConnectionName, this.cardTitle, this.cardText, output.signInResource)
     await context.sendActivity(MessageFactory.attachment(oCard))
     this.state.flowStarted = true
     this.state.flowExpires = Date.now() + 30000
     await this.flowStateAccessor.set(context, this.state)
-    logger.info('OAuth begin flow completed, waiting for user to sign in')
-    return {
-      token: undefined,
-      status: TokenRequestStatus.InProgress
-    }
+    return undefined!
   }
 
   /**
@@ -176,7 +168,7 @@ export class OAuthFlow {
     if (this.userTokenClient === undefined || this.userTokenClient === null) {
       const scope = 'https://api.botframework.com'
       const accessToken = await context.adapter.authProvider.getAccessToken(context.adapter.authConfig, scope)
-      this.userTokenClient = new UserTokenClient(accessToken)
+      this.userTokenClient = new UserTokenClient(accessToken, context.adapter.authConfig.clientId!)
     }
   }
 }

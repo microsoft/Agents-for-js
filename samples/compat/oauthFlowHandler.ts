@@ -18,8 +18,8 @@ export class OAuthFlowHanlder extends ActivityHandler {
     this.onConversationUpdate(async (context, next) => {
       await context.sendActivity('Welcome to the Web Chat SSO sample. Type "signin" to sign in or "signout" to sign out.')
       const tokenResponse = await this.oAuthFlow.beginFlow(context)
-      if (tokenResponse.status === TokenRequestStatus.Success) {
-        await this.sendLoggedUserInfo(context, tokenResponse.token!)
+      if (tokenResponse && tokenResponse.token) {
+        await this.sendLoggedUserInfo(context, tokenResponse.token)
       }
       await next()
     })
@@ -34,8 +34,8 @@ export class OAuthFlowHanlder extends ActivityHandler {
       } else {
         if (/^\d{6}$/.test(context.activity.text!)) {
           const tokenResponse = await this.oAuthFlow.continueFlow(context)
-          if (tokenResponse?.status === TokenRequestStatus.Success) {
-            await this.sendLoggedUserInfo(context, tokenResponse.token!)
+          if (tokenResponse.token) {
+            await this.sendLoggedUserInfo(context, tokenResponse.token)
           } else {
             await context.sendActivity(MessageFactory.text('Invalid code. Please try again.'))
           }
@@ -59,10 +59,10 @@ export class OAuthFlowHanlder extends ActivityHandler {
 
   async beginOAuthFlow (context: TurnContext): Promise<void> {
     const tokenResponse = await this.oAuthFlow.beginFlow(context)
-    if (tokenResponse.status === TokenRequestStatus.Success) {
-      await this.sendLoggedUserInfo(context, tokenResponse.token!)
+    if (tokenResponse.token) {
+      await this.sendLoggedUserInfo(context, tokenResponse.token)
     } else {
-      await context.sendActivity(MessageFactory.text('Authentication status ' + tokenResponse.status))
+      await context.sendActivity(MessageFactory.text('Authentication not available '))
     }
   }
 
