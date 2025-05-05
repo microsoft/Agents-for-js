@@ -16,6 +16,7 @@ import { TurnContext } from '../turnContext'
 import { ResourceResponse } from '../connector-client'
 import { debug } from '../logger'
 import { Authorization } from './oauth/authorization'
+import { AgentExtension } from './extensions'
 
 const logger = debug('agents:agent-application')
 
@@ -47,6 +48,7 @@ export class AgentApplication<TState extends TurnState> {
   private readonly _adapter?: BaseAdapter
   private readonly _authorization?: Authorization
   private _typingTimer: any
+  protected readonly _extensions: AgentExtension[] = []
 
   public constructor (options?: Partial<AgentApplicationOptions<TState>>) {
     this._options = {
@@ -503,6 +505,14 @@ export class AgentApplication<TState extends TurnState> {
       }
       this._typingTimer = setTimeout(onTimeout, TYPING_TIMER_DELAY)
     }
+  }
+
+  public registerExtension<T extends AgentExtension> (extension: T, regcb : (ext:T) => void): void {
+    if (this._extensions.includes(extension)) {
+      throw new Error('Extension already registered')
+    }
+    this._extensions.push(extension)
+    regcb(extension)
   }
 
   /**
