@@ -59,7 +59,7 @@ export class OAuthFlowHanlder extends ActivityHandler {
 
   async beginOAuthFlow (context: TurnContext): Promise<void> {
     const tokenResponse = await this.oAuthFlow.beginFlow(context)
-    if (tokenResponse.token) {
+    if (tokenResponse && tokenResponse.token) {
       await this.sendLoggedUserInfo(context, tokenResponse.token)
     } else {
       await context.sendActivity(MessageFactory.text('Authentication not available '))
