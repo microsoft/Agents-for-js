@@ -5,7 +5,7 @@ import axios, { AxiosInstance } from 'axios'
 import { ConversationReference } from '@microsoft/agents-activity'
 import { debug } from '../logger'
 import { normalizeTokenExchangeState } from '../activityWireCompat'
-import { AadResourceUrls, SignInResource, TokenExchangeRequest, TokenOrSinginResourceResponse, TokenRequestStatus, TokenResponse, TokenStatus } from './userTokenClient.types'
+import { AadResourceUrls, SignInResource, TokenExchangeRequest, TokenOrSinginResourceResponse, TokenResponse, TokenStatus } from './userTokenClient.types'
 import { getProductInfo } from '../getProductInfo'
 
 const logger = debug('agents:user-token-client')
@@ -47,15 +47,12 @@ export class UserTokenClient {
     try {
       const params = { connectionName, channelId, userId, code }
       const response = await this.client.get('/api/usertoken/GetToken', { params })
-      return { ...response.data, status: TokenRequestStatus.Success }
+      return response.data as TokenResponse
     } catch (error: any) {
       if (error.response?.status !== 404) {
         logger.error(error)
       }
-      return {
-        status: TokenRequestStatus.Failed,
-        token: undefined
-      }
+      return { token: undefined }
     }
   }
 
@@ -117,10 +114,10 @@ export class UserTokenClient {
     try {
       const params = { userId, connectionName, channelId }
       const response = await this.client.post('/api/usertoken/exchange', tokenExchangeRequest, { params })
-      return { ...response.data, status: TokenRequestStatus.Success }
+      return response.data as TokenResponse
     } catch (error: any) {
       logger.error(error)
-      return { status: TokenRequestStatus.Failed, token: undefined }
+      return { token: undefined }
     }
   }
 

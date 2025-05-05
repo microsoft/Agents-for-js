@@ -7,7 +7,7 @@ import { TurnContext } from '../../turnContext'
 import { debug } from '../../logger'
 import { TurnState } from '../turnState'
 import { Storage } from '../../storage'
-import { OAuthFlow, TokenRequestStatus, TokenResponse } from '../../oauth'
+import { OAuthFlow, TokenResponse } from '../../oauth'
 import { UserState } from '../../state'
 
 const logger = debug('agents:authorization')
@@ -98,7 +98,7 @@ export class Authorization {
       tokenResponse = await flow.beginFlow(context)
     } else {
       tokenResponse = await flow.continueFlow(context)
-      if (tokenResponse.status === TokenRequestStatus.Success) {
+      if (tokenResponse && tokenResponse.token) {
         if (this._signInHandler) {
           await this._signInHandler(context, state, authHandlerId)
         }

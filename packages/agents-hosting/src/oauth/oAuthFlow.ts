@@ -10,7 +10,7 @@ import {
   MessageFactory,
 } from '../'
 import { UserTokenClient } from './userTokenClient'
-import { TokenExchangeRequest, TokenRequestStatus, TokenResponse } from './userTokenClient.types'
+import { TokenExchangeRequest, TokenResponse } from './userTokenClient.types'
 
 const logger = debug('agents:oauth-flow')
 
@@ -98,7 +98,7 @@ export class OAuthFlow {
       logger.warn('Flow expired')
       this.state!.flowStarted = false
       await context.sendActivity(MessageFactory.text('Sign-in session expired. Please try again.'))
-      return { status: TokenRequestStatus.Expired, token: undefined }
+      return { token: undefined }
     }
     const contFlowActivity = context.activity
     if (contFlowActivity.type === ActivityTypes.Message) {
@@ -119,11 +119,11 @@ export class OAuthFlow {
       logger.info('Continuing OAuth flow with tokenExchange')
       const tokenExchangeRequest = contFlowActivity.value as TokenExchangeRequest
       if (this.tokenExchangeId === tokenExchangeRequest.id) { // dedupe
-        return { status: TokenRequestStatus.InProgress, token: undefined }
+        return { token: undefined }
       }
       this.tokenExchangeId = tokenExchangeRequest.id!
       const userTokenResp = await this.userTokenClient?.exchangeTokenAsync(contFlowActivity.from?.id!, this.absOauthConnectionName, contFlowActivity.channelId!, tokenExchangeRequest)
-      if (userTokenResp?.status === TokenRequestStatus.Success) {
+      if (userTokenResp && userTokenResp.token) {
         logger.info('Token exchanged')
         this.state!.flowStarted = false
         await this.flowStateAccessor.set(context, this.state)
@@ -131,10 +131,10 @@ export class OAuthFlow {
       } else {
         logger.warn('Token exchange failed')
         this.state!.flowStarted = true
-        return { status: TokenRequestStatus.Failed, token: undefined }
+        return { token: undefined }
       }
     }
-    return { status: TokenRequestStatus.Failed, token: undefined }
+    return { token: undefined }
   }
 
   /**

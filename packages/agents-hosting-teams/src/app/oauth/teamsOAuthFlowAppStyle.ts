@@ -11,8 +11,7 @@ import {
   TokenExchangeRequest,
   TurnState,
   Storage,
-  UserTokenClient,
-  TokenRequestStatus
+  UserTokenClient
 } from '@microsoft/agents-hosting'
 
 const logger = debug('agents:teams-oauth-flow-app-style')
@@ -82,7 +81,7 @@ export class TeamsOAuthFlowAppStyle {
     }
     this.tokenExchangeId = tokenExchangeRequest.id!
     const userTokenReq = await this.userTokenClient?.exchangeTokenAsync(contFlowActivity.from?.id!, authConfig.connectionName!, contFlowActivity.channelId!, tokenExchangeRequest)
-    if (userTokenReq?.status === TokenRequestStatus.Success) {
+    if (userTokenReq && userTokenReq.token) {
       logger.info('Token obtained')
       // this.appState!.sso!.userToken = userTokenReq.token
       this.appState!.sso!.flowStarted = false

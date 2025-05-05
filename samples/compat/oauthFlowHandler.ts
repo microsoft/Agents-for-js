@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 import { startServer } from '@microsoft/agents-hosting-express'
-import { ActivityHandler, CardFactory, MessageFactory, TurnContext, UserState, OAuthFlow, TokenRequestStatus, MemoryStorage } from '@microsoft/agents-hosting'
+import { ActivityHandler, CardFactory, MessageFactory, TurnContext, UserState, OAuthFlow, MemoryStorage } from '@microsoft/agents-hosting'
 import { Template } from 'adaptivecards-templating'
 import { getUserInfo } from './../_shared/userGraphClient'
 
@@ -50,7 +50,7 @@ export class OAuthFlowHanlder extends ActivityHandler {
     this.onSignInInvoke(async (context, next) => {
       console.log('SignInInvoke event triggered')
       const tokenResponse = await this.oAuthFlow.continueFlow(context)
-      if (tokenResponse?.status === TokenRequestStatus.Success) {
+      if (tokenResponse && tokenResponse.token) {
         await this.sendLoggedUserInfo(context, tokenResponse.token!)
       }
       await next()

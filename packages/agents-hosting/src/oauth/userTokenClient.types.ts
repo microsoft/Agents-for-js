@@ -4,41 +4,10 @@
 import { CardAction } from '@microsoft/agents-activity'
 
 /**
- * Represents the status of an OAuth token request.
- * This enum defines the possible states of a token request, such as success, failure, or in-progress.
- */
-export enum TokenRequestStatus {
-  /**
-     * Indicates that the token request was successful.
-     */
-  Success = 'Success',
-
-  /**
-     * Indicates that the token request failed.
-     */
-  Failed = 'Failed',
-
-  /**
-     * Indicates that the token request is pending.
-     */
-  InProgress = 'InProgress',
-
-  /**
-     * Indicates that the token request has expired.
-     */
-  Expired = 'Expired',
-}
-
-/**
  * Represents the response containing OAuth token information.
  * This interface encapsulates all data related to an OAuth token response.
  */
 export interface TokenResponse {
-  /**
-     * The status of the token request.
-     */
-  status: TokenRequestStatus;
-
   /**
      * The OAuth token string, or undefined if no token is available.
      */
