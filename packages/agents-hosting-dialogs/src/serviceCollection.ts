@@ -62,9 +62,9 @@ export class ServiceCollection {
   /**
      * Register an instance by key. This will overwrite existing instances.
      *
-     * @param key key of the instance being provided
-     * @param instance instance to provide
-     * @returns this for chaining
+     * @param key Key of the instance being provided.
+     * @param instance Instance to provide.
+     * @returns `this` for chaining.
      */
   addInstance<InstanceType>(key: string, instance: InstanceType): this {
     if (this.graph.hasNode(key)) {
@@ -78,19 +78,19 @@ export class ServiceCollection {
   /**
      * Register a factory for a key.
      *
-     * @param key key that factory will provide
-     * @param factory function that creates an instance to provide
-     * @returns this for chaining
+     * @param key Key that factory will provide.
+     * @param factory Function that creates an instance to provide.
+     * @returns `this` for chaining.
      */
   addFactory<InstanceType>(key: string, factory: Factory<InstanceType, false>): this
 
   /**
      * Register a factory for a key with a set of dependencies.
      *
-     * @param key key that factory will provide
-     * @param dependencies set of things this instance depends on. Will be provided to factory function via `services`.
-     * @param factory function that creates an instance to provide
-     * @returns this for chaining
+     * @param key Key that factory will provide.
+     * @param dependencies Set of things this instance depends on. Will be provided to factory function via `services`.
+     * @param factory Function that creates an instance to provide.
+     * @returns `this` for chaining.
      */
   addFactory<InstanceType, Dependencies>(
     key: string,
@@ -144,10 +144,10 @@ export class ServiceCollection {
      * Register a factory (that expects an initial value that is not undefined) for a key
      * with a set of dependencies.
      *
-     * @param key key that factory will provide
-     * @param dependencies set of things this instance depends on. Will be provided to factory function via `services`.
-     * @param factory function that creates an instance to provide
-     * @returns this for chaining
+     * @param key Key that factory will provide.
+     * @param dependencies Set of things this instance depends on. Will be provided to factory function via `services`.
+     * @param factory Function that creates an instance to provide.
+     * @returns `this` for chaining.
      */
   composeFactory<InstanceType, Dependencies>(
     key: string,
@@ -241,9 +241,9 @@ export class ServiceCollection {
   /**
      * Build a single service.
      *
-     * @param key service to build
-     * @param deep reconstruct all dependencies
-     * @returns the service instance, or undefined
+     * @param key Service to build.
+     * @param deep Whether to reconstruct all dependencies.
+     * @returns The service instance, or undefined.
      */
   makeInstance<InstanceType = unknown>(key: string, deep = false): InstanceType | undefined {
     // If this is not a deep reconstruction, reuse any services that `key` depends on
@@ -264,9 +264,9 @@ export class ServiceCollection {
   /**
      * Build a single service and assert that it is not undefined.
      *
-     * @param key service to build
-     * @param deep reconstruct all dependencies
-     * @returns the service instance
+     * @param key Service to build.
+     * @param deep Wheter to reconstruct all dependencies.
+     * @returns The service instance
      */
   mustMakeInstance<InstanceType = unknown>(key: string, deep = false): InstanceType {
     const instance = this.makeInstance<InstanceType>(key, deep)
@@ -287,8 +287,8 @@ export class ServiceCollection {
   /**
      * Build the full set of services, asserting that the specified keys are not undefined.
      *
-     * @param keys instances that must be not undefined
-     * @returns all resolve services
+     * @param keys Instances that must be not undefined
+     * @returns All resolve services
      */
   mustMakeInstances<InstancesType extends Record<string, unknown> = Record<string, unknown>>(
     ...keys: string[]

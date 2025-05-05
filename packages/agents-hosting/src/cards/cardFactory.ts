@@ -20,6 +20,9 @@ import { SigninCard } from './signinCard'
  * Factory class for creating various types of cards.
  */
 export class CardFactory {
+  /**
+   * The content types supported by the card factory.
+   */
   static contentTypes: any = {
     adaptiveCard: 'application/vnd.microsoft.card.adaptive',
     animationCard: 'application/vnd.microsoft.card.animation',

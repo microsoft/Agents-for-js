@@ -9,8 +9,19 @@ import { z } from 'zod'
  * Enum representing activity importance levels.
  */
 export enum ActivityImportance {
+  /**
+   * Indicates low importance.
+   */
   Low = 'low',
+
+  /**
+   * Indicates normal importance.
+   */
   Normal = 'normal',
+
+  /**
+   * Indicates high importance.
+   */
   High = 'high',
 }
 

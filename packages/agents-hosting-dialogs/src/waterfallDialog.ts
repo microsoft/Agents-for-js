@@ -29,7 +29,7 @@ export class WaterfallDialog<O extends object = {}> extends Dialog<O> {
      * Creates a new waterfall dialog containing the given array of steps.
      *
      * @remarks
-     * See the addstep function for details on creating a valid step function.
+     * See the {@link WaterfallDialog.addStep | addStep function} for details on creating a valid step function.
      * @param dialogId Unique ID of the dialog within the component or set its being added to.
      * @param steps (Optional) array of asynchronous waterfall step functions.
      */
@@ -67,7 +67,7 @@ export class WaterfallDialog<O extends object = {}> extends Dialog<O> {
   /**
      * Called when the WaterfallDialog is started and pushed onto the dialog stack.
      *
-     * @param dialogContext The DialogContext for the current turn of conversation.
+     * @param dialogContext The {@link DialogContext} for the current turn of conversation.
      * @param options Optional, initial information to pass to the Dialog.
      * @returns A Promise representing the asynchronous operation.
      * @remarks
@@ -89,7 +89,7 @@ export class WaterfallDialog<O extends object = {}> extends Dialog<O> {
      * Called when the WaterfallDialog is _continued_, where it is the active dialog and the
      * user replies with a new Activity.
      *
-     * @param dialogContext The DialogContext for the current turn of conversation.
+     * @param dialogContext The {@link DialogContext} for the current turn of conversation.
      * @returns A Promise representing the asynchronous operation.
      * @remarks
      * If the task is successful, the result indicates whether the dialog is still
@@ -109,7 +109,7 @@ export class WaterfallDialog<O extends object = {}> extends Dialog<O> {
   /**
      * Called when a child WaterfallDialog completed its turn, returning control to this dialog.
      *
-     * @param dc The DialogContext for the current turn of the conversation.
+     * @param dc The {@link DialogContext} for the current turn of the conversation.
      * @param reason DialogReason why the dialog resumed.
      * @param result Optional, value returned from the dialog that was called. The type
      * of the value returned is dependent on the child dialog.
@@ -138,7 +138,7 @@ export class WaterfallDialog<O extends object = {}> extends Dialog<O> {
   /**
      * Executes a step of the WaterfallDialog.
      *
-     * @param dc The DialogContext for the current turn of conversation.
+     * @param dc The {@link DialogContext} for the current turn of conversation.
      * @param index The index of the current waterfall step to execute.
      * @param reason The DialogReason the waterfall step is being executed.
      * @param result Optional, result returned by a dialog called in the previous waterfall step.

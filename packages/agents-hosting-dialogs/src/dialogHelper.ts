@@ -106,6 +106,14 @@ export async function internalRun (
   return dialogTurnResult
 }
 
+/**
+ * Executes the dialog by either continuing an existing dialog or starting a new one.
+ *
+ * @param context The TurnContext for the turn.
+ * @param dialogId The ID of the dialog to start or continue.
+ * @param dialogContext The DialogContext for the current turn of conversation.
+ * @returns A promise resolving to the result of the dialog turn.
+ */
 async function innerRun (
   context: TurnContext,
   dialogId: string,
@@ -136,8 +144,13 @@ export function getActiveDialogContext (dialogContext: DialogContext): DialogCon
 
   return getActiveDialogContext(child)
 }
-
 // Helper to send a trace activity with a memory snapshot of the active dialog DC.
+/**
+ * Sends a trace activity containing a memory snapshot of the active dialog context.
+ *
+ * @param dialogContext The DialogContext for the current turn of conversation.
+ * @returns A promise that resolves when the trace activity is sent.
+ */
 const sendStateSnapshotTrace = async (dialogContext: DialogContext): Promise<void> => {
   const traceLabel = 'Agent State'
 

@@ -71,6 +71,10 @@ export class AgentApplication<TState extends TurnState> {
     }
   }
 
+  /**
+   * Gets the adapter associated with the application.
+   * @throws Error if the adapter is not configured.
+   */
   public get adapter (): BaseAdapter {
     if (!this._adapter) {
       throw new Error(
@@ -81,6 +85,10 @@ export class AgentApplication<TState extends TurnState> {
     return this._adapter
   }
 
+  /**
+   * Gets the authorization instance for the application.
+   * @throws Error if no authentication options were configured.
+   */
   public get authorization (): Authorization {
     if (!this._authorization) {
       throw new Error(
@@ -91,6 +99,10 @@ export class AgentApplication<TState extends TurnState> {
     return this._authorization
   }
 
+  /**
+   * Gets the options used to configure the application.
+   * @returns The application options.
+   */
   public get options (): AgentApplicationOptions<TState> {
     return this._options
   }

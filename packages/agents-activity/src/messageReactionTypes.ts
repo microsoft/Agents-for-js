@@ -9,7 +9,14 @@ import { z } from 'zod'
  * Enum representing message reaction types.
  */
 export enum MessageReactionTypes {
+  /**
+   * Represents a 'like' reaction to a message.
+   */
   Like = 'like',
+
+  /**
+   * Represents a '+1' reaction to a message.
+   */
   PlusOne = 'plusOne',
 }
 

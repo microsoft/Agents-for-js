@@ -3,4 +3,7 @@
  * Licensed under the MIT License.
  */
 
+/**
+ * The event name used for token response activities.
+ */
 export const tokenResponseEventName = 'tokens/response'

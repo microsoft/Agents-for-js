@@ -13,8 +13,23 @@ export interface Request<
     Body extends Record<string, unknown> = Record<string, unknown>,
     Headers extends Record<string, string[] | string | undefined> = Record<string, string[] | string | undefined>
 > {
+  /**
+   * The body of the HTTP request, containing parsed data.
+   */
   body?: Body
+
+  /**
+   * The headers of the HTTP request, represented as key-value pairs.
+   */
   headers: Headers
+
+  /**
+   * The HTTP method of the request (e.g., GET, POST, PUT, DELETE).
+   */
   method?: string
+
+  /**
+   * The user information extracted from a JWT payload, if available.
+   */
   user?: JwtPayload
 }

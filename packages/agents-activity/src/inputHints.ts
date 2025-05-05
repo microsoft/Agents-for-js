@@ -9,8 +9,19 @@ import { z } from 'zod'
  * Enum representing input hints.
  */
 export enum InputHints {
+  /**
+   * Indicates that the bot is ready to accept input from the user.
+   */
   AcceptingInput = 'acceptingInput',
+
+  /**
+   * Indicates that the bot is ignoring input from the user.
+   */
   IgnoringInput = 'ignoringInput',
+
+  /**
+   * Indicates that the bot is expecting input from the user.
+   */
   ExpectingInput = 'expectingInput',
 }
 

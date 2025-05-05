@@ -26,13 +26,41 @@ interface TokenVerifyState {
  * Manages the OAuth flow
  */
 export class OAuthFlow {
+  /**
+   * The user token client used for managing user tokens.
+   */
   userTokenClient: UserTokenClient
+
+  /**
+   * The current state of the OAuth flow.
+   */
   state: FlowState | null
+
+  /**
+   * The accessor for managing the flow state in user state.
+   */
   flowStateAccessor: AgentStatePropertyAccessor<FlowState | null>
+
+  /**
+   * The ID of the token exchange request, used to deduplicate requests.
+   */
   tokenExchangeId: string | null = null
+
+  /**
+   * The name of the OAuth connection.
+   */
   absOauthConnectionName: string
+
+  /**
+   * The title of the OAuth card.
+   */
   cardTitle: string = 'Sign in'
+
+  /**
+   * The text of the OAuth card.
+   */
   cardText: string = 'login'
+
   /**
    * Creates a new instance of OAuthFlow.
    * @param userState The user state.
@@ -46,6 +74,12 @@ export class OAuthFlow {
     this.cardText = cardText ?? this.cardText
   }
 
+  /**
+   * Retrieves the user token from the user token service.
+   * @param context The turn context containing the activity information.
+   * @returns A promise that resolves to the user token response.
+   * @throws Will throw an error if the channelId or from properties are not set in the activity.
+   */
   public async getUserToken (context: TurnContext): Promise<TokenResponse> {
     await this.initializeTokenClient(context)
     logger.info('Get token from user token service')

@@ -9,20 +9,53 @@ import { defaultTokenizer, Token, TokenizerFunction } from './tokenizer'
  * Basic search options used to control how choices are recognized in a users utterance.
  */
 export interface FindValuesOptions {
+  /**
+   * If true, allows partial matches of values in the search.
+   */
   allowPartialMatches?: boolean;
+
+  /**
+   * The locale to use for tokenization and comparison.
+   */
   locale?: string;
+
+  /**
+   * The maximum token distance allowed between matches.
+   */
   maxTokenDistance?: number;
+
+  /**
+   * The tokenizer function to use for breaking the utterance into tokens.
+   */
   tokenizer?: TokenizerFunction;
 }
 
 export interface FoundValue {
+  /**
+   * The value that was found in the search.
+   */
   value: string;
+
+  /**
+   * The index of the value in the original list.
+   */
   index: number;
+
+  /**
+   * The confidence score of the match.
+   */
   score: number;
 }
 
 export interface SortedValue {
+  /**
+   * The value to be searched for.
+   */
   value: string;
+
+  /**
+   * The index of the value in the original list.
+   */
   index: number;
 }
 

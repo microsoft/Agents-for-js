@@ -8,11 +8,30 @@ import { IntentScore } from './intentScore'
  * Value returned from a recognizer.
  */
 export interface RecognizerResult {
-  text: string;
-  alteredText?: string;
-  intents: Record<string, IntentScore>;
-  entities?: any;
-  [propName: string]: any;
+  /**
+   * The original text input provided by the user.
+   */
+  text: string
+
+  /**
+   * Optional. The modified version of the text input, if applicable.
+   */
+  alteredText?: string
+
+  /**
+   * A mapping of intent names to their corresponding confidence scores.
+   */
+  intents: Record<string, IntentScore>
+
+  /**
+   * Optional. Entities recognized in the input, if any.
+   */
+  entities?: any
+
+  /**
+   * Additional properties that may be included in the recognizer result.
+   */
+  [propName: string]: any
 }
 
 export const getTopScoringIntent = (result: RecognizerResult): { intent: string; score: number } => {

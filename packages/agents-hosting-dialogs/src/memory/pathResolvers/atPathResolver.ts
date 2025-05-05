@@ -4,23 +4,29 @@
  */
 import { AliasPathResolver } from './aliasPathResolver'
 
+/**
+ * A path resolver that replaces the '@' alias with a specific prefix and transforms paths
+ * to access recognized entities in a conversational turn. It ensures that the resolved
+ * path includes the 'first()' function for entity properties.
+ */
 export class AtPathResolver extends AliasPathResolver {
   private readonly _prefix = 'turn.recognized.entities.'
   private readonly _delims = ['.', '[']
 
   /**
-     * Initializes a new instance of the AtPathResolver class.
-     */
+   * Initializes a new instance of the AtPathResolver class.
+   */
   constructor () {
     super('@', '')
   }
 
   /**
-     * Transforms the path.
-     *
-     * @param path Path to inspect.
-     * @returns The transformed path.
-     */
+   * Transforms the path by replacing the '@' alias and appending the 'first()' function
+   * to entity properties.
+   *
+   * @param path The path to inspect and transform.
+   * @returns The transformed path.
+   */
   transformPath (path: string): string {
     path = path.trim()
     if (path.startsWith('@') && path.length > 1 && !path.startsWith('@@')) {

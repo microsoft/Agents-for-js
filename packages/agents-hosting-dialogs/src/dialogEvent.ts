@@ -1,3 +1,6 @@
+/**
+ * Represents an event that occurs within a dialog, providing details such as its name, whether it should bubble to parent contexts, and any associated value.
+ */
 export interface DialogEvent {
   /**
        * Flag indicating whether the event will be bubbled to the parent `DialogContext`.

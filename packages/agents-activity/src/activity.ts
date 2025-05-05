@@ -77,51 +77,234 @@ export const activityZodSchema = z.object({
  * Represents an activity in a conversation.
  */
 export class Activity {
+  /**
+   * The type of the activity.
+   */
   type: ActivityTypes | string
+
+  /**
+   * The text content of the activity.
+   */
   text?: string
+
+  /**
+   * The unique identifier of the activity.
+   */
   id?: string
+
+  /**
+   * The channel ID where the activity originated.
+   */
   channelId?: string
+
+  /**
+   * The account of the sender of the activity.
+   */
   from?: ChannelAccount
+
+  /**
+   * The timestamp of the activity.
+   */
   timestamp?: Date | string
+
+  /**
+   * The local timestamp of the activity.
+   */
   localTimestamp?: Date | string
+
+  /**
+   * The local timezone of the activity.
+   */
   localTimezone?: string
+
+  /**
+   * The caller ID of the activity.
+   */
   callerId?: string
+
+  /**
+   * The service URL of the activity.
+   */
   serviceUrl?: string
+
+  /**
+   * The conversation account associated with the activity.
+   */
   conversation?: ConversationAccount
+
+  /**
+   * The recipient of the activity.
+   */
   recipient?: ChannelAccount
+
+  /**
+   * The text format of the activity.
+   */
   textFormat?: TextFormatTypes | string
+
+  /**
+   * The attachment layout of the activity.
+   */
   attachmentLayout?: AttachmentLayoutTypes | string
+
+  /**
+   * The members added to the conversation.
+   */
   membersAdded?: ChannelAccount[]
+
+  /**
+   * The members removed from the conversation.
+   */
   membersRemoved?: ChannelAccount[]
+
+  /**
+   * The reactions added to the activity.
+   */
   reactionsAdded?: MessageReaction[]
+
+  /**
+   * The reactions removed from the activity.
+   */
   reactionsRemoved?: MessageReaction[]
+
+  /**
+   * The topic name of the activity.
+   */
   topicName?: string
+
+  /**
+   * Indicates whether the history is disclosed.
+   */
   historyDisclosed?: boolean
+
+  /**
+   * The locale of the activity.
+   */
   locale?: string
+
+  /**
+   * The speech text of the activity.
+   */
   speak?: string
+
+  /**
+   * The input hint for the activity.
+   */
   inputHint?: InputHints | string
+
+  /**
+   * The summary of the activity.
+   */
   summary?: string
+
+  /**
+   * The suggested actions for the activity.
+   */
   suggestedActions?: SuggestedActions
+
+  /**
+   * The attachments of the activity.
+   */
   attachments?: Attachment[]
+
+  /**
+   * The entities associated with the activity.
+   */
   entities?: Entity[]
+
+  /**
+   * The channel-specific data for the activity.
+   */
   channelData?: any
+
+  /**
+   * The action associated with the activity.
+   */
   action?: string
+
+  /**
+   * The ID of the activity being replied to.
+   */
   replyToId?: string
+
+  /**
+   * The label for the activity.
+   */
   label?: string
+
+  /**
+   * The value type of the activity.
+   */
   valueType?: string
+
+  /**
+   * The value associated with the activity.
+   */
   value?: unknown
+
+  /**
+   * The name of the activity event.
+   */
   name?: ActivityEventNames | string
+
+  /**
+   * The conversation reference for the activity.
+   */
   relatesTo?: ConversationReference
+
+  /**
+   * The end-of-conversation code for the activity.
+   */
   code?: EndOfConversationCodes | string
+
+  /**
+   * The expiration time of the activity.
+   */
   expiration?: string | Date
+
+  /**
+   * The importance of the activity.
+   */
   importance?: ActivityImportance | string
+
+  /**
+   * The delivery mode of the activity.
+   */
   deliveryMode?: DeliveryModes | string
+
+  /**
+   * The list of keywords to listen for in the activity.
+   */
   listenFor?: string[]
+
+  /**
+   * The text highlights in the activity.
+   */
   textHighlights?: TextHighlight[]
+
+  /**
+   * The semantic action associated with the activity.
+   */
   semanticAction?: SemanticAction
+
+  /**
+   * The raw timestamp of the activity.
+   */
   rawTimestamp?: string
+
+  /**
+   * The raw expiration time of the activity.
+   */
   rawExpiration?: string
+
+  /**
+   * The raw local timestamp of the activity.
+   */
   rawLocalTimestamp?: string
+
+  /**
+   * Additional properties of the activity.
+   */
   [x: string]: unknown
 
   /**

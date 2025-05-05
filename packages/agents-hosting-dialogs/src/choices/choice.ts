@@ -10,7 +10,18 @@ import { CardAction } from '@microsoft/agents-activity'
  * user picked.
  */
 export interface Choice {
+  /**
+   * The value of the choice, which is used to identify the choice.
+   */
   value: string;
+
+  /**
+   * An optional action associated with the choice, such as a button click.
+   */
   action?: CardAction;
+
+  /**
+   * Optional synonyms that can be used to recognize the choice.
+   */
   synonyms?: string[];
 }

@@ -20,6 +20,9 @@ const logger = debug('agents:base-adapter')
  * Base class for all adapters, providing middleware and error handling capabilities.
  */
 export abstract class BaseAdapter {
+  /**
+   * The middleware set used to process the pipeline of middleware handlers.
+   */
   protected middleware: MiddlewareSet = new MiddlewareSet()
 
   private turnError: (context: TurnContext, error: Error) => Promise<void> = async (context: TurnContext, error: Error) => {
@@ -42,7 +45,14 @@ export abstract class BaseAdapter {
   readonly ConnectorClientKey = Symbol('ConnectorClient')
   readonly OAuthScopeKey = Symbol('OAuthScope')
 
+  /**
+   * The authentication provider used for token management.
+   */
   authProvider: AuthProvider = new MsalTokenProvider()
+
+  /**
+   * The authentication configuration for the adapter.
+   */
   authConfig: AuthConfiguration = { issuers: [] }
 
   /**
@@ -103,10 +113,18 @@ export abstract class BaseAdapter {
    */
   abstract getAttachment (attachmentId: string, viewId: string): Promise<NodeJS.ReadableStream>
 
+  /**
+   * Gets the error handler for the adapter.
+   * @returns The current error handler function.
+   */
   get onTurnError (): (context: TurnContext, error: Error) => Promise<void> {
     return this.turnError
   }
 
+  /**
+   * Sets the error handler for the adapter.
+   * @param value - The error handler function to set.
+   */
   set onTurnError (value: (context: TurnContext, error: Error) => Promise<void>) {
     this.turnError = value
   }
