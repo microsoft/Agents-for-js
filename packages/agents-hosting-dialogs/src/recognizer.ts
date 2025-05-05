@@ -13,9 +13,16 @@ export interface RecognizerConfiguration {
 }
 
 /**
- * Recognizer base class.
+ * Base class for implementing custom recognizers to identify intents and entities from user input.
+ *
+ * Recognizers process user input, such as text or speech, and return structured data representing
+ * the recognized intents, entities, and other relevant information. This class provides a foundation
+ * for creating custom recognizers by defining common methods and properties.
  */
 export class Recognizer extends Configurable implements RecognizerConfiguration {
+  /**
+   * Optional. The unique identifier for the recognizer.
+   */
   id?: string
   /**
      * To recognize intents and entities in a users utterance.

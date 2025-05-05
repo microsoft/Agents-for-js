@@ -49,6 +49,9 @@ export interface PromptCultureModel {
  * Class container for currently-supported Culture Models in Confirm and Choice Prompt.
  */
 export class PromptCultureModels {
+  /**
+   * Represents the Chinese culture model with locale and language-specific settings.
+   */
   static Chinese: PromptCultureModel = {
     locale: Culture.Chinese,
     separator: ', ',
@@ -58,6 +61,9 @@ export class PromptCultureModels {
     noInLanguage: '不',
   }
 
+  /**
+   * Represents the Dutch culture model with locale and language-specific settings.
+   */
   static Dutch: PromptCultureModel = {
     locale: Culture.Dutch,
     separator: ', ',
@@ -67,6 +73,9 @@ export class PromptCultureModels {
     noInLanguage: 'Nee',
   }
 
+  /**
+   * Represents the English culture model with locale and language-specific settings.
+   */
   static English: PromptCultureModel = {
     locale: Culture.English,
     separator: ', ',
@@ -76,6 +85,9 @@ export class PromptCultureModels {
     noInLanguage: 'No',
   }
 
+  /**
+   * Represents the French culture model with locale and language-specific settings.
+   */
   static French: PromptCultureModel = {
     locale: Culture.French,
     separator: ', ',
@@ -85,6 +97,9 @@ export class PromptCultureModels {
     noInLanguage: 'Non',
   }
 
+  /**
+   * Represents the German culture model with locale and language-specific settings.
+   */
   static German: PromptCultureModel = {
     locale: Culture.German,
     separator: ', ',
@@ -94,6 +109,9 @@ export class PromptCultureModels {
     noInLanguage: 'Nein',
   }
 
+  /**
+   * Represents the Italian culture model with locale and language-specific settings.
+   */
   static Italian: PromptCultureModel = {
     locale: Culture.Italian,
     separator: ', ',
@@ -103,6 +121,9 @@ export class PromptCultureModels {
     noInLanguage: 'No',
   }
 
+  /**
+   * Represents the Japanese culture model with locale and language-specific settings.
+   */
   static Japanese: PromptCultureModel = {
     locale: Culture.Japanese,
     separator: '、 ',
@@ -112,6 +133,9 @@ export class PromptCultureModels {
     noInLanguage: 'いいえ',
   }
 
+  /**
+   * Represents the Portuguese culture model with locale and language-specific settings.
+   */
   static Portuguese: PromptCultureModel = {
     locale: Culture.Portuguese,
     separator: ', ',
@@ -121,6 +145,9 @@ export class PromptCultureModels {
     noInLanguage: 'Não',
   }
 
+  /**
+   * Represents the Spanish culture model with locale and language-specific settings.
+   */
   static Spanish: PromptCultureModel = {
     locale: Culture.Spanish,
     separator: ', ',
@@ -131,6 +158,9 @@ export class PromptCultureModels {
   }
 
   /**
+     * Retrieves a list of supported culture codes.
+     *
+     * @returns An array of supported locale strings.
      * @private
      */
   private static getSupportedCultureCodes (): string[] {
@@ -138,12 +168,12 @@ export class PromptCultureModels {
   }
 
   /**
-     * Use Recognizers-Text to normalize various potential Locale strings to a standard.
+     * Normalizes a given locale string to the nearest supported language.
      *
+     * @param cultureCode The locale string to normalize (e.g., "en-US").
+     * @returns The normalized locale string.
      * @remarks This is mostly a copy/paste from https://github.com/microsoft/Recognizers-Text/blob/master/JavaScript/packages/recognizers-text/src/culture.ts#L39
      *          This doesn't directly use Recognizers-Text's MapToNearestLanguage because if they add language support before we do, it will break our prompts.
-     * @param cultureCode Represents locale. Examples: "en-US, en-us, EN".
-     * @returns Normalized locale.
      */
   static mapToNearestLanguage (cultureCode: string): string {
     if (cultureCode) {
@@ -164,6 +194,11 @@ export class PromptCultureModels {
     return cultureCode
   }
 
+  /**
+     * Retrieves a list of supported culture models.
+     *
+     * @returns An array of `PromptCultureModel` objects representing supported cultures.
+     */
   static getSupportedCultures = (): PromptCultureModel[] => [
     PromptCultureModels.Chinese,
     PromptCultureModels.Dutch,

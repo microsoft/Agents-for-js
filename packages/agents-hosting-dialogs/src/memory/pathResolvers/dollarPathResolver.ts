@@ -4,10 +4,15 @@
  */
 import { AliasPathResolver } from './aliasPathResolver'
 
+/**
+ * A path resolver that resolves paths starting with a dollar sign ('$')
+ * to the 'dialog.' namespace.
+ */
 export class DollarPathResolver extends AliasPathResolver {
   /**
-     * Initializes a new instance of the DollarPathResolver class.
-     */
+   * Initializes a new instance of the DollarPathResolver class.
+   * This resolver maps paths starting with '$' to the 'dialog.' namespace.
+   */
   constructor () {
     super('$', 'dialog.')
   }

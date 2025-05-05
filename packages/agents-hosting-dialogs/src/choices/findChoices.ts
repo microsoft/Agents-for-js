@@ -8,9 +8,24 @@ import { ModelResult } from './modelResult'
 import { Choice } from './choice'
 
 export interface FindChoicesOptions extends FindValuesOptions {
+  /**
+   * If true, the value of the choice will not be included in the search.
+   */
   noValue?: boolean;
+
+  /**
+   * If true, the action title of the choice will not be included in the search.
+   */
   noAction?: boolean;
+
+  /**
+   * If true, numbers will be recognized as choices.
+   */
   recognizeNumbers?: boolean;
+
+  /**
+   * If true, ordinals (e.g., first, second) will be recognized as choices.
+   */
   recognizeOrdinals?: boolean;
 }
 

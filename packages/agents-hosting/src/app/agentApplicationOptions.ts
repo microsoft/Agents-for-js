@@ -10,12 +10,43 @@ import { Storage } from '../storage'
 import { AuthorizationHandlers } from './oauth/authorization'
 
 export interface AgentApplicationOptions<TState extends TurnState> {
+  /**
+   * The adapter used for handling bot interactions.
+   */
   adapter?: CloudAdapter;
+
+  /**
+   * The application ID of the agent.
+   */
   agentAppId?: string;
+
+  /**
+   * The storage mechanism for persisting state.
+   */
   storage?: Storage;
+
+  /**
+   * Whether to start a typing timer for the bot.
+   */
   startTypingTimer: boolean;
+
+  /**
+   * Whether to enable long-running messages.
+   */
   longRunningMessages: boolean;
+
+  /**
+   * A factory function to create the turn state.
+   */
   turnStateFactory: () => TState;
+
+  /**
+   * An array of file downloaders for handling input files.
+   */
   fileDownloaders?: InputFileDownloader<TState>[];
+
+  /**
+   * Handlers for managing authorization.
+   */
   authorization?: AuthorizationHandlers;
 }

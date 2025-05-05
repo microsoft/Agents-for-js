@@ -37,12 +37,12 @@ export class ConfirmPrompt extends Prompt<boolean> {
      * Style of the "yes" and "no" choices rendered to the user when prompting.
      *
      * @remarks
-     * Defaults to `ListStyle.auto`.
+     * Defaults to {@link ListStyle.auto}.
      */
   style: ListStyle
 
   /**
-     * Additional options passed to the `ChoiceFactory` and used to tweak the style of choices
+     * Additional options passed to the {@link ChoiceFactory } and used to tweak the style of choices
      * rendered to the user.
      */
   choiceOptions: ChoiceFactoryOptions | undefined
@@ -55,7 +55,7 @@ export class ConfirmPrompt extends Prompt<boolean> {
   /**
      * Creates a new ConfirmPrompt instance.
      *
-     * @param dialogId Unique ID of the dialog within its parent `DialogSet` or `ComponentDialog`.
+     * @param dialogId Unique ID of the dialog within its parent {@link DialogSet} or {@link ComponentDialog}.
      * @param validator (Optional) validator that will be called each time the user responds to the prompt.
      * @param defaultLocale (Optional) locale to use if `TurnContext.activity.locale` is not specified. Defaults to a value of `en-us`.
      * @param choiceDefaults (Optional) Overrides the dictionary of Default Choices on {@link PromptCultureModels.getSupportedCultures | PromptCultureModels.getSupportedCultures()} method.

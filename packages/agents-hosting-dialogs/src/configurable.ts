@@ -46,6 +46,7 @@ export abstract class Configurable {
   }
 
   /**
+   * Gets the converter for the selector configuration.
      * @param _property The key of the conditional selector configuration.
      * @returns The converter for the selector configuration.
      */

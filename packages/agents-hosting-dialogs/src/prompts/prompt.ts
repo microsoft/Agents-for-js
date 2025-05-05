@@ -13,7 +13,7 @@ import { DialogEvent } from '../dialogEvent'
 import { Activity, ActivityTypes, InputHints } from '@microsoft/agents-activity'
 
 /**
- * Controls the way that choices for a `ChoicePrompt` or yes/no options for a `ConfirmPrompt` are
+ * Controls the way that choices for a {@link ChoicePrompt} or yes/no options for a {@link ConfirmPrompt} are
  * presented to a user.
  */
 export enum ListStyle {
@@ -116,7 +116,7 @@ export interface PromptRecognizerResult<T> {
  * > [!NOTE]
  * > If the validator returns `false` the prompts default re-prompt logic will be run unless the
  * > validator sends a custom re-prompt to the user using `prompt.context.sendActivity()`. In that
- * > case the prompts default re-rpompt logic will not be run.
+ * > case the prompts default re-prompt logic will not be run.
  * @param T Type of recognizer result being validated.
  * @param prompt Contextual information containing the recognizer result and original options passed to the prompt.
  */
@@ -140,8 +140,8 @@ export interface PromptValidatorContext<T> {
      * Result returned from the prompts recognizer function.
      *
      * @remarks
-     * The `prompt.recognized.succeeded` field can be checked to determine of the recognizer found
-     * anything and then the value can be retrieved from `prompt.recognized.value`.
+     * The {@link prompt.recognized.succeeded} field can be checked to determine of the recognizer found
+     * anything and then the value can be retrieved from {@link prompt.recognized.value}.
      */
   readonly recognized: PromptRecognizerResult<T>;
 
@@ -178,7 +178,7 @@ export abstract class Prompt<T> extends Dialog {
   /**
      * Creates a new Prompt instance.
      *
-     * @param dialogId Unique ID of the prompt within its parent `DialogSet` or `ComponentDialog`.
+     * @param dialogId Unique ID of the prompt within its parent {@link DialogSet} or {@link ComponentDialog}.
      * @param validator (Optional) custom validator used to provide additional validation and re-prompting logic for the prompt.
      */
   protected constructor (

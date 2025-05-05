@@ -7,13 +7,44 @@
  * Represents the authentication configuration.
  */
 export interface AuthConfiguration {
+  /**
+   * The tenant ID for the authentication configuration.
+   */
   tenantId?: string
+
+  /**
+   * The client ID for the authentication configuration. Required in production.
+   */
   clientId?: string
+
+  /**
+   * The client secret for the authentication configuration.
+   */
   clientSecret?: string
+
+  /**
+   * The path to the certificate PEM file.
+   */
   certPemFile?: string
+
+  /**
+   * The path to the certificate key file.
+   */
   certKeyFile?: string
+
+  /**
+   * A list of valid issuers for the authentication configuration.
+   */
   issuers: string[]
-  connectionName?: string,
+
+  /**
+   * The connection name for the authentication configuration.
+   */
+  connectionName?: string
+
+  /**
+   * The FIC (First-Party Integration Channel) client ID.
+   */
   FICClientId?: string
 }
 

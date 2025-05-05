@@ -3,12 +3,17 @@
  * Licensed under the MIT License.
  */
 
+/**
+ * Interface for resolving and transforming paths.
+ * Implementations of this interface define how specific path patterns
+ * should be transformed into other formats or namespaces.
+ */
 export interface PathResolver {
   /**
-     * Transform the path
-     *
-     * @param path Path to inspect.
-     * @returns Transformed path
-     */
+   * Transforms the given path into a new format or namespace.
+   *
+   * @param path - The path to inspect and transform.
+   * @returns The transformed path.
+   */
   transformPath(path: string): string;
 }

@@ -2,10 +2,29 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
+
+/**
+ * Represents a token extracted from a text string.
+ */
 export interface Token {
+  /**
+   * The start index of the token in the original text.
+   */
   start: number;
+
+  /**
+   * The end index of the token in the original text.
+   */
   end: number;
+
+  /**
+   * The original text of the token.
+   */
   text: string;
+
+  /**
+   * The normalized (lowercase) version of the token text.
+   */
   normalized: string;
 }
 

@@ -9,10 +9,29 @@ import { z } from 'zod'
  * Interface representing an attachment.
  */
 export interface Attachment {
+  /**
+   * The MIME type of the attachment content.
+   */
   contentType: string
+
+  /**
+   * The URL of the attachment content.
+   */
   contentUrl?: string
+
+  /**
+   * The content of the attachment.
+   */
   content?: unknown
+
+  /**
+   * The name of the attachment.
+   */
   name?: string
+
+  /**
+   * The URL of the thumbnail for the attachment.
+   */
   thumbnailUrl?: string
 }
 

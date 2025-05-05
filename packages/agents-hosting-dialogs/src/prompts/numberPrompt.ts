@@ -28,9 +28,9 @@ export class NumberPrompt extends Prompt<number> {
   /**
      * Creates a new NumberPrompt instance.
      *
-     * @param dialogId Unique ID of the dialog within its parent `DialogSet` or `ComponentDialog`.
+     * @param dialogId Unique ID of the dialog within its parent {@link DialogSet} or {@link ComponentDialog}.
      * @param validator (Optional) validator that will be called each time the user responds to the prompt.
-     * @param defaultLocale (Optional) locale to use if `TurnContext.activity.locale` is not specified. Defaults to a value of `en-us`.
+     * @param defaultLocale (Optional) locale to use if {@link TurnContext.activity.locale} is not specified. Defaults to a value of `en-us`.
      */
   constructor (dialogId: string, validator?: PromptValidator<number>, defaultLocale?: string) {
     super(dialogId, validator)
@@ -40,10 +40,10 @@ export class NumberPrompt extends Prompt<number> {
   /**
      * Prompts the user for input.
      *
-     * @param context [TurnContext] context for the current
+     * @param context {@link TurnContext} context for the current
      * turn of conversation with the user.
      * @param state Contains state for the current instance of the prompt on the dialog stack.
-     * @param options A [PromptOptions] object constructed
+     * @param options A {@link PromptOptions} object constructed
      * from the options initially provided in the call to Prompt.
      * @param isRetry `true` if this is the first time this prompt dialog instance
      * on the stack is prompting the user for input; otherwise, false.
@@ -65,10 +65,10 @@ export class NumberPrompt extends Prompt<number> {
   /**
      * Attempts to recognize the user's input.
      *
-     * @param context [TurnContext], context for the current
+     * @param context {@link TurnContext}, context for the current
      * turn of conversation with the user.
      * @param _state Contains state for the current instance of the prompt on the dialog stack.
-     * @param _options A [PromptOptions] object constructed
+     * @param _options A {@link PromptOptions} object constructed
      * from the options initially provided in the call to Prompt.
      * @returns A `Promise` representing the asynchronous operation.
      */
