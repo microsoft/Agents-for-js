@@ -83,7 +83,7 @@ export class OAuthFlow {
     this.state.flowStarted = true
     this.state.flowExpires = Date.now() + 30000
     await this.flowStateAccessor.set(context, this.state)
-    return undefined!
+    return undefined
   }
 
   /**
