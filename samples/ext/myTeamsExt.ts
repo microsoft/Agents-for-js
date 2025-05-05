@@ -1,6 +1,6 @@
-import { startServer } from '@microsoft/agents-hosting-express'
 import { AgentApplication, MemoryStorage, TurnContext, TurnState } from '@microsoft/agents-hosting'
 import { MyTeamsExt } from '@microsoft/agents-hosting-extensions-teams'
+import { startServer } from '@microsoft/agents-hosting-express'
 
 const app = new AgentApplication<TurnState>({ storage: new MemoryStorage() })
 
@@ -8,6 +8,9 @@ const myTeamsExt = new MyTeamsExt(app)
 
 app.registerExtension<MyTeamsExt>(myTeamsExt, (tae) => {
   console.log('MyTeamsExt registered')
+  tae.onMessageEdit(async (context: TurnContext, state: TurnState) => {
+    await context.sendActivity(`Message edited now: ${context.activity.id}`)
+  })
 })
 
 app.conversationUpdate('membersAdded', async (context: TurnContext) => {
