@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 import { ActivityTypes } from '@microsoft/agents-activity'
-import { AgentApplicationBuilder, CardFactory, MemoryStorage, MessageFactory, TokenRequestStatus, TurnContext, TurnState } from '@microsoft/agents-hosting'
+import { AgentApplicationBuilder, CardFactory, MemoryStorage, MessageFactory, TurnContext, TurnState } from '@microsoft/agents-hosting'
 import { Template } from 'adaptivecards-templating'
 import * as userTemplate from '../cards/UserProfileCard.json'
 import { getUserInfo } from './userGraphClient'
@@ -61,7 +61,8 @@ app.activity(ActivityTypes.Message, async (context: TurnContext, state: TurnStat
 
 async function showGraphProfile (context: TurnContext, state: TurnState): Promise<void> {
   const userTokenResponse = await app.authorization.getToken(context)
-  if (userTokenResponse.status === TokenRequestStatus.Success) {
+  if (userTokenResponse && userTokenResponse.token) {
+    await state.load(context, storage)
     const template = new Template(userTemplate)
     const userInfo = await getUserInfo(userTokenResponse.token!)
     const card = template.expand(userInfo)
