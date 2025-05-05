@@ -93,7 +93,7 @@ export class Authorization {
   public async beginOrContinueFlow (context: TurnContext, state: TurnState, authHandlerId?: string) : Promise<TokenResponse> {
     logger.info('beginOrContinueFlow for authHandlerId:', authHandlerId)
     const flow = this.resolverHandler(authHandlerId).flow!
-    let tokenResponse: TokenResponse
+    let tokenResponse: TokenResponse | undefined
     if (flow.state!.flowStarted === false) {
       tokenResponse = await flow.beginFlow(context)
     } else {
@@ -104,7 +104,7 @@ export class Authorization {
         }
       }
     }
-    return tokenResponse
+    return tokenResponse!
   }
 
   /**

@@ -62,7 +62,7 @@ export class OAuthFlow {
    * @param context The turn context.
    * @returns A promise that resolves to the user token.
    */
-  public async beginFlow (context: TurnContext): Promise<TokenResponse> {
+  public async beginFlow (context: TurnContext): Promise<TokenResponse | undefined> {
     this.state = await this.getUserState(context)
     if (this.absOauthConnectionName === '') {
       throw new Error('connectionName is not set')

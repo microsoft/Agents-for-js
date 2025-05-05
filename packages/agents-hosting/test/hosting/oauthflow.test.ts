@@ -44,8 +44,8 @@ describe('OAuthFlow', () => {
   beforeEach(() => {
     testActivity = createTestActivity()
     mockTurnContext = sinon.mock(context)
-    mockUserTokenClient = sinon.mock(fakseUserTokenClient)
-    oAuthFlow = new OAuthFlow(userState, 'testSSO', fakseUserTokenClient)
+    mockUserTokenClient = sinon.mock(fakeUserTokenClient)
+    oAuthFlow = new OAuthFlow(userState, 'testSSO', fakeUserTokenClient)
   })
 
   afterEach(() => {
@@ -62,7 +62,7 @@ describe('OAuthFlow', () => {
 
     const tokenResponse = await oAuthFlow.beginFlow(context)
 
-    assert.strictEqual(tokenResponse.token, 'testToken')
+    assert.strictEqual(tokenResponse?.token, 'testToken')
     assert.strictEqual(oAuthFlow.state?.flowStarted, false)
     assert.strictEqual(oAuthFlow.state?.flowExpires, 0)
   })
