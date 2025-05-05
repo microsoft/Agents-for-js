@@ -5,6 +5,7 @@ import { CardAction } from '@microsoft/agents-activity'
 
 /**
  * Represents the status of an OAuth token request.
+ * This enum defines the possible states of a token request, such as success, failure, or in-progress.
  */
 export enum TokenRequestStatus {
   /**
@@ -22,127 +23,182 @@ export enum TokenRequestStatus {
      */
   InProgress = 'InProgress',
 
+  /**
+     * Indicates that the token request has expired.
+     */
   Expired = 'Expired',
 }
 
 /**
-   * Represents the response containing OAuth token information.
-   * This interface encapsulates all data related to an OAuth token response.
-   */
+ * Represents the response containing OAuth token information.
+ * This interface encapsulates all data related to an OAuth token response.
+ */
 export interface TokenResponse {
-
-  status: TokenRequestStatus
+  /**
+     * The status of the token request.
+     */
+  status: TokenRequestStatus;
 
   /**
-     * The OAuth token string, or null if no token is available.
+     * The OAuth token string, or undefined if no token is available.
      */
-  token: string | undefined
-
-  /**
-     * The expiration time of the token, represented as a numeric timestamp.
-     */
-  // expires: number
+  token: string | undefined;
 }
 
 /**
  * Represents a request for exchanging tokens.
+ * This interface defines the structure of a token exchange request, including the URI, token, and ID.
  */
 export interface TokenExchangeRequest {
   /**
      * The URI for the token exchange request.
      */
-  uri?: string
+  uri?: string;
+
   /**
      * The token to be exchanged.
      */
-  token?: string
+  token?: string;
+
   /**
      * The ID associated with the token exchange request.
      */
-  id?: string
+  id?: string;
 }
 
 /**
  * Represents a resource for exchanging tokens.
+ * This interface defines the structure of a token exchange resource, including its ID, URI, and provider ID.
  */
 export interface TokenExchangeResource {
   /**
      * The ID of the token exchange resource.
      */
-  id?: string
+  id?: string;
+
   /**
      * The URI of the token exchange resource.
      */
-  uri?: string
+  uri?: string;
+
   /**
      * The provider ID for the token exchange resource.
      */
-  providerId?: string
+  providerId?: string;
 }
 
 /**
-   * Represents a resource for posting tokens.
-   */
+ * Represents a resource for posting tokens.
+ * This interface defines the structure of a token post resource, including its SAS URL.
+ */
 export interface TokenPostResource {
   /**
      * The SAS URL for the token post resource.
      */
-  sasUrl?: string
+  sasUrl?: string;
 }
 
 /**
-   * Represents a resource for signing in.
-   */
+ * Represents a resource for signing in.
+ * This interface defines the structure of a sign-in resource, including the sign-in link, token exchange resource, and token post resource.
+ */
 export interface SignInResource {
   /**
      * The link for signing in.
      */
-  signInLink: string,
+  signInLink: string;
+
   /**
      * The resource for token exchange.
      */
-  tokenExchangeResource: TokenExchangeResource,
+  tokenExchangeResource: TokenExchangeResource;
+
   /**
      * The resource for token post.
      */
-  tokenPostResource: TokenPostResource
+  tokenPostResource: TokenPostResource;
 }
 
+/**
+ * Represents an OAuth card.
+ * This interface defines the structure of an OAuth card, including its buttons, connection name, text, and associated resources.
+ */
 export interface OAuthCard {
   /**
-   * The buttons associated with the OAuth card.
-   */
-  buttons: CardAction[]
+     * The buttons associated with the OAuth card.
+     */
+  buttons: CardAction[];
+
   /**
-   * The connection name for the OAuth card.
-   */
-  connectionName: string
+     * The connection name for the OAuth card.
+     */
+  connectionName: string;
+
   /**
-   * The text content of the OAuth card.
-   */
-  text: string
+     * The text content of the OAuth card.
+     */
+  text: string;
+
   /**
-   * The token exchange resource for the OAuth card.
-   */
-  tokenExchangeResource: TokenExchangeResource
+     * The token exchange resource for the OAuth card.
+     */
+  tokenExchangeResource: TokenExchangeResource;
+
   /**
-   * The token post resource for the OAuth card.
-   */
-  tokenPostResource: TokenPostResource
+     * The token post resource for the OAuth card.
+     */
+  tokenPostResource: TokenPostResource;
 }
 
+/**
+ * Represents a response containing either a token or a sign-in resource.
+ * This interface defines the structure of a response that includes a token response and a sign-in resource.
+ */
 export interface TokenOrSinginResourceResponse {
-  tokenResponse: TokenResponse,
-  signInResource: SignInResource
+  /**
+     * The token response containing OAuth token information.
+     */
+  tokenResponse: TokenResponse;
+
+  /**
+     * The sign-in resource containing sign-in and token exchange information.
+     */
+  signInResource: SignInResource;
 }
 
+/**
+ * Represents the status of a token.
+ * This interface defines the structure of a token status, including channel ID, connection name, and other metadata.
+ */
 export interface TokenStatus {
-  channelId: string
-  connectionName: string,
-  hasToken: boolean,
-  serviceProviderDisplayName: string,
+  /**
+     * The ID of the channel associated with the token.
+     */
+  channelId: string;
+
+  /**
+     * The connection name associated with the token.
+     */
+  connectionName: string;
+
+  /**
+     * Indicates whether a token is available.
+     */
+  hasToken: boolean;
+
+  /**
+     * The display name of the service provider.
+     */
+  serviceProviderDisplayName: string;
 }
 
+/**
+ * Represents a collection of Azure Active Directory (AAD) resource URLs.
+ * This interface defines the structure of a collection of resource URLs.
+ */
 export interface AadResourceUrls {
-  resourceUrls: string[]
+  /**
+     * An array of resource URLs.
+     */
+  resourceUrls: string[];
 }
