@@ -5,7 +5,7 @@ import axios, { AxiosInstance } from 'axios'
 import { ConversationReference } from '@microsoft/agents-activity'
 import { debug } from '../logger'
 import { normalizeTokenExchangeState } from '../activityWireCompat'
-import { SignInResource, TokenExchangeRequest, TokenOrSinginResourceResponse, TokenRequestStatus, TokenResponse, TokenStatus } from './userTokenClient.types'
+import { AadResourceUrls, SignInResource, TokenExchangeRequest, TokenOrSinginResourceResponse, TokenRequestStatus, TokenResponse, TokenStatus } from './userTokenClient.types'
 import { getProductInfo } from '../getProductInfo'
 
 const logger = debug('agents:user-token-client')
@@ -143,9 +143,30 @@ export class UserTokenClient {
     return response.data as TokenOrSinginResourceResponse
   }
 
-  async getTokenStatus (userId: string, channelId: string, include: string = null!): Promise<TokenStatus> {
+  /**
+   * Gets the token status.
+   * @param userId The user ID.
+   * @param channelId The channel ID.
+   * @param include The optional include parameter.
+   * @returns A promise that resolves to the token status.
+   */
+  async getTokenStatus (userId: string, channelId: string, include: string = null!): Promise<TokenStatus[]> {
     const params = { userId, channelId, include }
     const response = await this.client.get('/api/usertoken/GetTokenStatus', { params })
-    return response.data as TokenStatus
+    return response.data as TokenStatus[]
+  }
+
+  /**
+   * Gets the AAD tokens.
+   * @param userId The user ID.
+   * @param connectionName The connection name.
+   * @param channelId The channel ID.
+   * @param resourceUrls The resource URLs.
+   * @returns A promise that resolves to the AAD tokens.
+   */
+  async getAadTokens (userId: string, connectionName: string, channelId: string, resourceUrls: AadResourceUrls) : Promise<Record<string, TokenResponse>> {
+    const params = { userId, connectionName, channelId }
+    const response = await this.client.post('/api/usertoken/GetAadTokens', resourceUrls, { params })
+    return response.data as Record<string, TokenResponse>
   }
 }

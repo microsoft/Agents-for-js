@@ -142,3 +142,7 @@ export interface TokenStatus {
   hasToken: boolean,
   serviceProviderDisplayName: string,
 }
+
+export interface AadResourceUrls {
+  resourceUrls: string[]
+}
