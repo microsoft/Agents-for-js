@@ -89,7 +89,14 @@ const MAX_PAGE_SIZE = 20
  * Options for configuring the BlobsTranscriptStore.
  */
 export interface BlobsTranscriptStoreOptions {
+  /**
+   * Optional pipeline options for configuring the Azure Blob Storage client.
+   */
   storagePipelineOptions?: StoragePipelineOptions;
+
+  /**
+   * Indicates whether to decode the transcript key when retrieving transcripts.
+   */
   decodeTranscriptKey?: boolean;
 }
 
