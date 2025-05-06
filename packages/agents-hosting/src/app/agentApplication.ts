@@ -155,8 +155,8 @@ export class AgentApplication<TState extends TurnState> {
    * );
    * ```
    */
-  public addRoute (selector: RouteSelector, handler: RouteHandler<TState>): this {
-    this._routes.push({ selector, handler })
+  public addRoute (selector: RouteSelector, handler: RouteHandler<TState>, isInvokeRoute: boolean = false): this {
+    this._routes.push({ selector, handler, isInvokeRoute })
     return this
   }
 
@@ -321,6 +321,68 @@ export class AgentApplication<TState extends TurnState> {
         'The Application.authentication property is unavailable because no authentication options were configured.'
       )
     }
+    return this
+  }
+
+  /**
+   * Adds a handler for message reaction added events.
+   *
+   * @param handler - The handler function that will be called when a message reaction is added.
+   * @returns The current instance of the application.
+   *
+   * @remarks
+   * This method registers a handler that will be invoked when a user adds a reaction to a message,
+   * such as a like, heart, or other emoji reaction.
+   *
+   * Example usage:
+   * ```typescript
+   * app.onMessageReactionAdded(async (context, state) => {
+   *   const reactionsAdded = context.activity.reactionsAdded;
+   *   if (reactionsAdded && reactionsAdded.length > 0) {
+   *     await context.sendActivity(`Thanks for your ${reactionsAdded[0].type} reaction!`);
+   *   }
+   * });
+   * ```
+   */
+  public onMessageReactionAdded (handler: (context: TurnContext, state: TState) => Promise<void>): this {
+    const selector = async (context: TurnContext): Promise<boolean> => {
+      return context.activity.type === ActivityTypes.MessageReaction &&
+             Array.isArray(context.activity.reactionsAdded) &&
+             context.activity.reactionsAdded.length > 0
+    }
+
+    this.addRoute(selector, handler)
+    return this
+  }
+
+  /**
+   * Adds a handler for message reaction removed events.
+   *
+   * @param handler - The handler function that will be called when a message reaction is removed.
+   * @returns The current instance of the application.
+   *
+   * @remarks
+   * This method registers a handler that will be invoked when a user removes a reaction from a message,
+   * such as unliking or removing an emoji reaction.
+   *
+   * Example usage:
+   * ```typescript
+   * app.onMessageReactionRemoved(async (context, state) => {
+   *   const reactionsRemoved = context.activity.reactionsRemoved;
+   *   if (reactionsRemoved && reactionsRemoved.length > 0) {
+   *     await context.sendActivity(`You removed your ${reactionsRemoved[0].type} reaction.`);
+   *   }
+   * });
+   * ```
+   */
+  public onMessageReactionRemoved (handler: (context: TurnContext, state: TState) => Promise<void>): this {
+    const selector = async (context: TurnContext): Promise<boolean> => {
+      return context.activity.type === ActivityTypes.MessageReaction &&
+             Array.isArray(context.activity.reactionsRemoved) &&
+             context.activity.reactionsRemoved.length > 0
+    }
+
+    this.addRoute(selector, handler)
     return this
   }
 

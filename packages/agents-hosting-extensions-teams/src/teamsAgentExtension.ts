@@ -2,18 +2,32 @@ import { Meeting } from './meeting'
 import { ActivityTypes } from '@microsoft/agents-activity'
 import { AgentApplication, AgentExtension, RouteHandler, RouteSelector, TurnContext, TurnState } from '@microsoft/agents-hosting'
 import { parseTeamsChannelData } from './activity-extensions/teamsChannelDataParser'
+import { MessageExtension } from './messageExtension'
+import { TaskModule } from './taskModule'
 
-export class MyTeamsExt extends AgentExtension {
+export class TeamsAgentExtension extends AgentExtension {
   _app: AgentApplication<TurnState>
   _meeting: Meeting
+  _messageExtension: MessageExtension
+  _taskModule: TaskModule
   constructor (private app: AgentApplication<TurnState>) {
     super('msteams')
     this._app = app
     this._meeting = new Meeting(app)
+    this._messageExtension = new MessageExtension(app)
+    this._taskModule = new TaskModule(app)
   }
 
   public get meeting (): Meeting {
     return this._meeting
+  }
+
+  public get messageExtension (): MessageExtension {
+    return this._messageExtension
+  }
+
+  public get taskModule (): TaskModule {
+    return this._taskModule
   }
 
   onMessageEdit = (handler: RouteHandler<TurnState>) => {
@@ -180,56 +194,6 @@ export class MyTeamsExt extends AgentExtension {
         context.activity.channelId === 'msteams' &&
         channelData &&
         channelData.eventType === 'teamRestored')
-    }
-    this.addRoute(this._app, routeSel, handler, false)
-    return this
-  }
-
-  onTeamsMeetingStart = (handler: RouteHandler<TurnState>) => {
-    const routeSel: RouteSelector = (context: TurnContext) => {
-      return Promise.resolve(context.activity.type === ActivityTypes.Event &&
-        context.activity.channelId === 'msteams' &&
-        context.activity.name === 'application/vnd.microsoft.meetingStart')
-    }
-    this.addRoute(this._app, routeSel, handler, false)
-    return this
-  }
-
-  onTeamsMeetingEnd = (handler: RouteHandler<TurnState>) => {
-    const routeSel: RouteSelector = (context: TurnContext) => {
-      return Promise.resolve(context.activity.type === ActivityTypes.Event &&
-        context.activity.channelId === 'msteams' &&
-        context.activity.name === 'application/vnd.microsoft.meetingEnd')
-    }
-    this.addRoute(this._app, routeSel, handler, false)
-    return this
-  }
-
-  onTeamsMeetingParticipantsJoin = (handler: RouteHandler<TurnState>) => {
-    const routeSel: RouteSelector = (context: TurnContext) => {
-      return Promise.resolve(context.activity.type === ActivityTypes.Event &&
-        context.activity.channelId === 'msteams' &&
-        context.activity.name === 'application/vnd.microsoft.meetingParticipantJoin')
-    }
-    this.addRoute(this._app, routeSel, handler, false)
-    return this
-  }
-
-  onTeamsMeetingParticipantsLeave = (handler: RouteHandler<TurnState>) => {
-    const routeSel: RouteSelector = (context: TurnContext) => {
-      return Promise.resolve(context.activity.type === ActivityTypes.Event &&
-        context.activity.channelId === 'msteams' &&
-        context.activity.name === 'application/vnd.microsoft.meetingParticipantLeave')
-    }
-    this.addRoute(this._app, routeSel, handler, false)
-    return this
-  }
-
-  onTeamsReadReceipt = (handler: RouteHandler<TurnState>) => {
-    const routeSel: RouteSelector = (context: TurnContext) => {
-      return Promise.resolve(context.activity.type === ActivityTypes.Event &&
-        context.activity.channelId === 'msteams' &&
-        context.activity.name === 'application/vnd.microsoft.readReceipt')
     }
     this.addRoute(this._app, routeSel, handler, false)
     return this
