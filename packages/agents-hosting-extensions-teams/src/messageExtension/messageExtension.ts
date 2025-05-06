@@ -1,5 +1,10 @@
-import { ActivityTypes } from '@microsoft/agents-activity'
+import { Activity, ActivityTypes } from '@microsoft/agents-activity'
 import { AgentApplication, RouteHandler, RouteSelector, TurnContext, TurnState } from '@microsoft/agents-hosting'
+import { MessagingExtensionQuery, messagingExtensionQueryZodSchema } from './messagingExtensionQuery'
+import { MessagingExtensionResponse } from './messagingExtensionResponse'
+import { MessagingExtensionResult } from './messagingExtensionResult'
+
+export type RouteQueryHandler<TState extends TurnState> = (context: TurnContext, state: TState, query: MessagingExtensionQuery) => Promise<MessagingExtensionResult>
 
 /**
  * Class that exposes Teams messaging extension-related events.
@@ -21,7 +26,7 @@ export class MessageExtension {
    * @param handler - The handler to call when a query is received
    * @returns this (for method chaining)
    */
-  onQuery (handler: RouteHandler<TurnState>) {
+  onQuery (handler: RouteQueryHandler<TurnState>) {
     const routeSel: RouteSelector = (context: TurnContext) => {
       return Promise.resolve(
         context.activity.type === ActivityTypes.Invoke &&
@@ -29,7 +34,22 @@ export class MessageExtension {
         context.activity.name === 'composeExtension/query'
       )
     }
-    this._app.addRoute(routeSel, handler, true) // Invoke requires true
+    const routeHandler : RouteHandler<TurnState> = async (context: TurnContext, state: TurnState) => {
+      const messageExtensionQuery: MessagingExtensionQuery = messagingExtensionQueryZodSchema.parse(context.activity.value)
+      const parameters: Record<string, unknown> = {}
+      messageExtensionQuery.parameters?.forEach((param) => {
+        parameters[param.name!] = param.value
+      })
+      const result : MessagingExtensionResult = await handler(context, state, messageExtensionQuery)
+      const response: MessagingExtensionResponse = { composeExtension: result }
+      const invokeResponse = new Activity(ActivityTypes.InvokeResponse)
+      invokeResponse.value = {
+        status: 200,
+        body: response
+      }
+      context.sendActivity(invokeResponse)
+    }
+    this._app.addRoute(routeSel, routeHandler, true) // Invoke requires true
     return this
   }
 
