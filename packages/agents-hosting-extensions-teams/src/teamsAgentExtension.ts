@@ -2,8 +2,8 @@ import { Meeting } from './meeting'
 import { ActivityTypes } from '@microsoft/agents-activity'
 import { AgentApplication, AgentExtension, RouteHandler, RouteSelector, TurnContext, TurnState } from '@microsoft/agents-hosting'
 import { parseTeamsChannelData } from './activity-extensions/teamsChannelDataParser'
-import { MessageExtension } from './messageExtension'
-import { TaskModule } from './taskModule'
+import { MessageExtension } from './messageExtension/messageExtension'
+import { TaskModule } from './taskModule/taskModule'
 
 export class TeamsAgentExtension extends AgentExtension {
   _app: AgentApplication<TurnState>
