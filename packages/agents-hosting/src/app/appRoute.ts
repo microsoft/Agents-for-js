@@ -17,4 +17,10 @@ export interface AppRoute<TState extends TurnState> {
    * The handler function that processes the activity if the selector matches.
    */
   handler: RouteHandler<TState>;
+
+  /**
+   * Indicates whether this route is an invoke route.
+   * Invoke routes are used for specific types of activities, such as messaging extensions.
+   */
+  isInvokeRoute?: boolean;
 }
