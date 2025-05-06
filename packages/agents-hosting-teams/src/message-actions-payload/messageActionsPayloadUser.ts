@@ -4,7 +4,11 @@
  */
 
 /**
- * The type of user identity.
+ * Defines the type of user identity in the message actions payload.
+ * - `aadUser`: Represents an Azure Active Directory user.
+ * - `onPremiseAadUser`: Represents an on-premises Azure Active Directory user.
+ * - `anonymousGuest`: Represents an anonymous guest user.
+ * - `federatedUser`: Represents a federated user.
  */
 export type UserIdentityType = 'aadUser' | 'onPremiseAadUser' | 'anonymousGuest' | 'federatedUser'
 
