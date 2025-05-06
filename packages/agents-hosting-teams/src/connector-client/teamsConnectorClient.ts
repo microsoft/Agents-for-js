@@ -15,6 +15,10 @@ import { BatchFailedEntriesResponse } from './batchFailedEntriesResponse'
 import { CancelOperationResponse } from './cancelOperationResponse'
 import { ChannelInfo, TeamsChannelData } from '../channel-data'
 
+/**
+ * A client for interacting with Microsoft Teams APIs.
+ * Extends the ConnectorClient class to provide Teams-specific functionalities.
+ */
 export class TeamsConnectorClient extends ConnectorClient {
   /**
    * Creates a new instance of ConnectorClient with authentication.
@@ -45,6 +49,12 @@ export class TeamsConnectorClient extends ConnectorClient {
     return new TeamsConnectorClient(axiosInstance)
   }
 
+  /**
+   * Retrieves a member from a conversation or team.
+   * @param activity - The activity containing the context.
+   * @param userId - The ID of the user to retrieve.
+   * @returns A TeamsChannelAccount representing the member.
+   */
   static async getMember (activity: Activity, userId: string): Promise<TeamsChannelAccount> {
     const teamsChannelData = activity.channelData as TeamsChannelData
     const teamId = teamsChannelData.team?.id
@@ -56,6 +66,12 @@ export class TeamsConnectorClient extends ConnectorClient {
     }
   }
 
+  /**
+   * Retrieves the team ID from an activity.
+   * @param activity - The activity containing the context.
+   * @returns The team ID as a string.
+   * @throws Error if the activity is missing or invalid.
+   */
   private static getTeamId (activity: any): string {
     if (!activity) {
       throw new Error('Missing activity parameter')
@@ -66,6 +82,14 @@ export class TeamsConnectorClient extends ConnectorClient {
     return teamId as string
   }
 
+  /**
+   * Retrieves a member from a team.
+   * @param activity - The activity containing the context.
+   * @param teamId - The ID of the team.
+   * @param userId - The ID of the user to retrieve.
+   * @returns A TeamsChannelAccount representing the team member.
+   * @throws Error if the teamId or userId is missing.
+   */
   static async getTeamMember (activity: any, teamId?: string, userId?: string) {
     const t = teamId || this.getTeamId(activity)
     if (!t) {
@@ -77,6 +101,12 @@ export class TeamsConnectorClient extends ConnectorClient {
     return await this.getMemberInternal(activity, t, userId)
   }
 
+  /**
+   * Retrieves a member from a conversation.
+   * @param conversationId - The ID of the conversation.
+   * @param userId - The ID of the user to retrieve.
+   * @returns A ChannelAccount representing the conversation member.
+   */
   public async getConversationMember (conversationId: string, userId: string): Promise<ChannelAccount> {
     const config: AxiosRequestConfig = {
       method: 'get',
@@ -89,6 +119,14 @@ export class TeamsConnectorClient extends ConnectorClient {
     return response.data
   }
 
+  /**
+   * Retrieves a member from a conversation or team internally.
+   * @param activity - The activity containing the context.
+   * @param conversationId - The ID of the conversation.
+   * @param userId - The ID of the user to retrieve.
+   * @returns A ChannelAccount representing the member.
+   * @throws Error if the conversationId is missing or the client is unavailable.
+   */
   static async getMemberInternal (
     activity: any,
     conversationId: string | undefined,
@@ -105,6 +143,13 @@ export class TeamsConnectorClient extends ConnectorClient {
     return teamMember
   }
 
+  /**
+   * Retrieves paged members of a conversation.
+   * @param conversationId - The ID of the conversation.
+   * @param pageSize - The number of members per page.
+   * @param continuationToken - The token for pagination.
+   * @returns A TeamsPagedMembersResult containing the paged members.
+   */
   public async getConversationPagedMember (conversationId: string, pageSize: number, continuationToken: string): Promise<TeamsPagedMembersResult> {
     const config: AxiosRequestConfig = {
       method: 'get',
@@ -118,6 +163,11 @@ export class TeamsConnectorClient extends ConnectorClient {
     return response.data
   }
 
+  /**
+   * Fetches the list of channels in a team.
+   * @param teamId - The ID of the team.
+   * @returns An array of ChannelInfo objects representing the channels.
+   */
   public async fetchChannelList (teamId: string): Promise<ChannelInfo[]> {
     const config: AxiosRequestConfig = {
       method: 'get',
@@ -127,6 +177,11 @@ export class TeamsConnectorClient extends ConnectorClient {
     return response.data
   }
 
+  /**
+   * Fetches the details of a team.
+   * @param teamId - The ID of the team.
+   * @returns A TeamDetails object containing the team details.
+   */
   public async fetchTeamDetails (teamId: string): Promise<TeamDetails> {
     const config: AxiosRequestConfig = {
       method: 'get',
@@ -136,6 +191,13 @@ export class TeamsConnectorClient extends ConnectorClient {
     return response.data
   }
 
+  /**
+   * Fetches information about a meeting participant.
+   * @param meetingId - The ID of the meeting.
+   * @param participantId - The ID of the participant.
+   * @param tenantId - The tenant ID.
+   * @returns A string containing participant information.
+   */
   public async fetchMeetingParticipant (meetingId: string, participantId: string, tenantId: string): Promise<string> {
     const config: AxiosRequestConfig = {
       method: 'get',
@@ -146,6 +208,11 @@ export class TeamsConnectorClient extends ConnectorClient {
     return response.data
   }
 
+  /**
+   * Fetches information about a meeting.
+   * @param meetingId - The ID of the meeting.
+   * @returns A MeetingInfo object containing the meeting information.
+   */
   public async fetchMeetingInfo (meetingId: string): Promise<MeetingInfo> {
     const config: AxiosRequestConfig = {
       method: 'get',
@@ -155,6 +222,12 @@ export class TeamsConnectorClient extends ConnectorClient {
     return response.data
   }
 
+  /**
+   * Sends a notification to a meeting.
+   * @param meetingId - The ID of the meeting.
+   * @param notification - The notification to send.
+   * @returns A MeetingNotificationResponse object containing the response.
+   */
   public async sendMeetingNotification (meetingId: string, notification: MeetingNotification): Promise<MeetingNotificationResponse> {
     const config: AxiosRequestConfig = {
       method: 'post',
@@ -165,6 +238,13 @@ export class TeamsConnectorClient extends ConnectorClient {
     return response.data
   }
 
+  /**
+   * Sends a message to a list of users.
+   * @param activity - The activity to send.
+   * @param tenantId - The tenant ID.
+   * @param members - The list of members to send the message to.
+   * @returns A TeamsBatchOperationResponse object containing the response.
+   */
   public async sendMessageToListOfUsers (activity: Activity, tenantId: string, members: TeamsMember[]): Promise<TeamsBatchOperationResponse> {
     const content = {
       activity,
@@ -180,6 +260,12 @@ export class TeamsConnectorClient extends ConnectorClient {
     return response.data
   }
 
+  /**
+   * Sends a message to all users in a tenant.
+   * @param activity - The activity to send.
+   * @param tenandId - The tenant ID.
+   * @returns A TeamsBatchOperationResponse object containing the response.
+   */
   public async sendMessageToAllUsersInTenant (activity: Activity, tenandId: string): Promise<TeamsBatchOperationResponse> {
     const content = {
       activity,
@@ -194,6 +280,13 @@ export class TeamsConnectorClient extends ConnectorClient {
     return response.data
   }
 
+  /**
+   * Sends a message to all users in a team.
+   * @param activity - The activity to send.
+   * @param tenantId - The tenant ID.
+   * @param teamId - The team ID.
+   * @returns A TeamsBatchOperationResponse object containing the response.
+   */
   public async sendMessageToAllUsersInTeam (activity: Activity, tenantId: string, teamId: string): Promise<TeamsBatchOperationResponse> {
     const content = {
       activity,
@@ -209,6 +302,13 @@ export class TeamsConnectorClient extends ConnectorClient {
     return response.data
   }
 
+  /**
+   * Sends a message to a list of channels.
+   * @param activity - The activity to send.
+   * @param tenantId - The tenant ID.
+   * @param members - The list of members to send the message to.
+   * @returns A TeamsBatchOperationResponse object containing the response.
+   */
   public async sendMessageToListOfChannels (activity: Activity, tenantId: string, members: TeamsMember[]): Promise<TeamsBatchOperationResponse> {
     const content = {
       activity,
@@ -224,6 +324,11 @@ export class TeamsConnectorClient extends ConnectorClient {
     return response.data
   }
 
+  /**
+   * Retrieves the state of a batch operation.
+   * @param operationId - The ID of the operation.
+   * @returns A BatchOperationStateResponse object containing the operation state.
+   */
   public async getOperationState (operationId: string): Promise<BatchOperationStateResponse> {
     const config: AxiosRequestConfig = {
       method: 'get',
@@ -233,6 +338,11 @@ export class TeamsConnectorClient extends ConnectorClient {
     return response.data
   }
 
+  /**
+   * Retrieves the failed entries of a batch operation.
+   * @param operationId - The ID of the operation.
+   * @returns A BatchFailedEntriesResponse object containing the failed entries.
+   */
   public async getFailedEntries (operationId: string): Promise<BatchFailedEntriesResponse> {
     const config: AxiosRequestConfig = {
       method: 'get',
@@ -242,6 +352,11 @@ export class TeamsConnectorClient extends ConnectorClient {
     return response.data
   }
 
+  /**
+   * Cancels a batch operation.
+   * @param operationId - The ID of the operation.
+   * @returns A CancelOperationResponse object containing the response.
+   */
   public async cancelOperation (operationId: string): Promise<CancelOperationResponse> {
     const config: AxiosRequestConfig = {
       method: 'delete',
