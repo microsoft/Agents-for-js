@@ -15,13 +15,27 @@ import { MessageExtensionsInvokeNames } from './messageExtensionsInvokeNames'
 import { parseValueAgentActivityPreview, parseValueAgentMessagePreviewAction, parseValueCommandId, parseValueQuery } from '../../parsers'
 import { Query } from '../query'
 
+/**
+ * The MessageExtensions class provides methods to handle various messaging extension scenarios in a Teams application.
+ * It allows developers to define handlers for different invoke activities such as queries, task fetches, and message previews.
+ * @template TState - The type of the TurnState used in the application.
+ */
 export class MessageExtensions<TState extends TurnState> {
   private readonly _app: TeamsApplication<TState>
 
+  /**
+   * Creates an instance of MessageExtensions.
+   * @param app - The TeamsApplication instance to associate with this MessageExtensions instance.
+   */
   public constructor (app: TeamsApplication<TState>) {
     this._app = app
   }
 
+  /**
+   * Registers a handler for the anonymous query link invoke activity.
+   * @param handler - A function to handle the anonymous query link.
+   * @returns The TeamsApplication instance.
+   */
   public anonymousQueryLink (
     handler: (context: TurnContext, state: TState, url: string) => Promise<MessagingExtensionResult>
   ): TeamsApplication<TState> {
@@ -52,6 +66,12 @@ export class MessageExtensions<TState extends TurnState> {
     return this._app
   }
 
+  /**
+   * Registers a handler for editing a message preview.
+   * @param commandId - The command ID(s) or selector(s) to match the activity.
+   * @param handler - A function to handle the message preview edit.
+   * @returns The TeamsApplication instance.
+   */
   public messagePreviewEdit (
     commandId: string | RegExp | RouteSelector | (string | RegExp | RouteSelector)[],
     handler: (
@@ -86,6 +106,12 @@ export class MessageExtensions<TState extends TurnState> {
     return this._app
   }
 
+  /**
+   * Registers a handler for sending a message preview.
+   * @param commandId - The command ID(s) or selector(s) to match the activity.
+   * @param handler - A function to handle the message preview send.
+   * @returns The TeamsApplication instance.
+   */
   public messagePreviewSend (
     commandId: string | RegExp | RouteSelector | (string | RegExp | RouteSelector)[],
     handler: (context: TurnContext, state: TState, previewActivity: Partial<Activity>) => Promise<void>
@@ -123,6 +149,12 @@ export class MessageExtensions<TState extends TurnState> {
     return this._app
   }
 
+  /**
+   * Registers a handler for fetching a task module.
+   * @param commandId - The command ID(s) or selector(s) to match the activity.
+   * @param handler - A function to handle the task fetch.
+   * @returns The TeamsApplication instance.
+   */
   public fetchTask (
     commandId: string | RegExp | RouteSelector | (string | RegExp | RouteSelector)[],
     handler: (context: TurnContext, state: TState) => Promise<TaskModuleTaskInfo | string>
@@ -173,6 +205,12 @@ export class MessageExtensions<TState extends TurnState> {
     return this._app
   }
 
+  /**
+   * Registers a handler for a query invoke activity.
+   * @param commandId - The command ID(s) or selector(s) to match the activity.
+   * @param handler - A function to handle the query.
+   * @returns The TeamsApplication instance.
+   */
   public query<TParams extends Record<string, any> = Record<string, any>>(
     commandId: string | RegExp | RouteSelector | (string | RegExp | RouteSelector)[],
     handler: (context: TurnContext, state: TState, query: Query<TParams>) => Promise<MessagingExtensionResult>
@@ -220,6 +258,11 @@ export class MessageExtensions<TState extends TurnState> {
     return this._app
   }
 
+  /**
+   * Registers a handler for a query link invoke activity.
+   * @param handler - A function to handle the query link.
+   * @returns The TeamsApplication instance.
+   */
   public queryLink (
     handler: (context: TurnContext, state: TState, url: string) => Promise<MessagingExtensionResult>
   ): TeamsApplication<TState> {
@@ -251,6 +294,11 @@ export class MessageExtensions<TState extends TurnState> {
     return this._app
   }
 
+  /**
+   * Registers a handler for selecting an item in a messaging extension.
+   * @param handler - A function to handle the item selection.
+   * @returns The TeamsApplication instance.
+   */
   public selectItem<TItem extends Record<string, any> = Record<string, any>>(
     handler: (context: TurnContext, state: TState, item: TItem) => Promise<MessagingExtensionResult>
   ): TeamsApplication<TState> {
@@ -281,6 +329,12 @@ export class MessageExtensions<TState extends TurnState> {
     return this._app
   }
 
+  /**
+   * Registers a handler for submitting an action in a messaging extension.
+   * @param commandId - The command ID(s) or selector(s) to match the activity.
+   * @param handler - A function to handle the action submission.
+   * @returns The TeamsApplication instance.
+   */
   public submitAction<TData extends Record<string, any>>(
     commandId: string | RegExp | RouteSelector | (string | RegExp | RouteSelector)[],
     handler: (
@@ -313,6 +367,11 @@ export class MessageExtensions<TState extends TurnState> {
     return this._app
   }
 
+  /**
+   * Sends a response for a submit action invoke activity.
+   * @param context - The TurnContext of the activity.
+   * @param result - The result to send in the response.
+   */
   private async returnSubmitActionResponse (
     context: TurnContext,
     result: MessagingExtensionResult | TaskModuleTaskInfo | string | null | undefined
@@ -352,6 +411,11 @@ export class MessageExtensions<TState extends TurnState> {
     }
   }
 
+  /**
+   * Registers a handler for querying a URL setting in a messaging extension.
+   * @param handler - A function to handle the URL setting query.
+   * @returns The TeamsApplication instance.
+   */
   public queryUrlSetting (
     handler: (context: TurnContext, state: TState) => Promise<MessagingExtensionResult>
   ): TeamsApplication<TState> {
@@ -381,6 +445,11 @@ export class MessageExtensions<TState extends TurnState> {
     return this._app
   }
 
+  /**
+   * Registers a handler for configuring settings in a messaging extension.
+   * @param handler - A function to handle the settings configuration.
+   * @returns The TeamsApplication instance.
+   */
   public configureSettings<TData extends Record<string, any>>(
     handler: (context: TurnContext, state: TState, settings: TData) => Promise<void>
   ): TeamsApplication<TState> {
@@ -407,6 +476,11 @@ export class MessageExtensions<TState extends TurnState> {
     return this._app
   }
 
+  /**
+   * Registers a handler for handling button clicks in a messaging extension card.
+   * @param handler - A function to handle the button click.
+   * @returns The TeamsApplication instance.
+   */
   public handleOnButtonClicked<TData extends Record<string, any>>(
     handler: (context: TurnContext, state: TState, data: TData) => Promise<void>
   ): TeamsApplication<TState> {
