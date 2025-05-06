@@ -185,8 +185,7 @@ export class DialogContext {
   services: TurnContextStateCollection = new TurnContextStateCollection()
 
   /**
-     * @deprecated This property serves no function.
-     * @returns The current dialog manager instance. This property is deprecated.
+     * @returns The current dialog manager instance.
      */
   get dialogManager (): DialogManager {
     return this.context.turnState.get(DialogTurnStateConstants.dialogManager)
