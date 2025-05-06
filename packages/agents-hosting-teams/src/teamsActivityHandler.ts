@@ -49,6 +49,11 @@ const TeamsMeetingEndT = z
     EndTime: z.string()
   })
 
+/**
+ * A handler for processing Microsoft Teams-specific activities.
+ * Extends the ActivityHandler class to provide additional Teams-specific functionality.
+ * This class includes methods for handling various Teams events, such as message updates, channel events, and meeting events.
+ */
 export class TeamsActivityHandler extends ActivityHandler {
   /**
    * Handles invoke activities.

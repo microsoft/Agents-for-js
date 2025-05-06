@@ -7,6 +7,9 @@
  * Class representing read receipt information.
  */
 export class ReadReceiptInfo {
+  /**
+   * The ID of the last read message.
+   */
   lastReadMessageId: string
 
   /**

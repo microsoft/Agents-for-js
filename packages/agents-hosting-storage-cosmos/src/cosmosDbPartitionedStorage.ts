@@ -6,11 +6,22 @@ import { CosmosDbKeyEscape } from './cosmosDbKeyEscape'
 import { DocumentStoreItem } from './documentStoreItem'
 import { CosmosDbPartitionedStorageOptions } from './cosmosDbPartitionedStorageOptions'
 import { Storage, StoreItems } from '@microsoft/agents-hosting'
+
+/**
+ * A utility class to ensure that a specific asynchronous task is executed only once for a given key.
+ * @template T The type of the result returned by the asynchronous task.
+ */
 export class DoOnce<T> {
   private task: {
     [key: string]: Promise<T>;
   } = {}
 
+  /**
+   * Waits for the task associated with the given key to complete, or starts the task if it hasn't been started yet.
+   * @param key The unique key identifying the task.
+   * @param fn A function that returns a promise representing the task to execute.
+   * @returns A promise that resolves to the result of the task.
+   */
   waitFor (key: string, fn: () => Promise<T>): Promise<T> {
     if (!this.task[key]) {
       this.task[key] = fn()
@@ -32,6 +43,10 @@ export class CosmosDbPartitionedStorage implements Storage {
   private client!: CosmosClient
   private compatibilityModePartitionKey = false;
   [key: string]: any;
+
+  /**
+   * The number of items in the storage. This property is not currently used.
+   */
   length: number = 0
 
   /**

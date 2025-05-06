@@ -12,6 +12,11 @@ import {
 } from '@azure/storage-blob'
 import { TranscriptStore, PagedResult, TranscriptInfo } from '@microsoft/agents-hosting'
 
+/**
+ * Formats a Date object into a hexadecimal string representing ticks.
+ * @param timestamp - The Date object to format.
+ * @returns A string representing the formatted ticks.
+ */
 function formatTicks (timestamp: Date): string {
   const epochTicks = 621355968000000000
   const ticksPerMillisecond = 10000
@@ -19,10 +24,21 @@ function formatTicks (timestamp: Date): string {
   return ticks.toString(16)
 }
 
+/**
+ * Generates a sanitized prefix for a channel.
+ * @param channelId - The ID of the channel.
+ * @returns A sanitized string prefix for the channel.
+ */
 function getChannelPrefix (channelId: string): string {
   return sanitizeBlobKey(`${channelId}/`)
 }
 
+/**
+ * Generates a sanitized prefix for a conversation within a channel.
+ * @param channelId - The ID of the channel.
+ * @param conversationId - The ID of the conversation.
+ * @returns A sanitized string prefix for the conversation.
+ */
 function getConversationPrefix (channelId: string, conversationId: string): string {
   return sanitizeBlobKey(`${channelId}/${conversationId}`)
 }
@@ -73,7 +89,14 @@ const MAX_PAGE_SIZE = 20
  * Options for configuring the BlobsTranscriptStore.
  */
 export interface BlobsTranscriptStoreOptions {
+  /**
+   * Optional pipeline options for configuring the Azure Blob Storage client.
+   */
   storagePipelineOptions?: StoragePipelineOptions;
+
+  /**
+   * Indicates whether to decode the transcript key when retrieving transcripts.
+   */
   decodeTranscriptKey?: boolean;
 }
 
@@ -86,6 +109,14 @@ export class BlobsTranscriptStore implements TranscriptStore {
   private _initializePromise?: Promise<unknown>
   private _isDecodeTranscriptKey?: boolean = false
 
+  /**
+   * Constructs a new instance of the BlobsTranscriptStore class.
+   * @param connectionString - The connection string for the Azure Blob Storage account.
+   * @param containerName - The name of the container to use for storing transcripts.
+   * @param options - Optional configuration options for the store.
+   * @param blobServiceUri - Optional URI for the blob service.
+   * @param tokenCredential - Optional credentials for authenticating with the blob service.
+   */
   constructor (
     connectionString: string,
     containerName: string,
@@ -134,6 +165,14 @@ export class BlobsTranscriptStore implements TranscriptStore {
     return this._initializePromise
   }
 
+  /**
+   * Retrieves transcript activities for a specific conversation.
+   * @param channelId - The ID of the channel.
+   * @param conversationId - The ID of the conversation.
+   * @param continuationToken - Optional token for paginated results.
+   * @param startDate - Optional start date to filter activities.
+   * @returns A promise resolving to a paged result of activities.
+   */
   async getTranscriptActivities (
     channelId: string,
     conversationId: string,
@@ -202,6 +241,12 @@ export class BlobsTranscriptStore implements TranscriptStore {
     }
   }
 
+  /**
+   * Lists all transcripts for a specific channel.
+   * @param channelId - The ID of the channel.
+   * @param continuationToken - Optional token for paginated results.
+   * @returns A promise resolving to a paged result of transcript information.
+   */
   async listTranscripts (channelId: string, continuationToken?: string): Promise<PagedResult<TranscriptInfo>> {
     z.object({ channelId: z.string() }).parse({ channelId })
 
@@ -242,6 +287,12 @@ export class BlobsTranscriptStore implements TranscriptStore {
     }
   }
 
+  /**
+   * Deletes all transcripts for a specific conversation.
+   * @param channelId - The ID of the channel.
+   * @param conversationId - The ID of the conversation.
+   * @returns A promise that resolves when the deletion is complete.
+   */
   async deleteTranscript (channelId: string, conversationId: string): Promise<void> {
     z.object({ channelId: z.string(), conversationId: z.string() }).parse({ channelId, conversationId })
 
@@ -270,6 +321,12 @@ export class BlobsTranscriptStore implements TranscriptStore {
     }
   }
 
+  /**
+   * Logs an activity to the transcript store.
+   * @param activity - The activity to log.
+   * @param options - Optional configuration options for the operation.
+   * @returns A promise that resolves when the activity is logged.
+   */
   async logActivity (activity: Activity, options?: BlobsTranscriptStoreOptions): Promise<void> {
     z.object({ activity: z.record(z.unknown()) }).parse({ activity })
 
