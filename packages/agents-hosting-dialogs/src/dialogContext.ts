@@ -48,7 +48,7 @@ const ACTIVITY_RECEIVED_EMITTED = Symbol('ActivityReceivedEmitted')
  * Contains dialog state, information about the state of the dialog stack, for a specific {@link DialogSet}.
  *
  * @remarks
- * State is read from and saved to storage each turn, and state cache for the turn is managed through the {@link TurnContext}.
+ * State is read from and saved to storage each turn, and state cache for the turn is managed through the {@link @microsoft/agents-hosting.TurnContext}.
  *
  * For more information, see the articles on
  * [Managing state](https://docs.microsoft.com/azure/bot-service/bot-builder-concept-state) and
@@ -77,32 +77,32 @@ export class DialogContext {
   /**
      * Creates an new instance of the DialogContext class.
      *
-     * @param dialogs The {@link DialogSet} for which to create the dialog context.
-     * @param contextOrDialogContext The {@link TurnContext} object for the current turn.
-     * @param state The state object to use to read and write {@link DialogState} to storage.
+     * @param dialogs The `DialogSet` for which to create the dialog context.
+     * @param contextOrDialogContext The `TurnContext` object for the current turn.
+     * @param state The state object to use to read and write `DialogState` to storage.
      * @remarks
-     * Passing in a DialogContext instance will clone the dialog context.
+     * Passing in a `DialogContext` instance will clone the dialog context.
      */
   constructor (dialogs: DialogSet, contextOrDialogContext: TurnContext, state: DialogState)
 
   /**
      * Creates an new instance of the DialogContext class.
      *
-     * @param dialogs The {@link DialogSet} for which to create the dialog context.
-     * @param contextOrDialogContext The {@link DialogContext} object for the current turn.
-     * @param state The state object to use to read and write {@link DialogState}  to storage.
+     * @param dialogs The `DialogSet` for which to create the dialog context.
+     * @param contextOrDialogContext The `DialogContext` object for the current turn.
+     * @param state The state object to use to read and write `DialogState` to storage.
      * @remarks
-     * Passing in a DialogContext instance will clone the dialog context.
+     * Passing in a `DialogContext` instance will clone the dialog context.
      */
   constructor (dialogs: DialogSet, contextOrDialogContext: DialogContext, state: DialogState)
 
   /**
-     * Creates an new instance of the DialogContext class.
+     * Creates an new instance of the `DialogContext` class.
      *
-     * @param dialogs The {@link DialogSet} for which to create the dialog context.
-     * @param contextOrDialogContext The {@link TurnContext} or {@link DialogContext} for the current turn.
-     * @param state The state object to use to read and write {@link DialogState} to storage.
-     * @remarks Passing in a DialogContext instance will clone the dialog context.
+     * @param dialogs The `DialogSet` for which to create the dialog context.
+     * @param contextOrDialogContext The `TurnContext` or `DialogContext` for the current turn.
+     * @param state The state object to use to read and write `DialogState` to storage.
+     * @remarks Passing in a `DialogContext` instance will clone the dialog context.
      */
   constructor (dialogs: DialogSet, contextOrDialogContext: TurnContext | DialogContext, state: DialogState) {
     this.dialogs = dialogs
@@ -144,7 +144,7 @@ export class DialogContext {
      * The parent dialog context for this dialog context, or `undefined` if this context doesn't have a parent.
      *
      * @remarks
-     * When it attempts to start a dialog, the dialog context searches for the Dialog.id
+     * When it attempts to start a dialog, the dialog context searches for the {@link Dialog.id}
      * in its {@link DialogContext.dialogs}. If the dialog to start is not found
      * in this dialog context, it searches in its parent dialog context, and so on.
      */
@@ -341,7 +341,7 @@ export class DialogContext {
      *
      * @param dialogId ID of the prompt dialog to start.
      * @param promptOrOptions The text of the initial prompt to send the user,
-     * the {@link Activity} to send as the initial prompt, or
+     * the {@link @microsoft/agents-activity.Activity} to send as the initial prompt, or
      * the object with which to format the prompt dialog.
      * @param choices Optional. Array of choices for the user to choose from,
      * for use with a {@link ChoicePrompt}.
@@ -361,7 +361,7 @@ export class DialogContext {
      *
      * @param dialogId ID of the prompt dialog to start.
      * @param promptOrOptions The text of the initial prompt to send the user,
-     * or the {@link Activity} to send as the initial prompt.
+     * or the {@link @microsoft/agents-activity.Activity} to send as the initial prompt.
      * @param choices Optional. Array of choices for the user to choose from,
      * for use with a {@link ChoicePrompt}.
      * @returns {Promise<DialogTurnResult>} a promise resolving to the dialog turn result.
@@ -397,7 +397,7 @@ export class DialogContext {
      *
      * @returns {Promise<DialogTurnResult>} a promise resolving to the dialog turn result.
      * @remarks
-     * After the call completes, you can check the turn context's {@link TurnContext.responded}
+     * After the call completes, you can check the turn context's {@link @microsoft/agents-hosting.TurnContext.responded | TurnContext.responded}
      * property to determine if the dialog sent a reply to the user.
      *
      * The {@link DialogTurnResult.status} of returned object describes
