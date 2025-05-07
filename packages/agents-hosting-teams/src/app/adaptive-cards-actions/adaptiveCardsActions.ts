@@ -19,13 +19,31 @@ const ACTION_EXECUTE_TYPE = 'Action.Execute'
 const DEFAULT_ACTION_SUBMIT_FILTER = 'verb'
 const SEARCH_INVOKE_NAME = 'application/search'
 
+/**
+ * A class to handle Adaptive Card actions such as executing actions, submitting actions, and performing searches.
+ * @template TState - The type of the TurnState used in the application.
+ */
 export class AdaptiveCardsActions<TState extends TurnState> {
+  /**
+   * The Teams application instance associated with this class.
+   */
   private readonly _app: TeamsApplication<TState>
 
+  /**
+   * Constructs an instance of AdaptiveCardsActions.
+   * @param app - The Teams application instance.
+   */
   public constructor (app: TeamsApplication<TState>) {
     this._app = app
   }
 
+  /**
+   * Registers a handler for the Action.Execute event.
+   * @template TData - The type of the data passed to the handler.
+   * @param verb - A string, RegExp, RouteSelector, or an array of these to match the action verb.
+   * @param handler - A function to handle the action execution.
+   * @returns The Teams application instance.
+   */
   public actionExecute<TData = Record<string, any>>(
     verb: string | RegExp | RouteSelector | (string | RegExp | RouteSelector)[],
     handler: (context: TurnContext, state: TState, data: TData) => Promise<AdaptiveCard | string>
@@ -101,6 +119,13 @@ export class AdaptiveCardsActions<TState extends TurnState> {
     return this._app
   }
 
+  /**
+   * Registers a handler for the Action.Submit event.
+   * @template TData - The type of the data passed to the handler.
+   * @param verb - A string, RegExp, RouteSelector, or an array of these to match the action verb.
+   * @param handler - A function to handle the action submission.
+   * @returns The Teams application instance.
+   */
   public actionSubmit<TData = Record<string, any>>(
     verb: string | RegExp | RouteSelector | (string | RegExp | RouteSelector)[],
     handler: (context: TurnContext, state: TState, data: TData) => Promise<void>
@@ -120,6 +145,12 @@ export class AdaptiveCardsActions<TState extends TurnState> {
     return this._app
   }
 
+  /**
+   * Registers a handler for the search event.
+   * @param dataset - A string, RegExp, RouteSelector, or an array of these to match the dataset.
+   * @param handler - A function to handle the search query.
+   * @returns The Teams application instance.
+   */
   public search (
     dataset: string | RegExp | RouteSelector | (string | RegExp | RouteSelector)[],
     handler: (

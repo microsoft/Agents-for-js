@@ -14,6 +14,12 @@ export type AttachmentLayout = 'list' | 'grid'
 
 /**
  * Types of messaging extension results.
+ * - `result`: Represents a standard result.
+ * - `auth`: Represents an authentication request.
+ * - `config`: Represents a configuration request.
+ * - `message`: Represents a message result.
+ * - `botMessagePreview`: Represents a bot message preview.
+ * - `silentAuth`: Represents a silent authentication request.
  */
 export type MessagingExtensionResultType =
     | 'result'

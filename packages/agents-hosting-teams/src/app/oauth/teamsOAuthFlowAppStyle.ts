@@ -17,16 +17,44 @@ import {
 
 const logger = debug('agents:teams-oauth-flow-app-style')
 
+/**
+ * Class representing the OAuth flow for Teams with app-specific styling.
+ */
 export class TeamsOAuthFlowAppStyle {
+  /**
+   * The user token client used for token operations.
+   */
   userTokenClient?: UserTokenClient
+
+  /**
+   * The ID of the token exchange request, used to prevent duplicate processing.
+   */
   tokenExchangeId: string | null = null
+
+  /**
+   * The storage instance used for persisting state.
+   */
   storage: Storage
+
+  /**
+   * The application state, which includes SSO-related data.
+   */
   appState: TurnState | null = null
 
+  /**
+   * Creates an instance of TeamsOAuthFlowAppStyle.
+   * @param storage - The storage instance for persisting state.
+   */
   constructor (storage: Storage) {
     this.storage = storage
   }
 
+  /**
+   * Begins the OAuth flow for the user.
+   * @param context - The turn context of the bot.
+   * @param state - The turn state containing SSO-related data.
+   * @returns A promise that resolves to the user token if available, or an empty string.
+   */
   public async beginFlow (context: TurnContext, state: TurnState): Promise<string> {
     await state.load(context, this.storage)
     if (this.appState === null) {
@@ -62,6 +90,11 @@ export class TeamsOAuthFlowAppStyle {
     return retVal
   }
 
+  /**
+   * Continues the OAuth flow by processing the token exchange request.
+   * @param context - The turn context of the bot.
+   * @returns A promise that resolves to the user token if the flow is successful, or an empty string.
+   */
   public async continueFlow (context: TurnContext) {
     if (this.appState!.sso!.userToken !== '') {
       return ''
@@ -92,6 +125,11 @@ export class TeamsOAuthFlowAppStyle {
     }
   }
 
+  /**
+   * Signs out the user and clears the SSO state.
+   * @param context - The turn context of the bot.
+   * @returns A promise that resolves when the sign-out process is complete.
+   */
   public async signOut (context: TurnContext): Promise<void> {
     if (this.appState !== null) {
       await this.appState.load(context, this.storage)
@@ -106,6 +144,11 @@ export class TeamsOAuthFlowAppStyle {
     }
   }
 
+  /**
+   * Retrieves the signed-in user's token from the application state.
+   * @param context - The turn context of the bot.
+   * @returns A promise that resolves to the user token if available, or undefined.
+   */
   public async userSignedInToken (context: TurnContext) {
     await this.appState?.load(context, this.storage)
     return this.appState?.sso?.userToken

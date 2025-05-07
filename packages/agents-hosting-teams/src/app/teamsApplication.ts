@@ -22,16 +22,56 @@ import { TeamsOAuthFlowAppStyle } from './oauth/teamsOAuthFlowAppStyle'
 
 const logger = debug('agents:teams-application')
 
+/**
+ * Represents a Teams application that extends the AgentApplication class.
+ * Provides various functionalities for handling Teams-specific events, messages, and interactions.
+ * @template TState - The type of the turn state.
+ */
 export class TeamsApplication<TState extends TurnState> extends AgentApplication<TState> {
+  /**
+   * Options for configuring the Teams application.
+   */
   private readonly _teamsOptions: TeamsApplicationOptions<TState>
+
+  /**
+   * Routes for handling invoke activities.
+   */
   private readonly _invokeRoutes: AppRoute<TState>[] = []
+
+  /**
+   * Handles adaptive card actions.
+   */
   private readonly _adaptiveCards: AdaptiveCardsActions<TState>
+
+  /**
+   * Handles messages and message-related events.
+   */
   private readonly _messages: Messages<TState>
+
+  /**
+   * Handles messaging extensions.
+   */
   private readonly _messageExtensions: MessageExtensions<TState>
+
+  /**
+   * Handles meeting-related events and actions.
+   */
   private readonly _meetings: Meetings<TState>
+
+  /**
+   * Handles task modules.
+   */
   private readonly _taskModules: TaskModules<TState>
+
+  /**
+   * Manages Teams OAuth flow for authentication.
+   */
   private readonly _teamsAuthManager?: TeamsOAuthFlowAppStyle
 
+  /**
+   * Initializes a new instance of the TeamsApplication class.
+   * @param options - Partial options for configuring the Teams application.
+   */
   public constructor (options?: Partial<TeamsApplicationOptions<TState>>) {
     super()
     this._teamsOptions = {
@@ -52,30 +92,52 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
     this._taskModules = new TaskModules<TState>(this)
   }
 
+  /**
+   * Gets the Teams application options.
+   */
   public get teamsOptions (): TeamsApplicationOptions<TState> {
     return this._teamsOptions
   }
 
+  /**
+   * Gets the task modules handler.
+   */
   public get taskModules (): TaskModules<TState> {
     return this._taskModules
   }
 
+  /**
+   * Gets the adaptive cards actions handler.
+   */
   public get adaptiveCards (): AdaptiveCardsActions<TState> {
     return this._adaptiveCards
   }
 
+  /**
+   * Gets the messages handler.
+   */
   public get messages (): Messages<TState> {
     return this._messages
   }
 
+  /**
+   * Gets the messaging extensions handler.
+   */
   public get messageExtensions (): MessageExtensions<TState> {
     return this._messageExtensions
   }
 
+  /**
+   * Gets the meetings handler.
+   */
   public get meetings (): Meetings<TState> {
     return this._meetings
   }
 
+  /**
+   * Gets the Teams OAuth flow manager.
+   * @throws Error if no authentication options were configured.
+   */
   public get teamsAuthManager (): TeamsOAuthFlowAppStyle {
     if (!this._teamsAuthManager) {
       throw new Error(
@@ -86,6 +148,12 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
     return this._teamsAuthManager
   }
 
+  /**
+   * Adds a route to the application.
+   * @param selector - The route selector.
+   * @param handler - The route handler.
+   * @param isInvokeRoute - Whether the route is for invoke activities.
+   */
   public addRoute (selector: RouteSelector, handler: RouteHandler<TState>, isInvokeRoute = false): this {
     if (isInvokeRoute) {
       this._invokeRoutes.push({ selector, handler })
@@ -95,6 +163,10 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
     return this
   }
 
+  /**
+   * Runs the application for the given turn context.
+   * @param turnContext - The turn context.
+   */
   public async run (turnContext: TurnContext): Promise<void> {
     await this.runInternalTeams(turnContext)
   }
@@ -175,6 +247,11 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
     })
   }
 
+  /**
+   * Handles conversation update events.
+   * @param event - The conversation update event.
+   * @param handler - The handler for the event.
+   */
   public conversationUpdate (
     event: TeamsConversationUpdateEvents,
     handler: (context: TurnContext, state: TState) => Promise<void>
@@ -190,6 +267,11 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
     return this
   }
 
+  /**
+   * Handles message event updates.
+   * @param event - The message event.
+   * @param handler - The handler for the event.
+   */
   public messageEventUpdate (
     event: TeamsMessageEvents,
     handler: (context: TurnContext, state: TState) => Promise<void>
@@ -205,6 +287,11 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
     return this
   }
 
+  /**
+   * Handles message reactions.
+   * @param event - The message reaction event.
+   * @param handler - The handler for the event.
+   */
   public messageReactions (
     event: MessageReactionEvents,
     handler: (context: TurnContext, state: TState) => Promise<void>
@@ -214,6 +301,10 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
     return this
   }
 
+  /**
+   * Handles file consent accept actions.
+   * @param handler - The handler for the file consent accept action.
+   */
   public fileConsentAccept (
     handler: (context: TurnContext, state: TState, fileConsentResponse: FileConsentCardResponse) => Promise<void>
   ): this {
@@ -236,6 +327,10 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
     return this
   }
 
+  /**
+   * Handles file consent decline actions.
+   * @param handler - The handler for the file consent decline action.
+   */
   public fileConsentDecline (
     handler: (context: TurnContext, state: TState, fileConsentResponse: FileConsentCardResponse) => Promise<void>
   ): this {
@@ -258,6 +353,10 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
     return this
   }
 
+  /**
+   * Handles handoff actions.
+   * @param handler - The handler for the handoff action.
+   */
   public handoff (handler: (context: TurnContext, state: TState, continuation: string) => Promise<void>): this {
     const selector = (context: TurnContext): Promise<boolean> => {
       return Promise.resolve(
@@ -276,6 +375,10 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
     return this
   }
 
+  /**
+   * Gets the channels of a team.
+   * @param context - The turn context, conversation reference, or activity.
+   */
   public async getTeamChannels (
     context: TurnContext | ConversationReference | Activity
   ): Promise<ChannelInfo[]> {
@@ -297,6 +400,10 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
     return teamsChannels
   }
 
+  /**
+   * Gets the details of a team.
+   * @param context - The turn context, conversation reference, or activity.
+   */
   public async getTeamDetails (
     context: TurnContext | ConversationReference | Activity
   ): Promise<TeamDetails | undefined> {
@@ -318,6 +425,12 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
     return teamDetails
   }
 
+  /**
+   * Gets the paged members of a team.
+   * @param context - The turn context or conversation reference.
+   * @param pageSize - The number of members per page.
+   * @param continuationToken - The continuation token for pagination.
+   */
   public async getPagedMembers (
     context: TurnContext | ConversationReference,
     pageSize?: number,
@@ -331,6 +444,10 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
     return pagedMembers
   }
 
+  /**
+   * Handles Teams read receipt events.
+   * @param handler - The handler for the read receipt event.
+   */
   public teamsReadReceipt (
     handler: (context: TurnContext, state: TState, readReceiptInfo: ReadReceiptInfo) => Promise<void>
   ): this {
