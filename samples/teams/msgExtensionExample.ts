@@ -7,15 +7,45 @@ const app = new AgentApplication<TurnState>({ storage: new MemoryStorage() })
 
 const teamsExt = new TeamsAgentExtension(app)
 
-app.registerExtension<TeamsAgentExtension>(teamsExt, (tae) => {
+app.registerExtension<TeamsAgentExtension>(teamsExt, tae => {
   console.log('Teams extension registered')
 
-  tae.messageExtension.onQuery(async (context: TurnContext, state: TurnState, query: MessagingExtensionQuery) : Promise<MessagingExtensionResult> => {
-    console.log('Received message extension query:', query)
-    return {
-      attachmentLayout: 'list',
-      type: 'result',
-    }
+  tae.messageExtension
+    .onQuery(async (context: TurnContext, state: TurnState, query: MessagingExtensionQuery) : Promise<MessagingExtensionResult> => {
+      console.log('Received message extension query:', query)
+
+      const fakeResult = {
+        title: 'Hello from the message extension!',
+        text: 'This is a sample message extension response.' + query.commandId + ' ' + query.parameters![0].value
+      }
+
+      return Promise.resolve({
+        attachmentLayout: 'list',
+        type: 'result',
+        attachments: [
+          {
+            preview: {
+              contentType: 'application/vnd.microsoft.card.thumbnail',
+              content: {
+                title: fakeResult.title,
+                text: fakeResult.text,
+                tap: {
+                  type: 'invoke',
+                  value: fakeResult
+                }
+              }
+            },
+            contentType: 'application/vnd.microsoft.card.hero',
+            content: fakeResult
+          }
+        ]
+      })
+    })
+
+  tae.messageExtension.onSelectItem(async (context: TurnContext, state: TurnState, item: any) : Promise<MessagingExtensionResult> => {
+    console.log('Item selected:', JSON.stringify(item))
+    await context.sendActivity(`You selected: ${item.title}`)
+    return {}
   })
 })
 
