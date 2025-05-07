@@ -19,7 +19,7 @@
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
   "dependencies": {
-    "@azure/msal-node": "^3.5.2",
+    "@azure/msal-node": "^3.5.3",
     "@microsoft/agents-activity": "file:../agents-activity",
     "axios": "^1.9.0",
     "debug": "^4.3.7",
