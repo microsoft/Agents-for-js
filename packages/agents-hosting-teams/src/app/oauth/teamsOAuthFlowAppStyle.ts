@@ -7,12 +7,11 @@ import {
   CardFactory,
   TurnContext,
   MessageFactory,
-  SigningResource,
+  SignInResource,
   TokenExchangeRequest,
   TurnState,
   Storage,
-  UserTokenClient,
-  TokenRequestStatus
+  UserTokenClient
 } from '@microsoft/agents-hosting'
 
 const logger = debug('agents:teams-oauth-flow-app-style')
@@ -77,10 +76,10 @@ export class TeamsOAuthFlowAppStyle {
     }
     const scope = 'https://api.botframework.com'
     const accessToken = await adapter.authProvider.getAccessToken(authConfig, scope)
-    this.userTokenClient = new UserTokenClient(accessToken)
+    this.userTokenClient = new UserTokenClient(accessToken, authConfig.clientId!)
     const retVal: string = ''
     await context.sendActivities([MessageFactory.text('authorizing user'), new Activity(ActivityTypes.Typing)])
-    const signingResource: SigningResource = await this.userTokenClient.getSignInResource(authConfig.clientId!, authConfig.connectionName!, context.activity.getConversationReference(), context.activity.relatesTo)
+    const signingResource: SignInResource = await this.userTokenClient.getSignInResource(authConfig.clientId!, authConfig.connectionName!, context.activity.getConversationReference(), context.activity.relatesTo)
     const oCard: Attachment = CardFactory.oauthCard(authConfig.connectionName as string, 'Sign in', '', signingResource)
     await context.sendActivity(MessageFactory.attachment(oCard))
     state.sso.flowStarted = true
@@ -115,7 +114,7 @@ export class TeamsOAuthFlowAppStyle {
     }
     this.tokenExchangeId = tokenExchangeRequest.id!
     const userTokenReq = await this.userTokenClient?.exchangeTokenAsync(contFlowActivity.from?.id!, authConfig.connectionName!, contFlowActivity.channelId!, tokenExchangeRequest)
-    if (userTokenReq?.status === TokenRequestStatus.Success) {
+    if (userTokenReq && userTokenReq.token) {
       logger.info('Token obtained')
       // this.appState!.sso!.userToken = userTokenReq.token
       this.appState!.sso!.flowStarted = false

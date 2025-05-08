@@ -3,7 +3,7 @@
 
 import { startServer } from '@microsoft/agents-hosting-express'
 import { ActivityTypes } from '@microsoft/agents-activity'
-import { AgentApplication, MessageFactory, TokenRequestStatus, TurnContext, TurnState, Storage } from '@microsoft/agents-hosting'
+import { AgentApplication, MessageFactory, TurnContext, TurnState, Storage } from '@microsoft/agents-hosting'
 
 class CreateAppDemo extends AgentApplication<TurnState> {
   private readonly _storage: Storage
@@ -28,8 +28,8 @@ class CreateAppDemo extends AgentApplication<TurnState> {
     }
     const github = await this.authorization.getToken(context, 'github')
     const graph = await this.authorization.getToken(context, 'graph')
-    const status = `GitHub flow status: ${github.status} ${github.token?.length}  
-                    Graph flow status: ${graph.status} ${graph.token?.length}`
+    const status = `GitHub flow status: ${github.token?.length}  
+                    Graph flow status:  ${graph.token?.length}`
     await context.sendActivity(MessageFactory.text(status))
     await context.sendActivity(MessageFactory.text('Enter "/login" to sign in or "/logout" to sign out. /me to see your profile. /prs to see your pull requests.'))
   }
@@ -45,7 +45,7 @@ class CreateAppDemo extends AgentApplication<TurnState> {
         const flow = this.authorization._authHandlers[ah].flow
         if (flow?.state?.flowStarted) {
           const tresp = await this.authorization.beginOrContinueFlow(context, state, ah)
-          if (tresp.status !== TokenRequestStatus.Success) {
+          if (tresp && !tresp.token) {
             await context.sendActivity(MessageFactory.text('Failed to complete the flow ' + ah))
           }
         }
