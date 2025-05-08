@@ -41,7 +41,7 @@
     "@types/node": "^22.15.3",
     "@types/sinon": "^17.0.4",
     "@types/uuid": "^10.0.0",
-    "esbuild": "^0.25.2",
+    "esbuild": "^0.25.4",
     "eslint": "^9.25.1",
     "global": "4.4.0",
     "neostandard": "^0.12.1",
@@ -49,7 +49,7 @@
     "npm-run-all": "^4.1.5",
     "sinon": "^20.0.0",
     "tsx": "^4.19.3",
-    "typedoc": "^0.28.3",
+    "typedoc": "^0.28.4",
     "typescript": "^5.8.3"
   },
   "engines": {

@@ -21,6 +21,11 @@ import { parseTeamsChannelData } from './parsers/teamsChannelDataParser'
 import { BatchOperationResponse } from './connector-client/batchOperationResponse'
 import { CloudAdapter, TurnContext } from '@microsoft/agents-hosting'
 
+/**
+ * Provides utility methods for interacting with Microsoft Teams-specific features.
+ * This class includes methods for retrieving team details, meeting information, sending messages,
+ * and managing operations within the Teams environment.
+ */
 export class TeamsInfo {
   /**
    * Gets the meeting participant information.

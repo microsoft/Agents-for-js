@@ -25,8 +25,8 @@ export interface DialogDependencies {
  * The constructor for the dialog set should be passed a state property that will be used to
  * persist the dialog stack for the set:
  *
- * To interact with the sets dialogs you can call createcontext with the
- * current {@link TurnContext}. That will create a {@link DialogContext} that can be used to start or continue
+ * To interact with the sets dialogs you can call `createcontext` with the
+ * current {@link @microsoft/agents-hosting.TurnContext}. That will create a {@link DialogContext} that can be used to start or continue
  * execution of the sets dialogs:
  *
  */
@@ -39,7 +39,7 @@ export class DialogSet {
      * Creates a new DialogSet instance.
      *
      * @remarks
-     * If the `dialogState` parameter is not passed in, calls to {@link DialogSet.createcontext |createContext}
+     * If the `dialogState` parameter is not passed in, calls to {@link @microsoft/agents-hosting-dialogs.DialogSet.createcontext | createContext}
      * will return an error.  You will need to create a {@link DialogContext} for the set manually and
      * pass in your own state object for persisting the sets dialog stack:
      *
