@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { TeamsChannelAccount } from '../client/teamsChannelAccount'
+import { TeamsChannelAccount } from '../activity-extensions/teamsChannelAccount'
 import { UserMeetingDetails } from './userMeetingDetails'
 
 /**

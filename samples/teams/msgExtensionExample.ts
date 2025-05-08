@@ -19,7 +19,7 @@ app.registerExtension<TeamsAgentExtension>(teamsExt, tae => {
         text: 'This is a sample message extension response.' + query.commandId + ' ' + query.parameters![0].value
       }
 
-      return Promise.resolve({
+      const msgExtResult: MessagingExtensionResult = {
         attachmentLayout: 'list',
         type: 'result',
         attachments: [
@@ -39,7 +39,9 @@ app.registerExtension<TeamsAgentExtension>(teamsExt, tae => {
             content: fakeResult
           }
         ]
-      })
+      }
+
+      return Promise.resolve(msgExtResult)
     })
 
   tae.messageExtension.onSelectItem(async (context: TurnContext, state: TurnState, item: any) : Promise<MessagingExtensionResult> => {
@@ -49,12 +51,15 @@ app.registerExtension<TeamsAgentExtension>(teamsExt, tae => {
   })
 })
 
+app.onMessageReactionAdded(async (context: TurnContext, state: TurnState) => {
+  const reactionInfo = context.activity.value
+  console.log('Reaction added:', reactionInfo)
+  await context.sendActivity(`You added a reaction: ${reactionInfo}`)
+})
+
 app.activity('message', async (context: TurnContext, state: TurnState) => {
   const text = context.activity.text || ''
   console.log('Received message:', text)
-
-  state.setValue('user.lastMessage', text)
-
   await context.sendActivity(`I received your message in Teams: "${text}". Try adding a reaction!`)
 })
 

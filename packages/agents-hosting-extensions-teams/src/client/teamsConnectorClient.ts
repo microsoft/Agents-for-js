@@ -2,19 +2,13 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios'
 import { Activity, ChannelAccount } from '@microsoft/agents-activity'
 import { ConnectorClient, AuthConfiguration, AuthProvider, getProductInfo } from '@microsoft/agents-hosting'
-import { TeamsChannelAccount } from './teamsChannelAccount'
-import { TeamsPagedMembersResult } from './teamsPagedMembersResult'
-import { TeamDetails } from './teamDetails'
-import { TeamsMember } from './teamsMember'
+import { TeamsChannelAccount } from '../activity-extensions/teamsChannelAccount'
 import { MeetingInfo } from '../meeting/meetingInfo'
 import { MeetingNotification } from '../meeting/meetingNotification'
 import { MeetingNotificationResponse } from '../meeting/meetingNotificationResponse'
-import { TeamsBatchOperationResponse } from './teamsBatchOperationResponse'
-import { BatchOperationStateResponse } from './batchOperationStateResponse'
-import { BatchFailedEntriesResponse } from './batchFailedEntriesResponse'
-import { CancelOperationResponse } from './cancelOperationResponse'
 import { ChannelInfo } from '../activity-extensions/channelInfo'
 import { TeamsChannelData } from '../activity-extensions'
+import { BatchFailedEntriesResponse, BatchOperationStateResponse, CancelOperationResponse, TeamDetails, TeamsBatchOperationResponse, TeamsMember, TeamsPagedMembersResult } from './teamsConnectorClient.types'
 
 /**
  * A client for interacting with Microsoft Teams APIs.
