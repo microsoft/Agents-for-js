@@ -1,6 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
   "name": "@microsoft/agents-hosting-teams",
+  "private": true,
   "version": "0.1.0",
   "homepage": "https://github.com/microsoft/Agents-for-js",
   "repository": {
