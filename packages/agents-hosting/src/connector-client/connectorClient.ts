@@ -41,14 +41,14 @@ export class ConnectorClient {
         return config
       },
       (error) => {
-        const { code, message, stack } = error
+        const { code, message, stack, response } = error
         const errorDetails = {
           code,
           host: this._axiosInstance.getUri(),
           url: error.config.url,
           method: error.config.method,
           data: error.config.data,
-          message,
+          message: message + JSON.stringify(response?.data),
           stack,
         }
         return Promise.reject(errorDetails)
