@@ -235,14 +235,3 @@ export function parseValueCommandId (value: unknown): {
     commandId: parsedValue.commandId
   }
 }
-
-// /**
-//  * Parses the given value as a messaging extension query.
-//  *
-//  * @param {unknown} value - The value to parse.
-//  * @returns {MessagingExtensionQuery} - The parsed messaging extension query.
-//  */
-// export function parseValueMessagingExtensionQuery (value: unknown): MessagingExtensionQuery {
-//   messagingExtensionQueryZodSchema.passthrough().parse(value)
-//   return value as MessagingExtensionQuery
-// }
