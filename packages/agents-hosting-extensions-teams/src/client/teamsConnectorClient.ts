@@ -13,7 +13,8 @@ import { TeamsBatchOperationResponse } from './teamsBatchOperationResponse'
 import { BatchOperationStateResponse } from './batchOperationStateResponse'
 import { BatchFailedEntriesResponse } from './batchFailedEntriesResponse'
 import { CancelOperationResponse } from './cancelOperationResponse'
-import { ChannelInfo, TeamsChannelData } from '../activity-extensions'
+import { ChannelInfo } from '../activity-extensions/channelInfo'
+import { TeamsChannelData } from '../activity-extensions'
 
 /**
  * A client for interacting with Microsoft Teams APIs.
