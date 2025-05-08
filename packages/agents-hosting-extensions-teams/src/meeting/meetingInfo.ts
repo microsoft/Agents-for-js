@@ -5,7 +5,7 @@
 
 import { ConversationAccount } from '@microsoft/agents-activity'
 import { MeetingDetails } from '../meeting/meetingDetails'
-import { TeamsChannelAccount } from '../client/teamsChannelAccount'
+import { TeamsChannelAccount } from '../activity-extensions/teamsChannelAccount'
 
 /**
  * Represents information about a meeting.

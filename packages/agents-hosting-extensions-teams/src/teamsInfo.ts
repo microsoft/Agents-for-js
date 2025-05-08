@@ -3,23 +3,17 @@
  * Licensed under the MIT License.
  */
 
-import { TeamsChannelAccount } from './client/teamsChannelAccount'
+import { TeamsChannelAccount } from './activity-extensions/teamsChannelAccount'
 import { TeamsMeetingParticipant } from './meeting/teamsMeetingParticipant'
 import { MeetingInfo } from './meeting/meetingInfo'
-import { TeamDetails } from './client/teamDetails'
-import { TeamsPagedMembersResult } from './client/teamsPagedMembersResult'
 import { MeetingNotification } from './meeting/meetingNotification'
 import { MeetingNotificationResponse } from './meeting/meetingNotificationResponse'
-import { TeamsMember } from './client/teamsMember'
-import { BatchOperationStateResponse } from './client/batchOperationStateResponse'
-import { BatchFailedEntriesResponse } from './client/batchFailedEntriesResponse'
-import { CancelOperationResponse } from './client/cancelOperationResponse'
 import { Activity, Channels, ConversationReference, ConversationParameters } from '@microsoft/agents-activity'
 import { TeamsConnectorClient } from './client/teamsConnectorClient'
 import { parseTeamsChannelData } from './activity-extensions/teamsChannelDataParser'
-import { BatchOperationResponse } from './client/batchOperationResponse'
 import { CloudAdapter, TurnContext } from '@microsoft/agents-hosting'
 import { ChannelInfo } from './activity-extensions/channelInfo'
+import { BatchFailedEntriesResponse, BatchOperationResponse, BatchOperationStateResponse, CancelOperationResponse, TeamDetails, TeamsMember, TeamsPagedMembersResult } from './client/teamsConnectorClient.types'
 
 /**
  * Provides utility methods for interacting with Microsoft Teams-specific features.
