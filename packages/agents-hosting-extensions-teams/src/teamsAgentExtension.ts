@@ -1,4 +1,4 @@
-import { Meeting } from './meeting'
+import { Meeting } from './meeting/meeting'
 import { ActivityTypes } from '@microsoft/agents-activity'
 import { AgentApplication, AgentExtension, RouteHandler, RouteSelector, TurnContext, TurnState } from '@microsoft/agents-hosting'
 import { parseTeamsChannelData } from './activity-extensions/teamsChannelDataParser'

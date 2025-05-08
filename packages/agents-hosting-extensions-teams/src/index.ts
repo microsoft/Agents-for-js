@@ -1,4 +1,4 @@
 export * from './teamsAgentExtension'
-export * from './meeting'
+export * from './meeting/meeting'
 export * from './messageExtension'
 export * from './taskModule/taskModule'
