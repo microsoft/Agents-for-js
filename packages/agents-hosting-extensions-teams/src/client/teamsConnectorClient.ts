@@ -1,7 +1,6 @@
 /** * Copyright (c) Microsoft Corporation. All rights reserved. * Licensed under the MIT License. */
-import axios, { AxiosRequestConfig, AxiosResponse } from 'axios'
+import { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
 import { Activity, ChannelAccount } from '@microsoft/agents-activity'
-import { ConnectorClient, AuthConfiguration, AuthProvider, getProductInfo } from '@microsoft/agents-hosting'
 import { TeamsChannelAccount } from '../activity-extensions/teamsChannelAccount'
 import { MeetingInfo } from '../meeting/meetingInfo'
 import { MeetingNotification } from '../meeting/meetingNotification'
@@ -9,39 +8,16 @@ import { MeetingNotificationResponse } from '../meeting/meetingNotificationRespo
 import { ChannelInfo } from '../activity-extensions/channelInfo'
 import { TeamsChannelData } from '../activity-extensions'
 import { BatchFailedEntriesResponse, BatchOperationStateResponse, CancelOperationResponse, TeamDetails, TeamsBatchOperationResponse, TeamsMember, TeamsPagedMembersResult } from './teamsConnectorClient.types'
+import { ConnectorClient } from '@microsoft/agents-hosting'
 
 /**
  * A client for interacting with Microsoft Teams APIs.
  * Extends the ConnectorClient class to provide Teams-specific functionalities.
  */
-export class TeamsConnectorClient extends ConnectorClient {
-  /**
-   * Creates a new instance of ConnectorClient with authentication.
-   * @param baseURL - The base URL for the API.
-   * @param authConfig - The authentication configuration.
-   * @param authProvider - The authentication provider.
-   * @param scope - The scope for the authentication token.
-   * @returns A new instance of ConnectorClient.
-   */
-  static async createClientWithAuthAsync (
-    baseURL: string,
-    authConfig: AuthConfiguration,
-    authProvider: AuthProvider,
-    scope: string
-  ): Promise<TeamsConnectorClient> {
-    const axiosInstance = axios.create({
-      baseURL,
-      headers: {
-        Accept: 'application/json',
-        'User-Agent': getProductInfo(),
-      }
-    })
-
-    const token = await authProvider.getAccessToken(authConfig, scope)
-    if (token.length > 1) {
-      axiosInstance.defaults.headers.common.Authorization = `Bearer ${token}`
-    }
-    return new TeamsConnectorClient(axiosInstance)
+export class TeamsConnectorClient {
+  private static axiosInstance: AxiosInstance
+  constructor (private client: ConnectorClient) {
+    TeamsConnectorClient.axiosInstance = client.axiosInstance
   }
 
   /**
@@ -110,7 +86,7 @@ export class TeamsConnectorClient extends ConnectorClient {
         'Content-Type': 'application/json'
       }
     }
-    const response: AxiosResponse = await this.client(config)
+    const response: AxiosResponse = await TeamsConnectorClient.axiosInstance(config)
     return response.data
   }
 
@@ -130,7 +106,7 @@ export class TeamsConnectorClient extends ConnectorClient {
     if (!conversationId) {
       throw new Error('conversationId is required')
     }
-    const client = activity.turnState?.get(activity.adapter.ConnectorClientKey) as TeamsConnectorClient
+    const client : ConnectorClient = activity.turnState?.get(activity.adapter.ConnectorClientKey)
     if (!client) {
       throw new Error('Client is not available in the context.')
     }
@@ -154,7 +130,7 @@ export class TeamsConnectorClient extends ConnectorClient {
         continuationToken
       }
     }
-    const response = await this.client(config)
+    const response = await TeamsConnectorClient.axiosInstance(config)
     return response.data
   }
 
@@ -168,7 +144,7 @@ export class TeamsConnectorClient extends ConnectorClient {
       method: 'get',
       url: `v3/teams/${teamId}/conversations`
     }
-    const response = await this.client(config)
+    const response = await TeamsConnectorClient.axiosInstance(config)
     return response.data
   }
 
@@ -182,7 +158,7 @@ export class TeamsConnectorClient extends ConnectorClient {
       method: 'get',
       url: `v3/teams/${teamId}`
     }
-    const response = await this.client(config)
+    const response = await TeamsConnectorClient.axiosInstance(config)
     return response.data
   }
 
@@ -199,7 +175,7 @@ export class TeamsConnectorClient extends ConnectorClient {
       url: `v1/meetings/${meetingId}/participants/${participantId}`,
       params: { tenantId }
     }
-    const response = await this.client(config)
+    const response = await TeamsConnectorClient.axiosInstance(config)
     return response.data
   }
 
@@ -213,7 +189,7 @@ export class TeamsConnectorClient extends ConnectorClient {
       method: 'get',
       url: `v1/meetings/${meetingId}`
     }
-    const response = await this.client(config)
+    const response = await TeamsConnectorClient.axiosInstance(config)
     return response.data
   }
 
@@ -229,7 +205,7 @@ export class TeamsConnectorClient extends ConnectorClient {
       url: `v1/meetings/${meetingId}/notification`,
       data: notification
     }
-    const response = await this.client(config)
+    const response = await TeamsConnectorClient.axiosInstance(config)
     return response.data
   }
 
@@ -251,7 +227,7 @@ export class TeamsConnectorClient extends ConnectorClient {
       url: 'v3/batch/conversation/users',
       data: content
     }
-    const response = await this.client(config)
+    const response = await TeamsConnectorClient.axiosInstance(config)
     return response.data
   }
 
@@ -271,7 +247,7 @@ export class TeamsConnectorClient extends ConnectorClient {
       url: 'v3/batch/conversation/tenant',
       data: content
     }
-    const response = await this.client(config)
+    const response = await TeamsConnectorClient.axiosInstance(config)
     return response.data
   }
 
@@ -293,7 +269,7 @@ export class TeamsConnectorClient extends ConnectorClient {
       url: 'v3/batch/conversation/team',
       data: content
     }
-    const response = await this.client(config)
+    const response = await TeamsConnectorClient.axiosInstance(config)
     return response.data
   }
 
@@ -315,7 +291,7 @@ export class TeamsConnectorClient extends ConnectorClient {
       url: 'v3/batch/conversation/channels',
       data: content
     }
-    const response = await this.client(config)
+    const response = await TeamsConnectorClient.axiosInstance(config)
     return response.data
   }
 
@@ -329,7 +305,7 @@ export class TeamsConnectorClient extends ConnectorClient {
       method: 'get',
       url: `v3/batch/conversation/${operationId}`
     }
-    const response = await this.client(config)
+    const response = await TeamsConnectorClient.axiosInstance(config)
     return response.data
   }
 
@@ -343,7 +319,7 @@ export class TeamsConnectorClient extends ConnectorClient {
       method: 'get',
       url: `v3/batch/conversation/failedentries/${operationId}`
     }
-    const response = await this.client(config)
+    const response = await TeamsConnectorClient.axiosInstance(config)
     return response.data
   }
 
@@ -358,7 +334,7 @@ export class TeamsConnectorClient extends ConnectorClient {
       url: `v3/batch/conversation/${operationId}`
     }
 
-    const response = await this.client(config)
+    const response = await TeamsConnectorClient.axiosInstance(config)
     return response.data
   }
 }
