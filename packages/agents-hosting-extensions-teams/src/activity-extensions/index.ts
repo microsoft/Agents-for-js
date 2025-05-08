@@ -3,7 +3,6 @@
  * Licensed under the MIT License.
  */
 
-export { ChannelInfo } from './channelInfo'
 export { NotificationInfo } from './notificationInfo'
 export { OnBehalfOf } from './onBehalfOf'
 export { TeamInfo } from './teamInfo'
