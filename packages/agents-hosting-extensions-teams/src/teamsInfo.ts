@@ -19,7 +19,7 @@ import { TeamsConnectorClient } from './client/teamsConnectorClient'
 import { parseTeamsChannelData } from './activity-extensions/teamsChannelDataParser'
 import { BatchOperationResponse } from './client/batchOperationResponse'
 import { CloudAdapter, TurnContext } from '@microsoft/agents-hosting'
-import { ChannelInfo } from './activity-extensions'
+import { ChannelInfo } from './activity-extensions/channelInfo'
 
 /**
  * Provides utility methods for interacting with Microsoft Teams-specific features.
