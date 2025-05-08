@@ -11,7 +11,7 @@ import { MeetingNotificationResponse } from './meeting/meetingNotificationRespon
 import { Activity, Channels, ConversationReference, ConversationParameters } from '@microsoft/agents-activity'
 import { TeamsConnectorClient } from './client/teamsConnectorClient'
 import { parseTeamsChannelData } from './activity-extensions/teamsChannelDataParser'
-import { CloudAdapter, TurnContext } from '@microsoft/agents-hosting'
+import { CloudAdapter, ConnectorClient, TurnContext } from '@microsoft/agents-hosting'
 import { ChannelInfo } from './activity-extensions/channelInfo'
 import { BatchFailedEntriesResponse, BatchOperationResponse, BatchOperationStateResponse, CancelOperationResponse, TeamDetails, TeamsMember, TeamsPagedMembersResult } from './client/teamsConnectorClient.types'
 
@@ -155,7 +155,7 @@ export class TeamsInfo {
       // const connectorClient = context.adapter.createConnectorClient(
       //   context.activity.serviceUrl
       // )
-      const connectorClient = this.getRestClient(context)
+      const connectorClient : ConnectorClient = context.turnState.get<ConnectorClient>('connectorClient')
       const conversationResourceResponse = await connectorClient.createConversationAsync(convoParams)
       conversationReference = context.activity.getConversationReference()
       conversationReference.conversation!.id = conversationResourceResponse.id
@@ -419,10 +419,12 @@ export class TeamsInfo {
   }
 
   private static async getMemberInternal (context: TurnContext, conversationId: string, userId: string): Promise<TeamsChannelAccount> {
-    return await this.getRestClient(context).getConversationMember(conversationId, userId)
+    const connectorClient : ConnectorClient = context.turnState.get<ConnectorClient>('connectorClient')
+    return await connectorClient.getConversationMember(conversationId, userId)
   }
 
   private static getRestClient (context: TurnContext) : TeamsConnectorClient {
-    return context.turnState.get('teamsConnectorClient')
+    const connectorClient : ConnectorClient = context.turnState.get<ConnectorClient>('connectorClient')
+    return new TeamsConnectorClient(connectorClient)
   }
 }

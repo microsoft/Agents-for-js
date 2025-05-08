@@ -7,7 +7,7 @@ import { AgentApplication, AppRoute, debug, MemoryStorage, RouteHandler, RouteSe
 import { TeamsApplicationOptions } from './teamsApplicationOptions'
 import { FileConsentCardResponse } from '../file/fileConsentCardResponse'
 import { ChannelInfo } from '../channel-data/channelInfo'
-import { TeamsInfo } from '../teamsInfo'
+// import { TeamsInfo } from '../teamsInfo'
 import { TeamDetails } from '../connector-client/teamDetails'
 import { TeamsPagedMembersResult } from '../connector-client/teamsPagedMembersResult'
 import { ReadReceiptInfo } from '../message-read-info/readReceipInfo'
@@ -392,7 +392,8 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
                 ctx.activity?.channelData?.team?.id ??
                 (ctx.activity?.conversation?.name === undefined ? ctx.activity?.conversation?.id : undefined)
         if (teamId) {
-          teamsChannels = await TeamsInfo.getTeamChannels(ctx, teamId)
+          // @ts-ignore
+          teamsChannels = undefined// await TeamsInfo.getTeamChannels(ctx, teamId)
         }
       })
     }
@@ -417,7 +418,8 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
                 ctx.activity?.channelData?.team?.id ??
                 (ctx.activity?.conversation?.name === undefined ? ctx.activity?.conversation?.id : undefined)
         if (teamId) {
-          teamDetails = await TeamsInfo.getTeamDetails(ctx, teamId)
+          // @ts-ignore
+          teamDetails = undefined // await TeamsInfo.getTeamDetails(ctx, teamId)
         }
       })
     }
@@ -438,7 +440,8 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
   ): Promise<TeamsPagedMembersResult> {
     let pagedMembers: TeamsPagedMembersResult = { members: [], continuationToken: '' }
     await this.continueConversationAsync(context, async (ctx) => {
-      pagedMembers = await TeamsInfo.getPagedMembers(ctx, pageSize, continuationToken)
+      // @ts-ignore
+      pagedMembers = undefined // await TeamsInfo.getPagedMembers(ctx, pageSize, continuationToken)
     })
 
     return pagedMembers

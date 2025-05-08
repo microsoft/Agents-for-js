@@ -3,7 +3,7 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
 import { AuthConfiguration } from '../auth/authConfiguration'
 import { AuthProvider } from '../auth/authProvider'
 import { debug } from '../logger'
-import { Activity, ConversationParameters } from '@microsoft/agents-activity'
+import { Activity, ChannelAccount, ConversationParameters } from '@microsoft/agents-activity'
 import { ConversationsResult } from './conversationsResult'
 import { ConversationResourceResponse } from './conversationResourceResponse'
 import { ResourceResponse } from './resourceResponse'
@@ -19,21 +19,21 @@ export { getProductInfo }
  * ConnectorClient is a client for interacting with the Microsoft Connector API.
  */
 export class ConnectorClient {
-  protected readonly client: AxiosInstance
+  protected readonly _axiosInstance: AxiosInstance
 
   /**
    * Private constructor for the ConnectorClient.
-   * @param client - The AxiosInstance to use for HTTP requests.
+   * @param axInstance - The AxiosInstance to use for HTTP requests.
    */
-  protected constructor (client: AxiosInstance) {
-    this.client = client
-    this.client.interceptors.response.use(
+  protected constructor (axInstance: AxiosInstance) {
+    this._axiosInstance = axInstance
+    this._axiosInstance.interceptors.response.use(
       (config) => {
         const { status, statusText, config: requestConfig } = config
         logger.debug('Response: ', {
           status,
           statusText,
-          host: this.client.getUri(),
+          host: this._axiosInstance.getUri(),
           url: requestConfig?.url,
           data: config.config.data,
           method: requestConfig?.method,
@@ -44,7 +44,7 @@ export class ConnectorClient {
         const { code, message, stack } = error
         const errorDetails = {
           code,
-          host: this.client.getUri(),
+          host: this._axiosInstance.getUri(),
           url: error.config.url,
           method: error.config.method,
           data: error.config.data,
@@ -54,6 +54,10 @@ export class ConnectorClient {
         return Promise.reject(errorDetails)
       }
     )
+  }
+
+  public get axiosInstance (): AxiosInstance {
+    return this._axiosInstance
   }
 
   /**
@@ -100,7 +104,22 @@ export class ConnectorClient {
       url: '/v3/conversations',
       params: continuationToken ? { continuationToken } : undefined
     }
-    const response = await this.client(config)
+    const response = await this._axiosInstance(config)
+    return response.data
+  }
+
+  public async getConversationMember (userId: string, conversationId: string): Promise<ChannelAccount> {
+    if (!userId || !conversationId) {
+      throw new Error('userId and conversationId are required')
+    }
+    const config: AxiosRequestConfig = {
+      method: 'get',
+      url: `v3/conversations/${conversationId}/members/${userId}`,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }
+    const response = await this._axiosInstance(config)
     return response.data
   }
 
@@ -119,7 +138,7 @@ export class ConnectorClient {
       },
       data: body
     }
-    const response: AxiosResponse = await this.client(config)
+    const response: AxiosResponse = await this._axiosInstance(config)
     return response.data
   }
 
@@ -147,7 +166,7 @@ export class ConnectorClient {
       },
       data: body
     }
-    const response = await this.client(config)
+    const response = await this._axiosInstance(config)
     logger.info('Reply to conversation/activity: ', response.data.id!, activityId)
     return response.data
   }
@@ -174,7 +193,7 @@ export class ConnectorClient {
       },
       data: body
     }
-    const response = await this.client(config)
+    const response = await this._axiosInstance(config)
     return response.data
   }
 
@@ -201,7 +220,7 @@ export class ConnectorClient {
       },
       data: body
     }
-    const response = await this.client(config)
+    const response = await this._axiosInstance(config)
     return response.data
   }
 
@@ -225,7 +244,7 @@ export class ConnectorClient {
         'Content-Type': 'application/json'
       }
     }
-    const response = await this.client(config)
+    const response = await this._axiosInstance(config)
     return response.data
   }
 
@@ -250,7 +269,7 @@ export class ConnectorClient {
       },
       data: body
     }
-    const response = await this.client(config)
+    const response = await this._axiosInstance(config)
     return response.data
   }
 
@@ -272,7 +291,7 @@ export class ConnectorClient {
         'Content-Type': 'application/json'
       }
     }
-    const response = await this.client(config)
+    const response = await this._axiosInstance(config)
     return response.data
   }
 
@@ -299,7 +318,7 @@ export class ConnectorClient {
         'Content-Type': 'application/json'
       }
     }
-    const response = await this.client(config)
+    const response = await this._axiosInstance(config)
     return response.data
   }
 }
