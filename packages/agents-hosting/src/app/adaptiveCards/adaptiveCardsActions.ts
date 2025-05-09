@@ -264,8 +264,8 @@ function createSearchSelector (dataset: string | RegExp | RouteSelector): RouteS
       const a = context?.activity
       const valueDataset = parseValueDataset(a.value)
       const isSearch = a?.type === ActivityTypes.Invoke && a?.name === SEARCH_INVOKE_NAME
-      if (isSearch && typeof valueDataset.dataset === 'string') {
-        return Promise.resolve(dataset.test(valueDataset.dataset))
+      if (isSearch && typeof valueDataset?.dataset === 'string') {
+        return Promise.resolve(dataset.test(valueDataset?.dataset))
       } else {
         return Promise.resolve(false)
       }
@@ -273,9 +273,9 @@ function createSearchSelector (dataset: string | RegExp | RouteSelector): RouteS
   } else {
     return (context: TurnContext) => {
       const a = context?.activity
-      const valueDataset = parseValueDataset(a.value)
+      // const valueDataset = parseAdaptiveCardInvokeAction(a.value)
       const isSearch = a?.type === ActivityTypes.Invoke && a?.name === SEARCH_INVOKE_NAME
-      return Promise.resolve(isSearch && valueDataset.dataset === dataset)
+      return Promise.resolve(isSearch)
     }
   }
 }
