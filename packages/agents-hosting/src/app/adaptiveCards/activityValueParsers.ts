@@ -74,7 +74,11 @@ export function parseValueActionExecuteSelector (value: unknown): ValueAction | 
   const actionValueExecuteSelector = z.object({
     action: actionZodSchema
   })
-  const parsedValue = actionValueExecuteSelector.passthrough().parse(value)
+  const safeParsedValue = actionValueExecuteSelector.passthrough().safeParse(value)
+  if (!safeParsedValue.success) {
+    throw new Error(`Invalid action value: ${safeParsedValue.error}`)
+  }
+  const parsedValue = safeParsedValue.data
   return {
     action: {
       type: parsedValue.action.type,
@@ -91,7 +95,10 @@ export function parseValueActionExecuteSelector (value: unknown): ValueAction | 
  */
 export function parseValueDataset (value: unknown): {
   dataset: string;
-} {
+} | undefined {
+  if (value === undefined || value === null) {
+    return undefined
+  }
   const datasetZodSchema = z.object({
     dataset: z.string().min(1)
   })
