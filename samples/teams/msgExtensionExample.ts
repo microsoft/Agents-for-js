@@ -52,7 +52,7 @@ app.registerExtension<TeamsAgentExtension>(teamsExt, tae => {
 })
 
 app.onMessageReactionAdded(async (context: TurnContext, state: TurnState) => {
-  const reactionInfo = context.activity.value
+  const reactionInfo = context.activity.reactionsAdded?.map(r => r.type).join(', ')
   console.log('Reaction added:', reactionInfo)
   await context.sendActivity(`You added a reaction: ${reactionInfo}`)
 })
