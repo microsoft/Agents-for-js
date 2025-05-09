@@ -50,18 +50,23 @@ export function parseValueContinuation (value: unknown): string {
   return value as string
 }
 
+export interface ValueAction {
+  action: {
+    type: string;
+    verb: string;
+  }
+}
+
 /**
  * Parses the given value as a value action execute selector.
  *
  * @param {unknown} value - The value to parse.
  * @returns {object} - The parsed value action execute selector.
  */
-export function parseValueActionExecuteSelector (value: unknown): {
-  action: {
-    type: string;
-    verb: string;
-  };
-} {
+export function parseValueActionExecuteSelector (value: unknown): ValueAction | undefined {
+  if (value === undefined || value === null) {
+    return undefined
+  }
   const actionZodSchema = z.object({
     type: z.string().min(1),
     verb: z.string().min(1)

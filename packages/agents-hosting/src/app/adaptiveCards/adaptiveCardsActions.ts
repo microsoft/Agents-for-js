@@ -58,10 +58,10 @@ export class AdaptiveCardsActions<TState extends TurnState> {
           if (
             a?.type !== ActivityTypes.Invoke ||
                         a?.name !== ACTION_INVOKE_NAME ||
-                        (invokeAction.action.type !== ACTION_EXECUTE_TYPE)
+                        (invokeAction?.action.type !== ACTION_EXECUTE_TYPE)
           ) {
             throw new Error(
-                            `Unexpected AdaptiveCards.actionExecute() triggered for activity type: ${invokeAction.action.type}`
+                            `Unexpected AdaptiveCards.actionExecute() triggered for activity type: ${invokeAction?.action.type}`
             )
           }
 
@@ -210,7 +210,7 @@ function createActionExecuteSelector (verb: string | RegExp | RouteSelector): Ro
       const isInvoke =
                 a?.type === ActivityTypes.Invoke &&
                 a?.name === ACTION_INVOKE_NAME &&
-                valueAction.action?.type === ACTION_EXECUTE_TYPE
+                valueAction?.action?.type === ACTION_EXECUTE_TYPE
       if (isInvoke && typeof valueAction.action.verb === 'string') {
         return Promise.resolve(verb.test(valueAction.action.verb))
       } else {
@@ -224,7 +224,7 @@ function createActionExecuteSelector (verb: string | RegExp | RouteSelector): Ro
       const isInvoke =
                 a?.type === ActivityTypes.Invoke &&
                 a?.name === ACTION_INVOKE_NAME &&
-                valueAction.action?.type === ACTION_EXECUTE_TYPE
+                valueAction?.action?.type === ACTION_EXECUTE_TYPE
       if (isInvoke && valueAction.action?.verb === verb) {
         return Promise.resolve(true)
       } else {
