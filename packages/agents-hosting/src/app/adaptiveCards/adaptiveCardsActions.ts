@@ -60,12 +60,17 @@ export class AdaptiveCardsActions<TState extends TurnState> {
                         a?.name !== ACTION_INVOKE_NAME ||
                         (invokeAction?.action.type !== ACTION_EXECUTE_TYPE)
           ) {
-            throw new Error(
-                            `Unexpected AdaptiveCards.actionExecute() triggered for activity type: ${invokeAction?.action.type}`
+            throw new Error(`Unexpected AdaptiveCards.actionExecute() triggered for activity type: ${invokeAction?.action.type}`
             )
           }
 
-          const result = await handler(context, state, (invokeAction.action as TData) ?? {} as TData)
+          if (invokeAction.action.verb !== v) {
+            // TODO: add logger to this class
+            console.log(`AdaptiveCards.actionExecute() triggered for verb: ${invokeAction.action.verb} does not match expected verb: ${v}`)
+          }
+
+          // TODO: review any, and check verb
+          const result = await handler(context, state, ((a.value as any).action as TData) ?? {} as TData)
           if (!context.turnState.get(INVOKE_RESPONSE_KEY)) {
             let response: AdaptiveCardInvokeResponse
             if (typeof result === 'string') {
@@ -136,7 +141,7 @@ export class AdaptiveCardsActions<TState extends TurnState> {
           throw new Error(`Unexpected AdaptiveCards.actionSubmit() triggered for activity type: ${a?.type}`)
         }
 
-        await handler(context, state as TState, (parseAdaptiveCardInvokeAction(a.value)).data as TData ?? {} as TData)
+        await handler(context, state as TState, (parseAdaptiveCardInvokeAction(a.value)) as TData ?? {} as TData)
       })
     })
     return this._app
