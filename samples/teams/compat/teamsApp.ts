@@ -12,6 +12,7 @@ import {
   TurnState,
 }
   from '@microsoft/agents-hosting'
+import { startServer } from '@microsoft/agents-hosting-express'
 import { MeetingNotification, TeamsAgentExtension, TeamsInfo, TeamsMember, parseTeamsChannelData } from '@microsoft/agents-hosting-extensions-teams'
 
 type ApplicationTurnState = TurnState
@@ -242,3 +243,5 @@ async function messageAllMembers (context: TurnContext) {
 
   await context.sendActivity(MessageFactory.text('All messages have been sent.'))
 }
+
+startServer(app)

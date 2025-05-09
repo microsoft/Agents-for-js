@@ -17,6 +17,7 @@ import { ResourceResponse } from '../connector-client'
 import { debug } from '../logger'
 import { Authorization } from './oauth/authorization'
 import { AgentExtension } from './extensions'
+import { AdaptiveCardsActions } from './adaptiveCards'
 
 const logger = debug('agents:agent-application')
 
@@ -49,6 +50,7 @@ export class AgentApplication<TState extends TurnState> {
   private readonly _authorization?: Authorization
   private _typingTimer: any
   protected readonly _extensions: AgentExtension[] = []
+  private readonly _adaptiveCards: AdaptiveCardsActions<TState>
 
   public constructor (options?: Partial<AgentApplicationOptions<TState>>) {
     this._options = {
@@ -57,6 +59,8 @@ export class AgentApplication<TState extends TurnState> {
       startTypingTimer: options?.startTypingTimer !== undefined ? options.startTypingTimer : false,
       longRunningMessages: options?.longRunningMessages !== undefined ? options.longRunningMessages : false
     }
+
+    this._adaptiveCards = new AdaptiveCardsActions<TState>(this)
 
     if (this._options.adapter) {
       this._adapter = this._options.adapter
@@ -107,6 +111,10 @@ export class AgentApplication<TState extends TurnState> {
    */
   public get options (): AgentApplicationOptions<TState> {
     return this._options
+  }
+
+  public get adaptiveCards (): AdaptiveCardsActions<TState> {
+    return this._adaptiveCards
   }
 
   /**

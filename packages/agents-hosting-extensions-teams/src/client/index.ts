@@ -4,3 +4,4 @@
  */
 
 export * from './teamsConnectorClient'
+export * from './teamsConnectorClient.types'
