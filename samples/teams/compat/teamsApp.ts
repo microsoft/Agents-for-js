@@ -12,6 +12,7 @@ import {
   TurnState,
 }
   from '@microsoft/agents-hosting'
+import { startServer } from '@microsoft/agents-hosting-express'
 import { MeetingNotification, TeamsAgentExtension, TeamsInfo, TeamsMember, parseTeamsChannelData } from '@microsoft/agents-hosting-extensions-teams'
 
 type ApplicationTurnState = TurnState
@@ -47,7 +48,7 @@ app.adaptiveCards.actionExecute('doStuff', async (context, state, data) => {
   return card as AdaptiveCard
 })
 
-app.onConversationUpdate('membersAdded', async (context: TurnContext, state: ApplicationTurnState) => {
+app.conversationUpdate('membersAdded', async (context: TurnContext, state: ApplicationTurnState) => {
   const membersAdded = context.activity.membersAdded ?? []
   const welcomeText = 'Hello from teamsApp!'
   for (const member of membersAdded) {
@@ -57,7 +58,7 @@ app.onConversationUpdate('membersAdded', async (context: TurnContext, state: App
   }
 })
 
-app.onMessage('/acInvoke', async (context: TurnContext, state: ApplicationTurnState) => {
+app.message('/acInvoke', async (context: TurnContext, state: ApplicationTurnState) => {
   const card = {
     type: 'AdaptiveCard',
     body: [
@@ -86,22 +87,22 @@ app.onMessage('/acInvoke', async (context: TurnContext, state: ApplicationTurnSt
   await context.sendActivity(MessageFactory.attachment(CardFactory.adaptiveCard(card)))
 })
 
-app.onMessage('/getMeetingParticipant', async (context: TurnContext, state: ApplicationTurnState) => {
+app.message('/getMeetingParticipant', async (context: TurnContext, state: ApplicationTurnState) => {
   const meetingParticipant = await TeamsInfo.getMeetingParticipant(context)
   await context.sendActivity(MessageFactory.text(`Meeting participant ${JSON.stringify(meetingParticipant)}`))
 })
 
-app.onMessage('/getMeetingInfo', async (context: TurnContext, state: ApplicationTurnState) => {
+app.message('/getMeetingInfo', async (context: TurnContext, state: ApplicationTurnState) => {
   const meeting = await TeamsInfo.getMeetingInfo(context)
   await context.sendActivity(MessageFactory.text(`Meeting Info ${JSON.stringify(meeting)}`))
 })
 
-app.onMessage('/getTeamDetails', async (context: TurnContext, state: ApplicationTurnState) => {
+app.message('/getTeamDetails', async (context: TurnContext, state: ApplicationTurnState) => {
   const channels = await TeamsInfo.getTeamDetails(context)
   await context.sendActivity(MessageFactory.text(`Meeting participant ${JSON.stringify(channels)}`))
 })
 
-app.onMessage('/sendMessageToTeamsChannel', async (context: TurnContext, state: ApplicationTurnState) => {
+app.message('/sendMessageToTeamsChannel', async (context: TurnContext, state: ApplicationTurnState) => {
   const teamsChannelData = parseTeamsChannelData(context.activity.channelData)
   const channelId = teamsChannelData.channel?.id
   if (!channelId) {
@@ -112,34 +113,34 @@ app.onMessage('/sendMessageToTeamsChannel', async (context: TurnContext, state: 
   await context.sendActivity(MessageFactory.text(`sebt ${JSON.stringify(sentResult)}`))
 })
 
-app.onMessage('/getTeamChannels', async (context: TurnContext, state: ApplicationTurnState) => {
+app.message('/getTeamChannels', async (context: TurnContext, state: ApplicationTurnState) => {
   const channels = await TeamsInfo.getTeamChannels(context)
   await context.sendActivity(MessageFactory.text(`list channels: ${JSON.stringify(channels)}`))
 })
 
-app.onMessage('/getPagedMembers', async (context: TurnContext, state: ApplicationTurnState) => {
+app.message('/getPagedMembers', async (context: TurnContext, state: ApplicationTurnState) => {
   const members = await TeamsInfo.getPagedMembers(context, 2)
   await context.sendActivity(MessageFactory.text(`members ${JSON.stringify(members.members.map(m => m.email!))}`))
 })
 
-app.onMessage('/getMember', async (context: TurnContext, state: ApplicationTurnState) => {
+app.message('/getMember', async (context: TurnContext, state: ApplicationTurnState) => {
   const me = await TeamsInfo.getMember(context, context.activity.from!.id!)
   await context.sendActivity(MessageFactory.text(`You mentioned me! ${JSON.stringify(me)}`))
 })
 
-app.onMessage('/getPagedTeamMembers', async (context: TurnContext, state: ApplicationTurnState) => {
+app.message('/getPagedTeamMembers', async (context: TurnContext, state: ApplicationTurnState) => {
   const members = await TeamsInfo.getPagedTeamMembers(context, undefined, 2)
   await context.sendActivity(MessageFactory.text(`team members ${JSON.stringify(members.members.map(m => m.email!))}`))
 })
 
-app.onMessage('/getTeamMember', async (context: TurnContext, state: ApplicationTurnState) => {
+app.message('/getTeamMember', async (context: TurnContext, state: ApplicationTurnState) => {
   const teamsChannelData = parseTeamsChannelData(context.activity.channelData)
   const teamId = teamsChannelData.team?.id
   const member = await TeamsInfo.getTeamMember(context, teamId!, context.activity.from!.id!)
   await context.sendActivity(MessageFactory.text(`team member ${JSON.stringify(member)}`))
 })
 
-app.onMessage('/sendMeetingNotification', async (context: TurnContext, state: ApplicationTurnState) => {
+app.message('/sendMeetingNotification', async (context: TurnContext, state: ApplicationTurnState) => {
   const notification: MeetingNotification = { type: 'targetedMeetingNotification', value: { recipients: ['rido'], surfaces: [] } }
   const teamsChannelData = parseTeamsChannelData(context.activity.channelData)
   const meetingId = teamsChannelData.meeting?.id
@@ -147,7 +148,7 @@ app.onMessage('/sendMeetingNotification', async (context: TurnContext, state: Ap
   await context.sendActivity(MessageFactory.text(`sendMeetingNotification ${JSON.stringify(resp)}`))
 })
 
-app.onMessage('/sendMessageToListOfUsers', async (context: TurnContext, state: ApplicationTurnState) => {
+app.message('/sendMessageToListOfUsers', async (context: TurnContext, state: ApplicationTurnState) => {
   const members = await TeamsInfo.getPagedMembers(context, 2)
   const users: TeamsMember[] = []
   members.members.forEach(m => {
@@ -158,19 +159,19 @@ app.onMessage('/sendMessageToListOfUsers', async (context: TurnContext, state: A
   await TeamsInfo.sendMessageToListOfUsers(context, MessageFactory.text('msg from agent to list of users'), context.adapter.authConfig.tenantId!, users)
 })
 
-app.onMessage('/sendMessageToAllUsersInTenant', async (context: TurnContext, state: ApplicationTurnState) => {
+app.message('/sendMessageToAllUsersInTenant', async (context: TurnContext, state: ApplicationTurnState) => {
   const batchResp = await TeamsInfo.sendMessageToAllUsersInTenant(context, MessageFactory.text('msg from agent to all users'), context.adapter.authConfig.tenantId!)
   console.log(batchResp.operationId)
 })
 
-app.onMessage('/sendMessageToAllUsersInTeam', async (context: TurnContext, state: ApplicationTurnState) => {
+app.message('/sendMessageToAllUsersInTeam', async (context: TurnContext, state: ApplicationTurnState) => {
   const teamsChannelData = parseTeamsChannelData(context.activity.channelData)
   const teamId = teamsChannelData.team?.id
   const batchResp = await TeamsInfo.sendMessageToAllUsersInTeam(context, MessageFactory.text('msg from agent to all users in team'), context.adapter.authConfig.tenantId!, teamId!)
   console.log(batchResp.operationId)
 })
 
-app.onMessage('/sendMessageToListOfChannels', async (context: TurnContext, state: ApplicationTurnState) => {
+app.message('/sendMessageToListOfChannels', async (context: TurnContext, state: ApplicationTurnState) => {
   const members = await TeamsInfo.getPagedMembers(context, 2)
   const users: TeamsMember[] = []
   members.members.forEach(m => {
@@ -181,11 +182,11 @@ app.onMessage('/sendMessageToListOfChannels', async (context: TurnContext, state
   await TeamsInfo.sendMessageToListOfChannels(context, MessageFactory.text('msg from agent to list of channels'), context.adapter.authConfig.tenantId!, users)
 })
 
-app.onMessage('/msgAllMembers', async (context: TurnContext, state: ApplicationTurnState) => {
+app.message('/msgAllMembers', async (context: TurnContext, state: ApplicationTurnState) => {
   await messageAllMembers(context)
 })
 
-app.onActivity(ActivityTypes.Message, async (context: TurnContext, state: ApplicationTurnState) => {
+app.activity(ActivityTypes.Message, async (context: TurnContext, state: ApplicationTurnState) => {
   await context.sendActivities([
     MessageFactory.text('Welcome to teamsApp!'),
     MessageFactory.text(`options: 
@@ -242,3 +243,5 @@ async function messageAllMembers (context: TurnContext) {
 
   await context.sendActivity(MessageFactory.text('All messages have been sent.'))
 }
+
+startServer(app)
