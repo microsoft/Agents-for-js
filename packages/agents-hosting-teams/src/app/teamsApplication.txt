@@ -41,7 +41,7 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
   /**
    * Handles adaptive card actions.
    */
-  private readonly _adaptiveCards: AdaptiveCardsActions<TState>
+  // private readonly _adaptiveCards: AdaptiveCardsActions<TState>
 
   /**
    * Handles messages and message-related events.
@@ -106,12 +106,12 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
     return this._taskModules
   }
 
-  /**
-   * Gets the adaptive cards actions handler.
-   */
-  public get adaptiveCards (): AdaptiveCardsActions<TState> {
-    return this._adaptiveCards
-  }
+  // /**
+  //  * Gets the adaptive cards actions handler.
+  //  */
+  // public get adaptiveCards (): AdaptiveCardsActions<TState> {
+  //   return this._adaptiveCards
+  // }
 
   /**
    * Gets the messages handler.
