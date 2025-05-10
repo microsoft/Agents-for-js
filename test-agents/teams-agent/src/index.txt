@@ -4,7 +4,7 @@
 import express, { Response } from 'express'
 
 import { Request, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv } from '@microsoft/agents-hosting'
-import { TeamsCloudAdapter } from '@microsoft/agents-hosting-teams'
+// import { TeamsCloudAdapter } from '@microsoft/agents-hosting-teams'
 
 import { TeamsHandler } from './teamsHandler'
 import { TeamsMultiFeature } from './teamsMultiFeature'

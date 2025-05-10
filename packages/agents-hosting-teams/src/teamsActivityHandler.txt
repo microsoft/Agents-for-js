@@ -29,7 +29,6 @@ import { ChannelInfo, TeamInfo } from './channel-data'
 import { parseValueMessagingExtensionQuery } from './parsers/activityValueParsers'
 import { parseTeamsChannelData } from './parsers/teamsChannelDataParser'
 import { MessagingExtensionQuery } from './messaging-extension'
-import { TeamsConnectorClient } from './connector-client/teamsConnectorClient'
 
 const TeamsMeetingStartT = z
   .object({

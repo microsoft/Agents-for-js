@@ -8,6 +8,7 @@ import { InputFileDownloader } from './inputFileDownloader'
 import { TurnState } from './turnState'
 import { Storage } from '../storage'
 import { AuthorizationHandlers } from './oauth/authorization'
+import { AdaptiveCardsOptions } from './adaptiveCards'
 
 export interface AgentApplicationOptions<TState extends TurnState> {
   /**
@@ -49,4 +50,9 @@ export interface AgentApplicationOptions<TState extends TurnState> {
    * Handlers for managing authorization.
    */
   authorization?: AuthorizationHandlers;
+
+  /**
+   * Options for AdaptiveCard actions.
+   */
+  adaptiveCards?: AdaptiveCardsOptions
 }

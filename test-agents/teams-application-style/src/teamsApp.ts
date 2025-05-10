@@ -3,6 +3,8 @@
 
 import { ActivityTypes, ConversationParameters } from '@microsoft/agents-activity'
 import {
+  AdaptiveCard,
+  AgentApplication,
   CardFactory,
   CloudAdapter,
   MessageFactory,
@@ -10,11 +12,17 @@ import {
   TurnState,
 }
   from '@microsoft/agents-hosting'
-import { TeamsInfo, TeamsMember, MeetingNotification, parseTeamsChannelData, TeamsApplication, AdaptiveCard } from '@microsoft/agents-hosting-teams'
+import { MeetingNotification, TeamsAgentExtension, TeamsInfo, TeamsMember, parseTeamsChannelData } from '@microsoft/agents-hosting-extensions-teams'
 
 type ApplicationTurnState = TurnState
-export const app = new TeamsApplication({
-  removeRecipientMention: false
+export const app = new AgentApplication({
+  // removeRecipientMention: false
+})
+
+const teamsExtension = new TeamsAgentExtension(app)
+
+app.registerExtension(teamsExtension, tae => {
+
 })
 
 app.adaptiveCards.actionExecute('doStuff', async (context, state, data) => {

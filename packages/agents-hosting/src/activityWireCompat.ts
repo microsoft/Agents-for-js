@@ -25,7 +25,7 @@ export function normalizeIncomingActivity (payload: any): object {
  * @returns The normalized payload object with `agent` replaced by `bot` in `relatesTo`.
  */
 export function normalizeOutgoingActivity (payload: any): object {
-  if (payload['relatesTo'] && payload['relatesTo']['agent']) {
+  if (payload && payload['relatesTo'] && payload['relatesTo']['agent']) {
     const relatesTo = payload['relatesTo']
     const ov = relatesTo['agent']
     delete relatesTo['agent']

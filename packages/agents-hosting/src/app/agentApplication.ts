@@ -16,6 +16,8 @@ import { TurnContext } from '../turnContext'
 import { ResourceResponse } from '../connector-client'
 import { debug } from '../logger'
 import { Authorization } from './oauth/authorization'
+import { AgentExtension } from './extensions'
+import { AdaptiveCardsActions } from './adaptiveCards'
 
 const logger = debug('agents:agent-application')
 
@@ -47,6 +49,8 @@ export class AgentApplication<TState extends TurnState> {
   private readonly _adapter?: BaseAdapter
   private readonly _authorization?: Authorization
   private _typingTimer: any
+  protected readonly _extensions: AgentExtension[] = []
+  private readonly _adaptiveCards: AdaptiveCardsActions<TState>
 
   public constructor (options?: Partial<AgentApplicationOptions<TState>>) {
     this._options = {
@@ -55,6 +59,8 @@ export class AgentApplication<TState extends TurnState> {
       startTypingTimer: options?.startTypingTimer !== undefined ? options.startTypingTimer : false,
       longRunningMessages: options?.longRunningMessages !== undefined ? options.longRunningMessages : false
     }
+
+    this._adaptiveCards = new AdaptiveCardsActions<TState>(this)
 
     if (this._options.adapter) {
       this._adapter = this._options.adapter
@@ -107,6 +113,10 @@ export class AgentApplication<TState extends TurnState> {
     return this._options
   }
 
+  public get adaptiveCards (): AdaptiveCardsActions<TState> {
+    return this._adaptiveCards
+  }
+
   /**
    * Sets an error handler for the application.
    *
@@ -153,8 +163,8 @@ export class AgentApplication<TState extends TurnState> {
    * );
    * ```
    */
-  public addRoute (selector: RouteSelector, handler: RouteHandler<TState>): this {
-    this._routes.push({ selector, handler })
+  public addRoute (selector: RouteSelector, handler: RouteHandler<TState>, isInvokeRoute: boolean = false): this {
+    this._routes.push({ selector, handler, isInvokeRoute })
     return this
   }
 
@@ -319,6 +329,68 @@ export class AgentApplication<TState extends TurnState> {
         'The Application.authentication property is unavailable because no authentication options were configured.'
       )
     }
+    return this
+  }
+
+  /**
+   * Adds a handler for message reaction added events.
+   *
+   * @param handler - The handler function that will be called when a message reaction is added.
+   * @returns The current instance of the application.
+   *
+   * @remarks
+   * This method registers a handler that will be invoked when a user adds a reaction to a message,
+   * such as a like, heart, or other emoji reaction.
+   *
+   * Example usage:
+   * ```typescript
+   * app.onMessageReactionAdded(async (context, state) => {
+   *   const reactionsAdded = context.activity.reactionsAdded;
+   *   if (reactionsAdded && reactionsAdded.length > 0) {
+   *     await context.sendActivity(`Thanks for your ${reactionsAdded[0].type} reaction!`);
+   *   }
+   * });
+   * ```
+   */
+  public onMessageReactionAdded (handler: (context: TurnContext, state: TState) => Promise<void>): this {
+    const selector = async (context: TurnContext): Promise<boolean> => {
+      return context.activity.type === ActivityTypes.MessageReaction &&
+             Array.isArray(context.activity.reactionsAdded) &&
+             context.activity.reactionsAdded.length > 0
+    }
+
+    this.addRoute(selector, handler)
+    return this
+  }
+
+  /**
+   * Adds a handler for message reaction removed events.
+   *
+   * @param handler - The handler function that will be called when a message reaction is removed.
+   * @returns The current instance of the application.
+   *
+   * @remarks
+   * This method registers a handler that will be invoked when a user removes a reaction from a message,
+   * such as unliking or removing an emoji reaction.
+   *
+   * Example usage:
+   * ```typescript
+   * app.onMessageReactionRemoved(async (context, state) => {
+   *   const reactionsRemoved = context.activity.reactionsRemoved;
+   *   if (reactionsRemoved && reactionsRemoved.length > 0) {
+   *     await context.sendActivity(`You removed your ${reactionsRemoved[0].type} reaction.`);
+   *   }
+   * });
+   * ```
+   */
+  public onMessageReactionRemoved (handler: (context: TurnContext, state: TState) => Promise<void>): this {
+    const selector = async (context: TurnContext): Promise<boolean> => {
+      return context.activity.type === ActivityTypes.MessageReaction &&
+             Array.isArray(context.activity.reactionsRemoved) &&
+             context.activity.reactionsRemoved.length > 0
+    }
+
+    this.addRoute(selector, handler)
     return this
   }
 
@@ -503,6 +575,14 @@ export class AgentApplication<TState extends TurnState> {
       }
       this._typingTimer = setTimeout(onTimeout, TYPING_TIMER_DELAY)
     }
+  }
+
+  public registerExtension<T extends AgentExtension> (extension: T, regcb : (ext:T) => void): void {
+    if (this._extensions.includes(extension)) {
+      throw new Error('Extension already registered')
+    }
+    this._extensions.push(extension)
+    regcb(extension)
   }
 
   /**
