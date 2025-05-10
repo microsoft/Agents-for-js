@@ -38,9 +38,6 @@
         "path": "test-agents/state-agent"
       },
       {
-        "path": "test-agents/teams-agent"
-      },
-      {
         "path": "test-agents/copilotstudio-console"
       },
       {
