@@ -167,7 +167,7 @@ export class AdaptiveCardsActions<TState extends TurnState> {
         selector,
         async (context, state) => {
           const a = context?.activity
-          if (a?.type !== ActivityTypes.Invoke || a?.name !== SEARCH_INVOKE_NAME) {
+          if (a?.type !== 'ActivityTypes.Invoke' || a?.name !== SEARCH_INVOKE_NAME) {
             throw new Error(`Unexpected AdaptiveCards.search() triggered for activity type: ${a?.type}`)
           }
 
