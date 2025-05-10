@@ -267,16 +267,16 @@ function getCountrySpecificResults (country: 'usa' | 'france' | 'india') {
       { title: 'Pune', value: 'Pune' }
     ]
   }
-  // return {
-  //   status: 200,
-  //   body: {
-  //     type: 'application/vnd.microsoft.search.searchResponse',
-  //     value: {
-  //       results: results[country] || results.india
-  //     }
-  //   }
-  // }
-  return results[country] || results.india
+  return {
+    status: 200,
+    body: {
+      type: 'application/vnd.microsoft.search.searchResponse',
+      value: {
+        results: results[country] || results.india
+      }
+    }
+  }
+  // return results[country] || results.india
 }
 
 function getSuccessResult (npmPackages: packageResult[]) {
