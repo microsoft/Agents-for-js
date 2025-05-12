@@ -20,6 +20,7 @@ app.adaptiveCards.search('', async (context: TurnContext, state: TurnState) => {
   let result
   if (dropdownCard) {
     result = getCountrySpecificResults(dropdownCard.toLowerCase())
+    return Promise.resolve(result)
   } else {
     const searchQuery = (context.activity.value! as any).queryText
     if (searchQuery.lengh < 4) {
@@ -28,24 +29,19 @@ app.adaptiveCards.search('', async (context: TurnContext, state: TurnState) => {
     const params = { text: searchQuery, size: 8 }
     const response = await axios.get('http://registry.npmjs.com/-/v1/search?', { params })
 
-    const npmPackages = response.data.objects.map((obj: packageResult) => ({
+    const npmPackages: AdaptiveCardSearchResult[] = response.data.objects.map((obj: packageResult) => ({
       title: obj.package.name,
       value: `${obj.package.name} - ${obj.package.description}`
     }))
     if (response.status === 200) {
-      // result = getSuccessResult(npmPackages)
       return Promise.resolve(npmPackages)
     } else if (response.status === 204) {
-      result = getNoResultFound()
+      return Promise.resolve([{ title: 'No results found', value: 'No results found' }])
     } else if (response.status === 500) {
-      result = getErrorResult()
+      return Promise.resolve([{ title: 'Error', value: 'Error message: Internal Server Error' }])
     }
   }
-  const acResult: AdaptiveCardSearchResult[] = [{
-    title: 'Search Results',
-    value: JSON.stringify(result)
-  }]
-  return Promise.resolve(acResult)
+  return Promise.resolve([])
 })
 
 app.activity('message', async (context: TurnContext, state: TurnState) => {
@@ -253,7 +249,7 @@ const dependantSearchCard = {
   ]
 }
 
-function getCountrySpecificResults (country: 'usa' | 'france' | 'india') {
+function getCountrySpecificResults (country: 'usa' | 'france' | 'india') : AdaptiveCardSearchResult[] {
   const results = {
     usa: [
       { title: 'CA', value: 'CA' },
@@ -271,36 +267,5 @@ function getCountrySpecificResults (country: 'usa' | 'france' | 'india') {
       { title: 'Pune', value: 'Pune' }
     ]
   }
-  return {
-    status: 200,
-    body: {
-      type: 'application/vnd.microsoft.search.searchResponse',
-      value: {
-        results: results[country] || results.india
-      }
-    }
-  }
-  // return results[country] || results.india
-}
-
-function getNoResultFound () {
-  return {
-    status: 204,
-    body: {
-      type: 'application/vnd.microsoft.search.searchResponse'
-    }
-  }
-}
-
-function getErrorResult () {
-  return {
-    status: 500,
-    body: {
-      type: 'application/vnd.microsoft.error',
-      value: {
-        code: '500',
-        message: 'Error message: Internal Server Error'
-      }
-    }
-  }
+  return results[country] || []
 }
