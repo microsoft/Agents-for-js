@@ -40,7 +40,7 @@ agent.conversationUpdate('membersAdded', async (context: TurnContext) => {
   await context.sendActivity('Welcome to the CardInvoke sample, send a message to see the echo feature in action.')
 })
 agent.adaptiveCards.actionExecute('doStuff', async (context: TurnContext, state: TurnState, data) => {
-  const card = {
+  const card : AdaptiveCard = {
     type: 'AdaptiveCard',
     body: [
       {
@@ -58,7 +58,7 @@ agent.adaptiveCards.actionExecute('doStuff', async (context: TurnContext, state:
     $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
     version: '1.4'
   }
-  return card as AdaptiveCard
+  return card
 })
 
 agent.message('/card', sendCardWithInvoke)
