@@ -22,6 +22,9 @@ app.adaptiveCards.search('', async (context: TurnContext, state: TurnState) => {
     result = getCountrySpecificResults(dropdownCard.toLowerCase())
   } else {
     const searchQuery = (context.activity.value! as any).queryText
+    if (searchQuery.lengh < 4) {
+      return []
+    }
     const params = { text: searchQuery, size: 8 }
     const response = await axios.get('http://registry.npmjs.com/-/v1/search?', { params })
 
@@ -30,7 +33,8 @@ app.adaptiveCards.search('', async (context: TurnContext, state: TurnState) => {
       value: `${obj.package.name} - ${obj.package.description}`
     }))
     if (response.status === 200) {
-      result = getSuccessResult(npmPackages)
+      // result = getSuccessResult(npmPackages)
+      return Promise.resolve(npmPackages)
     } else if (response.status === 204) {
       result = getNoResultFound()
     } else if (response.status === 500) {
@@ -39,7 +43,7 @@ app.adaptiveCards.search('', async (context: TurnContext, state: TurnState) => {
   }
   const acResult: AdaptiveCardSearchResult[] = [{
     title: 'Search Results',
-    value: result
+    value: JSON.stringify(result)
   }]
   return Promise.resolve(acResult)
 })
@@ -277,18 +281,6 @@ function getCountrySpecificResults (country: 'usa' | 'france' | 'india') {
     }
   }
   // return results[country] || results.india
-}
-
-function getSuccessResult (npmPackages: packageResult[]) {
-  return {
-    status: 200,
-    body: {
-      type: 'application/vnd.microsoft.search.searchResponse',
-      value: {
-        results: npmPackages
-      }
-    }
-  }
 }
 
 function getNoResultFound () {
