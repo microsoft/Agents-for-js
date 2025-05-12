@@ -34,7 +34,7 @@
   ],
   "devDependencies": {
     "@microsoft/microsoft-graph-types": "^2.40.0",
-    "@microsoft/teams-app-test-tool": "^0.2.7",
+    "@microsoft/teams-app-test-tool": "^0.2.9",
     "@types/debug": "^4.1.12",
     "@types/express": "^5.0.1",
     "@types/express-serve-static-core": "^5.0.5",
