@@ -1,7 +1,6 @@
 import { AgentApplication, MemoryStorage, TurnContext, TurnState } from '@microsoft/agents-hosting'
-import { TeamsAgentExtension } from '@microsoft/agents-hosting-extensions-teams'
 import { startServer } from '@microsoft/agents-hosting-express'
-import { MessagingExtensionQuery, MessagingExtensionResult } from '@microsoft/agents-hosting-teams'
+import { MessagingExtensionQuery, MessagingExtensionResult, TeamsAgentExtension } from '@microsoft/agents-hosting-extensions-teams'
 
 const app = new AgentApplication<TurnState>({ storage: new MemoryStorage() })
 

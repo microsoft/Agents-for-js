@@ -49,7 +49,7 @@ class TeamsBot extends TeamsActivityHandler {
           await context.sendActivity("Unknown command. Please use 'staticsearch', 'dynamicsearch', or 'dependantdropdown'.")
       }
     } else if (value) {
-      await context.sendActivity(`Selected option is: ${value.choiceselect}`)
+      await context.sendActivity(`Selected option is: ${value.choiceselect} ${value.city ? `and city is: ${value.city}` : ''}`)
     }
 
     await next()
@@ -63,27 +63,28 @@ class TeamsBot extends TeamsActivityHandler {
   async onInvokeActivity (context) {
     if (context._activity.name === 'application/search') {
       const dropdownCard = context._activity.value.data.choiceselect
-      const searchQuery = context._activity.value.queryText
-
-      const response = await axios.get(`http://registry.npmjs.com/-/v1/search?${querystring.stringify({ text: searchQuery, size: 8 })}`)
-      const npmPackages = response.data.objects.map(obj => ({
-        title: obj.package.name,
-        value: `${obj.package.name} - ${obj.package.description}`
-      }))
-
-      if (response.status === 200) {
-        if (dropdownCard) {
-          return this.getCountrySpecificResults(dropdownCard.toLowerCase())
-        } else {
-          return this.getSuccessResult(npmPackages)
+      if (dropdownCard) {
+        return this.getCountrySpecificResults(dropdownCard.toLowerCase())
+      } else {
+        const searchQuery = context._activity.value.queryText
+        if (searchQuery.length < 4) {
+          return
         }
-      } else if (response.status === 204) {
-        return this.getNoResultFound()
-      } else if (response.status === 500) {
-        return this.getErrorResult()
+        const response = await axios.get(`http://registry.npmjs.com/-/v1/search?${querystring.stringify({ text: searchQuery, size: 8 })}`)
+        const npmPackages = response.data.objects.map(obj => ({
+          title: obj.package.name,
+          value: `${obj.package.name} - ${obj.package.description}`
+        }))
+        if (response.status === 200) {
+          return this.getSuccessResult(npmPackages)
+        } else if (response.status === 400) {
+          return this.getNoResultFound()
+        } else if (response.status === 500) {
+          return this.getErrorResult()
+        }
+        return null
       }
     }
-    return null
   }
 
   /**
