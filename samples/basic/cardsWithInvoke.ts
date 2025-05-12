@@ -1,5 +1,5 @@
 import { startServer } from '@microsoft/agents-hosting-express'
-import { AgentApplication, MemoryStorage, MessageFactory, TurnContext, TurnState } from '@microsoft/agents-hosting'
+import { AdaptiveCard, AgentApplication, MemoryStorage, MessageFactory, TurnContext, TurnState } from '@microsoft/agents-hosting'
 
 const sendCardWithInvoke = async (context: TurnContext, state: TurnState): Promise<void> => {
   const card = MessageFactory.attachment({

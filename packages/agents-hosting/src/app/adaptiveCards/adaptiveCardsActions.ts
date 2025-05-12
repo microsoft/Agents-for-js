@@ -10,7 +10,7 @@ import { AdaptiveCardInvokeResponseType } from './adaptiveCardInvokeResponseType
 import { AdaptiveCardSearchResult } from './adaptiveCardSearchResult'
 import { parseAdaptiveCardInvokeAction, parseValueActionExecuteSelector, parseValueDataset, parseValueSearchQuery } from './activityValueParsers'
 import { AdaptiveCardsSearchParams } from './adaptiveCardsSearchParams'
-import { AdaptiveCard } from './adaptiveCard'
+import { AdaptiveCard } from '../../cards/adaptiveCard'
 import { Query } from './query'
 
 export const ACTION_INVOKE_NAME = 'adaptiveCard/action'
