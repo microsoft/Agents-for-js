@@ -1,5 +1,5 @@
 import { startServer } from '@microsoft/agents-hosting-express'
-import { AgentApplication, MemoryStorage, MessageFactory, TurnContext, TurnState } from '@microsoft/agents-hosting'
+import { AdaptiveCard, AgentApplication, MemoryStorage, MessageFactory, TurnContext, TurnState } from '@microsoft/agents-hosting'
 
 const sendCardWithInvoke = async (context: TurnContext, state: TurnState): Promise<void> => {
   const card = MessageFactory.attachment({
@@ -39,10 +39,30 @@ const agent = new AgentApplication<TurnState>({ storage: new MemoryStorage() })
 agent.conversationUpdate('membersAdded', async (context: TurnContext) => {
   await context.sendActivity('Welcome to the CardInvoke sample, send a message to see the echo feature in action.')
 })
-agent.message('/card', sendCardWithInvoke)
-agent.activity('invoke', async (context: TurnContext, state: TurnState) => {
-  await context.sendActivity('Invoke received ' + JSON.stringify(context.activity.value))
+agent.adaptiveCards.actionExecute('doStuff', async (context: TurnContext, state: TurnState, data) => {
+  const card = {
+    type: 'AdaptiveCard',
+    body: [
+      {
+        type: 'TextBlock',
+        size: 'Medium',
+        weight: 'Bolder',
+        text: '✅[ACK] Test'
+      },
+      {
+        type: 'TextBlock',
+        text: 'doStuff action executed ' + JSON.stringify(data),
+        wrap: true
+      }
+    ],
+    $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
+    version: '1.4'
+  }
+  return card as AdaptiveCard
 })
+
+agent.message('/card', sendCardWithInvoke)
+
 agent.activity('message', async (context: TurnContext, state: TurnState) => {
   let counter: number = state.getValue('conversation.counter') || 0
   await context.sendActivity(`[${counter++}]You said: ${JSON.stringify(context.activity.value)}`)
