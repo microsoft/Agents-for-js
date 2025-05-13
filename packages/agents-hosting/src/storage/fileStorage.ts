@@ -9,10 +9,10 @@ export class FileStorage implements Storage {
     if (!fs.existsSync(folder)) {
       fs.mkdirSync(folder, { recursive: true })
     }
-    if (!fs.existsSync(folder + '/state.json')) {
-      fs.writeFileSync(folder + '/state.json', '{}')
+    if (!fs.existsSync(path.join(folder, 'state.json'))) {
+      fs.writeFileSync(path.join(folder, 'state.json'), '{}')
     }
-    const data = fs.readFileSync(folder + '/state.json', 'utf8')
+    const data = fs.readFileSync(path.join(folder, 'state.json'), 'utf8')
     this._stateFile = JSON.parse(data)
   }
 
