@@ -35,10 +35,10 @@ import { ActivityHandler, AgentApplication, AuthConfiguration, authorizeJWT, Clo
 export const startServer = (agent: AgentApplication<TurnState<any, any>> | ActivityHandler, authConfiguration?: AuthConfiguration) => {
   const authConfig: AuthConfiguration = authConfiguration ?? loadAuthConfigFromEnv()
   let adapter: CloudAdapter
-  if (agent instanceof ActivityHandler) {
+  if (agent instanceof ActivityHandler || !agent.adapter) {
     adapter = new CloudAdapter(authConfig)
   } else {
-    adapter = agent.adapter as CloudAdapter ?? new CloudAdapter(authConfig)
+    adapter = agent.adapter as CloudAdapter
   }
   const server = express()
   server.use(express.json())

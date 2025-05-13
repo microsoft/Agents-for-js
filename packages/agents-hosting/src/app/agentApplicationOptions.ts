@@ -54,5 +54,5 @@ export interface AgentApplicationOptions<TState extends TurnState> {
   /**
    * Options for AdaptiveCard actions.
    */
-  adaptiveCards?: AdaptiveCardsOptions
+  adaptiveCardsOptions?: AdaptiveCardsOptions
 }

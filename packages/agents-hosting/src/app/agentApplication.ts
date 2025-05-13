@@ -80,12 +80,12 @@ export class AgentApplication<TState extends TurnState> {
    * @throws Error if the adapter is not configured.
    */
   public get adapter (): BaseAdapter {
-    if (!this._adapter) {
-      throw new Error(
-        'The Application.adapter property is unavailable because it was not configured when creating the Application.'
-      )
-    }
-    return this._adapter
+    // if (!this._adapter) {
+    //   throw new Error(
+    //     'The Application.adapter property is unavailable because it was not configured when creating the Application.'
+    //   )
+    // }
+    return this._adapter!
   }
 
   /**

@@ -74,7 +74,7 @@ export class AdaptiveCardsActions<TState extends TurnState> {
     verb: string | RegExp | RouteSelector | (string | RegExp | RouteSelector)[],
     handler: (context: TurnContext, state: TState, data: TData) => Promise<AdaptiveCard | string>
   ): AgentApplication<TState> {
-    let actionExecuteResponseType = this._app.options.adaptiveCards?.actionExecuteResponseType ?? AdaptiveCardActionExecuteResponseType.REPLACE_FOR_INTERACTOR;
+    let actionExecuteResponseType = this._app.options.adaptiveCardsOptions?.actionExecuteResponseType ?? AdaptiveCardActionExecuteResponseType.REPLACE_FOR_INTERACTOR;
     (Array.isArray(verb) ? verb : [verb]).forEach((v) => {
       const selector = createActionExecuteSelector(v)
       this._app.addRoute(
@@ -159,7 +159,7 @@ export class AdaptiveCardsActions<TState extends TurnState> {
     verb: string | RegExp | RouteSelector | (string | RegExp | RouteSelector)[],
     handler: (context: TurnContext, state: TState, data: TData) => Promise<void>
   ): AgentApplication<TState> {
-    const filter = this._app.options.adaptiveCards?.actionSubmitFilter ?? DEFAULT_ACTION_SUBMIT_FILTER;
+    const filter = this._app.options.adaptiveCardsOptions?.actionSubmitFilter ?? DEFAULT_ACTION_SUBMIT_FILTER;
     (Array.isArray(verb) ? verb : [verb]).forEach((v) => {
       const selector = createActionSubmitSelector(v, filter)
       this._app.addRoute(selector, async (context, state) => {

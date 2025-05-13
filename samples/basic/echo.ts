@@ -10,4 +10,5 @@ echo.activity('message', async (context: TurnContext, state: TurnState) => {
   await context.sendActivity(`[${counter++}]You said: ${context.activity.text}`)
   state.setValue('conversation.counter', counter)
 })
+
 startServer(echo)
