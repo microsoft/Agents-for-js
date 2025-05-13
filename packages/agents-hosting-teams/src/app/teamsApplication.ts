@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 import { Activity, ActivityTypes, ConversationReference } from '@microsoft/agents-activity'
-import { AgentApplication, AppRoute, debug, MemoryStorage, RouteHandler, RouteSelector, TurnContext, TurnState } from '@microsoft/agents-hosting'
+import { AgentApplication, AppRoute, Authorization, debug, RouteHandler, RouteSelector, TurnContext, TurnState } from '@microsoft/agents-hosting'
 import { TeamsApplicationOptions } from './teamsApplicationOptions'
 import { FileConsentCardResponse } from '../file/fileConsentCardResponse'
 import { ChannelInfo } from '../channel-data/channelInfo'
@@ -18,7 +18,6 @@ import { MessageExtensions } from './messaging-extension'
 import { Meetings } from './meeting'
 import { TaskModules } from './task'
 import { TeamsConversationUpdateEvents } from './conversation-events'
-import { TeamsOAuthFlowAppStyle } from './oauth/teamsOAuthFlowAppStyle'
 
 const logger = debug('agents:teams-application')
 
@@ -66,7 +65,7 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
   /**
    * Manages Teams OAuth flow for authentication.
    */
-  private readonly _teamsAuthManager?: TeamsOAuthFlowAppStyle
+  private readonly _teamsAuthManager?: Authorization
 
   /**
    * Initializes a new instance of the TeamsApplication class.
@@ -82,7 +81,7 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
     }
 
     if (options?.storage && options?.authorization) {
-      this._teamsAuthManager = new TeamsOAuthFlowAppStyle(options?.storage ?? new MemoryStorage())
+      this._teamsAuthManager = new Authorization(this.options.storage!, this.options.authorization!)
     }
 
     this._adaptiveCards = new AdaptiveCardsActions<TState>(this)
@@ -138,7 +137,7 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
    * Gets the Teams OAuth flow manager.
    * @throws Error if no authentication options were configured.
    */
-  public get teamsAuthManager (): TeamsOAuthFlowAppStyle {
+  public get teamsAuthManager (): Authorization {
     if (!this._teamsAuthManager) {
       throw new Error(
         'The Application.authentication property is unavailable because no authentication options were configured.'
