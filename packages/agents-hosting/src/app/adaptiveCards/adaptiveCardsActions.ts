@@ -6,8 +6,6 @@
 import { Activity, ActivityTypes } from '@microsoft/agents-activity'
 import { AdaptiveCardInvokeResponse, AgentApplication, CardFactory, INVOKE_RESPONSE_KEY, InvokeResponse, MessageFactory, RouteSelector, TurnContext, TurnState } from '../../'
 import { AdaptiveCardActionExecuteResponseType } from './adaptiveCardActionExecuteResponseType'
-import { AdaptiveCardInvokeResponseType } from './adaptiveCardInvokeResponseType'
-import { AdaptiveCardSearchResult } from './adaptiveCardSearchResult'
 import { parseAdaptiveCardInvokeAction, parseValueActionExecuteSelector, parseValueDataset, parseValueSearchQuery } from './activityValueParsers'
 import { AdaptiveCardsSearchParams } from './adaptiveCardsSearchParams'
 import { AdaptiveCard } from '../../cards/adaptiveCard'
@@ -17,6 +15,35 @@ export const ACTION_INVOKE_NAME = 'adaptiveCard/action'
 const ACTION_EXECUTE_TYPE = 'Action.Execute'
 const DEFAULT_ACTION_SUBMIT_FILTER = 'verb'
 const SEARCH_INVOKE_NAME = 'application/search'
+
+enum AdaptiveCardInvokeResponseType {
+  /**
+   * Indicates a response containing an Adaptive Card.
+   */
+  ADAPTIVE = 'application/vnd.microsoft.card.adaptive',
+
+  /**
+   * Indicates a response containing a message activity.
+   */
+  MESSAGE = 'application/vnd.microsoft.activity.message',
+
+  /**
+   * Indicates a response containing a search result.
+   */
+  SEARCH = 'application/vnd.microsoft.search.searchResponse'
+}
+
+export interface AdaptiveCardSearchResult {
+  /**
+   * The title of the search result.
+   */
+  title: string;
+
+  /**
+   * The value associated with the search result.
+   */
+  value: string;
+}
 
 /**
  * A class to handle Adaptive Card actions such as executing actions, submitting actions, and performing searches.
