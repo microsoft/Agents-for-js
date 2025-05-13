@@ -1,8 +1,16 @@
-import { AgentApplication, CloudAdapter, loadAuthConfigFromEnv, TurnContext, TurnState } from '@microsoft/agents-hosting'
+import { AdaptiveCardActionExecuteResponseType, AgentApplication, CloudAdapter, loadAuthConfigFromEnv, TurnContext, TurnState } from '@microsoft/agents-hosting'
 import { startServer } from '@microsoft/agents-hosting-express'
 
 const adapter = new CloudAdapter(loadAuthConfigFromEnv())
-const app = new AgentApplication<TurnState>({ startTypingTimer: true, longRunningMessages: true, adapter })
+const app = new AgentApplication<TurnState>({
+  adapter,
+  startTypingTimer: true,
+  longRunningMessages: true,
+  adaptiveCards: {
+    actionSubmitFilter: 'myFilter',
+    actionExecuteResponseType: AdaptiveCardActionExecuteResponseType.NEW_MESSAGE_FOR_ALL
+  }
+})
 
 app.conversationUpdate('membersAdded', async (context: TurnContext) => {
   await context.sendActivity('Welcome to the Echo sample, send a message to see the echo feature in action.')
