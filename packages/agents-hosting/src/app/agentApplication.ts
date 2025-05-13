@@ -71,9 +71,7 @@ export class AgentApplication<TState extends TurnState> {
     }
 
     if (this._options.longRunningMessages && !this._adapter && !this._options.agentAppId) {
-      throw new Error(
-        'The Application.longRunningMessages property is unavailable because no adapter or agentAppId was configured.'
-      )
+      throw new Error('The Application.longRunningMessages property is unavailable because no adapter or agentAppId was configured.')
     }
   }
 
@@ -87,7 +85,6 @@ export class AgentApplication<TState extends TurnState> {
         'The Application.adapter property is unavailable because it was not configured when creating the Application.'
       )
     }
-
     return this._adapter
   }
 
@@ -540,7 +537,7 @@ export class AgentApplication<TState extends TurnState> {
    * ```
    */
   public startTypingTimer (context: TurnContext): void {
-    if (context.activity.type === ActivityTypes.Message && !this._typingTimer) {
+    if (context.activity.type === ActivityTypes.Message && this._options.startTypingTimer && !this._typingTimer) {
       let timerRunning = true
       context.onSendActivities(async (context, activities, next) => {
         if (timerRunning) {
