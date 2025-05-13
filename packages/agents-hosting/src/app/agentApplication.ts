@@ -48,7 +48,7 @@ export class AgentApplication<TState extends TurnState> {
   protected readonly _afterTurn: ApplicationEventHandler<TState>[] = []
   private readonly _adapter?: BaseAdapter
   private readonly _authorization?: Authorization
-  private _typingTimer: any
+  private _typingTimer: NodeJS.Timeout | undefined
   protected readonly _extensions: AgentExtension[] = []
   private readonly _adaptiveCards: AdaptiveCardsActions<TState>
 
