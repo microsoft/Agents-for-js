@@ -1,5 +1,6 @@
-import { Storage, StoreItem } from './storage'
+import path from 'path'
 import fs from 'fs'
+import { Storage, StoreItem } from './storage'
 
 export class FileStorage implements Storage {
   private _folder: string
