@@ -17,9 +17,6 @@ async function loadModule () {
     case 'teamsApp':
       module = (await import('./teamsApp')).app
       return module
-    case 'teamsSsoApp':
-      module = (await import('./teamsSsoApp')).app
-      return module
     case 'teamsMultiFeatureBot':
       module = (await import('./teamsMultiFeatureBot')).app
       return module
