@@ -215,8 +215,7 @@ export class AgentApplication<TState extends TurnState> {
     handler: (context: TurnContext, state: TState) => Promise<void>
   ): this {
     if (typeof handler !== 'function') {
-      throw new Error(
-                `ConversationUpdate 'handler' for ${event} is ${typeof handler}. Type of 'handler' must be a function.`
+      throw new Error(`ConversationUpdate 'handler' for ${event} is ${typeof handler}. Type of 'handler' must be a function.`
       )
     }
 
@@ -237,13 +236,12 @@ export class AgentApplication<TState extends TurnState> {
     logic: (context: TurnContext) => Promise<void>
   ): Promise<void> {
     if (!this._adapter) {
-      throw new Error(
-        "You must configure the Application with an 'adapter' before calling Application.continueConversationAsync()"
+      throw new Error("You must configure the Application with an 'adapter' before calling Application.continueConversationAsync()"
       )
     }
 
     if (!this.options.agentAppId) {
-      logger.warn("Calling Application.continueConversationAsync() without a configured 'agentAppId'. In production environments, a 'agentAppId' is required.")
+      logger.warn('Calling Application.continueConversationAsync() without a configured `agentAppId`. In production environments, a `agentAppId` is required.')
     }
 
     let reference: ConversationReference
@@ -315,9 +313,7 @@ export class AgentApplication<TState extends TurnState> {
     if (this.options.authorization) {
       this.authorization.onSignInSuccess(handler)
     } else {
-      throw new Error(
-        'The Application.authentication property is unavailable because no authentication options were configured.'
-      )
+      throw new Error('The Application.authentication property is unavailable because no authentication options were configured.')
     }
     return this
   }
@@ -379,9 +375,10 @@ export class AgentApplication<TState extends TurnState> {
           state.temp.inputFiles = inputFiles
         }
 
-        if (state.temp.actionOutputs === undefined) {
-          state.temp.actionOutputs = {}
-        }
+        // TODO: review actionOutputs
+        // if (state.temp.actionOutputs === undefined) {
+        //   state.temp.actionOutputs = {}
+        // }
 
         for (let i = 0; i < this._routes.length; i++) {
           const route = this._routes[i]
@@ -556,6 +553,7 @@ export class AgentApplication<TState extends TurnState> {
     (Array.isArray(event) ? event : [event]).forEach((e) => {
       switch (e) {
         case 'beforeTurn':
+          this._beforeTurn.push(handler)
           break
         case 'afterTurn':
           this._afterTurn.push(handler)

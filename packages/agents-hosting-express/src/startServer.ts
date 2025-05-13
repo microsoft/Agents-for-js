@@ -32,7 +32,7 @@ import { ActivityHandler, AgentApplication, AuthConfiguration, authorizeJWT, Clo
  * startServer(app);
  * ```
  */
-export const startServer = (agent: AgentApplication<TurnState> | ActivityHandler, authConfiguration?: AuthConfiguration) => {
+export const startServer = (agent: AgentApplication<TurnState<any, any>> | ActivityHandler, authConfiguration?: AuthConfiguration) => {
   const authConfig: AuthConfiguration = authConfiguration ?? loadAuthConfigFromEnv()
   const adapter = new CloudAdapter(authConfig)
   const server = express()

@@ -20,9 +20,6 @@
         "path": "packages/agents-hosting-storage-cosmos"
       },
       {
-        "path": "packages/agents-hosting-teams"
-      },
-      {
         "path": "packages/agents-hosting-dialogs"
       },
       {
