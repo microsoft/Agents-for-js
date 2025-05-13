@@ -45,7 +45,7 @@ export class FileStorage implements Storage {
   delete (keys: string[]) : Promise<void> {
     return new Promise((resolve, reject) => {
       if (!keys || keys.length === 0) {
-        reject(new ReferenceError('Keys are required when reading.'))
+        reject(new ReferenceError('Keys are required when deleting.'))
       } else {
         for (const key of keys) {
           delete this._stateFile[key]
