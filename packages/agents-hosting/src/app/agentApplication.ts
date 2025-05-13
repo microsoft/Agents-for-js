@@ -636,6 +636,7 @@ export class AgentApplication<TState extends TurnState> {
     (Array.isArray(event) ? event : [event]).forEach((e) => {
       switch (e) {
         case 'beforeTurn':
+          this._beforeTurn.push(handler)
           break
         case 'afterTurn':
           this._afterTurn.push(handler)
