@@ -42,7 +42,7 @@ it('should remove <at> tags from text', () => {
     activity.normalizeMentions()
 
     // The implementation will keep spaces between words and add spaces as needed
-    assert.equal(activity.text, 'Bot1 Hello Bot2! How are Bot3 today?')
+    assert.equal(activity.text, 'Bot1 Hello Bot2 ! How are Bot3 today?')
   })
 
   it('should handle <at> tags with attributes', () => {

@@ -543,8 +543,18 @@ export class Activity {
 
             text = text.substring(0, iAtClose) + followingText
 
-            // Replace <at ...>
-            text = text.substring(0, iAtStart) + text.substring(iAtEnd + 1)
+            // Get tag content (text between <at...> and </at>)
+            const tagContent = text.substring(iAtEnd + 1, iAtClose)
+
+            // Replace <at ...> with just the tag content
+            let prefixText = text.substring(0, iAtStart)
+
+            // If prefixText is not empty and doesn't end with whitespace, add a space
+            if (prefixText.length > 0 && !(/\s$/.test(prefixText))) {
+              prefixText += ' '
+            }
+
+            text = prefixText + tagContent + followingText
 
             // We found one, try again, there may be more
             foundTag = true
