@@ -4,11 +4,11 @@
  */
 
 import { CloudAdapter } from '../cloudAdapter'
-import { InputFileDownloader } from './inputFileDownloader'
-import { TurnState } from './turnState'
 import { Storage } from '../storage'
-import { AuthorizationHandlers } from './oauth/authorization'
 import { AdaptiveCardsOptions } from './adaptiveCards'
+import { InputFileDownloader } from './inputFileDownloader'
+import { AuthorizationHandlers } from './oauth/authorization'
+import { TurnState } from './turnState'
 
 export interface AgentApplicationOptions<TState extends TurnState> {
   /**

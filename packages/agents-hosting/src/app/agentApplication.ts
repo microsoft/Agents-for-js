@@ -4,20 +4,20 @@
  */
 
 import { Activity, ActivityTypes, ConversationReference } from '@microsoft/agents-activity'
-import { TurnState } from './turnState'
 import { BaseAdapter } from '../baseAdapter'
-import { AgentApplicationOptions } from './agentApplicationOptions'
-import { RouteSelector } from './routeSelector'
-import { RouteHandler } from './routeHandler'
-import { ConversationUpdateEvents } from './conversationUpdateEvents'
-import { TurnEvents } from './turnEvents'
-import { AppRoute } from './appRoute'
-import { TurnContext } from '../turnContext'
 import { ResourceResponse } from '../connector-client'
 import { debug } from '../logger'
-import { Authorization } from './oauth/authorization'
-import { AgentExtension } from './extensions'
+import { TurnContext } from '../turnContext'
 import { AdaptiveCardsActions } from './adaptiveCards'
+import { AgentApplicationOptions } from './agentApplicationOptions'
+import { AppRoute } from './appRoute'
+import { ConversationUpdateEvents } from './conversationUpdateEvents'
+import { AgentExtension } from './extensions'
+import { Authorization } from './oauth/authorization'
+import { RouteHandler } from './routeHandler'
+import { RouteSelector } from './routeSelector'
+import { TurnEvents } from './turnEvents'
+import { TurnState } from './turnState'
 
 const logger = debug('agents:agent-application')
 
