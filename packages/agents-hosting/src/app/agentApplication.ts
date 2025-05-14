@@ -57,7 +57,8 @@ export class AgentApplication<TState extends TurnState> {
       ...options,
       turnStateFactory: options?.turnStateFactory || (() => new TurnState() as TState),
       startTypingTimer: options?.startTypingTimer !== undefined ? options.startTypingTimer : false,
-      longRunningMessages: options?.longRunningMessages !== undefined ? options.longRunningMessages : false
+      longRunningMessages: options?.longRunningMessages !== undefined ? options.longRunningMessages : false,
+      removeRecipientMention: options?.removeRecipientMention !== undefined ? options.removeRecipientMention : true,
     }
 
     this._adaptiveCards = new AdaptiveCardsActions<TState>(this)
@@ -80,11 +81,6 @@ export class AgentApplication<TState extends TurnState> {
    * @throws Error if the adapter is not configured.
    */
   public get adapter (): BaseAdapter {
-    // if (!this._adapter) {
-    //   throw new Error(
-    //     'The Application.adapter property is unavailable because it was not configured when creating the Application.'
-    //   )
-    // }
     return this._adapter!
   }
 
@@ -94,11 +90,8 @@ export class AgentApplication<TState extends TurnState> {
    */
   public get authorization (): Authorization {
     if (!this._authorization) {
-      throw new Error(
-        'The Application.authorization property is unavailable because no authentication options were configured.'
-      )
+      throw new Error('The Application.authorization property is unavailable because no authorization options were configured.')
     }
-
     return this._authorization
   }
 
@@ -136,7 +129,6 @@ export class AgentApplication<TState extends TurnState> {
     if (this._adapter) {
       this._adapter.onTurnError = handler
     }
-
     return this
   }
 
@@ -323,7 +315,7 @@ export class AgentApplication<TState extends TurnState> {
       this.authorization.onSignInSuccess(handler)
     } else {
       throw new Error(
-        'The Application.authentication property is unavailable because no authentication options were configured.'
+        'The Application.authorization property is unavailable because no authorization options were configured.'
       )
     }
     return this
@@ -426,6 +418,10 @@ export class AgentApplication<TState extends TurnState> {
     return await this.startLongRunningCall(turnContext, async (context) => {
       this.startTypingTimer(context)
       try {
+        if (this._options.removeRecipientMention && context.activity.type === ActivityTypes.Message) {
+          context.activity.removeRecipientMention()
+        }
+
         const { storage, turnStateFactory } = this._options
         const state = turnStateFactory()
         await state.load(context, storage)
