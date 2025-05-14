@@ -54,5 +54,11 @@ export interface AgentApplicationOptions<TState extends TurnState> {
   /**
    * Options for AdaptiveCard actions.
    */
-  adaptiveCardsOptions?: AdaptiveCardsOptions
+  adaptiveCardsOptions?: AdaptiveCardsOptions;
+
+  /**
+   * Optional. If true, the bot will automatically remove mentions of the bot's name from incoming
+   * messages. Defaults to true.
+   */
+  removeRecipientMention: boolean;
 }
