@@ -476,6 +476,97 @@ export class Activity {
   }
 
   /**
+   * Normalizes mentions in the activity by removing mention tags and optionally removing recipient mention.
+   * @param removeMention Whether to remove the recipient mention from the activity.
+   */
+  public normalizeMentions (removeMention: boolean = false): void {
+    if (this.type === ActivityTypes.Message) {
+      if (removeMention) {
+        // Strip recipient mention tags and text
+        this.removeRecipientMention()
+
+        // Strip entity.mention records for recipient id
+        if (this.entities !== undefined && this.recipient?.id) {
+          this.entities = this.entities.filter((entity) => {
+            if (entity.type.toLowerCase() === 'mention') {
+              const mention = entity as unknown as Mention
+              return mention.mentioned.id !== this.recipient?.id
+            }
+            return true
+          })
+        }
+      }
+
+      // Remove <at> </at> tags keeping the inner text
+      if (this.text) {
+        this.text = Activity.removeAt(this.text)
+      }
+
+      // Remove <at> </at> tags from mention records keeping the inner text
+      if (this.entities !== undefined) {
+        const mentions = this.getMentions(this)
+        for (const mention of mentions) {
+          if (mention.text) {
+            mention.text = Activity.removeAt(mention.text)?.trim()
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Removes <at> </at> tags from the specified text.
+   * @param text The text to process.
+   * @returns The text with <at> </at> tags removed.
+   */
+  private static removeAt (text: string): string {
+    if (!text) {
+      return text
+    }
+
+    let foundTag: boolean
+    do {
+      foundTag = false
+      const iAtStart = text.toLowerCase().indexOf('<at')
+      if (iAtStart >= 0) {
+        const iAtEnd = text.indexOf('>', iAtStart)
+        if (iAtEnd > 0) {
+          const iAtClose = text.toLowerCase().indexOf('</at>', iAtEnd)
+          if (iAtClose > 0) {
+            // Replace </at>
+            let followingText = text.substring(iAtClose + 5)
+
+            // If first char of followingText is not whitespace, insert space
+            if (followingText.length > 0 && !(/\s/.test(followingText[0]))) {
+              followingText = ` ${followingText}`
+            }
+
+            text = text.substring(0, iAtClose) + followingText
+
+            // Get tag content (text between <at...> and </at>)
+            const tagContent = text.substring(iAtEnd + 1, iAtClose)
+
+            // Replace <at ...> with just the tag content
+            let prefixText = text.substring(0, iAtStart)
+
+            // If prefixText is not empty and doesn't end with whitespace, add a space
+            if (prefixText.length > 0 && !(/\s$/.test(prefixText))) {
+              prefixText += ' '
+            }
+
+            text = prefixText + tagContent + followingText
+
+            // We found one, try again, there may be more
+            foundTag = true
+          }
+        }
+      }
+    } while (foundTag)
+
+    return text
+  }
+
+  /**
    * Removes the mention text for a given ID.
    * @param id The ID of the mention to remove.
    * @returns The updated text.
