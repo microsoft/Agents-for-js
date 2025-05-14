@@ -26,7 +26,7 @@ describe('Activity normalizeMentions', () => {
     assert.equal(activity.entities?.length, 1)
     assert.equal((activity.entities[0]).text, '<at>Bot</at>')
   })
-it('should remove <at> tags from text', () => {
+  it('should remove <at> tags from text', () => {
     const activity = new Activity(ActivityTypes.Message)
     activity.text = '<at>Bot</at> Hello there!'
 
@@ -203,5 +203,4 @@ it('should remove <at> tags from text', () => {
     assert.equal(activity.entities?.length, 1)
     assert.equal(activity.entities[0].type, 'customEntity')
   })
-  
 })
