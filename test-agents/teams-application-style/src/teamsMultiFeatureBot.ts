@@ -188,175 +188,176 @@ app.registerExtension(teamsAgentExtension, tae => {
     }
   })
 
-  // tae.taskModule.onSubmit(async (context: TurnContext, state: ApplicationTurnState, data: any) => {
-  //     const heroCard = CardFactory.heroCard(data.title, data.text)
-  // const attachment = { contentType: heroCard.contentType, content: heroCard.content, preview: heroCard }
-
-  // return {
-  //   type: 'result',
-  //   attachmentLayout: 'list',
-  //   attachments: [attachment]
-  // }
-})
-
-app.conversationUpdate('membersRemoved', async (context: TurnContext, state: ApplicationTurnState) => {
-  const removedMember = JSON.stringify(context.activity.membersRemoved)
-  const reply = MessageFactory.text('Hi there! A team member was removed' + removedMember)
-  await context.sendActivity(reply)
-})
-
-// app.messageExtensions.submitAction('createCard', async (context: TurnContext, state: ApplicationTurnState, data: any) => {
-//   const heroCard = CardFactory.heroCard(data.title, data.text)
-//   const attachment = { contentType: heroCard.contentType, content: heroCard.content, preview: heroCard }
-
-//   return {
-//     type: 'result',
-//     attachmentLayout: 'list',
-//     attachments: [attachment]
-//   }
-// })
-
-app.message('/teamsinfo', async (context: TurnContext, state: ApplicationTurnState) => {
-  const channels = await TeamsInfo.getTeamChannels(context)
-  const msg1 = `Meeting Participant: ${JSON.stringify(channels)}}`
-  await context.sendActivity(MessageFactory.text(msg1))
-
-  const teamDetails = await TeamsInfo.getTeamDetails(context)
-  const msg2 = `Team Details: ${JSON.stringify(teamDetails)}`
-  await context.sendActivity(MessageFactory.text(msg2))
-})
-
-app.message('/taskModule', async (context: TurnContext, state: ApplicationTurnState) => {
-  const reply = MessageFactory.attachment(getTaskModuleHeroCardOptions())
-  await context.sendActivity(reply)
-})
-
-// app.taskModules.fetch(['AdaptiveCard', 'YouTube', 'CustomForm'], async (context: TurnContext, state: ApplicationTurnState, data: any) => {
-//   let taskInfo: TaskModuleTaskInfo = {}
-
-//   switch (data.data) {
-//     case TaskModuleIds.AdaptiveCard: {
-//       taskInfo = setTaskInfo(TaskModuleUIConstants.AdaptiveCard)
-//       taskInfo.card = createAdaptiveCardAttachment()
-//       break
-//     }
-
-//     case TaskModuleIds.YouTube: {
-//       taskInfo = setTaskInfo(TaskModuleUIConstants.YouTube)
-//       taskInfo.url = taskInfo.fallbackUrl = baseUrl + TaskModuleIds.YouTube
-//       break
-//     }
-
-//     case TaskModuleIds.CustomForm: {
-//       taskInfo = setTaskInfo(TaskModuleUIConstants.CustomForm)
-//       taskInfo.url = taskInfo.fallbackUrl = baseUrl + TaskModuleIds.CustomForm
-//       break
-//     }
-//   }
-
-//   return taskInfo
-// })
-
-// app.taskModules.submit(async (context: TurnContext) => true, async (context: TurnContext, state: ApplicationTurnState, data: any) => {
-//   const reply = MessageFactory.text('taskModules.submit Value: ' + JSON.stringify(data.usertext))
-//   await context.sendActivity(reply)
-//   return 'Thanks!'
-// })
-
-app.activity(ActivityTypes.Message, async (context: TurnContext, state: ApplicationTurnState) => {
-  await context.sendActivity(MessageFactory.text('Type "/teamsinfo" or "/taskModule"'))
-})
-
-async function findPackages (text: string): Promise<[{ item1: string, item2: string, item3: string, item4: string, item5: string }]> {
-  const response = await fetch(`https://azuresearch-usnc.nuget.org/query?q=id:${text}&prerelease=true`)
-  const status = response.status
-
-  if (status !== 200) {
-    return [{ item1: '', item2: '', item3: '', item4: '', item5: '' }]
-  } else {
-    const jsonValues: any = await response.json()
-    const items = jsonValues['data']
-    return items.map((item: any) => {
-      return { item1: item['id'], item2: item['version'], item3: item['description'], item4: item['projectUrl'], item5: item['iconUrl'] }
-    })
-  }
-}
-
-function getAdaptiveCard (): MessagingExtensionResult {
-  const previewCard: Partial<ThumbnailCard> = {
-    title: 'Adaptive Card',
-    text: 'Please select to get Adaptive card'
-  }
-  const attachment: Attachment = {
-    contentType: 'application/vnd.microsoft.card.adaptive',
-    content: restaurantCardResource
-  }
-
-  const previewAttachment: Attachment = {
-    content: previewCard,
-    contentType: 'application/vnd.microsoft.card.thumbnail'
-  }
-
-  const messagingExtensionAttachment: MessagingExtensionAttachment = {
-    contentType: 'application/vnd.microsoft.card.adaptive',
-    content: attachment.content,
-    preview: previewAttachment
-  }
-
-  const messagingExtensionAttachmentList = [messagingExtensionAttachment]
-  return {
-    attachmentLayout: 'list',
-    type: 'result',
-    attachments: messagingExtensionAttachmentList
-  }
-}
-
-function getTaskModuleHeroCardOptions (): Attachment {
-  const taskModuleActions: any = []
-  const taskModules = [
-    TaskModuleUIConstants.AdaptiveCard,
-    TaskModuleUIConstants.CustomForm,
-    TaskModuleUIConstants.YouTube
-  ]
-
-  taskModules.map((taskModule) => {
-    const stringFetchValue = new CardTaskFetchValue<string>()
-    stringFetchValue.data = taskModule.id
-
-    const taskModuleAction = new TaskModuleAction(taskModule.buttonTitle as string, stringFetchValue)
-
-    taskModuleActions.push(taskModuleAction)
-    return taskModuleAction
+  tae.taskModule.onSubmit(async (context: TurnContext, state: ApplicationTurnState) => {
+    const heroCard = CardFactory.heroCard('data.title', 'data.text')
+    const attachment = { contentType: heroCard.contentType, content: heroCard.content, preview: heroCard }
+    console.log(attachment)
+    // return {
+    //   type: 'result',
+    //   attachmentLayout: 'list',
+    //   attachments: [attachment]
+    // }
   })
 
-  const heroCard: Partial<HeroCard> = {
-    title: 'Dialogs (referred to as task modules in TeamsJS v1.x) Invocation from Hero Card',
-    buttons: taskModuleActions
+  app.conversationUpdate('membersRemoved', async (context: TurnContext, state: ApplicationTurnState) => {
+    const removedMember = JSON.stringify(context.activity.membersRemoved)
+    const reply = MessageFactory.text('Hi there! A team member was removed' + removedMember)
+    await context.sendActivity(reply)
+  })
+
+  // app.messageExtensions.submitAction('createCard', async (context: TurnContext, state: ApplicationTurnState, data: any) => {
+  //   const heroCard = CardFactory.heroCard(data.title, data.text)
+  //   const attachment = { contentType: heroCard.contentType, content: heroCard.content, preview: heroCard }
+
+  //   return {
+  //     type: 'result',
+  //     attachmentLayout: 'list',
+  //     attachments: [attachment]
+  //   }
+  // })
+
+  app.message('/teamsinfo', async (context: TurnContext, state: ApplicationTurnState) => {
+    const channels = await TeamsInfo.getTeamChannels(context)
+    const msg1 = `Meeting Participant: ${JSON.stringify(channels)}}`
+    await context.sendActivity(MessageFactory.text(msg1))
+
+    const teamDetails = await TeamsInfo.getTeamDetails(context)
+    const msg2 = `Team Details: ${JSON.stringify(teamDetails)}`
+    await context.sendActivity(MessageFactory.text(msg2))
+  })
+
+  app.message('/taskModule', async (context: TurnContext, state: ApplicationTurnState) => {
+    const reply = MessageFactory.attachment(getTaskModuleHeroCardOptions())
+    await context.sendActivity(reply)
+  })
+
+  // app.taskModules.fetch(['AdaptiveCard', 'YouTube', 'CustomForm'], async (context: TurnContext, state: ApplicationTurnState, data: any) => {
+  //   let taskInfo: TaskModuleTaskInfo = {}
+
+  //   switch (data.data) {
+  //     case TaskModuleIds.AdaptiveCard: {
+  //       taskInfo = setTaskInfo(TaskModuleUIConstants.AdaptiveCard)
+  //       taskInfo.card = createAdaptiveCardAttachment()
+  //       break
+  //     }
+
+  //     case TaskModuleIds.YouTube: {
+  //       taskInfo = setTaskInfo(TaskModuleUIConstants.YouTube)
+  //       taskInfo.url = taskInfo.fallbackUrl = baseUrl + TaskModuleIds.YouTube
+  //       break
+  //     }
+
+  //     case TaskModuleIds.CustomForm: {
+  //       taskInfo = setTaskInfo(TaskModuleUIConstants.CustomForm)
+  //       taskInfo.url = taskInfo.fallbackUrl = baseUrl + TaskModuleIds.CustomForm
+  //       break
+  //     }
+  //   }
+
+  //   return taskInfo
+  // })
+
+  // app.taskModules.submit(async (context: TurnContext) => true, async (context: TurnContext, state: ApplicationTurnState, data: any) => {
+  //   const reply = MessageFactory.text('taskModules.submit Value: ' + JSON.stringify(data.usertext))
+  //   await context.sendActivity(reply)
+  //   return 'Thanks!'
+  // })
+
+  app.activity(ActivityTypes.Message, async (context: TurnContext, state: ApplicationTurnState) => {
+    await context.sendActivity(MessageFactory.text('Type "/teamsinfo" or "/taskModule"'))
+  })
+
+  async function findPackages (text: string): Promise<[{ item1: string, item2: string, item3: string, item4: string, item5: string }]> {
+    const response = await fetch(`https://azuresearch-usnc.nuget.org/query?q=id:${text}&prerelease=true`)
+    const status = response.status
+
+    if (status !== 200) {
+      return [{ item1: '', item2: '', item3: '', item4: '', item5: '' }]
+    } else {
+      const jsonValues: any = await response.json()
+      const items = jsonValues['data']
+      return items.map((item: any) => {
+        return { item1: item['id'], item2: item['version'], item3: item['description'], item4: item['projectUrl'], item5: item['iconUrl'] }
+      })
+    }
   }
 
-  const attachment: Attachment = {
-    content: heroCard,
-    contentType: CardFactory.contentTypes.heroCard
+  function getAdaptiveCard (): MessagingExtensionResult {
+    const previewCard: Partial<ThumbnailCard> = {
+      title: 'Adaptive Card',
+      text: 'Please select to get Adaptive card'
+    }
+    const attachment: Attachment = {
+      contentType: 'application/vnd.microsoft.card.adaptive',
+      content: restaurantCardResource
+    }
+
+    const previewAttachment: Attachment = {
+      content: previewCard,
+      contentType: 'application/vnd.microsoft.card.thumbnail'
+    }
+
+    const messagingExtensionAttachment: MessagingExtensionAttachment = {
+      contentType: 'application/vnd.microsoft.card.adaptive',
+      content: attachment.content,
+      preview: previewAttachment
+    }
+
+    const messagingExtensionAttachmentList = [messagingExtensionAttachment]
+    return {
+      attachmentLayout: 'list',
+      type: 'result',
+      attachments: messagingExtensionAttachmentList
+    }
   }
 
-  return attachment
-}
+  function getTaskModuleHeroCardOptions (): Attachment {
+    const taskModuleActions: any = []
+    const taskModules = [
+      TaskModuleUIConstants.AdaptiveCard,
+      TaskModuleUIConstants.CustomForm,
+      TaskModuleUIConstants.YouTube
+    ]
 
-// function createAdaptiveCardAttachment (): Attachment | undefined {
-//   const adaptiveCardAttachment: Attachment = {
-//     contentType: CardFactory.contentTypes.adaptiveCard,
-//     content: adaptiveCardResource
-//   }
+    taskModules.map((taskModule) => {
+      const stringFetchValue = new CardTaskFetchValue<string>()
+      stringFetchValue.data = taskModule.id
 
-//   return adaptiveCardAttachment
-// }
+      const taskModuleAction = new TaskModuleAction(taskModule.buttonTitle as string, stringFetchValue)
 
-// function setTaskInfo (uiConstants: UISettings): TaskModuleTaskInfo {
-//   const taskInfo: TaskModuleTaskInfo = {
-//     height: uiConstants.height,
-//     width: uiConstants.width,
-//     title: uiConstants.title
-//   }
+      taskModuleActions.push(taskModuleAction)
+      return taskModuleAction
+    })
+
+    const heroCard: Partial<HeroCard> = {
+      title: 'Dialogs (referred to as task modules in TeamsJS v1.x) Invocation from Hero Card',
+      buttons: taskModuleActions
+    }
+
+    const attachment: Attachment = {
+      content: heroCard,
+      contentType: CardFactory.contentTypes.heroCard
+    }
+
+    return attachment
+  }
+
+  // function createAdaptiveCardAttachment (): Attachment | undefined {
+  //   const adaptiveCardAttachment: Attachment = {
+  //     contentType: CardFactory.contentTypes.adaptiveCard,
+  //     content: adaptiveCardResource
+  //   }
+
+  //   return adaptiveCardAttachment
+  // }
+
+  // function setTaskInfo (uiConstants: UISettings): TaskModuleTaskInfo {
+  //   const taskInfo: TaskModuleTaskInfo = {
+  //     height: uiConstants.height,
+  //     width: uiConstants.width,
+  //     title: uiConstants.title
+  //   }
 
 //   return taskInfo
 // }
+})

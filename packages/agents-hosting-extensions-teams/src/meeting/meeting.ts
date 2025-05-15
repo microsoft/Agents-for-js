@@ -5,14 +5,14 @@ import { AgentApplication, RouteHandler, RouteSelector, TurnContext, TurnState }
  * Class that exposes all Teams meeting-related events.
  * Provides an organized way to handle meeting events in Microsoft Teams.
  */
-export class Meeting {
-  private _app: AgentApplication<TurnState>
+export class Meeting<TState extends TurnState> {
+  private _app: AgentApplication<TState>
 
   /**
    * Creates a new instance of the Meetings class.
    * @param app - The agent application
    */
-  constructor (app: AgentApplication<TurnState>) {
+  constructor (app: AgentApplication<TState>) {
     this._app = app
   }
 
@@ -21,7 +21,7 @@ export class Meeting {
    * @param handler - The handler to call when this event occurs
    * @returns this (for method chaining)
    */
-  onMeetingStart (handler: RouteHandler<TurnState>) {
+  onMeetingStart (handler: RouteHandler<TState>) {
     const routeSel: RouteSelector = (context: TurnContext) => {
       return Promise.resolve(
         context.activity.type === ActivityTypes.Event &&
