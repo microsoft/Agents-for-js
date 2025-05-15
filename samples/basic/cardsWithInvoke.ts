@@ -36,7 +36,7 @@ const sendCardWithInvoke = async (context: TurnContext, state: TurnState): Promi
 }
 
 const agent = new AgentApplication<TurnState>({ storage: new MemoryStorage() })
-agentonConversationUpdate('membersAdded', async (context: TurnContext) => {
+agent.onConversationUpdate('membersAdded', async (context: TurnContext) => {
   await context.sendActivity('Welcome to the CardInvoke sample, send a message to see the echo feature in action.')
 })
 agent.onMessage('/card', sendCardWithInvoke)
