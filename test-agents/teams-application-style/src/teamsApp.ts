@@ -39,7 +39,7 @@ app.adaptiveCards.actionExecute('doStuff', async (context, state, data) => {
   return card as AdaptiveCard
 })
 
-apponConversationUpdate('membersAdded', async (context: TurnContext, state: ApplicationTurnState) => {
+app.onConversationUpdate('membersAdded', async (context: TurnContext, state: ApplicationTurnState) => {
   const membersAdded = context.activity.membersAdded ?? []
   const welcomeText = 'Hello from teamsApp!'
   for (const member of membersAdded) {
