@@ -20,7 +20,7 @@ type ApplicationTurnState = TurnState<ConversationData, UserProfile>
 const storage = new MemoryStorage()
 export const app = new AgentApplicationBuilder<ApplicationTurnState>().withStorage(storage).build()
 
-app.conversationUpdate('membersAdded', async (context: TurnContext, state: ApplicationTurnState) => {
+apponConversationUpdate('membersAdded', async (context: TurnContext, state: ApplicationTurnState) => {
   await state.load(context, storage)
   const membersAdded = context.activity.membersAdded!
   for (let cnt = 0; cnt < membersAdded.length; ++cnt) {

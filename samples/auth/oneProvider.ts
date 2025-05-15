@@ -12,7 +12,7 @@ class OneProvider extends AgentApplication<TurnState> {
         default: { name: 'SSOSelf' }
       }
     })
-    this.conversationUpdate('membersAdded', this._status)
+    thisonConversationUpdate('membersAdded', this._status)
     this.authorization.onSignInSuccess(this._singinSuccess)
     this.onActivity('invoke', this._invoke)
     this.onActivity('message', this._message)

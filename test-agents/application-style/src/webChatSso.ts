@@ -26,7 +26,7 @@ app.onMessage('/me', async (context: TurnContext, state: TurnState) => {
   await showGraphProfile(context, state)
 })
 
-app.conversationUpdate('membersAdded', async (context: TurnContext, state: TurnState) => {
+apponConversationUpdate('membersAdded', async (context: TurnContext, state: TurnState) => {
   await state.load(context, storage)
   const membersAdded = context.activity.membersAdded!
   for (let cnt = 0; cnt < membersAdded.length; ++cnt) {

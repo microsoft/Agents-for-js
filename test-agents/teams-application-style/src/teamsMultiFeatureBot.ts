@@ -46,69 +46,69 @@ app.messageEventUpdate('undeleteMessage', async (context: TurnContext, state: Ap
   await context.sendActivity(reply)
 })
 
-app.conversationUpdate('membersAdded', async (context: TurnContext, state: ApplicationTurnState) => {
+apponConversationUpdate('membersAdded', async (context: TurnContext, state: ApplicationTurnState) => {
   const newMember = JSON.stringify(context.activity.membersAdded)
   const reply = MessageFactory.text('Hi there! You are a new member' + newMember)
   await context.sendActivity(reply)
 })
 
-app.conversationUpdate('membersRemoved', async (context: TurnContext, state: ApplicationTurnState) => {
+apponConversationUpdate('membersRemoved', async (context: TurnContext, state: ApplicationTurnState) => {
   const removedMember = JSON.stringify(context.activity.membersRemoved)
   const reply = MessageFactory.text('Hi there! A team member was removed' + removedMember)
   await context.sendActivity(reply)
 })
 
-app.conversationUpdate('teamRenamed', async (context: TurnContext, state: ApplicationTurnState) => {
+apponConversationUpdate('teamRenamed', async (context: TurnContext, state: ApplicationTurnState) => {
   const reply = MessageFactory.text('Hi, the team was renamed')
   await context.sendActivity(reply)
 })
 
-app.conversationUpdate('teamArchived', async (context: TurnContext, state: ApplicationTurnState) => {
+apponConversationUpdate('teamArchived', async (context: TurnContext, state: ApplicationTurnState) => {
   const reply = MessageFactory.text('Hi, the team was archived')
   console.log('Hi, the team was archived')
   await context.sendActivity(reply)
 })
 
-app.conversationUpdate('teamDeleted', async (context: TurnContext, state: ApplicationTurnState) => {
+apponConversationUpdate('teamDeleted', async (context: TurnContext, state: ApplicationTurnState) => {
   const reply = MessageFactory.text('Hi, the team was deleted')
   console.log('Hi, the team was deleted')
   await context.sendActivity(reply)
 })
 
-app.conversationUpdate('teamHardDeleted', async (context: TurnContext, state: ApplicationTurnState) => {
+apponConversationUpdate('teamHardDeleted', async (context: TurnContext, state: ApplicationTurnState) => {
   const reply = MessageFactory.text('Hi, the team was hard deleted')
   console.log('Hi, the team was hard deleted')
   await context.sendActivity(reply)
 })
 
-app.conversationUpdate('teamRestored', async (context: TurnContext, state: ApplicationTurnState) => {
+apponConversationUpdate('teamRestored', async (context: TurnContext, state: ApplicationTurnState) => {
   const reply = MessageFactory.text('Hi, the team has been restored')
   console.log('Hi, the team has been restored')
   await context.sendActivity(reply)
 })
 
-app.conversationUpdate('teamUnarchived', async (context: TurnContext, state: ApplicationTurnState) => {
+apponConversationUpdate('teamUnarchived', async (context: TurnContext, state: ApplicationTurnState) => {
   const reply = MessageFactory.text('Hi, the team has been unarchived')
   console.log('Hi, the team has been unarchived')
   await context.sendActivity(reply)
 })
 
-app.conversationUpdate('channelCreated', async (context: TurnContext, state: ApplicationTurnState) => {
+apponConversationUpdate('channelCreated', async (context: TurnContext, state: ApplicationTurnState) => {
   const reply = MessageFactory.text('Hi, the channel has been created')
   await context.sendActivity(reply)
 })
 
-app.conversationUpdate('channelDeleted', async (context: TurnContext, state: ApplicationTurnState) => {
+apponConversationUpdate('channelDeleted', async (context: TurnContext, state: ApplicationTurnState) => {
   const reply = MessageFactory.text('Hi, the channel has been deleted')
   await context.sendActivity(reply)
 })
 
-app.conversationUpdate('channelRenamed', async (context: TurnContext, state: ApplicationTurnState) => {
+apponConversationUpdate('channelRenamed', async (context: TurnContext, state: ApplicationTurnState) => {
   const reply = MessageFactory.text('Hi, the channel has been renamed')
   await context.sendActivity(reply)
 })
 
-app.conversationUpdate('channelRestored', async (context: TurnContext, state: ApplicationTurnState) => {
+apponConversationUpdate('channelRestored', async (context: TurnContext, state: ApplicationTurnState) => {
   const reply = MessageFactory.text('Hi, the channel has been restored')
   console.log('Hi, the channel has been restored')
   await context.sendActivity(reply)

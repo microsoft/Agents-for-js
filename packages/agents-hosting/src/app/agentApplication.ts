@@ -200,7 +200,7 @@ export class AgentApplication<TState extends TurnState> {
    *
    * Example usage:
    * ```typescript
-   * app.conversationUpdate('membersAdded', async (context, state) => {
+   * apponConversationUpdate('membersAdded', async (context, state) => {
    *   const membersAdded = context.activity.membersAdded;
    *   for (const member of membersAdded) {
    *     if (member.id !== context.activity.recipient.id) {
@@ -210,7 +210,7 @@ export class AgentApplication<TState extends TurnState> {
    * });
    * ```
    */
-  public conversationUpdate (
+  public onConversationUpdate (
     event: ConversationUpdateEvents,
     handler: (context: TurnContext, state: TState) => Promise<void>
   ): this {

@@ -27,7 +27,7 @@ class OAuthAgent extends AgentApplication<TurnState> {
     this.onMessage('/logout', this._signOut)
     this.onMessage('/me', this._profileRequest)
     this.onMessage('/prs', this._pullRequests)
-    this.conversationUpdate('membersAdded', this._status)
+    thisonConversationUpdate('membersAdded', this._status)
     this.onActivity(ActivityTypes.Invoke, this._invoke)
     this.onSignInSuccess(this._handleSignInSuccess)
     this.onActivity(ActivityTypes.Message, this._message)
