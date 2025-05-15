@@ -49,7 +49,7 @@ export class AgentApplication<TState extends TurnState> {
   private readonly _adapter?: BaseAdapter
   private readonly _authorization?: Authorization
   private _typingTimer: NodeJS.Timeout | undefined
-  protected readonly _extensions: AgentExtension[] = []
+  protected readonly _extensions: AgentExtension<TState>[] = []
   private readonly _adaptiveCards: AdaptiveCardsActions<TState>
 
   public constructor (options?: Partial<AgentApplicationOptions<TState>>) {
@@ -569,7 +569,7 @@ export class AgentApplication<TState extends TurnState> {
     }
   }
 
-  public registerExtension<T extends AgentExtension> (extension: T, regcb : (ext:T) => void): void {
+  public registerExtension<T extends AgentExtension<TState>> (extension: T, regcb : (ext:T) => void): void {
     if (this._extensions.includes(extension)) {
       throw new Error('Extension already registered')
     }

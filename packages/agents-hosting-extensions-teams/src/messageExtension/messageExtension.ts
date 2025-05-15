@@ -10,14 +10,14 @@ export type SelectItemHandler<TState extends TurnState> = (context: TurnContext,
  * Class that exposes Teams messaging extension-related events.
  * Provides an organized way to handle messaging extension operations in Microsoft Teams.
  */
-export class MessageExtension {
-  _app: AgentApplication<TurnState>
+export class MessageExtension<TState extends TurnState> {
+  _app: AgentApplication<TState>
 
   /**
    * Creates a new instance of the MessageExtension class.
    * @param app - The agent application
    */
-  constructor (app: AgentApplication<TurnState>) {
+  constructor (app: AgentApplication<TState>) {
     this._app = app
   }
 
@@ -26,7 +26,7 @@ export class MessageExtension {
    * @param handler - The handler to call when a query is received
    * @returns this (for method chaining)
    */
-  onQuery (handler: RouteQueryHandler<TurnState>) {
+  onQuery (handler: RouteQueryHandler<TState>) {
     const routeSel: RouteSelector = (context: TurnContext) => {
       return Promise.resolve(
         context.activity.type === ActivityTypes.Invoke &&
@@ -34,7 +34,7 @@ export class MessageExtension {
         context.activity.name === 'composeExtension/query'
       )
     }
-    const routeHandler : RouteHandler<TurnState> = async (context: TurnContext, state: TurnState) => {
+    const routeHandler : RouteHandler<TState> = async (context: TurnContext, state: TState) => {
       const messageExtensionQuery: MessagingExtensionQuery = messagingExtensionQueryZodSchema.parse(context.activity.value)
       const parameters: Record<string, unknown> = {}
       messageExtensionQuery.parameters?.forEach((param) => {
@@ -75,6 +75,7 @@ export class MessageExtension {
     return this
   }
 
+  // TODO: Uncomment when the methods are implemented
   // /**
   //  * Handles link queries from messaging extensions.
   //  * @param handler - The handler to call when a link query is received

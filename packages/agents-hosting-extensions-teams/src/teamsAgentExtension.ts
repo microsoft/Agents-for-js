@@ -5,12 +5,12 @@ import { parseTeamsChannelData } from './activity-extensions/teamsChannelDataPar
 import { MessageExtension } from './messageExtension/messageExtension'
 import { TaskModule } from './taskModule/taskModule'
 
-export class TeamsAgentExtension extends AgentExtension {
-  _app: AgentApplication<TurnState>
-  _meeting: Meeting
-  _messageExtension: MessageExtension
-  _taskModule: TaskModule
-  constructor (private app: AgentApplication<TurnState>) {
+export class TeamsAgentExtension<TState extends TurnState> extends AgentExtension<TState> {
+  _app: AgentApplication<TState>
+  _meeting: Meeting<TState>
+  _messageExtension: MessageExtension<TState>
+  _taskModule: TaskModule<TState>
+  constructor (private app: AgentApplication<TState>) {
     super('msteams')
     this._app = app
     this._meeting = new Meeting(app)
@@ -18,15 +18,15 @@ export class TeamsAgentExtension extends AgentExtension {
     this._taskModule = new TaskModule(app)
   }
 
-  public get meeting (): Meeting {
+  public get meeting (): Meeting<TState> {
     return this._meeting
   }
 
-  public get messageExtension (): MessageExtension {
+  public get messageExtension (): MessageExtension<TState> {
     return this._messageExtension
   }
 
-  public get taskModule (): TaskModule {
+  public get taskModule (): TaskModule<TState> {
     return this._taskModule
   }
 

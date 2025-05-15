@@ -4,13 +4,13 @@ import { RouteHandler } from './routeHandler'
 import { RouteSelector } from './routeSelector'
 import { TurnState } from './turnState'
 
-export class AgentExtension {
+export class AgentExtension<TState extends TurnState> {
   channelId: string
   constructor (channelId: string) {
     this.channelId = channelId
   }
 
-  addRoute (app: AgentApplication<TurnState>, routeSelector: RouteSelector, routeHandler: RouteHandler<TurnState>, isInvokeRoute: boolean = false) {
+  addRoute (app: AgentApplication<TState>, routeSelector: RouteSelector, routeHandler: RouteHandler<TurnState>, isInvokeRoute: boolean = false) {
     const ensureChannelMatches = async (context: TurnContext) => {
       return context.activity.channelId === this.channelId && routeSelector(context)
     }
