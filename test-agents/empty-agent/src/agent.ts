@@ -11,7 +11,7 @@ class EmptyAgent extends AgentApplication<TurnState> {
     this.conversationUpdate('membersAdded', this.help)
     this.message('/help', this.help)
     this.message('/diag', this.diag)
-    this.activity('message', this.echo)
+    this.onActivity('message', this.echo)
   }
 
   help = async (ctx: TurnContext) => {

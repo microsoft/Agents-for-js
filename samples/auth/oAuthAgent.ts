@@ -28,9 +28,9 @@ class OAuthAgent extends AgentApplication<TurnState> {
     this.message('/me', this._profileRequest)
     this.message('/prs', this._pullRequests)
     this.conversationUpdate('membersAdded', this._status)
-    this.activity(ActivityTypes.Invoke, this._invoke)
+    this.onActivity(ActivityTypes.Invoke, this._invoke)
     this.onSignInSuccess(this._handleSignInSuccess)
-    this.activity(ActivityTypes.Message, this._message)
+    this.onActivity(ActivityTypes.Message, this._message)
   }
 
   private _status = async (context: TurnContext, state: TurnState): Promise<void> => {

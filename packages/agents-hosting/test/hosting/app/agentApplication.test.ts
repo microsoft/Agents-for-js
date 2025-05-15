@@ -47,7 +47,7 @@ describe('Application', () => {
   it('should route to an activity handler', async () => {
     let called = false
 
-    app.activity(ActivityTypes.Message, async (context, state) => {
+    app.onActivity(ActivityTypes.Message, async (context, state) => {
       assert.notEqual(context, undefined)
       assert.notEqual(state, undefined)
       called = true
@@ -77,7 +77,7 @@ describe('Application', () => {
   it('should route to a act handler with regex', async () => {
     let called = false
 
-    app.activity(/^message/, async (context, state) => {
+    app.onActivity(/^message/, async (context, state) => {
       assert.notEqual(context, undefined)
       assert.notEqual(state, undefined)
       called = true
@@ -132,7 +132,7 @@ describe('Application', () => {
       assert.notEqual(state, undefined)
       timesCalled++
     })
-    app.activity(ActivityTypes.Message, async (context2, state2) => {
+    app.onActivity(ActivityTypes.Message, async (context2, state2) => {
       assert.notEqual(context2, undefined)
       assert.notEqual(state2, undefined)
       timesCalled++

@@ -176,7 +176,7 @@ export class AgentApplication<TState extends TurnState> {
    * });
    * ```
    */
-  public activity (
+  public onActivity (
     type: string | RegExp | RouteSelector | (string | RegExp | RouteSelector)[],
     handler: (context: TurnContext, state: TState) => Promise<void>
   ): this {
