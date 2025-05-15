@@ -187,10 +187,6 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
           return false
         }
 
-        if (typeof state.temp.input !== 'string') {
-          state.temp.input = context.activity.text ?? ''
-        }
-
         if (Array.isArray(this._teamsOptions.fileDownloaders) && this._teamsOptions.fileDownloaders.length > 0) {
           const inputFiles = state.temp.inputFiles ?? []
           for (let i = 0; i < this._teamsOptions.fileDownloaders.length; i++) {
@@ -198,10 +194,6 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
             inputFiles.push(...files)
           }
           state.temp.inputFiles = inputFiles
-        }
-
-        if (state.temp.actionOutputs === undefined) {
-          state.temp.actionOutputs = {}
         }
 
         if (context.activity.type === ActivityTypes.Invoke) {
