@@ -3,11 +3,11 @@ import { AgentApplication, MemoryStorage, TurnContext, TurnState } from '@micros
 
 const app = new AgentApplication<TurnState>({ storage: new MemoryStorage() })
 
-app.conversationUpdate('membersAdded', async (context: TurnContext) => {
+app.onConversationUpdate('membersAdded', async (context: TurnContext) => {
   await context.sendActivity('Welcome to the Message Reactions sample! Send a message and then add a reaction to it.')
 })
 
-app.activity('message', async (context: TurnContext, state: TurnState) => {
+app.onActivity('message', async (context: TurnContext, state: TurnState) => {
   const text = context.activity.text || ''
 
   state.setValue('conversation.lastMessage', text)

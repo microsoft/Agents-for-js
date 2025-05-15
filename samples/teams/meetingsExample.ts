@@ -43,7 +43,7 @@ app.registerExtension<TeamsAgentExtension>(teamsExt, (tae) => {
     })
 })
 
-app.activity('message', async (context: TurnContext, state: TurnState) => {
+app.onActivity('message', async (context: TurnContext, state: TurnState) => {
   const text = context.activity.text || ''
 
   if (text.toLowerCase().includes('help')) {
@@ -60,7 +60,7 @@ app.activity('message', async (context: TurnContext, state: TurnState) => {
   }
 })
 
-app.activity(() => { return Promise.resolve(true) }, async (context: TurnContext, state: TurnState) => {
+app.onActivity(() => { return Promise.resolve(true) }, async (context: TurnContext, state: TurnState) => {
   console.log('Received activity:', context.activity)
   await context.sendActivity('I received your activity. How can I assist you?')
 })
