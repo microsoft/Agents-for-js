@@ -15,7 +15,7 @@ export class TranscriptLoggerMiddleware implements Middleware {
 
   /**
    * Creates a new instance of the TranscriptLoggerMiddleware class.
-   * @param logger The transcript logger to use.
+   * @param {TranscriptLogger} logger The transcript logger to use.
    * @throws Will throw an error if the logger is not provided.
    */
   constructor (logger: TranscriptLogger) {
@@ -28,8 +28,8 @@ export class TranscriptLoggerMiddleware implements Middleware {
 
   /**
    * Called each time the agent processes a turn.
-   * @param context The context object for the turn.
-   * @param next The next middleware or handler to call.
+   * @param {TurnContext} context The context object for the turn.
+   * @param {() => Promise<void>} next The next middleware or handler to call.
    */
   async onTurn (context: TurnContext, next: () => Promise<void>): Promise<void> {
     const transcript: Activity[] = []
@@ -114,8 +114,8 @@ export class TranscriptLoggerMiddleware implements Middleware {
 
   /**
    * Logs an activity to the transcript.
-   * @param transcript The transcript array to log the activity to.
-   * @param activity The activity to log.
+   * @param {Activity[]} transcript The transcript array to log the activity to.
+   * @param {Activity} activity The activity to log.
    */
   private logActivity (transcript: Activity[], activity: Activity): void {
     if (!activity.timestamp) {
@@ -129,8 +129,8 @@ export class TranscriptLoggerMiddleware implements Middleware {
 
   /**
    * Creates a deep copy of an activity.
-   * @param activity The activity to clone.
-   * @returns A deep copy of the activity.
+   * @param {Partial<Activity>} activity The activity to clone.
+   * @returns {Activity} A deep copy of the activity.
    */
   private cloneActivity (activity: Partial<Activity>): Activity {
     return Object.assign(<Activity>{}, activity)
@@ -138,7 +138,7 @@ export class TranscriptLoggerMiddleware implements Middleware {
 
   /**
    * Handles errors that occur during logging.
-   * @param err The error that occurred.
+   * @param {Error | any} err The error that occurred.
    */
   private transcriptLoggerErrorHandler (err: Error | any): void {
     if (err instanceof Error) {
