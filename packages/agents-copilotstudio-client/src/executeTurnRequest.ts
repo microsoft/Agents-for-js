@@ -15,7 +15,7 @@ export class ExecuteTurnRequest {
 
   /**
    * Creates an instance of ExecuteTurnRequest.
-   * @param activity The activity to be executed.
+   * @param {Activity} [activity] The activity to be executed.
    */
   constructor (activity?: Activity) {
     this.activity = activity

@@ -15,7 +15,7 @@ const PERSISTED_DIALOG_STATE = 'dialogs'
 
 /**
  * Base class for a dialog that contains other child dialogs.
- * @remarks
+ * @description
  * Component dialogs let you break your agent's logic up into components that can themselves be added
  * as a dialog to another `ComponentDialog` or `DialogSet`. Components can also be exported as part
  * of a node package and used within other agents.

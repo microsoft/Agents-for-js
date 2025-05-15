@@ -25,7 +25,7 @@ export class ConnectionSettings {
 
 /**
  * Loads the connection settings for Copilot Studio from environment variables.
- * @returns The connection settings.
+ * @returns {ConnectionSettings} The connection settings.
  */
 export const loadCopilotStudioConnectionSettingsFromEnv: () => ConnectionSettings = () => {
   return {

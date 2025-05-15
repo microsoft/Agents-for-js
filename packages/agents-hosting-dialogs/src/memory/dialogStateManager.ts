@@ -30,7 +30,7 @@ const DIALOG_STATE_MANAGER_CONFIGURATION = 'DialogStateManagerConfiguration'
 
 /**
  * The DialogStateManager manages memory scopes and path resolvers.
- * @remarks
+ * @description
  * MemoryScopes are named root level objects, which can exist either in the dialog context or off
  * of turn state. Path resolvers allow for shortcut behavior for mapping things like
  * $foo -> dialog.foo
@@ -81,7 +81,7 @@ export class DialogStateManager {
 
   /**
    * Gets or sets the configured path resolvers and memory scopes for the dialog state manager.
-   * @remarks
+   * @description
    * There is a single set of configuration information for a given chain of dialog contexts.
    * Assigning a new configuration to any DialogStateManager within the chain will update the
    * configuration for the entire chain.
@@ -90,12 +90,12 @@ export class DialogStateManager {
 
   /**
    * Get the value from memory using path expression.
-   * @remarks
+   * @description
    * This always returns a CLONE of the memory, any modifications to the result will not affect memory.
    * @template T The value type to return.
-   * @param pathExpression Path expression to use.
-   * @param defaultValue (Optional) default value to use if the path isn't found. May be a function that returns the default value to use.
-   * @returns The found value or undefined if not found and no `defaultValue` specified.
+   * @param {string} pathExpression Path expression to use.
+   * @param {T | (() => T)} [defaultValue] (Optional) default value to use if the path isn't found. May be a function that returns the default value to use.
+   * @returns {T} The found value or undefined if not found and no `defaultValue` specified.
    */
   getValue<T = any>(pathExpression: string, defaultValue?: T | (() => T)): T {
     /**
@@ -129,8 +129,8 @@ export class DialogStateManager {
 
   /**
    * Set memory to value.
-   * @param pathExpression Path to memory.
-   * @param value Value to set.
+   * @param {string} pathExpression Path to memory.
+   * @param {any} value Value to set.
    */
   setValue (pathExpression: string, value: any): void {
     // Get path segments
@@ -195,7 +195,7 @@ export class DialogStateManager {
 
   /**
    * Delete property from memory
-   * @param pathExpression The leaf property to remove.
+   * @param {string} pathExpression The leaf property to remove.
    */
   deleteValue (pathExpression: string): void {
     // Get path segments
@@ -233,8 +233,9 @@ export class DialogStateManager {
 
   /**
    * Ensures that all memory scopes have been loaded for the current turn.
-   * @remarks
+   * @description
    * This should be called at the beginning of the turn.
+   * @returns {Promise<void>} A promise that resolves when all scopes are loaded.
    */
   async loadAllScopes (): Promise<void> {
     const scopes = this.configuration.memoryScopes
@@ -245,8 +246,9 @@ export class DialogStateManager {
 
   /**
    * Saves any changes made to memory scopes.
-   * @remarks
+   * @description
    * This should be called at the end of the turn.
+   * @returns {Promise<void>} A promise that resolves when all changes are saved.
    */
   async saveAllChanges (): Promise<void> {
     const scopes = this.configuration.memoryScopes
