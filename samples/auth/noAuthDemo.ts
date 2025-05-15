@@ -7,7 +7,7 @@ import { AgentApplication, MessageFactory, TurnContext, TurnState } from '@micro
 class NoAuthDemo extends AgentApplication<TurnState> {
   constructor () {
     super()
-    thisonConversationUpdate('membersAdded', this._status)
+    this.onConversationUpdate('membersAdded', this._status)
     this.onActivity('invoke', this._invoke)
     this.onActivity('message', this._message)
   }

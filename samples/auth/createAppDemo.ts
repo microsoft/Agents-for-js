@@ -16,7 +16,7 @@ class CreateAppDemo extends AgentApplication<TurnState> {
 
     this._storage = storage!
 
-    thisonConversationUpdate('membersAdded', this._status)
+    this.onConversationUpdate('membersAdded', this._status)
     this.onActivity(ActivityTypes.Invoke, this._invoke)
     this.onActivity(ActivityTypes.Message, this._message)
   }
