@@ -251,7 +251,7 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
    * @param event - The conversation update event.
    * @param handler - The handler for the event.
    */
-  public conversationUpdate (
+  public onConversationUpdate (
     event: TeamsConversationUpdateEvents,
     handler: (context: TurnContext, state: TState) => Promise<void>
   ): this {
@@ -271,7 +271,7 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
    * @param event - The message event.
    * @param handler - The handler for the event.
    */
-  public messageEventUpdate (
+  public onMessageEventUpdate (
     event: TeamsMessageEvents,
     handler: (context: TurnContext, state: TState) => Promise<void>
   ): this {
@@ -291,7 +291,7 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
    * @param event - The message reaction event.
    * @param handler - The handler for the event.
    */
-  public messageReactions (
+  public onMessageReactions (
     event: MessageReactionEvents,
     handler: (context: TurnContext, state: TState) => Promise<void>
   ): this {
@@ -356,7 +356,7 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
    * Handles handoff actions.
    * @param handler - The handler for the handoff action.
    */
-  public handoff (handler: (context: TurnContext, state: TState, continuation: string) => Promise<void>): this {
+  public onHandoff (handler: (context: TurnContext, state: TState, continuation: string) => Promise<void>): this {
     const selector = (context: TurnContext): Promise<boolean> => {
       return Promise.resolve(
         context.activity.type === ActivityTypes.Invoke && context.activity.name === 'handoff/action'
@@ -447,7 +447,7 @@ export class TeamsApplication<TState extends TurnState> extends AgentApplication
    * Handles Teams read receipt events.
    * @param handler - The handler for the read receipt event.
    */
-  public teamsReadReceipt (
+  public onTeamsReadReceipt (
     handler: (context: TurnContext, state: TState, readReceiptInfo: ReadReceiptInfo) => Promise<void>
   ): this {
     const selector = (context: TurnContext): Promise<boolean> => {
