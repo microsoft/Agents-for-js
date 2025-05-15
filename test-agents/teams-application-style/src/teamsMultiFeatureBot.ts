@@ -31,17 +31,17 @@ export const app = new TeamsApplication<ApplicationTurnState>({
   taskModules: { taskDataFilter: 'data' }
 })
 
-app.messageEventUpdate('editMessage', async (context: TurnContext, state: ApplicationTurnState) => {
+app.onMessageEventUpdate('editMessage', async (context: TurnContext, state: ApplicationTurnState) => {
   const reply = MessageFactory.text('You edited a message')
   await context.sendActivity(reply)
 })
 
-app.messageEventUpdate('softDeleteMessage', async (context: TurnContext, state: ApplicationTurnState) => {
+app.onMessageEventUpdate('softDeleteMessage', async (context: TurnContext, state: ApplicationTurnState) => {
   const reply = MessageFactory.text('You deleted a message')
   await context.sendActivity(reply)
 })
 
-app.messageEventUpdate('undeleteMessage', async (context: TurnContext, state: ApplicationTurnState) => {
+app.onMessageEventUpdate('undeleteMessage', async (context: TurnContext, state: ApplicationTurnState) => {
   const reply = MessageFactory.text('You undeleted a message')
   await context.sendActivity(reply)
 })
