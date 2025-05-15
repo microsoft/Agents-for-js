@@ -34,7 +34,7 @@ export const app = new AgentApplication<ApplicationTurnState>({
 })
 
 // Listen for ANY message to be received. MUST BE AFTER ANY OTHER MESSAGE HANDLERS
-app.activity(ActivityTypes.Message, async (turnContext: TurnContext, state: ApplicationTurnState) => {
+app.onActivity(ActivityTypes.Message, async (turnContext: TurnContext, state: ApplicationTurnState) => {
   try {
     const userProfile = state.user
     console.log('User Profile:', userProfile)
@@ -69,7 +69,7 @@ app.activity(ActivityTypes.Message, async (turnContext: TurnContext, state: Appl
   }
 })
 
-app.conversationUpdate('membersAdded', async (context: TurnContext, state: ApplicationTurnState) => {
+app.onConversationUpdate('membersAdded', async (context: TurnContext, state: ApplicationTurnState) => {
   await state.load(context, storage)
   const membersAdded = context.activity.membersAdded!
   for (let cnt = 0; cnt < membersAdded.length; ++cnt) {

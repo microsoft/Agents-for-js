@@ -119,13 +119,13 @@ export class AgentApplication<TState extends TurnState> {
    *
    * Example usage:
    * ```typescript
-   * app.error(async (context, error) => {
+   * app.onError(async (context, error) => {
    *   console.error(`An error occurred: ${error.message}`);
    *   await context.sendActivity('Sorry, something went wrong!');
    * });
    * ```
    */
-  public error (handler: (context: TurnContext, error: Error) => Promise<void>): this {
+  public onError (handler: (context: TurnContext, error: Error) => Promise<void>): this {
     if (this._adapter) {
       this._adapter.onTurnError = handler
     }
@@ -170,12 +170,12 @@ export class AgentApplication<TState extends TurnState> {
    *
    * Example usage:
    * ```typescript
-   * app.activity(ActivityTypes.Message, async (context, state) => {
+   * app.onActivity(ActivityTypes.Message, async (context, state) => {
    *   await context.sendActivity('I received your message');
    * });
    * ```
    */
-  public activity (
+  public onActivity (
     type: string | RegExp | RouteSelector | (string | RegExp | RouteSelector)[],
     handler: (context: TurnContext, state: TState) => Promise<void>
   ): this {
@@ -199,7 +199,7 @@ export class AgentApplication<TState extends TurnState> {
    *
    * Example usage:
    * ```typescript
-   * app.conversationUpdate('membersAdded', async (context, state) => {
+   * app.onConversationUpdate('membersAdded', async (context, state) => {
    *   const membersAdded = context.activity.membersAdded;
    *   for (const member of membersAdded) {
    *     if (member.id !== context.activity.recipient.id) {
@@ -209,7 +209,7 @@ export class AgentApplication<TState extends TurnState> {
    * });
    * ```
    */
-  public conversationUpdate (
+  public onConversationUpdate (
     event: ConversationUpdateEvents,
     handler: (context: TurnContext, state: TState) => Promise<void>
   ): this {
@@ -272,16 +272,16 @@ export class AgentApplication<TState extends TurnState> {
    *
    * Example usage:
    * ```typescript
-   * app.message('hello', async (context, state) => {
+   * app.onMessage('hello', async (context, state) => {
    *   await context.sendActivity('Hello there!');
    * });
    *
-   * app.message(/help., async (context, state) => {
+   * app.onMessage(/help., async (context, state) => {
    *   await context.sendActivity('How can I help you?');
    * });
    * ```
    */
-  public message (
+  public onMessage (
     keyword: string | RegExp | RouteSelector | (string | RegExp | RouteSelector)[],
     handler: (context: TurnContext, state: TState) => Promise<void>
   ): this {
@@ -615,13 +615,13 @@ export class AgentApplication<TState extends TurnState> {
    *
    * Example usage:
    * ```typescript
-   * app.turn('beforeTurn', async (context, state) => {
+   * app.onTurn('beforeTurn', async (context, state) => {
    *   console.log('Processing before turn');
    *   return true; // Continue execution
    * });
    * ```
    */
-  public turn (
+  public onTurn (
     event: TurnEvents | TurnEvents[],
     handler: (context: TurnContext, state: TState) => Promise<boolean>
   ): this {

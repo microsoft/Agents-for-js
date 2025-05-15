@@ -35,8 +35,6 @@ export interface DefaultUserState {}
  * Contains properties used for handling user input, file attachments, and OAuth flows.
  */
 export interface DefaultTempState {
-  /** Current user input text */
-  input: string;
   /** Collection of files attached to the current message */
   inputFiles: InputFile[];
 }
