@@ -48,6 +48,12 @@
       },
       {
         "path": "test-agents/root-agent"
+      },
+      {
+        "path": "test-agents/teams-agent"
+      },
+      {
+        "path": "test-agents/teams-application-style"
       }
     ]
   }
