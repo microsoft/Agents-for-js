@@ -5,7 +5,7 @@ import { parseTeamsChannelData } from './activity-extensions/teamsChannelDataPar
 import { MessageExtension } from './messageExtension/messageExtension'
 import { TaskModule } from './taskModule/taskModule'
 
-export class TeamsAgentExtension<TState extends TurnState> extends AgentExtension<TState> {
+export class TeamsAgentExtension<TState extends TurnState = TurnState> extends AgentExtension<TState> {
   _app: AgentApplication<TState>
   _meeting: Meeting<TState>
   _messageExtension: MessageExtension<TState>
