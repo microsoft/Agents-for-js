@@ -1,10 +1,9 @@
-import { AuthConfiguration, authorizeJWT, loadAuthConfigFromEnv, Request } from '@microsoft/agents-hosting'
-// import { TeamsCloudAdapter } from '@microsoft/agents-hosting-teams'
+import { AuthConfiguration, authorizeJWT, CloudAdapter, loadAuthConfigFromEnv, Request } from '@microsoft/agents-hosting'
 import express, { Response } from 'express'
 import path from 'path'
 
 const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
-// const adapter = new TeamsCloudAdapter(authConfig)
+const adapter = new CloudAdapter(authConfig)
 
 const server = express()
 server.use(express.json())
