@@ -543,13 +543,13 @@ export class AgentApplication<TState extends TurnState> {
    *
    * Example usage:
    * ```typescript
-   * app.turn('beforeTurn', async (context, state) => {
+   * app.onTurn('beforeTurn', async (context, state) => {
    *   console.log('Processing before turn');
    *   return true; // Continue execution
    * });
    * ```
    */
-  public turn (
+  public onTurn (
     event: TurnEvents | TurnEvents[],
     handler: (context: TurnContext, state: TState) => Promise<boolean>
   ): this {
