@@ -47,8 +47,8 @@ export class ActivityHandler {
   /**
    * Registers a handler for the Turn activity type.
    * This is called for all activities regardless of type.
-   * @param handler - The handler to register
-   * @returns The current instance for method chaining
+   * @param {AgentHandler} handler - The handler to register
+   * @returns {this} The current instance for method chaining
    */
   onTurn (handler: AgentHandler): this {
     return this.on('Turn', handler)
@@ -673,6 +673,10 @@ export class ActivityHandler {
    */
   protected async handle (context: TurnContext, type: string, onNext: () => Promise<void>): Promise<any> {
     let returnValue: any = null
+    /**
+     *
+     * @param index
+     */
     async function runHandler (index: number): Promise<void> {
       if (index < handlers.length) {
         const val = await handlers[index](context, async () => await runHandler(index + 1))

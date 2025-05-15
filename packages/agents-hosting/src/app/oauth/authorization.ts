@@ -132,7 +132,6 @@ export class Authorization {
   /**
    * Signs out the current user.
    * This method clears the user's token and resets the SSO state.
-   *
    * @param {TurnContext} context - The context object for the current turn.
    * @param {TurnState} state - The state object for the current turn.
    * @param {string} [authHandlerId] - Optional ID of the auth handler to use for sign out

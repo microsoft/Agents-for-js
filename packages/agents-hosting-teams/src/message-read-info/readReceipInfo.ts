@@ -14,7 +14,7 @@ export class ReadReceiptInfo {
 
   /**
    * Creates an instance of ReadReceiptInfo.
-   * @param {string} [lastReadMessageId=''] - The ID of the last read message.
+   * @param {string} [lastReadMessageId] - The ID of the last read message.
    */
   constructor (lastReadMessageId: string = '') {
     this.lastReadMessageId = lastReadMessageId

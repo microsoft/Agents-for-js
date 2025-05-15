@@ -6,7 +6,6 @@ import { DepGraph } from 'dependency-graph'
 
 /**
  * Factory describes a generic factory function signature. The type is generic over a few parameters:
- *
  * @template Type type the factory produces
  * @template Initial true if the `initialValue` passed to the factory must be defined
  */
@@ -17,7 +16,6 @@ export type Factory<Type, Initial extends boolean> = (
 /**
  * DependencyFactory is a function signature that produces an instance that depends on a set of
  * other services. The type is generic over a few parameters:
- *
  * @template Type type the factory produces
  * @template Dependencies the services this factory function depends on
  * @template Initial true if the `initialValue` passed to the factory must be defined
@@ -37,22 +35,21 @@ export class ServiceCollection {
   private readonly dependencies: Map<string, string[]> = new Map<string, string[]>()
 
   /**
-     * `DepGraph` is a dependency graph data structure. In our case, the services we support are encoded as a
-     * dependency graph where nodes are named with a key and store a list of factory methods.
-     */
+   * `DepGraph` is a dependency graph data structure. In our case, the services we support are encoded as a
+   * dependency graph where nodes are named with a key and store a list of factory methods.
+   */
   private readonly graph = new DepGraph<Array<DependencyFactory<unknown, Record<string, unknown>, true>>>()
 
   /**
-     * Cache constructed instances for reuse
-     */
+   * Cache constructed instances for reuse
+   */
   private cache: Record<string, unknown> = {}
 
   /**
-     * Construct a Providers instance
-     *
-     * @template S services interface
-     * @param defaultServices default set of services
-     */
+   * Construct a Providers instance
+   * @template S services interface
+   * @param defaultServices default set of services
+   */
   constructor (defaultServices: Record<string, unknown> = {}) {
     Object.entries(defaultServices).forEach(([key, instance]) => {
       this.addInstance(key, instance)
@@ -60,12 +57,11 @@ export class ServiceCollection {
   }
 
   /**
-     * Register an instance by key. This will overwrite existing instances.
-     *
-     * @param key Key of the instance being provided.
-     * @param instance Instance to provide.
-     * @returns `this` for chaining.
-     */
+   * Register an instance by key. This will overwrite existing instances.
+   * @param key Key of the instance being provided.
+   * @param instance Instance to provide.
+   * @returns `this` for chaining.
+   */
   addInstance<InstanceType>(key: string, instance: InstanceType): this {
     if (this.graph.hasNode(key)) {
       this.graph.removeNode(key)
@@ -76,22 +72,20 @@ export class ServiceCollection {
   }
 
   /**
-     * Register a factory for a key.
-     *
-     * @param key Key that factory will provide.
-     * @param factory Function that creates an instance to provide.
-     * @returns `this` for chaining.
-     */
+   * Register a factory for a key.
+   * @param key Key that factory will provide.
+   * @param factory Function that creates an instance to provide.
+   * @returns `this` for chaining.
+   */
   addFactory<InstanceType>(key: string, factory: Factory<InstanceType, false>): this
 
   /**
-     * Register a factory for a key with a set of dependencies.
-     *
-     * @param key Key that factory will provide.
-     * @param dependencies Set of things this instance depends on. Will be provided to factory function via `services`.
-     * @param factory Function that creates an instance to provide.
-     * @returns `this` for chaining.
-     */
+   * Register a factory for a key with a set of dependencies.
+   * @param key Key that factory will provide.
+   * @param dependencies Set of things this instance depends on. Will be provided to factory function via `services`.
+   * @param factory Function that creates an instance to provide.
+   * @returns `this` for chaining.
+   */
   addFactory<InstanceType, Dependencies>(
     key: string,
     dependencies: string[],
@@ -99,8 +93,11 @@ export class ServiceCollection {
   ): this
 
   /**
-     * @internal
-     */
+   * @param key
+   * @param depsOrFactory
+   * @param maybeFactory
+   * @internal
+   */
   addFactory<InstanceType, Dependencies>(
     key: string,
     depsOrFactory: string[] | Factory<InstanceType, false>,
@@ -133,22 +130,20 @@ export class ServiceCollection {
   }
 
   /**
-     * Register a factory (that expects the initial value that is not undefined) for a key.
-     *
-     * @param key key of the instance being provided
-     * @returns this for chaining
-     */
+   * Register a factory (that expects the initial value that is not undefined) for a key.
+   * @param key key of the instance being provided
+   * @returns this for chaining
+   */
   composeFactory<InstanceType>(key: string, factory: Factory<InstanceType, true>): this
 
   /**
-     * Register a factory (that expects an initial value that is not undefined) for a key
-     * with a set of dependencies.
-     *
-     * @param key Key that factory will provide.
-     * @param dependencies Set of things this instance depends on. Will be provided to factory function via `services`.
-     * @param factory Function that creates an instance to provide.
-     * @returns `this` for chaining.
-     */
+   * Register a factory (that expects an initial value that is not undefined) for a key
+   * with a set of dependencies.
+   * @param key Key that factory will provide.
+   * @param dependencies Set of things this instance depends on. Will be provided to factory function via `services`.
+   * @param factory Function that creates an instance to provide.
+   * @returns `this` for chaining.
+   */
   composeFactory<InstanceType, Dependencies>(
     key: string,
     dependencies: string[],
@@ -156,8 +151,11 @@ export class ServiceCollection {
   ): this
 
   /**
-     * @internal
-     */
+   * @param key
+   * @param depsOrFactory
+   * @param maybeFactory
+   * @internal
+   */
   composeFactory<InstanceType, Dependencies>(
     key: string,
     depsOrFactory: string[] | Factory<InstanceType, true>,
@@ -239,12 +237,11 @@ export class ServiceCollection {
   }
 
   /**
-     * Build a single service.
-     *
-     * @param key Service to build.
-     * @param deep Whether to reconstruct all dependencies.
-     * @returns The service instance, or undefined.
-     */
+   * Build a single service.
+   * @param key Service to build.
+   * @param deep Whether to reconstruct all dependencies.
+   * @returns The service instance, or undefined.
+   */
   makeInstance<InstanceType = unknown>(key: string, deep = false): InstanceType | undefined {
     // If this is not a deep reconstruction, reuse any services that `key` depends on
     let initialServices: Record<string, unknown> | undefined
@@ -262,12 +259,11 @@ export class ServiceCollection {
   }
 
   /**
-     * Build a single service and assert that it is not undefined.
-     *
-     * @param key Service to build.
-     * @param deep Wheter to reconstruct all dependencies.
-     * @returns The service instance
-     */
+   * Build a single service and assert that it is not undefined.
+   * @param key Service to build.
+   * @param deep Wheter to reconstruct all dependencies.
+   * @returns The service instance
+   */
   mustMakeInstance<InstanceType = unknown>(key: string, deep = false): InstanceType {
     const instance = this.makeInstance<InstanceType>(key, deep)
     assert.ok(instance, `\`${key}\` instance undefined!`)
@@ -276,20 +272,18 @@ export class ServiceCollection {
   }
 
   /**
-     * Build the full set of services.
-     *
-     * @returns all resolved services
-     */
+   * Build the full set of services.
+   * @returns all resolved services
+   */
   makeInstances<InstancesType>(): InstancesType {
     return this.buildNodes<InstancesType>(() => this.graph.overallOrder())
   }
 
   /**
-     * Build the full set of services, asserting that the specified keys are not undefined.
-     *
-     * @param keys Instances that must be not undefined
-     * @returns All resolve services
-     */
+   * Build the full set of services, asserting that the specified keys are not undefined.
+   * @param keys Instances that must be not undefined
+   * @returns All resolve services
+   */
   mustMakeInstances<InstancesType extends Record<string, unknown> = Record<string, unknown>>(
     ...keys: string[]
   ): InstancesType {

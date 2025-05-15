@@ -203,6 +203,10 @@ export class AdaptiveCardsActions<TState extends TurnState> {
   }
 }
 
+/**
+ *
+ * @param verb
+ */
 function createActionExecuteSelector (verb: string | RegExp | RouteSelector): RouteSelector {
   if (typeof verb === 'function') {
     return verb
@@ -237,6 +241,11 @@ function createActionExecuteSelector (verb: string | RegExp | RouteSelector): Ro
   }
 }
 
+/**
+ *
+ * @param verb
+ * @param filter
+ */
 function createActionSubmitSelector (verb: string | RegExp | RouteSelector, filter: string): RouteSelector {
   if (typeof verb === 'function') {
     return verb
@@ -259,6 +268,10 @@ function createActionSubmitSelector (verb: string | RegExp | RouteSelector, filt
   }
 }
 
+/**
+ *
+ * @param dataset
+ */
 function createSearchSelector (dataset: string | RegExp | RouteSelector): RouteSelector {
   if (typeof dataset === 'function') {
     return dataset
@@ -283,6 +296,11 @@ function createSearchSelector (dataset: string | RegExp | RouteSelector): RouteS
   }
 }
 
+/**
+ *
+ * @param context
+ * @param response
+ */
 async function sendInvokeResponse (context: TurnContext, response: AdaptiveCardInvokeResponse) {
   await context.sendActivity({
     value: { body: response, status: 200 } as InvokeResponse,

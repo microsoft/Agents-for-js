@@ -39,7 +39,6 @@ export interface StoreItems {
 /**
  * A factory function to generate storage keys based on the conversation context.
  * Allows different storage strategies based on the conversation state.
- *
  * @param context The TurnContext for the current turn of conversation
  * @returns A string key for storage that uniquely identifies where to store the data
  */
@@ -59,7 +58,6 @@ export type StorageKeyFactory = (context: TurnContext) => string | Promise<strin
 export interface Storage {
   /**
    * Reads store items from storage.
-   *
    * @param keys The keys of the items to read
    * @returns A promise that resolves to the store items. Items that don't exist in storage will not be included in the result.
    * @throws If the keys array is empty or undefined
@@ -68,7 +66,6 @@ export interface Storage {
 
   /**
    * Writes store items to storage.
-   *
    * @param changes The items to write to storage, indexed by key
    * @returns A promise that resolves when the write operation is complete
    * @throws If the changes object is empty or undefined, or if an eTag conflict occurs and optimistic concurrency is enabled
@@ -77,7 +74,6 @@ export interface Storage {
 
   /**
    * Deletes store items from storage.
-   *
    * @param keys The keys of the items to delete
    * @returns A promise that resolves when the delete operation is complete
    */

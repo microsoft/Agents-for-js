@@ -39,6 +39,10 @@ export class DocumentStoreItem {
   /**
    * Initializes a new instance of the DocumentStoreItem class.
    * @param storeItem The store item to initialize.
+   * @param storeItem.id
+   * @param storeItem.realId
+   * @param storeItem.document
+   * @param storeItem.eTag
    */
   constructor (storeItem: { id: string; realId: string; document: object; eTag?: string }) {
     this.id = storeItem.id

@@ -28,8 +28,8 @@ export class TurnContextStateCollection extends Map<any, any> {
 
   /**
    * Pushes a value onto the stack for the specified key.
-   * @param key The key of the element to push.
-   * @param value The value to push onto the stack.
+   * @param {any} key The key of the element to push.
+   * @param {any} value The value to push onto the stack.
    */
   push (key: any, value: any): void {
     const current = this.get(key)
@@ -49,8 +49,8 @@ export class TurnContextStateCollection extends Map<any, any> {
 
   /**
    * Pops a value from the stack for the specified key.
-   * @param key The key of the element to pop.
-   * @returns The value that was popped from the stack.
+   * @param {any} key The key of the element to pop.
+   * @returns {any} The value that was popped from the stack.
    */
   pop (key: any): any {
     const current = this.get(key)

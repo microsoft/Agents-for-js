@@ -21,8 +21,8 @@ export class DialogsComponentRegistration
   })
 
   /**
-     * Creates an instance of the DialogsComponentRegistration class.
-     */
+   * Creates an instance of the DialogsComponentRegistration class.
+   */
   constructor () {
     super()
 
@@ -30,19 +30,17 @@ export class DialogsComponentRegistration
   }
 
   /**
-     * Gets the dialogs memory scopes.
-     *
-     * @returns {MemoryScope[]} A list of MemoryScope.
-     */
+   * Gets the dialogs memory scopes.
+   * @returns {MemoryScope[]} A list of MemoryScope.
+   */
   getMemoryScopes (): MemoryScope[] {
     return this.services.mustMakeInstance<MemoryScope[]>('memoryScopes')
   }
 
   /**
-     * Gets the dialogs path resolvers.
-     *
-     * @returns {PathResolver[]} A list of PathResolver.
-     */
+   * Gets the dialogs path resolvers.
+   * @returns {PathResolver[]} A list of PathResolver.
+   */
   getPathResolvers (): PathResolver[] {
     return this.services.mustMakeInstance<PathResolver[]>('pathResolvers')
   }

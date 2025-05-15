@@ -25,7 +25,6 @@ export class TurnMemoryScope extends MemoryScope {
 
   /**
    * Gets the backing memory for this scope.
-   *
    * @param dialogContext - The DialogContext object for this turn.
    * @returns The memory for the scope.
    */
@@ -41,7 +40,6 @@ export class TurnMemoryScope extends MemoryScope {
 
   /**
    * Changes the backing object for the memory scope.
-   *
    * @param dialogContext - The DialogContext object for this turn.
    * @param memory - Memory object to set for the scope.
    */

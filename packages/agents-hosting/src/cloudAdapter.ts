@@ -57,7 +57,6 @@ export class CloudAdapter extends BaseAdapter {
 
   /**
    * Creates a connector client for a specific service URL and scope.
-   *
    * @param serviceUrl - The URL of the service to connect to
    * @param scope - The authentication scope to use
    * @returns A promise that resolves to a ConnectorClient instance
@@ -77,7 +76,6 @@ export class CloudAdapter extends BaseAdapter {
 
   /**
    * Sets the connector client on the turn context.
-   *
    * @param context - The current turn context
    * @protected
    */
@@ -292,6 +290,7 @@ export class CloudAdapter extends BaseAdapter {
    * Continues a conversation.
    * @param reference - The conversation reference to continue.
    * @param logic - The logic to execute.
+   * @param isResponse
    * @returns A promise representing the completion of the continue operation.
    */
   async continueConversation (reference: ConversationReference, logic: (revocableContext: TurnContext) => Promise<void>, isResponse: Boolean = false): Promise<void> {
@@ -309,10 +308,10 @@ export class CloudAdapter extends BaseAdapter {
   }
 
   /**
- * Processes the turn results and returns an InvokeResponse if applicable.
- * @param context - The TurnContext for the current turn.
- * @returns The InvokeResponse if applicable, otherwise undefined.
- */
+   * Processes the turn results and returns an InvokeResponse if applicable.
+   * @param context - The TurnContext for the current turn.
+   * @returns The InvokeResponse if applicable, otherwise undefined.
+   */
   protected processTurnResults (context: TurnContext): InvokeResponse | undefined {
     logger.info('<--Sending back turn results')
     // Handle ExpectedReplies scenarios where all activities have been buffered and sent back at once in an invoke response.

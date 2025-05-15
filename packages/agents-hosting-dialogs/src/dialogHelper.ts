@@ -18,7 +18,6 @@ import { Activity, ActivityTypes } from '@microsoft/agents-activity'
 
 /**
  * Runs a dialog from a given context and accessor.
- *
  * @param dialog The Dialog to run.
  * @param context TurnContext object for the current turn of conversation with the user.
  * @param accessor Defined methods for accessing the state property created in a State object.
@@ -108,7 +107,6 @@ export async function internalRun (
 
 /**
  * Executes the dialog by either continuing an existing dialog or starting a new one.
- *
  * @param context The TurnContext for the turn.
  * @param dialogId The ID of the dialog to start or continue.
  * @param dialogContext The DialogContext for the current turn of conversation.
@@ -132,7 +130,6 @@ async function innerRun (
 
 /**
  * Recursively walk up the dialog context stack to find the active DC.
- *
  * @param dialogContext DialogContext for the current turn of conversation with the user.
  * @returns Active DialogContext.
  */
@@ -147,7 +144,6 @@ export function getActiveDialogContext (dialogContext: DialogContext): DialogCon
 // Helper to send a trace activity with a memory snapshot of the active dialog DC.
 /**
  * Sends a trace activity containing a memory snapshot of the active dialog context.
- *
  * @param dialogContext The DialogContext for the current turn of conversation.
  * @returns A promise that resolves when the trace activity is sent.
  */

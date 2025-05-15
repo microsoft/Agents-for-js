@@ -23,7 +23,6 @@ export class AtPathResolver extends AliasPathResolver {
   /**
    * Transforms the path by replacing the '@' alias and appending the 'first()' function
    * to entity properties.
-   *
    * @param path The path to inspect and transform.
    * @returns The transformed path.
    */

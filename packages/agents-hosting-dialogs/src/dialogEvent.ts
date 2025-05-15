@@ -3,24 +3,24 @@
  */
 export interface DialogEvent {
   /**
-       * Flag indicating whether the event will be bubbled to the parent `DialogContext`.
-       */
+   * Flag indicating whether the event will be bubbled to the parent `DialogContext`.
+   */
   bubble: boolean;
 
   /**
-       * Name of the event being raised.
-       */
+   * Name of the event being raised.
+   */
   name: string;
 
   /**
-       * Optional. Value associated with the event.
-       */
+   * Optional. Value associated with the event.
+   */
   value?: any;
 }
 
 export interface DialogConfiguration {
   /**
-       * Static id of the dialog.
-       */
+   * Static id of the dialog.
+   */
   id?: string;
 }

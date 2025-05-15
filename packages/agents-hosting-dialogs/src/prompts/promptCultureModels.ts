@@ -2,46 +2,40 @@ import { Culture } from '@microsoft/recognizers-text-suite'
 
 export interface PromptCultureModel {
   /**
-     * Culture Model's Locale.
-     *
-     * @example
-     * "en-US"
-     */
+   * Culture Model's Locale.
+   * @example
+   * "en-US"
+   */
   locale: string;
   /**
-     * Culture Model's InlineSeparator.
-     *
-     * @example
-     * ", "
-     */
+   * Culture Model's InlineSeparator.
+   * @example
+   * ", "
+   */
   separator: string;
   /**
-     * Culture Model's InlineOr.
-     *
-     * @example
-     * " or "
-     */
+   * Culture Model's InlineOr.
+   * @example
+   * " or "
+   */
   inlineOr: string;
   /**
-     * Culture Model's InlineOrMore.
-     *
-     * @example
-     * ", or "
-     */
+   * Culture Model's InlineOrMore.
+   * @example
+   * ", or "
+   */
   inlineOrMore: string;
   /**
-     * Equivalent of "Yes" in Culture Model's Language.
-     *
-     * @example
-     * "Yes"
-     */
+   * Equivalent of "Yes" in Culture Model's Language.
+   * @example
+   * "Yes"
+   */
   yesInLanguage: string;
   /**
-     * Equivalent of "No" in Culture Model's Language.
-     *
-     * @example
-     * "No"
-     */
+   * Equivalent of "No" in Culture Model's Language.
+   * @example
+   * "No"
+   */
   noInLanguage: string;
 }
 
@@ -158,23 +152,21 @@ export class PromptCultureModels {
   }
 
   /**
-     * Retrieves a list of supported culture codes.
-     *
-     * @returns An array of supported locale strings.
-     * @private
-     */
+   * Retrieves a list of supported culture codes.
+   * @returns An array of supported locale strings.
+   * @private
+   */
   private static getSupportedCultureCodes (): string[] {
     return this.getSupportedCultures().map((c): string => c.locale)
   }
 
   /**
-     * Normalizes a given locale string to the nearest supported language.
-     *
-     * @param cultureCode The locale string to normalize (e.g., "en-US").
-     * @returns The normalized locale string.
-     * @remarks This is mostly a copy/paste from https://github.com/microsoft/Recognizers-Text/blob/master/JavaScript/packages/recognizers-text/src/culture.ts#L39
-     *          This doesn't directly use Recognizers-Text's MapToNearestLanguage because if they add language support before we do, it will break our prompts.
-     */
+   * Normalizes a given locale string to the nearest supported language.
+   * @param cultureCode The locale string to normalize (e.g., "en-US").
+   * @returns The normalized locale string.
+   * @remarks This is mostly a copy/paste from https://github.com/microsoft/Recognizers-Text/blob/master/JavaScript/packages/recognizers-text/src/culture.ts#L39
+   *          This doesn't directly use Recognizers-Text's MapToNearestLanguage because if they add language support before we do, it will break our prompts.
+   */
   static mapToNearestLanguage (cultureCode: string): string {
     if (cultureCode) {
       cultureCode = cultureCode.toLowerCase()
@@ -195,10 +187,9 @@ export class PromptCultureModels {
   }
 
   /**
-     * Retrieves a list of supported culture models.
-     *
-     * @returns An array of `PromptCultureModel` objects representing supported cultures.
-     */
+   * Retrieves a list of supported culture models.
+   * @returns An array of `PromptCultureModel` objects representing supported cultures.
+   */
   static getSupportedCultures = (): PromptCultureModel[] => [
     PromptCultureModels.Chinese,
     PromptCultureModels.Dutch,

@@ -15,6 +15,7 @@ export class ConversationState extends AgentState {
   /**
    * Creates a new instance of ConversationState.
    * @param storage The storage provider.
+   * @param namespace
    */
   constructor (storage: Storage, private readonly namespace: string = '') {
     super(storage, (context: TurnContext) => {

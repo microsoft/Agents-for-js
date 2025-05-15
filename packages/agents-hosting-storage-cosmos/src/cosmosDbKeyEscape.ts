@@ -46,6 +46,11 @@ export namespace CosmosDbKeyEscape {
     return truncateKey(`${sanitizedKey}${keySuffix || ''}`, compatibilityMode)
   }
 
+  /**
+   *
+   * @param key
+   * @param truncateKeysForCompatibility
+   */
   function truncateKey (key: string, truncateKeysForCompatibility?: boolean): string {
     if (truncateKeysForCompatibility === false) {
       return key
@@ -57,6 +62,10 @@ export namespace CosmosDbKeyEscape {
     return key
   }
 
+  /**
+   *
+   * @param key
+   */
   function hashKey (key: string): string {
     const hash = createHash('sha256')
     hash.update(key)

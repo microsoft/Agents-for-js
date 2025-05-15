@@ -19,7 +19,6 @@ const componentMemoryScopes = z.custom<ComponentMemoryScopes>((val: any) => type
 
 /**
  * Check if a ComponentRegistration is ComponentMemoryScopes or not.
- *
  * @param {any} component The component registration.
  * @returns {boolean} Type check result.
  */

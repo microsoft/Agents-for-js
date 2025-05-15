@@ -11,7 +11,6 @@
 export interface PathResolver {
   /**
    * Transforms the given path into a new format or namespace.
-   *
    * @param path - The path to inspect and transform.
    * @returns The transformed path.
    */

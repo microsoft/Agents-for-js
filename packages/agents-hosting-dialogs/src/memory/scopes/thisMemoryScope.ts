@@ -8,28 +8,26 @@ import { DialogContext } from '../../dialogContext'
 
 export class ThisMemoryScope extends MemoryScope {
   /**
-     * Initializes a new instance of the ThisMemoryScope class.
-     */
+   * Initializes a new instance of the ThisMemoryScope class.
+   */
   constructor () {
     super(ScopePath.this)
   }
 
   /**
-     * Gets the backing memory for this scope.
-     *
-     * @param dialogContext The DialogContext object for this turn.
-     * @returns The memory for the scope.
-     */
+   * Gets the backing memory for this scope.
+   * @param dialogContext The DialogContext object for this turn.
+   * @returns The memory for the scope.
+   */
   getMemory (dialogContext: DialogContext): object {
     return dialogContext.activeDialog ? dialogContext.activeDialog.state : {}
   }
 
   /**
-     * Changes the backing object for the memory scope.
-     *
-     * @param dialogContext The DialogContext object for this turn.
-     * @param memory Memory object to set for the scope.
-     */
+   * Changes the backing object for the memory scope.
+   * @param dialogContext The DialogContext object for this turn.
+   * @param memory Memory object to set for the scope.
+   */
   setMemory (dialogContext: DialogContext, memory: object): void {
     if (memory === undefined) {
       throw new Error('ThisMemoryScope.setMemory: undefined memory object passed in.')

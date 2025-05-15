@@ -11,6 +11,11 @@ class SimpleAdapter extends BaseAdapter {}
 describe('ActivityHandler', function () {
   const adapter = new SimpleAdapter()
 
+  /**
+   *
+   * @param activity
+   * @param handler
+   */
   async function processActivity (activity: Activity, handler: ActivityHandler) {
     if (!activity) {
       throw new Error('Missing activity')
@@ -291,15 +296,30 @@ describe('ActivityHandler', function () {
       onReactionsRemovedCalled = false
     })
 
+    /**
+     *
+     * @param context
+     * @param next
+     */
     function assertContextAndNext (context: TurnContext, next: () => Promise<void>) {
       assert(context, 'context not found')
       assert(next, 'next not found')
     }
 
+    /**
+     *
+     * @param flag
+     * @param {...any} args
+     */
     function assertFalseFlag (flag: boolean, ...args: string[]) {
       assert(!flag, `${args[0]}Called should not be true before the ${args.join(', ')} handlers are called.`)
     }
 
+    /**
+     *
+     * @param flag
+     * @param {...any} args
+     */
     function assertTrueFlag (flag: boolean, ...args: string[]) {
       assert(flag, `${args[0]}Called should be true after the ${args[0]} handlers are called.`)
     }

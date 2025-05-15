@@ -9,6 +9,14 @@ interface Token {
   normalized?: string;
 }
 
+/**
+ *
+ * @param token
+ * @param start
+ * @param end
+ * @param text
+ * @param normalized
+ */
 function assertToken (token: Token, start: number, end: number, text: string, normalized?: string): void {
   assert.strictEqual(token.start, start, `Invalid token.start of '${token.start}' for '${text}' token.`)
   assert.strictEqual(token.end, end, `Invalid token.end of '${token.end}' for '${text}' token.`)

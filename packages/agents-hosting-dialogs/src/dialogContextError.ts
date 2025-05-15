@@ -10,8 +10,8 @@ import { DialogInstance } from './dialogInstance'
  */
 export class DialogContextError extends Error {
   /**
-     * Represents the state of a dialog when an error occurred.
-     */
+   * Represents the state of a dialog when an error occurred.
+   */
   readonly dialogContext: {
     activeDialog?: string;
     parent?: string;
@@ -19,11 +19,10 @@ export class DialogContextError extends Error {
   }
 
   /**
-     * Construct a DialogError.
-     *
-     * @param {Error | string} error Source error or error message.
-     * @param {DialogContext} dialogContext Dialog context that is the source of the error.
-     */
+   * Construct a DialogError.
+   * @param {Error | string} error Source error or error message.
+   * @param {DialogContext} dialogContext Dialog context that is the source of the error.
+   */
   constructor (
     readonly error: Error | string,
     dialogContext: DialogContext

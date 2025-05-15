@@ -8,6 +8,9 @@ const server = express()
 server.use(express.json())
 server.use(authorizeJWT(authConfig))
 
+/**
+ *
+ */
 async function loadApp () {
   const moduleName = process.env.agentName || 'webChat'
   let module

@@ -10,11 +10,10 @@ import { Converter, ConverterFactory } from './converter'
  */
 export abstract class Configurable {
   /**
-     * Fluent method for configuring the object.
-     *
-     * @param config Configuration settings to apply.
-     * @returns The Configurable after the operation is complete.
-     */
+   * Fluent method for configuring the object.
+   * @param config Configuration settings to apply.
+   * @returns The Configurable after the operation is complete.
+   */
   configure (config: Record<string, unknown>): this {
     for (const key in config) {
       if (Object.prototype.hasOwnProperty.call(config, key)) {
@@ -47,9 +46,9 @@ export abstract class Configurable {
 
   /**
    * Gets the converter for the selector configuration.
-     * @param _property The key of the conditional selector configuration.
-     * @returns The converter for the selector configuration.
-     */
+   * @param _property The key of the conditional selector configuration.
+   * @returns The converter for the selector configuration.
+   */
   getConverter (_property: string): Converter | ConverterFactory {
     return undefined
   }

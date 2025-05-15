@@ -19,7 +19,6 @@ const logger = debug('agents:attachmentDownloader')
  *
  * This class provides functionality to filter and download attachments from a turn context,
  * supporting various content types and handling authentication for secure URLs.
- *
  * @typeParam TState - The type of the turn state used in the application.
  */
 export class AttachmentDownloader<TState extends TurnState = TurnState> implements InputFileDownloader<TState> {

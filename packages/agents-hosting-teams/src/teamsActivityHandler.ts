@@ -781,7 +781,7 @@ export class TeamsActivityHandler extends ActivityHandler {
 
   /**
    * Registers a handler for Teams message undelete event.
-   * @param {function} handler - The handler function.
+   * @param {Function} handler - The handler function.
    * @returns {this}
    */
   onTeamsMessageUndeleteEvent (handler: (context: TurnContext, next: () => Promise<void>) => Promise<void>): this {
@@ -792,7 +792,7 @@ export class TeamsActivityHandler extends ActivityHandler {
 
   /**
    * Registers a handler for Teams message edit event.
-   * @param {function} handler - The handler function.
+   * @param {Function} handler - The handler function.
    * @returns {this}
    */
   onTeamsMessageEditEvent (handler: (context: TurnContext, next: () => Promise<void>) => Promise<void>): this {
@@ -803,7 +803,7 @@ export class TeamsActivityHandler extends ActivityHandler {
 
   /**
    * Registers a handler for Teams message soft delete event.
-   * @param {function} handler - The handler function.
+   * @param {Function} handler - The handler function.
    * @returns {this}
    */
   onTeamsMessageSoftDeleteEvent (handler: (context: TurnContext, next: () => Promise<void>) => Promise<void>): this {
@@ -814,7 +814,7 @@ export class TeamsActivityHandler extends ActivityHandler {
 
   /**
    * Registers a handler for Teams members added event.
-   * @param {function} handler - The handler function.
+   * @param {Function} handler - The handler function.
    * @returns {this}
    */
   onTeamsMembersAddedEvent (
@@ -833,7 +833,7 @@ export class TeamsActivityHandler extends ActivityHandler {
 
   /**
    * Registers a handler for Teams members removed event.
-   * @param {function} handler - The handler function.
+   * @param {Function} handler - The handler function.
    * @returns {this}
    */
   onTeamsMembersRemovedEvent (
@@ -852,7 +852,7 @@ export class TeamsActivityHandler extends ActivityHandler {
 
   /**
    * Registers a handler for Teams channel created event.
-   * @param {function} handler - The handler function.
+   * @param {Function} handler - The handler function.
    * @returns {this}
    */
   onTeamsChannelCreatedEvent (
@@ -871,7 +871,7 @@ export class TeamsActivityHandler extends ActivityHandler {
 
   /**
    * Registers a handler for Teams channel deleted event.
-   * @param {function} handler - The handler function.
+   * @param {Function} handler - The handler function.
    * @returns {this}
    */
   onTeamsChannelDeletedEvent (
@@ -890,7 +890,7 @@ export class TeamsActivityHandler extends ActivityHandler {
 
   /**
    * Registers a handler for Teams channel renamed event.
-   * @param {function} handler - The handler function.
+   * @param {Function} handler - The handler function.
    * @returns {this}
    */
   onTeamsChannelRenamedEvent (
@@ -909,7 +909,7 @@ export class TeamsActivityHandler extends ActivityHandler {
 
   /**
    * Registers a handler for Teams team archived event.
-   * @param {function} handler - The handler function.
+   * @param {Function} handler - The handler function.
    * @returns {this}
    */
   onTeamsTeamArchivedEvent (
@@ -923,7 +923,7 @@ export class TeamsActivityHandler extends ActivityHandler {
 
   /**
    * Registers a handler for Teams team deleted event.
-   * @param {function} handler - The handler function.
+   * @param {Function} handler - The handler function.
    * @returns {this}
    */
   onTeamsTeamDeletedEvent (
@@ -937,7 +937,7 @@ export class TeamsActivityHandler extends ActivityHandler {
 
   /**
    * Registers a handler for Teams team hard deleted event.
-   * @param {function} handler - The handler function.
+   * @param {Function} handler - The handler function.
    * @returns {this}
    */
   onTeamsTeamHardDeletedEvent (
@@ -951,7 +951,7 @@ export class TeamsActivityHandler extends ActivityHandler {
 
   /**
    * Registers a handler for Teams channel restored event.
-   * @param {function} handler - The handler function.
+   * @param {Function} handler - The handler function.
    * @returns {this}
    */
   onTeamsChannelRestoredEvent (
@@ -970,7 +970,7 @@ export class TeamsActivityHandler extends ActivityHandler {
 
   /**
    * Registers a handler for Teams team renamed event.
-   * @param {function} handler - The handler function.
+   * @param {Function} handler - The handler function.
    * @returns {this}
    */
   onTeamsTeamRenamedEvent (
@@ -984,7 +984,7 @@ export class TeamsActivityHandler extends ActivityHandler {
 
   /**
    * Registers a handler for Teams team restored event.
-   * @param {function} handler - The handler function.
+   * @param {Function} handler - The handler function.
    * @returns {this}
    */
   onTeamsTeamRestoredEvent (
@@ -998,7 +998,7 @@ export class TeamsActivityHandler extends ActivityHandler {
 
   /**
    * Registers a handler for Teams team unarchived event.
-   * @param {function} handler - The handler function.
+   * @param {Function} handler - The handler function.
    * @returns {this}
    */
   onTeamsTeamUnarchivedEvent (
@@ -1081,7 +1081,7 @@ export class TeamsActivityHandler extends ActivityHandler {
 
   /**
    * Registers a handler for Teams meeting start event.
-   * @param {function} handler - The handler function.
+   * @param {Function} handler - The handler function.
    * @returns {this}
    */
   onTeamsMeetingStartEvent (
@@ -1105,7 +1105,7 @@ export class TeamsActivityHandler extends ActivityHandler {
 
   /**
    * Registers a handler for Teams meeting end event.
-   * @param {function} handler - The handler function.
+   * @param {Function} handler - The handler function.
    * @returns {this}
    */
   onTeamsMeetingEndEvent (
@@ -1129,7 +1129,7 @@ export class TeamsActivityHandler extends ActivityHandler {
 
   /**
    * Registers a handler for Teams read receipt event.
-   * @param {function} handler - The handler function.
+   * @param {Function} handler - The handler function.
    * @returns {this}
    */
   onTeamsReadReceiptEvent (
@@ -1143,7 +1143,7 @@ export class TeamsActivityHandler extends ActivityHandler {
 
   /**
    * Registers a handler for Teams meeting participants join event.
-   * @param {function} handler - The handler function.
+   * @param {Function} handler - The handler function.
    * @returns {this}
    */
   onTeamsMeetingParticipantsJoinEvent (
@@ -1167,7 +1167,7 @@ export class TeamsActivityHandler extends ActivityHandler {
 
   /**
    * Registers a handler for Teams meeting participants leave event.
-   * @param {function} handler - The handler function.
+   * @param {Function} handler - The handler function.
    * @returns {this}
    */
   onTeamsMeetingParticipantsLeaveEvent (

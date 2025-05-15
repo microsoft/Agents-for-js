@@ -10,11 +10,10 @@ import { DialogContext } from './dialogContext'
  */
 export interface TemplateInterface<T, D = Record<string, unknown>> {
   /**
-     * Given the turn context bind to the data to create the object
-     *
-     * @param dialogContext DialogContext.
-     * @param data Data to bind to.
-     * @returns Instance of T.
-     */
+   * Given the turn context bind to the data to create the object
+   * @param dialogContext DialogContext.
+   * @param data Data to bind to.
+   * @returns Instance of T.
+   */
   bind(dialogContext: DialogContext, data?: D): Promise<T>;
 }

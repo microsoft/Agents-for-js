@@ -9,7 +9,6 @@ import { Configuration } from './configuration'
 
 /**
  * Abstract base class for defining an AgentComponent.
- *
  * @remarks
  * An `AgentComponent` allows the registration of services, custom actions, memory scopes, and adapters.
  * To make components available to the system, derive from this class and implement the `configureServices` method.
@@ -19,7 +18,6 @@ import { Configuration } from './configuration'
 export abstract class AgentComponent {
   /**
    * A Zod schema for validating that an object is an `AgentComponent`.
-   *
    * @remarks
    * This schema checks if the object has a `configureServices` method.
    */
@@ -29,7 +27,6 @@ export abstract class AgentComponent {
 
   /**
    * Configures the services, custom actions, memory scopes, and adapters for the component.
-   *
    * @param services - The service collection to which services can be added.
    * @param configuration - The configuration object for accessing settings.
    */

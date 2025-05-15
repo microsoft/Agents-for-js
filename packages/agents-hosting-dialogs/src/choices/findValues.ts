@@ -64,7 +64,6 @@ export interface SortedValue {
  * functions like `findChoices()` and `recognizeChoices()` are layered above this function.  In most
  * cases its easier to just call one of the higher level functions instead but this function contains
  * the fuzzy search algorithm that drives choice recognition.
- *
  * @param utterance The text or user utterance to search over.
  * @param values List of values to search over.
  * @param options (Optional) options used to tweak the search that's performed.
@@ -75,6 +74,11 @@ export function findValues (
   values: SortedValue[],
   options?: FindValuesOptions
 ): ModelResult<FoundValue>[] {
+  /**
+   *
+   * @param token
+   * @param startPos
+   */
   function indexOfToken (token: Token, startPos: number): number {
     for (let i: number = startPos; i < tokens.length; i++) {
       if (tokens[i].normalized === token.normalized) {
@@ -85,6 +89,11 @@ export function findValues (
     return -1
   }
 
+  /**
+   *
+   * @param utterance
+   * @param values
+   */
   function findExactMatch (utterance: string, values: SortedValue[]): ModelResult<FoundValue> | null {
     const entry = values.find(({ value }) => value.toLowerCase() === utterance.toLowerCase())
     if (!entry) {
@@ -108,6 +117,13 @@ export function findValues (
     return [exactMatch]
   }
 
+  /**
+   *
+   * @param index
+   * @param value
+   * @param vTokens
+   * @param startPos
+   */
   function matchValue (
     index: number,
     value: string,

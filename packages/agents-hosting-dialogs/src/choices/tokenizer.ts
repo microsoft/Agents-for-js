@@ -30,7 +30,6 @@ export interface Token {
 
 /**
  * Signature for an alternate word breaker.
- *
  * @param text The text to be tokenized.
  * @param locale (Optional) locale of the text if known.
  */
@@ -38,7 +37,6 @@ export type TokenizerFunction = (text: string, locale?: string) => Token[]
 
 /**
  * Simple tokenizer that breaks on spaces and punctuation.
- *
  * @param text The input text.
  * @param _locale Optional, identifies the locale of the input text.
  * @returns A list of tokens.
@@ -47,6 +45,10 @@ export function defaultTokenizer (text: string, _locale?: string): Token[] {
   const tokens: Token[] = []
   let token: Token | undefined
 
+  /**
+   *
+   * @param end
+   */
   function appendToken (end: number): void {
     if (token) {
       token.end = end

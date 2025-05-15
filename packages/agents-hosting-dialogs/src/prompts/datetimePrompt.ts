@@ -12,59 +12,56 @@ import { Activity, InputHints } from '@microsoft/agents-activity'
  */
 export interface DateTimeResolution {
   /**
-     * TIMEX expression representing ambiguity of the recognized time.
-     */
+   * TIMEX expression representing ambiguity of the recognized time.
+   */
   timex: string;
 
   /**
-     * Type of time recognized. Possible values are 'date', 'time', 'datetime', 'daterange',
-     * 'timerange', 'datetimerange', 'duration', or 'set'.
-     */
+   * Type of time recognized. Possible values are 'date', 'time', 'datetime', 'daterange',
+   * 'timerange', 'datetimerange', 'duration', or 'set'.
+   */
   type: string;
 
   /**
-     * Value of the specified `type` that's a reasonable approximation given the ambiguity
-     * of the `timex`.
-     */
+   * Value of the specified `type` that's a reasonable approximation given the ambiguity
+   * of the `timex`.
+   */
   value: string;
 }
 
 /**
  * Prompts a user to enter a datetime expression.
- *
  * @remarks
  * By default the prompt will return to the calling dialog a {@link DateTimeResolution | DateTimeResolution[] }.
  */
 export class DateTimePrompt extends Prompt<DateTimeResolution[]> {
   /**
-     * The prompts default locale that should be recognized.
-     */
+   * The prompts default locale that should be recognized.
+   */
   defaultLocale: string | undefined
 
   /**
-     * Creates a new DateTimePrompt instance.
-     *
-     * @param dialogId Unique ID of the dialog within its parent {@link DialogSet} or {@link ComponentDialog}.
-     * @param validator (Optional) validator that will be called each time the user responds to the prompt.
-     * @param defaultLocale (Optional) locale to use if the {@link Activity.locale | TurnContext.activity.locale} is not specified. Defaults to a value of `en-us`.
-     */
+   * Creates a new DateTimePrompt instance.
+   * @param dialogId Unique ID of the dialog within its parent {@link DialogSet} or {@link ComponentDialog}.
+   * @param validator (Optional) validator that will be called each time the user responds to the prompt.
+   * @param defaultLocale (Optional) locale to use if the {@link Activity.locale | TurnContext.activity.locale} is not specified. Defaults to a value of `en-us`.
+   */
   constructor (dialogId: string, validator?: PromptValidator<DateTimeResolution[]>, defaultLocale?: string) {
     super(dialogId, validator)
     this.defaultLocale = defaultLocale
   }
 
   /**
-     * Prompts the user for input.
-     *
-     * @param context TurnContext, context for the current
-     * turn of conversation with the user.
-     * @param state Contains state for the current instance of the prompt on the dialog stack.
-     * @param options A PromptOptions object constructed
-     * from the options initially provided in the call to Prompt.
-     * @param isRetry `true` if this is the first time this prompt dialog instance
-     * on the stack is prompting the user for input; otherwise, false.
-     * @returns A `Promise` representing the asynchronous operation.
-     */
+   * Prompts the user for input.
+   * @param context TurnContext, context for the current
+   * turn of conversation with the user.
+   * @param state Contains state for the current instance of the prompt on the dialog stack.
+   * @param options A PromptOptions object constructed
+   * from the options initially provided in the call to Prompt.
+   * @param isRetry `true` if this is the first time this prompt dialog instance
+   * on the stack is prompting the user for input; otherwise, false.
+   * @returns A `Promise` representing the asynchronous operation.
+   */
   protected async onPrompt (
     context: TurnContext,
     state: any,
@@ -79,15 +76,14 @@ export class DateTimePrompt extends Prompt<DateTimeResolution[]> {
   }
 
   /**
-     * Attempts to recognize the user's input.
-     *
-     * @param context TurnContext, context for the current
-     * turn of conversation with the user.
-     * @param _state Contains state for the current instance of the prompt on the dialog stack.
-     * @param _options A PromptOptions object constructed
-     * from the options initially provided in the call to Prompt.
-     * @returns A `Promise` representing the asynchronous operation.
-     */
+   * Attempts to recognize the user's input.
+   * @param context TurnContext, context for the current
+   * turn of conversation with the user.
+   * @param _state Contains state for the current instance of the prompt on the dialog stack.
+   * @param _options A PromptOptions object constructed
+   * from the options initially provided in the call to Prompt.
+   * @returns A `Promise` representing the asynchronous operation.
+   */
   protected async onRecognize (
     context: TurnContext,
     _state: any,

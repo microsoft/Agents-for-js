@@ -8,17 +8,14 @@ import { ActivityHandler, AgentApplication, AuthConfiguration, authorizeJWT, Clo
 
 /**
  * Starts an Express server for handling Agent requests.
- *
  * @param agent - The AgentApplication instance to process incoming activities.
  * @param authConfiguration - Optional custom authentication configuration. If not provided,
  *                           configuration will be loaded from environment variables.
  * @returns void
- *
  * @remarks
  * This function sets up an Express server with the necessary middleware and routes for handling
  * bot requests. It configures JWT authorization middleware and sets up the message endpoint.
  * The server will listen on the port specified in the environment (or 3978 by default).
- *
  * @example
  * ```typescript
  * import { AgentApplication, TurnState } from '@microsoft/agents-hosting';

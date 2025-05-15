@@ -14,6 +14,10 @@ import path from 'path'
 
 import { MsalCachePlugin } from './msalCachePlugin.js'
 
+/**
+ *
+ * @param settings
+ */
 async function acquireToken (settings: ConnectionSettings): Promise<string> {
   const msalConfig = {
     auth: {

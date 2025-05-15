@@ -47,11 +47,10 @@ export class DialogManager extends Configurable {
   private readonly _initialTurnState: TurnContextStateCollection = new TurnContextStateCollection()
 
   /**
-     * Creates an instance of the DialogManager class.
-     *
-     * @param rootDialog Optional, root Dialog to use.
-     * @param dialogStateProperty Optional, alternate name for the dialogState property. (Default is "DialogStateProperty")
-     */
+   * Creates an instance of the DialogManager class.
+   * @param rootDialog Optional, root Dialog to use.
+   * @param dialogStateProperty Optional, alternate name for the dialogState property. (Default is "DialogStateProperty")
+   */
   constructor (rootDialog?: Dialog, dialogStateProperty?: string) {
     super()
     if (rootDialog) {
@@ -65,17 +64,16 @@ export class DialogManager extends Configurable {
   userState?: UserState
 
   /**
-     * Values that will be copied to the `TurnContext.turnState` at the beginning of each turn.
-     *
-     * @returns The turn state collection.
-     */
+   * Values that will be copied to the `TurnContext.turnState` at the beginning of each turn.
+   * @returns The turn state collection.
+   */
   get initialTurnState (): TurnContextStateCollection {
     return this._initialTurnState
   }
 
   /**
-     * Root dialog to start from [onTurn()](#onturn) method.
-     */
+   * Root dialog to start from [onTurn()](#onturn) method.
+   */
   set rootDialog (value: Dialog) {
     this.dialogs = new DialogSet()
     if (value) {
@@ -88,10 +86,9 @@ export class DialogManager extends Configurable {
   }
 
   /**
-     * Gets the root Dialog ID.
-     *
-     * @returns The root Dialog ID.
-     */
+   * Gets the root Dialog ID.
+   * @returns The root Dialog ID.
+   */
   get rootDialog (): Dialog {
     return this._rootDialogId ? this.dialogs.find(this._rootDialogId) : undefined
   }
@@ -101,21 +98,19 @@ export class DialogManager extends Configurable {
   expireAfter?: number
 
   /**
-     * Set configuration settings.
-     *
-     * @param config Configuration settings to apply.
-     * @returns The cofigured DialogManager context.
-     */
+   * Set configuration settings.
+   * @param config Configuration settings to apply.
+   * @returns The cofigured DialogManager context.
+   */
   configure (config: Partial<DialogManagerConfiguration>): this {
     return super.configure(config)
   }
 
   /**
-     * Runs dialog system in the context of a TurnContext.
-     *
-     * @param context TurnContext for the current turn of conversation with the user.
-     * @returns Result of running the logic against the activity.
-     */
+   * Runs dialog system in the context of a TurnContext.
+   * @param context TurnContext for the current turn of conversation with the user.
+   * @returns Result of running the logic against the activity.
+   */
   async onTurn (context: TurnContext): Promise<DialogManagerResult> {
     // Ensure properly configured
     if (!this._rootDialogId) {

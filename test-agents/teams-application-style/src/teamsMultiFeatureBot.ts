@@ -309,6 +309,10 @@ app.activity(ActivityTypes.Message, async (context: TurnContext, state: Applicat
   await context.sendActivity(MessageFactory.text('Type "/teamsinfo" or "/taskModule"'))
 })
 
+/**
+ *
+ * @param text
+ */
 async function findPackages (text: string): Promise<[{ item1: string, item2: string, item3: string, item4: string, item5: string }]> {
   const response = await fetch(`https://azuresearch-usnc.nuget.org/query?q=id:${text}&prerelease=true`)
   const status = response.status
@@ -324,6 +328,9 @@ async function findPackages (text: string): Promise<[{ item1: string, item2: str
   }
 }
 
+/**
+ *
+ */
 function getAdaptiveCard (): MessagingExtensionResult {
   const previewCard: Partial<ThumbnailCard> = {
     title: 'Adaptive Card',
@@ -353,6 +360,9 @@ function getAdaptiveCard (): MessagingExtensionResult {
   }
 }
 
+/**
+ *
+ */
 function getTaskModuleHeroCardOptions (): Attachment {
   const taskModuleActions: any = []
   const taskModules = [
@@ -384,6 +394,9 @@ function getTaskModuleHeroCardOptions (): Attachment {
   return attachment
 }
 
+/**
+ *
+ */
 function createAdaptiveCardAttachment (): Attachment | undefined {
   const adaptiveCardAttachment: Attachment = {
     contentType: CardFactory.contentTypes.adaptiveCard,
@@ -393,6 +406,10 @@ function createAdaptiveCardAttachment (): Attachment | undefined {
   return adaptiveCardAttachment
 }
 
+/**
+ *
+ * @param uiConstants
+ */
 function setTaskInfo (uiConstants: UISettings): TaskModuleTaskInfo {
   const taskInfo: TaskModuleTaskInfo = {
     height: uiConstants.height,

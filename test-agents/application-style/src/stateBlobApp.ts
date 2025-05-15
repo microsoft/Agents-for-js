@@ -76,6 +76,10 @@ app.conversationUpdate('membersAdded', async (context: TurnContext, state: Appli
   }
 })
 
+/**
+ *
+ * @param turnContext
+ */
 async function showTranscript (turnContext: TurnContext) {
   if (!turnContext.activity.conversation) {
     await turnContext.sendActivity('Conversation ID is undefined.')

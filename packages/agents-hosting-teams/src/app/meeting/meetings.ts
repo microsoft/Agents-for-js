@@ -28,7 +28,6 @@ export class Meetings<TState extends TurnState> {
   /**
    * Registers a handler for meeting start events.
    * This event occurs when a Teams meeting begins.
-   *
    * @param handler Function to handle the meeting start event
    * @returns The TeamsApplication instance for chaining
    */
@@ -56,7 +55,6 @@ export class Meetings<TState extends TurnState> {
   /**
    * Registers a handler for meeting end events.
    * This event occurs when a Teams meeting ends.
-   *
    * @param handler Function to handle the meeting end event
    * @returns The TeamsApplication instance for chaining
    */
@@ -84,7 +82,6 @@ export class Meetings<TState extends TurnState> {
   /**
    * Registers a handler for participant join events.
    * This event occurs when participants join a Teams meeting.
-   *
    * @param handler Function to handle the participants join event
    * @returns The TeamsApplication instance for chaining
    */
@@ -112,7 +109,6 @@ export class Meetings<TState extends TurnState> {
   /**
    * Registers a handler for participant leave events.
    * This event occurs when participants leave a Teams meeting.
-   *
    * @param handler Function to handle the participants leave event
    * @returns The TeamsApplication instance for chaining
    */

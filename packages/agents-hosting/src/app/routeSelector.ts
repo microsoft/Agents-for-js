@@ -7,7 +7,6 @@ import { TurnContext } from '../turnContext'
 
 /**
  * A function that determines whether a specific condition is met in the given turn context.
- *
  * @param context - The turn context for the current operation.
  * @returns A promise that resolves to a boolean indicating whether the condition is met.
  */

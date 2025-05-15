@@ -38,7 +38,6 @@ export interface FoundChoice {
 
 /**
  * Mid-level search function for recognizing a choice in an utterance.
- *
  * @param utterance The text or user utterance to search over. For an incoming 'message' activity you can simply use `context.activity.text`.
  * @param choices List of choices to search over.
  * @param options (Optional) options used to tweak the search that's performed.

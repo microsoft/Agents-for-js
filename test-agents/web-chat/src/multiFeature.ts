@@ -173,6 +173,10 @@ export class MultiFeatureHandler extends ActivityHandler {
     const promises = validAttachments.map(async a => await this.downloadAttachmentAndWrite(a))
     const successfulSaves = await Promise.all(promises)
 
+    /**
+     *
+     * @param localAttachmentData
+     */
     async function replyForReceivedAttachments (localAttachmentData: {
       fileName: string
       localPath: string

@@ -49,7 +49,6 @@ export class AgentClient {
 
   /**
    * Creates a new instance of the AgentClient class.
-   *
    * @param agentConfigKey The name of the agent, used to locate configuration in environment variables
    * @throws Error if required configuration is missing
    */
@@ -59,7 +58,6 @@ export class AgentClient {
 
   /**
    * Sends an activity to another agent and handles the conversation state.
-   *
    * @param activity The activity to send to the target agent
    * @param authConfig Authentication configuration used to obtain access tokens
    * @param conversationState State manager to store conversation data
@@ -116,7 +114,6 @@ export class AgentClient {
 
   /**
    * Loads agent configuration from environment variables based on the agent name.
-   *
    * @param agentName The name of the agent to load configuration for
    * @returns The agent client configuration
    * @throws Error if any required configuration is missing

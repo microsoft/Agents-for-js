@@ -59,6 +59,11 @@ app.activity(ActivityTypes.Message, async (context: TurnContext, state: TurnStat
   }
 })
 
+/**
+ *
+ * @param context
+ * @param state
+ */
 async function showGraphProfile (context: TurnContext, state: TurnState): Promise<void> {
   const userTokenResponse = await app.authorization.getToken(context)
   if (userTokenResponse.status === TokenRequestStatus.Success) {

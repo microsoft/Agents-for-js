@@ -25,13 +25,12 @@ export class Recognizer extends Configurable implements RecognizerConfiguration 
    */
   id?: string
   /**
-     * To recognize intents and entities in a users utterance.
-     *
-     * @param {DialogContext} _dialogContext Dialog Context.
-     * @param {Partial<Activity>} _activity Activity.
-     * @param {Record<string, string>} _telemetryProperties Additional properties to be logged to telemetry with event.
-     * @param {Record<string, number>} _telemetryMetrics Additional metrics to be logged to telemetry with event.
-     */
+   * To recognize intents and entities in a users utterance.
+   * @param {DialogContext} _dialogContext Dialog Context.
+   * @param {Partial<Activity>} _activity Activity.
+   * @param {Record<string, string>} _telemetryProperties Additional properties to be logged to telemetry with event.
+   * @param {Record<string, number>} _telemetryMetrics Additional metrics to be logged to telemetry with event.
+   */
   recognize (
     _dialogContext: DialogContext,
     _activity: Partial<Activity>,
@@ -42,11 +41,10 @@ export class Recognizer extends Configurable implements RecognizerConfiguration 
   }
 
   /**
-     * Creates choose intent result in the case that there are conflicting or ambiguous signals from the recognizers.
-     *
-     * @param {Record<string, RecognizerResult>} recognizerResults A group of recognizer results.
-     * @returns {RecognizerResult} Recognizer result which is ChooseIntent.
-     */
+   * Creates choose intent result in the case that there are conflicting or ambiguous signals from the recognizers.
+   * @param {Record<string, RecognizerResult>} recognizerResults A group of recognizer results.
+   * @returns {RecognizerResult} Recognizer result which is ChooseIntent.
+   */
   protected createChooseIntentResult (recognizerResults: Record<string, RecognizerResult>): RecognizerResult {
     let text: string = ''
     let sentiment: Record<string, any> = {}
@@ -87,13 +85,12 @@ export class Recognizer extends Configurable implements RecognizerConfiguration 
   }
 
   /**
-     * Uses the RecognizerResult to create a list of properties to be included when tracking the result in telemetry.
-     *
-     * @param {RecognizerResult} recognizerResult Recognizer Result.
-     * @param {Record<string, string>} telemetryProperties A list of properties to append or override the properties created using the RecognizerResult.
-     * @param {DialogContext} _dialogContext Dialog Context.
-     * @returns {Record<string, string>} A collection of properties that can be included when calling the TrackEvent method on the TelemetryClient.
-     */
+   * Uses the RecognizerResult to create a list of properties to be included when tracking the result in telemetry.
+   * @param {RecognizerResult} recognizerResult Recognizer Result.
+   * @param {Record<string, string>} telemetryProperties A list of properties to append or override the properties created using the RecognizerResult.
+   * @param {DialogContext} _dialogContext Dialog Context.
+   * @returns {Record<string, string>} A collection of properties that can be included when calling the TrackEvent method on the TelemetryClient.
+   */
   protected fillRecognizerResultTelemetryProperties (
     recognizerResult: RecognizerResult,
     telemetryProperties: Record<string, string>,

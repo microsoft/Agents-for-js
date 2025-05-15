@@ -10,17 +10,15 @@ import { AttachmentData } from './connector-client/attachmentData'
 /**
  * Defines a handler for processing and sending activities.
  * Used for middleware that needs to intercept or modify activities being sent.
- *
- * @param context The current turn context
- * @param activities The activities being sent
- * @param next Function to call to continue the middleware chain
+ * @param {TurnContext} context The current turn context
+ * @param {Activity[]} activities The activities being sent
+ * @param {() => Promise<ResourceResponse[]>} next Function to call to continue the middleware chain
  */
 export type SendActivitiesHandler = (context: TurnContext, activities: Activity[], next: () => Promise<ResourceResponse[]>) => Promise<ResourceResponse[]>
 
 /**
  * Defines a handler for updating an activity.
  * Used for middleware that needs to intercept or modify activity updates.
- *
  * @param context The current turn context
  * @param activity The activity being updated
  * @param next Function to call to continue the middleware chain
@@ -30,7 +28,6 @@ export type UpdateActivityHandler = (context: TurnContext, activity: Activity, n
 /**
  * Defines a handler for deleting an activity.
  * Used for middleware that needs to intercept or handle activity deletions.
- *
  * @param context The current turn context
  * @param reference Reference to the activity being deleted
  * @param next Function to call to continue the middleware chain
@@ -76,7 +73,6 @@ export class TurnContext {
 
   /**
    * Initializes a new instance of the TurnContext class.
-   *
    * @param adapterOrContext The adapter that created this context, or another TurnContext to clone
    * @param request The activity for the turn (required when first parameter is an adapter)
    */
@@ -104,7 +100,6 @@ export class TurnContext {
    *
    * Trace activities are typically used for debugging and are only visible in
    * channels that support them, like the Bot Framework Emulator.
-   *
    * @param name The name/category of the trace
    * @param value The value/data to include in the trace
    * @param valueType Optional type name for the value
@@ -130,7 +125,6 @@ export class TurnContext {
    * This is the primary method used to respond to the user. It automatically
    * addresses the response to the correct conversation and recipient using
    * information from the incoming activity.
-   *
    * @param activityOrText The activity to send or a string for a simple message
    * @param speak Optional text to be spoken by the agent
    * @param inputHint Optional input hint to indicate if the agent is expecting input
@@ -158,7 +152,6 @@ export class TurnContext {
    * This method applies conversation references to each activity and
    * emits them through the middleware chain before sending them to
    * the adapter.
-   *
    * @param activities The array of activities to send
    * @returns A promise that resolves to an array of resource responses
    */
@@ -214,7 +207,6 @@ export class TurnContext {
    *
    * This can be used to edit previously sent activities, for example to
    * update the content of an adaptive card or change a message.
-   *
    * @param activity The activity to update with its ID specified
    * @returns A promise that resolves when the activity has been updated
    */
@@ -228,7 +220,6 @@ export class TurnContext {
 
   /**
    * Deletes an activity from the conversation.
-   *
    * @param idOrReference The ID of the activity to delete or a conversation reference
    * @returns A promise that resolves when the activity has been deleted
    */
@@ -245,7 +236,6 @@ export class TurnContext {
 
   /**
    * Uploads an attachment to the conversation.
-   *
    * @param conversationId The ID of the conversation
    * @param attachmentData The attachment data to upload
    * @returns A promise that resolves to the resource response
@@ -256,7 +246,6 @@ export class TurnContext {
 
   /**
    * Gets information about an attachment.
-   *
    * @param attachmentId The ID of the attachment
    * @returns A promise that resolves to the attachment information
    */
@@ -266,7 +255,6 @@ export class TurnContext {
 
   /**
    * Gets the content of an attachment.
-   *
    * @param attachmentId The ID of the attachment
    * @param viewId The view to get
    * @returns A promise that resolves to a readable stream of the attachment content
@@ -280,7 +268,6 @@ export class TurnContext {
    *
    * This method follows a middleware pattern, allowing multiple handlers to
    * be chained together. Handlers can modify activities or inject new ones.
-   *
    * @param handler The handler to register
    * @returns The current TurnContext instance for chaining
    */
@@ -291,7 +278,6 @@ export class TurnContext {
 
   /**
    * Registers a handler for intercepting activity updates.
-   *
    * @param handler The handler to register
    * @returns The current TurnContext instance for chaining
    */
@@ -302,7 +288,6 @@ export class TurnContext {
 
   /**
    * Registers a handler for intercepting activity deletions.
-   *
    * @param handler The handler to register
    * @returns The current TurnContext instance for chaining
    */
@@ -315,7 +300,6 @@ export class TurnContext {
    * Copies the properties of this TurnContext to another TurnContext.
    *
    * Used internally when cloning contexts.
-   *
    * @param context The context to copy to
    * @protected
    */
@@ -401,7 +385,6 @@ export class TurnContext {
    * This internal method implements the middleware pattern, allowing
    * handlers to be chained together with each having the option to
    * short-circuit the chain.
-   *
    * @param handlers Array of handlers to execute
    * @param arg The argument to pass to each handler
    * @param next The function to execute at the end of the middleware chain

@@ -1,8 +1,6 @@
 /**
- * @private
  * Normalizes an incoming payload by converting the `bot` property in `relatesTo` to `agent`.
  * This ensures compatibility with the activity wire protocol.
- *
  * @param payload - The incoming payload object to normalize.
  * @returns The normalized payload object with `bot` replaced by `agent` in `relatesTo`.
  */
@@ -34,6 +32,10 @@ export function normalizeOutgoingActivity (payload: any): object {
   return payload
 }
 
+/**
+ *
+ * @param payload
+ */
 export function normalizeTokenExchangeState (payload: any): object {
   if (payload['conversation'] && payload['conversation']['agent']) {
     const conversation = payload['conversation']

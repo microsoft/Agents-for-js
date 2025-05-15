@@ -84,6 +84,8 @@ export class UserTokenClient {
    * @param appId The application ID.
    * @param cnxName The connection name.
    * @param activity The activity.
+   * @param conversationReference
+   * @param relatesTo
    * @returns A promise that resolves to the signing resource.
    */
   async getSignInResource (appId: string, cnxName: string, conversationReference: ConversationReference, relatesTo?: ConversationReference) : Promise<SigningResource> {

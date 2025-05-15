@@ -14,7 +14,6 @@ import { Dialog } from '../../dialog'
 export class ClassMemoryScope extends MemoryScope {
   /**
    * Initializes a new instance of the ClassMemoryScope class.
-   *
    * @param name - Name of the scope class. Defaults to `ScopePath.class`.
    */
   constructor (name = ScopePath.class) {
@@ -23,7 +22,6 @@ export class ClassMemoryScope extends MemoryScope {
 
   /**
    * Gets the backing memory for this scope.
-   *
    * @param dialogContext - The DialogContext object for this turn.
    * @returns The memory for the scope, containing cloned properties of the active dialog.
    */
@@ -57,7 +55,6 @@ export class ClassMemoryScope extends MemoryScope {
 
   /**
    * Override to find the dialog instance referenced by the scope.
-   *
    * @param dialogContext - Current dialog context.
    * @returns The dialog instance referenced by the scope, or undefined if not found.
    */
@@ -66,6 +63,10 @@ export class ClassMemoryScope extends MemoryScope {
   }
 }
 
+/**
+ *
+ * @param prop
+ */
 function isExpression (prop: any): prop is ExpressionResolver {
   return typeof prop === 'object' && typeof prop['tryGetValue'] === 'function'
 }

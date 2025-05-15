@@ -65,6 +65,10 @@ export class OAuthFlow {
   /**
    * Creates a new instance of OAuthFlow.
    * @param userState The user state.
+   * @param absOauthConnectionName
+   * @param tokenClient
+   * @param cardTitle
+   * @param cardText
    */
   constructor (userState: UserState, absOauthConnectionName: string, tokenClient?: UserTokenClient, cardTitle?: string, cardText?: string) {
     this.state = new FlowState()

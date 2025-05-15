@@ -18,33 +18,33 @@ import { Activity, ActivityTypes, InputHints } from '@microsoft/agents-activity'
  */
 export enum ListStyle {
   /**
-     * Don't include any choices for prompt.
-     */
+   * Don't include any choices for prompt.
+   */
   none,
 
   /**
-     * Automatically select the appropriate style for the current channel.
-     */
+   * Automatically select the appropriate style for the current channel.
+   */
   auto,
 
   /**
-     * Add choices to prompt as an inline list.
-     */
+   * Add choices to prompt as an inline list.
+   */
   inline,
 
   /**
-     * Add choices to prompt as a numbered list.
-     */
+   * Add choices to prompt as a numbered list.
+   */
   list,
 
   /**
-     * Add choices to prompt as suggested actions.
-     */
+   * Add choices to prompt as suggested actions.
+   */
   suggestedAction,
 
   /**
-     * Add choices to prompt as a HeroCard with buttons.
-     */
+   * Add choices to prompt as a HeroCard with buttons.
+   */
   heroCard,
 }
 
@@ -53,52 +53,51 @@ export enum ListStyle {
  */
 export interface PromptOptions {
   /**
-     * (Optional) Initial prompt to send the user.
-     */
+   * (Optional) Initial prompt to send the user.
+   */
   prompt?: string | Activity;
 
   /**
-     * (Optional) Retry prompt to send the user.
-     */
+   * (Optional) Retry prompt to send the user.
+   */
   retryPrompt?: string | Activity;
 
   /**
-     * (Optional) List of choices associated with the prompt.
-     */
+   * (Optional) List of choices associated with the prompt.
+   */
   choices?: (string | Choice)[];
 
   /**
-     * (Optional) Property that can be used to override or set the value of ChoicePrompt.Style
-     * when the prompt is executed using DialogContext.prompt.
-     */
+   * (Optional) Property that can be used to override or set the value of ChoicePrompt.Style
+   * when the prompt is executed using DialogContext.prompt.
+   */
   style?: ListStyle;
 
   /**
-     * (Optional) Additional validation rules to pass the prompts validator routine.
-     */
+   * (Optional) Additional validation rules to pass the prompts validator routine.
+   */
   validations?: object;
 
   /**
-     * The locale to be use for recognizing the utterance.
-     */
+   * The locale to be use for recognizing the utterance.
+   */
   recognizeLanguage?: string;
 }
 
 /**
  * Result returned by a prompts recognizer function.
- *
  * @param T Type of value being recognized.
  */
 export interface PromptRecognizerResult<T> {
   /**
-     * If `true` the user's utterance was successfully recognized and `value` contains the
-     * recognized result.
-     */
+   * If `true` the user's utterance was successfully recognized and `value` contains the
+   * recognized result.
+   */
   succeeded: boolean;
 
   /**
-     * Value that was recognized if `succeeded` is `true`.
-     */
+   * Value that was recognized if `succeeded` is `true`.
+   */
   value?: T;
 }
 
@@ -108,7 +107,6 @@ export interface PromptRecognizerResult<T> {
  * ```TypeScript
  * type PromptValidator<T> = (prompt: PromptValidatorContext<T>) => Promise<boolean>;
  * ```
- *
  * @remarks
  * The validator should be an asynchronous function that returns `true` if
  * `prompt.recognized.value` is valid and the prompt should end.
@@ -124,63 +122,56 @@ export type PromptValidator<T> = (prompt: PromptValidatorContext<T>) => Promise<
 
 /**
  * Contextual information passed to a custom `PromptValidator`.
- *
  * @param T Type of recognizer result being validated.
  */
 export interface PromptValidatorContext<T> {
   /**
-     * The context for the current turn of conversation with the user.
-     *
-     * @remarks
-     * The validator can use this to re-prompt the user.
-     */
+   * The context for the current turn of conversation with the user.
+   * @remarks
+   * The validator can use this to re-prompt the user.
+   */
   readonly context: TurnContext;
 
   /**
-     * Result returned from the prompts recognizer function.
-     *
-     * @remarks
-     * The {@link @microsoft/agents-hosting-dialogs.PromptRecognizerResult.succeeded | recognized.succeeded} field can be checked to determine of the recognizer found
-     * anything and then the value can be retrieved from {@link @microsoft/agents-hosting-dialogs.PromptRecognizerResult.value | recognized.value}.
-     */
+   * Result returned from the prompts recognizer function.
+   * @remarks
+   * The {@link @microsoft/agents-hosting-dialogs.PromptRecognizerResult.succeeded | recognized.succeeded} field can be checked to determine of the recognizer found
+   * anything and then the value can be retrieved from {@link @microsoft/agents-hosting-dialogs.PromptRecognizerResult.value | recognized.value}.
+   */
   readonly recognized: PromptRecognizerResult<T>;
 
   /**
-     * A dictionary of values persisted for each conversational turn while the prompt is active.
-     *
-     * @remarks
-     * The validator can use this to persist things like turn counts or other state information.
-     */
+   * A dictionary of values persisted for each conversational turn while the prompt is active.
+   * @remarks
+   * The validator can use this to persist things like turn counts or other state information.
+   */
   readonly state: object;
 
   /**
-     * Original set of options passed to the prompt by the calling dialog.
-     *
-     * @remarks
-     * The validator can extend this interface to support additional prompt options.
-     */
+   * Original set of options passed to the prompt by the calling dialog.
+   * @remarks
+   * The validator can extend this interface to support additional prompt options.
+   */
   readonly options: PromptOptions;
 
   /**
-     * A count of the number of times the prompt has been executed.
-     *
-     * A number indicating how many times the prompt was invoked (starting at 1 for the first time it was invoked).
-     */
+   * A count of the number of times the prompt has been executed.
+   *
+   * A number indicating how many times the prompt was invoked (starting at 1 for the first time it was invoked).
+   */
   readonly attemptCount: number;
 }
 
 /**
  * Base class for all prompts.
- *
  * @param T Type of value being returned by the prompts recognizer function.
  */
 export abstract class Prompt<T> extends Dialog {
   /**
-     * Creates a new Prompt instance.
-     *
-     * @param dialogId Unique ID of the prompt within its parent {@link DialogSet} or {@link ComponentDialog}.
-     * @param validator (Optional) custom validator used to provide additional validation and re-prompting logic for the prompt.
-     */
+   * Creates a new Prompt instance.
+   * @param dialogId Unique ID of the prompt within its parent {@link DialogSet} or {@link ComponentDialog}.
+   * @param validator (Optional) custom validator used to provide additional validation and re-prompting logic for the prompt.
+   */
   protected constructor (
     dialogId: string,
     private validator?: PromptValidator<T>
@@ -189,17 +180,16 @@ export abstract class Prompt<T> extends Dialog {
   }
 
   /**
-     * Called when a prompt dialog is pushed onto the dialog stack and is being activated.
-     *
-     * @param dialogContext The DialogContext for the current
-     * turn of the conversation.
-     * @param options Optional. PromptOptions,
-     * additional information to pass to the prompt being started.
-     * @returns A `Promise` representing the asynchronous operation.
-     * @remarks
-     * If the task is successful, the result indicates whether the prompt is still
-     * active after the turn has been processed by the prompt.
-     */
+   * Called when a prompt dialog is pushed onto the dialog stack and is being activated.
+   * @param dialogContext The DialogContext for the current
+   * turn of the conversation.
+   * @param options Optional. PromptOptions,
+   * additional information to pass to the prompt being started.
+   * @returns A `Promise` representing the asynchronous operation.
+   * @remarks
+   * If the task is successful, the result indicates whether the prompt is still
+   * active after the turn has been processed by the prompt.
+   */
   async beginDialog (dialogContext: DialogContext, options: PromptOptions): Promise<DialogTurnResult> {
     // Ensure prompts have input hint set
     const opt: Partial<PromptOptions> = { ...options }
@@ -222,16 +212,15 @@ export abstract class Prompt<T> extends Dialog {
   }
 
   /**
-     * Called when a prompt dialog is the active dialog and the user replied with a new activity.
-     *
-     * @param dialogContext The DialogContext for the current turn of conversation.
-     * @returns A `Promise` representing the asynchronous operation.
-     * @remarks
-     * If the task is successful, the result indicates whether the dialog is still
-     * active after the turn has been processed by the dialog.
-     * The prompt generally continues to receive the user's replies until it accepts the
-     * user's reply as valid input for the prompt.
-     */
+   * Called when a prompt dialog is the active dialog and the user replied with a new activity.
+   * @param dialogContext The DialogContext for the current turn of conversation.
+   * @returns A `Promise` representing the asynchronous operation.
+   * @remarks
+   * If the task is successful, the result indicates whether the dialog is still
+   * active after the turn has been processed by the dialog.
+   * The prompt generally continues to receive the user's replies until it accepts the
+   * user's reply as valid input for the prompt.
+   */
   async continueDialog (dialogContext: DialogContext): Promise<DialogTurnResult> {
     // Don't do anything for non-message activities
     if (dialogContext.context.activity.type !== ActivityTypes.Message) {
@@ -282,16 +271,15 @@ export abstract class Prompt<T> extends Dialog {
   }
 
   /**
-     * Called before an event is bubbled to its parent.
-     *
-     * @param dialogContext The DialogContext for the current turn of conversation.
-     * @param event DialogEvent, the event being raised.
-     * @returns Whether the event is handled by the current dialog and further processing should stop.
-     * @remarks
-     * This is a good place to perform interception of an event as returning `true` will prevent
-     * any further bubbling of the event to the dialogs parents and will also prevent any child
-     * dialogs from performing their default processing.
-     */
+   * Called before an event is bubbled to its parent.
+   * @param dialogContext The DialogContext for the current turn of conversation.
+   * @param event DialogEvent, the event being raised.
+   * @returns Whether the event is handled by the current dialog and further processing should stop.
+   * @remarks
+   * This is a good place to perform interception of an event as returning `true` will prevent
+   * any further bubbling of the event to the dialogs parents and will also prevent any child
+   * dialogs from performing their default processing.
+   */
   protected async onPreBubbleEvent (dialogContext: DialogContext, event: DialogEvent): Promise<boolean> {
     if (event.name === 'activityReceived' && dialogContext.context.activity.type === ActivityTypes.Message) {
       // Perform base recognition
@@ -308,18 +296,17 @@ export abstract class Prompt<T> extends Dialog {
   }
 
   /**
-     * Called when a prompt dialog resumes being the active dialog on the dialog stack, such as
-     * when the previous active dialog on the stack completes.
-     *
-     * @param dialogContext The DialogContext for the current turn of the conversation.
-     * @param _reason An enum indicating why the dialog resumed.
-     * @param _result Optional, value returned from the previous dialog on the stack.
-     * The type of the value returned is dependent on the previous dialog.
-     * @returns A Promise representing the asynchronous operation.
-     * @remarks
-     * If the task is successful, the result indicates whether the dialog is still
-     * active after the turn has been processed by the dialog.
-     */
+   * Called when a prompt dialog resumes being the active dialog on the dialog stack, such as
+   * when the previous active dialog on the stack completes.
+   * @param dialogContext The DialogContext for the current turn of the conversation.
+   * @param _reason An enum indicating why the dialog resumed.
+   * @param _result Optional, value returned from the previous dialog on the stack.
+   * The type of the value returned is dependent on the previous dialog.
+   * @returns A Promise representing the asynchronous operation.
+   * @remarks
+   * If the task is successful, the result indicates whether the dialog is still
+   * active after the turn has been processed by the dialog.
+   */
   async resumeDialog (dialogContext: DialogContext, _reason: DialogReason, _result?: any): Promise<DialogTurnResult> {
     // Prompts are typically leaf nodes on the stack but the dev is free to push other dialogs
     // on top of the stack which will result in the prompt receiving an unexpected call to
@@ -332,27 +319,25 @@ export abstract class Prompt<T> extends Dialog {
   }
 
   /**
-     * Called when a prompt dialog has been requested to re-prompt the user for input.
-     *
-     * @param context TurnContext, context for the current
-     * turn of conversation with the user.
-     * @param instance DialogInstance, the instance
-     * of the dialog on the stack.
-     * @returns A `Promise` representing the asynchronous operation.
-     */
+   * Called when a prompt dialog has been requested to re-prompt the user for input.
+   * @param context TurnContext, context for the current
+   * turn of conversation with the user.
+   * @param instance DialogInstance, the instance
+   * of the dialog on the stack.
+   * @returns A `Promise` representing the asynchronous operation.
+   */
   async repromptDialog (context: TurnContext, instance: DialogInstance): Promise<void> {
     const state: PromptState = instance.state as PromptState
     await this.onPrompt(context, state.state, state.options, false)
   }
 
   /**
-     * Called anytime the derived class should send the user a prompt.
-     *
-     * @param context Context for the current turn of conversation with the user.
-     * @param state Additional state being persisted for the prompt.
-     * @param options Options that the prompt was started with in the call to `DialogContext.prompt()`.
-     * @param isRetry If `true` the users response wasn't recognized and the re-prompt should be sent.
-     */
+   * Called anytime the derived class should send the user a prompt.
+   * @param context Context for the current turn of conversation with the user.
+   * @param state Additional state being persisted for the prompt.
+   * @param options Options that the prompt was started with in the call to `DialogContext.prompt()`.
+   * @param isRetry If `true` the users response wasn't recognized and the re-prompt should be sent.
+   */
   protected abstract onPrompt (
     context: TurnContext,
     state: object,
@@ -361,15 +346,14 @@ export abstract class Prompt<T> extends Dialog {
   ): Promise<void>
 
   /**
-     * Called to recognize an utterance received from the user.
-     *
-     * @remarks
-     * The Prompt class filters out non-message activities so its safe to assume that the users
-     * utterance can be retrieved from `context.activity.text`.
-     * @param context Context for the current turn of conversation with the user.
-     * @param state Additional state being persisted for the prompt.
-     * @param options Options that the prompt was started with in the call to `DialogContext.prompt()`.
-     */
+   * Called to recognize an utterance received from the user.
+   * @remarks
+   * The Prompt class filters out non-message activities so its safe to assume that the users
+   * utterance can be retrieved from `context.activity.text`.
+   * @param context Context for the current turn of conversation with the user.
+   * @param state Additional state being persisted for the prompt.
+   * @param options Options that the prompt was started with in the call to `DialogContext.prompt()`.
+   */
   protected abstract onRecognize (
     context: TurnContext,
     state: object,
@@ -377,15 +361,14 @@ export abstract class Prompt<T> extends Dialog {
   ): Promise<PromptRecognizerResult<T>>
 
   /**
-     * Helper function to compose an output activity containing a set of choices.
-     *
-     * @param prompt The prompt to append the users choices to.
-     * @param channelId ID of the channel the prompt is being sent to.
-     * @param choices List of choices to append.
-     * @param style Configured style for the list of choices.
-     * @param options (Optional) options to configure the underlying ChoiceFactory call.
-     * @returns The composed activity ready to send to the user.
-     */
+   * Helper function to compose an output activity containing a set of choices.
+   * @param prompt The prompt to append the users choices to.
+   * @param channelId ID of the channel the prompt is being sent to.
+   * @param choices List of choices to append.
+   * @param style Configured style for the list of choices.
+   * @param options (Optional) options to configure the underlying ChoiceFactory call.
+   * @returns The composed activity ready to send to the user.
+   */
   protected appendChoices (
     prompt: string | Activity,
     channelId: string,

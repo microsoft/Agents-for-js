@@ -24,11 +24,9 @@ export type ApplicationEventHandler<TState extends TurnState> = (context: TurnCo
 
 /**
  * Executes the application logic for a given turn context.
- *
- * @param turnContext - The context for the current turn of the conversation.
- * @returns A promise that resolves when the application logic has completed.
- *
- * @remarks
+ * @param {TurnContext} turnContext - The context for the current turn of the conversation.
+ * @returns {Promise<void>} A promise that resolves when the application logic has completed.
+ * @description
  * This method is the entry point for processing a turn in the conversation.
  * It delegates the actual processing to the `runInternal` method, which handles
  * the core logic for routing and executing handlers.
@@ -73,6 +71,7 @@ export class AgentApplication<TState extends TurnState> {
 
   /**
    * Gets the adapter associated with the application.
+   * @returns {BaseAdapter} The adapter instance.
    * @throws Error if the adapter is not configured.
    */
   public get adapter (): BaseAdapter {
@@ -87,6 +86,7 @@ export class AgentApplication<TState extends TurnState> {
 
   /**
    * Gets the authorization instance for the application.
+   * @returns {Authorization} The authorization instance.
    * @throws Error if no authentication options were configured.
    */
   public get authorization (): Authorization {
@@ -101,7 +101,7 @@ export class AgentApplication<TState extends TurnState> {
 
   /**
    * Gets the options used to configure the application.
-   * @returns The application options.
+   * @returns {AgentApplicationOptions<TState>} The application options.
    */
   public get options (): AgentApplicationOptions<TState> {
     return this._options
@@ -109,11 +109,9 @@ export class AgentApplication<TState extends TurnState> {
 
   /**
    * Sets an error handler for the application.
-   *
-   * @param handler - The error handler function to be called when an error occurs.
-   * @returns The current instance of the application.
-   *
-   * @remarks
+   * @param {(context: TurnContext, error: Error) => Promise<void>} handler - The error handler function to be called when an error occurs.
+   * @returns {this} The current instance of the application.
+   * @description
    * This method allows you to handle any errors that occur during turn processing.
    * The handler will receive the turn context and the error that occurred.
    *
@@ -135,12 +133,10 @@ export class AgentApplication<TState extends TurnState> {
 
   /**
    * Adds a new route to the application for handling activities.
-   *
-   * @param selector - The selector function that determines if a route should handle the current activity.
-   * @param handler - The handler function that will be called if the selector returns true.
-   * @returns The current instance of the application.
-   *
-   * @remarks
+   * @param {RouteSelector} selector - The selector function that determines if a route should handle the current activity.
+   * @param {RouteHandler<TState>} handler - The handler function that will be called if the selector returns true.
+   * @returns {this} The current instance of the application.
+   * @description
    * Routes are evaluated in the order they are added. The first route with a selector that returns true will be used.
    *
    * Example usage:
@@ -160,12 +156,10 @@ export class AgentApplication<TState extends TurnState> {
 
   /**
    * Adds a handler for specific activity types.
-   *
-   * @param type - The activity type(s) to handle. Can be a string, RegExp, RouteSelector, or array of these types.
-   * @param handler - The handler function that will be called when the specified activity type is received.
-   * @returns The current instance of the application.
-   *
-   * @remarks
+   * @param {string | RegExp | RouteSelector | (string | RegExp | RouteSelector)[]} type - The activity type(s) to handle. Can be a string, RegExp, RouteSelector, or array of these types.
+   * @param {(context: TurnContext, state: TState) => Promise<void>} handler - The handler function that will be called when the specified activity type is received.
+   * @returns {this} The current instance of the application.
+   * @description
    * This method allows you to register handlers for specific activity types such as 'message', 'conversationUpdate', etc.
    * You can specify multiple activity types by passing an array.
    *
@@ -189,13 +183,11 @@ export class AgentApplication<TState extends TurnState> {
 
   /**
    * Adds a handler for conversation update events.
-   *
-   * @param event - The conversation update event to handle (e.g., 'membersAdded', 'membersRemoved').
-   * @param handler - The handler function that will be called when the specified event occurs.
-   * @returns The current instance of the application.
+   * @param {ConversationUpdateEvents} event - The conversation update event to handle (e.g., 'membersAdded', 'membersRemoved').
+   * @param {(context: TurnContext, state: TState) => Promise<void>} handler - The handler function that will be called when the specified event occurs.
+   * @returns {this} The current instance of the application.
    * @throws Error if the handler is not a function.
-   *
-   * @remarks
+   * @description
    * Conversation update events occur when the state of a conversation changes, such as when members join or leave.
    *
    * Example usage:
@@ -227,9 +219,9 @@ export class AgentApplication<TState extends TurnState> {
 
   /**
    * Continues a conversation asynchronously.
-   * @param conversationReferenceOrContext - The conversation reference or turn context.
-   * @param logic - The logic to execute during the conversation.
-   * @returns A promise that resolves when the conversation logic has completed.
+   * @param {ConversationReference | TurnContext} conversationReferenceOrContext - The conversation reference or turn context.
+   * @param {(context: TurnContext) => Promise<void>} logic - The logic to execute during the conversation.
+   * @returns {Promise<void>} A promise that resolves when the conversation logic has completed.
    * @throws Error if the adapter is not configured.
    */
   protected async continueConversationAsync (
@@ -259,13 +251,11 @@ export class AgentApplication<TState extends TurnState> {
 
   /**
    * Adds a handler for message activities that match the specified keyword or pattern.
-   *
-   * @param keyword - The keyword, pattern, or selector function to match against message text.
+   * @param {string | RegExp | RouteSelector | (string | RegExp | RouteSelector)[]} keyword - The keyword, pattern, or selector function to match against message text.
    *                  Can be a string, RegExp, RouteSelector, or array of these types.
-   * @param handler - The handler function that will be called when a matching message is received.
-   * @returns The current instance of the application.
-   *
-   * @remarks
+   * @param {(context: TurnContext, state: TState) => Promise<void>} handler - The handler function that will be called when a matching message is received.
+   * @returns {this} The current instance of the application.
+   * @description
    * This method allows you to register handlers for specific message patterns.
    * If keyword is a string, it matches messages containing that string.
    * If keyword is a RegExp, it tests the message text against the regular expression.
@@ -295,12 +285,10 @@ export class AgentApplication<TState extends TurnState> {
 
   /**
    * Sets a handler to be called when a user successfully signs in.
-   *
-   * @param handler - The handler function to be called after successful sign-in.
-   * @returns The current instance of the application.
+   * @param {(context: TurnContext, state: TurnState, id?: string) => void} handler - The handler function to be called after successful sign-in.
+   * @returns {this} The current instance of the application.
    * @throws Error if authentication options were not configured.
-   *
-   * @remarks
+   * @description
    * This method allows you to perform actions after a user has successfully authenticated.
    * The handler will receive the turn context and state.
    *
@@ -324,11 +312,9 @@ export class AgentApplication<TState extends TurnState> {
 
   /**
    * Executes the application logic for a given turn context.
-   *
-   * @param turnContext - The context for the current turn of the conversation.
-   * @returns A promise that resolves when the application logic has completed.
-   *
-   * @remarks
+   * @param {TurnContext} turnContext - The context for the current turn of the conversation.
+   * @returns {Promise<void>} A promise that resolves when the application logic has completed.
+   * @description
    * This method is the entry point for processing a turn in the conversation.
    * It delegates the actual processing to the `runInternal` method, which handles
    * the core logic for routing and executing handlers.
@@ -346,10 +332,9 @@ export class AgentApplication<TState extends TurnState> {
   /**
    * Executes the application logic for a given turn context.
    * @private
-   * @param turnContext - The context for the current turn of the conversation.
-   * @returns A promise that resolves to true if a handler was executed, false otherwise.
-   *
-   * @remarks
+   * @param {TurnContext} turnContext - The context for the current turn of the conversation.
+   * @returns {Promise<boolean>} A promise that resolves to true if a handler was executed, false otherwise.
+   * @description
    * This method is the core logic for processing a turn in the conversation.
    * It handles routing and executing handlers based on the activity type and content.
    */
@@ -412,14 +397,12 @@ export class AgentApplication<TState extends TurnState> {
 
   /**
    * Sends a proactive message to a conversation.
-   *
-   * @param context - The turn context or conversation reference to use.
-   * @param activityOrText - The activity or text to send.
-   * @param speak - Optional text to be spoken by the bot on a speech-enabled channel.
-   * @param inputHint - Optional input hint for the activity.
-   * @returns A promise that resolves to the resource response from sending the activity.
-   *
-   * @remarks
+   * @param {TurnContext | ConversationReference} context - The turn context or conversation reference to use.
+   * @param {string | Activity} activityOrText - The activity or text to send.
+   * @param {string} [speak] - Optional text to be spoken by the bot on a speech-enabled channel.
+   * @param {string} [inputHint] - Optional input hint for the activity.
+   * @returns {Promise<ResourceResponse | undefined>} A promise that resolves to the resource response from sending the activity.
+   * @description
    * This method allows you to send messages proactively to a conversation, outside the normal turn flow.
    *
    * Example usage:
@@ -447,11 +430,9 @@ export class AgentApplication<TState extends TurnState> {
 
   /**
    * Starts a typing indicator timer for the current turn context.
-   *
-   * @param context - The turn context for the current conversation.
-   * @returns void
-   *
-   * @remarks
+   * @param {TurnContext} context - The turn context for the current conversation.
+   * @returns {void}
+   * @description
    * This method starts a timer that sends typing activity indicators to the user
    * at regular intervals. The typing indicator continues until a message is sent
    * or the timer is explicitly stopped.
@@ -507,10 +488,8 @@ export class AgentApplication<TState extends TurnState> {
 
   /**
    * Stops the typing indicator timer if it's currently running.
-   *
-   * @returns void
-   *
-   * @remarks
+   * @returns {void}
+   * @description
    * This method clears the typing indicator timer to prevent further typing indicators
    * from being sent. It's typically called automatically when a message is sent, but
    * can also be called manually to stop the typing indicator.
@@ -531,12 +510,10 @@ export class AgentApplication<TState extends TurnState> {
 
   /**
    * Adds an event handler for specified turn events.
-   *
-   * @param event - The turn event(s) to handle. Can be 'beforeTurn', 'afterTurn', or other custom events.
-   * @param handler - The handler function that will be called when the event occurs.
-   * @returns The current instance of the application.
-   *
-   * @remarks
+   * @param {TurnEvents | TurnEvents[]} event - The turn event(s) to handle. Can be 'beforeTurn', 'afterTurn', or other custom events.
+   * @param {(context: TurnContext, state: TState) => Promise<boolean>} handler - The handler function that will be called when the event occurs.
+   * @returns {this} The current instance of the application.
+   * @description
    * Turn events allow you to execute logic before or after the main turn processing.
    * Handlers added for 'beforeTurn' are executed before routing logic.
    * Handlers added for 'afterTurn' are executed after routing logic.

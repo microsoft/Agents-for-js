@@ -12,7 +12,6 @@ import { Activity } from '@microsoft/agents-activity'
 
 /**
  * Represents a dictionary of default choice options for different locales.
- *
  * @remarks
  * This interface is used to define the default options for rendering choices in prompts,
  * such as separators, inline options, and whether to include numbers.
@@ -20,7 +19,6 @@ import { Activity } from '@microsoft/agents-activity'
 export interface ChoiceDefaultsChoicePrompt {
   /**
    * A mapping of locale strings to their corresponding choice factory options.
-   *
    * @remarks
    * Each locale key maps to a `ChoiceFactoryOptions` object that defines the
    * default behavior for rendering choices in that locale.
@@ -30,51 +28,48 @@ export interface ChoiceDefaultsChoicePrompt {
 
 /**
  * Prompts a user to select from a list of choices.
- *
  * @remarks
  * By default the prompt will return to the calling dialog a {@link FoundChoice} object containing the
  * choice that was selected.
  */
 export class ChoicePrompt extends Prompt<FoundChoice> {
   /**
-     * A dictionary of Default Choices based on {@link PromptCultureModels.getSupportedCultures | PromptCultureModels.getSupportedCultures method}.
-     * Can be replaced by user using the constructor that contains choiceDefaults.
-     */
+   * A dictionary of Default Choices based on {@link PromptCultureModels.getSupportedCultures | PromptCultureModels.getSupportedCultures method}.
+   * Can be replaced by user using the constructor that contains choiceDefaults.
+   */
   private choiceDefaults: ChoiceDefaultsChoicePrompt
 
   /**
-     * The prompts default locale that should be recognized.
-     */
+   * The prompts default locale that should be recognized.
+   */
   defaultLocale: string | undefined
 
   /**
-     * Style of the "yes" and "no" choices rendered to the user when prompting.
-     *
-     * @remarks
-     * Defaults to `ListStyle.auto`.
-     */
+   * Style of the "yes" and "no" choices rendered to the user when prompting.
+   * @remarks
+   * Defaults to `ListStyle.auto`.
+   */
   style: ListStyle
 
   /**
-     * Additional options passed to the `ChoiceFactory` and used to tweak the style of choices
-     * rendered to the user.
-     */
+   * Additional options passed to the `ChoiceFactory` and used to tweak the style of choices
+   * rendered to the user.
+   */
   choiceOptions: ChoiceFactoryOptions | undefined
 
   /**
-     * Additional options passed to the underlying {@link recognizeChoices | recognizeChoices function }.
-     */
+   * Additional options passed to the underlying {@link recognizeChoices | recognizeChoices function }.
+   */
   recognizerOptions: FindChoicesOptions | undefined
 
   /**
-     * Creates a new `ChoicePrompt` instance.
-     *
-     * @param dialogId Unique ID of the dialog within its parent `DialogSet`.
-     * @param validator (Optional) validator that will be called each time the user responds to the prompt. If the validator replies with a message no additional retry prompt will be sent.
-     * @param defaultLocale (Optional) locale to use if `dc.context.activity.locale` not specified. Defaults to a value of `en-us`.
-     * @param choiceDefaults (Optional) Overrides the dictionary of Bot Framework SDK-supported _choiceDefaults (for prompt localization).
-     *  Must be passed in to each ConfirmPrompt that needs the custom choice defaults.
-     */
+   * Creates a new `ChoicePrompt` instance.
+   * @param dialogId Unique ID of the dialog within its parent `DialogSet`.
+   * @param validator (Optional) validator that will be called each time the user responds to the prompt. If the validator replies with a message no additional retry prompt will be sent.
+   * @param defaultLocale (Optional) locale to use if `dc.context.activity.locale` not specified. Defaults to a value of `en-us`.
+   * @param choiceDefaults (Optional) Overrides the dictionary of Bot Framework SDK-supported _choiceDefaults (for prompt localization).
+   *  Must be passed in to each ConfirmPrompt that needs the custom choice defaults.
+   */
   constructor (
     dialogId: string,
     validator?: PromptValidator<FoundChoice>,
@@ -102,17 +97,16 @@ export class ChoicePrompt extends Prompt<FoundChoice> {
   }
 
   /**
-     * Prompts the user for input.
-     *
-     * @param context TurnContext, context for the current
-     * turn of conversation with the user.
-     * @param state Contains state for the current instance of the prompt on the dialog stack.
-     * @param options A PromptOptions object constructed
-     * from the options initially provided in the call to Prompt.
-     * @param isRetry `true` if this is the first time this prompt dialog instance
-     * on the stack is prompting the user for input; otherwise, false.
-     * @returns A `Promise` representing the asynchronous operation.
-     */
+   * Prompts the user for input.
+   * @param context TurnContext, context for the current
+   * turn of conversation with the user.
+   * @param state Contains state for the current instance of the prompt on the dialog stack.
+   * @param options A PromptOptions object constructed
+   * from the options initially provided in the call to Prompt.
+   * @param isRetry `true` if this is the first time this prompt dialog instance
+   * on the stack is prompting the user for input; otherwise, false.
+   * @returns A `Promise` representing the asynchronous operation.
+   */
   protected async onPrompt (
     context: TurnContext,
     state: any,
@@ -141,15 +135,14 @@ export class ChoicePrompt extends Prompt<FoundChoice> {
   }
 
   /**
-     * Attempts to recognize the user's input.
-     *
-     * @param context TurnContext context for the current
-     * turn of conversation with the user.
-     * @param state Contains state for the current instance of the prompt on the dialog stack.
-     * @param options A PromptOptions object constructed
-     * from the options initially provided in the call to Prompt.
-     * @returns A `Promise` representing the asynchronous operation.
-     */
+   * Attempts to recognize the user's input.
+   * @param context TurnContext context for the current
+   * turn of conversation with the user.
+   * @param state Contains state for the current instance of the prompt on the dialog stack.
+   * @param options A PromptOptions object constructed
+   * from the options initially provided in the call to Prompt.
+   * @returns A `Promise` representing the asynchronous operation.
+   */
   protected async onRecognize (
     context: TurnContext,
     state: any,
@@ -176,8 +169,10 @@ export class ChoicePrompt extends Prompt<FoundChoice> {
   }
 
   /**
-     * @private
-     */
+   * @param activity
+   * @param opt
+   * @private
+   */
   private determineCulture (activity: Activity, opt?: FindChoicesOptions): string {
     const optLocale = opt && opt.locale ? opt.locale : null
     let culture = PromptCultureModels.mapToNearestLanguage(

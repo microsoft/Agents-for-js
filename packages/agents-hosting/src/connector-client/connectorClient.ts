@@ -230,11 +230,11 @@ export class ConnectorClient {
   }
 
   /**
-     * Uploads an attachment to a conversation.
-     * @param conversationId - The ID of the conversation.
-     * @param body - The attachment data.
-     * @returns The resource response.
-     */
+   * Uploads an attachment to a conversation.
+   * @param conversationId - The ID of the conversation.
+   * @param body - The attachment data.
+   * @returns The resource response.
+   */
   public async uploadAttachment (
     conversationId: string,
     body: AttachmentData

@@ -21,7 +21,6 @@ export class DialogContextMemoryScope extends MemoryScope {
 
   /**
    * Gets the backing memory for this scope.
-   *
    * @param dialogContext - The `DialogContext` object for this turn.
    * @returns An object containing the dialog stack, active dialog ID, and parent dialog ID.
    */

@@ -198,6 +198,10 @@ app.activity(ActivityTypes.Message, async (context: TurnContext, state: Applicat
     )])
 })
 
+/**
+ *
+ * @param context
+ */
 async function messageAllMembers (context: TurnContext) {
   const author = await TeamsInfo.getMember(context, context.activity.from!.id!)
   const membersResult = await TeamsInfo.getPagedMembers(context, 2)

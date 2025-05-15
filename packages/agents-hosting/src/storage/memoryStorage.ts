@@ -30,7 +30,6 @@ export class MemoryStorage implements Storage {
 
   /**
    * Creates a new instance of the MemoryStorage class.
-   *
    * @param memory An optional initial memory store to seed the storage with data
    */
   constructor (private memory: { [k: string]: string } = {}) { }
@@ -40,7 +39,6 @@ export class MemoryStorage implements Storage {
    *
    * Using this method ensures that the same storage instance is used across
    * the application, allowing for shared state without passing references.
-   *
    * @returns The singleton instance of MemoryStorage
    */
   static getSingleInstance (): MemoryStorage {
@@ -52,7 +50,6 @@ export class MemoryStorage implements Storage {
 
   /**
    * Reads storage items from memory.
-   *
    * @param keys The keys of the items to read
    * @returns A promise that resolves to the read items
    * @throws Will throw an error if keys are not provided or the array is empty
@@ -81,7 +78,6 @@ export class MemoryStorage implements Storage {
    * If an item has an eTag, it will only be updated if the existing item
    * has the same eTag. If an item has an eTag of '*' or no eTag, it will
    * always be written regardless of the current state.
-   *
    * @param changes The items to write, indexed by key
    * @returns A promise that resolves when the write operation is complete
    * @throws Will throw an error if changes are not provided or if there's an eTag conflict
@@ -109,7 +105,6 @@ export class MemoryStorage implements Storage {
 
   /**
    * Deletes storage items from memory.
-   *
    * @param keys The keys of the items to delete
    * @returns A promise that resolves when the delete operation is complete
    */
@@ -127,7 +122,6 @@ export class MemoryStorage implements Storage {
    * - Creating a clone of the item to prevent modification of the original
    * - Generating a new eTag for optimistic concurrency control
    * - Converting the item to a JSON string for storage
-   *
    * @param key The key of the item to save
    * @param item The item to save
    * @private

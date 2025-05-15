@@ -11,8 +11,8 @@ import { ScopePath } from '../scopePath'
 export class ConversationMemoryScope extends AgentStateMemoryScope {
   protected stateKey = 'ConversationState'
   /**
-     * Initializes a new instance of the ConversationMemoryScope class.
-     */
+   * Initializes a new instance of the ConversationMemoryScope class.
+   */
   constructor () {
     super(ScopePath.conversation)
   }

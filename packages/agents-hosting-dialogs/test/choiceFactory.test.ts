@@ -4,6 +4,11 @@ import { MessageFactory } from '@microsoft/agents-hosting'
 import { ChoiceFactory, Choice } from '../src/choices'
 import { ActionTypes, Activity } from '@microsoft/agents-activity'
 
+/**
+ *
+ * @param received
+ * @param expected
+ */
 function assertActivity (received: Activity, expected: Activity): void {
   assert(received)
   for (const key in expected) {
@@ -93,6 +98,12 @@ const choicesWithPostBacks: Choice[] = [
   },
 ]
 
+/**
+ *
+ * @param choices
+ * @param actionValues
+ * @param actionType
+ */
 function assertChoices (
   choices: Choice[],
   actionValues: string[],

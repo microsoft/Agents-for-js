@@ -15,28 +15,28 @@ import { Choice } from './choice'
  */
 export interface ChoiceFactoryOptions {
   /**
-     * (Optional) character used to separate individual choices when there are more than 2 choices.
-     * The default value is `", "`.
-     */
+   * (Optional) character used to separate individual choices when there are more than 2 choices.
+   * The default value is `", "`.
+   */
   inlineSeparator?: string;
 
   /**
-     * (Optional) separator inserted between the choices when their are only 2 choices. The default
-     * value is `" or "`.
-     */
+   * (Optional) separator inserted between the choices when their are only 2 choices. The default
+   * value is `" or "`.
+   */
   inlineOr?: string;
 
   /**
-     * (Optional) separator inserted between the last 2 choices when their are more than 2 choices.
-     * The default value is `", or "`.
-     */
+   * (Optional) separator inserted between the last 2 choices when their are more than 2 choices.
+   * The default value is `", or "`.
+   */
   inlineOrMore?: string;
 
   /**
-     * (Optional) if `true`, inline and list style choices will be prefixed with the index of the
-     * choice as in "1. choice". If `false`, the list style will use a bulleted list instead. The
-     * default value is `true`.
-     */
+   * (Optional) if `true`, inline and list style choices will be prefixed with the index of the
+   * choice as in "1. choice". If `false`, the list style will use a bulleted list instead. The
+   * default value is `true`.
+   */
   includeNumbers?: boolean;
 }
 
@@ -49,16 +49,15 @@ export class ChoiceFactory {
   static readonly MAX_ACTION_TITLE_LENGTH = 20
 
   /**
-     * Returns a 'message' activity containing a list of choices that has been automatically
-     * formatted based on the capabilities of a given channel.
-     *
-     * @param channelOrContext Channel ID or context object for the current turn of conversation.
-     * @param choices List of choices to render.
-     * @param text (Optional) text of the message.
-     * @param speak (Optional) SSML to speak for the message.
-     * @param options (Optional) formatting options to use when rendering as a list.
-     * @returns The created message activity.
-     */
+   * Returns a 'message' activity containing a list of choices that has been automatically
+   * formatted based on the capabilities of a given channel.
+   * @param channelOrContext Channel ID or context object for the current turn of conversation.
+   * @param choices List of choices to render.
+   * @param text (Optional) text of the message.
+   * @param speak (Optional) SSML to speak for the message.
+   * @param options (Optional) formatting options to use when rendering as a list.
+   * @returns The created message activity.
+   */
   static forChannel (
     channelOrContext: string | TurnContext,
     choices: (string | Choice)[],
@@ -86,15 +85,14 @@ export class ChoiceFactory {
   }
 
   /**
-     * Returns a 'message' activity containing a list of choices that has been formatted as an
-     * inline list.
-     *
-     * @param choices List of choices to render.
-     * @param text (Optional) text of the message.
-     * @param speak (Optional) SSML to speak for the message.
-     * @param options (Optional) formatting options to tweak rendering of list.
-     * @returns The created message activity.
-     */
+   * Returns a 'message' activity containing a list of choices that has been formatted as an
+   * inline list.
+   * @param choices List of choices to render.
+   * @param text (Optional) text of the message.
+   * @param speak (Optional) SSML to speak for the message.
+   * @param options (Optional) formatting options to tweak rendering of list.
+   * @returns The created message activity.
+   */
   static inline (
     choices: (string | Choice)[],
     text?: string,
@@ -127,15 +125,14 @@ export class ChoiceFactory {
   }
 
   /**
-     * Returns a 'message' activity containing a list of choices that has been formatted as an
-     * numbered or bulleted list.
-     *
-     * @param choices List of choices to render.
-     * @param text (Optional) text of the message.
-     * @param speak (Optional) SSML to speak for the message.
-     * @param options (Optional) formatting options to tweak rendering of list.
-     * @returns The created message activity.
-     */
+   * Returns a 'message' activity containing a list of choices that has been formatted as an
+   * numbered or bulleted list.
+   * @param choices List of choices to render.
+   * @param text (Optional) text of the message.
+   * @param speak (Optional) SSML to speak for the message.
+   * @param options (Optional) formatting options to tweak rendering of list.
+   * @returns The created message activity.
+   */
   static list (
     choices: (string | Choice)[],
     text?: string,
@@ -160,11 +157,10 @@ export class ChoiceFactory {
   }
 
   /**
-     * Takes a mixed list of `string` and `Choice` based choices and returns them as a `Choice[]`.
-     *
-     * @param choices List of choices to add.
-     * @returns A list of choices.
-     */
+   * Takes a mixed list of `string` and `Choice` based choices and returns them as a `Choice[]`.
+   * @param choices List of choices to add.
+   * @returns A list of choices.
+   */
   static toChoices (choices: (string | Choice)[] | undefined): Choice[] {
     return (choices || [])
       .map((choice) => (typeof choice === 'string' ? { value: choice } : choice))

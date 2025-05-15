@@ -14,13 +14,13 @@ import { PathResolver } from './pathResolvers'
 
 export interface DialogStateManagerConfiguration {
   /**
-     * List of path resolvers used to evaluate memory paths.
-     */
+   * List of path resolvers used to evaluate memory paths.
+   */
   readonly pathResolvers: PathResolver[];
 
   /**
-     * List of the supported memory scopes.
-     */
+   * List of the supported memory scopes.
+   */
   readonly memoryScopes: MemoryScope[];
 }
 
@@ -30,7 +30,6 @@ const DIALOG_STATE_MANAGER_CONFIGURATION = 'DialogStateManagerConfiguration'
 
 /**
  * The DialogStateManager manages memory scopes and path resolvers.
- *
  * @remarks
  * MemoryScopes are named root level objects, which can exist either in the dialog context or off
  * of turn state. Path resolvers allow for shortcut behavior for mapping things like
@@ -40,11 +39,10 @@ export class DialogStateManager {
   private readonly dialogContext: DialogContext
 
   /**
-     * Initializes a new instance of the DialogStateManager class.
-     *
-     * @param dc The dialog context for the current turn of the conversation.
-     * @param configuration Configuration for the dialog state manager.
-     */
+   * Initializes a new instance of the DialogStateManager class.
+   * @param dc The dialog context for the current turn of the conversation.
+   * @param configuration Configuration for the dialog state manager.
+   */
   constructor (dc: DialogContext, configuration?: DialogStateManagerConfiguration) {
     ComponentRegistration.add(new DialogsComponentRegistration())
 
@@ -82,26 +80,27 @@ export class DialogStateManager {
   }
 
   /**
-     * Gets or sets the configured path resolvers and memory scopes for the dialog state manager.
-     *
-     * @remarks
-     * There is a single set of configuration information for a given chain of dialog contexts.
-     * Assigning a new configuration to any DialogStateManager within the chain will update the
-     * configuration for the entire chain.
-     */
+   * Gets or sets the configured path resolvers and memory scopes for the dialog state manager.
+   * @remarks
+   * There is a single set of configuration information for a given chain of dialog contexts.
+   * Assigning a new configuration to any DialogStateManager within the chain will update the
+   * configuration for the entire chain.
+   */
   configuration: DialogStateManagerConfiguration
 
   /**
-     * Get the value from memory using path expression.
-     *
-     * @remarks
-     * This always returns a CLONE of the memory, any modifications to the result will not affect memory.
-     * @template T The value type to return.
-     * @param pathExpression Path expression to use.
-     * @param defaultValue (Optional) default value to use if the path isn't found. May be a function that returns the default value to use.
-     * @returns The found value or undefined if not found and no `defaultValue` specified.
-     */
+   * Get the value from memory using path expression.
+   * @remarks
+   * This always returns a CLONE of the memory, any modifications to the result will not affect memory.
+   * @template T The value type to return.
+   * @param pathExpression Path expression to use.
+   * @param defaultValue (Optional) default value to use if the path isn't found. May be a function that returns the default value to use.
+   * @returns The found value or undefined if not found and no `defaultValue` specified.
+   */
   getValue<T = any>(pathExpression: string, defaultValue?: T | (() => T)): T {
+    /**
+     *
+     */
     function returnDefault (): T {
       return typeof defaultValue === 'function' ? (defaultValue as () => T)() : defaultValue
     }
@@ -129,11 +128,10 @@ export class DialogStateManager {
   }
 
   /**
-     * Set memory to value.
-     *
-     * @param pathExpression Path to memory.
-     * @param value Value to set.
-     */
+   * Set memory to value.
+   * @param pathExpression Path to memory.
+   * @param value Value to set.
+   */
   setValue (pathExpression: string, value: any): void {
     // Get path segments
     const tpath = this.transformPath(pathExpression)
@@ -196,10 +194,9 @@ export class DialogStateManager {
   }
 
   /**
-     * Delete property from memory
-     *
-     * @param pathExpression The leaf property to remove.
-     */
+   * Delete property from memory
+   * @param pathExpression The leaf property to remove.
+   */
   deleteValue (pathExpression: string): void {
     // Get path segments
     const tpath = this.transformPath(pathExpression)
@@ -235,11 +232,10 @@ export class DialogStateManager {
   }
 
   /**
-     * Ensures that all memory scopes have been loaded for the current turn.
-     *
-     * @remarks
-     * This should be called at the beginning of the turn.
-     */
+   * Ensures that all memory scopes have been loaded for the current turn.
+   * @remarks
+   * This should be called at the beginning of the turn.
+   */
   async loadAllScopes (): Promise<void> {
     const scopes = this.configuration.memoryScopes
     for (let i = 0; i < scopes.length; i++) {
@@ -248,11 +244,10 @@ export class DialogStateManager {
   }
 
   /**
-     * Saves any changes made to memory scopes.
-     *
-     * @remarks
-     * This should be called at the end of the turn.
-     */
+   * Saves any changes made to memory scopes.
+   * @remarks
+   * This should be called at the end of the turn.
+   */
   async saveAllChanges (): Promise<void> {
     const scopes = this.configuration.memoryScopes
     for (let i = 0; i < scopes.length; i++) {
@@ -261,10 +256,9 @@ export class DialogStateManager {
   }
 
   /**
-     * Deletes all of the backing memory for a given scope.
-     *
-     * @param name Name of the scope.
-     */
+   * Deletes all of the backing memory for a given scope.
+   * @param name Name of the scope.
+   */
   async deleteScopesMemory (name: string): Promise<void> {
     name = name.toLowerCase()
     const scopes = this.configuration.memoryScopes
@@ -278,14 +272,13 @@ export class DialogStateManager {
   }
 
   /**
-     * Normalizes the path segments of a passed in path.
-     *
-     * @remarks
-     * A path of `profile.address[0]` will be normalized to `profile.address.0`.
-     * @param pathExpression The path to normalize.
-     * @param allowNestedPaths Optional. If `false` then detection of a nested path will cause an empty path to be returned. Defaults to 'true'.
-     * @returns The normalized path.
-     */
+   * Normalizes the path segments of a passed in path.
+   * @remarks
+   * A path of `profile.address[0]` will be normalized to `profile.address.0`.
+   * @param pathExpression The path to normalize.
+   * @param allowNestedPaths Optional. If `false` then detection of a nested path will cause an empty path to be returned. Defaults to 'true'.
+   * @returns The normalized path.
+   */
   parsePath (pathExpression: string, allowNestedPaths = true): (string | number)[] {
     // Expand path segments
     let segment = ''
@@ -400,11 +393,10 @@ export class DialogStateManager {
   }
 
   /**
-     * Transform the path using the registered path transformers.
-     *
-     * @param pathExpression The path to transform.
-     * @returns The transformed path.
-     */
+   * Transform the path using the registered path transformers.
+   * @param pathExpression The path to transform.
+   * @returns The transformed path.
+   */
   transformPath (pathExpression: string): string {
     // Run path through registered resolvers.
     const resolvers = this.configuration.pathResolvers
@@ -416,10 +408,9 @@ export class DialogStateManager {
   }
 
   /**
-     * Gets all memory scopes suitable for logging.
-     *
-     * @returns Object which represents all memory scopes.
-     */
+   * Gets all memory scopes suitable for logging.
+   * @returns Object which represents all memory scopes.
+   */
   getMemorySnapshot (): object {
     const output = {}
     this.configuration.memoryScopes.forEach((scope) => {
@@ -432,11 +423,10 @@ export class DialogStateManager {
   }
 
   /**
-     * Track when specific paths are changed.
-     *
-     * @param paths Paths to track.
-     * @returns Normalized paths to pass to `anyPathChanged` method.
-     */
+   * Track when specific paths are changed.
+   * @param paths Paths to track.
+   * @returns Normalized paths to pass to `anyPathChanged` method.
+   */
   trackPaths (paths: string[]): string[] {
     const allPaths: string[] = []
     paths.forEach((path) => {
@@ -456,12 +446,11 @@ export class DialogStateManager {
   }
 
   /**
-     * Check to see if any path has changed since watermark.
-     *
-     * @param counter Time counter to compare to.
-     * @param paths Paths from `trackPaths` method to check.
-     * @returns True if any path has changed since counter.
-     */
+   * Check to see if any path has changed since watermark.
+   * @param counter Time counter to compare to.
+   * @param paths Paths from `trackPaths` method to check.
+   * @returns True if any path has changed since counter.
+   */
   anyPathChanged (counter: number, paths: string[]): boolean {
     let found = false
     if (paths) {
@@ -477,9 +466,9 @@ export class DialogStateManager {
   }
 
   /**
-     * @private
-     * @param path Track path to change.
-     */
+   * @private
+   * @param path Track path to change.
+   */
   private trackChange (path: string): void {
     // Normalize path and scan for any matches or children that match.
     // - We're appending an extra '_' so that we can do substring matches and
@@ -501,12 +490,12 @@ export class DialogStateManager {
   }
 
   /**
-     * @private
-     * @param memory Object memory to resolve.
-     * @param segments Segments of the memory to resolve.
-     * @param assignment Optional.
-     * @returns The value of the memory segment.
-     */
+   * @private
+   * @param memory Object memory to resolve.
+   * @param segments Segments of the memory to resolve.
+   * @param assignment Optional.
+   * @returns The value of the memory segment.
+   */
   private resolveSegments (memory: object, segments: (string | number)[], assignment?: boolean): any {
     let value: any = memory
     const l = assignment ? segments.length - 1 : segments.length
@@ -583,8 +572,10 @@ export class DialogStateManager {
   }
 
   /**
-     * @private
-     */
+   * @param obj
+   * @param key
+   * @private
+   */
   private findObjectKey (obj: object, key: string): string | undefined {
     const k = key.toLowerCase()
     for (const prop in obj) {
@@ -597,11 +588,11 @@ export class DialogStateManager {
   }
 
   /**
-     * @private
-     * Gets MemoryScope by name.
-     * @param name Name of scope.
-     * @returns The MemoryScope.
-     */
+   * @private
+   * Gets MemoryScope by name.
+   * @param name Name of scope.
+   * @returns The MemoryScope.
+   */
   private getMemoryScope (name: string): MemoryScope | undefined {
     const key = name.toLowerCase()
     const scopes = this.configuration.memoryScopes
@@ -616,16 +607,16 @@ export class DialogStateManager {
   }
 
   /**
-     * Gets the version number.
-     *
-     * @returns A string with the version number.
-     */
+   * Gets the version number.
+   * @returns A string with the version number.
+   */
   version (): string {
     return '0'
   }
 }
 
 /**
+ * @param segment
  * @private
  */
 function isIndex (segment: string): boolean {
@@ -644,6 +635,7 @@ function isIndex (segment: string): boolean {
 }
 
 /**
+ * @param segment
  * @private
  */
 function isQuoted (segment: string): boolean {
@@ -654,6 +646,7 @@ function isQuoted (segment: string): boolean {
 }
 
 /**
+ * @param c
  * @private
  */
 function isValidPathChar (c: string): boolean {

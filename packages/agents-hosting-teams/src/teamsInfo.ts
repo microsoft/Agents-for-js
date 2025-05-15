@@ -29,7 +29,6 @@ import { CloudAdapter, TurnContext } from '@microsoft/agents-hosting'
 export class TeamsInfo {
   /**
    * Gets the meeting participant information.
-   *
    * @param {TurnContext} context - The turn context.
    * @param {string} [meetingId] - The meeting ID.
    * @param {string} [participantId] - The participant ID.
@@ -78,7 +77,6 @@ export class TeamsInfo {
 
   /**
    * Gets the meeting information.
-   *
    * @param {TurnContext} context - The turn context.
    * @param {string} [meetingId] - The meeting ID.
    * @returns {Promise<MeetingInfo>} - The meeting information.
@@ -94,7 +92,6 @@ export class TeamsInfo {
 
   /**
    * Gets the team details.
-   *
    * @param {TurnContext} context - The turn context.
    * @param {string} [teamId] - The team ID.
    * @returns {Promise<TeamDetails>} - The team details.
@@ -113,7 +110,6 @@ export class TeamsInfo {
 
   /**
    * Sends a message to a Teams channel.
-   *
    * @param {TurnContext} context - The turn context.
    * @param {Activity} activity - The activity to send.
    * @param {string} teamsChannelId - The Teams channel ID.
@@ -174,7 +170,6 @@ export class TeamsInfo {
 
   /**
    * Gets the channels of a team.
-   *
    * @param {TurnContext} context - The turn context.
    * @param {string} [teamId] - The team ID.
    * @returns {Promise<ChannelInfo[]>} - The list of channels.
@@ -192,7 +187,6 @@ export class TeamsInfo {
 
   /**
    * Gets the paged members of a team or conversation.
-   *
    * @param {TurnContext} context - The turn context.
    * @param {number} [pageSize] - The page size.
    * @param {string} [continuationToken] - The continuation token.
@@ -212,7 +206,6 @@ export class TeamsInfo {
 
   /**
    * Gets a member of a team or conversation.
-   *
    * @param {TurnContext} context - The turn context.
    * @param {string} userId - The user ID.
    * @returns {Promise<TeamsChannelAccount>} - The member information.
@@ -230,7 +223,6 @@ export class TeamsInfo {
 
   /**
    * Gets the paged members of a team.
-   *
    * @param {TurnContext} context - The turn context.
    * @param {string} [teamId] - The team ID.
    * @param {number} [pageSize] - The page size.
@@ -258,7 +250,6 @@ export class TeamsInfo {
 
   /**
    * Gets a member of a team.
-   *
    * @param {TurnContext} context - The turn context.
    * @param {string} teamId - The team ID.
    * @param {string} userId - The user ID.
@@ -270,7 +261,6 @@ export class TeamsInfo {
 
   /**
    * Sends a meeting notification.
-   *
    * @param {TurnContext} context - The turn context.
    * @param {MeetingNotification} notification - The meeting notification.
    * @param {string} [meetingId] - The meeting ID.
@@ -295,7 +285,6 @@ export class TeamsInfo {
 
   /**
    * Sends a message to a list of users.
-   *
    * @param {TurnContext} context - The turn context.
    * @param {Activity} activity - The activity to send.
    * @param {string} tenantId - The tenant ID.
@@ -318,7 +307,6 @@ export class TeamsInfo {
 
   /**
    * Sends a message to all users in a tenant.
-   *
    * @param {TurnContext} context - The turn context.
    * @param {Activity} activity - The activity to send.
    * @param {string} tenantId - The tenant ID.
@@ -337,7 +325,6 @@ export class TeamsInfo {
 
   /**
    * Sends a message to all users in a team.
-   *
    * @param {TurnContext} context - The turn context.
    * @param {Activity} activity - The activity to send.
    * @param {string} tenantId - The tenant ID.
@@ -359,7 +346,6 @@ export class TeamsInfo {
 
   /**
    * Sends a message to a list of channels.
-   *
    * @param {TurnContext} context - The turn context.
    * @param {Activity} activity - The activity to send.
    * @param {string} tenantId - The tenant ID.
@@ -381,7 +367,6 @@ export class TeamsInfo {
 
   /**
    * Gets the operation state.
-   *
    * @param {TurnContext} context - The turn context.
    * @param {string} operationId - The operation ID.
    * @returns {Promise<BatchOperationStateResponse>} - The operation state response.
@@ -396,7 +381,6 @@ export class TeamsInfo {
 
   /**
    * Gets the failed entries of an operation.
-   *
    * @param {TurnContext} context - The turn context.
    * @param {string} operationId - The operation ID.
    * @returns {Promise<BatchFailedEntriesResponse>} - The failed entries response.
@@ -411,7 +395,6 @@ export class TeamsInfo {
 
   /**
    * Cancels an operation.
-   *
    * @param {TurnContext} context - The turn context.
    * @param {string} operationId - The operation ID.
    * @returns {Promise<CancelOperationResponse>} - The cancel operation response.

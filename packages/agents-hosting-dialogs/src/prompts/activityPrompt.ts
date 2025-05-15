@@ -13,7 +13,6 @@ import { Activity, ActivityTypes, InputHints } from '@microsoft/agents-activity'
 
 /**
  * Waits for an activity to be received.
- *
  * @remarks
  * This prompt requires a validator be passed in and is useful when waiting for non-message
  * activities like an event to be received. The validator can ignore received events until the
@@ -21,11 +20,10 @@ import { Activity, ActivityTypes, InputHints } from '@microsoft/agents-activity'
  */
 export class ActivityPrompt extends Dialog {
   /**
-     * Creates a new ActivityPrompt instance.
-     *
-     * @param dialogId Unique ID of the dialog within its parent `DialogSet` or `ComponentDialog`.
-     * @param validator Validator that will be called each time a new activity is received.
-     */
+   * Creates a new ActivityPrompt instance.
+   * @param dialogId Unique ID of the dialog within its parent `DialogSet` or `ComponentDialog`.
+   * @param validator Validator that will be called each time a new activity is received.
+   */
   constructor (
     dialogId: string,
     private validator: PromptValidator<Activity>
@@ -34,17 +32,16 @@ export class ActivityPrompt extends Dialog {
   }
 
   /**
-     * Called when a prompt dialog is pushed onto the dialog stack and is being activated.
-     *
-     * @param dialogContext The DialogContext for the current
-     * turn of the conversation.
-     * @param options PromptOptions, additional
-     * information to pass to the prompt being started.
-     * @returns A `Promise` representing the asynchronous operation.
-     * @remarks
-     * If the promise is successful, the result indicates whether the prompt is still
-     * active after the turn has been processed by the prompt.
-     */
+   * Called when a prompt dialog is pushed onto the dialog stack and is being activated.
+   * @param dialogContext The DialogContext for the current
+   * turn of the conversation.
+   * @param options PromptOptions, additional
+   * information to pass to the prompt being started.
+   * @returns A `Promise` representing the asynchronous operation.
+   * @remarks
+   * If the promise is successful, the result indicates whether the prompt is still
+   * active after the turn has been processed by the prompt.
+   */
   async beginDialog (dialogContext: DialogContext, options: PromptOptions): Promise<DialogTurnResult> {
     // Ensure prompts have input hint set
     const opt: Partial<PromptOptions> = { ...options }
@@ -67,17 +64,16 @@ export class ActivityPrompt extends Dialog {
   }
 
   /**
-     * Called when a prompt dialog is the active dialog and the user replied with a new activity.
-     *
-     * @param dialogContext The DialogContext for the current
-     * turn of conversation.
-     * @returns A `Promise` representing the asynchronous operation.
-     * @remarks
-     * If the promise is successful, the result indicates whether the dialog is still
-     * active after the turn has been processed by the dialog.
-     * The prompt generally continues to receive the user's replies until it accepts the
-     * user's reply as valid input for the prompt.
-     */
+   * Called when a prompt dialog is the active dialog and the user replied with a new activity.
+   * @param dialogContext The DialogContext for the current
+   * turn of conversation.
+   * @returns A `Promise` representing the asynchronous operation.
+   * @remarks
+   * If the promise is successful, the result indicates whether the dialog is still
+   * active after the turn has been processed by the dialog.
+   * The prompt generally continues to receive the user's replies until it accepts the
+   * user's reply as valid input for the prompt.
+   */
   async continueDialog (dialogContext: DialogContext): Promise<DialogTurnResult> {
     // Perform base recognition
     const state: any = dialogContext.activeDialog.state as ActivityPromptState
@@ -115,17 +111,16 @@ export class ActivityPrompt extends Dialog {
   }
 
   /**
-     * Called when a prompt dialog resumes being the active dialog on the dialog stack, such as
-     * when the previous active dialog on the stack completes.
-     *
-     * @param dialogContext The DialogContext for the current turn
-     * of the conversation.
-     * @param _reason DialogReason, an enum indicating why
-     * the dialog resumed.
-     * @param _result Optional. Value returned from the previous dialog on the stack.
-     * The type of the value returned is dependent on the previous dialog.
-     * @returns A `Promise` representing the asynchronous operation.
-     */
+   * Called when a prompt dialog resumes being the active dialog on the dialog stack, such as
+   * when the previous active dialog on the stack completes.
+   * @param dialogContext The DialogContext for the current turn
+   * of the conversation.
+   * @param _reason DialogReason, an enum indicating why
+   * the dialog resumed.
+   * @param _result Optional. Value returned from the previous dialog on the stack.
+   * The type of the value returned is dependent on the previous dialog.
+   * @returns A `Promise` representing the asynchronous operation.
+   */
   async resumeDialog (dialogContext: DialogContext, _reason: DialogReason, _result?: any): Promise<DialogTurnResult> {
     // Prompts are typically leaf nodes on the stack but the dev is free to push other dialogs
     // on top of the stack which will result in the prompt receiving an unexpected call to
@@ -138,30 +133,28 @@ export class ActivityPrompt extends Dialog {
   }
 
   /**
-     * Called when a prompt dialog has been requested to re-prompt the user for input.
-     *
-     * @param context TurnContext, context for the current
-     * turn of conversation with the user.
-     * @param instance DialogInstance, the instance
-     * of the dialog on the stack.
-     * @returns A `Promise` representing the asynchronous operation.
-     */
+   * Called when a prompt dialog has been requested to re-prompt the user for input.
+   * @param context TurnContext, context for the current
+   * turn of conversation with the user.
+   * @param instance DialogInstance, the instance
+   * of the dialog on the stack.
+   * @returns A `Promise` representing the asynchronous operation.
+   */
   async repromptDialog (context: TurnContext, instance: DialogInstance): Promise<void> {
     const state: ActivityPromptState = instance.state as ActivityPromptState
     await this.onPrompt(context, state.state, state.options, false)
   }
 
   /**
-     * When overridden in a derived class, prompts the user for input.
-     *
-     * @param context TurnContext, context for the current
-     * turn of conversation with the user.
-     * @param state Contains state for the current instance of the prompt on the dialog stack.
-     * @param options A PromptOptions object constructed
-     * from the options initially provided in the call to Prompt.
-     * @param isRetry A boolean representing if the prompt is a retry.
-     * @returns A `Promise` representing the asynchronous operation.
-     */
+   * When overridden in a derived class, prompts the user for input.
+   * @param context TurnContext, context for the current
+   * turn of conversation with the user.
+   * @param state Contains state for the current instance of the prompt on the dialog stack.
+   * @param options A PromptOptions object constructed
+   * from the options initially provided in the call to Prompt.
+   * @param isRetry A boolean representing if the prompt is a retry.
+   * @returns A `Promise` representing the asynchronous operation.
+   */
   protected async onPrompt (
     context: TurnContext,
     state: object,
@@ -176,15 +169,14 @@ export class ActivityPrompt extends Dialog {
   }
 
   /**
-     * When overridden in a derived class, attempts to recognize the incoming Activity.
-     *
-     * @param context TurnContext, context for the current
-     * turn of conversation with the user.
-     * @param _state Contains state for the current instance of the prompt on the dialog stack.
-     * @param _options A PromptOptions object constructed
-     * from the options initially provided in the call to Prompt.
-     * @returns A `Promise` representing the asynchronous operation.
-     */
+   * When overridden in a derived class, attempts to recognize the incoming Activity.
+   * @param context TurnContext, context for the current
+   * turn of conversation with the user.
+   * @param _state Contains state for the current instance of the prompt on the dialog stack.
+   * @param _options A PromptOptions object constructed
+   * from the options initially provided in the call to Prompt.
+   * @returns A `Promise` representing the asynchronous operation.
+   */
   protected async onRecognize (
     context: TurnContext,
     _state: object,

@@ -5,6 +5,11 @@
  */
 export type IgnoreError = (err: Error) => boolean
 
+/**
+ *
+ * @param promise
+ * @param ignore
+ */
 export async function ignoreError<T> (promise: Promise<T>, ignore: IgnoreError): Promise<T | null> {
   try {
     return await promise
@@ -24,6 +29,10 @@ interface ErrorWithStatusCode {
   statusCode?: number;
 }
 
+/**
+ *
+ * @param {...any} codes
+ */
 export function isStatusCodeError (...codes: number[]): IgnoreError {
   const ignoredCodes = new Set(codes)
   return function (err) {

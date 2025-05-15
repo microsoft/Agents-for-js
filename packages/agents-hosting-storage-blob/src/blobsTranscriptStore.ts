@@ -43,6 +43,11 @@ function getConversationPrefix (channelId: string, conversationId: string): stri
   return sanitizeBlobKey(`${channelId}/${conversationId}`)
 }
 
+/**
+ *
+ * @param activity
+ * @param options
+ */
 function getBlobKey (activity: Activity, options?: BlobsTranscriptStoreOptions): string {
   if (!(activity.timestamp instanceof Date)) {
     throw new Error('Invalid timestamp: must be an instance of Date')
@@ -58,6 +63,11 @@ function getBlobKey (activity: Activity, options?: BlobsTranscriptStoreOptions):
   )
 }
 
+/**
+ *
+ * @param key
+ * @param options
+ */
 export function sanitizeBlobKey (key: string, options?: BlobsTranscriptStoreOptions): string {
   if (!key || key.length === 0) {
     throw new Error('Please provide a non-empty key')
@@ -75,6 +85,10 @@ export function sanitizeBlobKey (key: string, options?: BlobsTranscriptStoreOpti
   return encodedKey
 }
 
+/**
+ *
+ * @param value
+ */
 export function maybeCast<T> (value: unknown, ctor?: { new (...args: any[]): T }): T {
   if (ctor != null && value instanceof ctor) {
     return value

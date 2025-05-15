@@ -508,6 +508,12 @@ export class MessageExtensions<TState extends TurnState> {
   }
 }
 
+/**
+ *
+ * @param commandId
+ * @param invokeName
+ * @param messagePreviewAction
+ */
 function createTaskSelector (
   commandId: string | RegExp | RouteSelector,
   invokeName: string,
@@ -546,6 +552,11 @@ function createTaskSelector (
   }
 }
 
+/**
+ *
+ * @param activity
+ * @param messagePreviewAction
+ */
 function matchesPreviewAction (activity: Activity, messagePreviewAction?: 'edit' | 'send'): boolean {
   if ('botMessagePreviewAction' in (activity?.value as any)) {
     const activityValue = parseValueAgentMessagePreviewAction(activity.value)

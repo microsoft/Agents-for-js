@@ -9,12 +9,26 @@ interface Resolution {
   synonym?: string;
 }
 
+/**
+ *
+ * @param result
+ * @param start
+ * @param end
+ * @param text
+ */
 function assertResult (result: ModelResult, start: number, end: number, text: string): void {
   assert(result.start === start, `Invalid ModelResult.start of '${result.start}' for '${text}' result.`)
   assert(result.end === end, `Invalid ModelResult.end of '${result.end}' for '${text}' result.`)
   assert(result.text === text, `Invalid ModelResult.text of '${result.text}' for '${text}' result.`)
 }
 
+/**
+ *
+ * @param result
+ * @param value
+ * @param index
+ * @param score
+ */
 function assertValue (result: ModelResult, value: string, index: number, score: number): void {
   assert(result.typeName === 'value', `Invalid ModelResult.typeName of '${result.typeName}' for '${value}' value.`)
   assert(result.resolution, `Missing ModelResult.resolution for '${value}' value.`)
@@ -25,6 +39,14 @@ function assertValue (result: ModelResult, value: string, index: number, score: 
   assert(resolution.score === score, `Invalid resolution.score of '${resolution.score}' for '${value}' value.`)
 }
 
+/**
+ *
+ * @param result
+ * @param value
+ * @param index
+ * @param score
+ * @param synonym
+ */
 function assertChoice (result: ModelResult, value: string, index: number, score: number, synonym?: string): void {
   assert(result.typeName === 'choice', `Invalid ModelResult.typeName of '${result.typeName}' for '${value}' choice.`)
   assert(result.resolution, `Missing ModelResult.resolution for '${value}' choice.`)

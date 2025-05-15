@@ -13,9 +13,10 @@ import { Activity } from '@microsoft/agents-activity'
  */
 export class UserState extends AgentState {
   /**
-    * Creates a new instance of UserState.
-    * @param storage The storage provider.
-    */
+   * Creates a new instance of UserState.
+   * @param storage The storage provider.
+   * @param namespace
+   */
   constructor (storage: Storage, private readonly namespace: string = '') {
     super(storage, (context: TurnContext) => {
       const key: string = this.getStorageKey(context)

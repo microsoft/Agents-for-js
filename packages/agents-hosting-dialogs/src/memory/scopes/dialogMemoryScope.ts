@@ -21,7 +21,6 @@ export class DialogMemoryScope extends MemoryScope {
 
   /**
    * Gets the backing memory for this scope.
-   *
    * @param dialogContext - The DialogContext object for this turn.
    * @returns The memory for the scope.
    */
@@ -40,7 +39,6 @@ export class DialogMemoryScope extends MemoryScope {
 
   /**
    * Changes the backing object for the memory scope.
-   *
    * @param dialogContext - The DialogContext object for this turn.
    * @param memory - Memory object to set for the scope.
    * @throws Will throw an error if the memory object is undefined or if no active dialog is found.
@@ -68,7 +66,6 @@ export class DialogMemoryScope extends MemoryScope {
 
   /**
    * Determines if the given dialog context is a container.
-   *
    * @private
    * @param dialogContext - The DialogContext object for this turn.
    * @returns A boolean indicating whether the dialog context is a container.

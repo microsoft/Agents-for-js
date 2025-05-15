@@ -31,7 +31,6 @@ export class BlobsStorage implements Storage {
 
   /**
    * Creates a new instance of the BlobsStorage class.
-   *
    * @param connectionString The Azure Storage connection string
    * @param containerName The name of the Blob container to use
    * @param options Optional configuration settings for the storage provider
@@ -86,7 +85,6 @@ export class BlobsStorage implements Storage {
 
   /**
    * Reads storage items from blob storage.
-   *
    * @param keys Array of item keys to read
    * @returns A promise that resolves to a StoreItems object containing the retrieved items
    * @throws Will throw if keys parameter is invalid or if there's an error reading from storage
@@ -124,7 +122,6 @@ export class BlobsStorage implements Storage {
 
   /**
    * Writes storage items to blob storage.
-   *
    * @param changes The items to write to storage
    * @returns A promise that resolves when the write operation is complete
    * @throws Will throw if there's a validation error, eTag conflict, or other storage error
@@ -156,7 +153,6 @@ export class BlobsStorage implements Storage {
 
   /**
    * Deletes storage items from blob storage.
-   *
    * @param keys Array of item keys to delete
    * @returns A promise that resolves when the delete operation is complete
    * @throws Will throw if keys parameter is invalid

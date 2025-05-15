@@ -11,7 +11,6 @@ const logger = debug('dialogs:recognizeChoices')
 
 /**
  * High level function for recognizing a choice in a users utterance.
- *
  * @param utterance The text or user utterance to search over. For an incoming 'message' activity you can simply use `context.activity.text`.
  * @param choices List of choices to search over.
  * @param options (Optional) options used to tweak the search that's performed.
@@ -22,6 +21,10 @@ export function recognizeChoices (
   choices: (string | Choice)[],
   options?: FindChoicesOptions
 ): ModelResult<FoundChoice>[] {
+  /**
+   *
+   * @param match
+   */
   function matchChoiceByIndex (match: ModelResult<any>): void {
     try {
       const index: number = parseInt(match.resolution.value, 10) - 1

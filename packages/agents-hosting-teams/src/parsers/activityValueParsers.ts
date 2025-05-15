@@ -10,7 +10,6 @@ import { adaptiveCardsSearchParamsZodSchema } from '../adaptive-cards'
 
 /**
  * Parses the given value as a value action.
- *
  * @param {unknown} value - The value to parse.
  * @returns {string} - The parsed value action.
  */
@@ -24,7 +23,6 @@ export function parseValueAction (value: unknown): string {
 
 /**
  * Parses the given value as a value action name.
- *
  * @param {unknown} value - The value to parse.
  * @returns {string} - The parsed value action name.
  */
@@ -38,7 +36,6 @@ export function parseValueActionName (value: unknown): string {
 
 /**
  * Parses the given value as a value continuation.
- *
  * @param {unknown} value - The value to parse.
  * @returns {string} - The parsed value continuation.
  */
@@ -52,7 +49,6 @@ export function parseValueContinuation (value: unknown): string {
 
 /**
  * Parses the given value as a value action execute selector.
- *
  * @param {unknown} value - The value to parse.
  * @returns {object} - The parsed value action execute selector.
  */
@@ -80,7 +76,6 @@ export function parseValueActionExecuteSelector (value: unknown): {
 
 /**
  * Parses the given value as a dataset.
- *
  * @param {unknown} value - The value to parse.
  * @returns {object} - The parsed dataset.
  */
@@ -98,7 +93,6 @@ export function parseValueDataset (value: unknown): {
 
 /**
  * Parses the given value as action feedback loop data.
- *
  * @param {unknown} value - The value to parse.
  * @returns {object} - The parsed action feedback loop data.
  */
@@ -125,7 +119,6 @@ export function parseValueActionFeedbackLoopData (value: unknown): {
 
 /**
  * Parses the given value as an adaptive card invoke action.
- *
  * @param {unknown} value - The value to parse.
  * @returns {AdaptiveCardInvokeAction} - The parsed adaptive card invoke action.
  */
@@ -136,7 +129,6 @@ export function parseAdaptiveCardInvokeAction (value: unknown): AdaptiveCardInvo
 
 /**
  * Parses the given value as a search query.
- *
  * @param {unknown} value - The value to parse.
  * @returns {object} - The parsed search query.
  */
@@ -168,7 +160,6 @@ export function parseValueSearchQuery (value: unknown): {
 
 /**
  * Parses the given value as a query.
- *
  * @param {unknown} value - The value to parse.
  * @returns {object} - The parsed query.
  */
@@ -186,7 +177,6 @@ export function parseValueQuery (value: unknown): {
 
 /**
  * Parses the given value as an activity message preview action.
- *
  * @param {unknown} value - The value to parse.
  * @returns {object} - The parsed message preview action.
  */
@@ -204,7 +194,6 @@ export function parseValueAgentMessagePreviewAction (value: unknown): {
 
 /**
  * Parses the given value as an activity preview.
- *
  * @param {unknown} value - The value to parse.
  * @returns {object} - The parsed activity preview.
  */
@@ -220,7 +209,6 @@ export function parseValueAgentActivityPreview (value: unknown): object {
 
 /**
  * Parses the given value as a command ID.
- *
  * @param {unknown} value - The value to parse.
  * @returns {object} - The parsed command ID.
  */
@@ -238,7 +226,6 @@ export function parseValueCommandId (value: unknown): {
 
 /**
  * Parses the given value as a messaging extension query.
- *
  * @param {unknown} value - The value to parse.
  * @returns {MessagingExtensionQuery} - The parsed messaging extension query.
  */

@@ -5,7 +5,6 @@
 
 /**
  * Represents the result of a model recognition process.
- *
  * @template T - The type of the resolution containing additional details about the match.
  */
 export interface ModelResult<T extends Record<string, any> = {}> {

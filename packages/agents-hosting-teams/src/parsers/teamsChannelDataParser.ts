@@ -7,7 +7,6 @@ import { TeamsChannelData, teamsChannelDataZodSchema } from '../channel-data'
 
 /**
  * Parses the given object as TeamsChannelData.
- *
  * @param {object} o - The object to parse.
  * @returns {TeamsChannelData} - The parsed TeamsChannelData.
  */

@@ -3,11 +3,21 @@ import { describe, it } from 'node:test'
 import { MessageFactory } from '../../src'
 import { Activity, AttachmentLayoutTypes, CardAction, InputHints } from '@microsoft/agents-activity'
 
+/**
+ *
+ * @param activity
+ */
 function assertMessage (activity: Activity) {
   assert(typeof activity === 'object', 'invalid activity returned.')
   assert(activity.type === 'message', 'not a message activity.')
 }
 
+/**
+ *
+ * @param actions
+ * @param count
+ * @param titles
+ */
 function assertActions (actions: CardAction[], count: number, titles: string[]) {
   assert(Array.isArray(actions), 'actions not array.')
   assert(actions.length === count, 'wrong number of actions returned.')
@@ -21,6 +31,12 @@ function assertActions (actions: CardAction[], count: number, titles: string[]) 
   }
 }
 
+/**
+ *
+ * @param activity
+ * @param count
+ * @param types
+ */
 function assertAttachments (activity: Activity, count: number, types: string[]) {
   assert(Array.isArray(activity.attachments), 'no attachments array.')
   assert(activity.attachments.length === count, 'wrong number of attachments.')

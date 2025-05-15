@@ -75,6 +75,10 @@ export function getCopilotStudioConnectionUrl (
   return createUri(settings.agentIdentifier, host, agentType, conversationId)
 }
 
+/**
+ *
+ * @param uri
+ */
 function isValidUri (uri: string): boolean {
   try {
     const newUri = new URL(uri)
@@ -84,6 +88,13 @@ function isValidUri (uri: string): boolean {
   }
 }
 
+/**
+ *
+ * @param agentIdentifier
+ * @param host
+ * @param agentType
+ * @param conversationId
+ */
 function createUri (
   agentIdentifier: string,
   host: string,
@@ -104,6 +115,12 @@ function createUri (
   return url.toString()
 }
 
+/**
+ *
+ * @param cloud
+ * @param environmentId
+ * @param cloudBaseAddress
+ */
 function getEnvironmentEndpoint (
   cloud: PowerPlatformCloud,
   environmentId: string,
@@ -123,6 +140,11 @@ function getEnvironmentEndpoint (
   return `${hexPrefix}.${hexSuffix}.environment.${getEndpointSuffix(cloud, cloudBaseAddress)}`
 }
 
+/**
+ *
+ * @param category
+ * @param cloudBaseAddress
+ */
 function getEndpointSuffix (
   category: PowerPlatformCloud,
   cloudBaseAddress: string
@@ -164,6 +186,10 @@ function getEndpointSuffix (
   }
 }
 
+/**
+ *
+ * @param cloud
+ */
 function getIdSuffixLength (cloud: PowerPlatformCloud): number {
   switch (cloud) {
     case PowerPlatformCloud.FirstRelease:

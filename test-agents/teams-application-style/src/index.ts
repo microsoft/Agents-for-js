@@ -10,6 +10,9 @@ const server = express()
 server.use(express.json())
 server.use(authorizeJWT(authConfig))
 
+/**
+ *
+ */
 async function loadModule () {
   const moduleName = process.env.agentName || 'teamsApp'
   let module

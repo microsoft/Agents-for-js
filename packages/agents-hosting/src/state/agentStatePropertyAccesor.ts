@@ -12,13 +12,11 @@ import { AgentState, CustomKey } from './agentState'
  * The interface defines standard methods for working with persisted state properties,
  * allowing property access with strong typing to reduce errors when working with
  * complex state objects.
- *
  * @typeParam T The type of the property being accessed
  */
 export interface StatePropertyAccessor<T = any> {
   /**
    * Deletes the persisted property from its backing storage object.
-   *
    * @remarks
    * The properties backing storage object SHOULD be loaded into memory on first access.
    *
@@ -31,7 +29,6 @@ export interface StatePropertyAccessor<T = any> {
 
   /**
    * Reads a persisted property from its backing storage object.
-   *
    * @remarks
    * The properties backing storage object SHOULD be loaded into memory on first access.
    *
@@ -48,7 +45,6 @@ export interface StatePropertyAccessor<T = any> {
 
   /**
    * Reads a persisted property from its backing storage object.
-   *
    * @param context Context for the current turn of conversation with the user.
    * @param defaultValue (Optional) default value to copy to the backing storage object if the property isn't found.
    */
@@ -56,7 +52,6 @@ export interface StatePropertyAccessor<T = any> {
 
   /**
    * Assigns a new value to the properties backing storage object.
-   *
    * @remarks
    * The properties backing storage object SHOULD be loaded into memory on first access.
    *
@@ -101,13 +96,11 @@ export interface StatePropertyAccessor<T = any> {
  *
  * // Later, call userState.saveChanges(context) to persist to storage
  * ```
- *
  * @typeParam T The type of the property being accessed
  */
 export class AgentStatePropertyAccessor<T = any> implements StatePropertyAccessor<T> {
   /**
    * Creates a new instance of AgentStatePropertyAccessor.
-   *
    * @param state The agent state object that will contain this property
    * @param name The name of the property in the state object
    */
@@ -119,7 +112,6 @@ export class AgentStatePropertyAccessor<T = any> implements StatePropertyAccesso
    * This removes the property from the state object but does not automatically
    * persist the change to storage. Call state.saveChanges() afterwards to
    * persist changes.
-   *
    * @param context The turn context
    * @param customKey Optional custom key for storing the state in a specific location
    * @returns A promise that resolves when the delete operation is complete
@@ -137,7 +129,6 @@ export class AgentStatePropertyAccessor<T = any> implements StatePropertyAccesso
    * If the property doesn't exist and a default value is provided, a deep clone
    * of the default value will be stored in state and returned. This ensures that
    * modifications to the returned object will be properly tracked.
-   *
    * @param context The turn context
    * @param defaultValue Optional default value to use if the property doesn't exist
    * @param customKey Optional custom key for storing the state in a specific location
@@ -161,7 +152,6 @@ export class AgentStatePropertyAccessor<T = any> implements StatePropertyAccesso
    *
    * This updates the property in the in-memory state object but does not automatically
    * persist the change to storage. Call state.saveChanges() afterwards to persist changes.
-   *
    * @param context The turn context
    * @param value The value to set
    * @param customKey Optional custom key for storing the state in a specific location

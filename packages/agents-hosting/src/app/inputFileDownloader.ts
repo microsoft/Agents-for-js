@@ -32,7 +32,6 @@ export interface InputFile {
 export interface InputFileDownloader<TState extends TurnState = TurnState> {
   /**
    * Downloads files based on the provided turn context and state.
-   *
    * @param context - The turn context for the current operation.
    * @param state - The state associated with the current turn.
    * @returns A promise that resolves to an array of input files.

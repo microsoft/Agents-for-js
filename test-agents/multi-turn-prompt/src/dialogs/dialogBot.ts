@@ -11,11 +11,11 @@ export class DialogHandler extends ActivityHandler {
   private dialog: Dialog
   private dialogState: AgentStatePropertyAccessor<DialogState>
   /**
-     *
-     * @param {ConversationState} conversationState
-     * @param {UserState} userState
-     * @param {Dialog} dialog
-     */
+   *
+   * @param {ConversationState} conversationState
+   * @param {UserState} userState
+   * @param {Dialog} dialog
+   */
   constructor (conversationState: AgentState, userState: AgentState, dialog: Dialog) {
     super()
     if (!conversationState) throw new Error('[Dialog]: Missing parameter. conversationState is required')
