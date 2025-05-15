@@ -51,7 +51,7 @@ app.onMessage('/runtime', async (context: TurnContext, state) => {
   await context.sendActivity(JSON.stringify(runtime))
 })
 
-apponConversationUpdate('membersAdded', async (context: TurnContext, state) => {
+app.onConversationUpdate('membersAdded', async (context: TurnContext, state) => {
   await state.load(context, undefined)
   await context.sendActivity('Welcome to the conversation!')
 })
