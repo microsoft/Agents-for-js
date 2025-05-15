@@ -6,11 +6,12 @@
 import { ConversationAccount } from '@microsoft/agents-activity'
 import { Meeting } from './meeting'
 import { TeamsChannelAccount } from '../activity-extensions/teamsChannelAccount'
+import { TurnState } from '@microsoft/agents-hosting'
 
 /**
  * Interface representing a participant in a Teams meeting.
  */
-export interface TeamsMeetingParticipant {
+export interface TeamsMeetingParticipant<TState extends TurnState> {
   /**
    * The user participating in the meeting.
    */
@@ -19,7 +20,7 @@ export interface TeamsMeetingParticipant {
   /**
    * The meeting details.
    */
-  meeting?: Meeting;
+  meeting?: Meeting<TState>;
 
   /**
    * The conversation account associated with the meeting.
