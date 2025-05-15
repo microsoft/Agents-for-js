@@ -366,10 +366,6 @@ export class AgentApplication<TState extends TurnState> {
           return false
         }
 
-        if (typeof state.temp.input !== 'string') {
-          state.temp.input = context.activity.text ?? ''
-        }
-
         if (Array.isArray(this._options.fileDownloaders) && this._options.fileDownloaders.length > 0) {
           const inputFiles = state.temp.inputFiles ?? []
           for (let i = 0; i < this._options.fileDownloaders.length; i++) {
@@ -377,10 +373,6 @@ export class AgentApplication<TState extends TurnState> {
             inputFiles.push(...files)
           }
           state.temp.inputFiles = inputFiles
-        }
-
-        if (state.temp.actionOutputs === undefined) {
-          state.temp.actionOutputs = {}
         }
 
         for (let i = 0; i < this._routes.length; i++) {
