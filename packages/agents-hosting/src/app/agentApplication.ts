@@ -416,10 +416,17 @@ export class AgentApplication<TState extends TurnState> {
    */
   public async runInternal (turnContext: TurnContext): Promise<boolean> {
     return await this.startLongRunningCall(turnContext, async (context) => {
-      this.startTypingTimer(context)
       try {
+        if (this._options.startTypingTimer) {
+          this.startTypingTimer(context)
+        }
+
         if (this._options.removeRecipientMention && context.activity.type === ActivityTypes.Message) {
           context.activity.removeRecipientMention()
+        }
+
+        if (this._options.normalizeMentions && context.activity.type === ActivityTypes.Message) {
+          context.activity.normalizeMentions()
         }
 
         const { storage, turnStateFactory } = this._options
@@ -431,10 +438,6 @@ export class AgentApplication<TState extends TurnState> {
           return false
         }
 
-        if (typeof state.temp.input !== 'string') {
-          state.temp.input = context.activity.text ?? ''
-        }
-
         if (Array.isArray(this._options.fileDownloaders) && this._options.fileDownloaders.length > 0) {
           const inputFiles = state.temp.inputFiles ?? []
           for (let i = 0; i < this._options.fileDownloaders.length; i++) {
@@ -442,10 +445,6 @@ export class AgentApplication<TState extends TurnState> {
             inputFiles.push(...files)
           }
           state.temp.inputFiles = inputFiles
-        }
-
-        if (state.temp.actionOutputs === undefined) {
-          state.temp.actionOutputs = {}
         }
 
         for (let i = 0; i < this._routes.length; i++) {
@@ -533,7 +532,7 @@ export class AgentApplication<TState extends TurnState> {
    * ```
    */
   public startTypingTimer (context: TurnContext): void {
-    if (context.activity.type === ActivityTypes.Message && this._options.startTypingTimer && !this._typingTimer) {
+    if (context.activity.type === ActivityTypes.Message && !this._typingTimer) {
       let timerRunning = true
       context.onSendActivities(async (context, activities, next) => {
         if (timerRunning) {

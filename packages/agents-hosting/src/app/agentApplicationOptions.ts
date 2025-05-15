@@ -57,8 +57,14 @@ export interface AgentApplicationOptions<TState extends TurnState> {
   adaptiveCardsOptions?: AdaptiveCardsOptions;
 
   /**
-   * Optional. If true, the bot will automatically remove mentions of the bot's name from incoming
+   * Optional. If true, the agent will automatically remove mentions of the bot's name from incoming
    * messages. Defaults to true.
    */
-  removeRecipientMention: boolean;
+  removeRecipientMention?: boolean;
+
+  /**
+   * Optional. If true, the agent will automatically normalize mentions in incoming messages. Defaults to
+   * true.
+   */
+  normalizeMentions?: boolean
 }
