@@ -119,13 +119,13 @@ export class AgentApplication<TState extends TurnState> {
    *
    * Example usage:
    * ```typescript
-   * app.error(async (context, error) => {
+   * app.onError(async (context, error) => {
    *   console.error(`An error occurred: ${error.message}`);
    *   await context.sendActivity('Sorry, something went wrong!');
    * });
    * ```
    */
-  public error (handler: (context: TurnContext, error: Error) => Promise<void>): this {
+  public onError (handler: (context: TurnContext, error: Error) => Promise<void>): this {
     if (this._adapter) {
       this._adapter.onTurnError = handler
     }
@@ -200,7 +200,7 @@ export class AgentApplication<TState extends TurnState> {
    *
    * Example usage:
    * ```typescript
-   * apponConversationUpdate('membersAdded', async (context, state) => {
+   * app.onConversationUpdate('membersAdded', async (context, state) => {
    *   const membersAdded = context.activity.membersAdded;
    *   for (const member of membersAdded) {
    *     if (member.id !== context.activity.recipient.id) {
