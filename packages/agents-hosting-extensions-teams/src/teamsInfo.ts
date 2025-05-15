@@ -11,7 +11,7 @@ import { MeetingNotificationResponse } from './meeting/meetingNotificationRespon
 import { Activity, Channels, ConversationReference, ConversationParameters } from '@microsoft/agents-activity'
 import { TeamsConnectorClient } from './client/teamsConnectorClient'
 import { parseTeamsChannelData } from './activity-extensions/teamsChannelDataParser'
-import { CloudAdapter, ConnectorClient, TurnContext } from '@microsoft/agents-hosting'
+import { CloudAdapter, ConnectorClient, TurnContext, TurnState } from '@microsoft/agents-hosting'
 import { ChannelInfo } from './activity-extensions/channelInfo'
 import { BatchFailedEntriesResponse, BatchOperationResponse, BatchOperationStateResponse, CancelOperationResponse, TeamDetails, TeamsMember, TeamsPagedMembersResult } from './client/teamsConnectorClient.types'
 
@@ -35,7 +35,7 @@ export class TeamsInfo {
     meetingId?: string,
     participantId?: string,
     tenantId?: string
-  ): Promise<TeamsMeetingParticipant> {
+  ): Promise<TeamsMeetingParticipant<TurnState>> {
     if (!context) {
       throw new Error('context is required.')
     }
@@ -67,7 +67,7 @@ export class TeamsInfo {
 
     // return this.getTeamsConnectorClient(context).teams.fetchMeetingParticipant(meetingId, participantId, { tenantId })
     const res = await this.getRestClient(context).fetchMeetingParticipant(meetingId, participantId, tenantId!)
-    return res as TeamsMeetingParticipant
+    return res as TeamsMeetingParticipant<TurnState>
   }
 
   /**

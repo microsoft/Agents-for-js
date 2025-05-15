@@ -188,16 +188,17 @@ app.registerExtension(teamsAgentExtension, tae => {
     }
   })
 
-  tae.taskModule.onSubmit(async (context: TurnContext, state: ApplicationTurnState) => {
-    const heroCard = CardFactory.heroCard('data.title', 'data.text')
-    const attachment = { contentType: heroCard.contentType, content: heroCard.content, preview: heroCard }
-    console.log(attachment)
-    // return {
-    //   type: 'result',
-    //   attachmentLayout: 'list',
-    //   attachments: [attachment]
-    // }
-  })
+  // tae.taskModule.submit('do', async (context: TurnContext, state: ApplicationTurnState, data: TData) => {
+  //   const heroCard = CardFactory.heroCard('data.title', 'data.text')
+  //   const attachment = { contentType: heroCard.contentType, content: heroCard.content, preview: heroCard }
+  //   console.log(attachment)
+  //   // return {
+  //   //   type: 'result',
+  //   //   attachmentLayout: 'list',
+  //   //   attachments: [attachment]
+  //   // }
+  //   return null
+  // })
 
   app.conversationUpdate('membersRemoved', async (context: TurnContext, state: ApplicationTurnState) => {
     const removedMember = JSON.stringify(context.activity.membersRemoved)
