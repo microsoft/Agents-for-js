@@ -25,7 +25,7 @@ import { ActivityHandler, AgentApplication, AuthConfiguration, authorizeJWT, Clo
  * import { startServer } from '@microsoft/agents-hosting-express';
  *
  * const app = new AgentApplication<TurnState>();
- * app.message('hello', async (context, state) => {
+ * app.onMessage('hello', async (context, state) => {
  *   await context.sendActivity('Hello, world!');
  * });
  *

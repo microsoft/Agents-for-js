@@ -9,8 +9,8 @@ class EmptyAgent extends AgentApplication<TurnState> {
     super({ storage })
 
     this.conversationUpdate('membersAdded', this.help)
-    this.message('/help', this.help)
-    this.message('/diag', this.diag)
+    this.onMessage('/help', this.help)
+    this.onMessage('/diag', this.diag)
     this.onActivity('message', this.echo)
   }
 

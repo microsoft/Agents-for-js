@@ -171,7 +171,7 @@ export class AgentApplication<TState extends TurnState> {
    *
    * Example usage:
    * ```typescript
-   * app.activity(ActivityTypes.Message, async (context, state) => {
+   * app.onActivity(ActivityTypes.Message, async (context, state) => {
    *   await context.sendActivity('I received your message');
    * });
    * ```
@@ -273,16 +273,16 @@ export class AgentApplication<TState extends TurnState> {
    *
    * Example usage:
    * ```typescript
-   * app.message('hello', async (context, state) => {
+   * app.onMessage('hello', async (context, state) => {
    *   await context.sendActivity('Hello there!');
    * });
    *
-   * app.message(/help., async (context, state) => {
+   * app.onMessage(/help., async (context, state) => {
    *   await context.sendActivity('How can I help you?');
    * });
    * ```
    */
-  public message (
+  public onMessage (
     keyword: string | RegExp | RouteSelector | (string | RegExp | RouteSelector)[],
     handler: (context: TurnContext, state: TState) => Promise<void>
   ): this {

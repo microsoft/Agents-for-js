@@ -258,7 +258,7 @@ app.messageExtensions.submitAction('createCard', async (context: TurnContext, st
   }
 })
 
-app.message('/teamsinfo', async (context: TurnContext, state: ApplicationTurnState) => {
+app.onMessage('/teamsinfo', async (context: TurnContext, state: ApplicationTurnState) => {
   const channels = await TeamsInfo.getTeamChannels(context)
   const msg1 = `Meeting Participant: ${JSON.stringify(channels)}}`
   await context.sendActivity(MessageFactory.text(msg1))
@@ -268,7 +268,7 @@ app.message('/teamsinfo', async (context: TurnContext, state: ApplicationTurnSta
   await context.sendActivity(MessageFactory.text(msg2))
 })
 
-app.message('/taskModule', async (context: TurnContext, state: ApplicationTurnState) => {
+app.onMessage('/taskModule', async (context: TurnContext, state: ApplicationTurnState) => {
   const reply = MessageFactory.attachment(getTaskModuleHeroCardOptions())
   await context.sendActivity(reply)
 })
@@ -305,7 +305,7 @@ app.taskModules.submit(async (context: TurnContext) => true, async (context: Tur
   return 'Thanks!'
 })
 
-app.activity(ActivityTypes.Message, async (context: TurnContext, state: ApplicationTurnState) => {
+app.onActivity(ActivityTypes.Message, async (context: TurnContext, state: ApplicationTurnState) => {
   await context.sendActivity(MessageFactory.text('Type "/teamsinfo" or "/taskModule"'))
 })
 
