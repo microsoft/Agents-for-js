@@ -1,4 +1,7 @@
-/** * Copyright (c) Microsoft Corporation. All rights reserved. * Licensed under the MIT License. */
+/**
+ * Copyright (c) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License.
+ */
 import { ActionTypes, Activity, ActivityTypes, Attachment, AttachmentLayoutTypes, CardAction, InputHints, SuggestedActions } from '@microsoft/agents-activity'
 
 /**
@@ -7,10 +10,10 @@ import { ActionTypes, Activity, ActivityTypes, Attachment, AttachmentLayoutTypes
 export class MessageFactory {
   /**
    * Creates a text message activity.
-   * @param text The text of the message.
-   * @param speak (Optional) The text to be spoken by the agent.
-   * @param inputHint (Optional) The input hint for the message.
-   * @returns The created text message activity.
+   * @param {string} text The text of the message.
+   * @param {string} [speak] (Optional) The text to be spoken by the agent.
+   * @param {InputHints | string} [inputHint] (Optional) The input hint for the message.
+   * @returns {Activity} The created text message activity.
    */
   static text (text: string, speak?: string, inputHint?: InputHints | string): Activity {
     let msgObj = {}
@@ -28,11 +31,11 @@ export class MessageFactory {
 
   /**
    * Creates a message activity with suggested actions.
-   * @param actions The suggested actions.
-   * @param text (Optional) The text of the message.
-   * @param speak (Optional) The text to be spoken by the agent.
-   * @param inputHint (Optional) The input hint for the message.
-   * @returns The created message activity with suggested actions.
+   * @param {Array<CardAction | string>} actions The suggested actions.
+   * @param {string} [text] (Optional) The text of the message.
+   * @param {string} [speak] (Optional) The text to be spoken by the agent.
+   * @param {InputHints | string} [inputHint] (Optional) The input hint for the message.
+   * @returns {Activity} The created message activity with suggested actions.
    */
   static suggestedActions (
     actions: Array<CardAction | string>,
@@ -69,11 +72,11 @@ export class MessageFactory {
 
   /**
    * Creates a message activity with a single attachment.
-   * @param attachment The attachment to include in the message.
-   * @param text (Optional) The text of the message.
-   * @param speak (Optional) The text to be spoken by the agent.
-   * @param inputHint (Optional) The input hint for the message.
-   * @returns The created message activity with an attachment.
+   * @param {Attachment} attachment The attachment to include in the message.
+   * @param {string} [text] (Optional) The text of the message.
+   * @param {string} [speak] (Optional) The text to be spoken by the agent.
+   * @param {InputHints | string} [inputHint] (Optional) The input hint for the message.
+   * @returns {Activity} The created message activity with an attachment.
    */
   static attachment (
     attachment: Attachment,
@@ -86,11 +89,11 @@ export class MessageFactory {
 
   /**
    * Creates a message activity with a list of attachments.
-   * @param attachments The list of attachments to include in the message.
-   * @param text (Optional) The text of the message.
-   * @param speak (Optional) The text to be spoken by the agent.
-   * @param inputHint (Optional) The input hint for the message.
-   * @returns The created message activity with a list of attachments.
+   * @param {Attachment[]} attachments The list of attachments to include in the message.
+   * @param {string} [text] (Optional) The text of the message.
+   * @param {string} [speak] (Optional) The text to be spoken by the agent.
+   * @param {InputHints | string} [inputHint] (Optional) The input hint for the message.
+   * @returns {Activity} The created message activity with a list of attachments.
    */
   static list (
     attachments: Attachment[],
@@ -103,11 +106,11 @@ export class MessageFactory {
 
   /**
    * Creates a message activity with a carousel of attachments.
-   * @param attachments The list of attachments to include in the carousel.
-   * @param text (Optional) The text of the message.
-   * @param speak (Optional) The text to be spoken by the agent.
-   * @param inputHint (Optional) The input hint for the message.
-   * @returns The created message activity with a carousel of attachments.
+   * @param {Attachment[]} attachments The list of attachments to include in the carousel.
+   * @param {string} [text] (Optional) The text of the message.
+   * @param {string} [speak] (Optional) The text to be spoken by the agent.
+   * @param {InputHints | string} [inputHint] (Optional) The input hint for the message.
+   * @returns {Activity} The created message activity with a carousel of attachments.
    */
   static carousel (
     attachments: Attachment[],
@@ -120,13 +123,13 @@ export class MessageFactory {
 
   /**
    * Creates a message activity with content from a URL.
-   * @param url The URL of the content.
-   * @param contentType The content type of the attachment.
-   * @param name (Optional) The name of the attachment.
-   * @param text (Optional) The text of the message.
-   * @param speak (Optional) The text to be spoken by the agent.
-   * @param inputHint (Optional) The input hint for the message.
-   * @returns The created message activity with content from a URL.
+   * @param {string} url The URL of the content.
+   * @param {string} contentType The content type of the attachment.
+   * @param {string} [name] (Optional) The name of the attachment.
+   * @param {string} [text] (Optional) The text of the message.
+   * @param {string} [speak] (Optional) The text to be spoken by the agent.
+   * @param {InputHints | string} [inputHint] (Optional) The input hint for the message.
+   * @returns {Activity} The created message activity with content from a URL.
    */
   static contentUrl (
     url: string,
@@ -146,12 +149,12 @@ export class MessageFactory {
 
 /**
  * Creates a message activity with attachments.
- * @param attachmentLayout The layout for the attachments.
- * @param attachments The list of attachments to include in the message.
- * @param text (Optional) The text of the message.
- * @param speak (Optional) The text to be spoken by the agent.
- * @param inputHint (Optional) The input hint for the message.
- * @returns The created message activity with attachments.
+ * @param {AttachmentLayoutTypes} attachmentLayout The layout for the attachments.
+ * @param {Attachment[]} attachments The list of attachments to include in the message.
+ * @param {string} [text] (Optional) The text of the message.
+ * @param {string} [speak] (Optional) The text to be spoken by the agent.
+ * @param {InputHints | string} [inputHint] (Optional) The input hint for the message.
+ * @returns {Activity} The created message activity with attachments.
  */
 function attachmentActivity (
   attachmentLayout: AttachmentLayoutTypes,
