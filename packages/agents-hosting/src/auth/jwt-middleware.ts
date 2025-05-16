@@ -21,7 +21,7 @@ const logger = debug('agents:jwt-middleware')
 const verifyToken = async (raw: string, config: AuthConfiguration): Promise<JwtPayload> => {
   const getKey: GetPublicKeyOrSecret = (header: JwtHeader, callback: SignCallback) => {
     const payload = jwt.decode(raw) as JwtPayload
-
+    logger.info('jwt.decode ', JSON.stringify(payload))
     const jwksUri: string = payload.iss === 'https://api.botframework.com'
       ? 'https://login.botframework.com/v1/.well-known/keys'
       : `https://login.microsoftonline.com/${config.tenantId}/discovery/v2.0/keys`

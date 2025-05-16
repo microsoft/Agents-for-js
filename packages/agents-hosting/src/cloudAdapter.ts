@@ -198,25 +198,23 @@ export class CloudAdapter extends BaseAdapter {
     }
 
     logger.debug('Received activity: ', activity)
+    const context = this.createTurnContext(activity, logic)
+    const scope = request.user?.azp ?? request.user?.appid ?? 'https://api.botframework.com'
+    logger.debug('Creating connector client with scope: ', scope)
+    this.connectorClient = await this.createConnectorClient(activity.serviceUrl!, scope)
+    this.setConnectorClient(context)
 
     if (
       activity?.type === ActivityTypes.InvokeResponse ||
       activity?.type === ActivityTypes.Invoke ||
       activity?.deliveryMode === DeliveryModes.ExpectReplies
     ) {
-      const context = this.createTurnContext(activity, logic)
       await this.runMiddleware(context, logic)
       const invokeResponse = this.processTurnResults(context)
       logger.debug('Activity Response (invoke/expect replies): ', invokeResponse)
       return end(invokeResponse?.status ?? StatusCodes.OK, JSON.stringify(invokeResponse?.body), true)
     }
 
-    const scope = request.user?.azp ?? request.user?.appid ?? 'https://api.botframework.com'
-    logger.debug('Creating connector client with scope: ', scope)
-    this.connectorClient = await this.createConnectorClient(activity.serviceUrl!, scope)
-
-    const context = this.createTurnContext(activity, logic)
-    this.setConnectorClient(context)
     await this.runMiddleware(context, logic)
     const invokeResponse = this.processTurnResults(context)
 

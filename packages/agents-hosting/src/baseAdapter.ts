@@ -175,12 +175,12 @@ export abstract class BaseAdapter {
 
     try {
       await this.middleware.run(pContext.proxy, async () => await next(pContext.proxy))
-    } catch (err) {
+    } catch (err: Error | any) {
       if (this.onTurnError) {
         if (err instanceof Error) {
           await this.onTurnError(pContext.proxy, err)
         } else {
-          throw new Error('Unknown error type')
+          throw new Error('Unknown error type: ' + err.message)
         }
       } else {
         throw err

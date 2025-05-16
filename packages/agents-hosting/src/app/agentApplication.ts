@@ -4,18 +4,20 @@
  */
 
 import { Activity, ActivityTypes, ConversationReference } from '@microsoft/agents-activity'
-import { TurnState } from './turnState'
 import { BaseAdapter } from '../baseAdapter'
-import { AgentApplicationOptions } from './agentApplicationOptions'
-import { RouteSelector } from './routeSelector'
-import { RouteHandler } from './routeHandler'
-import { ConversationUpdateEvents } from './conversationUpdateEvents'
-import { TurnEvents } from './turnEvents'
-import { AppRoute } from './appRoute'
-import { TurnContext } from '../turnContext'
 import { ResourceResponse } from '../connector-client'
 import { debug } from '../logger'
+import { TurnContext } from '../turnContext'
+import { AdaptiveCardsActions } from './adaptiveCards'
+import { AgentApplicationOptions } from './agentApplicationOptions'
+import { AppRoute } from './appRoute'
+import { ConversationUpdateEvents } from './conversationUpdateEvents'
+import { AgentExtension } from './extensions'
 import { Authorization } from './oauth/authorization'
+import { RouteHandler } from './routeHandler'
+import { RouteSelector } from './routeSelector'
+import { TurnEvents } from './turnEvents'
+import { TurnState } from './turnState'
 
 const logger = debug('agents:agent-application')
 
@@ -46,15 +48,20 @@ export class AgentApplication<TState extends TurnState> {
   protected readonly _afterTurn: ApplicationEventHandler<TState>[] = []
   private readonly _adapter?: BaseAdapter
   private readonly _authorization?: Authorization
-  private _typingTimer: any
+  private _typingTimer: NodeJS.Timeout | undefined
+  protected readonly _extensions: AgentExtension<TState>[] = []
+  private readonly _adaptiveCards: AdaptiveCardsActions<TState>
 
   public constructor (options?: Partial<AgentApplicationOptions<TState>>) {
     this._options = {
       ...options,
       turnStateFactory: options?.turnStateFactory || (() => new TurnState() as TState),
       startTypingTimer: options?.startTypingTimer !== undefined ? options.startTypingTimer : false,
-      longRunningMessages: options?.longRunningMessages !== undefined ? options.longRunningMessages : false
+      longRunningMessages: options?.longRunningMessages !== undefined ? options.longRunningMessages : false,
+      removeRecipientMention: options?.removeRecipientMention !== undefined ? options.removeRecipientMention : true,
     }
+
+    this._adaptiveCards = new AdaptiveCardsActions<TState>(this)
 
     if (this._options.adapter) {
       this._adapter = this._options.adapter
@@ -65,9 +72,7 @@ export class AgentApplication<TState extends TurnState> {
     }
 
     if (this._options.longRunningMessages && !this._adapter && !this._options.agentAppId) {
-      throw new Error(
-        'The Application.longRunningMessages property is unavailable because no adapter or agentAppId was configured.'
-      )
+      throw new Error('The Application.longRunningMessages property is unavailable because no adapter was configured in the app.')
     }
   }
 
@@ -76,13 +81,7 @@ export class AgentApplication<TState extends TurnState> {
    * @throws Error if the adapter is not configured.
    */
   public get adapter (): BaseAdapter {
-    if (!this._adapter) {
-      throw new Error(
-        'The Application.adapter property is unavailable because it was not configured when creating the Application.'
-      )
-    }
-
-    return this._adapter
+    return this._adapter!
   }
 
   /**
@@ -91,11 +90,8 @@ export class AgentApplication<TState extends TurnState> {
    */
   public get authorization (): Authorization {
     if (!this._authorization) {
-      throw new Error(
-        'The Application.authorization property is unavailable because no authentication options were configured.'
-      )
+      throw new Error('The Application.authorization property is unavailable because no authorization options were configured.')
     }
-
     return this._authorization
   }
 
@@ -105,6 +101,10 @@ export class AgentApplication<TState extends TurnState> {
    */
   public get options (): AgentApplicationOptions<TState> {
     return this._options
+  }
+
+  public get adaptiveCards (): AdaptiveCardsActions<TState> {
+    return this._adaptiveCards
   }
 
   /**
@@ -129,7 +129,6 @@ export class AgentApplication<TState extends TurnState> {
     if (this._adapter) {
       this._adapter.onTurnError = handler
     }
-
     return this
   }
 
@@ -153,8 +152,8 @@ export class AgentApplication<TState extends TurnState> {
    * );
    * ```
    */
-  public addRoute (selector: RouteSelector, handler: RouteHandler<TState>): this {
-    this._routes.push({ selector, handler })
+  public addRoute (selector: RouteSelector, handler: RouteHandler<TState>, isInvokeRoute: boolean = false): this {
+    this._routes.push({ selector, handler, isInvokeRoute })
     return this
   }
 
@@ -316,9 +315,71 @@ export class AgentApplication<TState extends TurnState> {
       this.authorization.onSignInSuccess(handler)
     } else {
       throw new Error(
-        'The Application.authentication property is unavailable because no authentication options were configured.'
+        'The Application.authorization property is unavailable because no authorization options were configured.'
       )
     }
+    return this
+  }
+
+  /**
+   * Adds a handler for message reaction added events.
+   *
+   * @param handler - The handler function that will be called when a message reaction is added.
+   * @returns The current instance of the application.
+   *
+   * @remarks
+   * This method registers a handler that will be invoked when a user adds a reaction to a message,
+   * such as a like, heart, or other emoji reaction.
+   *
+   * Example usage:
+   * ```typescript
+   * app.onMessageReactionAdded(async (context, state) => {
+   *   const reactionsAdded = context.activity.reactionsAdded;
+   *   if (reactionsAdded && reactionsAdded.length > 0) {
+   *     await context.sendActivity(`Thanks for your ${reactionsAdded[0].type} reaction!`);
+   *   }
+   * });
+   * ```
+   */
+  public onMessageReactionAdded (handler: (context: TurnContext, state: TState) => Promise<void>): this {
+    const selector = async (context: TurnContext): Promise<boolean> => {
+      return context.activity.type === ActivityTypes.MessageReaction &&
+             Array.isArray(context.activity.reactionsAdded) &&
+             context.activity.reactionsAdded.length > 0
+    }
+
+    this.addRoute(selector, handler)
+    return this
+  }
+
+  /**
+   * Adds a handler for message reaction removed events.
+   *
+   * @param handler - The handler function that will be called when a message reaction is removed.
+   * @returns The current instance of the application.
+   *
+   * @remarks
+   * This method registers a handler that will be invoked when a user removes a reaction from a message,
+   * such as unliking or removing an emoji reaction.
+   *
+   * Example usage:
+   * ```typescript
+   * app.onMessageReactionRemoved(async (context, state) => {
+   *   const reactionsRemoved = context.activity.reactionsRemoved;
+   *   if (reactionsRemoved && reactionsRemoved.length > 0) {
+   *     await context.sendActivity(`You removed your ${reactionsRemoved[0].type} reaction.`);
+   *   }
+   * });
+   * ```
+   */
+  public onMessageReactionRemoved (handler: (context: TurnContext, state: TState) => Promise<void>): this {
+    const selector = async (context: TurnContext): Promise<boolean> => {
+      return context.activity.type === ActivityTypes.MessageReaction &&
+             Array.isArray(context.activity.reactionsRemoved) &&
+             context.activity.reactionsRemoved.length > 0
+    }
+
+    this.addRoute(selector, handler)
     return this
   }
 
@@ -355,8 +416,19 @@ export class AgentApplication<TState extends TurnState> {
    */
   public async runInternal (turnContext: TurnContext): Promise<boolean> {
     return await this.startLongRunningCall(turnContext, async (context) => {
-      this.startTypingTimer(context)
       try {
+        if (this._options.startTypingTimer) {
+          this.startTypingTimer(context)
+        }
+
+        if (this._options.removeRecipientMention && context.activity.type === ActivityTypes.Message) {
+          context.activity.removeRecipientMention()
+        }
+
+        if (this._options.normalizeMentions && context.activity.type === ActivityTypes.Message) {
+          context.activity.normalizeMentions()
+        }
+
         const { storage, turnStateFactory } = this._options
         const state = turnStateFactory()
         await state.load(context, storage)
@@ -495,6 +567,14 @@ export class AgentApplication<TState extends TurnState> {
       }
       this._typingTimer = setTimeout(onTimeout, TYPING_TIMER_DELAY)
     }
+  }
+
+  public registerExtension<T extends AgentExtension<TState>> (extension: T, regcb : (ext:T) => void): void {
+    if (this._extensions.includes(extension)) {
+      throw new Error('Extension already registered')
+    }
+    this._extensions.push(extension)
+    regcb(extension)
   }
 
   /**

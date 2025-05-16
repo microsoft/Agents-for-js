@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { CacheInfo, TaskModuleResponseBase } from '@microsoft/agents-hosting-teams'
+import { TaskModuleResponseBase } from '@microsoft/agents-hosting-extensions-teams'
 
 export interface TaskModuleResponse {
   task?: TaskModuleResponseBase
-  cacheInfo?: CacheInfo
+  cacheInfo?: any // TODO CacheInfo
 }

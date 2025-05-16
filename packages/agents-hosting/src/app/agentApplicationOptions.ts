@@ -4,10 +4,11 @@
  */
 
 import { CloudAdapter } from '../cloudAdapter'
-import { InputFileDownloader } from './inputFileDownloader'
-import { TurnState } from './turnState'
 import { Storage } from '../storage'
+import { AdaptiveCardsOptions } from './adaptiveCards'
+import { InputFileDownloader } from './inputFileDownloader'
 import { AuthorizationHandlers } from './oauth/authorization'
+import { TurnState } from './turnState'
 
 export interface AgentApplicationOptions<TState extends TurnState> {
   /**
@@ -49,4 +50,21 @@ export interface AgentApplicationOptions<TState extends TurnState> {
    * Handlers for managing authorization.
    */
   authorization?: AuthorizationHandlers;
+
+  /**
+   * Options for AdaptiveCard actions.
+   */
+  adaptiveCardsOptions?: AdaptiveCardsOptions;
+
+  /**
+   * Optional. If true, the agent will automatically remove mentions of the bot's name from incoming
+   * messages. Defaults to true.
+   */
+  removeRecipientMention?: boolean;
+
+  /**
+   * Optional. If true, the agent will automatically normalize mentions in incoming messages. Defaults to
+   * true.
+   */
+  normalizeMentions?: boolean
 }

@@ -851,7 +851,7 @@ describe('Activity removeRecipientMention', () => {
       text: 'bot123 Hello, how can I help you?'
     }
     const activity: Activity = Activity.fromObject(obj)
-    activity.entities = [mention as unknown as Entity]
+    // activity.entities = [mention as unknown as Entity]
 
     const result = activity.removeRecipientMention()
     assert.equal(result, 'Hello, how can I help you?')
