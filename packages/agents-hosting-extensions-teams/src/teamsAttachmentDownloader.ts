@@ -31,7 +31,7 @@ export class TeamsAttachmentDownloader<TState extends TurnState = TurnState> imp
     }
 
     const connectorClient : ConnectorClient = context.turnState.get<ConnectorClient>('connectorClient')
-    this._httpClient.defaults.headers.common.Authorization = connectorClient.axiosInstance.defaults.headers.common.Authorization
+    this._httpClient.defaults.headers = connectorClient.axiosInstance.defaults.headers
 
     const files: InputFile[] = []
     for (const attachment of attachments) {
@@ -51,30 +51,28 @@ export class TeamsAttachmentDownloader<TState extends TurnState = TurnState> imp
      * @returns {Promise<InputFile>} - Promise that resolves to the downloaded input file.
      */
   private async downloadFile (attachment: Attachment): Promise<InputFile | undefined> {
-    if (attachment.contentUrl && attachment.contentUrl.startsWith('https://')) {
+    let inputFile: InputFile | undefined
+    if (attachment.contentType === 'application/vnd.microsoft.teams.file.download.info') {
       const contentSchema = z.object({ downloadUrl: z.string() })
       const contentValue = contentSchema.parse(attachment.content)
       const response = await this._httpClient.get(contentValue.downloadUrl, { responseType: 'arraybuffer' })
-
       const content = Buffer.from(response.data, 'binary')
-
       let contentType = attachment.contentType
       if (contentType === 'image/*') {
         contentType = 'image/png'
       }
-
-      // Return file
-      return {
-        content,
-        contentType,
-        contentUrl: attachment.contentUrl
-      }
+      inputFile = { content, contentType, contentUrl: attachment.contentUrl }
+    } else if (attachment.contentType === 'image/*') {
+      const response = await this._httpClient.get(attachment.contentUrl!, { responseType: 'arraybuffer' })
+      const content = Buffer.from(response.data, 'binary')
+      inputFile = { content, contentType: attachment.contentType, contentUrl: attachment.contentUrl }
     } else {
-      return {
+      inputFile = {
         content: Buffer.from(attachment.content as ArrayBuffer),
         contentType: attachment.contentType,
         contentUrl: attachment.contentUrl
       }
     }
+    return inputFile
   }
 }
