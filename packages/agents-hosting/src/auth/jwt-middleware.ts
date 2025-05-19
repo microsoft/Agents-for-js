@@ -41,7 +41,7 @@ const verifyToken = async (raw: string, config: AuthConfiguration): Promise<JwtP
     })
   }
 
-  return await new Promise((resolve, reject) => {
+  return await new Promise<JwtPayload>((resolve, reject) => {
     const verifyOptions: jwt.VerifyOptions = {
       issuer: config.issuers,
       audience: [config.clientId!, 'https://api.botframework.com'],
@@ -50,13 +50,13 @@ const verifyToken = async (raw: string, config: AuthConfiguration): Promise<JwtP
       clockTolerance: 300
     }
 
-    jwt.verify(raw, getKey, verifyOptions, (err, user) => {
+    jwt.verify(raw, getKey, verifyOptions, (err: jwt.VerifyErrors | null, decoded: string | jwt.JwtPayload | undefined) => {
       if (err != null) {
         logger.error('jwt.verify ', JSON.stringify(err))
         reject(err)
         return
       }
-      const tokenClaims = user as JwtPayload
+      const tokenClaims = decoded as JwtPayload
 
       resolve(tokenClaims)
     })
@@ -73,7 +73,6 @@ const verifyToken = async (raw: string, config: AuthConfiguration): Promise<JwtP
  */
 export const authorizeJWT = (authConfig: AuthConfiguration) => {
   return async function (req: Request, res: Response, next: NextFunction) {
-    let failed = false
     logger.info('authorizing jwt')
     const authHeader = req.headers.authorization as string
     if (authHeader) {
@@ -83,9 +82,9 @@ export const authorizeJWT = (authConfig: AuthConfiguration) => {
         logger.debug('token verified for ', user)
         req.user = user
       } catch (err: Error | any) {
-        failed = true
         logger.error(err)
         res.status(401).send({ 'jwt-auth-error': err.message })
+        return // Prevent next() after response sent
       }
     } else {
       if (!authConfig.clientId && process.env.NODE_ENV !== 'production') {
@@ -94,10 +93,9 @@ export const authorizeJWT = (authConfig: AuthConfiguration) => {
       } else {
         logger.error('authorization header not found')
         res.status(401).send({ 'jwt-auth-error': 'authorization header not found' })
+        return // Prevent next() after response sent
       }
     }
-    if (!failed) {
-      next()
-    }
+    next()
   }
 }
