@@ -60,6 +60,9 @@ const verifyToken = async (raw: string, config: AuthConfiguration): Promise<JwtP
 
       resolve(tokenClaims)
     })
+  }).catch((err) => {
+    logger.error('Error in verifyToken: ', err)
+    throw err
   })
 }
 
