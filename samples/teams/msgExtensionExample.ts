@@ -56,7 +56,7 @@ app.onMessageReactionAdded(async (context: TurnContext, state: TurnState) => {
   await context.sendActivity(`You added a reaction: ${reactionInfo}`)
 })
 
-app.activity('message', async (context: TurnContext, state: TurnState) => {
+app.onActivity('message', async (context: TurnContext, state: TurnState) => {
   const text = context.activity.text || ''
   console.log('Received message:', text)
   await context.sendActivity(`I received your message in Teams: "${text}". Try adding a reaction!`)

@@ -35,7 +35,7 @@ app.registerExtension<TeamsAgentExtension>(teamsExt, (tae) => {
   })
 })
 
-app.activity('message', async (context: TurnContext, state: TurnState) => {
+app.onActivity('message', async (context: TurnContext, state: TurnState) => {
   const text = context.activity.text || ''
   console.log('Received message:', text)
 

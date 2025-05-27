@@ -14,7 +14,7 @@ import { startServer } from '@microsoft/agents-hosting-express'
 
 type ApplicationTurnState = TurnState
 export const app = new AgentApplication()
-app.conversationUpdate('membersAdded', async (context: TurnContext, state: ApplicationTurnState) => {
+app.onConversationUpdate('membersAdded', async (context: TurnContext, state: ApplicationTurnState) => {
   const welcomeText = 'cardActions: /acExecute /acSubmit!'
   await context.sendActivity(MessageFactory.text(welcomeText, welcomeText))
 })
@@ -45,7 +45,7 @@ app.adaptiveCards.actionExecute('doStuff', async (context, state, data) => {
   return card as AdaptiveCard
 })
 
-app.message('/acExecute', async (context: TurnContext, state: ApplicationTurnState) => {
+app.onMessage('/acExecute', async (context: TurnContext, state: ApplicationTurnState) => {
   const card: AdaptiveCard = {
     type: 'AdaptiveCard',
     body: [
@@ -81,7 +81,7 @@ app.message('/acExecute', async (context: TurnContext, state: ApplicationTurnSta
   await context.sendActivity(MessageFactory.attachment(CardFactory.adaptiveCard(card)))
 })
 
-app.message('/acSubmit', async (context: TurnContext, state: ApplicationTurnState) => {
+app.onMessage('/acSubmit', async (context: TurnContext, state: ApplicationTurnState) => {
   const card: AdaptiveCard = {
     type: 'AdaptiveCard',
     body: [

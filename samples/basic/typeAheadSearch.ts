@@ -10,7 +10,7 @@ interface packageResult {
 }
 
 const app = new AgentApplication<TurnState>({ storage: new MemoryStorage() })
-app.conversationUpdate('membersAdded', async (context: TurnContext) => {
+app.onConversationUpdate('membersAdded', async (context: TurnContext) => {
   await context.sendActivity('Hello and welcome! With this sample you can see the functionality of static and dynamic search in adaptive card')
 })
 
@@ -44,7 +44,7 @@ app.adaptiveCards.search('', async (context: TurnContext, state: TurnState) => {
   return Promise.resolve([])
 })
 
-app.activity('message', async (context: TurnContext, state: TurnState) => {
+app.onActivity('message', async (context: TurnContext, state: TurnState) => {
   const text = context.activity.text?.toLowerCase().trim()
   const value = context.activity.value
 

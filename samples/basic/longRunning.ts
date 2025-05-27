@@ -17,11 +17,11 @@ const app = new AgentApplication<TurnState<DefaultConversationState, MyUserState
   }
 })
 
-app.conversationUpdate('membersAdded', async (context: TurnContext) => {
+app.onConversationUpdate('membersAdded', async (context: TurnContext) => {
   await context.sendActivity('Welcome to the Echo sample, send a message to see the echo feature in action.')
 })
 
-app.activity('message', async (context: TurnContext, state: TurnState<DefaultConversationState, MyUserState>) => {
+app.onActivity('message', async (context: TurnContext, state: TurnState<DefaultConversationState, MyUserState>) => {
   const numMessages = state.user.numMessages || 0
   const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
   // await context.sendActivity(`You said1: ${context.activity.text}`)

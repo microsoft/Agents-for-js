@@ -200,7 +200,7 @@ app.registerExtension(teamsAgentExtension, tae => {
   //   return null
   // })
 
-  app.conversationUpdate('membersRemoved', async (context: TurnContext, state: ApplicationTurnState) => {
+  app.onConversationUpdate('membersRemoved', async (context: TurnContext, state: ApplicationTurnState) => {
     const removedMember = JSON.stringify(context.activity.membersRemoved)
     const reply = MessageFactory.text('Hi there! A team member was removed' + removedMember)
     await context.sendActivity(reply)
@@ -217,7 +217,7 @@ app.registerExtension(teamsAgentExtension, tae => {
   //   }
   // })
 
-  app.message('/teamsinfo', async (context: TurnContext, state: ApplicationTurnState) => {
+  app.onMessage('/teamsinfo', async (context: TurnContext, state: ApplicationTurnState) => {
     const channels = await TeamsInfo.getTeamChannels(context)
     const msg1 = `Meeting Participant: ${JSON.stringify(channels)}}`
     await context.sendActivity(MessageFactory.text(msg1))
@@ -227,7 +227,7 @@ app.registerExtension(teamsAgentExtension, tae => {
     await context.sendActivity(MessageFactory.text(msg2))
   })
 
-  app.message('/taskModule', async (context: TurnContext, state: ApplicationTurnState) => {
+  app.onMessage('/taskModule', async (context: TurnContext, state: ApplicationTurnState) => {
     const reply = MessageFactory.attachment(getTaskModuleHeroCardOptions())
     await context.sendActivity(reply)
   })
@@ -264,7 +264,7 @@ app.registerExtension(teamsAgentExtension, tae => {
   //   return 'Thanks!'
   // })
 
-  app.activity(ActivityTypes.Message, async (context: TurnContext, state: ApplicationTurnState) => {
+  app.onActivity(ActivityTypes.Message, async (context: TurnContext, state: ApplicationTurnState) => {
     await context.sendActivity(MessageFactory.text('Type "/teamsinfo" or "/taskModule"'))
   })
 
