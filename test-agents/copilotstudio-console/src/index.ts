@@ -76,7 +76,7 @@ const askQuestion = async (copilotClient: CopilotStudioClient, conversationId: s
   rl.question('\n>>>: ', async (answer) => {
     if (answer.toLowerCase() === 'exit') {
       rl.close()
-    } else {
+    } else if (answer.length > 0) {
       const replies = await copilotClient.askQuestionAsync(answer, conversationId)
       replies.forEach((act: Activity) => {
         if (act.type === ActivityTypes.Message) {
@@ -87,8 +87,8 @@ const askQuestion = async (copilotClient: CopilotStudioClient, conversationId: s
           rl.close()
         }
       })
-      await askQuestion(copilotClient, conversationId)
     }
+    await askQuestion(copilotClient, conversationId)
   })
 }
 
