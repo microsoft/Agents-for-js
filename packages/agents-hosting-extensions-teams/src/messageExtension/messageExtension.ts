@@ -3,9 +3,11 @@ import { AgentApplication, RouteHandler, RouteSelector, TurnContext, TurnState }
 import { MessagingExtensionQuery, messagingExtensionQueryZodSchema } from './messagingExtensionQuery'
 import { MessagingExtensionResponse } from './messagingExtensionResponse'
 import { MessagingExtensionResult } from './messagingExtensionResult'
+import { z } from 'zod'
 
 export type RouteQueryHandler<TState extends TurnState> = (context: TurnContext, state: TState, query: MessagingExtensionQuery) => Promise<MessagingExtensionResult>
 export type SelectItemHandler<TState extends TurnState> = (context: TurnContext, state: TState, item: unknown) => Promise<MessagingExtensionResult>
+export type QueryLinkHandler<TState extends TurnState> = (context: TurnContext, state: TState, url: string) => Promise<MessagingExtensionResult>
 /**
  * Class that exposes Teams messaging extension-related events.
  * Provides an organized way to handle messaging extension operations in Microsoft Teams.
@@ -75,24 +77,34 @@ export class MessageExtension<TState extends TurnState> {
     return this
   }
 
-  // TODO: Uncomment when the methods are implemented
-  // /**
-  //  * Handles link queries from messaging extensions.
-  //  * @param handler - The handler to call when a link query is received
-  //  * @returns this (for method chaining)
-  //  */
-  // onQueryLink (handler: RouteHandler<TurnState>) {
-  //   const routeSel: RouteSelector = (context: TurnContext) => {
-  //     return Promise.resolve(
-  //       context.activity.type === ActivityTypes.Invoke &&
-  //       context.activity.channelId === 'msteams' &&
-  //       context.activity.name === 'composeExtension/queryLink'
-  //     )
-  //   }
-  //   this._app.addRoute(routeSel, handler, true)
-  //   return this
-  // }
+  /**
+   * Handles link queries from messaging extensions.
+   * @param handler - The handler to call when a link query is received
+   * @returns this (for method chaining)
+  */
+  onQueryLink (handler: QueryLinkHandler<TurnState>) {
+    const routeSel: RouteSelector = (context: TurnContext) => {
+      return Promise.resolve(
+        context.activity.type === ActivityTypes.Invoke &&
+       context.activity.channelId === 'msteams' &&
+       context.activity.name === 'composeExtension/queryLink'
+      )
+    }
+    const routeHandler : RouteHandler<TurnState> = async (context: TurnContext, state: TurnState) => {
+      const appBasedLinkQuerySchema = z.object({
+        url: z.string().url()
+      })
+      const query = appBasedLinkQuerySchema.parse(context.activity.value)
+      const res = await handler(context, state, query.url)
+      const response: MessagingExtensionResponse = { composeExtension: res }
+      const invokeResponse = Activity.fromObject({ type: ActivityTypes.InvokeResponse, value: { status: 200, body: response } })
+      await context.sendActivity(invokeResponse)
+    }
+    this._app.addRoute(routeSel, routeHandler, true)
+    return this
+  }
 
+  // TODO: Uncomment when the methods are implemented
   // /**
   //  * Handles anonymous link queries (for public access) from messaging extensions.
   //  * @param handler - The handler to call when an anonymous link query is received

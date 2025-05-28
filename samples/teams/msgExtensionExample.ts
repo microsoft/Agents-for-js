@@ -10,6 +10,29 @@ app.registerExtension<TeamsAgentExtension>(teamsExt, tae => {
   console.log('Teams extension registered')
 
   tae.messageExtension
+    .onQueryLink(async (context: TurnContext, state: TurnState, link: string) : Promise<MessagingExtensionResult> => {
+      await context.sendActivity(`Received a message with the link: ${link}`)
+      return {
+        attachmentLayout: 'list',
+        type: 'result',
+        attachments: [
+          {
+            contentType: 'application/vnd.microsoft.card.thumbnail',
+            content: {
+              title: 'Link Preview',
+              text: `You clicked on a link: ${link}`,
+              tap: {
+                type: 'invoke',
+                value: {
+                  title: 'Link Clicked',
+                  text: `You clicked on the link: ${link}`
+                }
+              }
+            }
+          }
+        ]
+      }
+    })
     .onQuery(async (context: TurnContext, state: TurnState, query: MessagingExtensionQuery) : Promise<MessagingExtensionResult> => {
       console.log('Received message extension query:', query)
 
