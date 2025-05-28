@@ -86,7 +86,7 @@ export class TeamsConnectorClient {
         'Content-Type': 'application/json'
       }
     }
-    const response: AxiosResponse = await TeamsConnectorClient.axiosInstance(config)
+    const response: AxiosResponse = await this.axiosInstance(config)
     return response.data
   }
 
@@ -130,7 +130,7 @@ export class TeamsConnectorClient {
         continuationToken
       }
     }
-    const response = await TeamsConnectorClient.axiosInstance(config)
+    const response = await this.axiosInstance(config)
     return response.data
   }
 
@@ -144,7 +144,7 @@ export class TeamsConnectorClient {
       method: 'get',
       url: `v3/teams/${teamId}/conversations`
     }
-    const response = await TeamsConnectorClient.axiosInstance(config)
+    const response = await this.axiosInstance(config)
     return response.data
   }
 
@@ -158,7 +158,7 @@ export class TeamsConnectorClient {
       method: 'get',
       url: `v3/teams/${teamId}`
     }
-    const response = await TeamsConnectorClient.axiosInstance(config)
+    const response = await this.axiosInstance(config)
     return response.data
   }
 
@@ -175,7 +175,7 @@ export class TeamsConnectorClient {
       url: `v1/meetings/${meetingId}/participants/${participantId}`,
       params: { tenantId }
     }
-    const response = await TeamsConnectorClient.axiosInstance(config)
+    const response = await this.axiosInstance(config)
     return response.data
   }
 
@@ -189,7 +189,7 @@ export class TeamsConnectorClient {
       method: 'get',
       url: `v1/meetings/${meetingId}`
     }
-    const response = await TeamsConnectorClient.axiosInstance(config)
+    const response = await this.axiosInstance(config)
     return response.data
   }
 
@@ -205,7 +205,7 @@ export class TeamsConnectorClient {
       url: `v1/meetings/${meetingId}/notification`,
       data: notification
     }
-    const response = await TeamsConnectorClient.axiosInstance(config)
+    const response = await this.axiosInstance(config)
     return response.data
   }
 
@@ -227,7 +227,7 @@ export class TeamsConnectorClient {
       url: 'v3/batch/conversation/users',
       data: content
     }
-    const response = await TeamsConnectorClient.axiosInstance(config)
+    const response = await this.axiosInstance(config)
     return response.data
   }
 
@@ -247,7 +247,7 @@ export class TeamsConnectorClient {
       url: 'v3/batch/conversation/tenant',
       data: content
     }
-    const response = await TeamsConnectorClient.axiosInstance(config)
+    const response = await this.axiosInstance(config)
     return response.data
   }
 
@@ -269,7 +269,7 @@ export class TeamsConnectorClient {
       url: 'v3/batch/conversation/team',
       data: content
     }
-    const response = await TeamsConnectorClient.axiosInstance(config)
+    const response = await this.axiosInstance(config)
     return response.data
   }
 
@@ -291,7 +291,7 @@ export class TeamsConnectorClient {
       url: 'v3/batch/conversation/channels',
       data: content
     }
-    const response = await TeamsConnectorClient.axiosInstance(config)
+    const response = await this.axiosInstance(config)
     return response.data
   }
 
@@ -305,7 +305,7 @@ export class TeamsConnectorClient {
       method: 'get',
       url: `v3/batch/conversation/${operationId}`
     }
-    const response = await TeamsConnectorClient.axiosInstance(config)
+    const response = await this.axiosInstance(config)
     return response.data
   }
 
@@ -319,7 +319,7 @@ export class TeamsConnectorClient {
       method: 'get',
       url: `v3/batch/conversation/failedentries/${operationId}`
     }
-    const response = await TeamsConnectorClient.axiosInstance(config)
+    const response = await this.axiosInstance(config)
     return response.data
   }
 
@@ -334,7 +334,7 @@ export class TeamsConnectorClient {
       url: `v3/batch/conversation/${operationId}`
     }
 
-    const response = await TeamsConnectorClient.axiosInstance(config)
+    const response = await this.axiosInstance(config)
     return response.data
   }
 }
