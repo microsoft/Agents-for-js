@@ -37,6 +37,12 @@ describe('Activity type instances', () => {
     }, Error)
   })
 
+  it('allows empty text', () => {
+    const a = Activity.fromObject({ type: ActivityTypes.Message, text: '' })
+    assert.strictEqual(a.type, 'message')
+    assert.strictEqual(a.text, '')
+  })
+
   it('literal with type message and text and no channelId', () => {
     const obj = {
       type: ActivityTypes.Message,

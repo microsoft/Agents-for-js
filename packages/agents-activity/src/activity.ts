@@ -30,7 +30,7 @@ import { TextHighlight, textHighlightZodSchema } from './textHighlight'
  */
 export const activityZodSchema = z.object({
   type: z.union([activityTypesZodSchema, z.string().min(1)]),
-  text: z.string().min(1).optional(),
+  text: z.string().optional(),
   id: z.string().min(1).optional(),
   channelId: z.string().min(1).optional(),
   from: channelAccountZodSchema.optional(),
