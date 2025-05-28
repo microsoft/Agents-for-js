@@ -15,9 +15,9 @@ import { ConnectorClient } from '@microsoft/agents-hosting'
  * Extends the ConnectorClient class to provide Teams-specific functionalities.
  */
 export class TeamsConnectorClient {
-  private static axiosInstance: AxiosInstance
+  private axiosInstance: AxiosInstance
   constructor (private client: ConnectorClient) {
-    TeamsConnectorClient.axiosInstance = client.axiosInstance
+    this.axiosInstance = client.axiosInstance
   }
 
   /**
