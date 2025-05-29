@@ -71,6 +71,5 @@ export const teamsChannelDataZodSchema = z.object({
  * @returns {TeamsChannelData} - The parsed TeamsChannelData.
  */
 export function parseTeamsChannelData (o: object): TeamsChannelData {
-  teamsChannelDataZodSchema.passthrough().parse(o)
-  return o
+  return teamsChannelDataZodSchema.passthrough().parse(o)
 }
