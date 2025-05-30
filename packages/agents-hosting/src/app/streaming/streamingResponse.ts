@@ -16,7 +16,7 @@ import { Utilities } from './utilities'
  * This class is used to send a series of updates to the client in a single response. The expected
  * sequence of calls is:
  *
- * `sendInformativeUpdate()`, `sendTextChunk()`, `sendTextChunk()`, ..., `endStream()`.
+ * `queueInformativeUpdate()`, `queueTextChunk()`, `queueTextChunk()`, ..., `endStream()`.
  *
  * Once `endStream()` is called, the stream is considered ended and no further updates can be sent.
  */
@@ -241,7 +241,8 @@ export class StreamingResponse {
           text: this._message,
           attachments: this._attachments,
           channelData: {
-            streamType: 'final'
+            streamType: 'final',
+            streamSequence: this._nextSequence++
           } as StreamingChannelData
         })
       } else {

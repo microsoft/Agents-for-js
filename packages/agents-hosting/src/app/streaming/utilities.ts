@@ -10,7 +10,7 @@ import { ClientCitation } from './clientCitation'
 // import { Tokenizer } from './tokenizers'
 
 /**
- * Utility functions for manipulating .
+ * Utility functions for manipulating text and citations.
  */
 export class Utilities {
 //   /**
