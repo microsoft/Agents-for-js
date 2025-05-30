@@ -278,8 +278,9 @@ export class StreamingResponse {
      * @returns {Promise<void>} - A promise that will be resolved once the queue is empty.
      * @private
      */
-  private drainQueue (): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
+  private async drainQueue (): Promise<void> {
+    // eslint-disable-next-line no-async-promise-executor
+    return new Promise<void>(async (resolve, reject) => {
       try {
         while (this._queue.length > 0) {
           // Get next activity from queue
@@ -287,7 +288,7 @@ export class StreamingResponse {
           const activity = factory()
 
           // Send activity
-          Promise.resolve(this.sendActivity(activity))
+          await this.sendActivity(activity)
         }
 
         resolve()
@@ -360,7 +361,7 @@ export class StreamingResponse {
 
     // Send activity
     const response = await this._context.sendActivity(activity)
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+    // await new Promise((resolve) => setTimeout(resolve, 1500))
 
     // Save assigned stream ID
     if (!this._streamId) {

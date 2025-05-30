@@ -6,6 +6,7 @@ import { ResourceResponse } from './connector-client/resourceResponse'
 import { TurnContextStateCollection } from './turnContextStateCollection'
 import { AttachmentInfo } from './connector-client/attachmentInfo'
 import { AttachmentData } from './connector-client/attachmentData'
+import { StreamingResponse } from './app/streaming/streamingResponse'
 
 /**
  * Defines a handler for processing and sending activities.
@@ -73,7 +74,7 @@ export class TurnContext {
   private readonly _onDeleteActivity: DeleteActivityHandler[] = []
   private readonly _turn = 'turn'
   private readonly _locale = 'locale'
-
+  private readonly _streamingResponse: StreamingResponse
   /**
    * Initializes a new instance of the TurnContext class.
    *
@@ -89,6 +90,7 @@ export class TurnContext {
       this._adapter = adapterOrContext
       this._activity = request as Activity
     }
+    this._streamingResponse = new StreamingResponse(this)
   }
 
   /**
@@ -393,6 +395,10 @@ export class TurnContext {
    */
   get turnState (): TurnContextStateCollection {
     return this._turnState
+  }
+
+  get streamingResponse (): StreamingResponse {
+    return this._streamingResponse
   }
 
   /**
