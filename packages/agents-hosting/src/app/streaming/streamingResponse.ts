@@ -8,7 +8,7 @@ import { TurnContext } from '../../turnContext'
 import { ClientCitation } from './clientCitation'
 import { SensitivityUsageInfo } from './sensitivityUsageInfo'
 import { Citation } from './message'
-import { Utilities } from './utilities'
+import { CitationUtil } from './citationUtil'
 
 /**
  * A helper class for streaming responses to the client.
@@ -111,7 +111,7 @@ export class StreamingResponse {
     this._message += text
 
     // If there are citations, modify the content so that the sources are numbers instead of [doc1], [doc2], etc.
-    this._message = Utilities.formatCitationsResponse(this._message)
+    this._message = CitationUtil.formatCitationsResponse(this._message)
 
     // Queue the next chunk
     this.queueNextChunk()
@@ -168,7 +168,7 @@ export class StreamingResponse {
           appearance: {
             '@type': 'DigitalDocument',
             name: citation.title || `Document #${currPos + 1}`,
-            abstract: Utilities.snippet(citation.content, 477)
+            abstract: CitationUtil.snippet(citation.content, 477)
           }
         }
         currPos++
@@ -324,7 +324,7 @@ export class StreamingResponse {
 
     if (this._citations && this._citations.length > 0 && !this._ended) {
       // Filter out the citations unused in content.
-      const currCitations = Utilities.getUsedCitations(this._message, this._citations) ?? undefined
+      const currCitations = CitationUtil.getUsedCitations(this._message, this._citations) ?? undefined
       activity.entities.push({
         type: 'https://schema.org/Message',
         '@type': 'Message',
