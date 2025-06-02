@@ -17,6 +17,7 @@ agent.onActivity('invoke', async (context: TurnContext, state: TurnState) => {
       status: 200,
     }
   })
+  console.log('Received invoke activity:', context.activity)
   await context.sendActivity(invokeResponse)
 })
 
@@ -26,10 +27,10 @@ agent.onActivity('message', async (context: TurnContext, state: TurnState) => {
   context.streamingResponse.setSensitivityLabel({ type: 'https://schema.org/Message', '@type': 'CreativeWork', name: 'Internal' })
   await context.streamingResponse.queueInformativeUpdate('starting streaming response')
   await sleep(1000)
-  for (let i = 0; i < 2; i++) {
+  for (let i = 0; i < 5; i++) {
     console.log(`Streaming chunk ${i + 1}`)
     await context.streamingResponse.queueTextChunk(`part ${i + 1}`)
-    await sleep(1000)
+    await sleep(i * 500)
   }
   await context.streamingResponse.endStream()
 })

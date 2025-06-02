@@ -238,7 +238,7 @@ export class StreamingResponse {
         // Send final message
         return Activity.fromObject({
           type: 'message',
-          text: this._message,
+          text: this._message || 'end strean response',
           attachments: this._attachments,
           channelData: {
             streamType: 'final',
@@ -362,7 +362,7 @@ export class StreamingResponse {
 
     // Send activity
     const response = await this._context.sendActivity(activity)
-    // await new Promise((resolve) => setTimeout(resolve, 1500))
+    await new Promise((resolve) => setTimeout(resolve, 1500))
 
     // Save assigned stream ID
     if (!this._streamId) {
