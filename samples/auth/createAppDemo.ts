@@ -16,9 +16,9 @@ class CreateAppDemo extends AgentApplication<TurnState> {
 
     this._storage = storage!
 
-    this.conversationUpdate('membersAdded', this._status)
-    this.activity(ActivityTypes.Invoke, this._invoke)
-    this.activity(ActivityTypes.Message, this._message)
+    this.onConversationUpdate('membersAdded', this._status)
+    this.onActivity(ActivityTypes.Invoke, this._invoke)
+    this.onActivity(ActivityTypes.Message, this._message)
   }
 
   private _status = async (context: TurnContext, state: TurnState): Promise<void> => {

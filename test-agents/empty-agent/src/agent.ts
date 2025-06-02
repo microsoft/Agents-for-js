@@ -8,10 +8,10 @@ class EmptyAgent extends AgentApplication<TurnState> {
   constructor () {
     super({ startTypingTimer: true, storage: new MemoryStorage() })
 
-    this.conversationUpdate('membersAdded', this.help)
-    this.message('/help', this.help)
-    this.message('/diag', this.diag)
-    this.activity('message', this.echo)
+    this.onConversationUpdate('membersAdded', this.help)
+    this.onMessage('/help', this.help)
+    this.onMessage('/diag', this.diag)
+    this.onActivity('message', this.echo)
   }
 
   help = async (ctx: TurnContext) => {

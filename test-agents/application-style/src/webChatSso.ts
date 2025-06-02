@@ -13,20 +13,20 @@ export const app = new AgentApplicationBuilder()
   .withAuthorization({ ah1: { name: 'SSO' } })
   .build()
 
-app.message('/signout', async (context: TurnContext, state: TurnState) => {
+app.onMessage('/signout', async (context: TurnContext, state: TurnState) => {
   await app.authorization.signOut(context, state)
   await context.sendActivity(MessageFactory.text('User signed out'))
 })
 
-app.message('/signin', async (context: TurnContext, state: TurnState) => {
+app.onMessage('/signin', async (context: TurnContext, state: TurnState) => {
   await app.authorization.beginOrContinueFlow(context, state)
 })
 
-app.message('/me', async (context: TurnContext, state: TurnState) => {
+app.onMessage('/me', async (context: TurnContext, state: TurnState) => {
   await showGraphProfile(context, state)
 })
 
-app.conversationUpdate('membersAdded', async (context: TurnContext, state: TurnState) => {
+app.onConversationUpdate('membersAdded', async (context: TurnContext, state: TurnState) => {
   await state.load(context, storage)
   const membersAdded = context.activity.membersAdded!
   for (let cnt = 0; cnt < membersAdded.length; ++cnt) {
@@ -37,7 +37,7 @@ app.conversationUpdate('membersAdded', async (context: TurnContext, state: TurnS
   }
 })
 
-app.activity(ActivityTypes.Invoke, async (context: TurnContext, state: TurnState) => {
+app.onActivity(ActivityTypes.Invoke, async (context: TurnContext, state: TurnState) => {
   await app.authorization.beginOrContinueFlow(context, state)
 })
 
@@ -46,7 +46,7 @@ app.onSignInSuccess(async (context: TurnContext, state: TurnState) => {
   await showGraphProfile(context, state)
 })
 
-app.activity(ActivityTypes.Message, async (context: TurnContext, state: TurnState) => {
+app.onActivity(ActivityTypes.Message, async (context: TurnContext, state: TurnState) => {
   if (app.authorization.getFlowState() === true) {
     const code = Number(context.activity.text)
     if (code.toString().length === 6) {

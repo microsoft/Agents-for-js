@@ -22,15 +22,15 @@ class OAuthAgent extends AgentApplication<TurnState> {
 
     this._storage = storage!
 
-    this.message('/login', this._signIn)
-    this.message('/status', this._status)
-    this.message('/logout', this._signOut)
-    this.message('/me', this._profileRequest)
-    this.message('/prs', this._pullRequests)
-    this.conversationUpdate('membersAdded', this._status)
-    this.activity(ActivityTypes.Invoke, this._invoke)
+    this.onMessage('/login', this._signIn)
+    this.onMessage('/status', this._status)
+    this.onMessage('/logout', this._signOut)
+    this.onMessage('/me', this._profileRequest)
+    this.onMessage('/prs', this._pullRequests)
+    this.onConversationUpdate('membersAdded', this._status)
+    this.onActivity(ActivityTypes.Invoke, this._invoke)
     this.onSignInSuccess(this._handleSignInSuccess)
-    this.activity(ActivityTypes.Message, this._message)
+    this.onActivity(ActivityTypes.Message, this._message)
   }
 
   private _status = async (context: TurnContext, state: TurnState): Promise<void> => {

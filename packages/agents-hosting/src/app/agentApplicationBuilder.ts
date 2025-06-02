@@ -3,11 +3,11 @@
  * Licensed under the MIT License.
  */
 
+import { Storage } from '../storage'
 import { AgentApplication } from './agentApplication'
 import { AgentApplicationOptions } from './agentApplicationOptions'
-import { TurnState } from './turnState'
-import { Storage } from '../storage'
 import { AuthorizationHandlers } from './oauth/authorization'
+import { TurnState } from './turnState'
 
 /**
  * Builder class for creating and configuring AgentApplication instances.

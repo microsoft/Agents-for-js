@@ -5,5 +5,5 @@
     "rootDir": "./samples"
   },
   "include": ["samples/**/*.ts", "samples/_resources/*.json"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "dist"]
 }
