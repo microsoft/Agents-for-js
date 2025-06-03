@@ -9,6 +9,9 @@ import { ClientCitation } from './clientCitation'
 import { SensitivityUsageInfo } from './sensitivityUsageInfo'
 import { Citation } from './message'
 import { CitationUtil } from './citationUtil'
+import { debug } from '../../logger'
+
+const logger = debug('agents:streamingResponse')
 
 /**
  * A helper class for streaming responses to the client.
@@ -268,8 +271,8 @@ export class StreamingResponse {
     // If there's no sync in progress, start one
     if (!this._queueSync) {
       this._queueSync = this.drainQueue().catch((err) => {
-        console.error(`Error occured when sending activity while streaming: "${err}".`)
-        throw err
+        logger.error(`Error occured when sending activity while streaming: "${err}".`)
+        // throw err
       })
     }
   }
@@ -283,12 +286,10 @@ export class StreamingResponse {
     // eslint-disable-next-line no-async-promise-executor
     return new Promise<void>(async (resolve, reject) => {
       try {
+        logger.debug(`Draining queue with ${this._queue.length} activities.`)
         while (this._queue.length > 0) {
-          // Get next activity from queue
           const factory = this._queue.shift()!
           const activity = factory()
-
-          // Send activity
           await this.sendActivity(activity)
         }
 
@@ -296,7 +297,6 @@ export class StreamingResponse {
       } catch (err) {
         reject(err)
       } finally {
-        // Queue is empty, mark as idle
         this._queueSync = undefined
       }
     })
