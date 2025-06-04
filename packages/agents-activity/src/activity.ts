@@ -211,7 +211,7 @@ export class Activity {
   /**
    * The entities associated with the activity.
    */
-  entities?: Entity[] | AIEntity[]
+  entities?: (Entity | AIEntity)[]
 
   /**
    * The channel-specific data for the activity.
