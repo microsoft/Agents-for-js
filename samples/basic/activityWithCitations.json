@@ -1,0 +1,89 @@
+{
+    "type": "message",
+    "entities": [
+        {
+            "@context": "https://schema.org",
+            "@id": "",
+            "@type": "Message",
+            "citation": [
+                {
+                    "@id": "https://support.microsoft.com/en-us/windows/use-a-proxy-server-in-windows-03096c53-0554-4ffe-b6ab-8b1deee8dae1",
+                    "@type": "Claim",
+                    "appearance": {
+                        "@type": "DigitalDocument",
+                        "name": "Use a proxy server in Windows",
+                        "encodingFormat": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        "url": "https://support.microsoft.com/en-us/windows/use-a-proxy-server-in-windows-03096c53-0554-4ffe-b6ab-8b1deee8dae1",
+                        "usageInfo": {
+                            "@type": "CreativeWork",
+                            "additionalType": "https://copilotstudio.microsoft.com/sensitivity-labels/v1",
+                            "name": "General"
+                        }
+                    },
+                    "claimInterpreter": {
+                        "@type": "Project",
+                        "slogan": "Surfaced with Azure OpenAI",
+                        "url": "https://www.microsoft.com/en-us/ai/responsible-ai"
+                    },
+                    "position": "1"
+                },
+                {
+                    "@id": "https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/configure-proxy-server-settings",
+                    "@type": "Claim",
+                    "appearance": {
+                        "@type": "DigitalDocument",
+                        "name": "Configure a proxy server settings",
+                        "dateModified": "2024-03-01T15:56:27.000-0800",
+                        "editor": "William Wong",
+                        "encodingFormat": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        "url": "https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/configure-proxy-server-settings"
+                    },
+                    "claimInterpreter": {
+                        "@type": "Project",
+                        "slogan": "Surfaced with Azure OpenAI",
+                        "url": "https://www.microsoft.com/en-us/ai/responsible-ai"
+                    },
+                    "position": "2"
+                },
+                {
+                    "@id": "_:c1",
+                    "@type": "Claim",
+                    "appearance": {
+                        "@type": "DigitalDocument",
+                        "abstract": "Aute Lorem id laboris Lorem do dolor mollit. Officia dolore dolor do culpa nostrud velit officia...",
+                        "name": "Sample Citation From File",
+                        "usageInfo": {
+                            "@id": "_:s1",
+                            "@type": "CreativeWork",
+                            "additionalType": "https://copilotstudio.microsoft.com/sensitivity-labels/v1",
+                            "description": "Data is classified as Confidential but is NOT PROTECTED to allow access by approved NDA business partners. If a higher level of protection is needed please change the sensitivity level of the cited content.",
+                            "keywords": [
+                                "EncryptedContent"
+                            ],
+                            "name": "Confidential\\Any User (No Protection)",
+                            "pattern": {
+                                "@type": "DefinedTermSet",
+                                "inDefinedTermSet": "https://www.w3.org/TR/css-color-4/",
+                                "name": "color",
+                                "termCode": "orange"
+                            }
+                        }
+                    },
+                    "claimInterpreter": {
+                        "@type": "Project",
+                        "slogan": "Surfaced with Azure OpenAI",
+                        "url": "https://www.microsoft.com/en-us/ai/responsible-ai"
+                    },
+                    "position": "3"
+                }
+            ],
+            "keywords": [
+                "AIGeneratedContent"
+            ],
+            "type": "https://schema.org/Message",
+            "usageInfo": {
+                "@id": "_:s1"
+            }
+        }
+    ]
+}

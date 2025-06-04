@@ -28,6 +28,7 @@ export { Mention } from './entity/mention'
 export { GeoCoordinates } from './entity/geoCoordinates'
 export { Place } from './entity/place'
 export { Thing } from './entity/thing'
+export * from './entity/AIEntity'
 
 export * from './invoke/adaptiveCardInvokeAction'
 
