@@ -39,7 +39,7 @@ export class DialogSet {
      * Creates a new DialogSet instance.
      *
      * @remarks
-     * If the `dialogState` parameter is not passed in, calls to {@link @microsoft/agents-hosting-dialogs.DialogSet.createcontext | createContext}
+     * If the `dialogState` parameter is not passed in, calls to `createContext`
      * will return an error.  You will need to create a {@link DialogContext} for the set manually and
      * pass in your own state object for persisting the sets dialog stack:
      *
