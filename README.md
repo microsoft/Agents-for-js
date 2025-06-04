@@ -20,7 +20,7 @@ We offer the following NPM packages to create conversational experiences based o
 | `@microsoft/agents-hosting` | Provides classes to host an Agent in express.  | `botbuilder` |
 | `@microsoft/agents-hosting-express` | Configures express to run the Agent.  | N/A |
 | `@microsoft/agents-hosting-dialogs` | Provides classes to host an Agent in express.  | `botbuilder-dialogs` |
-| `@microsoft/agents-hosting-teams` | Provides classes to make use of Teams specific features.  | `botbuilder` |
+| `@microsoft/agents-hosting-extensions-teams` | Provides classes to make use of Teams specific features.  | `teams ai` |
 | `@microsoft/agents-hosting-storage-blob` | Extension to use Azure Blob as storage.  | `botbuilder-azure` |
 | `@microsoft/agents-hosting-storage-cosmos` | Extension to use CosmosDB as storage.  | `botbuilder-azure` |
 

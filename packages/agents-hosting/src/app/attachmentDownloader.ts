@@ -46,6 +46,7 @@ export class AttachmentDownloader<TState extends TurnState = TurnState> implemen
       return Promise.resolve([])
     }
 
+    // TODO: from adapter
     const authProvider: AuthProvider = new MsalTokenProvider()
 
     const accessToken = await authProvider.getAccessToken(loadAuthConfigFromEnv(), 'https://api.botframework.com')

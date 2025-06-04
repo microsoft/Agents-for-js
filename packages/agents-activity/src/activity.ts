@@ -3,34 +3,34 @@
  * Licensed under the MIT License.
  */
 
-import { z } from 'zod'
 import { v4 as uuid } from 'uuid'
-import { ActivityTypes, activityTypesZodSchema } from './activityTypes'
+import { z } from 'zod'
+import { SemanticAction, semanticActionZodSchema } from './action/semanticAction'
 import { SuggestedActions, suggestedActionsZodSchema } from './action/suggestedActions'
 import { ActivityEventNames, activityEventNamesZodSchema } from './activityEventNames'
 import { ActivityImportance, activityImportanceZodSchema } from './activityImportance'
-import { TextHighlight, textHighlightZodSchema } from './textHighlight'
-import { SemanticAction, semanticActionZodSchema } from './action/semanticAction'
-import { ChannelAccount, channelAccountZodSchema } from './conversation/channelAccount'
-import { ConversationAccount, conversationAccountZodSchema } from './conversation/conversationAccount'
-import { TextFormatTypes, textFormatTypesZodSchema } from './textFormatTypes'
-import { AttachmentLayoutTypes, attachmentLayoutTypesZodSchema } from './attachment/attachmentLayoutTypes'
-import { MessageReaction, messageReactionZodSchema } from './messageReaction'
-import { InputHints, inputHintsZodSchema } from './inputHints'
+import { ActivityTypes, activityTypesZodSchema } from './activityTypes'
 import { Attachment, attachmentZodSchema } from './attachment/attachment'
-import { Entity, entityZodSchema } from './entity/entity'
+import { AttachmentLayoutTypes, attachmentLayoutTypesZodSchema } from './attachment/attachmentLayoutTypes'
+import { ChannelAccount, channelAccountZodSchema } from './conversation/channelAccount'
+import { Channels } from './conversation/channels'
+import { ConversationAccount, conversationAccountZodSchema } from './conversation/conversationAccount'
 import { ConversationReference, conversationReferenceZodSchema } from './conversation/conversationReference'
 import { EndOfConversationCodes, endOfConversationCodesZodSchema } from './conversation/endOfConversationCodes'
 import { DeliveryModes, deliveryModesZodSchema } from './deliveryModes'
-import { Channels } from './conversation/channels'
+import { Entity, entityZodSchema } from './entity/entity'
 import { Mention } from './entity/mention'
+import { InputHints, inputHintsZodSchema } from './inputHints'
+import { MessageReaction, messageReactionZodSchema } from './messageReaction'
+import { TextFormatTypes, textFormatTypesZodSchema } from './textFormatTypes'
+import { TextHighlight, textHighlightZodSchema } from './textHighlight'
 
 /**
  * Zod schema for validating an Activity object.
  */
 export const activityZodSchema = z.object({
   type: z.union([activityTypesZodSchema, z.string().min(1)]),
-  text: z.string().min(1).optional(),
+  text: z.string().optional(),
   id: z.string().min(1).optional(),
   channelId: z.string().min(1).optional(),
   from: channelAccountZodSchema.optional(),
@@ -473,6 +473,97 @@ export class Activity {
       }
     }
     return result
+  }
+
+  /**
+   * Normalizes mentions in the activity by removing mention tags and optionally removing recipient mention.
+   * @param removeMention Whether to remove the recipient mention from the activity.
+   */
+  public normalizeMentions (removeMention: boolean = false): void {
+    if (this.type === ActivityTypes.Message) {
+      if (removeMention) {
+        // Strip recipient mention tags and text
+        this.removeRecipientMention()
+
+        // Strip entity.mention records for recipient id
+        if (this.entities !== undefined && this.recipient?.id) {
+          this.entities = this.entities.filter((entity) => {
+            if (entity.type.toLowerCase() === 'mention') {
+              const mention = entity as unknown as Mention
+              return mention.mentioned.id !== this.recipient?.id
+            }
+            return true
+          })
+        }
+      }
+
+      // Remove <at> </at> tags keeping the inner text
+      if (this.text) {
+        this.text = Activity.removeAt(this.text)
+      }
+
+      // Remove <at> </at> tags from mention records keeping the inner text
+      if (this.entities !== undefined) {
+        const mentions = this.getMentions(this)
+        for (const mention of mentions) {
+          if (mention.text) {
+            mention.text = Activity.removeAt(mention.text)?.trim()
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Removes <at> </at> tags from the specified text.
+   * @param text The text to process.
+   * @returns The text with <at> </at> tags removed.
+   */
+  private static removeAt (text: string): string {
+    if (!text) {
+      return text
+    }
+
+    let foundTag: boolean
+    do {
+      foundTag = false
+      const iAtStart = text.toLowerCase().indexOf('<at')
+      if (iAtStart >= 0) {
+        const iAtEnd = text.indexOf('>', iAtStart)
+        if (iAtEnd > 0) {
+          const iAtClose = text.toLowerCase().indexOf('</at>', iAtEnd)
+          if (iAtClose > 0) {
+            // Replace </at>
+            let followingText = text.substring(iAtClose + 5)
+
+            // If first char of followingText is not whitespace, insert space
+            if (followingText.length > 0 && !(/\s/.test(followingText[0]))) {
+              followingText = ` ${followingText}`
+            }
+
+            text = text.substring(0, iAtClose) + followingText
+
+            // Get tag content (text between <at...> and </at>)
+            const tagContent = text.substring(iAtEnd + 1, iAtClose)
+
+            // Replace <at ...> with just the tag content
+            let prefixText = text.substring(0, iAtStart)
+
+            // If prefixText is not empty and doesn't end with whitespace, add a space
+            if (prefixText.length > 0 && !(/\s$/.test(prefixText))) {
+              prefixText += ' '
+            }
+
+            text = prefixText + tagContent + followingText
+
+            // We found one, try again, there may be more
+            foundTag = true
+          }
+        }
+      }
+    } while (foundTag)
+
+    return text
   }
 
   /**

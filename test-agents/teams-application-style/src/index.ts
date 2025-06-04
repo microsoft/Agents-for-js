@@ -1,10 +1,9 @@
-import { AuthConfiguration, authorizeJWT, loadAuthConfigFromEnv, Request } from '@microsoft/agents-hosting'
-import { TeamsCloudAdapter } from '@microsoft/agents-hosting-teams'
+import { AuthConfiguration, authorizeJWT, CloudAdapter, loadAuthConfigFromEnv, Request } from '@microsoft/agents-hosting'
 import express, { Response } from 'express'
 import path from 'path'
 
 const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
-const adapter = new TeamsCloudAdapter(authConfig)
+const adapter = new CloudAdapter(authConfig)
 
 const server = express()
 server.use(express.json())
@@ -16,9 +15,6 @@ async function loadModule () {
   switch (moduleName) {
     case 'teamsApp':
       module = (await import('./teamsApp')).app
-      return module
-    case 'teamsSsoApp':
-      module = (await import('./teamsSsoApp')).app
       return module
     case 'teamsMultiFeatureBot':
       module = (await import('./teamsMultiFeatureBot')).app
