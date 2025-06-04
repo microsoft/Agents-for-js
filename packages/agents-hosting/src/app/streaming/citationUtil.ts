@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { ClientCitation } from './clientCitation'
+import { ClientCitation } from '@microsoft/agents-activity/src/entity/AIEntity'
 
 // import { stringify } from 'yaml'
 

@@ -24,6 +24,7 @@ import { InputHints, inputHintsZodSchema } from './inputHints'
 import { MessageReaction, messageReactionZodSchema } from './messageReaction'
 import { TextFormatTypes, textFormatTypesZodSchema } from './textFormatTypes'
 import { TextHighlight, textHighlightZodSchema } from './textHighlight'
+import { AIEntity } from './entity/AIEntity'
 
 /**
  * Zod schema for validating an Activity object.
@@ -210,7 +211,7 @@ export class Activity {
   /**
    * The entities associated with the activity.
    */
-  entities?: Entity[]
+  entities?: Entity[] | AIEntity[]
 
   /**
    * The channel-specific data for the activity.
