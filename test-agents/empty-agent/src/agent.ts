@@ -17,7 +17,7 @@ class EmptyAgent extends AgentApplication<TurnState> {
 
   help = async (ctx: TurnContext) => {
     const version = (await import('@microsoft/agents-hosting/package.json')).version
-    await ctx.sendActivity(`Empty Agent running on node sdk ${version}. Commands: /help, /diag, /stream `)
+    await ctx.sendActivity(`Empty Agent running on node sdk ${version}. Commands: /help, /diag, /stream`)
   }
 
   echo = async (ctx: TurnContext, state: TurnState) => {
