@@ -1,6 +1,6 @@
 import { strict as assert } from 'assert'
 import { describe, it, beforeEach, afterEach } from 'node:test'
-import { CloudAdapter, FlowState, MemoryStorage, OAuthFlow, SigningResource, TokenRequestStatus, TurnContext, UserState, UserTokenClient } from './../../src'
+import { CloudAdapter, FlowState, MemoryStorage, OAuthFlow, SignInResource, TurnContext, UserState, UserTokenClient } from './../../src'
 import { Activity, ActivityTypes } from '@microsoft/agents-activity'
 import sinon from 'sinon'
 
@@ -21,7 +21,7 @@ const createTestActivity = () => Activity.fromObject({
   text: 'testText'
 })
 
-const testSigninResource : SigningResource = {
+const testSigninResource : SignInResource = {
   signInLink: 'https://test.com',
   tokenExchangeResource: {
     id: 'testTokenExchangeId',
@@ -34,7 +34,7 @@ const testSigninResource : SigningResource = {
 
 describe('OAuthFlow', () => {
   const userState = new UserState(new MemoryStorage())
-  const fakseUserTokenClient = new UserTokenClient('fakeToken')
+  const fakeUserTokenClient = new UserTokenClient('fakeToken', '123')
   const fakeAdapter = new CloudAdapter({ clientId: 'fakeClientId', clientSecret: 'fakeClientSecret', issuers: [] })
   const context = new TurnContext(fakeAdapter, createTestActivity())
   let oAuthFlow: OAuthFlow
@@ -44,8 +44,8 @@ describe('OAuthFlow', () => {
   beforeEach(() => {
     testActivity = createTestActivity()
     mockTurnContext = sinon.mock(context)
-    mockUserTokenClient = sinon.mock(fakseUserTokenClient)
-    oAuthFlow = new OAuthFlow(userState, 'testSSO', fakseUserTokenClient)
+    mockUserTokenClient = sinon.mock(fakeUserTokenClient)
+    oAuthFlow = new OAuthFlow(userState, 'testSSO', fakeUserTokenClient)
   })
 
   afterEach(() => {
@@ -58,26 +58,22 @@ describe('OAuthFlow', () => {
 
   it('begin flow should succeeds when token found in service', async () => {
     mockTurnContext.expects('sendActivity').never()
-    mockUserTokenClient.expects('getSignInResource').never()
-    mockUserTokenClient.expects('getUserToken').returns({ token: 'testToken', channelId: 'test', connectionName: 'testSSO', expires: 0, status: TokenRequestStatus.Success })
+    mockUserTokenClient.expects('getTokenOrSignInResource').once().returns({ tokenResponse: { token: 'testToken' } })
 
     const tokenResponse = await oAuthFlow.beginFlow(context)
 
-    assert.strictEqual(tokenResponse.status, TokenRequestStatus.Success)
-    assert.strictEqual(tokenResponse.token, 'testToken')
+    assert.strictEqual(tokenResponse?.token, 'testToken')
     assert.strictEqual(oAuthFlow.state?.flowStarted, false)
     assert.strictEqual(oAuthFlow.state?.flowExpires, 0)
   })
 
-  it('should call getSigningResource and send OAuth card if token not in service', async () => {
-    mockUserTokenClient.expects('getUserToken').once().returns({ status: TokenRequestStatus.Failed })
-    mockUserTokenClient.expects('getSignInResource').once().returns(testSigninResource)
+  it('should  send OAuth card if token not in service', async () => {
+    mockUserTokenClient.expects('getTokenOrSignInResource').once().returns({ signInResource: testSigninResource })
     mockTurnContext.expects('sendActivity').once().withArgs(sinon.match.hasNested('attachments[0].contentType', 'application/vnd.microsoft.card.oauth'))
 
     const tokenResponse = await oAuthFlow.beginFlow(context)
 
-    assert.strictEqual(tokenResponse.token, undefined)
-    assert.strictEqual(tokenResponse.status, TokenRequestStatus.InProgress)
+    assert.strictEqual(tokenResponse, undefined)
     assert.strictEqual(oAuthFlow.state?.flowStarted, true)
     assert.strictEqual(oAuthFlow.state?.flowExpires > 0, true)
   })
@@ -97,7 +93,7 @@ describe('OAuthFlow', () => {
     sinon.stub(context, 'activity').get(() => testActivity)
     mockUserTokenClient.expects('getSignInResource').never()
     mockTurnContext.expects('sendActivity').never()
-    mockUserTokenClient.expects('getUserToken').once().withArgs('testSSO', 'test', 'testUser', magicCode).returns({ token: 'retrievedToken', status: TokenRequestStatus.Success })
+    mockUserTokenClient.expects('getUserToken').once().withArgs('testSSO', 'test', 'testUser', magicCode).returns({ token: 'retrievedToken' })
 
     const token = await oAuthFlow.continueFlow(context)
 
@@ -113,7 +109,7 @@ describe('OAuthFlow', () => {
     oAuthFlow.state = expiredState
     mockUserTokenClient.expects('getSignInResource').never()
     mockTurnContext.expects('sendActivity').never()
-    mockUserTokenClient.expects('getUserToken').once().withArgs('testSSO', 'test', 'testUser', '123456').returns({ token: 'retrievedToken', status: TokenRequestStatus.Success })
+    mockUserTokenClient.expects('getUserToken').once().withArgs('testSSO', 'test', 'testUser', '123456').returns({ token: 'retrievedToken' })
 
     const token = await oAuthFlow.continueFlow(context)
     assert.strictEqual(token?.token, 'retrievedToken')
@@ -128,7 +124,7 @@ describe('OAuthFlow', () => {
     const expiredState : FlowState = { flowStarted: true, flowExpires: Date.now() + 10000 }
     oAuthFlow.state = expiredState
     mockTurnContext.expects('sendActivity').never()
-    mockUserTokenClient.expects('getUserToken').once().withArgs('testSSO', 'test', 'testUser', magicCode).returns({ token: undefined, status: TokenRequestStatus.Failed })
+    mockUserTokenClient.expects('getUserToken').once().withArgs('testSSO', 'test', 'testUser', magicCode).returns({ token: undefined })
 
     const flowResult = await oAuthFlow.continueFlow(context)
 
@@ -146,7 +142,7 @@ describe('OAuthFlow', () => {
     context.activity.value = tokenExchangeRequest
 
     mockTurnContext.expects('sendActivity').never()
-    mockUserTokenClient.expects('exchangeTokenAsync').once().withArgs('testUser', 'testSSO', 'test', tokenExchangeRequest).returns({ token: 'exchangedToken', status: TokenRequestStatus.Success })
+    mockUserTokenClient.expects('exchangeTokenAsync').once().withArgs('testUser', 'testSSO', 'test', tokenExchangeRequest).returns({ token: 'exchangedToken' })
 
     const flowResult = await oAuthFlow.continueFlow(context)
     assert.strictEqual(flowResult?.token, 'exchangedToken')
