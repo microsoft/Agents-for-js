@@ -32,6 +32,7 @@ class EmptyAgent extends AgentApplication<TurnState> {
     aiActivity.text = `Welcome to the **Citations** sample. 
                         Type /help for help, /diag for diagnostics, 
                         or send a message to see the echo feature in action. [1] and [2]`
+
     aiActivity.channelData = { feedbackLoopEnabled: true }
     aiActivity.entities = [{ type: 'cosa', name: 'Empty Agent' }]
     const cit1: ClientCitation = {
