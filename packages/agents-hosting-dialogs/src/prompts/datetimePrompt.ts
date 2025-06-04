@@ -46,7 +46,7 @@ export class DateTimePrompt extends Prompt<DateTimeResolution[]> {
      *
      * @param dialogId Unique ID of the dialog within its parent {@link DialogSet} or {@link ComponentDialog}.
      * @param validator (Optional) validator that will be called each time the user responds to the prompt.
-     * @param defaultLocale (Optional) locale to use if the {@link Activity.locale | TurnContext.activity.locale} is not specified. Defaults to a value of `en-us`.
+     * @param defaultLocale (Optional) locale to use if the `TurnContext.activity.locale` is not specified. Defaults to a value of `en-us`.
      */
   constructor (dialogId: string, validator?: PromptValidator<DateTimeResolution[]>, defaultLocale?: string) {
     super(dialogId, validator)
