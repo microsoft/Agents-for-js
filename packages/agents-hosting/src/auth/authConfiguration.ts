@@ -46,6 +46,11 @@ export interface AuthConfiguration {
    * The FIC (First-Party Integration Channel) client ID.
    */
   FICClientId?: string
+
+  /**
+   * The path to K8s provided token.
+   */
+  WIDAssertionFile?: string
 }
 
 /**
@@ -79,6 +84,7 @@ export const loadAuthConfigFromEnv: () => AuthConfiguration = () => {
     certKeyFile: process.env.certKeyFile,
     connectionName: process.env.connectionName,
     FICClientId: process.env.FICClientId,
+    WIDAssertionFile: process.env.WIDAssertionFile,
     issuers: [
       'https://api.botframework.com',
       `https://sts.windows.net/${process.env.tenantId}/`,
@@ -109,6 +115,7 @@ export const loadPrevAuthConfigFromEnv: () => AuthConfiguration = () => {
     certKeyFile: process.env.certKeyFile,
     connectionName: process.env.connectionName,
     FICClientId: process.env.MicrosoftAppClientId,
+    WIDAssertionFile: process.env.WIDAssertionFile,
     issuers: [
       'https://api.botframework.com',
       `https://sts.windows.net/${process.env.MicrosoftAppTenantId}/`,
