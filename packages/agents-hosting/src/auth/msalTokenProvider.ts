@@ -25,7 +25,7 @@ export class MsalTokenProvider implements AuthProvider {
    * @param scope The scope for the token.
    * @returns A promise that resolves to the access token.
    */
-  async getAccessToken (authConfig: AuthConfiguration, scope: string): Promise<string> {
+  public async getAccessToken (authConfig: AuthConfiguration, scope: string): Promise<string> {
     if (!authConfig.clientId && process.env.NODE_ENV !== 'production') {
       return ''
     }
@@ -49,6 +49,22 @@ export class MsalTokenProvider implements AuthProvider {
     }
 
     return token
+  }
+
+  public async acquireTokenOnBehalfOf (authConfig: AuthConfiguration, scopes: string[], oboAssertion: string): Promise<string> {
+    const cca = new ConfidentialClientApplication({
+      auth: {
+        clientId: authConfig.clientId as string,
+        authority: `https://login.microsoftonline.com/${authConfig.tenantId || 'botframework.com'}`,
+        clientSecret: authConfig.clientSecret
+      },
+      system: this.sysOptions
+    })
+    const token = await cca.acquireTokenOnBehalfOf({
+      oboAssertion,
+      scopes
+    })
+    return token?.accessToken as string
   }
 
   private readonly sysOptions: NodeSystemOptions = {
