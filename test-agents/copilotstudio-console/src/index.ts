@@ -14,10 +14,63 @@ import path from 'path'
 
 import { MsalCachePlugin } from './msalCachePlugin.js'
 
-async function acquireToken (settings: ConnectionSettings): Promise<string> {
-  const msalConfig = {
+interface S2SConnectionSettings extends ConnectionSettings {
+  appClientSecret?: string
+}
+
+async function acquireS2SToken (baseConfig: msal.Configuration, settings: S2SConnectionSettings): Promise<string> {
+  const cca = new msal.ConfidentialClientApplication({
+    ...baseConfig,
     auth: {
-      clientId: settings.appClientId,
+      ...baseConfig.auth,
+      clientSecret: settings.appClientSecret!
+    }
+  })
+
+  try {
+    const response = await cca.acquireTokenByClientCredential({ scopes: ['https://api.powerplatform.com/.default'] })
+    if (!response?.accessToken) {
+      throw new Error('Failed to acquire token')
+    }
+
+    return response?.accessToken
+  } catch (error) {
+    console.error('Error acquiring token for client credential:', error)
+    throw error
+  }
+}
+
+async function acquireToken (baseConfig: msal.Configuration): Promise<string> {
+  const tokenRequest = {
+    scopes: ['https://api.powerplatform.com/.default'],
+    redirectUri: 'http://localhost',
+    openBrowser: async (url: string) => {
+      await open(url)
+    }
+  }
+
+  const pca = new msal.PublicClientApplication(baseConfig)
+
+  try {
+    const accounts = await pca.getAllAccounts()
+    if (accounts.length > 0) {
+      const response2 = await pca.acquireTokenSilent({ account: accounts[0], scopes: tokenRequest.scopes })
+      return response2.accessToken
+    } else {
+      const response = await pca.acquireTokenInteractive(tokenRequest)
+      return response.accessToken
+    }
+  } catch (error) {
+    console.error('Error acquiring token interactively:', error)
+    const response = await pca.acquireTokenInteractive(tokenRequest)
+    return response.accessToken
+  }
+}
+
+function getToken (settings: ConnectionSettings) : Promise<string> {
+  const msalConfig: msal.Configuration = {
+    auth: {
+      clientId: settings.appClientId!,
       authority: `https://login.microsoftonline.com/${settings.tenantId}`,
     },
     cache: {
@@ -33,35 +86,17 @@ async function acquireToken (settings: ConnectionSettings): Promise<string> {
       }
     }
   }
-  const pca = new msal.PublicClientApplication(msalConfig)
-  const tokenRequest = {
-    scopes: ['https://api.powerplatform.com/.default'],
-    redirectUri: 'http://localhost',
-    openBrowser: async (url: string) => {
-      await open(url)
-    }
+
+  if (process.env.useS2SConnection === 'true') {
+    return acquireS2SToken(msalConfig, { ...settings, appClientSecret: process.env.appClientSecret })
   }
-  let token
-  try {
-    const accounts = await pca.getAllAccounts()
-    if (accounts.length > 0) {
-      const response2 = await pca.acquireTokenSilent({ account: accounts[0], scopes: tokenRequest.scopes })
-      token = response2.accessToken
-    } else {
-      const response = await pca.acquireTokenInteractive(tokenRequest)
-      token = response.accessToken
-    }
-  } catch (error) {
-    console.error('Error acquiring token interactively:', error)
-    const response = await pca.acquireTokenInteractive(tokenRequest)
-    token = response.accessToken
-  }
-  return token
+
+  return acquireToken(msalConfig)
 }
 
 const createClient = async (): Promise<CopilotStudioClient> => {
   const settings = loadCopilotStudioConnectionSettingsFromEnv()
-  const token = await acquireToken(settings)
+  const token = await getToken(settings)
   const copilotClient = new CopilotStudioClient(settings, token)
   console.log(`Copilot Studio Client Version: ${pkg.version}, running with settings: ${JSON.stringify(settings, null, 2)}`)
   return copilotClient
@@ -96,7 +131,6 @@ const askQuestion = async (copilotClient: CopilotStudioClient, conversationId: s
 const main = async () => {
   const copilotClient = await createClient()
   const act: Activity = await copilotClient.startConversationAsync(true)
-  console.log('\nSuggested Actions: ')
   act.suggestedActions?.actions.forEach((action: CardAction) => console.log(action.value))
   await askQuestion(copilotClient, act.conversation?.id!)
 }
