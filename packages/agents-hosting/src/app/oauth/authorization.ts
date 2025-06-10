@@ -7,7 +7,7 @@ import { TurnContext } from '../../turnContext'
 import { debug } from '../../logger'
 import { TurnState } from '../turnState'
 import { Storage } from '../../storage'
-import { OAuthFlow, TokenRequestStatus, TokenResponse } from '../../oauth'
+import { OAuthFlow, TokenResponse } from '../../oauth'
 import { UserState } from '../../state'
 import { AuthConfiguration, MsalTokenProvider } from '../../auth'
 import jwt, { JwtPayload } from 'jsonwebtoken'
@@ -117,18 +117,18 @@ export class Authorization {
   public async beginOrContinueFlow (context: TurnContext, state: TurnState, authHandlerId?: string) : Promise<TokenResponse> {
     logger.info('beginOrContinueFlow for authHandlerId:', authHandlerId)
     const flow = this.resolverHandler(authHandlerId).flow!
-    let tokenResponse: TokenResponse
+    let tokenResponse: TokenResponse | undefined
     if (flow.state!.flowStarted === false) {
       tokenResponse = await flow.beginFlow(context)
     } else {
       tokenResponse = await flow.continueFlow(context)
-      if (tokenResponse.status === TokenRequestStatus.Success) {
+      if (tokenResponse && tokenResponse.token) {
         if (this._signInHandler) {
           await this._signInHandler(context, state, authHandlerId)
         }
       }
     }
-    return tokenResponse
+    return tokenResponse!
   }
 
   /**
