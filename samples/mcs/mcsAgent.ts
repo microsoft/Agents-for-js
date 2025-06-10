@@ -7,8 +7,6 @@ import { AgentApplication, MemoryStorage, MessageFactory, TokenRequestStatus, Tu
 import { Activity, ActivityTypes } from '@microsoft/agents-activity'
 
 class McsAgent extends AgentApplication<TurnState> {
-  private _mcsClient: CopilotStudioClient | undefined
-
   constructor () {
     super({
       storage: new MemoryStorage(),
@@ -32,8 +30,9 @@ class McsAgent extends AgentApplication<TurnState> {
     const tresp = await this.authorization.getToken(context)
     if (tresp.status === TokenRequestStatus.Success) {
       const oboToken = await this.authorization.exchangeToken(context, ['https://api.powerplatform.com/.default'])
-      this._mcsClient = await this.createClient(oboToken.token!)
-      await this._mcsClient.startConversationAsync()
+      state.setValue('user.oboToken', oboToken.token)
+      // this._mcsClient = await this.createClient(oboToken.token!)
+      // await this._mcsClient.startConversationAsync()
       await context.sendActivity(MessageFactory.text('Welcome to the MCS Agent demo!, ready to chat with MCS!'))
       console.log('OBO Token received: ' + (oboToken?.token?.length || 0))
     } else {
@@ -47,23 +46,34 @@ class McsAgent extends AgentApplication<TurnState> {
   }
 
   private _message = async (context: TurnContext, state: TurnState): Promise<void> => {
-    if (this._mcsClient === null || this._mcsClient === undefined) {
-      // await context.sendActivity(MessageFactory.text('MCS Client is not initialized.'))
+    const cid = state.getValue<string>('conversation.conversationId')
+    const oboToken = state.getValue<string>('user.oboToken')
+    if (!oboToken) {
       await this._status(context, state)
       return
     }
-    const resp = await this._mcsClient!.askQuestionAsync(context.activity.text!)
-    for await (const activity of resp) {
-      console.log('Received activity:', activity.type, activity.text)
-      if (activity.type === 'message') {
-        await context.sendActivity(activity)
-      } else if (activity.type === 'typing') {
-        await context.sendActivity(new Activity(ActivityTypes.Typing))
+    const cpsClient = this.createClient(oboToken!)
+
+    if (cid === undefined || cid === null || cid.length === 0) {
+      const newAct = await cpsClient.startConversationAsync()
+      if (newAct.type === ActivityTypes.Message) {
+        await context.sendActivity(newAct.text!)
+        state.setValue('conversation.conversationId', newAct.conversation!.id)
+      }
+    } else {
+      const resp = await cpsClient!.askQuestionAsync(context.activity.text!, cid)
+      for await (const activity of resp) {
+        console.log('Received activity:', activity.type, activity.text)
+        if (activity.type === 'message') {
+          await context.sendActivity(activity)
+        } else if (activity.type === 'typing') {
+          await context.sendActivity(new Activity(ActivityTypes.Typing))
+        }
       }
     }
   }
 
-  private createClient = async (token: string): Promise<CopilotStudioClient> => {
+  private createClient = (token: string): CopilotStudioClient => {
     const settings = loadCopilotStudioConnectionSettingsFromEnv()
     const copilotClient = new CopilotStudioClient(settings, token)
     return copilotClient
