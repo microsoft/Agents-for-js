@@ -94,7 +94,7 @@ class OAuthAgent extends AgentApplication<TurnState> {
       }
     } else {
       const tokenResponse = await this.authorization.beginOrContinueFlow(context, state, 'github')
-      console.warn('GitHub token ', tokenResponse)
+      console.warn(`GitHub token: ${JSON.stringify(tokenResponse)}`)
       await context.sendActivity(MessageFactory.text('GitHub token length.' + tokenResponse?.token?.length))
     }
   }
