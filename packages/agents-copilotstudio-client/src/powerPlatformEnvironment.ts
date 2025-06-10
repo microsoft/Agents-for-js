@@ -6,8 +6,8 @@
 import { AgentType } from './agentType'
 import { ConnectionSettings } from './connectionSettings'
 import { PowerPlatformCloud } from './powerPlatformCloud'
-
-const ApiVersion: string = '2022-03-01-preview'
+import { PrebuiltBotStrategy } from './strategies/prebuiltBotStrategy'
+import { PublishedBotStrategy } from './strategies/publishedBotStrategy'
 
 /**
  * Generates the connection URL for Copilot Studio.
@@ -22,20 +22,34 @@ export function getCopilotStudioConnectionUrl (
 ): string {
   let cloudValue: PowerPlatformCloud = PowerPlatformCloud.Prod
 
-  const isNotEmptyCloud = settings.cloud && settings.cloud.trim() !== ''
+  if (settings.directConnectUrl?.trim()) {
+    if (!isValidUri(settings.directConnectUrl)) {
+      throw new Error('directConnectUrl must be a valid URL')
+    }
+
+    // FIX for Missing Tenant ID
+    if (settings.directConnectUrl.toLocaleLowerCase().includes('tenants/00000000-0000-0000-0000-000000000000')) {
+      // Direct connection cannot be used, ejecting and forcing the normal settings flow:
+      return getCopilotStudioConnectionUrl({ ...settings, directConnectUrl: '' }, conversationId)
+    }
+
+    return createURL(settings.directConnectUrl, conversationId).href
+  }
+
+  const isNotEmptyCloud = settings.cloud && settings.cloud.toString().trim() !== ''
   const isNotEmptyCustomPowerPlatformCloud = settings.customPowerPlatformCloud !== undefined && settings.customPowerPlatformCloud.trim() !== ''
 
-  if (isNotEmptyCloud && !Object.values(PowerPlatformCloud).includes(settings.cloud)) {
+  if (isNotEmptyCloud && !Object.values(PowerPlatformCloud).includes(settings.cloud!)) {
     throw new Error('Invalid PowerPlatformCloud enum key')
   }
 
-  const cloudSetting = isNotEmptyCloud ? PowerPlatformCloud[settings.cloud as keyof typeof PowerPlatformCloud] : PowerPlatformCloud.Unknown
+  const cloudSetting = isNotEmptyCloud ? settings.cloud! : PowerPlatformCloud.Unknown
 
   if (cloudSetting === PowerPlatformCloud.Other && isNotEmptyCustomPowerPlatformCloud) {
     throw new Error('customPowerPlatformCloud must be provided when PowerPlatformCloud is Other')
   }
 
-  if (settings.environmentId.trim() === '') {
+  if (!settings.environmentId?.trim()) {
     throw new Error('EnvironmentId must be provided')
   }
 
@@ -59,11 +73,11 @@ export function getCopilotStudioConnectionUrl (
 
   let agentType: AgentType
 
-  if (settings.copilotAgentType && settings.copilotAgentType.trim() !== '') {
-    if (!Object.values(AgentType).includes(settings.copilotAgentType as unknown as AgentType)) {
+  if (settings.copilotAgentType && settings.copilotAgentType.toString().trim() !== '') {
+    if (!Object.values(AgentType).includes(settings.copilotAgentType)) {
       throw new Error('Invalid AgentType enum key')
     } else {
-      agentType = AgentType[settings.copilotAgentType as keyof typeof AgentType]
+      agentType = settings.copilotAgentType
     }
   } else {
     agentType = AgentType.Published
@@ -72,7 +86,19 @@ export function getCopilotStudioConnectionUrl (
   settings.customPowerPlatformCloud = isNotEmptyCustomPowerPlatformCloud ? settings.customPowerPlatformCloud : 'api.unknown.powerplatform.com'
 
   const host = getEnvironmentEndpoint(cloudValue, settings.environmentId, settings.customPowerPlatformCloud)
-  return createUri(settings.agentIdentifier, host, agentType, conversationId)
+
+  const strategy = {
+    [AgentType.Published]: () => new PublishedBotStrategy({
+      host,
+      schema: settings.agentIdentifier!,
+    }),
+    [AgentType.Prebuilt]: () => new PrebuiltBotStrategy({
+      host,
+      identifier: settings.agentIdentifier!,
+    }),
+  }[agentType]()
+
+  return strategy.getConversationUrl(conversationId)
 }
 
 function isValidUri (uri: string): boolean {
@@ -84,31 +110,34 @@ function isValidUri (uri: string): boolean {
   }
 }
 
-function createUri (
-  agentIdentifier: string,
-  host: string,
-  agentType: AgentType,
-  conversationId?: string
-): string {
-  const agentPathName = agentType === AgentType.Published ? 'dataverse-backed' : 'prebuilt'
+function createURL (base: string, conversationId?: string): URL {
+  const url = new URL(base)
 
-  const url = new URL(`https://${host}`)
-  url.searchParams.set('api-version', ApiVersion)
-
-  if (!conversationId) {
-    url.pathname = `/copilotstudio/${agentPathName}/authenticated/bots/${agentIdentifier}/conversations`
-  } else {
-    url.pathname = `/copilotstudio/${agentPathName}/authenticated/bots/${agentIdentifier}/conversations/${conversationId}`
+  if (!url.searchParams.has('api-version')) {
+    url.searchParams.append('api-version', '2022-03-01-preview')
   }
 
-  return url.toString()
+  if (url.pathname.endsWith('/')) {
+    url.pathname = url.pathname.slice(0, -1)
+  }
+
+  if (url.pathname.includes('/conversations')) {
+    url.pathname = url.pathname.substring(0, url.pathname.indexOf('/conversations'))
+  }
+
+  url.pathname = `${url.pathname}/conversations`
+  if (conversationId) {
+    url.pathname = `${url.pathname}/${conversationId}`
+  }
+
+  return url
 }
 
 function getEnvironmentEndpoint (
   cloud: PowerPlatformCloud,
   environmentId: string,
   cloudBaseAddress?: string
-): string {
+): URL {
   if (cloud === PowerPlatformCloud.Other && (!cloudBaseAddress || !cloudBaseAddress.trim())) {
     throw new Error('cloudBaseAddress must be provided when PowerPlatformCloud is Other')
   }
@@ -120,7 +149,7 @@ function getEnvironmentEndpoint (
   const hexPrefix = normalizedResourceId.substring(0, normalizedResourceId.length - idSuffixLength)
   const hexSuffix = normalizedResourceId.substring(normalizedResourceId.length - idSuffixLength)
 
-  return `${hexPrefix}.${hexSuffix}.environment.${getEndpointSuffix(cloud, cloudBaseAddress)}`
+  return new URL(`https://${hexPrefix}.${hexSuffix}.environment.${getEndpointSuffix(cloud, cloudBaseAddress)}`)
 }
 
 function getEndpointSuffix (
