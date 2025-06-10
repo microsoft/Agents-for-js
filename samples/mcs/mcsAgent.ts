@@ -20,7 +20,6 @@ class McsAgent extends AgentApplication<TurnState> {
     this.onConversationUpdate('membersAdded', this._status)
     this.authorization.onSignInSuccess(this._singinSuccess)
     this.onMessage('/logout', this._signOut)
-    this.onActivity('invoke', this._invoke)
     this.onActivity('message', this._message)
   }
 
@@ -30,20 +29,17 @@ class McsAgent extends AgentApplication<TurnState> {
   }
 
   private _status = async (context: TurnContext, state: TurnState): Promise<void> => {
-    await context.sendActivity(MessageFactory.text('Welcome to the MCS Agent demo!'))
     const tresp = await this.authorization.getToken(context)
     if (tresp.status === TokenRequestStatus.Success) {
       const oboToken = await this.authorization.exchangeToken(context, ['https://api.powerplatform.com/.default'])
       this._mcsClient = await this.createClient(oboToken.token!)
       await this._mcsClient.startConversationAsync()
+      await context.sendActivity(MessageFactory.text('Welcome to the MCS Agent demo!, ready to chat with MCS!'))
       console.log('OBO Token received: ' + (oboToken?.token?.length || 0))
     } else {
+      await context.sendActivity(MessageFactory.text('Before using the MCS Agent, please sign in.'))
       await this.authorization.beginOrContinueFlow(context, state)
     }
-  }
-
-  private _invoke = async (context: TurnContext, state: TurnState): Promise<void> => {
-    await context.sendActivity(MessageFactory.text('Invoke received.'))
   }
 
   private _singinSuccess = async (context: TurnContext, state: TurnState): Promise<void> => {
@@ -52,7 +48,7 @@ class McsAgent extends AgentApplication<TurnState> {
 
   private _message = async (context: TurnContext, state: TurnState): Promise<void> => {
     if (this._mcsClient === null || this._mcsClient === undefined) {
-      await context.sendActivity(MessageFactory.text('MCS Client is not initialized.'))
+      // await context.sendActivity(MessageFactory.text('MCS Client is not initialized.'))
       await this._status(context, state)
       return
     }
