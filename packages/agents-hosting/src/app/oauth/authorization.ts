@@ -97,10 +97,10 @@ export class Authorization {
 
   private isExchangeable (token: string | undefined): boolean {
     if (!token || typeof token !== 'string') {
-      return false;
+      return false
     }
-    const payload = jwt.decode(token) as JwtPayload;
-    return payload?.aud?.indexOf('api://') === 0;
+    const payload = jwt.decode(token) as JwtPayload
+    return payload?.aud?.indexOf('api://') === 0
   }
 
   private async handleObo (context: TurnContext, token: string, scopes: string[]): Promise<TokenResponse> {
