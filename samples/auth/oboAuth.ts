@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 import { startServer } from '@microsoft/agents-hosting-express'
-import { AgentApplication, MemoryStorage, MessageFactory, TokenRequestStatus, TurnContext, TurnState } from '@microsoft/agents-hosting'
+import { AgentApplication, MemoryStorage, MessageFactory, TurnContext, TurnState } from '@microsoft/agents-hosting'
 
 class OboApp extends AgentApplication<TurnState> {
   constructor () {
@@ -21,10 +21,10 @@ class OboApp extends AgentApplication<TurnState> {
   private _status = async (context: TurnContext, state: TurnState): Promise<void> => {
     await context.sendActivity(MessageFactory.text('Welcome to the Basic App demo!'))
     const tresp = await this.authorization.getToken(context)
-    if (tresp.status === TokenRequestStatus.Success) {
+    if (tresp) {
       await context.sendActivity(MessageFactory.text('Token received: ' + tresp.token?.length))
     } else {
-      await context.sendActivity(MessageFactory.text('Token request status: ' + tresp.status))
+      await context.sendActivity(MessageFactory.text('Token request status: ' + tresp || 'unknown'))
     }
     const oboToken = await this.authorization.exchangeToken(context, ['https://api.powerplatform.com/.default'])
     await context.sendActivity(MessageFactory.text('OBO Token received: ' + (oboToken?.token?.length || 0)))

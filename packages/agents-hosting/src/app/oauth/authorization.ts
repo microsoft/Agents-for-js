@@ -104,7 +104,7 @@ export class Authorization {
     const msalTokenProvider = new MsalTokenProvider()
     const authConfig: AuthConfiguration = context.adapter.authConfig
     const newToken = await msalTokenProvider.acquireTokenOnBehalfOf(authConfig, scopes, token)
-    return { status: TokenRequestStatus.Success, token: newToken }
+    return { token: newToken }
   }
 
   /**

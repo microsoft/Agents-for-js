@@ -3,7 +3,7 @@
 
 import { startServer } from '@microsoft/agents-hosting-express'
 import { CopilotStudioClient, loadCopilotStudioConnectionSettingsFromEnv } from '@microsoft/agents-copilotstudio-client'
-import { AgentApplication, MemoryStorage, MessageFactory, TokenRequestStatus, TurnContext, TurnState } from '@microsoft/agents-hosting'
+import { AgentApplication, MemoryStorage, MessageFactory, TurnContext, TurnState } from '@microsoft/agents-hosting'
 import { Activity, ActivityTypes } from '@microsoft/agents-activity'
 
 class McsAgent extends AgentApplication<TurnState> {
@@ -28,7 +28,7 @@ class McsAgent extends AgentApplication<TurnState> {
 
   private _status = async (context: TurnContext, state: TurnState): Promise<void> => {
     const tresp = await this.authorization.getToken(context)
-    if (tresp.status === TokenRequestStatus.Success) {
+    if (tresp.token) {
       const oboToken = await this.authorization.exchangeToken(context, ['https://api.powerplatform.com/.default'])
       state.setValue('user.oboToken', oboToken.token)
       // this._mcsClient = await this.createClient(oboToken.token!)
