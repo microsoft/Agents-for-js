@@ -13,11 +13,12 @@ import { AgentApplicationOptions } from './agentApplicationOptions'
 import { AppRoute } from './appRoute'
 import { ConversationUpdateEvents } from './conversationUpdateEvents'
 import { AgentExtension } from './extensions'
-import { Authorization } from './oauth/authorization'
+import { Authorization } from './authorization'
 import { RouteHandler } from './routeHandler'
 import { RouteSelector } from './routeSelector'
 import { TurnEvents } from './turnEvents'
 import { TurnState } from './turnState'
+import { TokenRequestStatus } from '../oauth'
 
 const logger = debug('agents:agent-application')
 
@@ -152,8 +153,8 @@ export class AgentApplication<TState extends TurnState> {
    * );
    * ```
    */
-  public addRoute (selector: RouteSelector, handler: RouteHandler<TState>, isInvokeRoute: boolean = false): this {
-    this._routes.push({ selector, handler, isInvokeRoute })
+  public addRoute (selector: RouteSelector, handler: RouteHandler<TState>, isInvokeRoute: boolean = false, authHandlers: string[] = []): this {
+    this._routes.push({ selector, handler, isInvokeRoute, authHandlers })
     return this
   }
 
@@ -177,11 +178,12 @@ export class AgentApplication<TState extends TurnState> {
    */
   public onActivity (
     type: string | RegExp | RouteSelector | (string | RegExp | RouteSelector)[],
-    handler: (context: TurnContext, state: TState) => Promise<void>
+    handler: (context: TurnContext, state: TState) => Promise<void>,
+    authHandlers: string[] = []
   ): this {
     (Array.isArray(type) ? type : [type]).forEach((t) => {
       const selector = this.createActivitySelector(t)
-      this.addRoute(selector, handler)
+      this.addRoute(selector, handler, false, authHandlers)
     })
     return this
   }
@@ -447,10 +449,25 @@ export class AgentApplication<TState extends TurnState> {
           state.temp.inputFiles = inputFiles
         }
 
-        for (let i = 0; i < this._routes.length; i++) {
-          const route = this._routes[i]
+        for (const route of this._routes) {
           if (await route.selector(context)) {
-            await route.handler(context, state)
+            if (route.authHandlers === undefined || route.authHandlers.length === 0) {
+              await route.handler(context, state)
+            } else {
+              let signingComplete = false
+              for (const authHandlerId of route.authHandlers) {
+                const tokenResponse = await this._authorization?.beginOrContinueFlow(turnContext, state, authHandlerId)
+                if (tokenResponse?.status === TokenRequestStatus.Success) {
+                  signingComplete = true
+                  if (!signingComplete) {
+                    break
+                  }
+                }
+                if (signingComplete) {
+                  await route.handler(context, state)
+                }
+              }
+            }
 
             if (await this.callEventHandlers(context, state, this._afterTurn)) {
               await state.save(context, storage)

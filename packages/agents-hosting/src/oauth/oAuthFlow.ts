@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 import { debug } from './../logger'
-import { ActivityTypes, Attachment } from '@microsoft/agents-activity'
+import { Activity, ActivityTypes, Attachment } from '@microsoft/agents-activity'
 import {
   CardFactory,
   AgentStatePropertyAccessor,
@@ -18,6 +18,8 @@ const logger = debug('agents:oauth-flow')
 export class FlowState {
   public flowStarted: boolean = false
   public flowExpires: number = 0
+  public authHandlerId: string | null = null
+  public continuationActivity: Activity | null = null
 }
 
 interface TokenVerifyState {
@@ -109,6 +111,7 @@ export class OAuthFlow {
     if (tokenResponse?.status === TokenRequestStatus.Success) {
       this.state.flowStarted = false
       this.state.flowExpires = 0
+      this.state.authHandlerId = this.absOauthConnectionName
       await this.flowStateAccessor.set(context, this.state)
       logger.info('User token retrieved successfully from service')
       return tokenResponse
@@ -120,6 +123,7 @@ export class OAuthFlow {
     await context.sendActivity(MessageFactory.attachment(oCard))
     this.state.flowStarted = true
     this.state.flowExpires = Date.now() + 30000
+    this.state.authHandlerId = this.absOauthConnectionName
     await this.flowStateAccessor.set(context, this.state)
     logger.info('OAuth begin flow completed, waiting for user to sign in')
     return {
