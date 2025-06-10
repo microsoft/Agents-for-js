@@ -18,11 +18,13 @@ class McsAgent extends AgentApplication<TurnState> {
     this.onConversationUpdate('membersAdded', this._status)
     this.authorization.onSignInSuccess(this._singinSuccess)
     this.onMessage('/logout', this._signOut)
+    this.onActivity('invoke', this._invoke)
     this.onActivity('message', this._message)
   }
 
   private _signOut = async (context: TurnContext, state: TurnState): Promise<void> => {
     await this.authorization.signOut(context, state)
+    state.deleteValue('user.oboToken')
     await context.sendActivity(MessageFactory.text('User signed out'))
   }
 
@@ -31,8 +33,6 @@ class McsAgent extends AgentApplication<TurnState> {
     if (tresp.token) {
       const oboToken = await this.authorization.exchangeToken(context, ['https://api.powerplatform.com/.default'])
       state.setValue('user.oboToken', oboToken.token)
-      // this._mcsClient = await this.createClient(oboToken.token!)
-      // await this._mcsClient.startConversationAsync()
       await context.sendActivity(MessageFactory.text('Welcome to the MCS Agent demo!, ready to chat with MCS!'))
       console.log('OBO Token received: ' + (oboToken?.token?.length || 0))
     } else {
@@ -43,6 +43,10 @@ class McsAgent extends AgentApplication<TurnState> {
 
   private _singinSuccess = async (context: TurnContext, state: TurnState): Promise<void> => {
     await context.sendActivity(MessageFactory.text('User signed in successfully'))
+  }
+
+  private _invoke = async (context: TurnContext, state: TurnState): Promise<void> => {
+    await context.sendActivity(MessageFactory.text('Invoke received.'))
   }
 
   private _message = async (context: TurnContext, state: TurnState): Promise<void> => {
