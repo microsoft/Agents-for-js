@@ -76,10 +76,10 @@ export class Messages<TState extends TurnState> {
               }
             }
 
-            await context.sendActivity({
+            await context.sendActivity(Activity.fromObject({
               value: { body: response, status: 200 } as InvokeResponse,
               type: ActivityTypes.InvokeResponse
-            } as Activity)
+            }))
           }
         }
       },

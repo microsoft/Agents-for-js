@@ -221,7 +221,7 @@ export class BlobsTranscriptStore implements TranscriptStore {
             }
 
             const activity = (await StreamConsumers.json(readableStreamBody)) as any
-            return { ...activity, timestamp: new Date(activity.timestamp) } as Activity
+            return Activity.fromObject({ ...activity, timestamp: new Date(activity.timestamp) })
           })
         )
 
