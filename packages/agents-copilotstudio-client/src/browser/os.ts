@@ -3,6 +3,18 @@
  * Licensed under the MIT License.
  */
 
-import type * as osTypes from 'os'
+export function platform() {
+  return "browser";
+}
+export function arch() {
+  return "web";
+}
+export function release() {
+  return "";
+}
 
-export default {} as typeof osTypes
+export default {
+  platform,
+  arch,
+  release,
+};

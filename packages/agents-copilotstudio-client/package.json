@@ -20,17 +20,16 @@
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
   "browser": {
-    "os": "./src/browser/os.ts",
-    "crypto": "./src/browser/crypto.ts"
+    "os": "./src/browser/os.ts"
   },
   "scripts": {
-    "build:browser": "esbuild --platform=browser --target=es2019 --format=esm --bundle --sourcemap --minify --outfile=dist/src/browser.mjs src/index.ts"
+    "build:browser": "node build.js"
   },
   "dependencies": {
     "@microsoft/agents-activity": "file:../agents-activity",
     "axios": "^1.9.0",
-    "rxjs": "5.5.12",
-    "uuid": "^11.1.0"
+    "debug": "^4.3.7",
+    "esbuild": "^0.25.5"
   },
   "devDependencies": {
     "debug": "^4.3.7",
@@ -52,6 +51,7 @@
         "default": "./dist/src/index.js"
       }
     },
+    "./browser": "./dist/browser.js",
     "./package.json": "./package.json"
   },
   "engines": {
