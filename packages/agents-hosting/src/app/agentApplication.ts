@@ -757,7 +757,7 @@ export class AgentApplication<TState extends TurnState> {
       const k = keyword.toString().toLocaleLowerCase()
       return (context: TurnContext) => {
         if (context?.activity?.type === ActivityTypes.Message && context.activity.text) {
-          return Promise.resolve(context.activity.text.toLocaleLowerCase().indexOf(k) >= 0)
+          return Promise.resolve(context.activity.text.toLocaleLowerCase() === k)
         } else {
           return Promise.resolve(false)
         }

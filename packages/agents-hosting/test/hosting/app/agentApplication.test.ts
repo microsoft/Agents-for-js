@@ -8,7 +8,7 @@ import { Activity, ActivityTypes } from '@microsoft/agents-activity'
 import { MessageFactory } from '../../../src/messageFactory'
 import { TurnContext } from '../../../src/turnContext'
 
-const testActivity = Activity.fromObject({
+const createTestActivity = () => Activity.fromObject({
   type: 'message',
   from: {
     id: 'test',
@@ -28,12 +28,14 @@ const testActivity = Activity.fromObject({
 describe('Application', () => {
   let sandbox: sinon.SinonSandbox
   let app = new AgentApplication()
+  let testActivity: Activity = createTestActivity()
   const testAdapter = new TestAdapter()
 
   beforeEach(() => {
     app = new AgentApplication()
     sandbox = sinon.createSandbox()
     sandbox.stub(app, 'adapter').get(() => testAdapter)
+    testActivity = createTestActivity()
   })
   it('should create an Application with default options', () => {
     const app = new AgentApplication()
@@ -70,6 +72,38 @@ describe('Application', () => {
     const context = new TurnContext(testAdapter, testActivity)
     const handled = await app.runInternal(context)
     await context.sendActivity(MessageFactory.text('/yo'))
+    assert.equal(called, true)
+    assert.equal(handled, true)
+  })
+
+  it('should not route to a message handler with partial string', async () => {
+    let called = false
+
+    app.onMessage('fooBar', async (context, state) => {
+      assert.notEqual(context, undefined)
+      assert.notEqual(state, undefined)
+      called = true
+    })
+    testActivity.text = 'foo'
+    const context = new TurnContext(testAdapter, testActivity)
+    const handled = await app.runInternal(context)
+    await context.sendActivity(testActivity)
+    assert.equal(called, false)
+    assert.equal(handled, false)
+  })
+
+  it('should route to a message handler with string case insensitive', async () => {
+    let called = false
+
+    app.onMessage('foo', async (context, state) => {
+      assert.notEqual(context, undefined)
+      assert.notEqual(state, undefined)
+      called = true
+    })
+    testActivity.text = 'FOO'
+    const context = new TurnContext(testAdapter, testActivity)
+    const handled = await app.runInternal(context)
+    await context.sendActivity(testActivity)
     assert.equal(called, true)
     assert.equal(handled, true)
   })
