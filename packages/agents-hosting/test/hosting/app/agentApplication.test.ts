@@ -74,6 +74,22 @@ describe('Application', () => {
     assert.equal(handled, true)
   })
 
+  it('should route to a message handler with string case insensitive', async () => {
+    let called = false
+
+    app.onMessage('foo', async (context, state) => {
+      assert.notEqual(context, undefined)
+      assert.notEqual(state, undefined)
+      called = true
+    })
+    testActivity.text = 'FOO'
+    const context = new TurnContext(testAdapter, testActivity)
+    const handled = await app.runInternal(context)
+    await context.sendActivity(testActivity)
+    assert.equal(called, true)
+    assert.equal(handled, true)
+  })
+
   it('should route to a act handler with regex', async () => {
     let called = false
 
