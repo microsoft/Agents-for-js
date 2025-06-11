@@ -49,15 +49,15 @@ class OAuthAgent extends AgentApplication<TurnState> {
 
   private _signIn = async (context: TurnContext, state: TurnState): Promise<void> => {
     const tokenResponse = await this.authorization.beginOrContinueFlow(context, state)
-    await context.sendActivity(MessageFactory.text(`Auth flow status: ${tokenResponse.token?.length}`))
+    await context.sendActivity(MessageFactory.text(`Auth flow status: ${tokenResponse?.token !== undefined ? 'success' : 'failed'}`))
   }
 
   private _profileRequest = async (context: TurnContext, state: TurnState): Promise<void> => {
     const userTokenResponse = await this.authorization.getToken(context)
-    if (userTokenResponse && userTokenResponse.token) {
+    if (userTokenResponse && userTokenResponse?.token) {
       const userTemplate = (await import('./../_resources/UserProfileCard.json'))
       const template = new Template(userTemplate)
-      const userInfo = await getUserInfo(userTokenResponse.token!)
+      const userInfo = await getUserInfo(userTokenResponse?.token!)
       const card = template.expand(userInfo)
       const activity = MessageFactory.attachment(CardFactory.adaptiveCard(card))
       await context.sendActivity(activity)
@@ -94,8 +94,8 @@ class OAuthAgent extends AgentApplication<TurnState> {
       }
     } else {
       const tokenResponse = await this.authorization.beginOrContinueFlow(context, state, 'github')
-      console.warn('GitHub token length.' + tokenResponse.token?.length)
-      await context.sendActivity(MessageFactory.text('GitHub token length.' + tokenResponse.token?.length))
+      console.warn('GitHub token.', tokenResponse)
+      await context.sendActivity(MessageFactory.text('GitHub token.' + tokenResponse?.token !== undefined ? 'not available' : 'available'))
     }
   }
 
