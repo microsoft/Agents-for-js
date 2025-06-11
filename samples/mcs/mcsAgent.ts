@@ -24,7 +24,7 @@ class McsAgent extends AgentApplication<TurnState> {
 
   private _signOut = async (context: TurnContext, state: TurnState): Promise<void> => {
     await this.authorization.signOut(context, state)
-    state.deleteValue('user.oboToken')
+    // state.deleteValue('user.oboToken')
     await context.sendActivity(MessageFactory.text('User signed out'))
   }
 
@@ -32,12 +32,13 @@ class McsAgent extends AgentApplication<TurnState> {
     const tresp = await this.authorization.getToken(context)
     if (tresp.token) {
       const oboToken = await this.authorization.exchangeToken(context, ['https://api.powerplatform.com/.default'])
-      state.setValue('user.oboToken', oboToken.token)
       await context.sendActivity(MessageFactory.text('Welcome to the MCS Agent demo!, ready to chat with MCS!'))
       console.log('OBO Token received: ' + (oboToken?.token?.length || 0))
     } else {
-      await context.sendActivity(MessageFactory.text('Before using the MCS Agent, please sign in.'))
-      await this.authorization.beginOrContinueFlow(context, state)
+      const tokenResp = await this.authorization.beginOrContinueFlow(context, state)
+      if (!tokenResp?.token) {
+        await context.sendActivity(MessageFactory.text('Before using the MCS Agent, please sign in.'))
+      }
     }
   }
 
@@ -51,12 +52,12 @@ class McsAgent extends AgentApplication<TurnState> {
 
   private _message = async (context: TurnContext, state: TurnState): Promise<void> => {
     const cid = state.getValue<string>('conversation.conversationId')
-    const oboToken = state.getValue<string>('user.oboToken')
-    if (!oboToken) {
+    const oboToken = await this.authorization.exchangeToken(context, ['https://api.powerplatform.com/.default'])
+    if (!oboToken.token) {
       await this._status(context, state)
       return
     }
-    const cpsClient = this.createClient(oboToken!)
+    const cpsClient = this.createClient(oboToken.token!)
 
     if (cid === undefined || cid === null || cid.length === 0) {
       const newAct = await cpsClient.startConversationAsync()
