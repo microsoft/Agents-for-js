@@ -74,6 +74,22 @@ describe('Application', () => {
     assert.equal(handled, true)
   })
 
+  it('should not route to a message handler with partial string', async () => {
+    let called = false
+
+    app.onMessage('fooBar', async (context, state) => {
+      assert.notEqual(context, undefined)
+      assert.notEqual(state, undefined)
+      called = true
+    })
+    testActivity.text = 'foo'
+    const context = new TurnContext(testAdapter, testActivity)
+    const handled = await app.runInternal(context)
+    await context.sendActivity(testActivity)
+    assert.equal(called, false)
+    assert.equal(handled, false)
+  })
+
   it('should route to a message handler with string case insensitive', async () => {
     let called = false
 
