@@ -8,7 +8,7 @@ import { Activity, ActivityTypes } from '@microsoft/agents-activity'
 import { MessageFactory } from '../../../src/messageFactory'
 import { TurnContext } from '../../../src/turnContext'
 
-const testActivity = Activity.fromObject({
+const createTestActivity = () => Activity.fromObject({
   type: 'message',
   from: {
     id: 'test',
@@ -28,12 +28,14 @@ const testActivity = Activity.fromObject({
 describe('Application', () => {
   let sandbox: sinon.SinonSandbox
   let app = new AgentApplication()
+  let testActivity: Activity = createTestActivity()
   const testAdapter = new TestAdapter()
 
   beforeEach(() => {
     app = new AgentApplication()
     sandbox = sinon.createSandbox()
     sandbox.stub(app, 'adapter').get(() => testAdapter)
+    testActivity = createTestActivity()
   })
   it('should create an Application with default options', () => {
     const app = new AgentApplication()
