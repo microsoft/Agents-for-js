@@ -18,6 +18,11 @@ interface streamRead {
 }
 
 export class CopilotStudioClient {
+  /** Header key for conversation ID. */
+  private static readonly conversationIdHeaderKey: string = 'x-ms-conversationid'
+  /** Island Header key */
+  private static readonly islandExperimentalUrlHeaderKey: string = 'x-ms-d2e-experimental'
+
   /** The ID of the current conversation. */
   private conversationId: string = ''
   /** The connection settings for the client. */
@@ -41,7 +46,28 @@ export class CopilotStudioClient {
 
   private async postRequestAsync (axiosConfig: AxiosRequestConfig): Promise<Activity[]> {
     const activities: Activity[] = []
+
+    this.logger(`>>> SEND TO ${axiosConfig.url}`)
+
     const response = await this.client(axiosConfig)
+
+    if (this.settings.useExperimentalEndpoint && !this.settings.directConnectUrl?.trim()) {
+      const islandExperimentalUrl = response.headers?.[CopilotStudioClient.islandExperimentalUrlHeaderKey]
+      if (islandExperimentalUrl) {
+        this.settings.directConnectUrl = islandExperimentalUrl
+        this.logger(`Island Experimental URL: ${islandExperimentalUrl}`)
+      }
+    }
+
+    this.conversationId = response.headers?.[CopilotStudioClient.conversationIdHeaderKey] ?? ''
+    if (this.conversationId) {
+      this.logger(`Conversation ID: ${this.conversationId}`)
+    }
+
+    this.logger('=====================================================')
+    this.logger(`Headers: ${JSON.stringify(response.headers, null, 2)}`)
+    this.logger('=====================================================')
+
     const stream = response.data
     const reader = stream.pipeThrough(new TextDecoderStream()).getReader()
     let result: string = ''
@@ -70,6 +96,11 @@ export class CopilotStudioClient {
           const act = Activity.fromJson(ve.substring(5, ve.length))
           if (act.type === ActivityTypes.Message) {
             activities.push(act)
+            if (!this.conversationId.trim()) {
+              // Did not get it from the header.
+              this.conversationId = act.conversation?.id ?? ''
+              this.logger(`Conversation ID: ${this.conversationId}`)
+            }
           } else {
             this.logger('Activity type: ', act.type)
           }
@@ -110,7 +141,6 @@ export class CopilotStudioClient {
 
     const values = await this.postRequestAsync(config)
     const act = values[0]
-    this.conversationId = act.conversation?.id!
     return act
   }
 
