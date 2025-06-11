@@ -13,7 +13,7 @@ import { AgentApplicationOptions } from './agentApplicationOptions'
 import { AppRoute } from './appRoute'
 import { ConversationUpdateEvents } from './conversationUpdateEvents'
 import { AgentExtension } from './extensions'
-import { Authorization } from './authorization'
+import { Authorization, SingInState } from './authorization'
 import { RouteHandler } from './routeHandler'
 import { RouteSelector } from './routeSelector'
 import { TurnEvents } from './turnEvents'
@@ -212,7 +212,8 @@ export class AgentApplication<TState extends TurnState> {
    */
   public onConversationUpdate (
     event: ConversationUpdateEvents,
-    handler: (context: TurnContext, state: TState) => Promise<void>
+    handler: (context: TurnContext, state: TState) => Promise<void>,
+    authHandlers: string[] = []
   ): this {
     if (typeof handler !== 'function') {
       throw new Error(
@@ -221,7 +222,7 @@ export class AgentApplication<TState extends TurnState> {
     }
 
     const selector = this.createConversationUpdateSelector(event)
-    this.addRoute(selector, handler)
+    this.addRoute(selector, handler, false, authHandlers)
     return this
   }
 
@@ -284,11 +285,12 @@ export class AgentApplication<TState extends TurnState> {
    */
   public onMessage (
     keyword: string | RegExp | RouteSelector | (string | RegExp | RouteSelector)[],
-    handler: (context: TurnContext, state: TState) => Promise<void>
+    handler: (context: TurnContext, state: TState) => Promise<void>,
+    authHandlers: string[] = []
   ): this {
     (Array.isArray(keyword) ? keyword : [keyword]).forEach((k) => {
       const selector = this.createMessageSelector(k)
-      this.addRoute(selector, handler)
+      this.addRoute(selector, handler, false, authHandlers)
     })
     return this
   }
@@ -311,9 +313,9 @@ export class AgentApplication<TState extends TurnState> {
    * });
    * ```
    */
-  public onSignInSuccess (handler: (context: TurnContext, state: TurnState, id?: string) => void): this {
+  public onSignInSuccess (handler: (context: TurnContext, state: TurnState, id?: string) => Promise<void>): this {
     if (this.options.authorization) {
-      this.authorization.onSignInSuccess(handler)
+      Promise.resolve(this.authorization.onSignInSuccess(handler))
     } else {
       throw new Error(
         'The Application.authorization property is unavailable because no authorization options were configured.'
@@ -434,6 +436,16 @@ export class AgentApplication<TState extends TurnState> {
         const state = turnStateFactory()
         await state.load(context, storage)
 
+        const signInState : SingInState = state.getValue('user.__SIGNIN_STATE_')
+        if (this._authorization) {
+          const flowStarted = this._authorization.getFlowState(signInState?.handlerId!)
+          if (flowStarted) {
+            // const handler = this._authorization.resolverHandler(signInState?.handlerId!)
+            await this._authorization.beginOrContinueFlow(turnContext, state, signInState?.handlerId)
+            return true
+          }
+        }
+
         if (!(await this.callEventHandlers(context, state, this._beforeTurn))) {
           await state.save(context, storage)
           return false
@@ -464,6 +476,7 @@ export class AgentApplication<TState extends TurnState> {
                 }
                 if (signingComplete) {
                   await route.handler(context, state)
+                  state.deleteValue('user.__SIGNIN_STATE_')
                 }
               }
             }
