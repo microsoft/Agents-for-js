@@ -3,12 +3,12 @@
  * Licensed under the MIT License.
  */
 
-import { TurnContext } from '../../turnContext'
-import { debug } from '../../logger'
-import { TurnState } from '../turnState'
-import { Storage } from '../../storage'
-import { OAuthFlow, TokenResponse } from '../../oauth'
-import { UserState } from '../../state'
+import { TurnContext } from '../turnContext'
+import { debug } from '../logger'
+import { TurnState } from './turnState'
+import { Storage } from '../storage'
+import { OAuthFlow, TokenResponse } from '../oauth'
+import { UserState } from '../state'
 
 const logger = debug('agents:authorization')
 

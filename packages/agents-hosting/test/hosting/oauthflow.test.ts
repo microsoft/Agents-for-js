@@ -86,7 +86,7 @@ describe('OAuthFlow', () => {
   })
 
   it('should retrieve token using valid magic code from text during continueFlow', async () => {
-    const expiredState = { userToken: '', flowStarted: true, flowExpires: Date.now() + 10000 }
+    const expiredState = { userToken: '', flowStarted: true, flowExpires: Date.now() + 10000, authHandlerId: 'test', continuationActivity: testActivity }
     oAuthFlow.state = expiredState
     const magicCode = '12345'
     testActivity.text = magicCode
@@ -105,7 +105,7 @@ describe('OAuthFlow', () => {
     testActivity.name = 'signin/verifyState'
     testActivity.value = { state: '123456' }
     sinon.stub(context, 'activity').get(() => testActivity)
-    const expiredState : FlowState = { flowStarted: true, flowExpires: Date.now() + 10000 }
+    const expiredState : FlowState = { flowStarted: true, flowExpires: Date.now() + 10000, authHandlerId: 'test', continuationActivity: testActivity }
     oAuthFlow.state = expiredState
     mockUserTokenClient.expects('getSignInResource').never()
     mockTurnContext.expects('sendActivity').never()
@@ -121,7 +121,7 @@ describe('OAuthFlow', () => {
     const magicCode = 'abc'
     testActivity.text = magicCode
     sinon.stub(context, 'activity').get(() => testActivity)
-    const expiredState : FlowState = { flowStarted: true, flowExpires: Date.now() + 10000 }
+    const expiredState : FlowState = { flowStarted: true, flowExpires: Date.now() + 10000, authHandlerId: 'test', continuationActivity: testActivity }
     oAuthFlow.state = expiredState
     mockTurnContext.expects('sendActivity').never()
     mockUserTokenClient.expects('getUserToken').once().withArgs('testSSO', 'test', 'testUser', magicCode).returns({ token: undefined })
@@ -134,7 +134,7 @@ describe('OAuthFlow', () => {
   })
 
   it('should handle token exchange during continueFlow', async () => {
-    const expiredState : FlowState = { flowStarted: true, flowExpires: Date.now() + 10000 }
+    const expiredState : FlowState = { flowStarted: true, flowExpires: Date.now() + 10000, authHandlerId: 'test', continuationActivity: testActivity }
     oAuthFlow.state = expiredState
     const tokenExchangeRequest = { id: 'exchangeId' }
     context.activity.type = ActivityTypes.Invoke

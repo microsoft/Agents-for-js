@@ -18,7 +18,6 @@ import { RouteHandler } from './routeHandler'
 import { RouteSelector } from './routeSelector'
 import { TurnEvents } from './turnEvents'
 import { TurnState } from './turnState'
-import { TokenRequestStatus } from '../oauth'
 
 const logger = debug('agents:agent-application')
 
@@ -457,7 +456,7 @@ export class AgentApplication<TState extends TurnState> {
               let signingComplete = false
               for (const authHandlerId of route.authHandlers) {
                 const tokenResponse = await this._authorization?.beginOrContinueFlow(turnContext, state, authHandlerId)
-                if (tokenResponse?.status === TokenRequestStatus.Success) {
+                if (tokenResponse?.token) {
                   signingComplete = true
                   if (!signingComplete) {
                     break
