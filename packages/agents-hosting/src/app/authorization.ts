@@ -10,13 +10,13 @@ import { Storage } from '../storage'
 import { OAuthFlow, TokenResponse } from '../oauth'
 import { UserState } from '../state'
 import { Activity } from '@microsoft/agents-activity'
-import { CloudAdapter } from '../cloudAdapter'
 
 const logger = debug('agents:authorization')
 
 export interface SingInState {
   continuationActivity?: Activity,
   handlerId?: string,
+  completed?: boolean
 }
 
 /**
@@ -99,7 +99,7 @@ export class Authorization {
    */
   public async beginOrContinueFlow (context: TurnContext, state: TurnState, authHandlerId?: string) : Promise<TokenResponse> {
     logger.info('beginOrContinueFlow for authHandlerId:', authHandlerId)
-    const signInState: SingInState | undefined = state.getValue('user.__SIGNIN_STATE_') || { continuationActivity: undefined, handlerId: undefined }
+    const signInState: SingInState | undefined = state.getValue('user.__SIGNIN_STATE_') || { continuationActivity: undefined, handlerId: undefined, completed: false }
     const flow = this.resolverHandler(authHandlerId).flow!
     let tokenResponse: TokenResponse | undefined
     if (flow.state!.flowStarted === false) {
@@ -113,15 +113,18 @@ export class Authorization {
         if (this._signInHandler) {
           this._signInHandler(context, state, authHandlerId)
         }
-        if (signInState?.continuationActivity?.text !== context.activity.text) {
-          // proactive
-          const convRef = Activity.fromObject(signInState?.continuationActivity!).getConversationReference()
-          const cAdapter = context.adapter as CloudAdapter
-          await cAdapter.continueConversation(convRef!, async ctx => {
-            await ctx.sendActivity(signInState?.continuationActivity!)
-          }, true)
-        }
-        state.deleteValue('user.__SIGNIN_STATE_')
+        signInState!.completed = true
+        state.setValue('user.__SIGNIN_STATE_', signInState)
+        // if (signInState?.continuationActivity?.text !== context.activity.text) {
+        //   // proactive
+        //   const convRef = Activity.fromObject(signInState?.continuationActivity!).getConversationReference()
+        //   const cAdapter = context.adapter as CloudAdapter
+
+        //   await cAdapter.continueConversation(convRef!, async ctx => {
+        //     await ctx.sendActivity(signInState?.continuationActivity!)
+        //   }, true)
+        // }
+        // state.deleteValue('user.__SIGNIN_STATE_')
       }
     }
     return tokenResponse!

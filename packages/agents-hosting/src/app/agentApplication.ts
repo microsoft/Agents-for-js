@@ -315,7 +315,7 @@ export class AgentApplication<TState extends TurnState> {
    */
   public onSignInSuccess (handler: (context: TurnContext, state: TurnState, id?: string) => Promise<void>): this {
     if (this.options.authorization) {
-      Promise.resolve(this.authorization.onSignInSuccess(handler))
+      this.authorization.onSignInSuccess(handler)
     } else {
       throw new Error(
         'The Application.authorization property is unavailable because no authorization options were configured.'
@@ -440,8 +440,12 @@ export class AgentApplication<TState extends TurnState> {
         if (this._authorization) {
           const flowStarted = this._authorization.getFlowState(signInState?.handlerId!)
           if (flowStarted) {
-            // const handler = this._authorization.resolverHandler(signInState?.handlerId!)
             await this._authorization.beginOrContinueFlow(turnContext, state, signInState?.handlerId)
+            if (signInState?.completed) {
+              const convRef = Activity.fromObject(signInState?.continuationActivity!).getConversationReference()
+              await this.sendProactiveActivity(convRef, signInState?.continuationActivity!)
+              state.deleteValue('user.__SIGNIN_STATE_')
+            }
             return true
           }
         }
@@ -476,7 +480,6 @@ export class AgentApplication<TState extends TurnState> {
                 }
                 if (signingComplete) {
                   await route.handler(context, state)
-                  state.deleteValue('user.__SIGNIN_STATE_')
                 }
               }
             }
