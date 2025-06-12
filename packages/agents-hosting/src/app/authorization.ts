@@ -9,6 +9,8 @@ import { TurnState } from './turnState'
 import { Storage } from '../storage'
 import { OAuthFlow, TokenResponse } from '../oauth'
 import { UserState } from '../state'
+import { AuthConfiguration, MsalTokenProvider } from '../auth'
+import jwt, { JwtPayload } from 'jsonwebtoken'
 import { Activity } from '@microsoft/agents-activity'
 
 const logger = debug('agents:authorization')
@@ -75,7 +77,7 @@ export class Authorization {
       currentAuthHandler.auto = currentAuthHandler.auto ?? process.env[ah + '_connectionAuto'] === 'true'
       currentAuthHandler.flow = new OAuthFlow(userState, currentAuthHandler.name, null!, currentAuthHandler.title, currentAuthHandler.text)
     }
-    logger.info('Authorization handlers configured with', this._authHandlers.length, 'handlers')
+    logger.info('Authorization handlers configured with', Object.keys(this._authHandlers).length, 'handlers')
   }
 
   /**
@@ -88,6 +90,31 @@ export class Authorization {
     logger.info('getToken from user token service for authHandlerId:', authHandlerId)
     const authHandler = this.resolverHandler(authHandlerId)
     return await authHandler.flow?.getUserToken(context)!
+  }
+
+  public async exchangeToken (context: TurnContext, scopes: string[], authHandlerId?: string): Promise<TokenResponse> {
+    logger.info('getToken from user token service for authHandlerId:', authHandlerId)
+    const authHandler = this.resolverHandler(authHandlerId)
+    const tokenResponse = await authHandler.flow?.getUserToken(context)!
+    if (this.isExchangeable(tokenResponse.token)) {
+      return await this.handleObo(context, tokenResponse.token!, scopes)
+    }
+    return tokenResponse
+  }
+
+  private isExchangeable (token: string | undefined): boolean {
+    if (!token || typeof token !== 'string') {
+      return false
+    }
+    const payload = jwt.decode(token) as JwtPayload
+    return payload?.aud?.indexOf('api://') === 0
+  }
+
+  private async handleObo (context: TurnContext, token: string, scopes: string[]): Promise<TokenResponse> {
+    const msalTokenProvider = new MsalTokenProvider()
+    const authConfig: AuthConfiguration = context.adapter.authConfig
+    const newToken = await msalTokenProvider.acquireTokenOnBehalfOf(authConfig, scopes, token)
+    return { token: newToken }
   }
 
   /**

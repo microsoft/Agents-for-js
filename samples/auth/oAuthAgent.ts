@@ -49,7 +49,7 @@ class OAuthAgent extends AgentApplication<TurnState> {
 
   private _signIn = async (context: TurnContext, state: TurnState): Promise<void> => {
     const tokenResponse = await this.authorization.beginOrContinueFlow(context, state)
-    await context.sendActivity(MessageFactory.text(`Auth flow status: ${tokenResponse?.token !== undefined ? 'success' : 'failed'}`))
+    await context.sendActivity(MessageFactory.text(`Auth flow status: ${tokenResponse}`))
   }
 
   private _profileRequest = async (context: TurnContext, state: TurnState): Promise<void> => {
@@ -94,8 +94,8 @@ class OAuthAgent extends AgentApplication<TurnState> {
       }
     } else {
       const tokenResponse = await this.authorization.beginOrContinueFlow(context, state, 'github')
-      console.warn('GitHub token.', tokenResponse)
-      await context.sendActivity(MessageFactory.text('GitHub token.' + tokenResponse?.token !== undefined ? 'not available' : 'available'))
+      console.warn(`GitHub token: ${JSON.stringify(tokenResponse)}`)
+      await context.sendActivity(MessageFactory.text('GitHub token length.' + tokenResponse?.token?.length))
     }
   }
 
