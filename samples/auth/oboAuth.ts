@@ -9,13 +9,13 @@ class OboApp extends AgentApplication<TurnState> {
     super({
       storage: new MemoryStorage(),
       authorization: {
-        default: { name: 'OBOTest' }
+        mcs: { name: 'OBOTest' }
       }
     })
     this.onConversationUpdate('membersAdded', this._status)
     this.authorization.onSignInSuccess(this._singinSuccess)
     this.onActivity('invoke', this._invoke)
-    this.onActivity('message', this._message)
+    this.onActivity('message', this._message, ['mcs'])
   }
 
   private _status = async (context: TurnContext, state: TurnState): Promise<void> => {
@@ -39,7 +39,6 @@ class OboApp extends AgentApplication<TurnState> {
   }
 
   private _message = async (context: TurnContext, state: TurnState): Promise<void> => {
-    await this.authorization.beginOrContinueFlow(context, state)
     await context.sendActivity(MessageFactory.text('You said.' + context.activity.text))
   }
 }
