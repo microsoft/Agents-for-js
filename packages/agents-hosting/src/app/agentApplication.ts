@@ -442,8 +442,8 @@ export class AgentApplication<TState extends TurnState> {
           if (flowStarted) {
             await this._authorization.beginOrContinueFlow(turnContext, state, signInState?.handlerId)
             if (signInState?.completed) {
-              const convRef = Activity.fromObject(signInState?.continuationActivity!).getConversationReference()
-              await this.sendProactiveActivity(convRef, signInState?.continuationActivity!)
+              const savedAct = Activity.fromObject(signInState?.continuationActivity!)
+              await this.run(new TurnContext(context.adapter, savedAct))
               state.deleteValue('user.__SIGNIN_STATE_')
             }
             return true
