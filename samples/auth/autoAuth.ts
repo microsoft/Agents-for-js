@@ -21,6 +21,7 @@ class OneProvider extends AgentApplication<TurnState> {
     this.onMessage('/logout', this._logout)
     this.onMessage('/me', this._profileRequest, ['graph'])
     this.onMessage('/prs', this._pullRequests, ['github'])
+    this.onMessage('/status', this._status, ['graph', 'github'])
     this.onActivity('invoke', this._invoke)
     this.onActivity('message', this._message)
   }
