@@ -7,7 +7,7 @@ import { TurnContext } from '../turnContext'
 import { debug } from '../logger'
 import { TurnState } from './turnState'
 import { Storage } from '../storage'
-import { OAuthFlow, TokenResponse } from '../oauth'
+import { FlowState, OAuthFlow, TokenResponse } from '../oauth'
 import { UserState } from '../state'
 import { AuthConfiguration, MsalTokenProvider } from '../auth'
 import jwt, { JwtPayload } from 'jsonwebtoken'
@@ -142,16 +142,6 @@ export class Authorization {
         }
         signInState!.completed = true
         state.setValue('user.__SIGNIN_STATE_', signInState)
-        // if (signInState?.continuationActivity?.text !== context.activity.text) {
-        //   // proactive
-        //   const convRef = Activity.fromObject(signInState?.continuationActivity!).getConversationReference()
-        //   const cAdapter = context.adapter as CloudAdapter
-
-        //   await cAdapter.continueConversation(convRef!, async ctx => {
-        //     await ctx.sendActivity(signInState?.continuationActivity!)
-        //   }, true)
-        // }
-        // state.deleteValue('user.__SIGNIN_STATE_')
       }
     }
     return tokenResponse!
@@ -162,9 +152,9 @@ export class Authorization {
    * @param {string} [authHandlerId] - Optional ID of the auth handler to check, defaults to first handler
    * @returns {boolean} Whether the flow has started
    */
-  public getFlowState (authHandlerId?: string) : boolean {
+  public getFlowState (authHandlerId?: string) : FlowState {
     const flow = this.resolverHandler(authHandlerId).flow!
-    return flow.state?.flowStarted!
+    return flow.state!
   }
 
   /**

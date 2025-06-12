@@ -438,10 +438,10 @@ export class AgentApplication<TState extends TurnState> {
 
         const signInState : SingInState = state.getValue('user.__SIGNIN_STATE_')
         if (this._authorization) {
-          const flowStarted = this._authorization.getFlowState(signInState?.handlerId!)
-          if (flowStarted) {
-            await this._authorization.beginOrContinueFlow(turnContext, state, signInState?.handlerId)
-            if (signInState?.completed) {
+          const flowState = this._authorization.getFlowState(signInState?.handlerId!)
+          if (flowState.flowStarted && flowState.absOauthConnectionName === this.authorization._authHandlers[signInState?.handlerId!].name) {
+            const tokenResponse = await this._authorization.beginOrContinueFlow(turnContext, state, signInState?.handlerId)
+            if (signInState?.completed && tokenResponse?.token) {
               const savedAct = Activity.fromObject(signInState?.continuationActivity!)
               await this.run(new TurnContext(context.adapter, savedAct))
               state.deleteValue('user.__SIGNIN_STATE_')
