@@ -7,7 +7,7 @@ import { CloudAdapter } from '../cloudAdapter'
 import { Storage } from '../storage'
 import { AdaptiveCardsOptions } from './adaptiveCards'
 import { InputFileDownloader } from './inputFileDownloader'
-import { AuthorizationHandlers } from './oauth/authorization'
+import { AuthorizationHandlers } from './authorization'
 import { TurnState } from './turnState'
 
 export interface AgentApplicationOptions<TState extends TurnState> {

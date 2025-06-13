@@ -4,34 +4,30 @@
 import { startServer } from '@microsoft/agents-hosting-express'
 import { AgentApplication, MemoryStorage, MessageFactory, TurnContext, TurnState } from '@microsoft/agents-hosting'
 
-class OneProvider extends AgentApplication<TurnState> {
+class OboApp extends AgentApplication<TurnState> {
   constructor () {
     super({
       storage: new MemoryStorage(),
       authorization: {
-        graph: { name: 'SSOSelf' }
+        mcs: { name: 'OBOTest' }
       }
     })
     this.onConversationUpdate('membersAdded', this._status)
     this.authorization.onSignInSuccess(this._singinSuccess)
-    this.onMessage('logout', this._logout)
     this.onActivity('invoke', this._invoke)
-    this.onActivity('message', this._message, ['graph'])
+    this.onActivity('message', this._message, ['mcs'])
   }
 
   private _status = async (context: TurnContext, state: TurnState): Promise<void> => {
     await context.sendActivity(MessageFactory.text('Welcome to the Basic App demo!'))
     const tresp = await this.authorization.getToken(context)
-    if (tresp && tresp.token) {
+    if (tresp) {
       await context.sendActivity(MessageFactory.text('Token received: ' + tresp.token?.length))
     } else {
-      await context.sendActivity(MessageFactory.text('Token request status: '))
+      await context.sendActivity(MessageFactory.text('Token request status: ' + tresp || 'unknown'))
     }
-  }
-
-  private _logout = async (context: TurnContext, state: TurnState): Promise<void> => {
-    await this.authorization.signOut(context, state, 'graph')
-    await context.sendActivity(MessageFactory.text('user logged out'))
+    const oboToken = await this.authorization.exchangeToken(context, ['https://api.powerplatform.com/.default'])
+    await context.sendActivity(MessageFactory.text('OBO Token received: ' + (oboToken?.token?.length || 0)))
   }
 
   private _invoke = async (context: TurnContext, state: TurnState): Promise<void> => {
@@ -43,9 +39,8 @@ class OneProvider extends AgentApplication<TurnState> {
   }
 
   private _message = async (context: TurnContext, state: TurnState): Promise<void> => {
-    await this.authorization.beginOrContinueFlow(context, state)
     await context.sendActivity(MessageFactory.text('You said.' + context.activity.text))
   }
 }
 
-startServer(new OneProvider())
+startServer(new OboApp())
