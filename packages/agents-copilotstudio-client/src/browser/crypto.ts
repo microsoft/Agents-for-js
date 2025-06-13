@@ -3,6 +3,6 @@
  * Licensed under the MIT License.
  */
 
-import type * as osTypes from 'os'
+import type * as cryptoTypes from 'crypto'
 
-export default {} as typeof osTypes
+export default window.crypto as typeof cryptoTypes

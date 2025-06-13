@@ -41,6 +41,9 @@
         "path": "test-agents/copilotstudio-console"
       },
       {
+        "path": "test-agents/copilotstudio-webchat"
+      },
+      {
         "path": "test-agents/multi-turn-prompt"
       },
       {

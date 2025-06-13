@@ -3,29 +3,37 @@
  * Licensed under the MIT License.
  */
 
-export async function acquireToken(settings) {
-  const msalInstance = new msal.PublicClientApplication({
+export async function acquireToken (settings) {
+  const msalInstance = new window.msal.PublicClientApplication({
     auth: {
       clientId: settings.appClientId,
       authority: `https://login.microsoftonline.com/${settings.tenantId}`,
     },
-  });
+  })
 
-  await msalInstance.initialize();
+  await msalInstance.initialize()
   const loginRequest = {
-    scopes: ["https://api.powerplatform.com/.default"],
+    scopes: ['https://api.powerplatform.com/.default'],
     redirectUri: window.location.origin,
-  };
-
-  const accounts = await msalInstance.getAllAccounts();
-  if (accounts.length > 0) {
-    const response = await msalInstance.acquireTokenSilent({
-      ...loginRequest,
-      account: accounts[0],
-    });
-    return response.accessToken;
   }
 
-  const response = await msalInstance.loginPopup(loginRequest);
-  return response.accessToken;
+  // When there are not accounts or the acquireTokenSilent fails,
+  // it will fall back to loginPopup.
+  try {
+    const accounts = await msalInstance.getAllAccounts()
+    if (accounts.length > 0) {
+      const response = await msalInstance.acquireTokenSilent({
+        ...loginRequest,
+        account: accounts[0],
+      })
+      return response.accessToken
+    }
+  } catch (e) {
+    if (!(e instanceof window.msal.InteractionRequiredAuthError)) {
+      throw e
+    }
+  }
+
+  const response = await msalInstance.loginPopup(loginRequest)
+  return response.accessToken
 }

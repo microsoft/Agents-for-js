@@ -1,17 +1,15 @@
-# TODO: update readme
-
 # Copilot Studio WebChat Integration Sample
 
-This sample demonstrates how to connect Microsoft Copilot Studio to a custom WebChat interface using the [Bot Framework WebChat](https://www.npmjs.com/package/botframework-webchat) component. It provides a full-stack example, including backend authentication and conversation management, as well as a modern frontend chat UI.
+This sample demonstrates how to connect Microsoft Copilot Studio to a custom WebChat interface using the [Bot Framework WebChat](https://www.npmjs.com/package/botframework-webchat) component. It provides a full-stack example, including backend authentication, conversation management, and a modern frontend chat UI.
 
 ## Overview
 
-This sample contains a ready-to-run example for integrating Copilot Studio bots with a web-based chat client. It uses the Power Platform API for secure communication and token acquisition, and leverages the Bot Framework WebChat for the frontend experience.
+This sample is a ready-to-run example for integrating Copilot Studio bots with a web-based chat client. It uses the Power Platform API for secure communication and token acquisition, and leverages Bot Framework WebChat for the frontend experience.
 
 ### Folder Structure
 
-- **copilotstudio/**: Contains backend logic for authenticating with Microsoft Entra ID (Azure AD), acquiring tokens, and communicating with the Copilot Studio API.
-- **webchat/**: Contains the frontend code for rendering the chat UI using Bot Framework WebChat and connecting to the backend via a custom DirectLine-like adapter.
+- **src/**: Contains backend logic for serving the website and Copilot Studio Client configuration.
+- **public/**: Contains the frontend code for rendering the chat UI using Bot Framework WebChat and connecting to the Copilot Studio Client. Additionally, it uses Microsoft Entra ID (Azure AD) to acquire the token for communicating with the Copilot Studio API.
 
 ## 1. Prerequisites
 
@@ -60,7 +58,7 @@ This step requires permissions to create application identities in your Azure te
 
 ## 4. Configure the Example Application
 
-1. Open the [env.TEMPLATE](./copilotstudio/env.TEMPLATE) and rename it to .env.
+1. Open the [env.TEMPLATE](./env.TEMPLATE) and rename it to `.env`.
 2. Fill in the values you recorded during setup:
     - `environmentId`: The Copilot Studio Environment Id.
     - `agentIdentifier`: The Copilot Studio Schema name.
@@ -78,7 +76,7 @@ This step requires permissions to create application identities in your Azure te
    ```bash
    npm run start
    ```
-   or for development with hot reload:
+   Or for development with hot reload:
    ```bash
    npm run dev
    ```
@@ -86,56 +84,39 @@ This step requires permissions to create application identities in your Azure te
 3. **Open your browser:**
    - Navigate to [http://localhost:3000](http://localhost:3000) to interact with your Copilot Studio bot via the WebChat interface.
 
-
 ## 6. How It Works
 
-- The backend (`index.js` and `copilotstudio/`) authenticates users via Azure AD and securely acquires tokens to interact with Copilot Studio APIs.
-- The frontend (`webchat/`) uses Bot Framework WebChat to provide a chat interface, connecting to the backend through a custom adapter that mimics the DirectLine protocol.
+- The backend (`src/`) serves the website (`public/`), exposes Copilot Studio Client settings loaded from environment variables as JSON at `/agentSettings`, and serves the Copilot Studio Client compiled file for the browser to consume.
+- The frontend (`public/`) uses Bot Framework WebChat to provide a chat interface, connecting through the Copilot Studio Client library to communicate with the Copilot Studio service.
 
 ## 7. Folder Details
 
-### copilotstudio/
-
-- Handles authentication with Azure AD using MSAL.
-- Manages token acquisition and refresh.
-- Provides API endpoints for starting conversations and sending activities to Copilot Studio.
-
-### webchat/
+### public/
 
 - Implements the chat UI using Bot Framework WebChat.
-- Connects to the backend using a custom connection class that translates between WebChat and Copilot Studio APIs.
+- Handles authentication with Azure AD using MSAL.
+- Manages token acquisition.
+- Provides a connection between WebChat and Copilot Studio Client for interaction.
+
+### src/
+
+- Hosts the website (`public/`) and serves the Copilot Studio client from node_modules and its settings.
 
 ## 8. Additional Notes
 
 - Ensure your Azure AD app registration has the necessary API permissions for Power Platform.
-- The backend uses [Vite](https://vite.dev/) to serve the frontend and Express to provide API endpoints.
-    - **Note:** The integration between WebChat and the Copilot Studio client is independent of the build tool. Vite and Express are used here to simplify the sample code.
+- The backend uses Express to serve the frontend and provide API endpoints.
+    - **Note:** The integration between WebChat and the Copilot Studio client is independent of the build tool. Express is used here to simplify the sample code.
     - You can use any communication strategy, as long as:
-        - The Copilot Studio client is hosted in a Node.js environment.
-        - The WebChat frontend code is served to the browser.
+        - The WebChat and Copilot Studio Client frontend code is served to the browser.
 - This sample is intended for development and demonstration purposes. For production, review authentication flows and security best practices.
-
 
 ## 9. Authentication
 
-The Copilot Studio Client requires a user token to operate. This sample uses a user interactive flow to get the user token for the application ID created above.
-
-> [!IMPORTANT]  
-> The token is cached on the user machine in `$TEMP/mcssample.usercache.json`.
+The Copilot Studio Client requires a user token to operate. This sample uses a user-interactive flow to get the user token for the application ID created above.
 
 ## 10. Troubleshooting
 
 - **Token Acquisition Errors:** If you see errors related to token acquisition, verify your `.env` configuration and Azure AD app registration permissions.
-- **CORS Issues:** The backend is configured to allow CORS for local development. If you encounter CORS errors, ensure your frontend is served from the expected origin.
-- **API Permissions:** Double-check that your Azure AD app registration has the correct API permissions and if needed the admin consent has been granted.
+- **API Permissions:** Double-check that your Azure AD app registration has the correct API permissions and, if needed, that admin consent has been granted.
 - **Agent Not Responding:** Ensure your Copilot Studio bot is published and the identifiers in your `.env` file are correct.
-
-
-## 11. Further Resources
-
-- [Copilot Studio documentation](https://learn.microsoft.com/power-platform/copilot-studio/)
-- [Bot Framework WebChat documentation](https://github.com/microsoft/BotFramework-WebChat)
-- [Copilot Studio Client Node.js Sample (GitHub)](https://github.com/microsoft/Agents/tree/main/samples/basic/copilotstudio-client/nodejs)
-- [Power Platform API documentation](https://learn.microsoft.com/power-platform/developer/connectors/power-platform-api-overview)
-- [Register an application with the Microsoft identity platform](https://learn.microsoft.com/azure/active-directory/develop/quickstart-register-app)
-
