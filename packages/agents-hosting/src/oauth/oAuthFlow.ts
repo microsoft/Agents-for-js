@@ -135,6 +135,7 @@ export class OAuthFlow {
     if (this.state?.flowExpires !== 0 && Date.now() > this.state!.flowExpires) {
       logger.warn('Flow expired')
       await context.sendActivity(MessageFactory.text('Sign-in session expired. Please try again.'))
+      this.state!.flowStarted = false
       return { token: undefined }
     }
     const contFlowActivity = context.activity
@@ -205,7 +206,7 @@ export class OAuthFlow {
     await this.userTokenClient?.signOut(context.activity.from?.id as string, this.absOauthConnectionName, context.activity.channelId as string)
     this.state!.flowExpires = 0
     await this.flowStateAccessor.set(context, this.state)
-    logger.info('User signed out successfully')
+    logger.info('User signed out successfully from connection:', this.absOauthConnectionName)
   }
 
   // /**

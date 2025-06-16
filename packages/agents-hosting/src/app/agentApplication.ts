@@ -19,7 +19,7 @@ import { RouteSelector } from './routeSelector'
 import { TurnEvents } from './turnEvents'
 import { TurnState } from './turnState'
 
-const logger = debug('agents:agent-application')
+const logger = debug('agents:app')
 
 const TYPING_TIMER_DELAY = 1000
 export type ApplicationEventHandler<TState extends TurnState> = (context: TurnContext, state: TState) => Promise<boolean>
@@ -74,6 +74,7 @@ export class AgentApplication<TState extends TurnState> {
     if (this._options.longRunningMessages && !this._adapter && !this._options.agentAppId) {
       throw new Error('The Application.longRunningMessages property is unavailable because no adapter was configured in the app.')
     }
+    logger.info('AgentApplication created with options:', this._options)
   }
 
   /**
@@ -418,6 +419,7 @@ export class AgentApplication<TState extends TurnState> {
    * It handles routing and executing handlers based on the activity type and content.
    */
   public async runInternal (turnContext: TurnContext): Promise<boolean> {
+    logger.info('Running application with activity:', turnContext.activity)
     return await this.startLongRunningCall(turnContext, async (context) => {
       try {
         if (this._options.startTypingTimer) {
@@ -437,8 +439,10 @@ export class AgentApplication<TState extends TurnState> {
         await state.load(context, storage)
 
         const signInState : SingInState = state.getValue('user.__SIGNIN_STATE_')
+        logger.debug('SignIn State:', signInState)
         if (this._authorization) {
           const flowState = this._authorization.getFlowState(signInState?.handlerId!)
+          logger.debug('Flow State:', flowState)
           if (flowState.flowStarted && flowState.absOauthConnectionName === this.authorization._authHandlers[signInState?.handlerId!].name) {
             const tokenResponse = await this._authorization.beginOrContinueFlow(turnContext, state, signInState?.handlerId)
             if (signInState?.completed && tokenResponse?.token) {
@@ -469,16 +473,10 @@ export class AgentApplication<TState extends TurnState> {
             if (route.authHandlers === undefined || route.authHandlers.length === 0) {
               await route.handler(context, state)
             } else {
-              let signingComplete = false
               for (const authHandlerId of route.authHandlers) {
+                logger.info(`Executing route handler for authHandlerId: ${authHandlerId}`)
                 const tokenResponse = await this._authorization?.beginOrContinueFlow(turnContext, state, authHandlerId)
                 if (tokenResponse?.token) {
-                  signingComplete = true
-                  if (!signingComplete) {
-                    break
-                  }
-                }
-                if (signingComplete) {
                   await route.handler(context, state)
                 }
               }

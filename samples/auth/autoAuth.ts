@@ -28,19 +28,11 @@ class OneProvider extends AgentApplication<TurnState> {
 
   private _status = async (context: TurnContext, state: TurnState): Promise<void> => {
     await context.sendActivity(MessageFactory.text('Welcome to the Basic App demo!'))
-    const tresp = await this.authorization.getToken(context, 'graph')
-    if (tresp && tresp.token) {
-      await context.sendActivity(MessageFactory.text('Graph Token  received: ' + tresp.token?.length))
-    } else {
-      await context.sendActivity(MessageFactory.text('Graph Token request status: '))
-    }
-
-    const tresp2 = await this.authorization.getToken(context, 'github')
-    if (tresp2 && tresp2.token) {
-      await context.sendActivity(MessageFactory.text('github Token  received: ' + tresp2.token?.length))
-    } else {
-      await context.sendActivity(MessageFactory.text('github Token request status: '))
-    }
+    const tokGraph = await this.authorization.getToken(context, 'graph')
+    const tokGH = await this.authorization.getToken(context, 'github')
+    const statusGraph = tokGraph.token !== undefined
+    const statusGH = tokGH.token !== undefined
+    await context.sendActivity(MessageFactory.text(`Token status: Graph:${statusGraph} GH:${statusGH}`))
   }
 
   private _logout = async (context: TurnContext, state: TurnState): Promise<void> => {
