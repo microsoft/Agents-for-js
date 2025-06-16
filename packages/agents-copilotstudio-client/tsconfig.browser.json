@@ -1,9 +1,0 @@
-{
-  "extends": "../../tsconfig.json",
-  "compilerOptions": {
-    "lib": ["ES2021", "DOM"],   // Add DOM for browser
-    "target": "es2020",         // Modern browser compatibility
-    "module": "esnext",         // ES modules for browser
-    "outDir": "dist/browser"
-  }
-}

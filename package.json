@@ -18,7 +18,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "lint": "eslint --fix",
+    "lint": "eslint",
     "clean": "git clean -xdf",
     "build:samples": "tsc --build --verbose tsconfig.samples.json",
     "build:browser": "npm run build:browser --workspaces --if-present",
