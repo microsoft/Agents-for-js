@@ -99,7 +99,7 @@ export class OAuthFlow {
    * @returns A promise that resolves to the user token.
    */
   public async beginFlow (context: TurnContext): Promise<TokenResponse | undefined> {
-    this.state = new FlowState()
+    this.state = await this.getFlowState(context)
     if (this.absOauthConnectionName === '') {
       throw new Error('connectionName is not set')
     }
@@ -130,7 +130,7 @@ export class OAuthFlow {
    * @returns A promise that resolves to the user token.
    */
   public async continueFlow (context: TurnContext): Promise<TokenResponse> {
-    // this.state = await this.getFlowState(context)
+    this.state = await this.getFlowState(context)
     await this.initializeTokenClient(context)
     if (this.state?.flowExpires !== 0 && Date.now() > this.state!.flowExpires) {
       logger.warn('Flow expired')
@@ -201,7 +201,7 @@ export class OAuthFlow {
    * @returns A promise that resolves when the sign-out operation is complete.
    */
   public async signOut (context: TurnContext): Promise<void> {
-    // this.state = await this.getFlowState(context)
+    this.state = await this.getFlowState(context)
     await this.initializeTokenClient(context)
     await this.userTokenClient?.signOut(context.activity.from?.id as string, this.absOauthConnectionName, context.activity.channelId as string)
     this.state!.flowExpires = 0
@@ -209,18 +209,18 @@ export class OAuthFlow {
     logger.info('User signed out successfully from connection:', this.absOauthConnectionName)
   }
 
-  // /**
-  //  * Gets the user state.
-  //  * @param context The turn context.
-  //  * @returns A promise that resolves to the user state.
-  //  */
-  // private async getFlowState (context: TurnContext) {
-  //   let userProfile: FlowState | null = await this.flowStateAccessor.get(context, null)
-  //   if (userProfile === null) {
-  //     userProfile = new FlowState()
-  //   }
-  //   return userProfile
-  // }
+  /**
+   * Gets the user state.
+   * @param context The turn context.
+   * @returns A promise that resolves to the user state.
+   */
+  private async getFlowState (context: TurnContext) {
+    let userProfile: FlowState | null = await this.flowStateAccessor.get(context, null)
+    if (userProfile === null) {
+      userProfile = new FlowState()
+    }
+    return userProfile
+  }
 
   private async initializeTokenClient (context: TurnContext) {
     if (this.userTokenClient === undefined || this.userTokenClient === null) {

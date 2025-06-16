@@ -419,7 +419,7 @@ export class AgentApplication<TState extends TurnState> {
    * It handles routing and executing handlers based on the activity type and content.
    */
   public async runInternal (turnContext: TurnContext): Promise<boolean> {
-    logger.info('Running application with activity:', turnContext.activity)
+    logger.info('Running application with activity:', turnContext.activity.id!)
     return await this.startLongRunningCall(turnContext, async (context) => {
       try {
         if (this._options.startTypingTimer) {
@@ -473,20 +473,22 @@ export class AgentApplication<TState extends TurnState> {
             if (route.authHandlers === undefined || route.authHandlers.length === 0) {
               await route.handler(context, state)
             } else {
+              let signInComplete = false
               for (const authHandlerId of route.authHandlers) {
                 logger.info(`Executing route handler for authHandlerId: ${authHandlerId}`)
                 const tokenResponse = await this._authorization?.beginOrContinueFlow(turnContext, state, authHandlerId)
-                if (tokenResponse?.token) {
-                  await route.handler(context, state)
+                signInComplete = (tokenResponse?.token !== undefined && tokenResponse?.token.length > 0)
+
+                if (!signInComplete) {
+                  break
                 }
+              }
+              if (signInComplete) {
+                await route.handler(context, state)
               }
             }
 
-            if (await this.callEventHandlers(context, state, this._afterTurn)) {
-              await state.save(context, storage)
-            }
-
-            return true
+            break
           }
         }
 
