@@ -7,18 +7,25 @@ import {
   AgentStatePropertyAccessor,
   UserState,
   TurnContext,
-  MessageFactory,
+  MessageFactory
 } from '../'
 import { UserTokenClient } from './userTokenClient'
 import { TokenExchangeRequest, TokenResponse } from './userTokenClient.types'
 
 const logger = debug('agents:oauth-flow')
 
-export class FlowState {
-  public flowStarted: boolean = false
-  public flowExpires: number = 0
-  public absOauthConnectionName: string | null = null
-  public continuationActivity: Activity | null = null
+// export class FlowState {
+//   public flowStarted: boolean = false
+//   public flowExpires: number = 0
+//   public absOauthConnectionName: string | null = null
+//   public continuationActivity: Activity | null = null
+// }
+
+export interface FlowState {
+  flowStarted: boolean
+  flowExpires: number
+  absOauthConnectionName: string | null
+  continuationActivity?: Activity | null
 }
 
 interface TokenVerifyState {
@@ -68,7 +75,7 @@ export class OAuthFlow {
    * @param userState The user state.
    */
   constructor (userState: UserState, absOauthConnectionName: string, tokenClient?: UserTokenClient, cardTitle?: string, cardText?: string) {
-    this.state = new FlowState()
+    this.state = { flowStarted: false, flowExpires: 0, absOauthConnectionName: null }
     this.flowStateAccessor = userState.createProperty('flowState')
     this.absOauthConnectionName = absOauthConnectionName
     this.userTokenClient = tokenClient ?? null!
@@ -217,7 +224,7 @@ export class OAuthFlow {
   private async getFlowState (context: TurnContext) {
     let userProfile: FlowState | null = await this.flowStateAccessor.get(context, null)
     if (userProfile === null) {
-      userProfile = new FlowState()
+      userProfile = { flowStarted: false, flowExpires: 0, absOauthConnectionName: null }
     }
     return userProfile
   }
