@@ -3,7 +3,7 @@
 
 import { startServer } from '@microsoft/agents-hosting-express'
 import { ActivityTypes } from '@microsoft/agents-activity'
-import { AgentApplication, CardFactory, MemoryStorage, MessageFactory, TokenRequestStatus, TurnContext, TurnState, Storage } from '@microsoft/agents-hosting'
+import { AgentApplication, CardFactory, MemoryStorage, MessageFactory, TurnContext, TurnState, Storage } from '@microsoft/agents-hosting'
 import { Template } from 'adaptivecards-templating'
 import { getUserInfo } from '../_shared/userGraphClient'
 import { getCurrentProfile, getPullRequests } from '../_shared/githubApiClient'
@@ -36,8 +36,8 @@ class OAuthAgent extends AgentApplication<TurnState> {
   private _status = async (context: TurnContext, state: TurnState): Promise<void> => {
     const github = await this.authorization.getToken(context, 'github')
     const graph = await this.authorization.getToken(context, 'graph')
-    const status = `GitHub flow status: ${github.status} ${github.token?.length}  
-                    Graph flow status: ${graph.status} ${graph.token?.length}`
+    const status = `GitHub flow status:  ${github.token?.length}  
+                    Graph flow status:  ${graph.token?.length}`
     await context.sendActivity(MessageFactory.text(status))
     await context.sendActivity(MessageFactory.text('Enter "/login" to sign in or "/logout" to sign out. /me to see your profile. /prs to see your pull requests.'))
   }
@@ -49,12 +49,12 @@ class OAuthAgent extends AgentApplication<TurnState> {
 
   private _signIn = async (context: TurnContext, state: TurnState): Promise<void> => {
     const tokenResponse = await this.authorization.beginOrContinueFlow(context, state)
-    await context.sendActivity(MessageFactory.text(`Auth flow status: ${tokenResponse.status}`))
+    await context.sendActivity(MessageFactory.text(`Auth flow status: ${tokenResponse.token?.length}`))
   }
 
   private _profileRequest = async (context: TurnContext, state: TurnState): Promise<void> => {
     const userTokenResponse = await this.authorization.getToken(context)
-    if (userTokenResponse.status === TokenRequestStatus.Success) {
+    if (userTokenResponse && userTokenResponse.token) {
       const userTemplate = (await import('./../_resources/UserProfileCard.json'))
       const template = new Template(userTemplate)
       const userInfo = await getUserInfo(userTokenResponse.token!)
@@ -68,7 +68,7 @@ class OAuthAgent extends AgentApplication<TurnState> {
 
   private _pullRequests = async (context: TurnContext, state: TurnState): Promise<void> => {
     const userTokenResponse = await this.authorization.getToken(context, 'github')
-    if (userTokenResponse.status === TokenRequestStatus.Success && userTokenResponse.token) {
+    if (userTokenResponse && userTokenResponse.token) {
       const ghProf = await getCurrentProfile(userTokenResponse.token)
       console.log('GitHub profile', ghProf)
 
@@ -94,7 +94,8 @@ class OAuthAgent extends AgentApplication<TurnState> {
       }
     } else {
       const tokenResponse = await this.authorization.beginOrContinueFlow(context, state, 'github')
-      console.warn('GitHub token not available after flow.' + tokenResponse.status)
+      console.warn('GitHub token length.' + tokenResponse.token?.length)
+      await context.sendActivity(MessageFactory.text('GitHub token length.' + tokenResponse.token?.length))
     }
   }
 
@@ -113,7 +114,7 @@ class OAuthAgent extends AgentApplication<TurnState> {
         const flow = this.authorization._authHandlers[ah].flow
         if (flow?.state?.flowStarted) {
           const tresp = await this.authorization.beginOrContinueFlow(context, state, ah)
-          if (tresp.status !== TokenRequestStatus.Success) {
+          if (tresp && !tresp.token) {
             await context.sendActivity(MessageFactory.text('Failed to complete the flow ' + ah))
           }
         }
