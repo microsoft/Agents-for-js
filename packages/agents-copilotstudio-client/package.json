@@ -24,7 +24,7 @@
     "crypto": "./src/browser/crypto.ts"
   },
   "scripts": {
-    "build:browser": "node esbuild.mjs"
+    "build:browser": "node esbuild.browser.mjs"
   },
   "dependencies": {
     "@microsoft/agents-activity": "file:../agents-activity",
@@ -52,10 +52,14 @@
         "default": "./dist/src/index.js"
       },
       "require": {
+        "browser": "./dist/src/browser.js",
         "default": "./dist/src/index.js"
       }
     },
-    "./browser": "./dist/src/browser.js",
+    "./browser": {
+      "import": "./dist/src/browser.mjs",
+      "default": "./dist/src/browser.js"
+    },
     "./package.json": "./package.json"
   },
   "engines": {

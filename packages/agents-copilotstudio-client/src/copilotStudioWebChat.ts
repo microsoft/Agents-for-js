@@ -10,15 +10,71 @@ import { Observable, BehaviorSubject, type Observer } from 'rxjs'
 
 import { CopilotStudioClient } from './copilotStudioClient'
 
-interface CopilotStudioWebChatConnectionSettings {
+export interface CopilotStudioWebChatSettings {
+  /**
+   * Whether to show typing indicators in the WebChat.
+   * Defaults to false.
+   */
   showTyping?: boolean;
 }
 
-export const CopilotStudioWebChat = {
-  createConnection (
+export interface CopilotStudioWebChatConnection {
+  /**
+   * An observable that emits the connection status.
+   * 0 - Disconnected
+   * 1 - Connecting
+   * 2 - Connected
+  */
+  connectionStatus$: BehaviorSubject<number>;
+
+  /**
+   * An observable that emits incoming activities.
+   * The emitted activities will have a 'webchat:sequence-id' in their channelData.
+   */
+  activity$: Observable<Partial<Activity>>;
+
+  /**
+   * Posts an activity to the Copilot Studio service.
+   * The activity must have a non-empty text field.
+   * Returns an observable that emits the activity ID once the activity is posted.
+   *
+   * @param activity - The activity to post.
+   * @returns An observable that emits the activity ID.
+   */
+  postActivity(activity: Activity): Observable<string>;
+
+  /**
+   * Ends the connection.
+   * This will complete the connectionStatus$ and activity$ observables.
+   */
+  end(): void;
+}
+
+/**
+ * This class is intended to be used in WebChat applications to connect to the Copilot Studio service.
+ *
+ * example usage:
+ * ```javascript
+ * const client = new window.Agents.CopilotStudioClient(...)
+ * window.WebChat.renderWebChat({
+ *   directLine: window.Agents.CopilotStudioWebChat.createConnection(client)
+ * })
+ * ```
+ */
+export class CopilotStudioWebChat {
+  /**
+   * Creates a new DirectLine-Like connection to WebChat.
+   * When an activity is posted in WebChat, the connection will be send it to the Copilot Studio service, awaiting response.
+   * After a response is received, it will emit the incoming activity back to WebChat.
+   *
+   * @param client - The Copilot Studio client instance.
+   * @param settings - Optional settings for the WebChat connection.
+   * @returns A new instance of CopilotStudioWebChatConnection.
+   */
+  static createConnection (
     client: CopilotStudioClient,
-    settings?: CopilotStudioWebChatConnectionSettings
-  ) {
+    settings?: CopilotStudioWebChatSettings
+  ):CopilotStudioWebChatConnection {
     let sequence = 0
     let activityObserver: Observer<Partial<Activity>> | undefined
     let conversation: ConversationAccount | undefined
@@ -83,8 +139,8 @@ export const CopilotStudioWebChat = {
             notifyTyping()
 
             const activities = await client.askQuestionAsync(activity.text!)
-            for (const reponseActivity of activities) {
-              notifyActivity(reponseActivity)
+            for (const responseActivity of activities) {
+              notifyActivity(responseActivity)
             }
 
             observer.next(id)
@@ -104,5 +160,5 @@ export const CopilotStudioWebChat = {
         }
       },
     }
-  },
+  }
 }
