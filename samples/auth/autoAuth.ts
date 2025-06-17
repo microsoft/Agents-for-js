@@ -44,8 +44,8 @@ class OneProvider extends AgentApplication<TurnState> {
     await context.sendActivity(MessageFactory.text('Invoke received.'))
   }
 
-  private _singinSuccess = async (context: TurnContext, state: TurnState): Promise<void> => {
-    await context.sendActivity(MessageFactory.text('User signed in successfully'))
+  private _singinSuccess = async (context: TurnContext, state: TurnState, authId?: string): Promise<void> => {
+    await context.sendActivity(MessageFactory.text(`User signed in successfully in ${authId}`))
   }
 
   private _message = async (context: TurnContext, state: TurnState): Promise<void> => {
@@ -70,7 +70,7 @@ class OneProvider extends AgentApplication<TurnState> {
     const userTokenResponse = await this.authorization.getToken(context, 'github')
     if (userTokenResponse && userTokenResponse.token) {
       const ghProf = await getCurrentProfile(userTokenResponse.token)
-      console.log('GitHub profile', ghProf)
+      // console.log('GitHub profile', ghProf)
 
       const userTemplate = (await import('./../_resources/UserProfileCard.json'))
       const template = new Template(userTemplate)
