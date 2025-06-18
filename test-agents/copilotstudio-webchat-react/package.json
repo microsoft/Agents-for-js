@@ -1,0 +1,27 @@
+{
+  "name": "copilotstudio-webchat-react",
+  "version": "0.1.0",
+  "private": true,
+  "author": "Microsoft",
+  "license": "MIT",
+  "main": "public/static/index.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "esbuild src/index.tsx --bundle --platform=browser --target=es2020 --outdir=public/static --sourcemap --jsx=automatic --inject:./build-env.js",
+    "start": "npm run build -- --watch --serve=3978 --servedir=./public"
+  },
+  "dependencies": {
+    "@azure/msal-browser": "^4.13.1",
+    "@microsoft/agents-copilotstudio-client": "file:../../packages/agents-copilotstudio-client",
+    "botframework-webchat": "4.18.1-main.20250505.5e12798",
+    "botframework-webchat-fluent-theme": "4.18.1-main.20250505.5e12798",
+    "react": "16.8.6",
+    "react-dom": "16.8.6"
+  },
+  "devDependencies": {
+    "react": "16.8.6",
+    "react-dom": "16.8.6"
+  }
+}
