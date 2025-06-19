@@ -1,6 +1,6 @@
 import { strict as assert } from 'assert'
 import { describe, it, beforeEach, afterEach } from 'node:test'
-import { CloudAdapter, FlowState, MemoryStorage, OAuthFlow, SignInResource, TurnContext, UserState, UserTokenClient } from './../../src'
+import { CloudAdapter, FlowState, MemoryStorage, OAuthFlow, SignInResource, TurnContext, UserTokenClient } from './../../src'
 import { Activity, ActivityTypes } from '@microsoft/agents-activity'
 import sinon from 'sinon'
 
@@ -33,7 +33,7 @@ const testSigninResource : SignInResource = {
 }
 
 describe('OAuthFlow', () => {
-  const userState = new UserState(new MemoryStorage())
+  const memory = new MemoryStorage()
   const fakeUserTokenClient = new UserTokenClient('fakeToken', '123')
   const fakeAdapter = new CloudAdapter({ clientId: 'fakeClientId', clientSecret: 'fakeClientSecret', issuers: [] })
   const context = new TurnContext(fakeAdapter, createTestActivity())
@@ -45,7 +45,7 @@ describe('OAuthFlow', () => {
     testActivity = createTestActivity()
     mockTurnContext = sinon.mock(context)
     mockUserTokenClient = sinon.mock(fakeUserTokenClient)
-    oAuthFlow = new OAuthFlow(userState, 'testSSO', fakeUserTokenClient)
+    oAuthFlow = new OAuthFlow(memory, 'testSSO', fakeUserTokenClient)
   })
 
   afterEach(() => {
@@ -53,7 +53,6 @@ describe('OAuthFlow', () => {
     mockUserTokenClient.verify()
     mockTurnContext.restore()
     mockUserTokenClient.restore()
-    userState.clear(context)
   })
 
   it('begin flow should succeeds when token found in service', async () => {
