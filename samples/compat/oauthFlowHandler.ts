@@ -76,7 +76,6 @@ export class OAuthFlowHanlder extends ActivityHandler {
 
   async run (context: TurnContext) {
     await super.run(context)
-    // await this.userState.saveChanges(context, false)
   }
 }
 startServer(new OAuthFlowHanlder(new MemoryStorage()))
