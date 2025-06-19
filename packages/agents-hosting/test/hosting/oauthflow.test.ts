@@ -34,7 +34,7 @@ const testSigninResource : SignInResource = {
 
 describe('OAuthFlow', () => {
   const fakeUserTokenClient = new UserTokenClient('fakeToken', '123')
-  const fakeAdapter = new CloudAdapter({ clientId: 'fakeClientId', clientSecret: 'fakeClientSecret', issuers: undefined})
+  const fakeAdapter = new CloudAdapter({ clientId: 'fakeClientId', clientSecret: 'fakeClientSecret', issuers: undefined })
   const context = new TurnContext(fakeAdapter, createTestActivity())
   let memory: MemoryStorage
   let oAuthFlow: OAuthFlow
