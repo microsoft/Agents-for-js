@@ -35,7 +35,7 @@ const testSigninResource : SignInResource = {
 describe('OAuthFlow', () => {
   const userState = new UserState(new MemoryStorage())
   const fakeUserTokenClient = new UserTokenClient('fakeToken', '123')
-  const fakeAdapter = new CloudAdapter({ clientId: 'fakeClientId', clientSecret: 'fakeClientSecret', issuers: undefined})
+  const fakeAdapter = new CloudAdapter({ clientId: 'fakeClientId', clientSecret: 'fakeClientSecret', issuers: undefined })
   const context = new TurnContext(fakeAdapter, createTestActivity())
   let oAuthFlow: OAuthFlow
   let mockUserTokenClient: sinon.SinonMock
