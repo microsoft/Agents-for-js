@@ -35,7 +35,7 @@ export interface AuthConfiguration {
   /**
    * A list of valid issuers for the authentication configuration.
    */
-  issuers: string[]
+  issuers: string | [string, ...string[]] | undefined
 
   /**
    * The connection name for the authentication configuration.

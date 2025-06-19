@@ -53,7 +53,7 @@ export abstract class BaseAdapter {
   /**
    * The authentication configuration for the adapter.
    */
-  authConfig: AuthConfiguration = { issuers: [] }
+  authConfig: AuthConfiguration = { issuers: undefined }
 
   /**
    * Sends a set of activities to the conversation.
