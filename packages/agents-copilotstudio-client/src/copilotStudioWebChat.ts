@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import crypto from 'crypto'
+import { v4 as uuid } from 'uuid'
 
 import { Activity, ConversationAccount } from '@microsoft/agents-activity'
 import { Observable, BehaviorSubject, type Observer } from 'rxjs'
@@ -55,9 +55,9 @@ export interface CopilotStudioWebChatConnection {
  *
  * example usage:
  * ```javascript
- * const client = new window.Agents.CopilotStudioClient(...)
+ * const client = new CopilotStudioClient(...)
  * window.WebChat.renderWebChat({
- *   directLine: window.Agents.CopilotStudioWebChat.createConnection(client)
+ *   directLine: CopilotStudioWebChat.createConnection(client)
  * })
  * ```
  */
@@ -133,7 +133,7 @@ export class CopilotStudioWebChat {
 
         return Observable.create(async (observer: Observer<string>) => {
           try {
-            const id = crypto.randomUUID()
+            const id = uuid()
 
             notifyActivity({ ...activity, id })
             notifyTyping()
