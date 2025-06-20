@@ -22,8 +22,9 @@
     "clean": "git clean -xdf",
     "build:samples": "tsc --build --verbose tsconfig.samples.json",
     "build:browser": "npm run build:browser --workspaces --if-present",
-    "build": "tsc --build --verbose tsconfig.build.json && npm run build:browser",
+    "build": "tsc --build --verbose tsconfig.build.json",
     "build:clean": "npm run clean && npm run build",
+    "postbuild": "npm run build:browser",
     "test": "node --test  --test-reporter=spec  --import tsx  --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=test-report.xml './packages/*/test/**/*.test.ts'",
     "docs": "typedoc --skipErrorChecking"
   },

@@ -4,21 +4,12 @@ This sample demonstrates how to connect Microsoft Copilot Studio to a custom Web
 
 ## Overview
 
-This sample is a ready-to-run example for integrating Copilot Studio bots with a web-based chat client. It uses the Power Platform API for secure communication and token acquisition, and leverages Bot Framework WebChat for the frontend experience.
-
-### Folder Structure
-
-- **src/**: Contains backend logic for serving the website and Copilot Studio Client configuration.
-- **public/**: Contains the frontend code for rendering the chat UI using Bot Framework WebChat and connecting to the Copilot Studio Client. Additionally, it uses Microsoft Entra ID (Azure AD) to acquire the token for communicating with the Copilot Studio API.
+This sample is a ready-to-run example for integrating Copilot Studio agents with a web-based chat client. It uses the Power Platform API for secure communication and token acquisition, and leverages Bot Framework WebChat for the frontend experience.
 
 ## 1. Prerequisites
 
-1. [Node.js](https://nodejs.org) version 20 or higher  
-   ```bash
-   node --version
-   ```
-2. An Agent created in Microsoft Copilot Studio or access to an existing Agent.
-3. Ability to create an App Registration in Azure, or access to an existing one with the `CopilotStudio.Copilots.Invoke` API Permission assigned.
+1. An Agent created in Microsoft Copilot Studio or access to an existing Agent.
+2. Ability to create an App Registration in Azure, or access to an existing one with the `CopilotStudio.Copilots.Invoke` API Permission assigned.
 
 ## 2. Create an Agent in Copilot Studio
 
@@ -58,65 +49,36 @@ This step requires permissions to create application identities in your Azure te
 
 ## 4. Configure the Example Application
 
-1. Open the [env.TEMPLATE](./env.TEMPLATE) and rename it to `.env`.
+1. Open the [settings.js](./settings.js) file.
 2. Fill in the values you recorded during setup:
     - `environmentId`: The Copilot Studio Environment Id.
     - `agentIdentifier`: The Copilot Studio Schema name.
     - `tenantId`: The App Registration Directory (tenant) ID.
     - `appClientId`: The App Registration Application (client) ID.
 
-## 5. Setup and Running the Sample
+## 5. Run the Sample
 
-1. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+1. **Open the project in VS Code.**
 
-2. **Start the sample:**
-   ```bash
-   npm run start
-   ```
-   Or for development with hot reload:
-   ```bash
-   npm run dev
-   ```
+2. **Start Live Preview:**
+   - Open the Command Palette (`Ctrl+Shift+P` or `F1`).
+   - Type and select `Live Preview: Start Server`.
+   - Navigate to [`http://localhost:3000/test-agents/copilotstudio-webchat`](http://localhost:3000/test-agents/copilotstudio-webchat) in a browser to interact with your Copilot Studio agent via the WebChat interface.
 
-3. **Open your browser:**
-   - Navigate to [http://localhost:3000](http://localhost:3000) to interact with your Copilot Studio bot via the WebChat interface.
+> [!TIP]  
+> If you do not have the Live Preview extension installed, search for "Live Preview" in the Extensions view and install it from Microsoft.
 
-## 6. How It Works
-
-- The backend (`src/`) serves the website (`public/`), exposes Copilot Studio Client settings loaded from environment variables as JSON at `/agentSettings`, and serves the Copilot Studio Client compiled file for the browser to consume.
-- The frontend (`public/`) uses Bot Framework WebChat to provide a chat interface, connecting through the Copilot Studio Client library to communicate with the Copilot Studio service.
-
-## 7. Folder Details
-
-### public/
-
-- Implements the chat UI using Bot Framework WebChat.
-- Handles authentication with Azure AD using MSAL.
-- Manages token acquisition.
-- Provides a connection between WebChat and Copilot Studio Client for interaction.
-
-### src/
-
-- Hosts the website (`public/`) and serves the Copilot Studio client from node_modules and its settings.
-
-## 8. Additional Notes
+## 6. Additional Notes
 
 - Ensure your Azure AD app registration has the necessary API permissions for Power Platform.
-- The backend uses Express to serve the frontend and provide API endpoints.
-    - **Note:** The integration between WebChat and the Copilot Studio client is independent of the build tool. Express is used here to simplify the sample code.
-    - You can use any communication strategy, as long as:
-        - The WebChat and Copilot Studio Client frontend code is served to the browser.
-- This sample is intended for development and demonstration purposes. For production, review authentication flows and security best practices.
+- This sample is intended for development and demonstration purposes. For production, review authentication flows and security best practices. See the [Microsoft identity platform authentication best practices](https://learn.microsoft.com/en-us/entra/identity-platform/authentication-vs-authorization) and [MSAL.js best practices](https://learn.microsoft.com/azure/active-directory/develop/msal-overview).
 
-## 9. Authentication
+## 7. Authentication
 
-The Copilot Studio Client requires a user token to operate. This sample uses a user-interactive flow to get the user token for the application ID created above.
+The Copilot Studio Client requires a user token to operate. This sample uses a user-interactive flow to obtain the user token for the application ID created above.
 
-## 10. Troubleshooting
+## 8. Troubleshooting
 
-- **Token Acquisition Errors:** If you see errors related to token acquisition, verify your `.env` configuration and Azure AD app registration permissions.
+- **Token Acquisition Errors:** If you see errors related to token acquisition, verify your `settings.js` configuration and Azure AD app registration permissions.
 - **API Permissions:** Double-check that your Azure AD app registration has the correct API permissions and, if needed, that admin consent has been granted.
-- **Agent Not Responding:** Ensure your Copilot Studio bot is published and the identifiers in your `.env` file are correct.
+- **Agent Not Responding:** Ensure your Copilot Studio agent is published and the identifiers in your `settings.js` file are correct.

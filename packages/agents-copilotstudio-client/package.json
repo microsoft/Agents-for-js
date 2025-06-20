@@ -24,12 +24,13 @@
     "crypto": "./src/browser/crypto.ts"
   },
   "scripts": {
-    "build:browser": "node esbuild.browser.mjs"
+    "build:browser": "esbuild --platform=browser --target=es2019 --format=esm --bundle --sourcemap --minify --outfile=dist/src/browser.mjs src/index.ts"
   },
   "dependencies": {
     "@microsoft/agents-activity": "file:../agents-activity",
     "axios": "^1.9.0",
-    "rxjs": "5.5.12"
+    "rxjs": "5.5.12",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "debug": "^4.3.7",
@@ -52,13 +53,8 @@
         "default": "./dist/src/index.js"
       },
       "require": {
-        "browser": "./dist/src/browser.js",
         "default": "./dist/src/index.js"
       }
-    },
-    "./browser": {
-      "import": "./dist/src/browser.mjs",
-      "default": "./dist/src/browser.js"
     },
     "./package.json": "./package.json"
   },
