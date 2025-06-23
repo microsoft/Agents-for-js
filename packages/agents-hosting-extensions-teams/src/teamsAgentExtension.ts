@@ -6,11 +6,11 @@ import { MessageExtension } from './messageExtension/messageExtension'
 import { TaskModule } from './taskModule/taskModule'
 
 export class TeamsAgentExtension<TState extends TurnState = TurnState> extends AgentExtension<TState> {
-  _app: AgentApplication<TState>
-  _meeting: Meeting<TState>
-  _messageExtension: MessageExtension<TState>
-  _taskModule: TaskModule<TState>
-  constructor (private app: AgentApplication<TState>) {
+  private _app: AgentApplication<TState>
+  private _meeting: Meeting<TState>
+  private _messageExtension: MessageExtension<TState>
+  private _taskModule: TaskModule<TState>
+  constructor (app: AgentApplication<TState>) {
     super('msteams')
     this._app = app
     this._meeting = new Meeting(app)
@@ -30,7 +30,7 @@ export class TeamsAgentExtension<TState extends TurnState = TurnState> extends A
     return this._taskModule
   }
 
-  onMessageEdit = (handler: RouteHandler<TurnState>) => {
+  onMessageEdit (handler: RouteHandler<TurnState>) {
     const routeSel: RouteSelector = (context: TurnContext) => {
       const channelData = parseTeamsChannelData(context.activity.channelData)
       return Promise.resolve(!!(context.activity.type === ActivityTypes.MessageUpdate && channelData?.eventType === 'editMessage'))
@@ -39,7 +39,7 @@ export class TeamsAgentExtension<TState extends TurnState = TurnState> extends A
     return this
   }
 
-  onMessageDelete = (handler: RouteHandler<TurnState>) => {
+  onMessageDelete (handler: RouteHandler<TurnState>) {
     const routeSel: RouteSelector = (context: TurnContext) => {
       const channelData = parseTeamsChannelData(context.activity.channelData)
       return Promise.resolve(context.activity.type === ActivityTypes.MessageDelete && channelData && channelData.eventType === 'softDeleteMessage')
@@ -48,7 +48,7 @@ export class TeamsAgentExtension<TState extends TurnState = TurnState> extends A
     return this
   }
 
-  onMessageUndelete = (handler: RouteHandler<TurnState>) => {
+  onMessageUndelete (handler: RouteHandler<TurnState>) {
     const routeSel: RouteSelector = (context: TurnContext) => {
       const channelData = parseTeamsChannelData(context.activity.channelData)
       return Promise.resolve(context.activity.type === ActivityTypes.MessageUpdate && channelData && channelData.eventType === 'undeleteMessage')
@@ -57,143 +57,143 @@ export class TeamsAgentExtension<TState extends TurnState = TurnState> extends A
     return this
   }
 
-  onTeamsMembersAdded = (handler: RouteHandler<TurnState>) => {
+  onTeamsMembersAdded (handler: RouteHandler<TurnState>) {
     const routeSel: RouteSelector = (context: TurnContext) => {
       return Promise.resolve(!!(context.activity.type === ActivityTypes.ConversationUpdate &&
-        context.activity.channelId === 'msteams' &&
-        context.activity.membersAdded &&
-        context.activity.membersAdded.length > 0))
+                context.activity.channelId === 'msteams' &&
+                context.activity.membersAdded &&
+                context.activity.membersAdded.length > 0))
     }
     this.addRoute(this._app, routeSel, handler, false)
     return this
   }
 
-  onTeamsMembersRemoved = (handler: RouteHandler<TurnState>) => {
+  onTeamsMembersRemoved (handler: RouteHandler<TurnState>) {
     const routeSel: RouteSelector = (context: TurnContext) => {
       return Promise.resolve(!!(context.activity.type === ActivityTypes.ConversationUpdate &&
-        context.activity.channelId === 'msteams' &&
-        context.activity.membersRemoved &&
-        context.activity.membersRemoved.length > 0))
+                context.activity.channelId === 'msteams' &&
+                context.activity.membersRemoved &&
+                context.activity.membersRemoved.length > 0))
     }
     this.addRoute(this._app, routeSel, handler, false)
     return this
   }
 
-  onTeamsChannelCreated = (handler: RouteHandler<TurnState>) => {
+  onTeamsChannelCreated (handler: RouteHandler<TurnState>) {
     const routeSel: RouteSelector = (context: TurnContext) => {
       const channelData = parseTeamsChannelData(context.activity.channelData)
       return Promise.resolve(context.activity.type === ActivityTypes.ConversationUpdate &&
-        context.activity.channelId === 'msteams' &&
-        channelData &&
-        channelData.eventType === 'channelCreated')
+                context.activity.channelId === 'msteams' &&
+                channelData &&
+                channelData.eventType === 'channelCreated')
     }
     this.addRoute(this._app, routeSel, handler, false)
     return this
   }
 
-  onTeamsChannelDeleted = (handler: RouteHandler<TurnState>) => {
+  onTeamsChannelDeleted (handler: RouteHandler<TurnState>) {
     const routeSel: RouteSelector = (context: TurnContext) => {
       const channelData = parseTeamsChannelData(context.activity.channelData)
       return Promise.resolve(context.activity.type === ActivityTypes.ConversationUpdate &&
-        context.activity.channelId === 'msteams' &&
-        channelData &&
-        channelData.eventType === 'channelDeleted')
+                context.activity.channelId === 'msteams' &&
+                channelData &&
+                channelData.eventType === 'channelDeleted')
     }
     this.addRoute(this._app, routeSel, handler, false)
     return this
   }
 
-  onTeamsChannelRenamed = (handler: RouteHandler<TurnState>) => {
+  onTeamsChannelRenamed (handler: RouteHandler<TurnState>) {
     const routeSel: RouteSelector = (context: TurnContext) => {
       const channelData = parseTeamsChannelData(context.activity.channelData)
       return Promise.resolve(context.activity.type === ActivityTypes.ConversationUpdate &&
-        context.activity.channelId === 'msteams' &&
-        channelData &&
-        channelData.eventType === 'channelRenamed')
+                context.activity.channelId === 'msteams' &&
+                channelData &&
+                channelData.eventType === 'channelRenamed')
     }
     this.addRoute(this._app, routeSel, handler, false)
     return this
   }
 
-  onTeamsChannelRestored = (handler: RouteHandler<TurnState>) => {
+  onTeamsChannelRestored (handler: RouteHandler<TurnState>) {
     const routeSel: RouteSelector = (context: TurnContext) => {
       const channelData = parseTeamsChannelData(context.activity.channelData)
       return Promise.resolve(context.activity.type === ActivityTypes.ConversationUpdate &&
-        context.activity.channelId === 'msteams' &&
-        channelData &&
-        channelData.eventType === 'channelRestored')
+                context.activity.channelId === 'msteams' &&
+                channelData &&
+                channelData.eventType === 'channelRestored')
     }
     this.addRoute(this._app, routeSel, handler, false)
     return this
   }
 
-  onTeamsTeamRenamed = (handler: RouteHandler<TurnState>) => {
+  onTeamsTeamRenamed (handler: RouteHandler<TurnState>) {
     const routeSel: RouteSelector = (context: TurnContext) => {
       const channelData = parseTeamsChannelData(context.activity.channelData)
       return Promise.resolve(context.activity.type === ActivityTypes.ConversationUpdate &&
-        context.activity.channelId === 'msteams' &&
-        channelData &&
-        channelData.eventType === 'teamRenamed')
+                context.activity.channelId === 'msteams' &&
+                channelData &&
+                channelData.eventType === 'teamRenamed')
     }
     this.addRoute(this._app, routeSel, handler, false)
     return this
   }
 
-  onTeamsTeamArchived = (handler: RouteHandler<TurnState>) => {
+  onTeamsTeamArchived (handler: RouteHandler<TurnState>) {
     const routeSel: RouteSelector = (context: TurnContext) => {
       const channelData = parseTeamsChannelData(context.activity.channelData)
       return Promise.resolve(context.activity.type === ActivityTypes.ConversationUpdate &&
-        context.activity.channelId === 'msteams' &&
-        channelData &&
-        channelData.eventType === 'teamArchived')
+                context.activity.channelId === 'msteams' &&
+                channelData &&
+                channelData.eventType === 'teamArchived')
     }
     this.addRoute(this._app, routeSel, handler, false)
     return this
   }
 
-  onTeamsTeamUnarchived = (handler: RouteHandler<TurnState>) => {
+  onTeamsTeamUnarchived (handler: RouteHandler<TurnState>) {
     const routeSel: RouteSelector = (context: TurnContext) => {
       const channelData = parseTeamsChannelData(context.activity.channelData)
       return Promise.resolve(context.activity.type === ActivityTypes.ConversationUpdate &&
-        context.activity.channelId === 'msteams' &&
-        channelData &&
-        channelData.eventType === 'teamUnarchived')
+                context.activity.channelId === 'msteams' &&
+                channelData &&
+                channelData.eventType === 'teamUnarchived')
     }
     this.addRoute(this._app, routeSel, handler, false)
     return this
   }
 
-  onTeamsTeamDeleted = (handler: RouteHandler<TurnState>) => {
+  onTeamsTeamDeleted (handler: RouteHandler<TurnState>) {
     const routeSel: RouteSelector = (context: TurnContext) => {
       const channelData = parseTeamsChannelData(context.activity.channelData)
       return Promise.resolve(context.activity.type === ActivityTypes.ConversationUpdate &&
-        context.activity.channelId === 'msteams' &&
-        channelData &&
-        channelData.eventType === 'teamDeleted')
+                context.activity.channelId === 'msteams' &&
+                channelData &&
+                channelData.eventType === 'teamDeleted')
     }
     this.addRoute(this._app, routeSel, handler, false)
     return this
   }
 
-  onTeamsTeamHardDeleted = (handler: RouteHandler<TurnState>) => {
+  onTeamsTeamHardDeleted (handler: RouteHandler<TurnState>) {
     const routeSel: RouteSelector = (context: TurnContext) => {
       const channelData = parseTeamsChannelData(context.activity.channelData)
       return Promise.resolve(context.activity.type === ActivityTypes.ConversationUpdate &&
-        context.activity.channelId === 'msteams' &&
-        channelData &&
-        channelData.eventType === 'teamHardDeleted')
+                context.activity.channelId === 'msteams' &&
+                channelData &&
+                channelData.eventType === 'teamHardDeleted')
     }
     this.addRoute(this._app, routeSel, handler, false)
     return this
   }
 
-  onTeamsTeamRestored = (handler: RouteHandler<TurnState>) => {
+  onTeamsTeamRestored (handler: RouteHandler<TurnState>) {
     const routeSel: RouteSelector = (context: TurnContext) => {
       const channelData = parseTeamsChannelData(context.activity.channelData)
       return Promise.resolve(context.activity.type === ActivityTypes.ConversationUpdate &&
-        context.activity.channelId === 'msteams' &&
-        channelData &&
-        channelData.eventType === 'teamRestored')
+                context.activity.channelId === 'msteams' &&
+                channelData &&
+                channelData.eventType === 'teamRestored')
     }
     this.addRoute(this._app, routeSel, handler, false)
     return this
