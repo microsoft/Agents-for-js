@@ -185,10 +185,8 @@ export class OAuthFlow {
    */
   private async getUserState (context: TurnContext) {
     const key = this.getFlowStateKey(context)
-    let userProfile: FlowState | null = await this.storage.read([key]) as FlowState
-    if (userProfile.flowStarted === undefined) {
-      userProfile = { flowStarted: false, flowExpires: 0 }
-    }
+    const data = await this.storage.read([key])
+    const userProfile: FlowState = data[key] ?? { flowStarted: false, flowExpires: 0 }
     return userProfile
   }
 
