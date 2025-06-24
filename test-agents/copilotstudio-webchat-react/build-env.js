@@ -2,10 +2,10 @@
 export const process = {
   env: {
     // App ID of the App Registration used to log in, this should be in the same tenant as the Copilot.
-    appClientId: '',
+    appClientId: 'e42bed64-9aeb-4b3e-9ca9-e9d589737048',
 
     // Tenant ID of the App Registration used to log in, this should be in the same tenant as the Copilot.
-    tenantId: '',
+    tenantId: '86f99aa0-6261-467a-944f-ed89af57c6e2',
 
     // Environment ID of the environment with the Copilot Studio App.
     environmentId: '',
@@ -22,14 +22,8 @@ export const process = {
     // AgentType enum key.
     copilotAgentType: '',
 
-    // Flag to enable token acquisition with an "appClientSecret" instead.
-    useS2SConnection: false,
-
-    // App secret used for the S2S connection.
-    appClientSecret: '',
-
     // URL used to connect to the Copilot Studio service.
-    directConnectUrl: '',
+    directConnectUrl: 'https://default86f99aa06261467a944fed89af57c6.e2.environment.api.powerplatform.com/copilotstudio/dataverse-backed/authenticated/bots/crdf7_agentRlbE3j/conversations?api-version=2022-03-01-preview',
 
     DEBUG: 'copilot-studio-client'
   }
