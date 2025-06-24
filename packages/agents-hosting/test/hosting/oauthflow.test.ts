@@ -1,6 +1,6 @@
 import { strict as assert } from 'assert'
 import { describe, it, beforeEach, afterEach } from 'node:test'
-import { CloudAdapter, FlowState, MemoryStorage, OAuthFlow, SignInResource, TurnContext, UserTokenClient } from './../../src'
+import { CloudAdapter, MemoryStorage, OAuthFlow, SignInResource, TurnContext, UserTokenClient } from './../../src'
 import { Activity, ActivityTypes } from '@microsoft/agents-activity'
 import sinon from 'sinon'
 
