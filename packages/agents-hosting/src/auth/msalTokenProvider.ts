@@ -30,7 +30,9 @@ export class MsalTokenProvider implements AuthProvider {
       return ''
     }
     let token
-    if (authConfig.FICClientId !== undefined) {
+    if (authConfig.WIDAssertionFile !== undefined) {
+      token = await this.acquireAccessTokenViaWID(authConfig, scope)
+    } else if (authConfig.FICClientId !== undefined) {
       token = await this.acquireAccessTokenViaFIC(authConfig, scope)
     } else if (authConfig.clientSecret !== undefined) {
       token = await this.acquireAccessTokenViaSecret(authConfig, scope)
@@ -176,6 +178,28 @@ export class MsalTokenProvider implements AuthProvider {
     })
     const token = await cca.acquireTokenByClientCredential({ scopes })
     logger.info('got token using FIC client assertion')
+    return token?.accessToken as string
+  }
+
+  /**
+   * Acquires a token using a Workload Identity client assertion.
+   * @param authConfig The authentication configuration.
+   * @param scope The scope for the token.
+   * @returns A promise that resolves to the access token.
+   */
+  private async acquireAccessTokenViaWID (authConfig: AuthConfiguration, scope: string) : Promise<string> {
+    const scopes = [`${scope}/.default`]
+    const clientAssertion = fs.readFileSync(authConfig.WIDAssertionFile as string, 'utf8')
+    const cca = new ConfidentialClientApplication({
+      auth: {
+        clientId: authConfig.clientId as string,
+        authority: `https://login.microsoftonline.com/${authConfig.tenantId}`,
+        clientAssertion
+      },
+      system: this.sysOptions
+    })
+    const token = await cca.acquireTokenByClientCredential({ scopes })
+    logger.info('got token using WID client assertion')
     return token?.accessToken as string
   }
 
