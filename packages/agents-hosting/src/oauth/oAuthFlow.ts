@@ -15,7 +15,9 @@ const logger = debug('agents:oauth-flow')
 
 export interface FlowState {
   flowStarted: boolean,
-  flowExpires: number
+  flowExpires: number,
+  absOauthConnectionName: string | null
+  continuationActivity?: Activity | null
 }
 
 interface TokenVerifyState {
@@ -60,7 +62,7 @@ export class OAuthFlow {
    * @param userState The user state.
    */
   constructor (private storage: Storage, absOauthConnectionName: string, tokenClient?: UserTokenClient, cardTitle?: string, cardText?: string) {
-    this.state = { flowExpires: 0, flowStarted: false }
+    this.state = { flowExpires: 0, flowStarted: false, absOauthConnectionName: null }
     this.absOauthConnectionName = absOauthConnectionName
     this.userTokenClient = tokenClient ?? null!
     this.cardTitle = cardTitle ?? this.cardTitle
@@ -90,7 +92,7 @@ export class OAuthFlow {
    * @returns A promise that resolves to the user token.
    */
   public async beginFlow (context: TurnContext): Promise<TokenResponse | undefined> {
-    this.state = await this.getFlowState(context)
+    this.state = await this.getUserState(context)
     if (this.absOauthConnectionName === '') {
       throw new Error('connectionName is not set')
     }
@@ -121,7 +123,7 @@ export class OAuthFlow {
    * @returns A promise that resolves to the user token.
    */
   public async continueFlow (context: TurnContext): Promise<TokenResponse> {
-    this.state = await this.getFlowState(context)
+    this.state = await this.getUserState(context)
     await this.initializeTokenClient(context)
     if (this.state?.flowExpires !== 0 && Date.now() > this.state!.flowExpires) {
       logger.warn('Flow expired')
@@ -139,14 +141,14 @@ export class OAuthFlow {
           this.state!.flowStarted = false
           this.state!.flowExpires = 0
           this.state!.absOauthConnectionName = this.absOauthConnectionName
-          await this.flowStateAccessor.set(context, this.state)
+          await this.storage.write({ [this.getFlowStateKey(context)]: this.state })
           return result
         } else {
           await context.sendActivity(MessageFactory.text('Invalid code. Please try again.'))
           logger.warn('Invalid magic code provided')
           this.state!.flowStarted = true
           this.state!.flowExpires = Date.now() + 30000 // reset flow expiration
-          await this.flowStateAccessor.set(context, this.state)
+          await this.storage.write({ [this.getFlowStateKey(context)]: this.state })
           return { token: undefined }
         }
       } else {
@@ -192,7 +194,7 @@ export class OAuthFlow {
    * @returns A promise that resolves when the sign-out operation is complete.
    */
   public async signOut (context: TurnContext): Promise<void> {
-    this.state = await this.getFlowState(context)
+    this.state = await this.getUserState(context)
     await this.initializeTokenClient(context)
     await this.userTokenClient?.signOut(context.activity.from?.id as string, this.absOauthConnectionName, context.activity.channelId as string)
     this.state!.flowExpires = 0
