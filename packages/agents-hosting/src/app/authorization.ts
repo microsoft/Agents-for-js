@@ -8,7 +8,6 @@ import { debug } from '../logger'
 import { TurnState } from './turnState'
 import { Storage } from '../storage'
 import { FlowState, OAuthFlow, TokenResponse } from '../oauth'
-import { UserState } from '../state'
 import { AuthConfiguration, MsalTokenProvider } from '../auth'
 import jwt, { JwtPayload } from 'jsonwebtoken'
 import { Activity } from '@microsoft/agents-activity'
@@ -137,7 +136,7 @@ export class Authorization {
       tokenResponse = await flow.continueFlow(context)
       if (tokenResponse && tokenResponse.token) {
         if (this._signInHandler) {
-          this._signInHandler(context, state, authHandlerId)
+          await this._signInHandler(context, state, authHandlerId)
         }
         signInState!.completed = true
         state.setValue('user.__SIGNIN_STATE_', signInState)

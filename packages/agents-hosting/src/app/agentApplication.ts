@@ -443,7 +443,7 @@ export class AgentApplication<TState extends TurnState> {
         if (this._authorization) {
           const flowState = this._authorization.getFlowState(signInState?.handlerId!)
           logger.debug('Flow State:', flowState)
-          if (flowState.flowStarted && flowState.absOauthConnectionName === this.authorization._authHandlers[signInState?.handlerId!].name) {
+          if (signInState && flowState.flowStarted && flowState.absOauthConnectionName === this.authorization._authHandlers[signInState?.handlerId!].name) {
             const tokenResponse = await this._authorization.beginOrContinueFlow(turnContext, state, signInState?.handlerId)
             if (signInState?.completed && tokenResponse?.token) {
               const savedAct = Activity.fromObject(signInState?.continuationActivity!)
