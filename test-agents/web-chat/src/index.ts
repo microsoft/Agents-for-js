@@ -25,8 +25,7 @@ const createAgent = (agentName: string) => {
       return new MultiFeatureHandler(conversationReferences)
     case 'webChatSso': {
       const memoryStorage = new MemoryStorage()
-      const userState = new UserState(memoryStorage)
-      return new WebChatSsoHandler(userState)
+      return new WebChatSsoHandler(memoryStorage)
     }
     case 'StateManagementAgent': {
       /* AZURE BLOB STORAGE - Uncomment the code in this section to use Azure blob storage */

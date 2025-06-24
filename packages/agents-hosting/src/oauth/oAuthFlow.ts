@@ -4,9 +4,8 @@ import { debug } from './../logger'
 import { Activity, ActivityTypes, Attachment } from '@microsoft/agents-activity'
 import {
   CardFactory,
-  AgentStatePropertyAccessor,
-  UserState,
   TurnContext,
+  Storage,
   MessageFactory
 } from '../'
 import { UserTokenClient } from './userTokenClient'
@@ -14,18 +13,9 @@ import { TokenExchangeRequest, TokenResponse } from './userTokenClient.types'
 
 const logger = debug('agents:oauth-flow')
 
-// export class FlowState {
-//   public flowStarted: boolean = false
-//   public flowExpires: number = 0
-//   public absOauthConnectionName: string | null = null
-//   public continuationActivity: Activity | null = null
-// }
-
 export interface FlowState {
-  flowStarted: boolean
+  flowStarted: boolean,
   flowExpires: number
-  absOauthConnectionName: string | null
-  continuationActivity?: Activity | null
 }
 
 interface TokenVerifyState {
@@ -43,12 +33,7 @@ export class OAuthFlow {
   /**
    * The current state of the OAuth flow.
    */
-  state: FlowState | null
-
-  /**
-   * The accessor for managing the flow state in user state.
-   */
-  flowStateAccessor: AgentStatePropertyAccessor<FlowState | null>
+  state: FlowState
 
   /**
    * The ID of the token exchange request, used to deduplicate requests.
@@ -74,9 +59,8 @@ export class OAuthFlow {
    * Creates a new instance of OAuthFlow.
    * @param userState The user state.
    */
-  constructor (userState: UserState, absOauthConnectionName: string, tokenClient?: UserTokenClient, cardTitle?: string, cardText?: string) {
-    this.state = { flowStarted: false, flowExpires: 0, absOauthConnectionName: null }
-    this.flowStateAccessor = userState.createProperty('flowState')
+  constructor (private storage: Storage, absOauthConnectionName: string, tokenClient?: UserTokenClient, cardTitle?: string, cardText?: string) {
+    this.state = { flowExpires: 0, flowStarted: false }
     this.absOauthConnectionName = absOauthConnectionName
     this.userTokenClient = tokenClient ?? null!
     this.cardTitle = cardTitle ?? this.cardTitle
@@ -119,7 +103,7 @@ export class OAuthFlow {
       this.state.flowStarted = false
       this.state.flowExpires = 0
       this.state.absOauthConnectionName = this.absOauthConnectionName
-      await this.flowStateAccessor.set(context, this.state)
+      await this.storage.write({ [this.getFlowStateKey(context)]: this.state })
       return output.tokenResponse
     }
     const oCard: Attachment = CardFactory.oauthCard(this.absOauthConnectionName, this.cardTitle, this.cardText, output.signInResource)
@@ -127,7 +111,7 @@ export class OAuthFlow {
     this.state.flowStarted = true
     this.state.flowExpires = Date.now() + 30000
     this.state.absOauthConnectionName = this.absOauthConnectionName
-    await this.flowStateAccessor.set(context, this.state)
+    await this.storage.write({ [this.getFlowStateKey(context)]: this.state })
     return undefined
   }
 
@@ -191,7 +175,7 @@ export class OAuthFlow {
       if (userTokenResp && userTokenResp.token) {
         logger.info('Token exchanged')
         this.state!.flowStarted = false
-        await this.flowStateAccessor.set(context, this.state)
+        await this.storage.write({ [this.getFlowStateKey(context)]: this.state })
         return userTokenResp
       } else {
         logger.warn('Token exchange failed')
@@ -212,7 +196,7 @@ export class OAuthFlow {
     await this.initializeTokenClient(context)
     await this.userTokenClient?.signOut(context.activity.from?.id as string, this.absOauthConnectionName, context.activity.channelId as string)
     this.state!.flowExpires = 0
-    await this.flowStateAccessor.set(context, this.state)
+    this.storage.write({ [this.getFlowStateKey(context)]: this.state })
     logger.info('User signed out successfully from connection:', this.absOauthConnectionName)
   }
 
@@ -221,11 +205,10 @@ export class OAuthFlow {
    * @param context The turn context.
    * @returns A promise that resolves to the user state.
    */
-  private async getFlowState (context: TurnContext) {
-    let userProfile: FlowState | null = await this.flowStateAccessor.get(context, null)
-    if (userProfile === null) {
-      userProfile = { flowStarted: false, flowExpires: 0, absOauthConnectionName: null }
-    }
+  private async getUserState (context: TurnContext) {
+    const key = this.getFlowStateKey(context)
+    const data = await this.storage.read([key])
+    const userProfile: FlowState = data[key] ?? { flowStarted: false, flowExpires: 0 }
     return userProfile
   }
 
@@ -235,5 +218,15 @@ export class OAuthFlow {
       const accessToken = await context.adapter.authProvider.getAccessToken(context.adapter.authConfig, scope)
       this.userTokenClient = new UserTokenClient(accessToken, context.adapter.authConfig.clientId!)
     }
+  }
+
+  private getFlowStateKey (context: TurnContext): string {
+    const channelId = context.activity.channelId
+    const conversationId = context.activity.conversation?.id
+    const userId = context.activity.from?.id
+    if (!channelId || !conversationId || !userId) {
+      throw new Error('ChannelId, conversationId, and userId must be set in the activity')
+    }
+    return `oauth/${channelId}/${conversationId}/${userId}/flowState`
   }
 }
