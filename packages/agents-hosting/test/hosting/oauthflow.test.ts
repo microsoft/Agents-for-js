@@ -1,6 +1,6 @@
 import { strict as assert } from 'assert'
 import { describe, it, beforeEach, afterEach } from 'node:test'
-import { CloudAdapter, MemoryStorage, OAuthFlow, SignInResource, TurnContext, UserTokenClient } from './../../src'
+import { CloudAdapter, MemoryStorage, OAuthFlow, SignInResource, TurnContext, UserTokenClient, FlowState } from './../../src'
 import { Activity, ActivityTypes } from '@microsoft/agents-activity'
 import sinon from 'sinon'
 
@@ -33,10 +33,10 @@ const testSigninResource : SignInResource = {
 }
 
 describe('OAuthFlow', () => {
-  const memory = new MemoryStorage()
   const fakeUserTokenClient = new UserTokenClient('fakeToken', '123')
   const fakeAdapter = new CloudAdapter({ clientId: 'fakeClientId', clientSecret: 'fakeClientSecret', issuers: [] })
   const context = new TurnContext(fakeAdapter, createTestActivity())
+  let memory: MemoryStorage
   let oAuthFlow: OAuthFlow
   let mockUserTokenClient: sinon.SinonMock
   let mockTurnContext: sinon.SinonMock
@@ -45,6 +45,7 @@ describe('OAuthFlow', () => {
     testActivity = createTestActivity()
     mockTurnContext = sinon.mock(context)
     mockUserTokenClient = sinon.mock(fakeUserTokenClient)
+    memory = new MemoryStorage()
     oAuthFlow = new OAuthFlow(memory, 'testSSO', fakeUserTokenClient)
   })
 
