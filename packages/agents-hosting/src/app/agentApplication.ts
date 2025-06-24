@@ -74,7 +74,7 @@ export class AgentApplication<TState extends TurnState> {
     if (this._options.longRunningMessages && !this._adapter && !this._options.agentAppId) {
       throw new Error('The Application.longRunningMessages property is unavailable because no adapter was configured in the app.')
     }
-    logger.info('AgentApplication created with options:', this._options)
+    logger.debug('AgentApplication created with options:', this._options)
   }
 
   /**
