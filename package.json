@@ -54,6 +54,12 @@
     "typedoc": "^0.28.4",
     "typescript": "^5.8.3"
   },
+  "dependencies": {
+    "jwks-rsa": "^3.2.0"
+  },
+  "overrides": {
+    "@types/jsonwebtoken": "9.0.6"
+  },
   "engines": {
     "node": ">=18.0.0"
   }

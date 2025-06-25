@@ -15,5 +15,5 @@ ReactDOM.render(
   }}
   >
     <Chat />
-  </div>,
-  document.getElementById('root'))
+  </div>, document.getElementById('root')
+)
