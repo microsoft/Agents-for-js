@@ -4,6 +4,7 @@ import { AgentApplication, AgentExtension, RouteHandler, RouteSelector, TurnCont
 import { parseTeamsChannelData } from './activity-extensions/teamsChannelDataParser'
 import { MessageExtension } from './messageExtension/messageExtension'
 import { TaskModule } from './taskModule/taskModule'
+import { FeedbackLoopData } from './feedbackLoopData'
 
 export class TeamsAgentExtension<TState extends TurnState = TurnState> extends AgentExtension<TState> {
   private _app: AgentApplication<TState>
@@ -18,6 +19,10 @@ export class TeamsAgentExtension<TState extends TurnState = TurnState> extends A
     this._taskModule = new TaskModule(app)
   }
 
+  public get app (): AgentApplication<TState> {
+    return this._app
+  }
+
   public get meeting (): Meeting<TState> {
     return this._meeting
   }
@@ -28,6 +33,19 @@ export class TeamsAgentExtension<TState extends TurnState = TurnState> extends A
 
   public get taskModule (): TaskModule<TState> {
     return this._taskModule
+  }
+
+  onFeedback (handler: RouteHandler<TurnState>) {
+    const routeSel: RouteSelector = (context: TurnContext) => {
+      return Promise.resolve(
+        context.activity.type === ActivityTypes.Invoke &&
+        context.activity.channelId === 'msteams' &&
+        context.activity.name === 'message/submitAction' &&
+        (context.activity.value as FeedbackLoopData).actionName === 'feedback'
+      )
+    }
+    this._app.addRoute(routeSel, handler, true) // Invoke requires true
+    return this
   }
 
   onMessageEdit (handler: RouteHandler<TurnState>) {
