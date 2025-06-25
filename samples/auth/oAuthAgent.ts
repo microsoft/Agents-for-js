@@ -30,6 +30,7 @@ class OAuthAgent extends AgentApplication<TurnState> {
     this.onConversationUpdate('membersAdded', this._status)
     this.onActivity(ActivityTypes.Invoke, this._invoke)
     this.onSignInSuccess(this._handleSignInSuccess)
+    this.onSignInFailure(this._handleSignInFailure)
     this.onActivity(ActivityTypes.Message, this._message)
   }
 
@@ -105,6 +106,10 @@ class OAuthAgent extends AgentApplication<TurnState> {
 
   private _handleSignInSuccess = async (context: TurnContext, state: TurnState, id?: string): Promise<void> => {
     await context.sendActivity(MessageFactory.text('User signed in successfully in ' + id))
+  }
+
+  private _handleSignInFailure = async (context: TurnContext, state: TurnState, id?: string): Promise<void> => {
+    await context.sendActivity(MessageFactory.text('User sign in failed in ' + id))
   }
 
   private _message = async (context: TurnContext, state: TurnState): Promise<void> => {

@@ -18,6 +18,7 @@ class OneProvider extends AgentApplication<TurnState> {
     })
     this.onConversationUpdate('membersAdded', this._status)
     this.authorization.onSignInSuccess(this._singinSuccess)
+    this.authorization.onSignInFailure(this._singinFailure)
     this.onMessage('/logout', this._logout)
     this.onMessage('/me', this._profileRequest, ['graph'])
     this.onMessage('/prs', this._pullRequests, ['github'])
@@ -46,6 +47,10 @@ class OneProvider extends AgentApplication<TurnState> {
 
   private _singinSuccess = async (context: TurnContext, state: TurnState, authId?: string): Promise<void> => {
     await context.sendActivity(MessageFactory.text(`User signed in successfully in ${authId}`))
+  }
+
+  private _singinFailure = async (context: TurnContext, state: TurnState, authId?: string, err?: string): Promise<void> => {
+    await context.sendActivity(MessageFactory.text(`Signing Failure in auth handler: ${authId} with error: ${err}`))
   }
 
   private _message = async (context: TurnContext, state: TurnState): Promise<void> => {

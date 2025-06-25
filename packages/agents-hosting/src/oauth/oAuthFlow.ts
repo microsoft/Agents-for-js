@@ -106,6 +106,7 @@ export class OAuthFlow {
       this.state.flowExpires = 0
       this.state.absOauthConnectionName = this.absOauthConnectionName
       await this.storage.write({ [this.getFlowStateKey(context)]: this.state })
+      logger.info('Token retrieved successfully')
       return output.tokenResponse
     }
     const oCard: Attachment = CardFactory.oauthCard(this.absOauthConnectionName, this.cardTitle, this.cardText, output.signInResource)
@@ -114,6 +115,7 @@ export class OAuthFlow {
     this.state.flowExpires = Date.now() + 30000
     this.state.absOauthConnectionName = this.absOauthConnectionName
     await this.storage.write({ [this.getFlowStateKey(context)]: this.state })
+    logger.info('OAuth card sent, flow started')
     return undefined
   }
 
@@ -137,14 +139,14 @@ export class OAuthFlow {
       if (magicCode.match(/^\d{6}$/)) {
         const result = await this.userTokenClient?.getUserToken(this.absOauthConnectionName, contFlowActivity.channelId!, contFlowActivity.from?.id!, magicCode)!
         if (result && result.token) {
-          logger.info('Token retrieved successfully')
           this.state!.flowStarted = false
           this.state!.flowExpires = 0
           this.state!.absOauthConnectionName = this.absOauthConnectionName
           await this.storage.write({ [this.getFlowStateKey(context)]: this.state })
+          logger.info('Token retrieved successfully')
           return result
         } else {
-          await context.sendActivity(MessageFactory.text('Invalid code. Please try again.'))
+          // await context.sendActivity(MessageFactory.text('Invalid code. Please try again.'))
           logger.warn('Invalid magic code provided')
           this.state!.flowStarted = true
           this.state!.flowExpires = Date.now() + 30000 // reset flow expiration

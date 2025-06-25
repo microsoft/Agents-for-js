@@ -135,10 +135,17 @@ export class Authorization {
     } else {
       tokenResponse = await flow.continueFlow(context)
       if (tokenResponse && tokenResponse.token) {
-        if (this._signInHandler) {
-          await this._signInHandler(context, state, authHandlerId)
+        if (this._signInSuccessHandler) {
+          await this._signInSuccessHandler(context, state, authHandlerId)
         }
         signInState!.completed = true
+        state.setValue('user.__SIGNIN_STATE_', signInState)
+      } else {
+        logger.warn('Failed to complete OAuth flow, no token received')
+        if (this._signInFailureHandler) {
+          await this._signInFailureHandler(context, state, authHandlerId, 'Failed to complete the OAuth flow')
+        }
+        signInState!.completed = false
         state.setValue('user.__SIGNIN_STATE_', signInState)
       }
     }
@@ -188,13 +195,22 @@ export class Authorization {
     }
   }
 
-  _signInHandler: ((context: TurnContext, state: TurnState, authHandlerId?: string) => Promise<void>) | null = null
-
+  _signInSuccessHandler: ((context: TurnContext, state: TurnState, authHandlerId?: string) => Promise<void>) | null = null
   /**
    * Sets a handler to be called when sign-in is successfully completed
    * @param {Function} handler - The handler function to call on successful sign-in
-   */
+  */
   public onSignInSuccess (handler: (context: TurnContext, state: TurnState, authHandlerId?: string) => Promise<void>) {
-    this._signInHandler = handler
+    this._signInSuccessHandler = handler
+  }
+
+  _signInFailureHandler: ((context: TurnContext, state: TurnState, authHandlerId?: string, errorMessage?: string) => Promise<void>) | null = null
+
+  /**
+   * Sets a handler to be called when sign-in fails
+   * @param {Function} handler - The handler function to call on sign-in failure
+   */
+  public onSignInFailure (handler: (context: TurnContext, state: TurnState, authHandlerId?: string, errorMessage?: string) => Promise<void>) {
+    this._signInFailureHandler = handler
   }
 }

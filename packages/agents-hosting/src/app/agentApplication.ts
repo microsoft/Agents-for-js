@@ -326,6 +326,35 @@ export class AgentApplication<TState extends TurnState> {
   }
 
   /**
+   * Sets a handler to be called when a sign-in attempt fails.
+   *
+   * @param handler - The handler function to be called after a failed sign-in attempt.
+   * @returns The current instance of the application.
+   * @throws Error if authentication options were not configured.
+   *
+   * @remarks
+   * This method allows you to handle cases where a user fails to authenticate,
+   * such as when they cancel the sign-in process or an error occurs.
+   *
+   * Example usage:
+   * ```typescript
+   * app.onSignInFailure(async (context, state) => {
+   *   await context.sendActivity('Sign-in failed. Please try again.');
+   * });
+   * ```
+   */
+  public onSignInFailure (handler: (context: TurnContext, state: TurnState, id?: string) => Promise<void>): this {
+    if (this.options.authorization) {
+      this.authorization.onSignInFailure(handler)
+    } else {
+      throw new Error(
+        'The Application.authorization property is unavailable because no authorization options were configured.'
+      )
+    }
+    return this
+  }
+
+  /**
    * Adds a handler for message reaction added events.
    *
    * @param handler - The handler function that will be called when a message reaction is added.
