@@ -1,0 +1,6 @@
+- All `botbuilder` related imports should be updated to import from `@microsoft/agents-hosting`.
+- Activity related classes, types, and helpers should be imported from `@microsoft/agents-activity`.
+- Teams specific related types should be imported from `@microsoft/agents-extensions-teams`.
+- Teams AI components can be imported from `@microsoft/agents-extensions-teams-ai`.
+- Activity is now a class so replace any `Partial<Activity>` with `Activity` and use `Activity.fromObject()` to create instances.
+- The values for `RoleTypes.Bot` and `ConversationReference.bot` changed to `RoleTypes.Agent` and `ConversationReference.agent` respectively.
