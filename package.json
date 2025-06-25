@@ -61,7 +61,9 @@
     "@types/jsonwebtoken": "9.0.6",
     "browserslist": {
       "electron-to-chromium": "1.5.170"
-    }
+    },
+    "botframework-streaming":
+      {"@types/node": "~20.19.0"}
   },
   "engines": {
     "node": ">=18.0.0"
