@@ -12,8 +12,8 @@ class OneProvider extends AgentApplication<TurnState> {
     super({
       storage: new MemoryStorage(),
       authorization: {
-        graph: { name: 'SSOSelf' },
-        github: { name: 'GH', text: 'Sign in with GitHub', title: 'GitHub Sign In' },
+        graph: { text: 'Sign in with Microsoft Graph', title: 'Graph Sign In' },
+        github: { text: 'Sign in with GitHub', title: 'GitHub Sign In' },
       }
     })
     this.onConversationUpdate('membersAdded', this._status)

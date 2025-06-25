@@ -7,7 +7,7 @@ import { TurnContext } from '../turnContext'
 import { debug } from '../logger'
 import { TurnState } from './turnState'
 import { Storage } from '../storage'
-import { FlowState, OAuthFlow, TokenResponse } from '../oauth'
+import { OAuthFlow, TokenResponse } from '../oauth'
 import { AuthConfiguration, MsalTokenProvider } from '../auth'
 import jwt, { JwtPayload } from 'jsonwebtoken'
 import { Activity } from '@microsoft/agents-activity'
@@ -86,13 +86,19 @@ export class Authorization {
    */
   public async getToken (context: TurnContext, authHandlerId?: string): Promise<TokenResponse> {
     logger.info('getToken from user token service for authHandlerId:', authHandlerId)
-    const authHandler = this.resolverHandler(authHandlerId)
+    if (authHandlerId === undefined) {
+      authHandlerId = this.getFirstHandlerId()
+    }
+    const authHandler = this._authHandlers[authHandlerId]
     return await authHandler.flow?.getUserToken(context)!
   }
 
   public async exchangeToken (context: TurnContext, scopes: string[], authHandlerId?: string): Promise<TokenResponse> {
     logger.info('getToken from user token service for authHandlerId:', authHandlerId)
-    const authHandler = this.resolverHandler(authHandlerId)
+    if (authHandlerId === undefined) {
+      authHandlerId = this.getFirstHandlerId()
+    }
+    const authHandler = this._authHandlers[authHandlerId]
     const tokenResponse = await authHandler.flow?.getUserToken(context)!
     if (this.isExchangeable(tokenResponse.token)) {
       return await this.handleObo(context, tokenResponse.token!, scopes)
@@ -123,9 +129,12 @@ export class Authorization {
    * @returns {Promise<TokenResponse>} The token response from the OAuth provider
    */
   public async beginOrContinueFlow (context: TurnContext, state: TurnState, authHandlerId?: string) : Promise<TokenResponse> {
+    if (authHandlerId === undefined) {
+      authHandlerId = this.getFirstHandlerId()
+    }
     logger.info('beginOrContinueFlow for authHandlerId:', authHandlerId)
     const signInState: SingInState | undefined = state.getValue('user.__SIGNIN_STATE_') || { continuationActivity: undefined, handlerId: undefined, completed: false }
-    const flow = this.resolverHandler(authHandlerId).flow!
+    const flow = this._authHandlers[authHandlerId].flow!
     let tokenResponse: TokenResponse | undefined
     if (flow.state!.flowStarted === false) {
       tokenResponse = await flow.beginFlow(context)
@@ -152,26 +161,12 @@ export class Authorization {
     return tokenResponse!
   }
 
-  /**
-   * Gets the current state of the OAuth flow
-   * @param {string} [authHandlerId] - Optional ID of the auth handler to check, defaults to first handler
-   * @returns {boolean} Whether the flow has started
-   */
-  public getFlowState (authHandlerId?: string) : FlowState {
-    const flow = this.resolverHandler(authHandlerId).flow!
-    return flow.state!
-  }
-
-  /**
-   * Resolves the auth handler to use based on the provided ID
-   * @param {string} [authHandlerId] - Optional ID of the auth handler to resolve, defaults to first handler
-   * @returns {AuthHandler} The resolved auth handler
-   */
-  resolverHandler = (authHandlerId?: string) : AuthHandler => {
-    if (authHandlerId) {
-      return this._authHandlers![authHandlerId]
+  getFirstHandlerId = () : string => {
+    const firstHandlerId = Object.keys(this._authHandlers)[0]
+    if (!firstHandlerId) {
+      throw new Error('No auth handlers configured')
     }
-    return this._authHandlers![Object.keys(this._authHandlers)[0]]
+    return firstHandlerId
   }
 
   /**
@@ -191,7 +186,7 @@ export class Authorization {
         await flow?.signOut(context)
       }
     } else {
-      await this.resolverHandler(authHandlerId).flow?.signOut(context)
+      await this._authHandlers[authHandlerId].flow?.signOut(context)
     }
   }
 
