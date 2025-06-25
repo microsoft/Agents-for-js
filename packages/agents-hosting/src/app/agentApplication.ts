@@ -501,8 +501,6 @@ export class AgentApplication<TState extends TurnState> {
           if (await route.selector(context)) {
             if (route.authHandlers === undefined || route.authHandlers.length === 0) {
               await route.handler(context, state)
-              await state.save(context, storage)
-              return true
             } else {
               let signInComplete = false
               for (const authHandlerId of route.authHandlers) {
@@ -519,7 +517,11 @@ export class AgentApplication<TState extends TurnState> {
               }
             }
 
-            break
+            if (await this.callEventHandlers(context, state, this._afterTurn)) {
+              await state.save(context, storage)
+            }
+
+            return true
           }
         }
 
