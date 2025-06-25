@@ -58,7 +58,10 @@
     "jwks-rsa": "^3.2.0"
   },
   "overrides": {
-    "@types/jsonwebtoken": "9.0.6"
+    "@types/jsonwebtoken": "9.0.6",
+    "browserslist": {
+      "electron-to-chromium": "1.5.170"
+    }
   },
   "engines": {
     "node": ">=18.0.0"
