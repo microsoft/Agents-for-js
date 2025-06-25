@@ -18,7 +18,7 @@ class OneProvider extends AgentApplication<TurnState> {
     })
     this.onConversationUpdate('membersAdded', this._status)
     this.authorization.onSignInSuccess(this._singinSuccess)
-    this.authorization.onSignInFailure(this._singinFailure)
+    // this.authorization.onSignInFailure(this._singinFailure)
     this.onMessage('/logout', this._logout)
     this.onMessage('/me', this._profileRequest, ['graph'])
     this.onMessage('/prs', this._pullRequests, ['github'])

@@ -172,6 +172,7 @@ export class OAuthFlow {
       logger.info('Continuing OAuth flow with tokenExchange')
       const tokenExchangeRequest = contFlowActivity.value as TokenExchangeRequest
       if (this.tokenExchangeId === tokenExchangeRequest.id) { // dedupe
+        logger.debug('Token exchange request already processed, skipping')
         return { token: undefined }
       }
       this.tokenExchangeId = tokenExchangeRequest.id!
