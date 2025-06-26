@@ -1,0 +1,3 @@
+# Ignore settings.js to avoid committing sensitive information.
+# To start tracking changes again, use: git update-index --no-skip-worktree settings.js.
+settings.js
