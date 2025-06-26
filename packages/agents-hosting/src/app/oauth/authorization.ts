@@ -8,7 +8,6 @@ import { debug } from '../../logger'
 import { TurnState } from '../turnState'
 import { Storage } from '../../storage'
 import { OAuthFlow, TokenResponse } from '../../oauth'
-import { UserState } from '../../state'
 
 const logger = debug('agents:authorization')
 
@@ -48,11 +47,10 @@ export class Authorization {
    * @param {AuthorizationHandlers} authHandlers - Configuration for OAuth providers
    * @throws {Error} If storage is null/undefined or no auth handlers are provided
    */
-  constructor (storage: Storage, authHandlers: AuthorizationHandlers) {
+  constructor (private storage: Storage, authHandlers: AuthorizationHandlers) {
     if (storage === undefined || storage === null) {
       throw new Error('Storage is required for UserAuthorization')
     }
-    const userState = new UserState(storage)
     if (authHandlers === undefined || Object.keys(authHandlers).length === 0) {
       throw new Error('The authorization does not have any auth handlers')
     }
@@ -66,7 +64,7 @@ export class Authorization {
       currentAuthHandler.title = currentAuthHandler.title ?? process.env[ah + '_connectionTitle'] as string
       currentAuthHandler.text = currentAuthHandler.text ?? process.env[ah + '_connectionText'] as string
       currentAuthHandler.auto = currentAuthHandler.auto ?? process.env[ah + '_connectionAuto'] === 'true'
-      currentAuthHandler.flow = new OAuthFlow(userState, currentAuthHandler.name, null!, currentAuthHandler.title, currentAuthHandler.text)
+      currentAuthHandler.flow = new OAuthFlow(this.storage, currentAuthHandler.name, null!, currentAuthHandler.title, currentAuthHandler.text)
     }
     logger.info('Authorization handlers configured with', this._authHandlers.length, 'handlers')
   }
