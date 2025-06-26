@@ -13,10 +13,18 @@ import { TokenExchangeRequest, TokenResponse } from './userTokenClient.types'
 
 const logger = debug('agents:oauth-flow')
 
+/**
+ * Represents the state of the OAuth flow.
+ * @interface FlowState
+ */
 export interface FlowState {
+  /** Indicates whether the OAuth flow has been started */
   flowStarted: boolean,
+  /** Timestamp when the OAuth flow expires (in milliseconds since epoch) */
   flowExpires: number,
+  /** The absolute OAuth connection name used for the flow, null if not set */
   absOauthConnectionName: string | null
+  /** Optional activity to continue the flow with, used for multi-turn scenarios */
   continuationActivity?: Activity | null
 }
 

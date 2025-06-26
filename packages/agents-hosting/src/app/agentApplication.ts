@@ -22,22 +22,45 @@ import { TurnState } from './turnState'
 const logger = debug('agents:app')
 
 const TYPING_TIMER_DELAY = 1000
+
+/**
+ * Event handler function type for application events.
+ * @template TState - The state type extending TurnState.
+ * @param context - The turn context containing activity information.
+ * @param state - The current turn state.
+ * @returns A promise that resolves to a boolean indicating whether to continue execution.
+ */
 export type ApplicationEventHandler<TState extends TurnState> = (context: TurnContext, state: TState) => Promise<boolean>
 
 /**
- * Executes the application logic for a given turn context.
+ * Main application class for handling agent conversations and routing.
  *
- * @param turnContext - The context for the current turn of the conversation.
- * @returns A promise that resolves when the application logic has completed.
+ * @template TState - The state type extending TurnState.
  *
  * @remarks
- * This method is the entry point for processing a turn in the conversation.
- * It delegates the actual processing to the `runInternal` method, which handles
- * the core logic for routing and executing handlers.
+ * The AgentApplication class provides a framework for building conversational agents.
+ * It handles routing activities to appropriate handlers, manages conversation state,
+ * supports authentication flows, and provides various event handling capabilities.
+ *
+ * Key features:
+ * - Activity routing based on type, content, or custom selectors
+ * - State management with automatic load/save
+ * - OAuth authentication support
+ * - Typing indicators and long-running message support
+ * - Extensible architecture with custom extensions
+ * - Event handlers for before/after turn processing
  *
  * Example usage:
  * ```typescript
- * const app = new AgentApplication();
+ * const app = new AgentApplication<MyState>({
+ *   storage: myStorage,
+ *   adapter: myAdapter
+ * });
+ *
+ * app.onMessage('hello', async (context, state) => {
+ *   await context.sendActivity('Hello there!');
+ * });
+ *
  * await app.run(turnContext);
  * ```
  */
@@ -52,6 +75,32 @@ export class AgentApplication<TState extends TurnState> {
   protected readonly _extensions: AgentExtension<TState>[] = []
   private readonly _adaptiveCards: AdaptiveCardsActions<TState>
 
+  /**
+   * Creates a new instance of AgentApplication.
+   *
+   * @param options - Optional configuration options for the application.
+   *
+   * @remarks
+   * The constructor initializes the application with default settings and applies
+   * any provided options. It sets up the adapter, authorization, and other core
+   * components based on the configuration.
+   *
+   * Default options:
+   * - startTypingTimer: false
+   * - longRunningMessages: false
+   * - removeRecipientMention: true
+   * - turnStateFactory: Creates a new TurnState instance
+   *
+   * Example usage:
+   * ```typescript
+   * const app = new AgentApplication({
+   *   storage: myStorage,
+   *   adapter: myAdapter,
+   *   startTypingTimer: true,
+   *   authorization: { connectionName: 'oauth' }
+   * });
+   * ```
+   */
   public constructor (options?: Partial<AgentApplicationOptions<TState>>) {
     this._options = {
       ...options,
@@ -96,6 +145,21 @@ export class AgentApplication<TState extends TurnState> {
     return this._options
   }
 
+  /**
+   * Gets the adaptive cards actions handler for the application.
+   * @returns The adaptive cards actions instance.
+   *
+   * @remarks
+   * The adaptive cards actions handler provides functionality for handling
+   * adaptive card interactions, such as submit actions and other card-based events.
+   *
+   * Example usage:
+   * ```typescript
+   * app.adaptiveCards.onSubmit('myCardId', async (context, state, data) => {
+   *   await context.sendActivity(`Received data: ${JSON.stringify(data)}`);
+   * });
+   * ```
+   */
   public get adaptiveCards (): AdaptiveCardsActions<TState> {
     return this._adaptiveCards
   }
@@ -431,13 +495,32 @@ export class AgentApplication<TState extends TurnState> {
 
   /**
    * Executes the application logic for a given turn context.
-   * @private
    * @param turnContext - The context for the current turn of the conversation.
    * @returns A promise that resolves to true if a handler was executed, false otherwise.
    *
    * @remarks
-   * This method is the core logic for processing a turn in the conversation.
+   * This is the core internal method that processes a turn in the conversation.
    * It handles routing and executing handlers based on the activity type and content.
+   * While this method is public, it's typically called internally by the `run` method.
+   *
+   * The method performs the following operations:
+   * 1. Starts typing timer if configured
+   * 2. Processes mentions if configured
+   * 3. Loads turn state
+   * 4. Handles authentication flows
+   * 5. Executes before-turn event handlers
+   * 6. Downloads files if file downloaders are configured
+   * 7. Routes to appropriate handlers
+   * 8. Executes after-turn event handlers
+   * 9. Saves turn state
+   *
+   * Example usage:
+   * ```typescript
+   * const handled = await app.runInternal(turnContext);
+   * if (!handled) {
+   *   console.log('No handler matched the activity');
+   * }
+   * ```
    */
   public async runInternal (turnContext: TurnContext): Promise<boolean> {
     logger.info('Running application with activity:', turnContext.activity.id!)
@@ -626,6 +709,26 @@ export class AgentApplication<TState extends TurnState> {
     }
   }
 
+  /**
+   * Registers an extension with the application.
+   *
+   * @template T - The extension type extending AgentExtension.
+   * @param extension - The extension instance to register.
+   * @param regcb - Callback function called after successful registration.
+   * @throws Error if the extension is already registered.
+   *
+   * @remarks
+   * Extensions provide a way to add custom functionality to the application.
+   * Each extension can only be registered once to prevent conflicts.
+   *
+   * Example usage:
+   * ```typescript
+   * const myExtension = new MyCustomExtension();
+   * app.registerExtension(myExtension, (ext) => {
+   *   console.log('Extension registered:', ext.name);
+   * });
+   * ```
+   */
   public registerExtension<T extends AgentExtension<TState>> (extension: T, regcb : (ext:T) => void): void {
     if (this._extensions.includes(extension)) {
       throw new Error('Extension already registered')
