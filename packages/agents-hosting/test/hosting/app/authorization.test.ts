@@ -97,7 +97,6 @@ describe('AgentApplication', () => {
       assert.equal(authHandler.name, 'EnvConnection')
       assert.equal(authHandler.title, 'Env Title')
       assert.equal(authHandler.text, 'Env Text')
-      assert.equal(authHandler.auto, true)
     } finally {
       // Restore original env
       process.env = originalEnv

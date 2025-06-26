@@ -27,8 +27,6 @@ export interface SingInState {
 export interface AuthHandler {
   /** Connection name for the auth provider */
   name?: string,
-  /** Whether authorization should be triggered automatically */
-  auto?: boolean,
   /** The OAuth flow implementation */
   flow?: OAuthFlow,
   /** Title to display on auth cards/UI */
@@ -72,7 +70,6 @@ export class Authorization {
       currentAuthHandler.name = currentAuthHandler.name ?? process.env[ah + '_connectionName'] as string
       currentAuthHandler.title = currentAuthHandler.title ?? process.env[ah + '_connectionTitle'] as string
       currentAuthHandler.text = currentAuthHandler.text ?? process.env[ah + '_connectionText'] as string
-      currentAuthHandler.auto = currentAuthHandler.auto ?? process.env[ah + '_connectionAuto'] === 'true'
       currentAuthHandler.flow = new OAuthFlow(this.storage, currentAuthHandler.name, null!, currentAuthHandler.title, currentAuthHandler.text)
     }
     logger.info('Authorization handlers configured with', Object.keys(this._authHandlers).length, 'handlers')

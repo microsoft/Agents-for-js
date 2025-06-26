@@ -78,14 +78,6 @@ export class AgentApplication<TState extends TurnState> {
   }
 
   /**
-   * Gets the adapter associated with the application.
-   * @throws Error if the adapter is not configured.
-   */
-  public get adapter (): BaseAdapter {
-    return this._adapter!
-  }
-
-  /**
    * Gets the authorization instance for the application.
    * @throws Error if no authentication options were configured.
    */
