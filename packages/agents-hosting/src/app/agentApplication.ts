@@ -146,6 +146,14 @@ export class AgentApplication<TState extends TurnState> {
   }
 
   /**
+   * Gets the adapter used by the application.
+   * @returns The adapter instance.
+   */
+  public get adapter (): BaseAdapter {
+    return this._adapter!
+  }
+
+  /**
    * Gets the adaptive cards actions handler for the application.
    * @returns The adaptive cards actions instance.
    *
