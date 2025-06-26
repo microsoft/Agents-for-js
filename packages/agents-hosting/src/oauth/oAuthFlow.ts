@@ -23,6 +23,12 @@ export interface FlowState {
 interface TokenVerifyState {
   state: string
 }
+
+interface CachedToken {
+  token: TokenResponse
+  expiresAt: number
+}
+
 /**
  * Manages the OAuth flow
  */
@@ -41,6 +47,11 @@ export class OAuthFlow {
    * The ID of the token exchange request, used to deduplicate requests.
    */
   tokenExchangeId: string | null = null
+
+  /**
+   * In-memory cache for tokens with expiration.
+   */
+  private tokenCache: Map<string, CachedToken> = new Map()
 
   /**
    * The name of the OAuth connection.
@@ -70,20 +81,45 @@ export class OAuthFlow {
   }
 
   /**
-   * Retrieves the user token from the user token service.
+   * Retrieves the user token from the user token service with in-memory caching for 10 minutes.
    * @param context The turn context containing the activity information.
    * @returns A promise that resolves to the user token response.
    * @throws Will throw an error if the channelId or from properties are not set in the activity.
    */
   public async getUserToken (context: TurnContext): Promise<TokenResponse> {
     await this.initializeTokenClient(context)
-    logger.info('Get token from user token service')
     const activity = context.activity
-    if (activity.channelId && activity.from && activity.from.id) {
-      return await this.userTokenClient.getUserToken(this.absOauthConnectionName, activity.channelId, activity.from.id)
-    } else {
+
+    if (!activity.channelId || !activity.from || !activity.from.id) {
       throw new Error('UserTokenService requires channelId and from to be set')
     }
+
+    const cacheKey = `${activity.channelId}_${activity.from.id}_${this.absOauthConnectionName}`
+
+    const cachedEntry = this.tokenCache.get(cacheKey)
+    if (cachedEntry && Date.now() < cachedEntry.expiresAt) {
+      logger.info('Returning cached token for user')
+      return cachedEntry.token
+    }
+
+    if (cachedEntry) {
+      this.tokenCache.delete(cacheKey)
+    }
+
+    logger.info('Get token from user token service')
+    const tokenResponse = await this.userTokenClient.getUserToken(this.absOauthConnectionName, activity.channelId, activity.from.id)
+
+    // Cache the token if it's valid (has a token value)
+    if (tokenResponse && tokenResponse.token) {
+      const cacheExpiry = Date.now() + (10 * 60 * 1000) // 10 minutes from now
+      this.tokenCache.set(cacheKey, {
+        token: tokenResponse,
+        expiresAt: cacheExpiry
+      })
+      logger.info('Token cached for 10 minutes')
+    }
+
+    return tokenResponse
   }
 
   /**
@@ -199,6 +235,15 @@ export class OAuthFlow {
   public async signOut (context: TurnContext): Promise<void> {
     this.state = await this.getUserState(context)
     await this.initializeTokenClient(context)
+
+    // Clear cached token for this user
+    const activity = context.activity
+    if (activity.channelId && activity.from && activity.from.id) {
+      const cacheKey = `${activity.channelId}_${activity.from.id}_${this.absOauthConnectionName}`
+      this.tokenCache.delete(cacheKey)
+      logger.info('Cached token cleared for user')
+    }
+
     await this.userTokenClient?.signOut(context.activity.from?.id as string, this.absOauthConnectionName, context.activity.channelId as string)
     this.state!.flowExpires = 0
     this.storage.write({ [this.getFlowStateKey(context)]: this.state })
