@@ -102,4 +102,16 @@ describe('AgentApplication', () => {
       process.env = originalEnv
     }
   })
+
+  it('should throw when using a non-existent auth handler id', () => {
+    const app = new AgentApplication({
+      storage: new MemoryStorage(),
+      authorization: {
+        testAuth: { name: 'test' }
+      }
+    })
+    assert.rejects(async () => {
+      await app.authorization.getToken({} as any, 'nonExistinghandler')
+    }, { message: 'AuthHandler nonExistinghandler not configured' })
+  })
 })

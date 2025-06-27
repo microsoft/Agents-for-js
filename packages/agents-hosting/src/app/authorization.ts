@@ -16,29 +16,29 @@ const logger = debug('agents:authorization')
 
 /**
  * Interface representing the state of a sign-in process.
- * @interface SingInState
+ * @interface SignInState
  */
-export interface SingInState {
-  /** Optional activity to continue with after sign-in completion */
+export interface SignInState {
+  /** Optional activity to continue with after sign-in completion. */
   continuationActivity?: Activity,
-  /** Identifier of the auth handler being used */
+  /** Identifier of the auth handler being used. */
   handlerId?: string,
-  /** Whether the sign-in process has been completed */
+  /** Whether the sign-in process has been completed. */
   completed?: boolean
 }
 
 /**
- * Interface defining an authorization handler for OAuth flows
+ * Interface defining an authorization handler for OAuth flows.
  * @interface AuthHandler
  */
 export interface AuthHandler {
-  /** Connection name for the auth provider */
+  /** Connection name for the auth provider. */
   name?: string,
-  /** The OAuth flow implementation */
+  /** The OAuth flow implementation. */
   flow?: OAuthFlow,
-  /** Title to display on auth cards/UI */
+  /** Title to display on auth cards/UI. */
   title?: string,
-  /** Text to display on auth cards/UI */
+  /** Text to display on auth cards/UI. */
   text?: string,
 }
 
@@ -92,7 +92,7 @@ export class Authorization {
    *
    * @param storage - The storage system to use for state management.
    * @param authHandlers - Configuration for OAuth providers.
-   * @throws Error if storage is null/undefined or no auth handlers are provided.
+   * @throws {Error} If storage is null/undefined or no auth handlers are provided.
    *
    * @remarks
    * The constructor initializes all configured auth handlers and sets up OAuth flows.
@@ -139,12 +139,13 @@ export class Authorization {
    * Gets the token for a specific auth handler.
    *
    * @param context - The context object for the current turn.
-   * @param authHandlerId - Optional ID of the auth handler to use, defaults to first handler.
+   * @param authHandlerId - ID of the auth handler to use.
    * @returns A promise that resolves to the token response from the OAuth provider.
+   * @throws {Error} If the auth handler is not configured.
+   * @public
    *
    * @remarks
    * This method retrieves an existing token for the specified auth handler.
-   * If no authHandlerId is provided, it uses the first configured handler.
    * The token may be cached and will be retrieved from the OAuth provider if needed.
    *
    * Example usage:
@@ -157,11 +158,23 @@ export class Authorization {
    */
   public async getToken (context: TurnContext, authHandlerId: string): Promise<TokenResponse> {
     logger.info('getToken from user token service for authHandlerId:', authHandlerId)
-    if (authHandlerId === undefined) {
-      authHandlerId = this.getFirstHandlerId()
-    }
-    const authHandler = this._authHandlers[authHandlerId]
+    const authHandler = this.getAuthHandlerOrThrow(authHandlerId)
     return await authHandler.flow?.getUserToken(context)!
+  }
+
+  /**
+   * Gets the auth handler by ID or throws an error if not found.
+   *
+   * @param authHandlerId - ID of the auth handler to retrieve.
+   * @returns The auth handler instance.
+   * @throws {Error} If the auth handler with the specified ID is not configured.
+   * @private
+   */
+  private getAuthHandlerOrThrow (authHandlerId: string): AuthHandler {
+    if (!Object.prototype.hasOwnProperty.call(this._authHandlers, authHandlerId)) {
+      throw new Error(`AuthHandler with ID ${authHandlerId} not configured`)
+    }
+    return this._authHandlers[authHandlerId]
   }
 
   /**
@@ -169,8 +182,10 @@ export class Authorization {
    *
    * @param context - The context object for the current turn.
    * @param scopes - Array of scopes to request for the new token.
-   * @param authHandlerId - Optional ID of the auth handler to use, defaults to first handler.
+   * @param authHandlerId - ID of the auth handler to use.
    * @returns A promise that resolves to the exchanged token response.
+   * @throws {Error} If the auth handler is not configured.
+   * @public
    *
    * @remarks
    * This method handles token exchange scenarios, particularly for on-behalf-of (OBO) flows.
@@ -188,10 +203,7 @@ export class Authorization {
    */
   public async exchangeToken (context: TurnContext, scopes: string[], authHandlerId: string): Promise<TokenResponse> {
     logger.info('getToken from user token service for authHandlerId:', authHandlerId)
-    if (authHandlerId === undefined) {
-      authHandlerId = this.getFirstHandlerId()
-    }
-    const authHandler = this._authHandlers[authHandlerId]
+    const authHandler = this.getAuthHandlerOrThrow(authHandlerId)
     const tokenResponse = await authHandler.flow?.getUserToken(context)!
     if (this.isExchangeable(tokenResponse.token)) {
       return await this.handleObo(context, tokenResponse.token!, scopes)
@@ -199,6 +211,13 @@ export class Authorization {
     return tokenResponse
   }
 
+  /**
+   * Checks if a token is exchangeable for an on-behalf-of flow.
+   *
+   * @param token - The token to check.
+   * @returns True if the token is exchangeable, false otherwise.
+   * @private
+   */
   private isExchangeable (token: string | undefined): boolean {
     if (!token || typeof token !== 'string') {
       return false
@@ -207,6 +226,15 @@ export class Authorization {
     return payload?.aud?.indexOf('api://') === 0
   }
 
+  /**
+   * Handles on-behalf-of token exchange using MSAL.
+   *
+   * @param context - The context object for the current turn.
+   * @param token - The token to exchange.
+   * @param scopes - Array of scopes to request for the new token.
+   * @returns A promise that resolves to the exchanged token response.
+   * @private
+   */
   private async handleObo (context: TurnContext, token: string, scopes: string[]): Promise<TokenResponse> {
     const msalTokenProvider = new MsalTokenProvider()
     const authConfig: AuthConfiguration = context.adapter.authConfig
@@ -219,8 +247,10 @@ export class Authorization {
    *
    * @param context - The context object for the current turn.
    * @param state - The state object for the current turn.
-   * @param authHandlerId - Optional ID of the auth handler to use, defaults to first handler.
+   * @param authHandlerId - ID of the auth handler to use.
    * @returns A promise that resolves to the token response from the OAuth provider.
+   * @throws {Error} If the auth handler is not configured.
+   * @public
    *
    * @remarks
    * This method manages the complete OAuth authentication flow:
@@ -241,12 +271,10 @@ export class Authorization {
    * ```
    */
   public async beginOrContinueFlow (context: TurnContext, state: TurnState, authHandlerId: string) : Promise<TokenResponse> {
-    if (authHandlerId === undefined) {
-      authHandlerId = this.getFirstHandlerId()
-    }
+    const authHandler = this.getAuthHandlerOrThrow(authHandlerId)
     logger.info('beginOrContinueFlow for authHandlerId:', authHandlerId)
-    const signInState: SingInState | undefined = state.getValue('user.__SIGNIN_STATE_') || { continuationActivity: undefined, handlerId: undefined, completed: false }
-    const flow = this._authHandlers[authHandlerId].flow!
+    const signInState: SignInState | undefined = state.getValue('user.__SIGNIN_STATE_') || { continuationActivity: undefined, handlerId: undefined, completed: false }
+    const flow = authHandler.flow!
     let tokenResponse: TokenResponse | undefined
     if (flow.state!.flowStarted === false) {
       tokenResponse = await flow.beginFlow(context)
@@ -274,36 +302,14 @@ export class Authorization {
   }
 
   /**
-   * Gets the ID of the first configured authentication handler.
-   *
-   * @returns The ID of the first auth handler.
-   * @throws Error if no auth handlers are configured.
-   *
-   * @remarks
-   * This method is used as a fallback when no specific auth handler ID is provided
-   * to other methods. It returns the first handler found in the configuration.
-   *
-   * Example usage:
-   * ```typescript
-   * const firstHandlerId = auth.getFirstHandlerId();
-   * console.log('Default handler:', firstHandlerId);
-   * ```
-   */
-  getFirstHandlerId = () : string => {
-    const firstHandlerId = Object.keys(this._authHandlers)[0]
-    if (!firstHandlerId) {
-      throw new Error('No auth handlers configured')
-    }
-    return firstHandlerId
-  }
-
-  /**
    * Signs out the current user.
    *
    * @param context - The context object for the current turn.
    * @param state - The state object for the current turn.
    * @param authHandlerId - Optional ID of the auth handler to use for sign out. If not provided, signs out from all handlers.
    * @returns A promise that resolves when sign out is complete.
+   * @throws {Error} If the specified auth handler is not configured.
+   * @public
    *
    * @remarks
    * This method clears the user's token and resets the authentication state.
@@ -327,7 +333,8 @@ export class Authorization {
         await flow?.signOut(context)
       }
     } else {
-      await this._authHandlers[authHandlerId].flow?.signOut(context)
+      const authHandler = this.getAuthHandlerOrThrow(authHandlerId)
+      await authHandler.flow?.signOut(context)
     }
   }
 
@@ -341,6 +348,7 @@ export class Authorization {
    * Sets a handler to be called when sign-in is successfully completed.
    *
    * @param handler - The handler function to call on successful sign-in.
+   * @public
    *
    * @remarks
    * This method allows you to register a callback that will be invoked whenever
@@ -369,6 +377,7 @@ export class Authorization {
    * Sets a handler to be called when sign-in fails.
    *
    * @param handler - The handler function to call on sign-in failure.
+   * @public
    *
    * @remarks
    * This method allows you to register a callback that will be invoked whenever

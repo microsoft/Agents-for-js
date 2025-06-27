@@ -78,7 +78,11 @@ export class OAuthFlow {
 
   /**
    * Creates a new instance of OAuthFlow.
-   * @param userState The user state.
+   * @param storage The storage provider for persisting flow state.
+   * @param absOauthConnectionName The absolute OAuth connection name.
+   * @param tokenClient Optional user token client. If not provided, will be initialized automatically.
+   * @param cardTitle Optional title for the OAuth card. Defaults to 'Sign in'.
+   * @param cardText Optional text for the OAuth card. Defaults to 'login'.
    */
   constructor (private storage: Storage, absOauthConnectionName: string, tokenClient?: UserTokenClient, cardTitle?: string, cardText?: string) {
     this.state = { flowExpires: 0, flowStarted: false, absOauthConnectionName: null }
@@ -102,7 +106,7 @@ export class OAuthFlow {
       throw new Error('UserTokenService requires channelId and from to be set')
     }
 
-    const cacheKey = `${activity.channelId}_${activity.from.id}_${this.absOauthConnectionName}`
+    const cacheKey = this.getCacheKey(context)
 
     const cachedEntry = this.tokenCache.get(cacheKey)
     if (cachedEntry && Date.now() < cachedEntry.expiresAt) {
@@ -129,7 +133,7 @@ export class OAuthFlow {
   /**
    * Begins the OAuth flow.
    * @param context The turn context.
-   * @returns A promise that resolves to the user token.
+   * @returns A promise that resolves to the user token if available, or undefined if OAuth flow needs to be started.
    */
   public async beginFlow (context: TurnContext): Promise<TokenResponse | undefined> {
     this.state = await this.getUserState(context)
@@ -140,8 +144,30 @@ export class OAuthFlow {
     await this.initializeTokenClient(context)
 
     const act = context.activity
+
+    // Check cache first before starting OAuth flow
+    if (act.channelId && act.from && act.from.id) {
+      const cacheKey = this.getCacheKey(context)
+      const cachedEntry = this.tokenCache.get(cacheKey)
+      if (cachedEntry && Date.now() < cachedEntry.expiresAt) {
+        logger.info(`Returning cached token for user in beginFlow with cache key: ${cacheKey}`)
+        return cachedEntry.token
+      }
+    }
+
     const output = await this.userTokenClient.getTokenOrSignInResource(act.from?.id!, this.absOauthConnectionName, act.channelId!, act.getConversationReference(), act.relatesTo!, undefined!)
     if (output && output.tokenResponse) {
+      // Cache the token if it's valid
+      if (act.channelId && act.from && act.from.id) {
+        const cacheKey = this.getCacheKey(context)
+        const cacheExpiry = Date.now() + (10 * 60 * 1000) // 10 minutes from now
+        this.tokenCache.set(cacheKey, {
+          token: output.tokenResponse,
+          expiresAt: cacheExpiry
+        })
+        logger.info('Token cached for 10 minutes in beginFlow')
+      }
+
       this.state.flowStarted = false
       this.state.flowExpires = 0
       this.state.absOauthConnectionName = this.absOauthConnectionName
@@ -162,7 +188,7 @@ export class OAuthFlow {
   /**
    * Continues the OAuth flow.
    * @param context The turn context.
-   * @returns A promise that resolves to the user token.
+   * @returns A promise that resolves to the user token response.
    */
   public async continueFlow (context: TurnContext): Promise<TokenResponse> {
     this.state = await this.getUserState(context)
@@ -179,6 +205,17 @@ export class OAuthFlow {
       if (magicCode.match(/^\d{6}$/)) {
         const result = await this.userTokenClient?.getUserToken(this.absOauthConnectionName, contFlowActivity.channelId!, contFlowActivity.from?.id!, magicCode)!
         if (result && result.token) {
+          // Cache the token if it's valid
+          if (contFlowActivity.channelId && contFlowActivity.from && contFlowActivity.from.id) {
+            const cacheKey = this.getCacheKey(context)
+            const cacheExpiry = Date.now() + (10 * 60 * 1000) // 10 minutes from now
+            this.tokenCache.set(cacheKey, {
+              token: result,
+              expiresAt: cacheExpiry
+            })
+            logger.info('Token cached for 10 minutes in continueFlow (magic code)')
+          }
+
           this.state!.flowStarted = false
           this.state!.flowExpires = 0
           this.state!.absOauthConnectionName = this.absOauthConnectionName
@@ -205,6 +242,16 @@ export class OAuthFlow {
       const tokenVerifyState = contFlowActivity.value as TokenVerifyState
       const magicCode = tokenVerifyState.state
       const result = await this.userTokenClient?.getUserToken(this.absOauthConnectionName, contFlowActivity.channelId!, contFlowActivity.from?.id!, magicCode)!
+      // Cache the token if it's valid
+      if (result && result.token && contFlowActivity.channelId && contFlowActivity.from && contFlowActivity.from.id) {
+        const cacheKey = this.getCacheKey(context)
+        const cacheExpiry = Date.now() + (10 * 60 * 1000) // 10 minutes from now
+        this.tokenCache.set(cacheKey, {
+          token: result,
+          expiresAt: cacheExpiry
+        })
+        logger.info('Token cached for 10 minutes in continueFlow (verifyState)')
+      }
       return result
     }
 
@@ -218,6 +265,17 @@ export class OAuthFlow {
       this.tokenExchangeId = tokenExchangeRequest.id!
       const userTokenResp = await this.userTokenClient?.exchangeTokenAsync(contFlowActivity.from?.id!, this.absOauthConnectionName, contFlowActivity.channelId!, tokenExchangeRequest)
       if (userTokenResp && userTokenResp.token) {
+        // Cache the token if it's valid
+        if (contFlowActivity.channelId && contFlowActivity.from && contFlowActivity.from.id) {
+          const cacheKey = this.getCacheKey(context)
+          const cacheExpiry = Date.now() + (10 * 60 * 1000) // 10 minutes from now
+          this.tokenCache.set(cacheKey, {
+            token: userTokenResp,
+            expiresAt: cacheExpiry
+          })
+          logger.info('Token cached for 10 minutes in continueFlow (tokenExchange)')
+        }
+
         logger.info('Token exchanged')
         this.state!.flowStarted = false
         await this.storage.write({ [this.getFlowStateKey(context)]: this.state })
@@ -243,7 +301,7 @@ export class OAuthFlow {
     // Clear cached token for this user
     const activity = context.activity
     if (activity.channelId && activity.from && activity.from.id) {
-      const cacheKey = `${activity.channelId}_${activity.from.id}_${this.absOauthConnectionName}`
+      const cacheKey = this.getCacheKey(context)
       this.tokenCache.delete(cacheKey)
       logger.info('Cached token cleared for user')
     }
@@ -255,9 +313,9 @@ export class OAuthFlow {
   }
 
   /**
-   * Gets the user state.
+   * Gets the user state for the OAuth flow.
    * @param context The turn context.
-   * @returns A promise that resolves to the user state.
+   * @returns A promise that resolves to the flow state.
    */
   private async getUserState (context: TurnContext) {
     const key = this.getFlowStateKey(context)
@@ -266,6 +324,10 @@ export class OAuthFlow {
     return userProfile
   }
 
+  /**
+   * Initializes the user token client if not already initialized.
+   * @param context The turn context used to get authentication credentials.
+   */
   private async initializeTokenClient (context: TurnContext) {
     if (this.userTokenClient === undefined || this.userTokenClient === null) {
       const scope = 'https://api.botframework.com'
@@ -274,6 +336,26 @@ export class OAuthFlow {
     }
   }
 
+  /**
+   * Generates a cache key for storing user tokens.
+   * @param context The turn context containing activity information.
+   * @returns The cache key string in format: channelId_userId_connectionName.
+   * @throws Will throw an error if required activity properties are missing.
+   */
+  private getCacheKey (context: TurnContext): string {
+    const activity = context.activity
+    if (!activity.channelId || !activity.from || !activity.from.id) {
+      throw new Error('ChannelId and from.id must be set in the activity for cache key generation')
+    }
+    return `${activity.channelId}_${activity.from.id}_${this.absOauthConnectionName}`
+  }
+
+  /**
+   * Generates a storage key for persisting OAuth flow state.
+   * @param context The turn context containing activity information.
+   * @returns The storage key string in format: oauth/channelId/conversationId/userId/flowState.
+   * @throws Will throw an error if required activity properties are missing.
+   */
   private getFlowStateKey (context: TurnContext): string {
     const channelId = context.activity.channelId
     const conversationId = context.activity.conversation?.id

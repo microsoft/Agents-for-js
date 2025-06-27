@@ -13,7 +13,7 @@ import { AgentApplicationOptions } from './agentApplicationOptions'
 import { AppRoute } from './appRoute'
 import { ConversationUpdateEvents } from './conversationUpdateEvents'
 import { AgentExtension } from './extensions'
-import { Authorization, SingInState } from './authorization'
+import { Authorization, SignInState } from './authorization'
 import { RouteHandler } from './routeHandler'
 import { RouteSelector } from './routeSelector'
 import { TurnEvents } from './turnEvents'
@@ -550,7 +550,7 @@ export class AgentApplication<TState extends TurnState> {
         const state = turnStateFactory()
         await state.load(context, storage)
 
-        const signInState : SingInState = state.getValue('user.__SIGNIN_STATE_')
+        const signInState : SignInState = state.getValue('user.__SIGNIN_STATE_')
         logger.debug('SignIn State:', signInState)
         if (this._authorization && signInState && signInState.handlerId) {
           const flowState = this._authorization._authHandlers[signInState.handlerId]?.flow?.state!
