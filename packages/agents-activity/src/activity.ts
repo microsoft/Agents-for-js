@@ -35,7 +35,7 @@ export const activityZodSchema = z.object({
   channelId: z.string().min(1).optional(),
   from: channelAccountZodSchema.optional(),
   timestamp: z.union([z.date(), z.string().min(1).datetime().optional(), z.string().min(1).transform(s => new Date(s)).optional()]),
-  localTimestamp: z.string().min(1).transform(s => new Date(s)).optional(),
+  localTimestamp: z.string().min(1).transform(s => new Date(s)).optional().or(z.date()).optional(), // z.string().min(1).transform(s => new Date(s)).optional(),
   localTimezone: z.string().min(1).optional(),
   callerId: z.string().min(1).optional(),
   serviceUrl: z.string().min(1).optional(),
