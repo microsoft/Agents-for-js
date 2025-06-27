@@ -128,6 +128,8 @@ export class AgentApplication<TState extends TurnState> {
 
   /**
    * Gets the authorization instance for the application.
+   *
+   * @returns The authorization instance.
    * @throws Error if no authentication options were configured.
    */
   public get authorization (): Authorization {
@@ -139,6 +141,7 @@ export class AgentApplication<TState extends TurnState> {
 
   /**
    * Gets the options used to configure the application.
+   *
    * @returns The application options.
    */
   public get options (): AgentApplicationOptions<TState> {
@@ -147,6 +150,7 @@ export class AgentApplication<TState extends TurnState> {
 
   /**
    * Gets the adapter used by the application.
+   *
    * @returns The adapter instance.
    */
   public get adapter (): BaseAdapter {
@@ -155,6 +159,7 @@ export class AgentApplication<TState extends TurnState> {
 
   /**
    * Gets the adaptive cards actions handler for the application.
+   *
    * @returns The adaptive cards actions instance.
    *
    * @remarks
@@ -202,6 +207,8 @@ export class AgentApplication<TState extends TurnState> {
    *
    * @param selector - The selector function that determines if a route should handle the current activity.
    * @param handler - The handler function that will be called if the selector returns true.
+   * @param isInvokeRoute - Whether this route is for invoke activities. Defaults to false.
+   * @param authHandlers - Array of authentication handler names for this route. Defaults to empty array.
    * @returns The current instance of the application.
    *
    * @remarks
@@ -227,6 +234,7 @@ export class AgentApplication<TState extends TurnState> {
    *
    * @param type - The activity type(s) to handle. Can be a string, RegExp, RouteSelector, or array of these types.
    * @param handler - The handler function that will be called when the specified activity type is received.
+   * @param authHandlers - Array of authentication handler names for this activity. Defaults to empty array.
    * @returns The current instance of the application.
    *
    * @remarks
@@ -257,6 +265,7 @@ export class AgentApplication<TState extends TurnState> {
    *
    * @param event - The conversation update event to handle (e.g., 'membersAdded', 'membersRemoved').
    * @param handler - The handler function that will be called when the specified event occurs.
+   * @param authHandlers - Array of authentication handler names for this event. Defaults to empty array.
    * @returns The current instance of the application.
    * @throws Error if the handler is not a function.
    *
@@ -293,6 +302,7 @@ export class AgentApplication<TState extends TurnState> {
 
   /**
    * Continues a conversation asynchronously.
+   *
    * @param conversationReferenceOrContext - The conversation reference or turn context.
    * @param logic - The logic to execute during the conversation.
    * @returns A promise that resolves when the conversation logic has completed.
@@ -329,6 +339,7 @@ export class AgentApplication<TState extends TurnState> {
    * @param keyword - The keyword, pattern, or selector function to match against message text.
    *                  Can be a string, RegExp, RouteSelector, or array of these types.
    * @param handler - The handler function that will be called when a matching message is received.
+   * @param authHandlers - Array of authentication handler names for this message handler. Defaults to empty array.
    * @returns The current instance of the application.
    *
    * @remarks
@@ -343,7 +354,7 @@ export class AgentApplication<TState extends TurnState> {
    *   await context.sendActivity('Hello there!');
    * });
    *
-   * app.onMessage(/help., async (context, state) => {
+   * app.onMessage(/help/, async (context, state) => {
    *   await context.sendActivity('How can I help you?');
    * });
    * ```
@@ -503,6 +514,7 @@ export class AgentApplication<TState extends TurnState> {
 
   /**
    * Executes the application logic for a given turn context.
+   *
    * @param turnContext - The context for the current turn of the conversation.
    * @returns A promise that resolves to true if a handler was executed, false otherwise.
    *
@@ -809,6 +821,14 @@ export class AgentApplication<TState extends TurnState> {
     return this
   }
 
+  /**
+   * Calls a series of event handlers in sequence.
+   *
+   * @param context - The turn context for the current conversation.
+   * @param state - The current turn state.
+   * @param handlers - Array of event handlers to call.
+   * @returns A promise that resolves to true if all handlers returned true, false otherwise.
+   */
   protected async callEventHandlers (
     context: TurnContext,
     state: TState,
@@ -824,6 +844,13 @@ export class AgentApplication<TState extends TurnState> {
     return true
   }
 
+  /**
+   * Starts a long-running call, potentially in a new conversation context.
+   *
+   * @param context - The turn context for the current conversation.
+   * @param handler - The handler function to execute.
+   * @returns A promise that resolves to the result of the handler.
+   */
   protected startLongRunningCall (
     context: TurnContext,
     handler: (context: TurnContext) => Promise<boolean>
@@ -849,6 +876,12 @@ export class AgentApplication<TState extends TurnState> {
     }
   }
 
+  /**
+   * Creates a selector function for activity types.
+   *
+   * @param type - The activity type to match. Can be a string, RegExp, or RouteSelector function.
+   * @returns A RouteSelector function that matches the specified activity type.
+   */
   private createActivitySelector (type: string | RegExp | RouteSelector): RouteSelector {
     if (typeof type === 'function') {
       return type
@@ -866,6 +899,12 @@ export class AgentApplication<TState extends TurnState> {
     }
   }
 
+  /**
+   * Creates a selector function for conversation update events.
+   *
+   * @param event - The conversation update event to match.
+   * @returns A RouteSelector function that matches the specified conversation update event.
+   */
   private createConversationUpdateSelector (event: ConversationUpdateEvents): RouteSelector {
     switch (event) {
       case 'membersAdded':
@@ -894,6 +933,12 @@ export class AgentApplication<TState extends TurnState> {
     }
   }
 
+  /**
+   * Creates a selector function for message content matching.
+   *
+   * @param keyword - The keyword, pattern, or selector function to match against message text.
+   * @returns A RouteSelector function that matches messages based on the specified keyword.
+   */
   private createMessageSelector (keyword: string | RegExp | RouteSelector): RouteSelector {
     if (typeof keyword === 'function') {
       return keyword
