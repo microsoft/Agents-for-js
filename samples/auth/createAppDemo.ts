@@ -17,7 +17,6 @@ class CreateAppDemo extends AgentApplication<TurnState> {
     this._storage = storage!
 
     this.onConversationUpdate('membersAdded', this._status)
-    this.onActivity(ActivityTypes.Invoke, this._invoke)
     this.onActivity(ActivityTypes.Message, this._message)
   }
 
@@ -32,10 +31,6 @@ class CreateAppDemo extends AgentApplication<TurnState> {
                     Graph flow status:  ${graph.token?.length}`
     await context.sendActivity(MessageFactory.text(status))
     await context.sendActivity(MessageFactory.text('Enter "/login" to sign in or "/logout" to sign out. /me to see your profile. /prs to see your pull requests.'))
-  }
-
-  private _invoke = async (context: TurnContext, state: TurnState): Promise<void> => {
-    await this.authorization.beginOrContinueFlow(context, state)
   }
 
   private _message = async (context: TurnContext, state: TurnState): Promise<void> => {

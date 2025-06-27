@@ -155,7 +155,7 @@ export class Authorization {
    * }
    * ```
    */
-  public async getToken (context: TurnContext, authHandlerId?: string): Promise<TokenResponse> {
+  public async getToken (context: TurnContext, authHandlerId: string): Promise<TokenResponse> {
     logger.info('getToken from user token service for authHandlerId:', authHandlerId)
     if (authHandlerId === undefined) {
       authHandlerId = this.getFirstHandlerId()
@@ -186,7 +186,7 @@ export class Authorization {
    * );
    * ```
    */
-  public async exchangeToken (context: TurnContext, scopes: string[], authHandlerId?: string): Promise<TokenResponse> {
+  public async exchangeToken (context: TurnContext, scopes: string[], authHandlerId: string): Promise<TokenResponse> {
     logger.info('getToken from user token service for authHandlerId:', authHandlerId)
     if (authHandlerId === undefined) {
       authHandlerId = this.getFirstHandlerId()
@@ -240,7 +240,7 @@ export class Authorization {
    * }
    * ```
    */
-  public async beginOrContinueFlow (context: TurnContext, state: TurnState, authHandlerId?: string) : Promise<TokenResponse> {
+  public async beginOrContinueFlow (context: TurnContext, state: TurnState, authHandlerId: string) : Promise<TokenResponse> {
     if (authHandlerId === undefined) {
       authHandlerId = this.getFirstHandlerId()
     }

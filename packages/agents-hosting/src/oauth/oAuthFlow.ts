@@ -106,12 +106,8 @@ export class OAuthFlow {
 
     const cachedEntry = this.tokenCache.get(cacheKey)
     if (cachedEntry && Date.now() < cachedEntry.expiresAt) {
-      logger.info('Returning cached token for user')
+      logger.info(`Returning cached token for user with cache key: ${cacheKey}`)
       return cachedEntry.token
-    }
-
-    if (cachedEntry) {
-      this.tokenCache.delete(cacheKey)
     }
 
     logger.info('Get token from user token service')

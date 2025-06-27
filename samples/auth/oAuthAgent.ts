@@ -28,7 +28,6 @@ class OAuthAgent extends AgentApplication<TurnState> {
     this.onMessage('/me', this._profileRequest)
     this.onMessage('/prs', this._pullRequests)
     this.onConversationUpdate('membersAdded', this._status)
-    this.onActivity(ActivityTypes.Invoke, this._invoke)
     this.onSignInSuccess(this._handleSignInSuccess)
     this.onSignInFailure(this._handleSignInFailure)
     this.onActivity(ActivityTypes.Message, this._message)
@@ -49,12 +48,12 @@ class OAuthAgent extends AgentApplication<TurnState> {
   }
 
   private _signIn = async (context: TurnContext, state: TurnState): Promise<void> => {
-    const tokenResponse = await this.authorization.beginOrContinueFlow(context, state)
+    const tokenResponse = await this.authorization.beginOrContinueFlow(context, state, 'graph')
     await context.sendActivity(MessageFactory.text(`Auth flow status: ${tokenResponse?.token?.length || 0}`))
   }
 
   private _profileRequest = async (context: TurnContext, state: TurnState): Promise<void> => {
-    const userTokenResponse = await this.authorization.getToken(context)
+    const userTokenResponse = await this.authorization.getToken(context, 'graph')
     if (userTokenResponse && userTokenResponse?.token) {
       const userTemplate = (await import('./../_resources/UserProfileCard.json'))
       const template = new Template(userTemplate)
@@ -98,10 +97,6 @@ class OAuthAgent extends AgentApplication<TurnState> {
       console.warn(`GitHub token: ${JSON.stringify(tokenResponse)}`)
       await context.sendActivity(MessageFactory.text('GitHub token length.' + tokenResponse?.token?.length))
     }
-  }
-
-  private _invoke = async (context: TurnContext, state: TurnState): Promise<void> => {
-    await this.authorization.beginOrContinueFlow(context, state)
   }
 
   private _handleSignInSuccess = async (context: TurnContext, state: TurnState, id?: string): Promise<void> => {

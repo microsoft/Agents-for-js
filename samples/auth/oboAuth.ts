@@ -14,24 +14,19 @@ class OboApp extends AgentApplication<TurnState> {
     })
     this.onConversationUpdate('membersAdded', this._status)
     this.authorization.onSignInSuccess(this._singinSuccess)
-    this.onActivity('invoke', this._invoke)
     this.onActivity('message', this._message, ['mcs'])
   }
 
   private _status = async (context: TurnContext, state: TurnState): Promise<void> => {
     await context.sendActivity(MessageFactory.text('Welcome to the Basic App demo!'))
-    const tresp = await this.authorization.getToken(context)
+    const tresp = await this.authorization.getToken(context, 'mcs')
     if (tresp) {
       await context.sendActivity(MessageFactory.text('Token received: ' + tresp.token?.length))
     } else {
       await context.sendActivity(MessageFactory.text('Token request status: ' + tresp || 'unknown'))
     }
-    const oboToken = await this.authorization.exchangeToken(context, ['https://api.powerplatform.com/.default'])
+    const oboToken = await this.authorization.exchangeToken(context, ['https://api.powerplatform.com/.default'], 'mcs')
     await context.sendActivity(MessageFactory.text('OBO Token received: ' + (oboToken?.token?.length || 0)))
-  }
-
-  private _invoke = async (context: TurnContext, state: TurnState): Promise<void> => {
-    await context.sendActivity(MessageFactory.text('Invoke received.'))
   }
 
   private _singinSuccess = async (context: TurnContext, state: TurnState): Promise<void> => {

@@ -21,7 +21,7 @@ class OneProvider extends AgentApplication<TurnState> {
 
   private _status = async (context: TurnContext, state: TurnState): Promise<void> => {
     await context.sendActivity(MessageFactory.text('Welcome to the Basic App demo!'))
-    const tresp = await this.authorization.getToken(context)
+    const tresp = await this.authorization.getToken(context, 'graph')
     if (tresp && tresp.token) {
       await context.sendActivity(MessageFactory.text('Token received: ' + tresp.token?.length))
     } else {
@@ -43,7 +43,7 @@ class OneProvider extends AgentApplication<TurnState> {
   }
 
   private _message = async (context: TurnContext, state: TurnState): Promise<void> => {
-    await this.authorization.beginOrContinueFlow(context, state)
+    await this.authorization.beginOrContinueFlow(context, state, 'graph')
     await context.sendActivity(MessageFactory.text('You said.' + context.activity.text))
   }
 }

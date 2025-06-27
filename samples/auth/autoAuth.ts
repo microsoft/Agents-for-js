@@ -58,7 +58,7 @@ class OneProvider extends AgentApplication<TurnState> {
   }
 
   private _profileRequest = async (context: TurnContext, state: TurnState): Promise<void> => {
-    const userTokenResponse = await this.authorization.getToken(context)
+    const userTokenResponse = await this.authorization.getToken(context, 'graph')
     if (userTokenResponse && userTokenResponse?.token) {
       const userTemplate = (await import('./../_resources/UserProfileCard.json'))
       const template = new Template(userTemplate)
