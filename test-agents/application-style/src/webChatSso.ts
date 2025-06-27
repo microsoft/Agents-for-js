@@ -19,7 +19,7 @@ app.onMessage('/signout', async (context: TurnContext, state: TurnState) => {
 })
 
 app.onMessage('/signin', async (context: TurnContext, state: TurnState) => {
-  await app.authorization.beginOrContinueFlow(context, state)
+  await app.authorization.beginOrContinueFlow(context, state, 'ah1')
 })
 
 app.onMessage('/me', async (context: TurnContext, state: TurnState) => {
@@ -38,7 +38,7 @@ app.onConversationUpdate('membersAdded', async (context: TurnContext, state: Tur
 })
 
 app.onActivity(ActivityTypes.Invoke, async (context: TurnContext, state: TurnState) => {
-  await app.authorization.beginOrContinueFlow(context, state)
+  await app.authorization.beginOrContinueFlow(context, state, 'ah1')
 })
 
 app.onSignInSuccess(async (context: TurnContext, state: TurnState) => {
@@ -50,7 +50,7 @@ app.onActivity(ActivityTypes.Message, async (context: TurnContext, state: TurnSt
   if (app.authorization._authHandlers['ah1'].flow?.state.flowStarted === true) {
     const code = Number(context.activity.text)
     if (code.toString().length === 6) {
-      await app.authorization.beginOrContinueFlow(context, state)
+      await app.authorization.beginOrContinueFlow(context, state, 'ah1')
     } else {
       await context.sendActivity(MessageFactory.text('Please enter a valid code'))
     }
@@ -60,7 +60,7 @@ app.onActivity(ActivityTypes.Message, async (context: TurnContext, state: TurnSt
 })
 
 async function showGraphProfile (context: TurnContext, state: TurnState): Promise<void> {
-  const userTokenResponse = await app.authorization.getToken(context)
+  const userTokenResponse = await app.authorization.getToken(context, 'ah1')
   if (userTokenResponse && userTokenResponse.token) {
     await state.load(context, storage)
     const template = new Template(userTemplate)
