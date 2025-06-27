@@ -112,6 +112,6 @@ describe('AgentApplication', () => {
     })
     assert.rejects(async () => {
       await app.authorization.getToken({} as any, 'nonExistinghandler')
-    }, { message: 'AuthHandler nonExistinghandler not configured' })
+    }, { message: 'AuthHandler with ID nonExistinghandler not configured' })
   })
 })
