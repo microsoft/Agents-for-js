@@ -19,6 +19,7 @@
   "type": "module",
   "scripts": {
     "lint": "eslint",
+    "clean:dist": "rm -rfv packages/*/dist",
     "clean": "git clean -xdf",
     "postclean": "npm ci",
     "build:samples": "tsc --build --verbose tsconfig.samples.json",
