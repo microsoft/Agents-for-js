@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "public/static",
+    "jsx": "react",
+    "tsBuildInfoFile": "dist/.tsbuildinfo"
+  }
+}
