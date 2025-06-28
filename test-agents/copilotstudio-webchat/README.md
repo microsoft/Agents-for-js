@@ -28,7 +28,7 @@ This step requires permissions to create application identities in your Azure te
 3. Create a new App Registration:
     1. Provide a Name.
     2. Choose "Accounts in this organization directory only".
-    3. In "Select a Platform", choose "Public Client/native (mobile & desktop)".
+    3. In "Select a Platform", choose "Single-page application".
     4. In the Redirect URI box, enter `http://localhost` (**use HTTP, not HTTPS**).
     5. Click Register.
 4. In your new application:
@@ -55,6 +55,8 @@ This step requires permissions to create application identities in your Azure te
     - `agentIdentifier`: The Copilot Studio Schema name.
     - `tenantId`: The App Registration Directory (tenant) ID.
     - `appClientId`: The App Registration Application (client) ID.
+3. Alternatively, you can provide a direct URL to connect to Copilot Studio instead of specifying the `environmentId` and `agentIdentifier` values:
+    - `directConnectUrl`: The URL to connect to the Copilot Studio service.
 
 ## 5. Run the Sample
 

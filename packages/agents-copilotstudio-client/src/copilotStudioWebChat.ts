@@ -64,7 +64,7 @@ export interface CopilotStudioWebChatConnection {
 export class CopilotStudioWebChat {
   /**
    * Creates a new DirectLine-Like connection to WebChat.
-   * When an activity is posted in WebChat, the connection will be send it to the Copilot Studio service, awaiting response.
+   * When an activity is posted in WebChat, the connection will send it to the Copilot Studio service, awaiting response.
    * After a response is received, it will emit the incoming activity back to WebChat.
    *
    * @param client - The Copilot Studio client instance.
