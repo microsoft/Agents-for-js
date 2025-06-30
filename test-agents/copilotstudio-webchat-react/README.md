@@ -13,7 +13,7 @@ This sample is a ready-to-run example for integrating Copilot Studio agents with
   - `acquireToken.ts`: Handles Microsoft Entra ID authentication
   - `index.tsx`: Application entry point
 - **public/**: Contains static assets and the HTML template
-- **build-env.js**: Environment configuration for build-time injection
+- **settings.js**: Environment configuration for build-time injection
 
 ## 1. Prerequisites
 
@@ -66,7 +66,8 @@ This step requires permissions to create application identities in your Azure te
 ## 4. Configure the Example Application
 
 1. **Edit the build environment file:**
-   - Open `build-env.js` in the root directory
+   - Open `settings.TEMPLATE.js` in the root directory
+   - Rename to `settings.js`
    - Fill in the values you recorded during setup using one of the two configurations:
      ### Option 1
      ```javascript
@@ -116,7 +117,7 @@ This is a pure client-side React application that connects directly to Copilot S
 
 ### Build Process
 - **esbuild** bundles the TypeScript/React code into browser-compatible JavaScript
-- **Environment injection** makes configuration available at build time via `build-env.js`
+- **Environment injection** makes configuration available at build time via `settings.js`
 - **Development server** provides hot reload and serves static files
 
 ### Runtime Flow
@@ -190,7 +191,8 @@ The Copilot Studio Client requires a user token to operate. This sample uses a u
 **Build Errors:**
 - Ensure Node.js version 20+ is installed
 - Run `npm install` to install all dependencies
-- Check that `build-env.js` has valid configuration values
+- Check that `settings.TEMPLATE.js` has been renamed to `settings.js`
+- Check that `settings.js` has valid configuration values
 
 **Authentication Errors:**
 - Use `http://localhost:3978` instead of `http://127.0.0.1:3978`, or whichever you chose for your redirect URI
@@ -200,7 +202,7 @@ The Copilot Studio Client requires a user token to operate. This sample uses a u
 
 **Connection Issues:**
 - Confirm your Copilot Studio bot is published
-- Verify environment ID and agent identifier in `build-env.js`
+- Verify environment ID and agent identifier in `settings.js`
 - Check browser console for detailed error messages
 
 **WebChat Not Loading:**

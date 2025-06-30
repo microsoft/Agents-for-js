@@ -7,3 +7,4 @@ test-report.xml
 tsconfig.tsbuildinfo
 devTools/
 static/
+settings.js

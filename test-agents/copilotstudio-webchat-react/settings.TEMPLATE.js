@@ -4,6 +4,7 @@
  */
 
 // This file emulates the process object in node.
+// rename this file to settings.js before running this test sample
 export const process = {
   env: {
     // App ID of the App Registration used to log in, this should be in the same tenant as the Copilot.

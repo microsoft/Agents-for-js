@@ -9,7 +9,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "esbuild src/index.tsx --bundle --platform=browser --target=es2019 --outdir=public/static --jsx=automatic --inject:./build-env.js",
+    "build": "esbuild src/index.tsx --bundle --platform=browser --target=es2019 --outdir=public/static --jsx=automatic --inject:./settings.js",
     "start": "npm run build -- --watch --serve=3000 --servedir=./public"
   },
   "dependencies": {
