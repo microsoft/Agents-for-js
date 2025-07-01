@@ -12,18 +12,18 @@ const myState: MyState = {
 }
 
 echo.onConversationUpdate('membersAdded', async (context: TurnContext, state: TurnState) => {
-  state.setValue('user.myState', myState)
-  await context.sendActivity('Welcome to the Echo sample, send a message to see the echo feature in action.')
+  const myState1 = state.getValue('user.myState') || myState
+  await context.sendActivity('Current State: ' + JSON.stringify(myState1, null, 2))
 })
 
 echo.onActivity('message', async (context: TurnContext, state: TurnState) => {
-  const myState: MyState = state.getValue('user.myState')
-  myState.age++
+  const myState1: MyState = state.getValue('user.myState') || myState
+  myState1.age++
   let counter: number = state.getValue('conversation.counter') || 0
   await context.sendActivity(`[${counter++}]You said: ${context.activity.text}`)
   state.setValue('conversation.counter', counter)
-  state.setValue('user.myState', myState)
-  await context.sendActivity(`state: ${JSON.stringify(myState, null, 2)}`)
+  state.setValue('user.myState', myState1)
+  await context.sendActivity(`state: ${JSON.stringify(myState1, null, 2)}`)
 })
 
 startServer(echo)

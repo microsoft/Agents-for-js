@@ -270,32 +270,41 @@ export class Authorization {
    * }
    * ```
    */
-  public async beginOrContinueFlow (context: TurnContext, state: TurnState, authHandlerId: string) : Promise<TokenResponse> {
+  public async beginOrContinueFlow (context: TurnContext, state: TurnState, authHandlerId: string, secRoute: boolean = true) : Promise<TokenResponse> {
     const authHandler = this.getAuthHandlerOrThrow(authHandlerId)
     logger.info('beginOrContinueFlow for authHandlerId:', authHandlerId)
     const signInState: SignInState | undefined = state.getValue('user.__SIGNIN_STATE_') || { continuationActivity: undefined, handlerId: undefined, completed: false }
     const flow = authHandler.flow!
     let tokenResponse: TokenResponse | undefined
-    if (flow.state!.flowStarted === false) {
+    tokenResponse = await authHandler.flow?.getUserToken(context)
+
+    if (tokenResponse?.token && tokenResponse.token.length > 0) {
+      return tokenResponse!
+    }
+
+    if (flow.state === null || flow.state?.flowStarted === false || flow.state?.flowStarted === undefined) {
       tokenResponse = await flow.beginFlow(context)
-      signInState!.continuationActivity = context.activity
-      signInState!.handlerId = authHandlerId
-      state.setValue('user.__SIGNIN_STATE_', signInState)
+      if (secRoute && tokenResponse?.token === undefined) {
+        signInState!.continuationActivity = context.activity
+        signInState!.handlerId = authHandlerId
+        state.setValue('user.__SIGNIN_STATE_', signInState)
+      }
     } else {
       tokenResponse = await flow.continueFlow(context)
       if (tokenResponse && tokenResponse.token) {
         if (this._signInSuccessHandler) {
           await this._signInSuccessHandler(context, state, authHandlerId)
         }
-        signInState!.completed = true
-        state.setValue('user.__SIGNIN_STATE_', signInState)
+        if (secRoute) {
+          state.deleteValue('user.__SIGNIN_STATE_')
+        }
       } else {
         logger.warn('Failed to complete OAuth flow, no token received')
         if (this._signInFailureHandler) {
           await this._signInFailureHandler(context, state, authHandlerId, 'Failed to complete the OAuth flow')
         }
-        signInState!.completed = false
-        state.setValue('user.__SIGNIN_STATE_', signInState)
+        // signInState!.completed = false
+        // state.setValue('user.__SIGNIN_STATE_', signInState)
       }
     }
     return tokenResponse!

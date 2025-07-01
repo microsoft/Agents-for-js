@@ -28,7 +28,7 @@ class OneProvider extends AgentApplication<TurnState> {
   }
 
   private _status = async (context: TurnContext, state: TurnState): Promise<void> => {
-    await context.sendActivity(MessageFactory.text('Welcome to the Basic App demo!'))
+    await context.sendActivity(MessageFactory.text('Welcome to the App Routes with auth demo!'))
     const tokGraph = await this.authorization.getToken(context, 'graph')
     const tokGH = await this.authorization.getToken(context, 'github')
     const statusGraph = tokGraph.token !== undefined

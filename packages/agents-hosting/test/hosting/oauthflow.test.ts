@@ -161,7 +161,7 @@ describe('OAuthFlow', () => {
 
       assert.strictEqual(tokenResponse, undefined)
       assert.strictEqual(oAuthFlow.state?.flowStarted, true)
-      assert.strictEqual(oAuthFlow.state?.flowExpires > 0, true)
+      assert.strictEqual(oAuthFlow.state?.flowExpires! > 0, true)
     })
 
     it('should throw error if connectionName is not set', async () => {

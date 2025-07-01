@@ -564,18 +564,21 @@ export class AgentApplication<TState extends TurnState> {
 
         const signInState : SignInState = state.getValue('user.__SIGNIN_STATE_')
         logger.debug('SignIn State:', signInState)
-        if (this._authorization && signInState && signInState.handlerId) {
-          const flowState = this._authorization._authHandlers[signInState.handlerId]?.flow?.state!
+        if (this._authorization && signInState && signInState.completed === false) {
+          const flowState = await this._authorization._authHandlers[signInState.handlerId!]?.flow?.getFlowState(context)
           logger.debug('Flow State:', flowState)
-          if (signInState && flowState.flowStarted && flowState.absOauthConnectionName === this.authorization._authHandlers[signInState?.handlerId!].name) {
-            const tokenResponse = await this._authorization.beginOrContinueFlow(turnContext, state, signInState?.handlerId)
-            if (signInState?.completed && tokenResponse?.token) {
-              const savedAct = Activity.fromObject(signInState?.continuationActivity!)
+          if (flowState && flowState.flowStarted === true) {
+            const tokenResponse = await this._authorization.beginOrContinueFlow(turnContext, state, signInState?.handlerId!)
+            const savedAct = Activity.fromObject(signInState?.continuationActivity!)
+            if (tokenResponse?.token && tokenResponse.token.length > 0) {
+              logger.info('resending continuation activity:', savedAct.text)
               await this.run(new TurnContext(context.adapter, savedAct))
-              state.deleteValue('user.__SIGNIN_STATE_')
+              await state.deleteValue('user.__SIGNIN_STATE_')
+              return true
             }
-            return true
           }
+
+          // return true
         }
 
         if (!(await this.callEventHandlers(context, state, this._beforeTurn))) {
@@ -602,7 +605,6 @@ export class AgentApplication<TState extends TurnState> {
                 logger.info(`Executing route handler for authHandlerId: ${authHandlerId}`)
                 const tokenResponse = await this._authorization?.beginOrContinueFlow(turnContext, state, authHandlerId)
                 signInComplete = (tokenResponse?.token !== undefined && tokenResponse?.token.length > 0)
-
                 if (!signInComplete) {
                   break
                 }

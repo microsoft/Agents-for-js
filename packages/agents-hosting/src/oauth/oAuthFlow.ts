@@ -19,11 +19,11 @@ const logger = debug('agents:oauth-flow')
  */
 export interface FlowState {
   /** Indicates whether the OAuth flow has been started */
-  flowStarted: boolean,
+  flowStarted: boolean | undefined,
   /** Timestamp when the OAuth flow expires (in milliseconds since epoch) */
-  flowExpires: number,
+  flowExpires: number | undefined,
   /** The absolute OAuth connection name used for the flow, null if not set */
-  absOauthConnectionName: string | null
+  absOauthConnectionName: string
   /** Optional activity to continue the flow with, used for multi-turn scenarios */
   continuationActivity?: Activity | null
 }
@@ -85,7 +85,7 @@ export class OAuthFlow {
    * @param cardText Optional text for the OAuth card. Defaults to 'login'.
    */
   constructor (private storage: Storage, absOauthConnectionName: string, tokenClient?: UserTokenClient, cardTitle?: string, cardText?: string) {
-    this.state = { flowExpires: 0, flowStarted: false, absOauthConnectionName: null }
+    this.state = { flowStarted: undefined, flowExpires: undefined, absOauthConnectionName }
     this.absOauthConnectionName = absOauthConnectionName
     this.userTokenClient = tokenClient ?? null!
     this.cardTitle = cardTitle ?? this.cardTitle
@@ -136,7 +136,7 @@ export class OAuthFlow {
    * @returns A promise that resolves to the user token if available, or undefined if OAuth flow needs to be started.
    */
   public async beginFlow (context: TurnContext): Promise<TokenResponse | undefined> {
-    this.state = await this.getUserState(context)
+    this.state = await this.getFlowState(context)
     if (this.absOauthConnectionName === '') {
       throw new Error('connectionName is not set')
     }
@@ -167,19 +167,14 @@ export class OAuthFlow {
         })
         logger.info('Token cached for 10 minutes in beginFlow')
       }
-
-      this.state.flowStarted = false
-      this.state.flowExpires = 0
-      this.state.absOauthConnectionName = this.absOauthConnectionName
-      await this.storage.write({ [this.getFlowStateKey(context)]: this.state })
+      // this.state = { flowStarted: false, flowExpires: 0, absOauthConnectionName: this.absOauthConnectionName }
+      // await this.storage.write({ [this.getFlowStateKey(context)]: this.state })
       logger.info('Token retrieved successfully')
       return output.tokenResponse
     }
     const oCard: Attachment = CardFactory.oauthCard(this.absOauthConnectionName, this.cardTitle, this.cardText, output.signInResource)
     await context.sendActivity(MessageFactory.attachment(oCard))
-    this.state.flowStarted = true
-    this.state.flowExpires = Date.now() + 30000
-    this.state.absOauthConnectionName = this.absOauthConnectionName
+    this.state = { flowStarted: true, flowExpires: Date.now() + 60 * 5 * 1000, absOauthConnectionName: this.absOauthConnectionName }
     await this.storage.write({ [this.getFlowStateKey(context)]: this.state })
     logger.info('OAuth card sent, flow started')
     return undefined
@@ -191,9 +186,9 @@ export class OAuthFlow {
    * @returns A promise that resolves to the user token response.
    */
   public async continueFlow (context: TurnContext): Promise<TokenResponse> {
-    this.state = await this.getUserState(context)
+    this.state = await this.getFlowState(context)
     await this.initializeTokenClient(context)
-    if (this.state?.flowExpires !== 0 && Date.now() > this.state!.flowExpires) {
+    if (this.state?.flowExpires !== 0 && Date.now() > this.state?.flowExpires!) {
       logger.warn('Flow expired')
       await context.sendActivity(MessageFactory.text('Sign-in session expired. Please try again.'))
       this.state!.flowStarted = false
@@ -216,17 +211,13 @@ export class OAuthFlow {
             logger.info('Token cached for 10 minutes in continueFlow (magic code)')
           }
 
-          this.state!.flowStarted = false
-          this.state!.flowExpires = 0
-          this.state!.absOauthConnectionName = this.absOauthConnectionName
-          await this.storage.write({ [this.getFlowStateKey(context)]: this.state })
+          await this.storage.delete([this.getFlowStateKey(context)])
           logger.info('Token retrieved successfully')
           return result
         } else {
           // await context.sendActivity(MessageFactory.text('Invalid code. Please try again.'))
           logger.warn('Invalid magic code provided')
-          this.state!.flowStarted = true
-          this.state!.flowExpires = Date.now() + 30000 // reset flow expiration
+          this.state = { flowStarted: true, flowExpires: Date.now() + 30000, absOauthConnectionName: this.absOauthConnectionName }
           await this.storage.write({ [this.getFlowStateKey(context)]: this.state })
           return { token: undefined }
         }
@@ -295,7 +286,6 @@ export class OAuthFlow {
    * @returns A promise that resolves when the sign-out operation is complete.
    */
   public async signOut (context: TurnContext): Promise<void> {
-    this.state = await this.getUserState(context)
     await this.initializeTokenClient(context)
 
     // Clear cached token for this user
@@ -307,8 +297,8 @@ export class OAuthFlow {
     }
 
     await this.userTokenClient?.signOut(context.activity.from?.id as string, this.absOauthConnectionName, context.activity.channelId as string)
-    this.state!.flowExpires = 0
-    this.storage.write({ [this.getFlowStateKey(context)]: this.state })
+
+    await this.storage.delete([this.getFlowStateKey(context)])
     logger.info('User signed out successfully from connection:', this.absOauthConnectionName)
   }
 
@@ -317,11 +307,11 @@ export class OAuthFlow {
    * @param context The turn context.
    * @returns A promise that resolves to the flow state.
    */
-  private async getUserState (context: TurnContext) {
+  public async getFlowState (context: TurnContext) : Promise<FlowState> {
     const key = this.getFlowStateKey(context)
     const data = await this.storage.read([key])
-    const userProfile: FlowState = data[key] ?? { flowStarted: false, flowExpires: 0 }
-    return userProfile
+    const flowState: FlowState = data[key] // ?? { flowStarted: false, flowExpires: 0 }
+    return flowState
   }
 
   /**
@@ -363,6 +353,6 @@ export class OAuthFlow {
     if (!channelId || !conversationId || !userId) {
       throw new Error('ChannelId, conversationId, and userId must be set in the activity')
     }
-    return `oauth/${channelId}/${conversationId}/${userId}/flowState`
+    return `oauth/${channelId}/${userId}/flowState`
   }
 }
