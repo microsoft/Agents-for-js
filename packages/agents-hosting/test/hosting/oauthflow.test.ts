@@ -206,7 +206,7 @@ describe('OAuthFlow', () => {
     it('should handle flow expiration', async () => {
       const expiredState: FlowState = { flowStarted: true, flowExpires: Date.now() - 1000, absOauthConnectionName: 'test' }
       // Set state in storage since continueFlow reads from storage
-      const stateKey = 'oauth/test/testConversation/testUser/flowState'
+      const stateKey = 'oauth/test/testUser/flowState'
       await memory.write({ [stateKey]: expiredState })
 
       mockTurnContext.expects('sendActivity').once().withArgs(sinon.match.hasNested('text', 'Sign-in session expired. Please try again.'))
@@ -219,7 +219,7 @@ describe('OAuthFlow', () => {
 
     it('should handle invalid magic code format', async () => {
       const activeState: FlowState = { flowStarted: true, flowExpires: Date.now() + 10000, absOauthConnectionName: 'test' }
-      const stateKey = 'oauth/test/testConversation/testUser/flowState'
+      const stateKey = 'oauth/test/testUser/flowState'
       await memory.write({ [stateKey]: activeState })
 
       testActivity.text = 'invalid'
@@ -233,7 +233,7 @@ describe('OAuthFlow', () => {
 
     it('should handle invalid magic code', async () => {
       const activeState: FlowState = { flowStarted: true, flowExpires: Date.now() + 10000, absOauthConnectionName: 'test' }
-      const stateKey = 'oauth/test/testConversation/testUser/flowState'
+      const stateKey = 'oauth/test/testUser/flowState'
       await memory.write({ [stateKey]: activeState })
 
       const magicCode = '123456'
@@ -255,7 +255,7 @@ describe('OAuthFlow', () => {
         value: { state: '123456' }
       })
       const verifyContext = new TurnContext(fakeAdapter, verifyActivity)
-      const stateKey = 'oauth/test/testConversation/testUser/flowState'
+      const stateKey = 'oauth/test/testUser/flowState'
       await memory.write({ [stateKey]: activeState })
 
       mockUserTokenClient.expects('getUserToken').once().withArgs('testSSO', 'test', 'testUser', '123456').returns({ token: 'verifiedToken' })
@@ -267,7 +267,7 @@ describe('OAuthFlow', () => {
 
     it('should handle token exchange during continueFlow', async () => {
       const activeState: FlowState = { flowStarted: true, flowExpires: Date.now() + 10000, absOauthConnectionName: 'test', continuationActivity: testActivity }
-      const stateKey = 'oauth/test/testConversation/testUser/flowState'
+      const stateKey = 'oauth/test/testUser/flowState'
       await memory.write({ [stateKey]: activeState })
 
       const tokenExchangeRequest = { id: 'exchangeId' }
@@ -293,7 +293,7 @@ describe('OAuthFlow', () => {
         value: tokenExchangeRequest
       })
       const exchangeContext = new TurnContext(fakeAdapter, exchangeActivity)
-      const stateKey = 'oauth/test/testConversation/testUser/flowState'
+      const stateKey = 'oauth/test/testUser/flowState'
       await memory.write({ [stateKey]: activeState })
 
       mockUserTokenClient.expects('exchangeTokenAsync').never()
@@ -305,7 +305,7 @@ describe('OAuthFlow', () => {
 
     it('should cache token when retrieved via magic code', async () => {
       const activeState: FlowState = { flowStarted: true, flowExpires: Date.now() + 10000, absOauthConnectionName: 'test' }
-      const stateKey = 'oauth/test/testConversation/testUser/flowState'
+      const stateKey = 'oauth/test/testUser/flowState'
       await memory.write({ [stateKey]: activeState })
 
       const magicCode = '123456'

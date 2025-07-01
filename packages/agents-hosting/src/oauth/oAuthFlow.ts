@@ -166,9 +166,8 @@ export class OAuthFlow {
           expiresAt: cacheExpiry
         })
         logger.info('Token cached for 10 minutes in beginFlow')
+        this.state = { flowStarted: false, flowExpires: 0, absOauthConnectionName: this.absOauthConnectionName }
       }
-      // this.state = { flowStarted: false, flowExpires: 0, absOauthConnectionName: this.absOauthConnectionName }
-      // await this.storage.write({ [this.getFlowStateKey(context)]: this.state })
       logger.info('Token retrieved successfully')
       return output.tokenResponse
     }
@@ -297,7 +296,7 @@ export class OAuthFlow {
     }
 
     await this.userTokenClient?.signOut(context.activity.from?.id as string, this.absOauthConnectionName, context.activity.channelId as string)
-
+    this.state = { flowStarted: false, flowExpires: 0, absOauthConnectionName: this.absOauthConnectionName }
     await this.storage.delete([this.getFlowStateKey(context)])
     logger.info('User signed out successfully from connection:', this.absOauthConnectionName)
   }
