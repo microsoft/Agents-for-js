@@ -1,5 +1,6 @@
 import { startServer } from '@microsoft/agents-hosting-express'
-import { AgentApplication, MemoryStorage, MessageFactory, TurnContext, TurnState } from '@microsoft/agents-hosting'
+import { AgentApplication, MemoryStorage, MessageFactory, TurnContext, TurnState, AdaptiveCardInvokeResponse, InvokeResponse, ActivityHandler, InvokeException } from '@microsoft/agents-hosting'
+import { Activity, ActivityTypes } from '@microsoft/agents-activity'
 
 const sendCardWithInvoke = async (context: TurnContext, state: TurnState): Promise<void> => {
   const card = MessageFactory.attachment({
@@ -41,11 +42,21 @@ agent.onConversationUpdate('membersAdded', async (context: TurnContext) => {
 })
 agent.onMessage('/card', sendCardWithInvoke)
 agent.onActivity('invoke', async (context: TurnContext, state: TurnState) => {
-  await context.sendActivity('Invoke received ' + JSON.stringify(context.activity.value))
+
+  const adcdinkrsp: AdaptiveCardInvokeResponse = {
+    statusCode: 200,
+    type: ActivityTypes.InvokeResponse,
+    value: 'Invoke received ' + JSON.stringify(context.activity.value) as any,
+  };
+
+  await context.sendActivity(Activity.fromObject({
+      value: { body: adcdinkrsp, status: 200 } as InvokeResponse,
+      type: ActivityTypes.InvokeResponse
+  }));
 })
 agent.onActivity('message', async (context: TurnContext, state: TurnState) => {
   let counter: number = state.getValue('conversation.counter') || 0
-  await context.sendActivity(`[${counter++}]You said: ${JSON.stringify(context.activity.value)}`)
+  await context.sendActivity(`[${counter++}]You said: ${JSON.stringify(context.activity.text)}`)
   state.setValue('conversation.counter', counter)
 })
 startServer(agent)
