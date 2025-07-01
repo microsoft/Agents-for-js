@@ -26,6 +26,8 @@ export interface FlowState {
   absOauthConnectionName: string
   /** Optional activity to continue the flow with, used for multi-turn scenarios */
   continuationActivity?: Activity | null
+
+  eTag?: string // Optional ETag for optimistic concurrency control
 }
 
 interface TokenVerifyState {
@@ -174,7 +176,7 @@ export class OAuthFlow {
     const oCard: Attachment = CardFactory.oauthCard(this.absOauthConnectionName, this.cardTitle, this.cardText, output.signInResource)
     await context.sendActivity(MessageFactory.attachment(oCard))
     this.state = { flowStarted: true, flowExpires: Date.now() + 60 * 5 * 1000, absOauthConnectionName: this.absOauthConnectionName }
-    await this.storage.write({ [this.getFlowStateKey(context)]: this.state })
+    await this.setFlowState(context)
     logger.info('OAuth card sent, flow started')
     return undefined
   }
@@ -216,8 +218,8 @@ export class OAuthFlow {
         } else {
           // await context.sendActivity(MessageFactory.text('Invalid code. Please try again.'))
           logger.warn('Invalid magic code provided')
-          this.state = { flowStarted: true, flowExpires: Date.now() + 30000, absOauthConnectionName: this.absOauthConnectionName }
-          await this.storage.write({ [this.getFlowStateKey(context)]: this.state })
+          this.state = { flowStarted: true, flowExpires: Date.now() + 30000, absOauthConnectionName: this.absOauthConnectionName, eTag: this.state.eTag }
+          await this.setFlowState(context)
           return { token: undefined }
         }
       } else {
@@ -268,7 +270,7 @@ export class OAuthFlow {
 
         logger.info('Token exchanged')
         this.state!.flowStarted = false
-        await this.storage.write({ [this.getFlowStateKey(context)]: this.state })
+        await this.setFlowState(context)
         return userTokenResp
       } else {
         logger.warn('Token exchange failed')
@@ -314,15 +316,28 @@ export class OAuthFlow {
   }
 
   /**
+   *
+   * @param context The turn context.
+   * @returns A promise that resolves when the flow state is set in storage.
+   * @throws Will throw an error if the flow state is not initialized.
+   * @description Sets the current flow state in the storage.
+   * This method persists the flow state to the storage provider.
+   * It should be called after any changes to the flow state to ensure persistence.
+   * If the flow state is not initialized, it will throw an error.
+   */
+  public async setFlowState (context: TurnContext): Promise<void> {
+    delete this.state.eTag // Remove eTag before writing to storage
+    await this.storage.write({ [this.getFlowStateKey(context)]: this.state })
+  }
+
+  /**
    * Initializes the user token client if not already initialized.
    * @param context The turn context used to get authentication credentials.
    */
   private async initializeTokenClient (context: TurnContext) {
-    if (this.userTokenClient === undefined || this.userTokenClient === null) {
-      const scope = 'https://api.botframework.com'
-      const accessToken = await context.adapter.authProvider.getAccessToken(context.adapter.authConfig, scope)
-      this.userTokenClient = new UserTokenClient(accessToken, context.adapter.authConfig.clientId!)
-    }
+    const scope = 'https://api.botframework.com'
+    const accessToken = await context.adapter.authProvider.getAccessToken(context.adapter.authConfig, scope)
+    this.userTokenClient = new UserTokenClient(accessToken, context.adapter.authConfig.clientId!)
   }
 
   /**

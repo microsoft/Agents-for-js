@@ -279,6 +279,8 @@ export class Authorization {
     tokenResponse = await authHandler.flow?.getUserToken(context)
 
     if (tokenResponse?.token && tokenResponse.token.length > 0) {
+      authHandler.flow!.state.flowStarted = false
+      await authHandler.flow!.setFlowState(context)
       return tokenResponse!
     }
 
