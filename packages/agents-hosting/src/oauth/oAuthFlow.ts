@@ -367,6 +367,6 @@ export class OAuthFlow {
     if (!channelId || !conversationId || !userId) {
       throw new Error('ChannelId, conversationId, and userId must be set in the activity')
     }
-    return `oauth/${channelId}/${userId}/flowState`
+    return `oauth/${channelId}/${userId}/${this.absOauthConnectionName}/flowState`
   }
 }
