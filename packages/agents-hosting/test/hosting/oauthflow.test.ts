@@ -188,7 +188,7 @@ describe('OAuthFlow', () => {
   describe('continueFlow', () => {
     it('should retrieve token using valid magic code from text', async () => {
       const activeState = { userToken: '', flowStarted: true, flowExpires: Date.now() + 10000, absOauthConnectionName: 'test', continuationActivity: testActivity }
-      const stateKey = 'oauth/test/testConversation/testUser/flowState'
+      const stateKey = 'oauth/test/testConversation/testUser/testSSO/flowState'
       await memory.write({ [stateKey]: activeState })
 
       const magicCode = '123456'
@@ -206,7 +206,7 @@ describe('OAuthFlow', () => {
     it('should handle flow expiration', async () => {
       const expiredState: FlowState = { flowStarted: true, flowExpires: Date.now() - 1000, absOauthConnectionName: 'test' }
       // Set state in storage since continueFlow reads from storage
-      const stateKey = 'oauth/test/testUser/flowState'
+      const stateKey = 'oauth/test/testUser/testSSO/flowState'
       await memory.write({ [stateKey]: expiredState })
 
       mockTurnContext.expects('sendActivity').once().withArgs(sinon.match.hasNested('text', 'Sign-in session expired. Please try again.'))
@@ -267,7 +267,7 @@ describe('OAuthFlow', () => {
 
     it('should handle token exchange during continueFlow', async () => {
       const activeState: FlowState = { flowStarted: true, flowExpires: Date.now() + 10000, absOauthConnectionName: 'test', continuationActivity: testActivity }
-      const stateKey = 'oauth/test/testUser/flowState'
+      const stateKey = 'oauth/test/testUser/testSSO/flowState'
       await memory.write({ [stateKey]: activeState })
 
       const tokenExchangeRequest = { id: 'exchangeId' }
