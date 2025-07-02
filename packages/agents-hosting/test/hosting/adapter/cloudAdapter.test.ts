@@ -1,14 +1,18 @@
 import { strict as assert, strict } from 'assert'
 import { afterEach, beforeEach, describe, it } from 'node:test'
-import { AuthConfiguration, CloudAdapter, TurnContext } from '../../../src'
+import { AuthConfiguration, CloudAdapter, INVOKE_RESPONSE_KEY, Request, TurnContext } from '../../../src'
 import sinon, { SinonSandbox } from 'sinon'
-import { Activity, ActivityTypes, ConversationReference } from '@microsoft/agents-activity'
+import { Activity, ActivityTypes, ConversationReference, DeliveryModes } from '@microsoft/agents-activity'
 import { ConnectorClient } from '../../../src/connector-client/connectorClient'
+import { Response } from 'express'
 
 describe('CloudAdapter', function () {
   let sandbox: SinonSandbox
   let mockConnectorClient: sinon.SinonStubbedInstance<ConnectorClient>
   let cloudAdapter: CloudAdapter
+  let req: Request
+  let res: Partial<Response>
+  let createConnectorClientSpy: sinon.SinonStub
 
   const authentication: AuthConfiguration = {
     tenantId: 'tenantId',
@@ -22,6 +26,17 @@ describe('CloudAdapter', function () {
     mockConnectorClient = sinon.createStubInstance(ConnectorClient)
     cloudAdapter = new CloudAdapter(authentication);
     (cloudAdapter as any).connectorClient = mockConnectorClient
+    createConnectorClientSpy = sinon.stub(cloudAdapter as any, 'createConnectorClient').returns(mockConnectorClient)
+    req = {
+      headers: {},
+      body: {}
+    }
+    res = {
+      status: sinon.stub().returnsThis(),
+      send: sinon.stub().returnsThis(),
+      end: sinon.stub().returnsThis(),
+      setHeader: sinon.stub().returnsThis()
+    }
   })
 
   afterEach(function () {
@@ -34,6 +49,115 @@ describe('CloudAdapter', function () {
     it('succeeds', function () {
       const ca = new CloudAdapter(authentication)
       strict.notEqual(ca, undefined)
+    })
+  })
+
+  describe('process', function () {
+    it('Should call end with status 200 and a body on invoke activity', async function () {
+      const stubfromObject = sinon.stub(Activity, 'fromObject').returns(createActivity(ActivityTypes.Invoke))
+
+      const logic = async (context: TurnContext) => {
+        context.turnState.set(INVOKE_RESPONSE_KEY, {
+          type: ActivityTypes.InvokeResponse,
+          value: {
+            status: 200,
+            body: 'invokeResponse',
+          },
+        })
+      }
+
+      await cloudAdapter.process(req as Request, res as Response, logic)
+
+      sinon.assert.calledOnceWithExactly((res as any).status, 200)
+      sinon.assert.calledOnceWithExactly((res as any).setHeader, 'content-type', 'application/json')
+      sinon.assert.calledOnce((res as any).send)
+      sinon.assert.calledOnce((res as any).end)
+      sinon.assert.calledOnce(createConnectorClientSpy)
+
+      stubfromObject.restore()
+    })
+
+    it('Should call end with status 200 and no body on invokeResponse activity', async function () {
+      const stubfromObject = sinon.stub(Activity, 'fromObject').returns(createActivity(ActivityTypes.InvokeResponse))
+
+      const logic = async (context: TurnContext) => {
+        context.turnState.set(INVOKE_RESPONSE_KEY, {
+          type: ActivityTypes.InvokeResponse,
+          value: {
+            status: 200,
+            body: 'invokeResponse',
+          },
+        })
+      }
+
+      await cloudAdapter.process(req as Request, res as Response, logic)
+
+      sinon.assert.calledOnceWithExactly((res as any).status, 200)
+      sinon.assert.calledOnceWithExactly((res as any).setHeader, 'content-type', 'application/json')
+      sinon.assert.notCalled((res as any).send)
+      sinon.assert.calledOnce(createConnectorClientSpy)
+
+      stubfromObject.restore()
+    })
+
+    it('Should call end with status 501 on invoke activity with no invokeResponse', async function () {
+      const stubfromObject = sinon.stub(Activity, 'fromObject').returns(createActivity(ActivityTypes.Invoke))
+
+      const logic = async (context: TurnContext) => {
+        // No invokeResponse set in turnState
+      }
+
+      await cloudAdapter.process(req as Request, res as Response, logic)
+
+      sinon.assert.calledOnceWithExactly((res as any).status, 501)
+      sinon.assert.calledOnceWithExactly((res as any).setHeader, 'content-type', 'application/json')
+      sinon.assert.notCalled((res as any).send)
+      sinon.assert.calledOnce(createConnectorClientSpy)
+
+      stubfromObject.restore()
+    })
+
+    it('Should call end with status 200 on expectReplies without connectorClient', async function () {
+      const activity = createActivity(ActivityTypes.Message)
+      activity.deliveryMode = DeliveryModes.ExpectReplies
+      activity.text = 'test-message'
+      activity.serviceUrl = undefined // Simulate no serviceUrl
+
+      const stubfromObject = sinon.stub(Activity, 'fromObject').returns(activity)
+
+      const logic = async (context: TurnContext) => {
+        await context.sendActivity(activity)
+      }
+
+      await cloudAdapter.process(req as Request, res as Response, logic)
+
+      sinon.assert.calledOnceWithExactly((res as any).status, 200)
+      sinon.assert.calledOnceWithExactly((res as any).setHeader, 'content-type', 'application/json')
+      sinon.assert.calledOnceWithExactly((res as any).send, JSON.stringify({ activities: [activity] }))
+      sinon.assert.notCalled(createConnectorClientSpy) // No connector client created for ExpectReplies without serviceUrl
+
+      stubfromObject.restore()
+    })
+
+    it('Should call end with status 200 on normal delivery mode', async function () {
+      const activity = createActivity(ActivityTypes.Message)
+      activity.deliveryMode = DeliveryModes.Normal
+      activity.text = 'test-message'
+
+      const stubfromObject = sinon.stub(Activity, 'fromObject').returns(activity)
+
+      const logic = async (context: TurnContext) => {
+        await context.sendActivity(activity)
+      }
+
+      await cloudAdapter.process(req as Request, res as Response, logic)
+
+      sinon.assert.calledOnceWithExactly((res as any).status, 200)
+      sinon.assert.notCalled((res as any).setHeader)
+      sinon.assert.notCalled((res as any).send)
+      sinon.assert.calledOnce(createConnectorClientSpy)
+
+      stubfromObject.restore()
     })
   })
 
@@ -192,3 +316,13 @@ describe('CloudAdapter', function () {
     })
   })
 })
+
+function createActivity (type: ActivityTypes) {
+  const activity: Activity = new Activity(type)
+  activity.conversation = { id: 'test-conversation-id' }
+  activity.serviceUrl = 'http://test-service-url'
+  activity.channelId = 'test-channel'
+  activity.from = { id: 'test-user-id', name: 'test-user-name' }
+  activity.recipient = { id: 'test-bot-id', name: 'test-bot-name' }
+  return activity
+}
