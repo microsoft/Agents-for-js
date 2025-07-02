@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 import { startServer } from '@microsoft/agents-hosting-express'
-import { ActivityHandler, CardFactory, MessageFactory, TurnContext, OAuthFlow, MemoryStorage, Storage } from '@microsoft/agents-hosting'
+import { ActivityHandler, CardFactory, MessageFactory, TurnContext, OAuthFlow, Storage, FileStorage } from '@microsoft/agents-hosting'
 import { Template } from 'adaptivecards-templating'
 import { getUserInfo } from './../_shared/userGraphClient'
 
@@ -78,4 +78,4 @@ export class OAuthFlowHanlder extends ActivityHandler {
     await super.run(context)
   }
 }
-startServer(new OAuthFlowHanlder(new MemoryStorage()))
+startServer(new OAuthFlowHanlder(new FileStorage('__state')))

@@ -1,5 +1,4 @@
 import { strict as assert } from 'assert'
-import sinon from 'sinon'
 import { describe, it, beforeEach } from 'node:test'
 
 import { AgentApplication } from './../../../src/app'
@@ -26,15 +25,12 @@ const createTestActivity = () => Activity.fromObject({
 })
 
 describe('Application', () => {
-  let sandbox: sinon.SinonSandbox
   let app = new AgentApplication()
   let testActivity: Activity = createTestActivity()
   const testAdapter = new TestAdapter()
 
   beforeEach(() => {
     app = new AgentApplication()
-    sandbox = sinon.createSandbox()
-    sandbox.stub(app, 'adapter').get(() => testAdapter)
     testActivity = createTestActivity()
   })
   it('should create an Application with default options', () => {

@@ -57,4 +57,25 @@ describe('Activity with timestamp', () => {
     assert.strictEqual(a.type, ActivityTypes.Message)
     assert.equal(a.timestamp?.toLocaleString(), obj.timestamp.toLocaleString())
   })
+
+  it('from object with localtimestamp as string', () => {
+    const obj = { type: 'message', localTimestamp: '2025-06-27T20:40:54.244Z', text: 'my Text' }
+    const a = Activity.fromObject(obj)
+    const t = typeof a.localTimestamp
+    assert.strictEqual(t, 'object')
+    assert.strictEqual(a.type, 'message')
+    assert.strictEqual(a.type, ActivityTypes.Message)
+    assert.equal(a.localTimestamp?.toLocaleString(), new Date(obj.localTimestamp).toLocaleString())
+  })
+
+  it('from object with localtimestamp as Date', () => {
+    const now = new Date()
+    const obj = { type: 'message', localTimestamp: now, text: 'my Text' }
+    const a = Activity.fromObject(obj)
+    const t = typeof a.localTimestamp
+    assert.strictEqual(t, 'object')
+    assert.strictEqual(a.type, 'message')
+    assert.strictEqual(a.type, ActivityTypes.Message)
+    assert.equal(a.localTimestamp?.toLocaleString(), new Date(obj.localTimestamp).toLocaleString())
+  })
 })
