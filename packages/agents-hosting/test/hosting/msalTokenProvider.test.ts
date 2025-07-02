@@ -74,6 +74,18 @@ describe('MsalTokenProvider', () => {
     acquireTokenStub.restore()
   })
 
+  it('should acquire token with WID', async () => {
+    authConfig.clientSecret = undefined
+    authConfig.certPemFile = undefined
+    authConfig.certKeyFile = undefined
+    authConfig.WIDAssertionFile = '/etc/issue'
+    // @ts-ignore
+    const acquireTokenStub = sinon.stub(ConfidentialClientApplication.prototype, 'acquireTokenByClientCredential').resolves({ accessToken: 'test-token' })
+    const token = await msalTokenProvider.getAccessToken(authConfig, 'scope')
+    assert.strictEqual(token, 'test-token')
+    acquireTokenStub.restore()
+  })
+
   it('should throw error for invalid authConfig', async () => {
     authConfig.tenantId = undefined
     authConfig.clientId = '1111'
