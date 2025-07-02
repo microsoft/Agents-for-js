@@ -26,6 +26,8 @@ export interface FlowState {
   absOauthConnectionName: string
   /** Optional activity to continue the flow with, used for multi-turn scenarios */
   continuationActivity?: Activity | null
+
+  eTag?: string // Optional ETag for optimistic concurrency control
 }
 
 interface TokenVerifyState {
@@ -311,6 +313,19 @@ export class OAuthFlow {
     const data = await this.storage.read([key])
     const flowState: FlowState = data[key] // ?? { flowStarted: false, flowExpires: 0 }
     return flowState
+  }
+
+  /**
+   * Sets the flow state for the OAuth flow.
+   * @param context The turn context.
+   * @param flowState The flow state to set.
+   * @returns A promise that resolves when the flow state is set.
+   */
+  public async setFlowState (context: TurnContext, flowState: FlowState) : Promise<void> {
+    const key = this.getFlowStateKey(context)
+    await this.storage.write({ [key]: flowState })
+    this.state = flowState
+    logger.info('Flow state set:', flowState)
   }
 
   /**
