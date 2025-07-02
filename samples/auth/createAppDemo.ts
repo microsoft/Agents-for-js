@@ -36,8 +36,8 @@ class CreateAppDemo extends AgentApplication<TurnState> {
   private _message = async (context: TurnContext, state: TurnState): Promise<void> => {
     const isMagicCode = context.activity.text?.match(/^\d{6}$/)
     if (isMagicCode) {
-      for (const ah in this.authorization._authHandlers) {
-        const flow = this.authorization._authHandlers[ah].flow
+      for (const ah in this.authorization.authHandlers) {
+        const flow = this.authorization.authHandlers[ah].flow
         if (flow?.state?.flowStarted) {
           const tresp = await this.authorization.beginOrContinueFlow(context, state, ah)
           if (tresp && !tresp.token) {
