@@ -64,10 +64,10 @@ describe('AgentApplication', () => {
       }
     })
 
-    const authHandlers = app.authorization._authHandlers
+    const authHandlers = app.authorization.authHandlers
     assert.equal(Object.keys(authHandlers).length, 2)
-    const one = app.authorization._authHandlers['authOne']
-    const two = app.authorization._authHandlers['authTwo']
+    const one = app.authorization.authHandlers['authOne']
+    const two = app.authorization.authHandlers['authTwo']
     assert.equal(one.name, 'FirstConnection')
     assert.equal(two.name, 'SecondConnection')
   })
@@ -93,7 +93,7 @@ describe('AgentApplication', () => {
         }
       })
 
-      const authHandler = app.authorization._authHandlers['testAuth']
+      const authHandler = app.authorization.authHandlers['testAuth']
       assert.equal(authHandler.name, 'EnvConnection')
       assert.equal(authHandler.title, 'Env Title')
       assert.equal(authHandler.text, 'Env Text')

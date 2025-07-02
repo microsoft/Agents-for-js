@@ -565,7 +565,7 @@ export class AgentApplication<TState extends TurnState> {
         const signInState : SignInState = state.getValue('user.__SIGNIN_STATE_')
         logger.debug('SignIn State:', signInState)
         if (this._authorization && signInState && signInState.completed === false) {
-          const flowState = await this._authorization._authHandlers[signInState.handlerId!]?.flow?.getFlowState(context)
+          const flowState = await this._authorization.authHandlers[signInState.handlerId!]?.flow?.getFlowState(context)
           logger.debug('Flow State:', flowState)
           if (flowState && flowState.flowStarted === true) {
             const tokenResponse = await this._authorization.beginOrContinueFlow(turnContext, state, signInState?.handlerId!)

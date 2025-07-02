@@ -57,7 +57,7 @@ describe('ApplicationBuilder', () => {
     assert.equal(app.options.storage, storage)
     // assert.equal(app.options.ai, ai)
     // assert.equal(app.options.adaptiveCards, adaptiveCards)
-    assert.equal(app.authorization._authHandlers === null, false)
+    assert.equal(app.authorization.authHandlers === null, false)
     // assert.equal(app.options.taskModules, taskModules)
     // assert.equal(app.options.removeRecipientMention, removeRecipientMention)
     // assert.equal(app.startTypingTimer, startTypingTimer)

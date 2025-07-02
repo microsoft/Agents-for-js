@@ -47,8 +47,7 @@ app.onSignInSuccess(async (context: TurnContext, state: TurnState) => {
 })
 
 app.onActivity(ActivityTypes.Message, async (context: TurnContext, state: TurnState) => {
-  const flowState = app.authorization.getFlowState('ah1');
-  if (flowState?.flowStarted === true) {
+  if (app.authorization.authHandlers['ah1'].flow?.state?.flowStarted === true) {
     const code = Number(context.activity.text)
     if (code.toString().length === 6) {
       await app.authorization.beginOrContinueFlow(context, state, 'ah1')

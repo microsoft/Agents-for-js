@@ -85,7 +85,7 @@ export class Authorization {
    * Dictionary of configured authentication handlers.
    * @public
    */
-  _authHandlers: AuthorizationHandlers
+  authHandlers: AuthorizationHandlers
 
   /**
    * Creates a new instance of Authorization.
@@ -121,18 +121,18 @@ export class Authorization {
     if (authHandlers === undefined || Object.keys(authHandlers).length === 0) {
       throw new Error('The authorization does not have any auth handlers')
     }
-    this._authHandlers = authHandlers
-    for (const ah in this._authHandlers) {
-      if (this._authHandlers![ah].name === undefined && process.env[ah + '_connectionName'] === undefined) {
+    this.authHandlers = authHandlers
+    for (const ah in this.authHandlers) {
+      if (this.authHandlers![ah].name === undefined && process.env[ah + '_connectionName'] === undefined) {
         throw new Error(`AuthHandler name ${ah}_connectionName not set in autorization and not found in env vars.`)
       }
-      const currentAuthHandler = this._authHandlers![ah]
+      const currentAuthHandler = this.authHandlers![ah]
       currentAuthHandler.name = currentAuthHandler.name ?? process.env[ah + '_connectionName'] as string
       currentAuthHandler.title = currentAuthHandler.title ?? process.env[ah + '_connectionTitle'] as string
       currentAuthHandler.text = currentAuthHandler.text ?? process.env[ah + '_connectionText'] as string
       currentAuthHandler.flow = new OAuthFlow(this.storage, currentAuthHandler.name, null!, currentAuthHandler.title, currentAuthHandler.text)
     }
-    logger.info('Authorization handlers configured with', Object.keys(this._authHandlers).length, 'handlers')
+    logger.info('Authorization handlers configured with', Object.keys(this.authHandlers).length, 'handlers')
   }
 
   /**
@@ -171,10 +171,10 @@ export class Authorization {
    * @private
    */
   private getAuthHandlerOrThrow (authHandlerId: string): AuthHandler {
-    if (!Object.prototype.hasOwnProperty.call(this._authHandlers, authHandlerId)) {
+    if (!Object.prototype.hasOwnProperty.call(this.authHandlers, authHandlerId)) {
       throw new Error(`AuthHandler with ID ${authHandlerId} not configured`)
     }
-    return this._authHandlers[authHandlerId]
+    return this.authHandlers[authHandlerId]
   }
 
   /**
@@ -342,8 +342,8 @@ export class Authorization {
   async signOut (context: TurnContext, state: TurnState, authHandlerId?: string) : Promise<void> {
     logger.info('signOut for authHandlerId:', authHandlerId)
     if (authHandlerId === undefined) { // aw
-      for (const ah in this._authHandlers) {
-        const flow = this._authHandlers[ah].flow
+      for (const ah in this.authHandlers) {
+        const flow = this.authHandlers[ah].flow
         await flow?.signOut(context)
       }
     } else {
