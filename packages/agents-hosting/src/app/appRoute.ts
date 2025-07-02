@@ -23,4 +23,10 @@ export interface AppRoute<TState extends TurnState> {
    * Invoke routes are used for specific types of activities, such as messaging extensions.
    */
   isInvokeRoute?: boolean;
+
+  /**
+   * Optional list of authorization handlers that this route requires.
+   * If provided, the route will check for these handlers before processing.
+   */
+  authHandlers?: string[]
 }

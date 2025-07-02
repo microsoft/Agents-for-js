@@ -6,7 +6,7 @@
 import { Storage } from '../storage'
 import { AgentApplication } from './agentApplication'
 import { AgentApplicationOptions } from './agentApplicationOptions'
-import { AuthorizationHandlers } from './oauth/authorization'
+import { AuthorizationHandlers } from './authorization'
 import { TurnState } from './turnState'
 
 /**
