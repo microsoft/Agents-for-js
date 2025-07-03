@@ -19,6 +19,7 @@
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
   "dependencies": {
+    "@azure/core-auth": "^1.9.0",
     "@azure/msal-node": "^3.6.0",
     "@microsoft/agents-activity": "file:../agents-activity",
     "axios": "^1.9.0",
@@ -40,6 +41,6 @@
     "./package.json": "./package.json"
   },
   "engines": {
-    "node": ">=24.0.0"
+    "node": ">=20.0.0"
   }
 }
