@@ -7,7 +7,7 @@ import { Activity, addAIToActivity, Attachment, Entity } from '@microsoft/agents
 import { TurnContext } from '../../turnContext'
 import { Citation } from './citation'
 import { CitationUtil } from './citationUtil'
-import { debug } from '../../logger'
+import { debug } from '@microsoft/agents-activity/src/logger'
 import { ClientCitation, SensitivityUsageInfo } from '@microsoft/agents-activity/src/entity/AIEntity'
 
 const logger = debug('agents:streamingResponse')

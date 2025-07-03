@@ -4,7 +4,7 @@
  */
 
 import { Storage, StoreItem } from './storage'
-import { debug } from '../logger'
+import { debug } from '@microsoft/agents-activity/src/logger'
 
 const logger = debug('agents:memory-storage')
 

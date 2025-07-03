@@ -5,7 +5,7 @@
 
 // Flag to enable debug mode, which will store the debug information in localStorage.
 // Copilot Studio Client uses the "debug" library for logging (https://github.com/debug-js/debug?tab=readme-ov-file#browser-support).
-window.localStorage.debug = 'copilot-studio-client'
+window.localStorage.debug = 'copilot-studio:*'
 
 export const settings = {
   // App ID of the App Registration used to log in, this should be in the same tenant as the Copilot.

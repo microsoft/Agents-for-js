@@ -9,6 +9,9 @@ import { Activity, ConversationAccount } from '@microsoft/agents-activity'
 import { Observable, BehaviorSubject, type Observer } from 'rxjs'
 
 import { CopilotStudioClient } from './copilotStudioClient'
+import { debug } from '@microsoft/agents-activity/src/logger'
+
+const logger = debug('copilot-studio:webchat')
 
 export interface CopilotStudioWebChatSettings {
   /**
@@ -75,6 +78,7 @@ export class CopilotStudioWebChat {
     client: CopilotStudioClient,
     settings?: CopilotStudioWebChatSettings
   ):CopilotStudioWebChatConnection {
+    logger.info('--> Creating connection between Copilot Studio and WebChat ...')
     let sequence = 0
     let activityObserver: Observer<Partial<Activity>> | undefined
     let conversation: ConversationAccount | undefined
@@ -89,6 +93,7 @@ export class CopilotStudioWebChat {
           return
         }
 
+        logger.info('--> Connection established.')
         notifyTyping()
         const activity = await client.startConversationAsync()
         conversation = activity.conversation
@@ -98,14 +103,16 @@ export class CopilotStudioWebChat {
     )
 
     const notifyActivity = (activity: Partial<Activity>) => {
-      activityObserver?.next({
+      const newActivity = {
         ...activity,
         timestamp: new Date().toISOString(),
         channelData: {
           ...activity.channelData,
           'webchat:sequence-id': sequence++,
         },
-      })
+      }
+      logger.debug(`Notify '${newActivity.type}' activity to WebChat:`, newActivity)
+      activityObserver?.next(newActivity)
     }
 
     const notifyTyping = () => {
@@ -123,6 +130,8 @@ export class CopilotStudioWebChat {
       connectionStatus$,
       activity$,
       postActivity (activity: Activity) {
+        logger.info('--> Preparing to send activity to Copilot Studio ...')
+
         if (!activity.text?.trim()) {
           throw new Error('Activity text cannot be empty.')
         }
@@ -135,6 +144,8 @@ export class CopilotStudioWebChat {
           try {
             const id = uuid()
 
+            logger.info('--> Sending activity to Copilot Studio ...')
+
             notifyActivity({ ...activity, id })
             notifyTyping()
 
@@ -145,13 +156,16 @@ export class CopilotStudioWebChat {
 
             observer.next(id)
             observer.complete()
+            logger.info('--> Activity received correctly from Copilot Studio.')
           } catch (error) {
+            logger.error('Error sending Activity to Copilot Studio:', error)
             observer.error(error)
           }
         })
       },
 
       end () {
+        logger.info('--> Ending connection between Copilot Studio and WebChat ...')
         connectionStatus$.complete()
         activity$.complete()
         if (activityObserver) {
