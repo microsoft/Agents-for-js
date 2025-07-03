@@ -1,6 +1,6 @@
 import { startServer } from '@microsoft/agents-hosting-express'
-import { AgentApplication, loadAuthConfigFromEnv, TurnContext, TurnState } from '@microsoft/agents-hosting'
-import { BlobsStorage, MsalTokenCredential } from '@microsoft/agents-hosting-storage-blob'
+import { AgentApplication, loadAuthConfigFromEnv, TurnContext, TurnState, MsalTokenCredential } from '@microsoft/agents-hosting'
+import { BlobsStorage } from '@microsoft/agents-hosting-storage-blob'
 
 const echo = new AgentApplication<TurnState>({
   storage: new BlobsStorage('', undefined, undefined,

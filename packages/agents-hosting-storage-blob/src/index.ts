@@ -3,4 +3,3 @@
 
 export * from './blobsStorage'
 export * from './blobsTranscriptStore'
-export * from './msalTokenCredential'

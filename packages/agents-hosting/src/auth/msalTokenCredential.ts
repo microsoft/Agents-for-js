@@ -1,5 +1,5 @@
 import { GetTokenOptions, TokenCredential } from '@azure/core-auth'
-import { AuthConfiguration, MsalTokenProvider } from '@microsoft/agents-hosting'
+import { AuthConfiguration, MsalTokenProvider } from './'
 
 export class MsalTokenCredential implements TokenCredential {
   constructor (private authConfig: AuthConfiguration) {}
