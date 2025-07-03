@@ -101,9 +101,69 @@ export function getCopilotStudioConnectionUrl (
   return strategy.getConversationUrl(conversationId)
 }
 
+/**
+ * Returns the Power Platform API Audience.
+ * @param settings - Configuration Settings to use.
+ * @param cloud - Optional Power Platform Cloud Hosting Agent.
+ * @param cloudBaseAddress - Optional Power Platform API endpoint to use if Cloud is configured as "other".
+ * @param directConnectUrl - Optional DirectConnection URL to a given Copilot Studio agent, if provided all other settings are ignored.
+ * @returns The Power Platform Audience.
+ * @throws Will throw an error if required settings are missing or invalid.
+ */
+export function getTokenAudience (
+  settings?: ConnectionSettings,
+  cloud: PowerPlatformCloud = PowerPlatformCloud.Unknown,
+  cloudBaseAddress: string = '',
+  directConnectUrl: string = ''): string {
+  if (!directConnectUrl && !settings?.directConnectUrl) {
+    if (cloud === PowerPlatformCloud.Other && !cloudBaseAddress) {
+      throw new Error('cloudBaseAddress must be provided when PowerPlatformCloudCategory is Other')
+    }
+    if (!settings && cloud === PowerPlatformCloud.Unknown) {
+      throw new Error('Either settings or cloud must be provided')
+    }
+    if (settings && settings.cloud && settings.cloud !== PowerPlatformCloud.Unknown) {
+      cloud = settings.cloud
+    }
+    if (cloud === PowerPlatformCloud.Other) {
+      if (cloudBaseAddress && isValidUri(cloudBaseAddress)) {
+        cloud = PowerPlatformCloud.Other
+      } else if (settings?.customPowerPlatformCloud && isValidUri(settings!.customPowerPlatformCloud)) {
+        cloud = PowerPlatformCloud.Other
+        cloudBaseAddress = settings.customPowerPlatformCloud
+      } else {
+        throw new Error('Either CustomPowerPlatformCloud or cloudBaseAddress must be provided when PowerPlatformCloudCategory is Other')
+      }
+    }
+    cloudBaseAddress ??= 'api.unknown.powerplatform.com'
+    return `https://${getEndpointSuffix(cloud, cloudBaseAddress)}/.default`
+  } else {
+    if (!directConnectUrl) {
+      directConnectUrl = settings?.directConnectUrl ?? ''
+    }
+    if (directConnectUrl && isValidUri(directConnectUrl)) {
+      if (decodeCloudFromURI(new URL(directConnectUrl)) === PowerPlatformCloud.Unknown) {
+        const cloudToTest: PowerPlatformCloud = settings?.cloud ?? cloud
+
+        if (cloudToTest === PowerPlatformCloud.Other || cloudToTest === PowerPlatformCloud.Unknown) {
+          throw new Error('Unable to resolve the PowerPlatform Cloud from DirectConnectUrl. The Token Audience resolver requires a specific PowerPlatformCloudCategory.')
+        }
+        if ((cloudToTest as PowerPlatformCloud) !== PowerPlatformCloud.Unknown) {
+          return `https://${getEndpointSuffix(cloudToTest, '')}/.default`
+        } else {
+          throw new Error('Unable to resolve the PowerPlatform Cloud from DirectConnectUrl. The Token Audience resolver requires a specific PowerPlatformCloudCategory.')
+        }
+      }
+      return `https://${getEndpointSuffix(decodeCloudFromURI(new URL(directConnectUrl)), '')}/.default`
+    } else {
+      throw new Error('DirectConnectUrl must be provided when DirectConnectUrl is set')
+    }
+  }
+}
 function isValidUri (uri: string): boolean {
   try {
-    const newUri = new URL(uri)
+    const absoluteUrl = uri.startsWith('http') ? uri : `https://${uri}`
+    const newUri = new URL(absoluteUrl)
     return !!newUri
   } catch {
     return false
@@ -200,5 +260,36 @@ function getIdSuffixLength (cloud: PowerPlatformCloud): number {
       return 2
     default:
       return 1
+  }
+}
+
+function decodeCloudFromURI (uri: URL): PowerPlatformCloud {
+  const host = uri.host.toLowerCase()
+
+  switch (host) {
+    case 'api.powerplatform.localhost':
+      return PowerPlatformCloud.Local
+    case 'api.exp.powerplatform.com':
+      return PowerPlatformCloud.Exp
+    case 'api.dev.powerplatform.com':
+      return PowerPlatformCloud.Dev
+    case 'api.prv.powerplatform.com':
+      return PowerPlatformCloud.Prv
+    case 'api.test.powerplatform.com':
+      return PowerPlatformCloud.Test
+    case 'api.preprod.powerplatform.com':
+      return PowerPlatformCloud.Preprod
+    case 'api.powerplatform.com':
+      return PowerPlatformCloud.Prod
+    case 'api.gov.powerplatform.microsoft.us':
+      return PowerPlatformCloud.GovFR
+    case 'api.high.powerplatform.microsoft.us':
+      return PowerPlatformCloud.High
+    case 'api.appsplatform.us':
+      return PowerPlatformCloud.DoD
+    case 'api.powerplatform.partner.microsoftonline.cn':
+      return PowerPlatformCloud.Mooncake
+    default:
+      return PowerPlatformCloud.Unknown
   }
 }

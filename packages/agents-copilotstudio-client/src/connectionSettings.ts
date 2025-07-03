@@ -43,10 +43,10 @@ export const loadCopilotStudioConnectionSettingsFromEnv: () => ConnectionSetting
     appClientId: process.env.appClientId ?? '',
     tenantId: process.env.tenantId ?? '',
     environmentId: process.env.environmentId ?? '',
-    cloud: cloudStr ? PowerPlatformCloud[cloudStr] : undefined,
+    cloud: cloudStr ? PowerPlatformCloud[cloudStr] : PowerPlatformCloud.Prod,
     customPowerPlatformCloud: process.env.customPowerPlatformCloud,
     agentIdentifier: process.env.agentIdentifier,
-    copilotAgentType: agentStr ? AgentType[agentStr] : undefined,
+    copilotAgentType: agentStr ? AgentType[agentStr] : AgentType.Published,
     directConnectUrl: process.env.directConnectUrl,
     useExperimentalEndpoint: process.env.useExperimentalEndpoint?.toLocaleLowerCase() === 'true'
   } satisfies ConnectionSettings

@@ -5,7 +5,7 @@
 
 import { ConnectionSettings } from './connectionSettings'
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios'
-import { getCopilotStudioConnectionUrl } from './powerPlatformEnvironment'
+import { getCopilotStudioConnectionUrl, getTokenAudience } from './powerPlatformEnvironment'
 import { Activity, ActivityTypes, ConversationAccount } from '@microsoft/agents-activity'
 import { ExecuteTurnRequest } from './executeTurnRequest'
 import createDebug, { Debugger } from 'debug'
@@ -31,6 +31,12 @@ export class CopilotStudioClient {
   private readonly client: AxiosInstance
   /** The logger for debugging. */
   private readonly logger: Debugger
+
+  /**
+   * Returns the Scope URL needed to connect to Copilot Studio from the Connection Settings.
+   * @param settings Copilot Studio Connection Settings.
+   */
+  static scopeFromSettings: (settings: ConnectionSettings) => string = getTokenAudience
 
   /**
    * Creates an instance of CopilotStudioClient.
