@@ -6,6 +6,9 @@ import { TestAdapter } from '../testStubs'
 import { Activity, ActivityTypes } from '@microsoft/agents-activity'
 import { MessageFactory } from '../../../src/messageFactory'
 import { TurnContext } from '../../../src/turnContext'
+import { CloudAdapter } from '../../../src/cloudAdapter'
+import { createStubInstance, SinonStub } from 'sinon'
+import { ConsoleTranscriptLogger } from '../../../src/transcript/consoleTranscriptLogger'
 
 const createTestActivity = () => Activity.fromObject({
   type: 'message',
@@ -40,6 +43,7 @@ describe('Application', () => {
     assert.equal(app.options.storage, undefined)
     assert.equal(app.options.authorization, undefined)
     assert.equal(app.options.startTypingTimer, false)
+    assert.equal(app.options.transcriptLogger, undefined)
   })
 
   it('should route to an activity handler', async () => {
@@ -172,5 +176,24 @@ describe('Application', () => {
     await context.sendActivity('/yo')
     assert.equal(timesCalled, 1)
     assert.equal(handled, true)
+  })
+
+  it('should add TranscriptLoggerMiddleware', async () => {
+    const logger = new ConsoleTranscriptLogger()
+    const adapter: CloudAdapter = createStubInstance(CloudAdapter)
+
+    const app = new AgentApplication({ adapter, transcriptLogger: logger })
+
+    assert.notEqual(app.adapter, undefined)
+    const useStub = adapter.use as SinonStub
+    assert.equal(useStub.calledOnce, true)
+    const calledWith = useStub.getCall(0).args[0]
+    assert.equal(calledWith.constructor.name, 'TranscriptLoggerMiddleware')
+  })
+
+  it('should throw for transcriptLogger when no adapter is provided', async () => {
+    const logger = new ConsoleTranscriptLogger()
+
+    assert.throws(() => new AgentApplication({ transcriptLogger: logger }))
   })
 })

@@ -5,6 +5,7 @@
 
 import { CloudAdapter } from '../cloudAdapter'
 import { Storage } from '../storage'
+import { TranscriptLogger } from '../transcript'
 import { AdaptiveCardsOptions } from './adaptiveCards'
 import { InputFileDownloader } from './inputFileDownloader'
 import { AuthorizationHandlers } from './authorization'
@@ -67,4 +68,9 @@ export interface AgentApplicationOptions<TState extends TurnState> {
    * true.
    */
   normalizeMentions?: boolean
+
+  /**
+   * Optional. The transcript logger to use for logging conversations. If not provided, no logging will occur.
+   */
+  transcriptLogger?: TranscriptLogger
 }
