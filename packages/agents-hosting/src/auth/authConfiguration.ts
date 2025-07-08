@@ -67,23 +67,43 @@ export interface AuthConfiguration {
  * @returns The authentication configuration.
  * @throws Will throw an error if clientId is not provided in production.
  */
-export const loadAuthConfigFromEnv: () => AuthConfiguration = () => {
-  if (process.env.clientId === undefined && process.env.NODE_ENV === 'production') {
-    throw new Error('ClientId required in production')
-  }
-  return {
-    tenantId: process.env.tenantId,
-    clientId: process.env.clientId,
-    clientSecret: process.env.clientSecret,
-    certPemFile: process.env.certPemFile,
-    certKeyFile: process.env.certKeyFile,
-    connectionName: process.env.connectionName,
-    FICClientId: process.env.FICClientId,
-    issuers: [
-      'https://api.botframework.com',
-      `https://sts.windows.net/${process.env.tenantId}/`,
-      `https://login.microsoftonline.com/${process.env.tenantId}/v2.0`
-    ]
+export const loadAuthConfigFromEnv: (cnxName?: string) => AuthConfiguration = (cnxName?: string) => {
+  if (cnxName === undefined) {
+    if (process.env.clientId === undefined && process.env.NODE_ENV === 'production') {
+      throw new Error('ClientId required in production')
+    }
+    return {
+      tenantId: process.env.tenantId,
+      clientId: process.env.clientId,
+      clientSecret: process.env.clientSecret,
+      certPemFile: process.env.certPemFile,
+      certKeyFile: process.env.certKeyFile,
+      connectionName: process.env.connectionName,
+      FICClientId: process.env.FICClientId,
+      issuers: [
+        'https://api.botframework.com',
+        `https://sts.windows.net/${process.env.tenantId}/`,
+        `https://login.microsoftonline.com/${process.env.tenantId}/v2.0`
+      ]
+    }
+  } else {
+    if (process.env[`${cnxName}_clientId`] === undefined && process.env.NODE_ENV === 'production') {
+      throw new Error('ClientId required in production, for connection: ' + cnxName)
+    }
+    return {
+      tenantId: process.env[`${cnxName}_tenantId`],
+      clientId: process.env[`${cnxName}_clientId`],
+      clientSecret: process.env[`${cnxName}_clientSecret`],
+      certPemFile: process.env[`${cnxName}_certPemFile`],
+      certKeyFile: process.env[`${cnxName}_certKeyFile`],
+      connectionName: process.env[`${cnxName}_connectionName`],
+      FICClientId: process.env.FICClientId,
+      issuers: [
+        'https://api.botframework.com',
+        `https://sts.windows.net/${process.env[`${cnxName}_tenantId`]}/`,
+        `https://login.microsoftonline.com/${process.env[`${cnxName}_tenantId`]}/v2.0`
+      ]
+    }
   }
 }
 
