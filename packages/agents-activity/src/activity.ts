@@ -24,6 +24,7 @@ import { InputHints, inputHintsZodSchema } from './inputHints'
 import { MessageReaction, messageReactionZodSchema } from './messageReaction'
 import { TextFormatTypes, textFormatTypesZodSchema } from './textFormatTypes'
 import { TextHighlight, textHighlightZodSchema } from './textHighlight'
+import { MembershipSource, membershipSourceZodSchema } from './conversation/membershipSource'
 
 /**
  * Zod schema for validating an Activity object.
@@ -70,7 +71,8 @@ export const activityZodSchema = z.object({
   deliveryMode: z.union([deliveryModesZodSchema, z.string().min(1)]).optional(),
   listenFor: z.array(z.string().min(1)).optional(),
   textHighlights: z.array(textHighlightZodSchema).optional(),
-  semanticAction: semanticActionZodSchema.optional()
+  semanticAction: semanticActionZodSchema.optional(),
+  membershipSource: membershipSourceZodSchema.optional(),
 })
 
 /**
@@ -286,6 +288,11 @@ export class Activity {
    * The semantic action associated with the activity.
    */
   semanticAction?: SemanticAction
+
+  /**
+   * The membership source associated with the activity.
+   */
+  membershipSource?: MembershipSource
 
   /**
    * The raw timestamp of the activity.
