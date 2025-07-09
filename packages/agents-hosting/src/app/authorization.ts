@@ -8,7 +8,7 @@ import { debug } from '../logger'
 import { TurnState } from './turnState'
 import { Storage } from '../storage'
 import { OAuthFlow, TokenResponse } from '../oauth'
-import { AuthConfiguration, MsalTokenProvider } from '../auth'
+import { AuthConfiguration, loadAuthConfigFromEnv, MsalTokenProvider } from '../auth'
 import jwt, { JwtPayload } from 'jsonwebtoken'
 import { Activity } from '@microsoft/agents-activity'
 
@@ -40,6 +40,8 @@ export interface AuthHandler {
   title?: string,
   /** Text to display on auth cards/UI. */
   text?: string,
+
+  cnxPrefix?: string
 }
 
 /**
@@ -206,7 +208,7 @@ export class Authorization {
     const authHandler = this.getAuthHandlerOrThrow(authHandlerId)
     const tokenResponse = await authHandler.flow?.getUserToken(context)!
     if (this.isExchangeable(tokenResponse.token)) {
-      return await this.handleObo(context, tokenResponse.token!, scopes)
+      return await this.handleObo(context, tokenResponse.token!, scopes, authHandler.cnxPrefix)
     }
     return tokenResponse
   }
@@ -235,9 +237,12 @@ export class Authorization {
    * @returns A promise that resolves to the exchanged token response.
    * @private
    */
-  private async handleObo (context: TurnContext, token: string, scopes: string[]): Promise<TokenResponse> {
+  private async handleObo (context: TurnContext, token: string, scopes: string[], cnxPrefix?: string): Promise<TokenResponse> {
     const msalTokenProvider = new MsalTokenProvider()
-    const authConfig: AuthConfiguration = context.adapter.authConfig
+    let authConfig: AuthConfiguration = context.adapter.authConfig
+    if (cnxPrefix) {
+      authConfig = loadAuthConfigFromEnv(cnxPrefix)
+    }
     const newToken = await msalTokenProvider.acquireTokenOnBehalfOf(authConfig, scopes, token)
     return { token: newToken }
   }
