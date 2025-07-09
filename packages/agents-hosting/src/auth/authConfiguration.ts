@@ -15,7 +15,7 @@ export interface AuthConfiguration {
   /**
    * The client ID for the authentication configuration. Required in production.
    */
-  clientId?: string
+  clientId: string
 
   /**
    * The client secret for the authentication configuration.
@@ -74,7 +74,7 @@ export const loadAuthConfigFromEnv: (cnxName?: string) => AuthConfiguration = (c
     }
     return {
       tenantId: process.env.tenantId,
-      clientId: process.env.clientId,
+      clientId: process.env.clientId!,
       clientSecret: process.env.clientSecret,
       certPemFile: process.env.certPemFile,
       certKeyFile: process.env.certKeyFile,
@@ -87,12 +87,9 @@ export const loadAuthConfigFromEnv: (cnxName?: string) => AuthConfiguration = (c
       ]
     }
   } else {
-    if (process.env[`${cnxName}_clientId`] === undefined && process.env.NODE_ENV === 'production') {
-      throw new Error('ClientId required in production, for connection: ' + cnxName)
-    }
     return {
       tenantId: process.env[`${cnxName}_tenantId`],
-      clientId: process.env[`${cnxName}_clientId`],
+      clientId: process.env[`${cnxName}_clientId`] ?? (() => { throw new Error(`ClientId not found for connection: ${cnxName}`) })(),
       clientSecret: process.env[`${cnxName}_clientSecret`],
       certPemFile: process.env[`${cnxName}_certPemFile`],
       certKeyFile: process.env[`${cnxName}_certKeyFile`],
@@ -123,7 +120,7 @@ export const loadPrevAuthConfigFromEnv: () => AuthConfiguration = () => {
   }
   return {
     tenantId: process.env.MicrosoftAppTenantId,
-    clientId: process.env.MicrosoftAppId,
+    clientId: process.env.MicrosoftAppId!,
     clientSecret: process.env.MicrosoftAppPassword,
     certPemFile: process.env.certPemFile,
     certKeyFile: process.env.certKeyFile,
