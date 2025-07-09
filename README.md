@@ -1,5 +1,9 @@
 # Microsoft 365 Agents SDK - NodeJS /TypeScript
 
+![Build Status](https://github.com/microsoft/Agents-for-js/actions/workflows/ci.yml/badge.svg)
+![NPM Downloads](https://img.shields.io/npm/dw/%40microsoft%2Fagents-activity)
+
+
 The Microsoft 365 Agent SDK simplifies building full stack, multichannel, trusted agents for platforms including M365, Teams, Copilot Studio, and Webchat. We also offer integrations with 3rd parties such as Facebook Messenger, Slack, or Twilio. The SDK provides developers with the building blocks to create agents that handle user interactions, orchestrate requests, reason responses, and collaborate with other agents.
 
 The M365 Agent SDK is a comprehensive framework for building enterprise-grade agents, enabling developers to integrate components from the Azure AI Foundry SDK, Semantic Kernel, as well as AI components from other vendors.
@@ -14,22 +18,22 @@ The best to way to get started with these packages is to look at the samples ava
 
 We offer the following NPM packages to create conversational experiences based on Agents:
 
-| Package Name | Description | Replaces|
-|--------------|-------------|---------|
-| `@microsoft/agents-activity` | Types and validators implementing the Activity protocol spec. | `botframework-schema` |
-| `@microsoft/agents-hosting` | Provides classes to host an Agent in express.  | `botbuilder` |
-| `@microsoft/agents-hosting-express` | Configures express to run the Agent.  | N/A |
-| `@microsoft/agents-hosting-dialogs` | Provides classes to host an Agent in express.  | `botbuilder-dialogs` |
-| `@microsoft/agents-hosting-extensions-teams` | Provides classes to make use of Teams specific features.  | `teams ai` |
-| `@microsoft/agents-hosting-storage-blob` | Extension to use Azure Blob as storage.  | `botbuilder-azure` |
-| `@microsoft/agents-hosting-storage-cosmos` | Extension to use CosmosDB as storage.  | `botbuilder-azure` |
+| Package Name | NPM Version | Description | Replaces|
+|--------------|-------------|-------------|---------|
+| `@microsoft/agents-activity` | [![npm](https://img.shields.io/npm/v/@microsoft/agents-activity)](https://www.npmjs.com/package/@microsoft/agents-activity) | Types and validators implementing the Activity protocol spec. | `botframework-schema` |
+| `@microsoft/agents-hosting` | [![npm](https://img.shields.io/npm/v/@microsoft/agents-hosting)](https://www.npmjs.com/package/@microsoft/agents-hosting) | Provides classes to host an Agent in express.  | `botbuilder` |
+| `@microsoft/agents-hosting-express` | [![npm](https://img.shields.io/npm/v/@microsoft/agents-hosting-express)](https://www.npmjs.com/package/@microsoft/agents-hosting-express) | Configures express to run the Agent.  | N/A |
+| `@microsoft/agents-hosting-dialogs` | [![npm](https://img.shields.io/npm/v/@microsoft/agents-hosting-dialogs)](https://www.npmjs.com/package/@microsoft/agents-hosting-dialogs) | Provides classes to host an Agent in express.  | `botbuilder-dialogs` |
+| `@microsoft/agents-hosting-extensions-teams` | [![npm](https://img.shields.io/npm/v/@microsoft/agents-hosting-extensions-teams)](https://www.npmjs.com/package/@microsoft/agents-hosting-extensions-teams) | Provides classes to make use of Teams specific features.  | `teams ai` |
+| `@microsoft/agents-hosting-storage-blob` | [![npm](https://img.shields.io/npm/v/@microsoft/agents-hosting-storage-blob)](https://www.npmjs.com/package/@microsoft/agents-hosting-storage-blob) | Extension to use Azure Blob as storage.  | `botbuilder-azure` |
+| `@microsoft/agents-hosting-storage-cosmos` | [![npm](https://img.shields.io/npm/v/@microsoft/agents-hosting-storage-cosmos)](https://www.npmjs.com/package/@microsoft/agents-hosting-storage-cosmos) | Extension to use CosmosDB as storage.  | `botbuilder-azure` |
 
 
 Additionally we provide a Copilot Studio Client, to interact with Agents created in CopilotStudio
 
-| Package Name | Description |
-|--------------|-------------|
-| `@microsoft/agents-copilotstudio-client`| Direct to Engine client to interact with Agents created in CopilotStudio
+| Package Name | NPM Version | Description |
+|--------------|-------------|-------------|
+| `@microsoft/agents-copilotstudio-client` | [![npm](https://img.shields.io/npm/v/@microsoft/agents-copilotstudio-client)](https://www.npmjs.com/package/@microsoft/agents-copilotstudio-client) | Direct to Engine client to interact with Agents created in CopilotStudio
 
 ### Environment requirements
 
