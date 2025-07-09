@@ -69,7 +69,7 @@ export class CloudAdapter extends BaseAdapter {
   ): Promise<ConnectorClient> {
     return ConnectorClient.createClientWithAuthAsync(
       serviceUrl,
-      this.authConfig,
+      this.authConfig!,
       this.authProvider,
       scope
     )
@@ -98,7 +98,7 @@ export class CloudAdapter extends BaseAdapter {
   }
 
   async createTurnContextWithScope (activity: Activity, logic: AgentHandler, scope: string): Promise<TurnContext> {
-    this.connectorClient = await ConnectorClient.createClientWithAuthAsync(activity.serviceUrl!, this.authConfig, this.authProvider, scope)
+    this.connectorClient = await ConnectorClient.createClientWithAuthAsync(activity.serviceUrl!, this.authConfig!, this.authProvider, scope)
     return new TurnContext(this, activity)
   }
 
