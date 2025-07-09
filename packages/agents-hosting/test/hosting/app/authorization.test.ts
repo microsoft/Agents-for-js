@@ -64,10 +64,10 @@ describe('AgentApplication', () => {
       }
     })
 
-    const authHandlers = app.authorization._authHandlers
+    const authHandlers = app.authorization.authHandlers
     assert.equal(Object.keys(authHandlers).length, 2)
-    const one = app.authorization.resolverHandler('authOne')
-    const two = app.authorization.resolverHandler('authTwo')
+    const one = app.authorization.authHandlers['authOne']
+    const two = app.authorization.authHandlers['authTwo']
     assert.equal(one.name, 'FirstConnection')
     assert.equal(two.name, 'SecondConnection')
   })
@@ -93,14 +93,25 @@ describe('AgentApplication', () => {
         }
       })
 
-      const authHandler = app.authorization.resolverHandler('testAuth')
+      const authHandler = app.authorization.authHandlers['testAuth']
       assert.equal(authHandler.name, 'EnvConnection')
       assert.equal(authHandler.title, 'Env Title')
       assert.equal(authHandler.text, 'Env Text')
-      assert.equal(authHandler.auto, true)
     } finally {
       // Restore original env
       process.env = originalEnv
     }
+  })
+
+  it('should throw when using a non-existent auth handler id', () => {
+    const app = new AgentApplication({
+      storage: new MemoryStorage(),
+      authorization: {
+        testAuth: { name: 'test' }
+      }
+    })
+    assert.rejects(async () => {
+      await app.authorization.getToken({} as any, 'nonExistinghandler')
+    }, { message: 'AuthHandler with ID nonExistinghandler not configured' })
   })
 })

@@ -219,10 +219,10 @@ export class AdaptiveCardsActions<TState extends TurnState> {
               }
             }
 
-            await context.sendActivity({
+            await context.sendActivity(Activity.fromObject({
               value: { body: response, status: 200 } as InvokeResponse,
               type: ActivityTypes.InvokeResponse
-            } as Activity)
+            }))
           }
         },
         true
@@ -313,8 +313,8 @@ function createSearchSelector (dataset: string | RegExp | RouteSelector): RouteS
 }
 
 async function sendInvokeResponse (context: TurnContext, response: AdaptiveCardInvokeResponse) {
-  await context.sendActivity({
+  await context.sendActivity(Activity.fromObject({
     value: { body: response, status: 200 } as InvokeResponse,
     type: ActivityTypes.InvokeResponse
-  } as Activity)
+  }))
 }

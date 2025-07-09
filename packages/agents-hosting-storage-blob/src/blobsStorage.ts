@@ -1,5 +1,6 @@
 import * as z from 'zod'
 import StreamConsumers from 'stream/consumers'
+import { TokenCredential } from '@azure/core-auth'
 import {
   AnonymousCredential,
   ContainerClient,
@@ -32,18 +33,18 @@ export class BlobsStorage implements Storage {
   /**
    * Creates a new instance of the BlobsStorage class.
    *
-   * @param connectionString The Azure Storage connection string
    * @param containerName The name of the Blob container to use
+   * @param connectionString Optional, The Azure Storage connection string
    * @param options Optional configuration settings for the storage provider
    * @param url Optional URL to the blob service (used instead of connectionString if provided)
    * @param credential Optional credential for authentication (used with url if provided)
    */
   constructor (
-    connectionString: string,
     containerName: string,
+    connectionString?: string,
     options?: BlobsStorageOptions,
     url = '',
-    credential?: StorageSharedKeyCredential | AnonymousCredential
+    credential?: StorageSharedKeyCredential | AnonymousCredential | TokenCredential
   ) {
     if (url !== '' && credential != null) {
       z.object({ url: z.string() }).parse({
@@ -62,12 +63,12 @@ export class BlobsStorage implements Storage {
       })
 
       this._containerClient = new ContainerClient(
-        connectionString,
+        connectionString!,
         containerName,
         options?.storagePipelineOptions
       )
 
-      if (connectionString.trim() === 'UseDevelopmentStorage=true;') {
+      if (connectionString!.trim() === 'UseDevelopmentStorage=true;') {
         this._concurrency = 1
       }
     }

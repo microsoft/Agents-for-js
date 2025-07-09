@@ -5,7 +5,7 @@
 
 import { ConnectionSettings } from './connectionSettings'
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios'
-import { getCopilotStudioConnectionUrl } from './powerPlatformEnvironment'
+import { getCopilotStudioConnectionUrl, getTokenAudience } from './powerPlatformEnvironment'
 import { Activity, ActivityTypes, ConversationAccount } from '@microsoft/agents-activity'
 import { ExecuteTurnRequest } from './executeTurnRequest'
 import createDebug, { Debugger } from 'debug'
@@ -33,6 +33,12 @@ export class CopilotStudioClient {
   private readonly logger: Debugger
 
   /**
+   * Returns the Scope URL needed to connect to Copilot Studio from the Connection Settings.
+   * @param settings Copilot Studio Connection Settings.
+   */
+  static scopeFromSettings: (settings: ConnectionSettings) => string = getTokenAudience
+
+  /**
    * Creates an instance of CopilotStudioClient.
    * @param settings The connection settings.
    * @param token The authentication token.
@@ -41,6 +47,7 @@ export class CopilotStudioClient {
     this.settings = settings
     this.client = axios.create()
     this.client.defaults.headers.common.Authorization = `Bearer ${token}`
+    this.client.defaults.headers.common['User-Agent'] = CopilotStudioClient.getProductInfo()
     this.logger = createDebug('copilot-studio-client')
   }
 
@@ -113,8 +120,20 @@ export class CopilotStudioClient {
     return activities
   }
 
+  /**
+   * Appends this package.json version to the User-Agent header.
+   * - For browser environments, it includes the user agent of the browser.
+   * - For Node.js environments, it includes the Node.js version, platform, architecture, and release.
+   * @returns A string containing the product information, including version and user agent.
+   */
   private static getProductInfo (): string {
-    return `CopilotStudioClient.agents-sdk-js/${pjson.version} nodejs/${process.version}  ${os.platform()}-${os.arch()}/${os.release()}`
+    const version = `CopilotStudioClient.agents-sdk-js/${pjson.version}`
+
+    if (typeof window !== 'undefined' && window.navigator) {
+      return `${version} ${navigator.userAgent}`
+    }
+
+    return `${version} nodejs/${process.version} ${os.platform()}-${os.arch()}/${os.release()}`
   }
 
   /**
@@ -132,7 +151,6 @@ export class CopilotStudioClient {
       headers: {
         Accept: 'text/event-stream',
         'Content-Type': 'application/json',
-        'User-Agent': CopilotStudioClient.getProductInfo(),
       },
       data: body,
       responseType: 'stream',
@@ -170,7 +188,7 @@ export class CopilotStudioClient {
       url: uriExecute,
       headers: {
         Accept: 'text/event-stream',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
       data: qbody,
       responseType: 'stream',

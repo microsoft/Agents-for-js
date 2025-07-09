@@ -19,10 +19,19 @@
   ],
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
+  "browser": {
+    "os": "./src/browser/os.ts",
+    "crypto": "./src/browser/crypto.ts"
+  },
+  "scripts": {
+    "build:browser": "esbuild --platform=browser --target=es2019 --format=esm --bundle --sourcemap --minify --outfile=dist/src/browser.mjs src/index.ts"
+  },
   "dependencies": {
     "@microsoft/agents-activity": "file:../agents-activity",
     "axios": "^1.9.0",
-    "debug": "^4.3.7"
+    "debug": "^4.3.7",
+    "rxjs": "5.5.12",
+    "uuid": "^11.1.0"
   },
   "license": "MIT",
   "files": [
@@ -32,12 +41,17 @@
   ],
   "exports": {
     ".": {
-      "import": "./dist/src/index.js",
-      "require": "./dist/src/index.js"
+      "import": {
+        "browser": "./dist/src/browser.mjs",
+        "default": "./dist/src/index.js"
+      },
+      "require": {
+        "default": "./dist/src/index.js"
+      }
     },
     "./package.json": "./package.json"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   }
 }

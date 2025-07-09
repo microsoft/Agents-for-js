@@ -13,31 +13,54 @@ import { AgentApplicationOptions } from './agentApplicationOptions'
 import { AppRoute } from './appRoute'
 import { ConversationUpdateEvents } from './conversationUpdateEvents'
 import { AgentExtension } from './extensions'
-import { Authorization } from './oauth/authorization'
+import { Authorization, SignInState } from './authorization'
 import { RouteHandler } from './routeHandler'
 import { RouteSelector } from './routeSelector'
 import { TurnEvents } from './turnEvents'
 import { TurnState } from './turnState'
 
-const logger = debug('agents:agent-application')
+const logger = debug('agents:app')
 
 const TYPING_TIMER_DELAY = 1000
+
+/**
+ * Event handler function type for application events.
+ * @template TState - The state type extending TurnState.
+ * @param context - The turn context containing activity information.
+ * @param state - The current turn state.
+ * @returns A promise that resolves to a boolean indicating whether to continue execution.
+ */
 export type ApplicationEventHandler<TState extends TurnState> = (context: TurnContext, state: TState) => Promise<boolean>
 
 /**
- * Executes the application logic for a given turn context.
+ * Main application class for handling agent conversations and routing.
  *
- * @param turnContext - The context for the current turn of the conversation.
- * @returns A promise that resolves when the application logic has completed.
+ * @template TState - The state type extending TurnState.
  *
  * @remarks
- * This method is the entry point for processing a turn in the conversation.
- * It delegates the actual processing to the `runInternal` method, which handles
- * the core logic for routing and executing handlers.
+ * The AgentApplication class provides a framework for building conversational agents.
+ * It handles routing activities to appropriate handlers, manages conversation state,
+ * supports authentication flows, and provides various event handling capabilities.
+ *
+ * Key features:
+ * - Activity routing based on type, content, or custom selectors
+ * - State management with automatic load/save
+ * - OAuth authentication support
+ * - Typing indicators and long-running message support
+ * - Extensible architecture with custom extensions
+ * - Event handlers for before/after turn processing
  *
  * Example usage:
  * ```typescript
- * const app = new AgentApplication();
+ * const app = new AgentApplication<MyState>({
+ *   storage: myStorage,
+ *   adapter: myAdapter
+ * });
+ *
+ * app.onMessage('hello', async (context, state) => {
+ *   await context.sendActivity('Hello there!');
+ * });
+ *
  * await app.run(turnContext);
  * ```
  */
@@ -52,6 +75,32 @@ export class AgentApplication<TState extends TurnState> {
   protected readonly _extensions: AgentExtension<TState>[] = []
   private readonly _adaptiveCards: AdaptiveCardsActions<TState>
 
+  /**
+   * Creates a new instance of AgentApplication.
+   *
+   * @param options - Optional configuration options for the application.
+   *
+   * @remarks
+   * The constructor initializes the application with default settings and applies
+   * any provided options. It sets up the adapter, authorization, and other core
+   * components based on the configuration.
+   *
+   * Default options:
+   * - startTypingTimer: false
+   * - longRunningMessages: false
+   * - removeRecipientMention: true
+   * - turnStateFactory: Creates a new TurnState instance
+   *
+   * Example usage:
+   * ```typescript
+   * const app = new AgentApplication({
+   *   storage: myStorage,
+   *   adapter: myAdapter,
+   *   startTypingTimer: true,
+   *   authorization: { connectionName: 'oauth' }
+   * });
+   * ```
+   */
   public constructor (options?: Partial<AgentApplicationOptions<TState>>) {
     this._options = {
       ...options,
@@ -74,18 +123,13 @@ export class AgentApplication<TState extends TurnState> {
     if (this._options.longRunningMessages && !this._adapter && !this._options.agentAppId) {
       throw new Error('The Application.longRunningMessages property is unavailable because no adapter was configured in the app.')
     }
-  }
-
-  /**
-   * Gets the adapter associated with the application.
-   * @throws Error if the adapter is not configured.
-   */
-  public get adapter (): BaseAdapter {
-    return this._adapter!
+    logger.debug('AgentApplication created with options:', this._options)
   }
 
   /**
    * Gets the authorization instance for the application.
+   *
+   * @returns The authorization instance.
    * @throws Error if no authentication options were configured.
    */
   public get authorization (): Authorization {
@@ -97,12 +141,38 @@ export class AgentApplication<TState extends TurnState> {
 
   /**
    * Gets the options used to configure the application.
+   *
    * @returns The application options.
    */
   public get options (): AgentApplicationOptions<TState> {
     return this._options
   }
 
+  /**
+   * Gets the adapter used by the application.
+   *
+   * @returns The adapter instance.
+   */
+  public get adapter (): BaseAdapter {
+    return this._adapter!
+  }
+
+  /**
+   * Gets the adaptive cards actions handler for the application.
+   *
+   * @returns The adaptive cards actions instance.
+   *
+   * @remarks
+   * The adaptive cards actions handler provides functionality for handling
+   * adaptive card interactions, such as submit actions and other card-based events.
+   *
+   * Example usage:
+   * ```typescript
+   * app.adaptiveCards.onSubmit('myCardId', async (context, state, data) => {
+   *   await context.sendActivity(`Received data: ${JSON.stringify(data)}`);
+   * });
+   * ```
+   */
   public get adaptiveCards (): AdaptiveCardsActions<TState> {
     return this._adaptiveCards
   }
@@ -137,6 +207,8 @@ export class AgentApplication<TState extends TurnState> {
    *
    * @param selector - The selector function that determines if a route should handle the current activity.
    * @param handler - The handler function that will be called if the selector returns true.
+   * @param isInvokeRoute - Whether this route is for invoke activities. Defaults to false.
+   * @param authHandlers - Array of authentication handler names for this route. Defaults to empty array.
    * @returns The current instance of the application.
    *
    * @remarks
@@ -152,8 +224,8 @@ export class AgentApplication<TState extends TurnState> {
    * );
    * ```
    */
-  public addRoute (selector: RouteSelector, handler: RouteHandler<TState>, isInvokeRoute: boolean = false): this {
-    this._routes.push({ selector, handler, isInvokeRoute })
+  public addRoute (selector: RouteSelector, handler: RouteHandler<TState>, isInvokeRoute: boolean = false, authHandlers: string[] = []): this {
+    this._routes.push({ selector, handler, isInvokeRoute, authHandlers })
     return this
   }
 
@@ -162,6 +234,7 @@ export class AgentApplication<TState extends TurnState> {
    *
    * @param type - The activity type(s) to handle. Can be a string, RegExp, RouteSelector, or array of these types.
    * @param handler - The handler function that will be called when the specified activity type is received.
+   * @param authHandlers - Array of authentication handler names for this activity. Defaults to empty array.
    * @returns The current instance of the application.
    *
    * @remarks
@@ -177,11 +250,12 @@ export class AgentApplication<TState extends TurnState> {
    */
   public onActivity (
     type: string | RegExp | RouteSelector | (string | RegExp | RouteSelector)[],
-    handler: (context: TurnContext, state: TState) => Promise<void>
+    handler: (context: TurnContext, state: TState) => Promise<void>,
+    authHandlers: string[] = []
   ): this {
     (Array.isArray(type) ? type : [type]).forEach((t) => {
       const selector = this.createActivitySelector(t)
-      this.addRoute(selector, handler)
+      this.addRoute(selector, handler, false, authHandlers)
     })
     return this
   }
@@ -191,6 +265,7 @@ export class AgentApplication<TState extends TurnState> {
    *
    * @param event - The conversation update event to handle (e.g., 'membersAdded', 'membersRemoved').
    * @param handler - The handler function that will be called when the specified event occurs.
+   * @param authHandlers - Array of authentication handler names for this event. Defaults to empty array.
    * @returns The current instance of the application.
    * @throws Error if the handler is not a function.
    *
@@ -211,7 +286,8 @@ export class AgentApplication<TState extends TurnState> {
    */
   public onConversationUpdate (
     event: ConversationUpdateEvents,
-    handler: (context: TurnContext, state: TState) => Promise<void>
+    handler: (context: TurnContext, state: TState) => Promise<void>,
+    authHandlers: string[] = []
   ): this {
     if (typeof handler !== 'function') {
       throw new Error(
@@ -220,12 +296,13 @@ export class AgentApplication<TState extends TurnState> {
     }
 
     const selector = this.createConversationUpdateSelector(event)
-    this.addRoute(selector, handler)
+    this.addRoute(selector, handler, false, authHandlers)
     return this
   }
 
   /**
    * Continues a conversation asynchronously.
+   *
    * @param conversationReferenceOrContext - The conversation reference or turn context.
    * @param logic - The logic to execute during the conversation.
    * @returns A promise that resolves when the conversation logic has completed.
@@ -262,6 +339,7 @@ export class AgentApplication<TState extends TurnState> {
    * @param keyword - The keyword, pattern, or selector function to match against message text.
    *                  Can be a string, RegExp, RouteSelector, or array of these types.
    * @param handler - The handler function that will be called when a matching message is received.
+   * @param authHandlers - Array of authentication handler names for this message handler. Defaults to empty array.
    * @returns The current instance of the application.
    *
    * @remarks
@@ -276,18 +354,19 @@ export class AgentApplication<TState extends TurnState> {
    *   await context.sendActivity('Hello there!');
    * });
    *
-   * app.onMessage(/help., async (context, state) => {
+   * app.onMessage(/help/, async (context, state) => {
    *   await context.sendActivity('How can I help you?');
    * });
    * ```
    */
   public onMessage (
     keyword: string | RegExp | RouteSelector | (string | RegExp | RouteSelector)[],
-    handler: (context: TurnContext, state: TState) => Promise<void>
+    handler: (context: TurnContext, state: TState) => Promise<void>,
+    authHandlers: string[] = []
   ): this {
     (Array.isArray(keyword) ? keyword : [keyword]).forEach((k) => {
       const selector = this.createMessageSelector(k)
-      this.addRoute(selector, handler)
+      this.addRoute(selector, handler, false, authHandlers)
     })
     return this
   }
@@ -310,9 +389,38 @@ export class AgentApplication<TState extends TurnState> {
    * });
    * ```
    */
-  public onSignInSuccess (handler: (context: TurnContext, state: TurnState, id?: string) => void): this {
+  public onSignInSuccess (handler: (context: TurnContext, state: TurnState, id?: string) => Promise<void>): this {
     if (this.options.authorization) {
       this.authorization.onSignInSuccess(handler)
+    } else {
+      throw new Error(
+        'The Application.authorization property is unavailable because no authorization options were configured.'
+      )
+    }
+    return this
+  }
+
+  /**
+   * Sets a handler to be called when a sign-in attempt fails.
+   *
+   * @param handler - The handler function to be called after a failed sign-in attempt.
+   * @returns The current instance of the application.
+   * @throws Error if authentication options were not configured.
+   *
+   * @remarks
+   * This method allows you to handle cases where a user fails to authenticate,
+   * such as when they cancel the sign-in process or an error occurs.
+   *
+   * Example usage:
+   * ```typescript
+   * app.onSignInFailure(async (context, state) => {
+   *   await context.sendActivity('Sign-in failed. Please try again.');
+   * });
+   * ```
+   */
+  public onSignInFailure (handler: (context: TurnContext, state: TurnState, id?: string) => Promise<void>): this {
+    if (this.options.authorization) {
+      this.authorization.onSignInFailure(handler)
     } else {
       throw new Error(
         'The Application.authorization property is unavailable because no authorization options were configured.'
@@ -406,15 +514,36 @@ export class AgentApplication<TState extends TurnState> {
 
   /**
    * Executes the application logic for a given turn context.
-   * @private
+   *
    * @param turnContext - The context for the current turn of the conversation.
    * @returns A promise that resolves to true if a handler was executed, false otherwise.
    *
    * @remarks
-   * This method is the core logic for processing a turn in the conversation.
+   * This is the core internal method that processes a turn in the conversation.
    * It handles routing and executing handlers based on the activity type and content.
+   * While this method is public, it's typically called internally by the `run` method.
+   *
+   * The method performs the following operations:
+   * 1. Starts typing timer if configured
+   * 2. Processes mentions if configured
+   * 3. Loads turn state
+   * 4. Handles authentication flows
+   * 5. Executes before-turn event handlers
+   * 6. Downloads files if file downloaders are configured
+   * 7. Routes to appropriate handlers
+   * 8. Executes after-turn event handlers
+   * 9. Saves turn state
+   *
+   * Example usage:
+   * ```typescript
+   * const handled = await app.runInternal(turnContext);
+   * if (!handled) {
+   *   console.log('No handler matched the activity');
+   * }
+   * ```
    */
   public async runInternal (turnContext: TurnContext): Promise<boolean> {
+    logger.info('Running application with activity:', turnContext.activity.id!)
     return await this.startLongRunningCall(turnContext, async (context) => {
       try {
         if (this._options.startTypingTimer) {
@@ -433,6 +562,25 @@ export class AgentApplication<TState extends TurnState> {
         const state = turnStateFactory()
         await state.load(context, storage)
 
+        const signInState : SignInState = state.getValue('user.__SIGNIN_STATE_')
+        logger.debug('SignIn State:', signInState)
+        if (this._authorization && signInState && signInState.completed === false) {
+          const flowState = await this._authorization.authHandlers[signInState.handlerId!]?.flow?.getFlowState(context)
+          logger.debug('Flow State:', flowState)
+          if (flowState && flowState.flowStarted === true) {
+            const tokenResponse = await this._authorization.beginOrContinueFlow(turnContext, state, signInState?.handlerId!)
+            const savedAct = Activity.fromObject(signInState?.continuationActivity!)
+            if (tokenResponse?.token && tokenResponse.token.length > 0) {
+              logger.info('resending continuation activity:', savedAct.text)
+              await this.run(new TurnContext(context.adapter, savedAct))
+              await state.deleteValue('user.__SIGNIN_STATE_')
+              return true
+            }
+          }
+
+          // return true
+        }
+
         if (!(await this.callEventHandlers(context, state, this._beforeTurn))) {
           await state.save(context, storage)
           return false
@@ -447,10 +595,24 @@ export class AgentApplication<TState extends TurnState> {
           state.temp.inputFiles = inputFiles
         }
 
-        for (let i = 0; i < this._routes.length; i++) {
-          const route = this._routes[i]
+        for (const route of this._routes) {
           if (await route.selector(context)) {
-            await route.handler(context, state)
+            if (route.authHandlers === undefined || route.authHandlers.length === 0) {
+              await route.handler(context, state)
+            } else {
+              let signInComplete = false
+              for (const authHandlerId of route.authHandlers) {
+                logger.info(`Executing route handler for authHandlerId: ${authHandlerId}`)
+                const tokenResponse = await this._authorization?.beginOrContinueFlow(turnContext, state, authHandlerId)
+                signInComplete = (tokenResponse?.token !== undefined && tokenResponse?.token.length > 0)
+                if (!signInComplete) {
+                  break
+                }
+              }
+              if (signInComplete) {
+                await route.handler(context, state)
+              }
+            }
 
             if (await this.callEventHandlers(context, state, this._afterTurn)) {
               await state.save(context, storage)
@@ -569,6 +731,26 @@ export class AgentApplication<TState extends TurnState> {
     }
   }
 
+  /**
+   * Registers an extension with the application.
+   *
+   * @template T - The extension type extending AgentExtension.
+   * @param extension - The extension instance to register.
+   * @param regcb - Callback function called after successful registration.
+   * @throws Error if the extension is already registered.
+   *
+   * @remarks
+   * Extensions provide a way to add custom functionality to the application.
+   * Each extension can only be registered once to prevent conflicts.
+   *
+   * Example usage:
+   * ```typescript
+   * const myExtension = new MyCustomExtension();
+   * app.registerExtension(myExtension, (ext) => {
+   *   console.log('Extension registered:', ext.name);
+   * });
+   * ```
+   */
   public registerExtension<T extends AgentExtension<TState>> (extension: T, regcb : (ext:T) => void): void {
     if (this._extensions.includes(extension)) {
       throw new Error('Extension already registered')
@@ -641,6 +823,14 @@ export class AgentApplication<TState extends TurnState> {
     return this
   }
 
+  /**
+   * Calls a series of event handlers in sequence.
+   *
+   * @param context - The turn context for the current conversation.
+   * @param state - The current turn state.
+   * @param handlers - Array of event handlers to call.
+   * @returns A promise that resolves to true if all handlers returned true, false otherwise.
+   */
   protected async callEventHandlers (
     context: TurnContext,
     state: TState,
@@ -656,6 +846,13 @@ export class AgentApplication<TState extends TurnState> {
     return true
   }
 
+  /**
+   * Starts a long-running call, potentially in a new conversation context.
+   *
+   * @param context - The turn context for the current conversation.
+   * @param handler - The handler function to execute.
+   * @returns A promise that resolves to the result of the handler.
+   */
   protected startLongRunningCall (
     context: TurnContext,
     handler: (context: TurnContext) => Promise<boolean>
@@ -681,6 +878,12 @@ export class AgentApplication<TState extends TurnState> {
     }
   }
 
+  /**
+   * Creates a selector function for activity types.
+   *
+   * @param type - The activity type to match. Can be a string, RegExp, or RouteSelector function.
+   * @returns A RouteSelector function that matches the specified activity type.
+   */
   private createActivitySelector (type: string | RegExp | RouteSelector): RouteSelector {
     if (typeof type === 'function') {
       return type
@@ -698,6 +901,12 @@ export class AgentApplication<TState extends TurnState> {
     }
   }
 
+  /**
+   * Creates a selector function for conversation update events.
+   *
+   * @param event - The conversation update event to match.
+   * @returns A RouteSelector function that matches the specified conversation update event.
+   */
   private createConversationUpdateSelector (event: ConversationUpdateEvents): RouteSelector {
     switch (event) {
       case 'membersAdded':
@@ -726,6 +935,12 @@ export class AgentApplication<TState extends TurnState> {
     }
   }
 
+  /**
+   * Creates a selector function for message content matching.
+   *
+   * @param keyword - The keyword, pattern, or selector function to match against message text.
+   * @returns A RouteSelector function that matches messages based on the specified keyword.
+   */
   private createMessageSelector (keyword: string | RegExp | RouteSelector): RouteSelector {
     if (typeof keyword === 'function') {
       return keyword
@@ -741,7 +956,7 @@ export class AgentApplication<TState extends TurnState> {
       const k = keyword.toString().toLocaleLowerCase()
       return (context: TurnContext) => {
         if (context?.activity?.type === ActivityTypes.Message && context.activity.text) {
-          return Promise.resolve(context.activity.text.toLocaleLowerCase().indexOf(k) >= 0)
+          return Promise.resolve(context.activity.text.toLocaleLowerCase() === k)
         } else {
           return Promise.resolve(false)
         }

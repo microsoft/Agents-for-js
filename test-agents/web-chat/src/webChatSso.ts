@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { ActivityHandler, CardFactory, MessageFactory, TurnContext, UserState, OAuthFlow } from '@microsoft/agents-hosting'
+import { ActivityHandler, CardFactory, MessageFactory, TurnContext, Storage, OAuthFlow } from '@microsoft/agents-hosting'
 import { Template } from 'adaptivecards-templating'
 import * as userTemplate from '../cards/UserProfileCard.json'
 import { getUserInfo } from './userGraphClient'
@@ -9,11 +9,9 @@ import { getUserInfo } from './userGraphClient'
 export class WebChatSsoHandler extends ActivityHandler {
   oAuthFlow: OAuthFlow
 
-  userState: UserState
-  constructor (userState: UserState) {
+  constructor (storage: Storage) {
     super()
-    this.userState = userState
-    this.oAuthFlow = new OAuthFlow(userState, process.env.connectionName!)
+    this.oAuthFlow = new OAuthFlow(storage, process.env.connectionName!)
 
     this.onConversationUpdate(async (context, next) => {
       await context.sendActivity('Welcome to the Web Chat SSO sample. Type "signin" to sign in or "signout" to sign out.')
@@ -77,6 +75,5 @@ export class WebChatSsoHandler extends ActivityHandler {
 
   async run (context: TurnContext) {
     await super.run(context)
-    await this.userState.saveChanges(context, false)
   }
 }

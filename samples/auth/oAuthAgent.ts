@@ -3,7 +3,7 @@
 
 import { startServer } from '@microsoft/agents-hosting-express'
 import { ActivityTypes } from '@microsoft/agents-activity'
-import { AgentApplication, CardFactory, MemoryStorage, MessageFactory, TurnContext, TurnState, Storage } from '@microsoft/agents-hosting'
+import { AgentApplication, CardFactory, MessageFactory, TurnContext, TurnState, Storage, FileStorage } from '@microsoft/agents-hosting'
 import { Template } from 'adaptivecards-templating'
 import { getUserInfo } from '../_shared/userGraphClient'
 import { getCurrentProfile, getPullRequests } from '../_shared/githubApiClient'
@@ -11,7 +11,7 @@ import { getCurrentProfile, getPullRequests } from '../_shared/githubApiClient'
 class OAuthAgent extends AgentApplication<TurnState> {
   private readonly _storage: Storage
 
-  constructor (storage?: Storage) {
+  constructor (storage: Storage) {
     super({
       storage,
       authorization: {
@@ -20,7 +20,7 @@ class OAuthAgent extends AgentApplication<TurnState> {
       }
     })
 
-    this._storage = storage!
+    this._storage = storage
 
     this.onMessage('/login', this._signIn)
     this.onMessage('/status', this._status)
@@ -28,8 +28,8 @@ class OAuthAgent extends AgentApplication<TurnState> {
     this.onMessage('/me', this._profileRequest)
     this.onMessage('/prs', this._pullRequests)
     this.onConversationUpdate('membersAdded', this._status)
-    this.onActivity(ActivityTypes.Invoke, this._invoke)
     this.onSignInSuccess(this._handleSignInSuccess)
+    // this.onSignInFailure(this._handleSignInFailure)
     this.onActivity(ActivityTypes.Message, this._message)
   }
 
@@ -48,16 +48,16 @@ class OAuthAgent extends AgentApplication<TurnState> {
   }
 
   private _signIn = async (context: TurnContext, state: TurnState): Promise<void> => {
-    const tokenResponse = await this.authorization.beginOrContinueFlow(context, state)
-    await context.sendActivity(MessageFactory.text(`Auth flow status: ${tokenResponse.token?.length}`))
+    const tokenResponse = await this.authorization.beginOrContinueFlow(context, state, 'graph', false)
+    await context.sendActivity(MessageFactory.text(`Auth flow status: ${tokenResponse?.token?.length || 0}`))
   }
 
   private _profileRequest = async (context: TurnContext, state: TurnState): Promise<void> => {
-    const userTokenResponse = await this.authorization.getToken(context)
-    if (userTokenResponse && userTokenResponse.token) {
+    const userTokenResponse = await this.authorization.getToken(context, 'graph')
+    if (userTokenResponse && userTokenResponse?.token) {
       const userTemplate = (await import('./../_resources/UserProfileCard.json'))
       const template = new Template(userTemplate)
-      const userInfo = await getUserInfo(userTokenResponse.token!)
+      const userInfo = await getUserInfo(userTokenResponse?.token!)
       const card = template.expand(userInfo)
       const activity = MessageFactory.attachment(CardFactory.adaptiveCard(card))
       await context.sendActivity(activity)
@@ -94,26 +94,26 @@ class OAuthAgent extends AgentApplication<TurnState> {
       }
     } else {
       const tokenResponse = await this.authorization.beginOrContinueFlow(context, state, 'github')
-      console.warn('GitHub token length.' + tokenResponse.token?.length)
-      await context.sendActivity(MessageFactory.text('GitHub token length.' + tokenResponse.token?.length))
+      console.warn(`GitHub token: ${JSON.stringify(tokenResponse)}`)
+      await context.sendActivity(MessageFactory.text('GitHub token length.' + tokenResponse?.token?.length))
     }
-  }
-
-  private _invoke = async (context: TurnContext, state: TurnState): Promise<void> => {
-    await this.authorization.beginOrContinueFlow(context, state)
   }
 
   private _handleSignInSuccess = async (context: TurnContext, state: TurnState, id?: string): Promise<void> => {
     await context.sendActivity(MessageFactory.text('User signed in successfully in ' + id))
   }
 
+  private _handleSignInFailure = async (context: TurnContext, state: TurnState, id?: string): Promise<void> => {
+    await context.sendActivity(MessageFactory.text('User sign in failed in ' + id))
+  }
+
   private _message = async (context: TurnContext, state: TurnState): Promise<void> => {
     const isMagicCode = context.activity.text?.match(/^\d{6}$/)
     if (isMagicCode) {
-      for (const ah in this.authorization._authHandlers) {
-        const flow = this.authorization._authHandlers[ah].flow
+      for (const ah in this.authorization.authHandlers) {
+        const flow = this.authorization.authHandlers[ah].flow
         if (flow?.state?.flowStarted) {
-          const tresp = await this.authorization.beginOrContinueFlow(context, state, ah)
+          const tresp = await this.authorization.beginOrContinueFlow(context, state, ah, false)
           if (tresp && !tresp.token) {
             await context.sendActivity(MessageFactory.text('Failed to complete the flow ' + ah))
           }
@@ -125,4 +125,4 @@ class OAuthAgent extends AgentApplication<TurnState> {
   }
 }
 
-startServer(new OAuthAgent(new MemoryStorage()))
+startServer(new OAuthAgent(new FileStorage('__state')))

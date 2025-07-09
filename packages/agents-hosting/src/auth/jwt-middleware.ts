@@ -43,7 +43,7 @@ const verifyToken = async (raw: string, config: AuthConfiguration): Promise<JwtP
 
   return await new Promise((resolve, reject) => {
     const verifyOptions: jwt.VerifyOptions = {
-      issuer: config.issuers,
+      issuer: config.issuers as [string, ...string[]],
       audience: [config.clientId!, 'https://api.botframework.com'],
       ignoreExpiration: false,
       algorithms: ['RS256'],
