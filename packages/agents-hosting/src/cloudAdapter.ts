@@ -69,7 +69,7 @@ export class CloudAdapter extends BaseAdapter {
   ): Promise<ConnectorClient> {
     return ConnectorClient.createClientWithAuthAsync(
       serviceUrl,
-      this.authConfig!,
+      this.authConfig,
       this.authProvider,
       scope
     )

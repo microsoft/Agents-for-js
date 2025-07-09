@@ -237,7 +237,7 @@ export class Authorization {
    */
   private async handleObo (context: TurnContext, token: string, scopes: string[]): Promise<TokenResponse> {
     const msalTokenProvider = new MsalTokenProvider()
-    const authConfig: AuthConfiguration = context.adapter.authConfig!
+    const authConfig: AuthConfiguration = context.adapter.authConfig
     const newToken = await msalTokenProvider.acquireTokenOnBehalfOf(authConfig, scopes, token)
     return { token: newToken }
   }

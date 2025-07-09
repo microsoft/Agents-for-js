@@ -335,7 +335,7 @@ export class OAuthFlow {
   private async initializeTokenClient (context: TurnContext) {
     if (this.userTokenClient === undefined || this.userTokenClient === null) {
       const scope = 'https://api.botframework.com'
-      const accessToken = await context.adapter.authProvider.getAccessToken(context.adapter.authConfig!, scope)
+      const accessToken = await context.adapter.authProvider.getAccessToken(context.adapter.authConfig, scope)
       this.userTokenClient = new UserTokenClient(accessToken, context.adapter.authConfig!.clientId!)
     }
   }

@@ -53,7 +53,7 @@ export abstract class BaseAdapter {
   /**
    * The authentication configuration for the adapter.
    */
-  abstract authConfig: AuthConfiguration // | null = null
+  abstract authConfig: AuthConfiguration
 
   /**
    * Sends a set of activities to the conversation.
