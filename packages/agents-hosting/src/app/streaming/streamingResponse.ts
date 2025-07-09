@@ -240,7 +240,7 @@ export class StreamingResponse {
         // Send final message
         return Activity.fromObject({
           type: 'message',
-          text: this._message || 'end strean response',
+          text: this._message || 'end of stream response',
           attachments: this._attachments,
           channelData: {
             streamType: 'final',

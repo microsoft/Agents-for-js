@@ -28,7 +28,7 @@ async function acquireS2SToken (baseConfig: msal.Configuration, settings: S2SCon
   })
 
   try {
-    const response = await cca.acquireTokenByClientCredential({ scopes: ['https://api.powerplatform.com/.default'] })
+    const response = await cca.acquireTokenByClientCredential({ scopes: [CopilotStudioClient.scopeFromSettings(settings)] })
     if (!response?.accessToken) {
       throw new Error('Failed to acquire token')
     }
@@ -40,9 +40,9 @@ async function acquireS2SToken (baseConfig: msal.Configuration, settings: S2SCon
   }
 }
 
-async function acquireToken (baseConfig: msal.Configuration): Promise<string> {
+async function acquireToken (baseConfig: msal.Configuration, settings: ConnectionSettings): Promise<string> {
   const tokenRequest = {
-    scopes: ['https://api.powerplatform.com/.default'],
+    scopes: [CopilotStudioClient.scopeFromSettings(settings)],
     redirectUri: 'http://localhost',
     openBrowser: async (url: string) => {
       await open(url)
@@ -91,7 +91,7 @@ function getToken (settings: ConnectionSettings) : Promise<string> {
     return acquireS2SToken(msalConfig, { ...settings, appClientSecret: process.env.appClientSecret })
   }
 
-  return acquireToken(msalConfig)
+  return acquireToken(msalConfig, settings)
 }
 
 const createClient = async (): Promise<CopilotStudioClient> => {
