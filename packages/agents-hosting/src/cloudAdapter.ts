@@ -37,7 +37,7 @@ export class CloudAdapter extends BaseAdapter {
    * Client for connecting to the Bot Framework Connector service
    */
   public connectorClient!: ConnectorClient
-
+  authConfig: AuthConfiguration
   /**
    * Creates an instance of CloudAdapter.
    * @param authConfig - The authentication configuration for securing communications
