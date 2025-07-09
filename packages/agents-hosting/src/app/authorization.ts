@@ -205,7 +205,7 @@ export class Authorization {
    * ```
    */
   public async exchangeToken (context: TurnContext, scopes: string[], authHandlerId: string): Promise<TokenResponse> {
-    logger.info('getToken from user token service for authHandlerId:', authHandlerId)
+    logger.info('exchangeToken from user token service for authHandlerId:', authHandlerId)
     const authHandler = this.getAuthHandlerOrThrow(authHandlerId)
     const tokenResponse = await authHandler.flow?.getUserToken(context)!
     if (this.isExchangeable(tokenResponse.token)) {
