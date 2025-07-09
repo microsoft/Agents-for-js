@@ -3,6 +3,8 @@
  * Licensed under the MIT License.
  */
 
+import { CopilotStudioClient } from '@microsoft/agents-copilotstudio-client'
+
 export async function acquireToken (settings) {
   const msalInstance = new window.msal.PublicClientApplication({
     auth: {
@@ -13,7 +15,7 @@ export async function acquireToken (settings) {
 
   await msalInstance.initialize()
   const loginRequest = {
-    scopes: ['https://api.powerplatform.com/.default'],
+    scopes: [CopilotStudioClient.scopeFromSettings(settings)],
     redirectUri: window.location.origin,
   }
 
