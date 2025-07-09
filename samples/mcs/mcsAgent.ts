@@ -3,7 +3,7 @@
 
 import { startServer } from '@microsoft/agents-hosting-express'
 import { CopilotStudioClient, loadCopilotStudioConnectionSettingsFromEnv } from '@microsoft/agents-copilotstudio-client'
-import { AgentApplication, MemoryStorage, MessageFactory, TurnContext, TurnState } from '@microsoft/agents-hosting'
+import { AgentApplication, MemoryStorage, MessageFactory, TurnContext, TurnState, Citation } from '@microsoft/agents-hosting'
 import { ActivityTypes } from '@microsoft/agents-activity'
 
 class McsAgent extends AgentApplication<TurnState> {
@@ -65,7 +65,8 @@ class McsAgent extends AgentApplication<TurnState> {
         console.log('Received activity:', activity.type, activity.text)
         if (activity.type === 'message') {
           // await context.sendActivity(activity)
-          context.streamingResponse.queueTextChunk(activity.text || '')
+          console.log('citation:', activity.entities)
+          context.streamingResponse.queueTextChunk(activity.text || '', activity.entities as unknown as Citation[])
         }
         // } else if (activity.type === 'typing') {
         //   await context.sendActivity(new Activity(ActivityTypes.Typing))
