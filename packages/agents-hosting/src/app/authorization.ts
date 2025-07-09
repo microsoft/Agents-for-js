@@ -132,6 +132,7 @@ export class Authorization {
       currentAuthHandler.name = currentAuthHandler.name ?? process.env[ah + '_connectionName'] as string
       currentAuthHandler.title = currentAuthHandler.title ?? process.env[ah + '_connectionTitle'] as string
       currentAuthHandler.text = currentAuthHandler.text ?? process.env[ah + '_connectionText'] as string
+      currentAuthHandler.cnxPrefix = currentAuthHandler.cnxPrefix ?? process.env[ah + '_cnxPrefix'] as string
       currentAuthHandler.flow = new OAuthFlow(this.storage, currentAuthHandler.name, null!, currentAuthHandler.title, currentAuthHandler.text)
     }
     logger.info('Authorization handlers configured with', Object.keys(this.authHandlers).length, 'handlers')
