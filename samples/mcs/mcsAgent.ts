@@ -11,7 +11,7 @@ class McsAgent extends AgentApplication<TurnState> {
     super({
       storage: new MemoryStorage(),
       authorization: {
-        mcs: { text: 'Login into MCS', title: 'MCS Login', cnxPrefix: 'obo', name: 'mcs' },
+        mcs: { text: 'Login into MCS', title: 'MCS Login', cnxPrefix: 'obo' },
       },
       startTypingTimer: true,
       longRunningMessages: false
