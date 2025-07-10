@@ -72,7 +72,6 @@ export const activityZodSchema = z.object({
   listenFor: z.array(z.string().min(1)).optional(),
   textHighlights: z.array(textHighlightZodSchema).optional(),
   semanticAction: semanticActionZodSchema.optional(),
-  membershipSource: membershipSourceZodSchema.optional(),
 })
 
 /**
@@ -288,11 +287,6 @@ export class Activity {
    * The semantic action associated with the activity.
    */
   semanticAction?: SemanticAction
-
-  /**
-   * The membership source associated with the activity.
-   */
-  membershipSource?: MembershipSource
 
   /**
    * The raw timestamp of the activity.
