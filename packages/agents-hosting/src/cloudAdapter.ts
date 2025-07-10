@@ -37,7 +37,7 @@ export class CloudAdapter extends BaseAdapter {
    * Client for connecting to the Bot Framework Connector service
    */
   public connectorClient!: ConnectorClient
-
+  authConfig: AuthConfiguration
   /**
    * Creates an instance of CloudAdapter.
    * @param authConfig - The authentication configuration for securing communications
@@ -125,7 +125,7 @@ export class CloudAdapter extends BaseAdapter {
   }
 
   async createTurnContextWithScope (activity: Activity, logic: AgentHandler, scope: string): Promise<TurnContext> {
-    this.connectorClient = await ConnectorClient.createClientWithAuthAsync(activity.serviceUrl!, this.authConfig, this.authProvider, scope)
+    this.connectorClient = await ConnectorClient.createClientWithAuthAsync(activity.serviceUrl!, this.authConfig!, this.authProvider, scope)
     return new TurnContext(this, activity)
   }
 
