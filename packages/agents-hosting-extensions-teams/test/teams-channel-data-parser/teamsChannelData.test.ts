@@ -3,6 +3,7 @@ import assert from 'assert'
 import { describe, it } from 'node:test'
 import { parseTeamsChannelData } from '../../src/activity-extensions/teamsChannelDataParser'
 import { ChannelInfo } from '../activity-extensions/channelInfo'
+import { ChannelTypes } from '../activity-extensions/channelTypes'
 
 describe('parseTeamsChannelData test', () => {
   it('Parse with no properties defined', () => {
@@ -105,7 +106,7 @@ describe('parseTeamsChannelData test', () => {
     const channelInfo: ChannelInfo = {
       id: 'id',
       name: 'name',
-      type: 'type'
+      type: ChannelTypes.Standard
     }
     const settings = {
       selectedChannel: channelInfo
@@ -124,7 +125,7 @@ describe('parseTeamsChannelData test', () => {
     const channelInfo: ChannelInfo = {
       id: 'id',
       name: 'name',
-      type: 'type'
+      type: ChannelTypes.Standard
     }
     const settings = {
       selectedChannel: channelInfo,

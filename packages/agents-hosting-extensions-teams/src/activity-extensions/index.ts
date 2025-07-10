@@ -3,14 +3,15 @@
  * Licensed under the MIT License.
  */
 
+export { ChannelInfo } from './channelInfo'
+export { ChannelTypes } from './channelTypes'
 export { NotificationInfo } from './notificationInfo'
 export { OnBehalfOf } from './onBehalfOf'
 export { TeamInfo } from './teamInfo'
-export * from './teamsChannelData'
-export { TeamsChannelDataSettings } from './teamsChannelDataSettings'
-export { TeamsMeetingInfo } from './teamsMeetingInfo'
-export { TenantInfo } from './tenantInfo'
-export * from './channelInfo'
 export { TeamsChannelAccount } from './teamsChannelAccount'
+export { TeamsChannelData } from './teamsChannelData'
+export { TeamsChannelDataSettings } from './teamsChannelDataSettings'
 export * from './teamsConversationUpdateEvents'
+export { TeamsMeetingInfo } from './teamsMeetingInfo'
 export * from './teamsMessageEvents'
+export { TenantInfo } from './tenantInfo'
