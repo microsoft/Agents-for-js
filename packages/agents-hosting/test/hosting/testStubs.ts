@@ -1,7 +1,13 @@
-import { AttachmentData, AttachmentInfo, BaseAdapter, ResourceResponse, TurnContext } from '../../src'
+import { AttachmentData, AttachmentInfo, AuthConfiguration, BaseAdapter, ResourceResponse, TurnContext } from '../../src'
 import { Activity, ConversationReference } from '@microsoft/agents-activity'
 
 export class TestAdapter extends BaseAdapter {
+  authConfig: AuthConfiguration
+  constructor () {
+    super()
+    this.authConfig = { clientId: 'cid', issuers: [] }
+  }
+
   async sendActivities (context: TurnContext, activities: Activity[]): Promise<ResourceResponse[]> {
     const responses: ResourceResponse[] = []
     for (const activity of activities) {
