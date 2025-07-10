@@ -405,7 +405,7 @@ class ActivityQueueListener {
       this._added = false
 
       // Allow some time for new activities to be added to the queue.
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      await new Promise((resolve) => setTimeout(resolve, 15000))
       await promise
     }
   }
@@ -509,7 +509,7 @@ class ActivityQueueListener {
           'Iterator timed out after 10 seconds while waiting for next activity.'
         )
         resolve()
-      }, 10000)
+      }, 20000)
       this._waitingIterator = () => {
         clearTimeout(timer)
         resolve()

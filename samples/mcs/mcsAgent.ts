@@ -3,8 +3,8 @@
 
 import { startServer } from '@microsoft/agents-hosting-express'
 import { CopilotStudioClient, loadCopilotStudioConnectionSettingsFromEnv } from '@microsoft/agents-copilotstudio-client'
-import { AgentApplication, MemoryStorage, MessageFactory, TurnContext, TurnState } from '@microsoft/agents-hosting'
-import { Activity, ActivityTypes } from '@microsoft/agents-activity'
+import { AgentApplication, MemoryStorage, MessageFactory, TurnContext, TurnState, Citation } from '@microsoft/agents-hosting'
+import { ActivityTypes } from '@microsoft/agents-activity'
 
 class McsAgent extends AgentApplication<TurnState> {
   constructor () {
@@ -12,7 +12,8 @@ class McsAgent extends AgentApplication<TurnState> {
       storage: new MemoryStorage(),
       authorization: {
         mcs: { text: 'Login into MCS', title: 'MCS Login' }
-      }
+      },
+      startTypingTimer: true
     })
 
     this.onConversationUpdate('membersAdded', this._status)
@@ -55,15 +56,18 @@ class McsAgent extends AgentApplication<TurnState> {
         state.setValue('conversation.conversationId', newAct.conversation!.id)
       }
     } else {
+      context.streamingResponse.setFeedbackLoop(true)
+      context.streamingResponse.setSensitivityLabel({ type: 'https://schema.org/Message', '@type': 'CreativeWork', name: 'Internal' })
+      context.streamingResponse.setGeneratedByAILabel(true)
+      await context.streamingResponse.queueInformativeUpdate('starting streaming response')
       const resp = await cpsClient!.askQuestionAsync(context.activity.text!, cid)
       for await (const activity of resp) {
         console.log('Received activity:', activity.type, activity.text)
         if (activity.type === 'message') {
-          await context.sendActivity(activity)
-        } else if (activity.type === 'typing') {
-          await context.sendActivity(new Activity(ActivityTypes.Typing))
+          context.streamingResponse.queueTextChunk(activity.text || '', activity.entities as unknown as Citation[])
         }
       }
+      context.streamingResponse.endStream()
     }
   }
 
