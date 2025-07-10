@@ -11,6 +11,7 @@ import { TeamsChannelDataSettings, teamsChannelDataSettingsZodSchema } from './t
 import { TeamsMeetingInfo, teamsMeetingInfoZodSchema } from './teamsMeetingInfo'
 import { TenantInfo, tenantInfoZodSchema } from './tenantInfo'
 import { TeamInfo, teamInfoZodSchema } from './teamInfo'
+import { MembershipSource } from '@microsoft/agents-activity'
 
 /**
  * Represents data for a Teams channel.
@@ -48,7 +49,43 @@ export interface TeamsChannelData {
    * Information about the users on behalf of whom the action is performed.
    */
   onBehalfOf?: OnBehalfOf[]
+  /**
+   * List of teams that a channel was shared with.
+   */
+  sharedWithTeams?: TeamInfo[]
+  /**
+   * List of teams that a channel was unshared from.
+   */
+  unsharedFromTeams?: TeamInfo[]
+  /**
+   * Information about the source of a member that was added or removed from a shared channel.
+   */
+  membershipSource?: MembershipSource
 }
+
+/**
+ * @private
+ * Zod schema for validating membership source types.
+ */
+const membershipSourceTypeZodSchema = z.enum(['channel', 'team'])
+
+/**
+ * Zod schema for validating membership source types.
+ */
+const membershipTypeZodSchema = z.enum(['direct', 'transitive'])
+
+/**
+ * @private
+ * Zod schema for validating a membership source.
+ */
+const membershipSourceZodSchema = z.object({
+  sourceType: membershipSourceTypeZodSchema,
+  id: z.string().min(1),
+  name: z.string().optional(),
+  membershipType: membershipTypeZodSchema,
+  aadGroupId: z.string().min(1).optional(),
+  tenantId: z.string().min(1).optional(),
+})
 
 /**
  * Zod schema for validating TeamsChannelData objects.
@@ -61,7 +98,10 @@ export const teamsChannelDataZodSchema = z.object({
   tenant: tenantInfoZodSchema.optional(),
   meeting: teamsMeetingInfoZodSchema.optional(),
   settings: teamsChannelDataSettingsZodSchema.optional(),
-  onBehalfOf: z.array(onBehalfOfZodSchema).optional()
+  onBehalfOf: z.array(onBehalfOfZodSchema).optional(),
+  sharedWithTeams: z.array(teamInfoZodSchema).optional(),
+  unsharedFromTeams: z.array(teamInfoZodSchema).optional(),
+  membershipSource: membershipSourceZodSchema.optional()
 })
 
 /**
@@ -71,5 +111,5 @@ export const teamsChannelDataZodSchema = z.object({
  * @returns {TeamsChannelData} - The parsed TeamsChannelData.
  */
 export function parseTeamsChannelData (o: object): TeamsChannelData {
-  return teamsChannelDataZodSchema.passthrough().parse(o)
+  return teamsChannelDataZodSchema.passthrough().parse(o) as TeamsChannelData
 }

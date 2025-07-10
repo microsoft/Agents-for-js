@@ -4,6 +4,7 @@
  */
 
 import { z } from 'zod'
+import { ChannelTypes, channelTypeZodSchema } from './channelTypes'
 
 /**
  * Represents information about a channel.
@@ -20,7 +21,7 @@ export interface ChannelInfo {
   /**
    * The type of the channel.
    */
-  type?: string
+  type?: ChannelTypes
 }
 
 /**
@@ -29,5 +30,5 @@ export interface ChannelInfo {
 export const channelInfoZodSchema = z.object({
   id: z.string().min(1).optional(),
   name: z.string().min(1).optional(),
-  type: z.string().min(1).optional()
+  type: channelTypeZodSchema.optional()
 })
