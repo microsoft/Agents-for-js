@@ -37,7 +37,7 @@ export class CloudAdapter extends BaseAdapter {
    * Client for connecting to the Bot Framework Connector service
    */
   public connectorClient!: ConnectorClient
-
+  authConfig: AuthConfiguration
   /**
    * Creates an instance of CloudAdapter.
    * @param authConfig - The authentication configuration for securing communications
@@ -53,6 +53,33 @@ export class CloudAdapter extends BaseAdapter {
     } else {
       this.authProvider = authProvider
     }
+  }
+
+  /**
+   * Determines whether a connector client is needed based on the delivery mode and service URL of the given activity.
+   *
+   * @param activity - The activity to evaluate.
+   * @returns true if a ConnectorClient is needed, false otherwise.
+   *  A connector client is required if the activity's delivery mode is not "ExpectReplies"
+   *  and the service URL is not null or empty.
+   * @protected
+   */
+  protected resolveIfConnectorClientIsNeeded (activity: Activity): boolean {
+    if (!activity) {
+      throw new TypeError('`activity` parameter required')
+    }
+
+    switch (activity.deliveryMode) {
+      case DeliveryModes.ExpectReplies:
+        if (!activity.serviceUrl) {
+          logger.debug('DeliveryMode = ExpectReplies, connector client is not needed')
+          return false
+        }
+        break
+      default:
+        break
+    }
+    return true
   }
 
   /**
@@ -98,7 +125,7 @@ export class CloudAdapter extends BaseAdapter {
   }
 
   async createTurnContextWithScope (activity: Activity, logic: AgentHandler, scope: string): Promise<TurnContext> {
-    this.connectorClient = await ConnectorClient.createClientWithAuthAsync(activity.serviceUrl!, this.authConfig, this.authProvider, scope)
+    this.connectorClient = await ConnectorClient.createClientWithAuthAsync(activity.serviceUrl!, this.authConfig!, this.authProvider, scope)
     return new TurnContext(this, activity)
   }
 
@@ -200,9 +227,13 @@ export class CloudAdapter extends BaseAdapter {
     logger.debug('Received activity: ', activity)
     const context = this.createTurnContext(activity, logic)
     const scope = request.user?.azp ?? request.user?.appid ?? 'https://api.botframework.com'
-    logger.debug('Creating connector client with scope: ', scope)
-    this.connectorClient = await this.createConnectorClient(activity.serviceUrl!, scope)
-    this.setConnectorClient(context)
+
+    // if Delivery Mode == ExpectReplies, we don't need a connector client.
+    if (this.resolveIfConnectorClientIsNeeded(activity)) {
+      logger.debug('Creating connector client with scope: ', scope)
+      this.connectorClient = await this.createConnectorClient(activity.serviceUrl!, scope)
+      this.setConnectorClient(context)
+    }
 
     if (
       activity?.type === ActivityTypes.InvokeResponse ||

@@ -673,20 +673,6 @@ describe('Activity getConversationReference', () => {
     assert.throws(() => activity.getConversationReference(), /Activity ChannelId undefined/)
   })
 
-  it('should throw an error if serviceUrl is null', () => {
-    const obj = {
-      type: ActivityTypes.Message,
-      serviceUrl: 'serviceUrl',
-      recipient: { id: 'bot1', name: 'Bot' },
-      channelId: 'channel123',
-      conversation: { id: 'conversation1' }
-    }
-    const activity: Activity = Activity.fromObject(obj)
-    // @ts-expect-error
-    activity.serviceUrl = null
-    assert.throws(() => activity.getConversationReference(), /Activity ServiceUrl undefined/)
-  })
-
   it('should return a valid ConversationReference', () => {
     const obj = {
       type: ActivityTypes.Message,
