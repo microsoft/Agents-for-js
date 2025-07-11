@@ -6,7 +6,7 @@
 import { v4 as uuid } from 'uuid'
 
 import { Activity, ConversationAccount } from '@microsoft/agents-activity'
-import { Observable, BehaviorSubject, type Observer } from 'rxjs'
+import { Observable, BehaviorSubject, type Subscriber } from 'rxjs'
 
 import { CopilotStudioClient } from './copilotStudioClient'
 
@@ -76,29 +76,27 @@ export class CopilotStudioWebChat {
     settings?: CopilotStudioWebChatSettings
   ):CopilotStudioWebChatConnection {
     let sequence = 0
-    let activityObserver: Observer<Partial<Activity>> | undefined
+    let activitySubscriber: Subscriber<Partial<Activity>> | undefined
     let conversation: ConversationAccount | undefined
 
     const connectionStatus$ = new BehaviorSubject(0)
-    const activity$ = Observable.create(
-      async (observer: Observer<Partial<Activity>>) => {
-        activityObserver = observer
+    const activity$ = createObservable<Partial<Activity>>(async (subscriber) => {
+      activitySubscriber = subscriber
 
-        if (connectionStatus$.value < 2) {
-          connectionStatus$.next(2)
-          return
-        }
-
-        notifyTyping()
-        const activity = await client.startConversationAsync()
-        conversation = activity.conversation
-        sequence = 0
-        notifyActivity(activity)
+      if (connectionStatus$.value < 2) {
+        connectionStatus$.next(2)
+        return
       }
-    )
+
+      notifyTyping()
+      const activity = await client.startConversationAsync()
+      conversation = activity.conversation
+      sequence = 0
+      notifyActivity(activity)
+    })
 
     const notifyActivity = (activity: Partial<Activity>) => {
-      activityObserver?.next({
+      activitySubscriber?.next({
         ...activity,
         timestamp: new Date().toISOString(),
         channelData: {
@@ -127,11 +125,11 @@ export class CopilotStudioWebChat {
           throw new Error('Activity text cannot be empty.')
         }
 
-        if (!activityObserver) {
-          throw new Error('Activity observer is not initialized.')
+        if (!activitySubscriber) {
+          throw new Error('Activity subscriber is not initialized.')
         }
 
-        return Observable.create(async (observer: Observer<string>) => {
+        return createObservable<string>(async (subscriber) => {
           try {
             const id = uuid()
 
@@ -143,22 +141,32 @@ export class CopilotStudioWebChat {
               notifyActivity(responseActivity)
             }
 
-            observer.next(id)
-            observer.complete()
+            subscriber.next(id)
+            subscriber.complete()
           } catch (error) {
-            observer.error(error)
+            subscriber.error(error)
           }
         })
       },
 
       end () {
         connectionStatus$.complete()
-        activity$.complete()
-        if (activityObserver) {
-          activityObserver.complete()
-          activityObserver = undefined
+        if (activitySubscriber) {
+          activitySubscriber.complete()
+          activitySubscriber = undefined
         }
       },
     }
   }
+}
+
+/**
+ * Creates an observable that allows executing an asynchronous function.
+ * @param fn - The function to execute.
+ * @returns A new observable.
+ */
+function createObservable<T> (fn: (subscriber: Subscriber<T>) => void): Observable<T> {
+  return new Observable<T>((subscriber) => {
+    Promise.resolve(fn(subscriber)).catch((error) => subscriber.error(error))
+  })
 }
