@@ -8,7 +8,23 @@ import { DialogContext } from './dialogContext'
 import omit from 'lodash/omit'
 import { RecognizerResult, getTopScoringIntent } from './recognizerResult'
 
+/**
+ * Configuration options for a recognizer instance.
+ *
+ * @remarks
+ * This interface defines the configuration properties that can be used to customize
+ * the behavior and identification of a recognizer. Recognizers use this configuration
+ * to set up their basic properties and operational parameters.
+ */
 export interface RecognizerConfiguration {
+  /**
+   * Optional unique identifier for the recognizer instance.
+   *
+   * @remarks
+   * The id property allows you to distinguish between multiple recognizer instances
+   * and can be useful for logging, debugging, and telemetry purposes. If not provided,
+   * the recognizer will operate without a specific identifier.
+   */
   id?: string;
 }
 
