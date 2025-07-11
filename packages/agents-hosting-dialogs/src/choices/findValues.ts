@@ -30,19 +30,45 @@ export interface FindValuesOptions {
   tokenizer?: TokenizerFunction;
 }
 
+/**
+ * Represents a value that was successfully found and matched during a search operation.
+ * This interface contains the matched value along with metadata about the match quality
+ * and its position in the original search list.
+ *
+ * @example
+ * ```typescript
+ * // Example of a FoundValue result from searching for "red" in ["red", "green", "blue"]
+ * const foundValue: FoundValue = {
+ *   value: "red",
+ *   index: 0,
+ *   score: 1.0
+ * };
+ * ```
+ */
 export interface FoundValue {
   /**
-   * The value that was found in the search.
+   * The exact value that was matched from the original search list.
+   * This is the original string value, not the user's input that matched it.
+   *
+   * @example "red" (when user typed "rd" and it matched "red")
    */
   value: string;
 
   /**
-   * The index of the value in the original list.
+   * The zero-based index position of this value in the original list that was searched.
+   * This allows you to correlate the found value back to its position in the source array.
+   *
+   * @example 0 (if "red" was the first item in the original choices array)
    */
   index: number;
 
   /**
-   * The confidence score of the match.
+   * A confidence score between 0 and 1 indicating the quality of the match.
+   * - 1.0 indicates a perfect exact match
+   * - Lower values indicate partial or fuzzy matches
+   * - Calculated based on completeness (how much of the value matched) and accuracy (token distance)
+   *
+   * @example 1.0 for exact matches, 0.8 for close partial matches, 0.3 for distant fuzzy matches
    */
   score: number;
 }
