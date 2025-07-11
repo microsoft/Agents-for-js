@@ -273,7 +273,7 @@ export class StreamingResponse {
     // If there's no sync in progress, start one
     if (!this._queueSync) {
       this._queueSync = this.drainQueue().catch((err) => {
-        logger.error(`Error occured when sending activity while streaming: "${JSON.stringify(err)}".`)
+        logger.error(`Error occurred when sending activity while streaming: "${JSON.stringify(err)}".`)
         // throw err
       })
     }
