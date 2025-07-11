@@ -58,6 +58,39 @@ function getBlobKey (activity: Activity, options?: BlobsTranscriptStoreOptions):
   )
 }
 
+/**
+ * Sanitizes a blob key for use with Azure Blob Storage.
+ *
+ * @remarks
+ * This function performs the following operations:
+ * 1. Validates that the key is not empty
+ * 2. Removes empty path segments by splitting on '/' and filtering out empty parts
+ * 3. Truncates the sanitized key to 1024 characters maximum
+ * 4. URL encodes the key to ensure it's safe for use as a blob name
+ * 5. Optionally decodes the key if the decodeTranscriptKey option is set
+ *
+ * @param key - The blob key string to sanitize. Must be non-empty.
+ * @param options - Optional configuration options.
+ * @param options.decodeTranscriptKey - If true, returns the URL-decoded version of the sanitized key.
+ * @returns A sanitized blob key that is safe for use with Azure Blob Storage, truncated to 1024 characters.
+ *
+ * @throws {Error} When the provided key is null, undefined, or an empty string.
+ *
+ * @example
+ * ```typescript
+ * // Basic sanitization with encoding
+ * const sanitized = sanitizeBlobKey('channel1/conversation2/activity.json');
+ * // Returns: 'channel1%2Fconversation2%2Factivity.json'
+ *
+ * // Sanitization with decoding option
+ * const decoded = sanitizeBlobKey('channel1/conversation2/activity.json', { decodeTranscriptKey: true });
+ * // Returns: 'channel1/conversation2/activity.json'
+ *
+ * // Handles empty path segments
+ * const withEmptySegments = sanitizeBlobKey('channel1//conversation2///activity.json');
+ * // Returns: 'channel1%2Fconversation2%2Factivity.json'
+ * ```
+ */
 export function sanitizeBlobKey (key: string, options?: BlobsTranscriptStoreOptions): string {
   if (!key || key.length === 0) {
     throw new Error('Please provide a non-empty key')
