@@ -399,9 +399,6 @@ export class Activity {
     if (this.channelId === null || this.channelId === undefined) {
       throw new Error('Activity ChannelId undefined')
     }
-    if (this.serviceUrl === null || this.serviceUrl === undefined) {
-      throw new Error('Activity ServiceUrl undefined')
-    }
 
     return {
       activityId: this.getAppropriateReplyToId(),

@@ -117,6 +117,9 @@ export class UserTokenClient {
       return response.data as TokenResponse
     } catch (error: any) {
       logger.error(error)
+      if (error.response?.data) {
+        logger.error(error.response.data)
+      }
       return { token: undefined }
     }
   }

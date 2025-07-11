@@ -11,14 +11,16 @@ class McsAgent extends AgentApplication<TurnState> {
     super({
       storage: new MemoryStorage(),
       authorization: {
-        mcs: { text: 'Login into MCS', title: 'MCS Login' }
-      }
+        mcs: { text: 'Login into MCS', title: 'MCS Login' },
+      },
+      startTypingTimer: true,
+      longRunningMessages: false
     })
 
     this.onConversationUpdate('membersAdded', this._status)
     this.authorization.onSignInSuccess(this._singinSuccess)
     this.onMessage('/logout', this._signOut)
-    this.onActivity('invoke', this._invoke)
+    // this.onActivity('invoke', this._invoke)
     this.onActivity('message', this._message, ['mcs'])
   }
 
@@ -35,9 +37,9 @@ class McsAgent extends AgentApplication<TurnState> {
     await context.sendActivity(MessageFactory.text('User signed in successfully'))
   }
 
-  private _invoke = async (context: TurnContext, state: TurnState): Promise<void> => {
-    await context.sendActivity(MessageFactory.text('Invoke received.'))
-  }
+  // private _invoke = async (context: TurnContext, state: TurnState): Promise<void> => {
+  //   await context.sendActivity(MessageFactory.text('Invoke received.'))
+  // }
 
   private _message = async (context: TurnContext, state: TurnState): Promise<void> => {
     const cid = state.getValue<string>('conversation.conversationId')
