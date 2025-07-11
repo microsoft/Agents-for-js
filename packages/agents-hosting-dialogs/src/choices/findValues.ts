@@ -114,11 +114,12 @@ export interface SortedValue {
 }
 
 /**
- * INTERNAL: Low-level function that searches for a set of values within an utterance. Higher level
+ * Low-level function that searches for a set of values within an utterance. Higher level
  * functions like `findChoices()` and `recognizeChoices()` are layered above this function.  In most
  * cases its easier to just call one of the higher level functions instead but this function contains
  * the fuzzy search algorithm that drives choice recognition.
  *
+ * @internal
  * @param utterance The text or user utterance to search over.
  * @param values List of values to search over.
  * @param options (Optional) options used to tweak the search that's performed.
