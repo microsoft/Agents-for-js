@@ -73,56 +73,176 @@ export interface StatePropertyAccessor<T = any> {
 }
 
 /**
- * Provides typed access to an Agent state property with automatic state loading.
+ * Provides typed access to an Agent state property with automatic state loading and persistence management.
  *
- * The AgentStatePropertyAccessor simplifies working with state by abstracting
- * the details of loading state from storage and manipulating specific properties.
- * It automatically handles:
+ * @remarks
+ * AgentStatePropertyAccessor simplifies working with persisted state by abstracting
+ * the complexity of loading state from storage and manipulating specific properties.
+ * It provides a type-safe interface for state management with automatic handling of:
  *
- * - Loading state when needed
- * - Deep cloning of default values to prevent reference issues
- * - Type checking for properties (when using TypeScript)
- * - Ensuring properties exist before access
+ * - **Lazy Loading**: State is loaded from storage only when first accessed
+ * - **Type Safety**: Full TypeScript support with generic type parameters
+ * - **Default Values**: Automatic deep cloning of default values to prevent reference issues
+ * - **Memory Management**: Efficient in-memory caching with explicit persistence control
+ * - **Custom Keys**: Support for custom storage keys for advanced scenarios
  *
- * Property accessors are created through the {@link AgentState.createProperty} method:
+ * ## Key Features
  *
+ * ### Type Safety
+ * The accessor provides compile-time type checking when using TypeScript:
  * ```typescript
- * // Create a property accessor for a user profile
+ * interface UserProfile {
+ *   name: string;
+ *   preferences: { theme: string; language: string };
+ * }
  * const userProfile = userState.createProperty<UserProfile>("userProfile");
- *
- * // Get the profile with a default if not exists
- * const profile = await userProfile.get(context, { name: "", preferences: {} });
- *
- * // Update a value
- * profile.preferences.theme = "dark";
- *
- * // Save the change
- * await userProfile.set(context, profile);
- *
- * // Later, call userState.saveChanges(context) to persist to storage
  * ```
  *
- * @typeParam T The type of the property being accessed
+ * ### Automatic Default Value Handling
+ * When a property doesn't exist, default values are automatically cloned and stored:
+ * ```typescript
+ * // If userProfile doesn't exist, the default will be cloned and saved
+ * const profile = await userProfile.get(context, {
+ *   name: "Anonymous",
+ *   preferences: { theme: "light", language: "en" }
+ * });
+ * ```
+ *
+ * ### Explicit Persistence Control
+ * Changes are kept in memory until explicitly persisted:
+ * ```typescript
+ * // Modify the state
+ * const counter = await counterProperty.get(context, 0);
+ * await counterProperty.set(context, counter + 1);
+ *
+ * // Changes are only in memory at this point
+ * // Persist to storage
+ * await userState.saveChanges(context);
+ * ```
+ *
+ * ## Usage Examples
+ *
+ * ### Basic Usage
+ * ```typescript
+ * // Create a property accessor
+ * const userProfile = userState.createProperty<UserProfile>("userProfile");
+ *
+ * // Get with default value
+ * const profile = await userProfile.get(context, {
+ *   name: "",
+ *   preferences: { theme: "light", language: "en" }
+ * });
+ *
+ * // Modify the profile
+ * profile.preferences.theme = "dark";
+ *
+ * // Save the changes
+ * await userProfile.set(context, profile);
+ * await userState.saveChanges(context); // Persist to storage
+ * ```
+ *
+ * ### Working with Primitive Types
+ * ```typescript
+ * const counterProperty = userState.createProperty<number>("counter");
+ *
+ * // Increment counter
+ * const currentCount = await counterProperty.get(context, 0);
+ * await counterProperty.set(context, currentCount + 1);
+ * await userState.saveChanges(context);
+ * ```
+ *
+ * ### Conditional Logic
+ * ```typescript
+ * const settingsProperty = userState.createProperty<Settings>("settings");
+ *
+ * // Check if property exists
+ * const settings = await settingsProperty.get(context);
+ * if (settings === undefined) {
+ *   // Property doesn't exist, initialize with defaults
+ *   await settingsProperty.set(context, getDefaultSettings());
+ * }
+ * ```
+ *
+ * ### Custom Storage Keys
+ * ```typescript
+ * // Store state with a custom key for multi-tenant scenarios
+ * const customKey = { key: `tenant_${tenantId}` };
+ * const tenantData = await dataProperty.get(context, defaultData, customKey);
+ * await dataProperty.set(context, updatedData, customKey);
+ * ```
+ *
+ * ## Important Notes
+ *
+ * - **Thread Safety**: This class is not thread-safe. Ensure proper synchronization in concurrent scenarios.
+ * - **Memory Usage**: State objects are kept in memory until the context is disposed.
+ * - **Persistence**: Always call `state.saveChanges(context)` to persist changes to storage.
+ * - **Deep Cloning**: Default values are deep cloned using JSON serialization, which may not work with complex objects containing functions or circular references.
+ *
+ * @typeParam T The type of the property being accessed. Can be any serializable type.
+ *
+ * @see {@link AgentState.createProperty} for creating property accessors
+ * @see {@link StatePropertyAccessor} for the interface definition
  */
 export class AgentStatePropertyAccessor<T = any> implements StatePropertyAccessor<T> {
   /**
    * Creates a new instance of AgentStatePropertyAccessor.
    *
-   * @param state The agent state object that will contain this property
-   * @param name The name of the property in the state object
+   * @remarks
+   * This constructor is typically not called directly. Instead, use {@link AgentState.createProperty}
+   * to create property accessors, which ensures proper integration with the state management system.
+   *
+   * @param state The agent state object that manages the backing storage for this property
+   * @param name The unique name of the property within the state object. This name is used as the key in the state storage.
+   *
+   * @example
+   * ```typescript
+   * // Recommended way - use AgentState.createProperty
+   * const userProfile = userState.createProperty<UserProfile>("userProfile");
+   *
+   * // Direct construction (not recommended)
+   * const accessor = new AgentStatePropertyAccessor<UserProfile>(userState, "userProfile");
+   * ```
    */
   constructor (protected readonly state: AgentState, public readonly name: string) { }
 
   /**
-   * Deletes the property from the state.
+   * Deletes the property from the state storage.
    *
-   * This removes the property from the state object but does not automatically
-   * persist the change to storage. Call state.saveChanges() afterwards to
-   * persist changes.
+   * This operation removes the property from the in-memory state object but does not
+   * automatically persist the change to the underlying storage. You must call
+   * `state.saveChanges(context)` afterwards to persist the deletion.
    *
-   * @param context The turn context
-   * @param customKey Optional custom key for storing the state in a specific location
+   * @remarks
+   * - If the property doesn't exist, this operation is a no-op
+   * - The deletion only affects the in-memory state until `saveChanges()` is called
+   * - After deletion, subsequent `get()` calls will return `undefined` (or the default value if provided)
+   *
+   * @param context The turn context for the current conversation turn
+   * @param customKey Optional custom key for accessing state in a specific storage location.
+   *                  Useful for multi-tenant scenarios or when state needs to be partitioned.
+   *
    * @returns A promise that resolves when the delete operation is complete
+   *
+   * @example
+   * ```typescript
+   * const userSettings = userState.createProperty<UserSettings>("settings");
+   *
+   * // Delete the user settings
+   * await userSettings.delete(context);
+   *
+   * // Persist the deletion to storage
+   * await userState.saveChanges(context);
+   *
+   * // Verify deletion
+   * const settings = await userSettings.get(context); // Returns undefined
+   * ```
+   *
+   * @example Custom key usage
+   * ```typescript
+   * const tenantKey = { key: `tenant_${tenantId}` };
+   * await userSettings.delete(context, tenantKey);
+   * await userState.saveChanges(context);
+   * ```
    */
   async delete (context: TurnContext, customKey?: CustomKey): Promise<void> {
     const obj: any = await this.state.load(context, false, customKey)
@@ -132,16 +252,70 @@ export class AgentStatePropertyAccessor<T = any> implements StatePropertyAccesso
   }
 
   /**
-   * Gets the value of the property from the state.
+   * Retrieves the value of the property from state storage.
    *
-   * If the property doesn't exist and a default value is provided, a deep clone
-   * of the default value will be stored in state and returned. This ensures that
-   * modifications to the returned object will be properly tracked.
+   * This method provides intelligent default value handling:
+   * - If the property exists, its value is returned
+   * - If the property doesn't exist and a default value is provided, the default is deep cloned,
+   *   stored in state, and returned
+   * - If the property doesn't exist and no default is provided, `undefined` is returned
    *
-   * @param context The turn context
-   * @param defaultValue Optional default value to use if the property doesn't exist
-   * @param customKey Optional custom key for storing the state in a specific location
-   * @returns A promise that resolves to the value of the property or undefined
+   * @remarks
+   * **Deep Cloning**: Default values are deep cloned using JSON serialization to prevent
+   * reference sharing issues. This means:
+   * - Functions, symbols, and circular references will be lost
+   * - Dates become strings (use Date constructor to restore)
+   * - Complex objects with prototypes lose their prototype chain
+   *
+   * **Performance**: The first access loads state from storage; subsequent accesses use
+   * the in-memory cached version until the context is disposed.
+   *
+   * @param context The turn context for the current conversation turn
+   * @param defaultValue Optional default value to use if the property doesn't exist.
+   *                    When provided, this value is deep cloned and stored in state.
+   * @param customKey Optional custom key for accessing state in a specific storage location.
+   *                  Useful for multi-tenant scenarios or when state needs to be partitioned.
+   *
+   * @returns A promise that resolves to the property value, the cloned default value, or `undefined`
+   *
+   * @example Basic usage
+   * ```typescript
+   * const counterProperty = userState.createProperty<number>("counter");
+   *
+   * // Get with default value
+   * const count = await counterProperty.get(context, 0);
+   * console.log(count); // 0 if property doesn't exist, otherwise the stored value
+   * ```
+   *
+   * @example Complex object with default
+   * ```typescript
+   * interface UserProfile {
+   *   name: string;
+   *   preferences: { theme: string; notifications: boolean };
+   * }
+   *
+   * const userProfile = userState.createProperty<UserProfile>("profile");
+   * const profile = await userProfile.get(context, {
+   *   name: "Anonymous",
+   *   preferences: { theme: "light", notifications: true }
+   * });
+   * ```
+   *
+   * @example Checking for existence
+   * ```typescript
+   * const profile = await userProfile.get(context);
+   * if (profile === undefined) {
+   *   console.log("Profile has not been set yet");
+   * } else {
+   *   console.log(`Welcome back, ${profile.name}!`);
+   * }
+   * ```
+   *
+   * @example Custom key usage
+   * ```typescript
+   * const tenantKey = { key: `tenant_${tenantId}` };
+   * const tenantData = await dataProperty.get(context, defaultData, tenantKey);
+   * ```
    */
   async get (context: TurnContext, defaultValue?: T, customKey?: CustomKey): Promise<T> {
     const obj: any = await this.state.load(context, false, customKey)
@@ -157,15 +331,72 @@ export class AgentStatePropertyAccessor<T = any> implements StatePropertyAccesso
   }
 
   /**
-   * Sets the value of the property in the state.
+   * Sets the value of the property in state storage.
    *
-   * This updates the property in the in-memory state object but does not automatically
-   * persist the change to storage. Call state.saveChanges() afterwards to persist changes.
+   * This operation updates the property in the in-memory state object but does not
+   * automatically persist the change to the underlying storage. You must call
+   * `state.saveChanges(context)` afterwards to persist the changes.
    *
-   * @param context The turn context
-   * @param value The value to set
-   * @param customKey Optional custom key for storing the state in a specific location
+   * @remarks
+   * **Memory vs Storage**: Changes are immediately reflected in memory and will be
+   * available to subsequent `get()` calls within the same context, but are not
+   * persisted to storage until `saveChanges()` is called.
+   *
+   * **Value References**: The exact value reference is stored (no cloning occurs).
+   * Ensure you don't modify objects after setting them unless you intend for those
+   * changes to be reflected in state.
+   *
+   * **Type Safety**: When using TypeScript, the value must match the property's
+   * declared type parameter.
+   *
+   * @param context The turn context for the current conversation turn
+   * @param value The value to assign to the property. Can be any serializable value.
+   * @param customKey Optional custom key for accessing state in a specific storage location.
+   *                  Useful for multi-tenant scenarios or when state needs to be partitioned.
+   *
    * @returns A promise that resolves when the set operation is complete
+   *
+   * @example Basic usage
+   * ```typescript
+   * const counterProperty = userState.createProperty<number>("counter");
+   *
+   * // Set a new value
+   * await counterProperty.set(context, 42);
+   *
+   * // Persist to storage
+   * await userState.saveChanges(context);
+   * ```
+   *
+   * @example Complex object
+   * ```typescript
+   * const userProfile = userState.createProperty<UserProfile>("profile");
+   *
+   * const newProfile: UserProfile = {
+   *   name: "John Doe",
+   *   preferences: { theme: "dark", notifications: false }
+   * };
+   *
+   * await userProfile.set(context, newProfile);
+   * await userState.saveChanges(context);
+   * ```
+   *
+   * @example Incremental updates
+   * ```typescript
+   * // Get current value, modify, then set
+   * const settings = await settingsProperty.get(context, getDefaultSettings());
+   * settings.theme = "dark";
+   * settings.lastUpdated = new Date();
+   *
+   * await settingsProperty.set(context, settings);
+   * await userState.saveChanges(context);
+   * ```
+   *
+   * @example Custom key usage
+   * ```typescript
+   * const tenantKey = { key: `tenant_${tenantId}` };
+   * await dataProperty.set(context, updatedData, tenantKey);
+   * await userState.saveChanges(context);
+   * ```
    */
   async set (context: TurnContext, value: T, customKey?: CustomKey): Promise<void> {
     const obj: any = await this.state.load(context, false, customKey)
