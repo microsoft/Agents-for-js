@@ -105,7 +105,8 @@ export interface PromptRecognizerResult<T> {
 /**
  * Function signature for providing a custom prompt validator.
  *
- * ```TypeScript
+ * @example
+ * ```typescript
  * type PromptValidator<T> = (prompt: PromptValidatorContext<T>) => Promise<boolean>;
  * ```
  *
