@@ -50,6 +50,8 @@ export interface AuthConfiguration {
 
 /**
  * Loads the authentication configuration from environment variables.
+ *
+ * @example
  * ```
  * tenantId=your-tenant-id
  * clientId=your-client-id
