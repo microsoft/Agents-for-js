@@ -8,7 +8,7 @@ import { Response, NextFunction } from 'express'
 import { Request } from './request'
 import jwksRsa, { JwksClient, SigningKey } from 'jwks-rsa'
 import jwt, { JwtHeader, JwtPayload, SignCallback, GetPublicKeyOrSecret } from 'jsonwebtoken'
-import { debug } from '../logger'
+import { debug } from '@microsoft/agents-activity/src/logger'
 
 const logger = debug('agents:jwt-middleware')
 

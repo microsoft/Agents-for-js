@@ -15,7 +15,7 @@ import { Activity, ActivityEventNames, ActivityTypes, Channels, ConversationRefe
 import { ResourceResponse } from './connector-client/resourceResponse'
 import { MsalTokenProvider } from './auth/msalTokenProvider'
 import * as uuid from 'uuid'
-import { debug } from './logger'
+import { debug } from '@microsoft/agents-activity/src/logger'
 import { StatusCodes } from './statusCodes'
 import { InvokeResponse } from './invoke/invokeResponse'
 import { AttachmentInfo } from './connector-client/attachmentInfo'
