@@ -25,7 +25,16 @@ const LAST_ACCESS = '_lastAccess'
 const CONVERSATION_STATE = 'ConversationState'
 const USER_STATE = 'UserState'
 
+/**
+ * Result returned by the DialogManager after processing a conversation turn.
+ * Contains the outcome of dialog execution and any state changes that occurred during the turn.
+ */
 export interface DialogManagerResult {
+  /**
+   * The result of executing the dialog during this conversation turn.
+   * Contains information about the dialog's completion state, any returned values,
+   * and whether the dialog is waiting for additional input from the user.
+   */
   turnResult: DialogTurnResult;
 }
 
