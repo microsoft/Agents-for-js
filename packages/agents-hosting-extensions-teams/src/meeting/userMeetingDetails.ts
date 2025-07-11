@@ -4,7 +4,7 @@
  */
 
 /**
- * Interface representing the details of a user's meeting.
+ * Represents the details of a user's meeting.
  */
 export interface UserMeetingDetails {
   /**

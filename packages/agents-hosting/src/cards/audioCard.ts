@@ -8,7 +8,7 @@ import { MediaUrl } from './mediaUrl'
 import { ThumbnailUrl } from './thumbnailUrl'
 
 /**
- * Interface representing an Audio Card.
+ * Represents an Audio Card.
  */
 export interface AudioCard {
   /** The title of the card. */

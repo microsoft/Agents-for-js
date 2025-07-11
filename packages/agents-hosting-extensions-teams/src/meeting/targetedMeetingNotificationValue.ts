@@ -6,7 +6,7 @@
 import { MeetingSurface } from './meetingSurface'
 
 /**
- * Interface representing the value of a targeted meeting notification.
+ * Represents the value of a targeted meeting notification.
  */
 export interface TargetedMeetingNotificationValue {
   /**

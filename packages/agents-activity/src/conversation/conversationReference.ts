@@ -8,7 +8,7 @@ import { ChannelAccount, channelAccountZodSchema } from './channelAccount'
 import { ConversationAccount, conversationAccountZodSchema } from './conversationAccount'
 
 /**
- * Interface representing a reference to a conversation.
+ * Represents a reference to a conversation.
  */
 export interface ConversationReference {
   /**

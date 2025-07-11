@@ -4,7 +4,7 @@
  */
 
 /**
- * Interface representing the failure information of a meeting notification recipient.
+ * Represents the failure information of a meeting notification recipient.
  */
 export interface MeetingNotificationRecipientFailureInfo {
   /** The recipient's MRI (Microsoft Resource Identifier). */

@@ -6,7 +6,7 @@
 import { TaskModuleResponseBase } from './taskModuleResponseBase'
 
 /**
- * Interface representing the message response of a task module.
+ * Represents the message response of a task module.
  */
 export interface TaskModuleMessageResponse extends TaskModuleResponseBase {
   /**

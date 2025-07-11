@@ -8,7 +8,7 @@ import { MediaUrl } from './mediaUrl'
 import { ThumbnailUrl } from './thumbnailUrl'
 
 /**
- * Interface representing an Animation Card.
+ * Represents an Animation Card.
  */
 export interface AnimationCard {
   /** The title of the card. */

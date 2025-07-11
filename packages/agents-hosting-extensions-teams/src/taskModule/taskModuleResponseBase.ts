@@ -9,7 +9,7 @@
 export type MessagePreviewType = 'message' | 'continue'
 
 /**
- * Interface representing the base response of a task module.
+ * Represents the base response of a task module.
  */
 export interface TaskModuleResponseBase {
   /**

@@ -9,7 +9,7 @@ import { TeamsChannelAccount } from '../activity-extensions/teamsChannelAccount'
 import { TurnState } from '@microsoft/agents-hosting'
 
 /**
- * Interface representing a participant in a Teams meeting.
+ * Represents a participant in a Teams meeting.
  */
 export interface TeamsMeetingParticipant<TState extends TurnState> {
   /**

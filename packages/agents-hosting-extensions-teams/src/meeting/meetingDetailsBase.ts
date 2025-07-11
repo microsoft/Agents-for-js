@@ -4,7 +4,7 @@
  */
 
 /**
- * Interface representing the base details of a meeting.
+ * Represents the base details of a meeting.
  */
 export interface MeetingDetailsBase {
   /** The unique identifier of the meeting. */

@@ -4,7 +4,7 @@
  */
 
 /**
- * Interface representing the context of a task module request.
+ * Represents the context of a task module request.
  */
 export interface TaskModuleRequestContext {
   /**

@@ -6,7 +6,7 @@
 import { z } from 'zod'
 
 /**
- * Interface representing an adaptive card invoke action.
+ * Represents an adaptive card invoke action.
  */
 export interface AdaptiveCardInvokeAction {
   /**

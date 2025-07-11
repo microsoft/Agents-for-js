@@ -6,7 +6,7 @@
 import { MeetingDetailsBase } from './meetingDetailsBase'
 
 /**
- * Interface representing the details of a meeting.
+ * Represents the details of a meeting.
  */
 export interface MeetingDetails extends MeetingDetailsBase {
   /** The Microsoft Graph resource ID of the meeting. */

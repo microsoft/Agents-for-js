@@ -6,7 +6,7 @@
 import { AuthConfiguration } from './authConfiguration'
 
 /**
- * Interface representing an authentication provider.
+ * Represents an authentication provider.
  */
 export interface AuthProvider {
   /**

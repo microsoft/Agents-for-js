@@ -7,7 +7,7 @@ import { z } from 'zod'
 import { ActionTypes, actionTypesZodSchema } from './actionTypes'
 
 /**
- * Interface representing a card action.
+ * Represents a card action.
  */
 export interface CardAction {
   /**

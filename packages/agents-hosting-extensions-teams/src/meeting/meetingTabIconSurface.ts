@@ -4,7 +4,7 @@
  */
 
 /**
- * Interface representing a meeting tab icon surface.
+ * Represents a meeting tab icon surface.
  */
 export interface MeetingTabIconSurface {
   /**

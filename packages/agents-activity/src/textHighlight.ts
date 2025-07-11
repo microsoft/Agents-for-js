@@ -6,7 +6,7 @@
 import { z } from 'zod'
 
 /**
- * Interface representing a text highlight.
+ * Represents a text highlight.
  */
 export interface TextHighlight {
   /**
