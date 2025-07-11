@@ -82,7 +82,9 @@ export class MsalTokenProvider implements AuthProvider {
             logger.info(message)
             return
           case LogLevel.Warning:
-            logger.warn(message)
+            if (!message.includes('Warning - No client info in response')) {
+              logger.warn(message)
+            }
             return
           case LogLevel.Verbose:
             logger.debug(message)
