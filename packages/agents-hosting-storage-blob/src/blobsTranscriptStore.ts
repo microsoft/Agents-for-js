@@ -75,6 +75,25 @@ export function sanitizeBlobKey (key: string, options?: BlobsTranscriptStoreOpti
   return encodedKey
 }
 
+/**
+ * Performs type casting with optional constructor validation.
+ * If a constructor is provided, validates that the value is an instance of that constructor.
+ * Otherwise, performs a direct type assertion.
+ *
+ * @template T - The target type to cast to.
+ * @param value - The value to cast.
+ * @param ctor - Optional constructor function to validate the value against.
+ * @returns The value cast to type T.
+ *
+ * @example
+ * ```typescript
+ * // With constructor validation
+ * const dateValue = maybeCast(someValue, Date);
+ *
+ * // Direct type assertion
+ * const stringValue = maybeCast<string>(someValue);
+ * ```
+ */
 export function maybeCast<T> (value: unknown, ctor?: { new (...args: any[]): T }): T {
   if (ctor != null && value instanceof ctor) {
     return value
