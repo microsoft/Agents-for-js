@@ -1,7 +1,7 @@
 import * as z from 'zod'
 import StreamConsumers from 'stream/consumers'
 import { Activity } from '@microsoft/agents-activity'
-
+import { TokenCredential } from '@azure/core-auth'
 import {
   AnonymousCredential,
   BlobItem,
@@ -174,7 +174,7 @@ export class BlobsTranscriptStore implements TranscriptStore {
     containerName: string,
     options?: BlobsTranscriptStoreOptions,
     blobServiceUri = '',
-    tokenCredential?: StorageSharedKeyCredential | AnonymousCredential
+    tokenCredential?: StorageSharedKeyCredential | AnonymousCredential | TokenCredential
   ) {
     if (blobServiceUri !== '' && tokenCredential !== null) {
       z.object({ blobServiceUri: z.string() }).parse({
