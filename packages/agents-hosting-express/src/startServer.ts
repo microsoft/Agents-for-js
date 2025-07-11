@@ -9,15 +9,16 @@ import { ActivityHandler, AgentApplication, AuthConfiguration, authorizeJWT, Clo
 /**
  * Starts an Express server for handling Agent requests.
  *
- * @param agent - The AgentApplication instance to process incoming activities.
+ * @param agent - The AgentApplication or ActivityHandler instance to process incoming activities.
  * @param authConfiguration - Optional custom authentication configuration. If not provided,
- *                           configuration will be loaded from environment variables.
- * @returns void
+ *                           configuration will be loaded from environment variables using loadAuthConfigFromEnv().
+ * @returns void - This function does not return a value as it starts a long-running server process.
  *
  * @remarks
  * This function sets up an Express server with the necessary middleware and routes for handling
- * bot requests. It configures JWT authorization middleware and sets up the message endpoint.
- * The server will listen on the port specified in the environment (or 3978 by default).
+ * agent requests. It configures JWT authorization middleware and sets up the message endpoint.
+ * The server will listen on the port specified in the PORT environment variable (or 3978 by default)
+ * and logs startup information including the SDK version and configured app ID.
  *
  * @example
  * ```typescript
