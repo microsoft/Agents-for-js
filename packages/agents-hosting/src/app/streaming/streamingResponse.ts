@@ -314,7 +314,13 @@ export class StreamingResponse {
     // Set activity ID to the assigned stream ID
     if (this._streamId) {
       activity.id = this._streamId
-      activity.entities![0]!.streamId = this._streamId
+      if (!activity.entities) {
+        activity.entities = [];
+      }
+      if (!activity.entities[0]) {
+        activity.entities[0] = {} as Entity;
+      }
+      activity.entities[0].streamId = this._streamId;
     }
 
     if (this._citations && this._citations.length > 0 && !this._ended) {
