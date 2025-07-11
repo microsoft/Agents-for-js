@@ -31,6 +31,9 @@ const logger = debug('agents:activity-handler')
  * Handles incoming activities from channels and dispatches them to the appropriate handlers.
  *
  * @remarks
+ *
+ * This class is provided to simplify the migration from Bot Framework SDK v4 to the Agents Hosting framework.
+ *
  * The ActivityHandler serves as the central hub for processing incoming activities in conversational AI applications.
  * It provides a comprehensive framework for handling various activity types including messages, conversation updates,
  * message reactions, typing indicators, installation updates, and invoke operations such as adaptive cards and search.

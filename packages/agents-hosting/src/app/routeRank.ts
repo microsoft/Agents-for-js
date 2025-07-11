@@ -12,28 +12,33 @@
  * @example
  * ```typescript
  * // High priority route that should be evaluated first
- * app.addRoute('/api/urgent', handler, RouteRank.First);
+ * this.onMessage('urgent', handler, undefined, RouteRank.First);
  *
  * // Normal priority route with default ranking
- * app.addRoute('/api/data', handler, RouteRank.Unspecified);
+ * this.onMessage('data', handler, undefined, RouteRank.Unspecified);
  *
  * // Fallback route that should be evaluated last
- * app.addRoute('/api/*', fallbackHandler, RouteRank.Last);
+ * this.onActivity('message', fallbackHandler, undefined, RouteRank.Last);
+ *
+ * // Multiple routes with same pattern - first ranked executes first
+ * this.onMessage('dupText', handler1, undefined, RouteRank.Last);
+ * this.onMessage('dupText', handler2, undefined, RouteRank.First); // This executes first
  * ```
  */
 export enum RouteRank {
   /**
    * Highest priority rank (value: 0). Routes with this rank are evaluated first
    * before any other routes. Use this for critical routes that must take precedence
-   * over all others, such as authentication endpoints or emergency handlers.
+   * over all others, such as high-priority message handlers or override handlers
+   * that should execute before any other matching routes.
    */
   First = 0,
 
   /**
    * Lowest priority rank (value: Number.MAX_VALUE). Routes with this rank are
    * evaluated last, after all other routes have been considered. Ideal for
-   * catch-all routes, fallback handlers, or default error pages that should
-   * only match when no other routes apply.
+   * catch-all message handlers, fallback activity handlers, or default responses
+   * that should only match when no other routes apply.
    */
   Last = Number.MAX_VALUE,
 

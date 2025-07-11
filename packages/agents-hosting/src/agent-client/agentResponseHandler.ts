@@ -15,7 +15,7 @@ interface ConversationReferenceState {
 }
 
 /**
- * Configures the agent response controller endpoint for handling incoming activities from external services.
+ * To enable Agent to Agent communication, configures the agent response controller endpoint for handling incoming activities from external services.
  *
  * This function sets up a POST endpoint that receives activities (messages, events, etc.) from external
  * services and processes them through the bot framework's activity handling pipeline. It's typically used
