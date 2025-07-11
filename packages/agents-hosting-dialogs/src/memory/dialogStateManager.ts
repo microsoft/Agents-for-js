@@ -29,7 +29,7 @@ const PATH_TRACKER = 'dialog._tracker.paths'
 const DIALOG_STATE_MANAGER_CONFIGURATION = 'DialogStateManagerConfiguration'
 
 /**
- * The DialogStateManager manages memory scopes and path resolvers.
+ * Manages memory scopes and path resolvers.
  *
  * @remarks
  * MemoryScopes are named root level objects, which can exist either in the dialog context or off
