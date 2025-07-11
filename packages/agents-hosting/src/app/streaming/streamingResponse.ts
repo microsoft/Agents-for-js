@@ -315,12 +315,12 @@ export class StreamingResponse {
     if (this._streamId) {
       activity.id = this._streamId
       if (!activity.entities) {
-        activity.entities = [];
+        activity.entities = []
       }
       if (!activity.entities[0]) {
-        activity.entities[0] = {} as Entity;
+        activity.entities[0] = {} as Entity
       }
-      activity.entities[0].streamId = this._streamId;
+      activity.entities[0].streamId = this._streamId
     }
 
     if (this._citations && this._citations.length > 0 && !this._ended) {
