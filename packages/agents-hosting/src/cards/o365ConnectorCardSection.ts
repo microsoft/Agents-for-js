@@ -7,6 +7,11 @@ import { O365ConnectorCardActionBase } from './o365ConnectorCardActionBase'
 import { O365ConnectorCardFact } from './o365ConnectorCardFact'
 import { O365ConnectorCardImage } from './o365ConnectorCardImage'
 
+/**
+ * Defines the type of activity image to display in an O365 connector card section.
+ * - 'avatar': Displays the image as a profile avatar (typically circular or small)
+ * - 'article': Displays the image as an article thumbnail (typically rectangular or larger)
+ */
 export type ActivityImageType = 'avatar' | 'article'
 
 /**
