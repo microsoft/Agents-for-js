@@ -52,10 +52,10 @@ export type ApplicationEventHandler<TState extends TurnState> = (context: TurnCo
  * - Extensible architecture with custom extensions
  * - Event handlers for before/after turn processing
  *
- * Example usage:
+ * @example
  * ```typescript
  * const app = new AgentApplication<MyState>({
- *   storage: myStorage,
+ *   storage: new MemoryStorage(),
  *   adapter: myAdapter
  * });
  *
@@ -93,10 +93,10 @@ export class AgentApplication<TState extends TurnState> {
    * - removeRecipientMention: true
    * - turnStateFactory: Creates a new TurnState instance
    *
-   * Example usage:
+   * @example
    * ```typescript
    * const app = new AgentApplication({
-   *   storage: myStorage,
+   *   storage: new MemoryStorage(),
    *   adapter: myAdapter,
    *   startTypingTimer: true,
    *   authorization: { connectionName: 'oauth' },
@@ -178,9 +178,9 @@ export class AgentApplication<TState extends TurnState> {
    * The adaptive cards actions handler provides functionality for handling
    * adaptive card interactions, such as submit actions and other card-based events.
    *
-   * Example usage:
+   * @example
    * ```typescript
-   * app.adaptiveCards.onSubmit('myCardId', async (context, state, data) => {
+   * app.adaptiveCards.actionSubmit('doStuff', async (context, state, data) => {
    *   await context.sendActivity(`Received data: ${JSON.stringify(data)}`);
    * });
    * ```
@@ -199,7 +199,7 @@ export class AgentApplication<TState extends TurnState> {
    * This method allows you to handle any errors that occur during turn processing.
    * The handler will receive the turn context and the error that occurred.
    *
-   * Example usage:
+   * @example
    * ```typescript
    * app.onError(async (context, error) => {
    *   console.error(`An error occurred: ${error.message}`);
@@ -229,7 +229,7 @@ export class AgentApplication<TState extends TurnState> {
    * Invoke-based activities receive special treatment and are matched separately as they typically
    * have shorter execution timeouts.
    *
-   * Example usage:
+   * @example
    * ```typescript
    * app.addRoute(
    *   async (context) => context.activity.type === ActivityTypes.Message,
@@ -259,7 +259,7 @@ export class AgentApplication<TState extends TurnState> {
    * This method allows you to register handlers for specific activity types such as 'message', 'conversationUpdate', etc.
    * You can specify multiple activity types by passing an array.
    *
-   * Example usage:
+   * @example
    * ```typescript
    * app.onActivity(ActivityTypes.Message, async (context, state) => {
    *   await context.sendActivity('I received your message');
@@ -292,7 +292,7 @@ export class AgentApplication<TState extends TurnState> {
    * @remarks
    * Conversation update events occur when the state of a conversation changes, such as when members join or leave.
    *
-   * Example usage:
+   * @example
    * ```typescript
    * app.onConversationUpdate('membersAdded', async (context, state) => {
    *   const membersAdded = context.activity.membersAdded;
@@ -370,13 +370,13 @@ export class AgentApplication<TState extends TurnState> {
    * If keyword is a RegExp, it tests the message text against the regular expression.
    * If keyword is a function, it calls the function with the context to determine if the message matches.
    *
-   * Example usage:
+   * @example
    * ```typescript
    * app.onMessage('hello', async (context, state) => {
    *   await context.sendActivity('Hello there!');
    * });
    *
-   * app.onMessage(/help/, async (context, state) => {
+   * app.onMessage(/help/i, async (context, state) => {
    *   await context.sendActivity('How can I help you?');
    * });
    * ```
@@ -405,7 +405,7 @@ export class AgentApplication<TState extends TurnState> {
    * This method allows you to perform actions after a user has successfully authenticated.
    * The handler will receive the turn context and state.
    *
-   * Example usage:
+   * @example
    * ```typescript
    * app.onSignInSuccess(async (context, state) => {
    *   await context.sendActivity('You have successfully signed in!');
@@ -434,7 +434,7 @@ export class AgentApplication<TState extends TurnState> {
    * This method allows you to handle cases where a user fails to authenticate,
    * such as when they cancel the sign-in process or an error occurs.
    *
-   * Example usage:
+   * @example
    * ```typescript
    * app.onSignInFailure(async (context, state) => {
    *   await context.sendActivity('Sign-in failed. Please try again.');
@@ -463,7 +463,7 @@ export class AgentApplication<TState extends TurnState> {
    * This method registers a handler that will be invoked when a user adds a reaction to a message,
    * such as a like, heart, or other emoji reaction.
    *
-   * Example usage:
+   * @example
    * ```typescript
    * app.onMessageReactionAdded(async (context, state) => {
    *   const reactionsAdded = context.activity.reactionsAdded;
@@ -497,7 +497,7 @@ export class AgentApplication<TState extends TurnState> {
    * This method registers a handler that will be invoked when a user removes a reaction from a message,
    * such as unliking or removing an emoji reaction.
    *
-   * Example usage:
+   * @example
    * ```typescript
    * app.onMessageReactionRemoved(async (context, state) => {
    *   const reactionsRemoved = context.activity.reactionsRemoved;
@@ -531,7 +531,7 @@ export class AgentApplication<TState extends TurnState> {
    * It delegates the actual processing to the `runInternal` method, which handles
    * the core logic for routing and executing handlers.
    *
-   * Example usage:
+   * @example
    * ```typescript
    * const app = new AgentApplication();
    * await app.run(turnContext);
@@ -563,7 +563,7 @@ export class AgentApplication<TState extends TurnState> {
    * 8. Executes after-turn event handlers
    * 9. Saves turn state
    *
-   * Example usage:
+   * @example
    * ```typescript
    * const handled = await app.runInternal(turnContext);
    * if (!handled) {
@@ -677,7 +677,7 @@ export class AgentApplication<TState extends TurnState> {
    * @remarks
    * This method allows you to send messages proactively to a conversation, outside the normal turn flow.
    *
-   * Example usage:
+   * @example
    * ```typescript
    * // With conversation reference
    * await app.sendProactiveActivity(conversationReference, 'Important notification!');
@@ -714,7 +714,7 @@ export class AgentApplication<TState extends TurnState> {
    * The typing indicator helps provide feedback to users that the agent is processing
    * their message, especially when responses might take time to generate.
    *
-   * Example usage:
+   * @example
    * ```typescript
    * app.startTypingTimer(turnContext);
    * // Do some processing...
@@ -772,7 +772,7 @@ export class AgentApplication<TState extends TurnState> {
    * Extensions provide a way to add custom functionality to the application.
    * Each extension can only be registered once to prevent conflicts.
    *
-   * Example usage:
+   * @example
    * ```typescript
    * const myExtension = new MyCustomExtension();
    * app.registerExtension(myExtension, (ext) => {
@@ -798,7 +798,7 @@ export class AgentApplication<TState extends TurnState> {
    * from being sent. It's typically called automatically when a message is sent, but
    * can also be called manually to stop the typing indicator.
    *
-   * Example usage:
+   * @example
    * ```typescript
    * app.startTypingTimer(turnContext);
    * // Do some processing...
@@ -824,7 +824,7 @@ export class AgentApplication<TState extends TurnState> {
    * Handlers added for 'beforeTurn' are executed before routing logic.
    * Handlers added for 'afterTurn' are executed after routing logic.
    *
-   * Example usage:
+   * @example
    * ```typescript
    * app.onTurn('beforeTurn', async (context, state) => {
    *   console.log('Processing before turn');

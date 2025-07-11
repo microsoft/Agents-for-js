@@ -4,7 +4,7 @@
  */
 
 /**
- * Interface representing information required for file upload.
+ * Represents information required for file upload.
  */
 export interface FileUploadInfo {
   /**

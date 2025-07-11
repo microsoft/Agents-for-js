@@ -4,7 +4,7 @@
  */
 
 /**
- * Interface representing a Fact.
+ * Represents a Fact.
  */
 export interface Fact {
   /** The key of the fact. */

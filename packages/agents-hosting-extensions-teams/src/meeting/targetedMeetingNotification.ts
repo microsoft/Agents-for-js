@@ -8,7 +8,7 @@ import { MeetingNotificationChannelData } from './meetingNotificationChannelData
 import { TargetedMeetingNotificationValue } from './targetedMeetingNotificationValue'
 
 /**
- * Interface representing a targeted meeting notification.
+ * Represents a targeted meeting notification.
  */
 export interface TargetedMeetingNotification extends MeetingNotificationBase<TargetedMeetingNotificationValue> {
   /**

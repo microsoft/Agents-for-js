@@ -7,7 +7,7 @@ import { z } from 'zod'
 import { CardAction, cardActionZodSchema } from './cardAction'
 
 /**
- * Interface representing suggested actions.
+ * Represents suggested actions.
  */
 export interface SuggestedActions {
   /**

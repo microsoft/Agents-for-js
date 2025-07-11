@@ -25,15 +25,53 @@ const LAST_ACCESS = '_lastAccess'
 const CONVERSATION_STATE = 'ConversationState'
 const USER_STATE = 'UserState'
 
+/**
+ * Result returned by the DialogManager after processing a conversation turn.
+ * Contains the outcome of dialog execution and any state changes that occurred during the turn.
+ */
 export interface DialogManagerResult {
+  /**
+   * The result of executing the dialog during this conversation turn.
+   * Contains information about the dialog's completion state, any returned values,
+   * and whether the dialog is waiting for additional input from the user.
+   */
   turnResult: DialogTurnResult;
 }
 
+/**
+ * Configuration interface for DialogManager instances.
+ * Defines the required and optional settings needed to initialize and configure a dialog manager.
+ */
 export interface DialogManagerConfiguration {
+  /**
+   * The conversation state storage for maintaining dialog state across turns.
+   * This is required and manages the dialog stack and conversation-scoped data.
+   */
   conversationState: AgentState;
+
+  /**
+   * The root dialog that will be started when the dialog manager begins execution.
+   * This dialog serves as the entry point for the conversation flow.
+   */
   rootDialog: Dialog;
+
+  /**
+   * Optional user state storage for maintaining user-scoped data across conversations.
+   * When provided, enables persistence of user-specific information beyond individual conversations.
+   */
   userState?: UserState;
+
+  /**
+   * Optional timeout duration in milliseconds after which inactive conversations expire.
+   * When set, conversations that haven't been accessed within this timeframe will have their state cleared.
+   * If not specified, conversations will not automatically expire.
+   */
   expireAfter?: number;
+
+  /**
+   * Optional configuration for the dialog state manager.
+   * Provides advanced settings for how dialog state is managed and persisted.
+   */
   stateConfiguration?: DialogStateManagerConfiguration;
 }
 

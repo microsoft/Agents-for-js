@@ -6,7 +6,7 @@
 import { MeetingEventDetails } from './meetingEventDetails'
 
 /**
- * Interface representing the details of a meeting start event.
+ * Represents the details of a meeting start event.
  */
 export interface MeetingStartEventDetails extends MeetingEventDetails {
   /**

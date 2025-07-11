@@ -6,7 +6,7 @@
 import { Attachment } from '@microsoft/agents-activity'
 
 /**
- * Interface representing the task module task information.
+ * Represents the task module task information.
  */
 export interface TaskModuleTaskInfo {
   /**

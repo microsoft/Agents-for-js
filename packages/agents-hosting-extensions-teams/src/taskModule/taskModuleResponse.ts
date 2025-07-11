@@ -7,7 +7,7 @@ import { TaskModuleContinueResponse } from './taskModuleContinueResponse'
 import { TaskModuleMessageResponse } from './taskModuleMessageResponse'
 
 /**
- * Interface representing the response of a task module.
+ * Represents the response of a task module.
  */
 export interface TaskModuleResponse {
   /**

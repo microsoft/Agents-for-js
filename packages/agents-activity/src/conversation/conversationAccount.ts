@@ -7,7 +7,7 @@ import { z } from 'zod'
 import { roleTypeZodSchema, RoleTypes } from './roleTypes'
 
 /**
- * Interface representing a conversation account.
+ * Represents a conversation account.
  */
 export interface ConversationAccount {
   /**

@@ -27,6 +27,7 @@ const logger = debug('agents:cloud-adapter')
 /**
  * Adapter for handling agent interactions with various channels through cloud-based services.
  *
+ * @remarks
  * CloudAdapter processes incoming HTTP requests from Microsoft Bot Framework channels,
  * authenticates them, and generates outgoing responses. It manages the communication
  * flow between agents and users across different channels, handling activities, attachments,

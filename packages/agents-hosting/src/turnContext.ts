@@ -51,6 +51,7 @@ export interface TurnContext {}
 /**
  * Represents the context for a single turn in a conversation between a user and an agent.
  *
+ * @remarks
  * TurnContext is a central concept in the Agents framework - it contains:
  * - The incoming activity that started the turn
  * - Access to the adapter that can be used to send responses

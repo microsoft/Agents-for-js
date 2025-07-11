@@ -7,7 +7,7 @@ import { z } from 'zod'
 import { roleTypeZodSchema, RoleTypes } from './roleTypes'
 
 /**
- * Interface representing a channel account.
+ * Represents a channel account.
  */
 export interface ChannelAccount {
   /**

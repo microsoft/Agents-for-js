@@ -19,6 +19,10 @@ interface streamRead {
   value: string
 }
 
+/**
+ * Client for interacting with Microsoft Copilot Studio services.
+ * Provides functionality to start conversations and send messages to Copilot Studio bots.
+ */
 export class CopilotStudioClient {
   /** Header key for conversation ID. */
   private static readonly conversationIdHeaderKey: string = 'x-ms-conversationid'
@@ -33,8 +37,10 @@ export class CopilotStudioClient {
   private readonly client: AxiosInstance
 
   /**
-   * Returns the Scope URL needed to connect to Copilot Studio from the Connection Settings.
-   * @param settings Copilot Studio Connection Settings.
+   * Returns the scope URL needed to connect to Copilot Studio from the connection settings.
+   * This is used for authentication token audience configuration.
+   * @param settings Copilot Studio connection settings.
+   * @returns The scope URL for token audience.
    */
   static scopeFromSettings: (settings: ConnectionSettings) => string = getTokenAudience
 

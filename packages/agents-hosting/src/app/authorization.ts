@@ -15,7 +15,7 @@ import { Activity } from '@microsoft/agents-activity'
 const logger = debug('agents:authorization')
 
 /**
- * Interface representing the state of a sign-in process.
+ * Represents the state of a sign-in process.
  * @interface SignInState
  */
 export interface SignInState {

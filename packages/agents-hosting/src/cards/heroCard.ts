@@ -7,7 +7,7 @@ import { CardAction } from '@microsoft/agents-activity'
 import { CardImage } from './cardImage'
 
 /**
- * Interface representing a Hero Card.
+ * Represents a Hero Card.
  */
 export interface HeroCard {
   /** The title of the card. */

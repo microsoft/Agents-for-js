@@ -11,7 +11,7 @@ import { FileUploadInfo } from './fileUploadInfo'
 export type Action = 'accept' | 'decline'
 
 /**
- * Interface representing the response to a file consent card.
+ * Represents the response to a file consent card.
  */
 export interface FileConsentCardResponse {
   /**

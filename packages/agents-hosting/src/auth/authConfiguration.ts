@@ -50,6 +50,8 @@ export interface AuthConfiguration {
 
 /**
  * Loads the authentication configuration from environment variables.
+ *
+ * @example
  * ```
  * tenantId=your-tenant-id
  * clientId=your-client-id
@@ -106,6 +108,8 @@ export const loadAuthConfigFromEnv: (cnxName?: string) => AuthConfiguration = (c
 
 /**
  * Loads the agent authentication configuration from previous version environment variables.
+ *
+ * @example
  * ```
  * MicrosoftAppId=your-client-id
  * MicrosoftAppPassword=your-client-secret

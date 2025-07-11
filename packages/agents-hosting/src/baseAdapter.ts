@@ -17,7 +17,19 @@ import { AttachmentInfo } from './connector-client/attachmentInfo'
 const logger = debug('agents:base-adapter')
 
 /**
- * Base class for all adapters, providing middleware and error handling capabilities.
+ * Abstract base class for all adapters in the Agents framework.
+ *
+ * @remarks
+ * This class provides core functionality for handling conversations, managing middleware,
+ * authentication, and error handling. Adapters are responsible for translating between
+ * the Agents framework and specific communication channels (like Teams, Web Chat, etc.).
+ *
+ * Key features:
+ * - Middleware pipeline for processing incoming and outgoing activities
+ * - Error handling and recovery mechanisms
+ * - Authentication provider integration
+ * - Abstract methods for channel-specific operations
+ * - Context management with revocable proxies for security
  */
 export abstract class BaseAdapter {
   /**
@@ -41,8 +53,19 @@ export abstract class BaseAdapter {
     await context.sendActivity('To continue to run this agent, please fix the source code.')
   }
 
+  /**
+   * Symbol key used to store agent identity information in the TurnContext.
+   */
   readonly AgentIdentityKey = Symbol('AgentIdentity')
+
+  /**
+   * Symbol key used to store connector client instances in the TurnContext.
+   */
   readonly ConnectorClientKey = Symbol('ConnectorClient')
+
+  /**
+   * Symbol key used to store OAuth scope information in the TurnContext.
+   */
   readonly OAuthScopeKey = Symbol('OAuthScope')
 
   /**

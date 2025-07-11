@@ -6,7 +6,7 @@
 import { TeamsMeetingMember } from './teamsMeetingMember'
 
 /**
- * Interface representing the details of a meeting participants event.
+ * Represents the details of a meeting participants event.
  */
 export interface MeetingParticipantsEventDetails {
   /** The list of members participating in the meeting. */

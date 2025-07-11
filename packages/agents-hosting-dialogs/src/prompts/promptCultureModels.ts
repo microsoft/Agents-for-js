@@ -1,47 +1,86 @@
 import { Culture } from '@microsoft/recognizers-text-suite'
 
+/**
+ * Represents a culture-specific model that defines localization settings for prompts.
+ * This interface provides language-specific formatting rules and translations for
+ * interactive prompts such as choice lists and confirmation dialogs.
+ */
 export interface PromptCultureModel {
   /**
-     * Culture Model's Locale.
-     *
-     * @example
-     * "en-US"
-     */
+   * The locale identifier for this culture model.
+   * This follows the standard IETF language tag format (e.g., "en-US", "fr-FR", "ja-JP").
+   * Used to identify the target language and region for localization.
+   *
+   * @example
+   * "en-US" // English (United States)
+   * @example
+   * "fr-FR" // French (France)
+   * @example
+   * "ja-JP" // Japanese (Japan)
+   */
   locale: string;
+
   /**
-     * Culture Model's InlineSeparator.
-     *
-     * @example
-     * ", "
-     */
+   * The separator string used to delimit items in a list when presenting choices.
+   * This is typically used between items in the middle of a list, not before the final item.
+   *
+   * @example
+   * ", " // English: "apple, banana, orange"
+   * @example
+   * "、 " // Japanese: "りんご、 バナナ、 オレンジ"
+   */
   separator: string;
+
   /**
-     * Culture Model's InlineOr.
-     *
-     * @example
-     * " or "
-     */
+   * The conjunction string used before the final item in a two-item list.
+   * This is used when presenting exactly two choices to the user.
+   *
+   * @example
+   * " or " // English: "apple or banana"
+   * @example
+   * " ou " // French: "pomme ou banane"
+   * @example
+   * " または " // Japanese: "りんご または バナナ"
+   */
   inlineOr: string;
+
   /**
-     * Culture Model's InlineOrMore.
-     *
-     * @example
-     * ", or "
-     */
+   * The conjunction string used before the final item in a list of three or more items.
+   * This combines with the separator to create properly formatted choice lists.
+   *
+   * @example
+   * ", or " // English: "apple, banana, or orange"
+   * @example
+   * ", ou " // French: "pomme, banane, ou orange"
+   * @example
+   * "、 または " // Japanese: "りんご、 バナナ、 または オレンジ"
+   */
   inlineOrMore: string;
+
   /**
-     * Equivalent of "Yes" in Culture Model's Language.
-     *
-     * @example
-     * "Yes"
-     */
+   * The affirmative response word in the target language.
+   * Used in confirmation prompts and boolean choice scenarios.
+   *
+   * @example
+   * "Yes" // English
+   * @example
+   * "Oui" // French
+   * @example
+   * "はい" // Japanese
+   */
   yesInLanguage: string;
+
   /**
-     * Equivalent of "No" in Culture Model's Language.
-     *
-     * @example
-     * "No"
-     */
+   * The negative response word in the target language.
+   * Used in confirmation prompts and boolean choice scenarios.
+   *
+   * @example
+   * "No" // English
+   * @example
+   * "Non" // French
+   * @example
+   * "いいえ" // Japanese
+   */
   noInLanguage: string;
 }
 

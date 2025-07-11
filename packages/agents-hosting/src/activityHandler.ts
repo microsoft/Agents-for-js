@@ -30,12 +30,36 @@ const logger = debug('agents:activity-handler')
 /**
  * Handles incoming activities from channels and dispatches them to the appropriate handlers.
  *
- * The ActivityHandler provides a foundation for handling different types of activities
- * in an agent application. It processes various activity types such as messages, conversation updates,
- * message reactions, etc., and routes them to the appropriate handler methods.
+ * @remarks
  *
- * Developers can extend this class to implement custom handlers for specific activity types
- * or override existing ones to customize the behavior.
+ * This class is provided to simplify the migration from Bot Framework SDK v4 to the Agents Hosting framework.
+ *
+ * The ActivityHandler serves as the central hub for processing incoming activities in conversational AI applications.
+ * It provides a comprehensive framework for handling various activity types including messages, conversation updates,
+ * message reactions, typing indicators, installation updates, and invoke operations such as adaptive cards and search.
+ *
+ * ## Key Features:
+ * - **Activity Routing**: Automatically routes activities to appropriate handlers based on activity type
+ * - **Handler Registration**: Provides fluent API methods (onMessage, onConversationUpdate, etc.) for registering event handlers
+ * - **Invoke Support**: Built-in handling for adaptive card actions and search invoke operations
+ * - **Error Handling**: Robust error handling with proper HTTP status codes for invoke operations
+ * - **Extensibility**: Designed for inheritance to allow custom behavior and specialized handlers
+ *
+ * ## Usage:
+ * ```typescript
+ * const handler = new ActivityHandler()
+ *   .onMessage(async (context, next) => {
+ *     await context.sendActivity('Hello!');
+ *     await next();
+ *   })
+ *   .onMembersAdded(async (context, next) => {
+ *     // Welcome new members
+ *     await next();
+ *   });
+ * ```
+ *
+ * Developers can extend this class to implement domain-specific logic, override default behaviors,
+ * or add support for custom activity types and invoke operations.
  */
 export class ActivityHandler {
   /**

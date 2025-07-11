@@ -8,7 +8,7 @@ import { Entity, entityZodSchema } from '../entity/entity'
 import { SemanticActionStateTypes, semanticActionStateTypesZodSchema } from './semanticActionStateTypes'
 
 /**
- * Interface representing a semantic action.
+ * Represents a semantic action.
  */
 export interface SemanticAction {
   /**

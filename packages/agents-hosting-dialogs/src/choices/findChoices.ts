@@ -29,10 +29,38 @@ export interface FindChoicesOptions extends FindValuesOptions {
   recognizeOrdinals?: boolean;
 }
 
+/**
+ * Represents a choice that was found and matched within a user's utterance.
+ * This interface contains information about the matched choice, including its
+ * original value, position in the choices list, confidence score, and the
+ * specific text that triggered the match.
+ */
 export interface FoundChoice {
+  /**
+   * The original value of the choice that was matched. This is the canonical
+   * value from the choice list, not the text that was actually found in the utterance.
+   */
   value: string;
+
+  /**
+   * The zero-based index of this choice in the original choices array that was
+   * passed to the findChoices function. This allows you to map back to the
+   * original choice object if needed.
+   */
   index: number;
+
+  /**
+   * A confidence score between 0.0 and 1.0 indicating how well the found text
+   * matches the choice. Higher scores indicate better matches, with 1.0 being
+   * a perfect match.
+   */
   score: number;
+
+  /**
+   * The specific text or synonym that was actually matched in the user's utterance.
+   * This may be different from the choice's value if the match was made against
+   * a synonym, action title, or alternative representation of the choice.
+   */
   synonym?: string;
 }
 

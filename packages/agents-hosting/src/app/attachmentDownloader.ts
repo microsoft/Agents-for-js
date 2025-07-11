@@ -17,6 +17,7 @@ const logger = debug('agents:attachmentDownloader')
 /**
  * A utility class for downloading input files from activity attachments.
  *
+ * @remarks
  * This class provides functionality to filter and download attachments from a turn context,
  * supporting various content types and handling authentication for secure URLs.
  *

@@ -6,7 +6,7 @@
 import { TaskModuleRequestContext } from './taskModuleRequestContext'
 
 /**
- * Interface representing the request of a task module.
+ * Represents the request of a task module.
  */
 export interface TaskModuleRequest {
   /**

@@ -30,41 +30,96 @@ export interface FindValuesOptions {
   tokenizer?: TokenizerFunction;
 }
 
+/**
+ * Represents a value that was successfully found and matched during a search operation.
+ * This interface contains the matched value along with metadata about the match quality
+ * and its position in the original search list.
+ *
+ * @example
+ * ```typescript
+ * // Example of a FoundValue result from searching for "red" in ["red", "green", "blue"]
+ * const foundValue: FoundValue = {
+ *   value: "red",
+ *   index: 0,
+ *   score: 1.0
+ * };
+ * ```
+ */
 export interface FoundValue {
   /**
-   * The value that was found in the search.
+   * The exact value that was matched from the original search list.
+   * This is the original string value, not the user's input that matched it.
+   *
+   * @example "red" (when user typed "rd" and it matched "red")
    */
   value: string;
 
   /**
-   * The index of the value in the original list.
+   * The zero-based index position of this value in the original list that was searched.
+   * This allows you to correlate the found value back to its position in the source array.
+   *
+   * @example 0 (if "red" was the first item in the original choices array)
    */
   index: number;
 
   /**
-   * The confidence score of the match.
+   * A confidence score between 0 and 1 indicating the quality of the match.
+   * - 1.0 indicates a perfect exact match
+   * - Lower values indicate partial or fuzzy matches
+   * - Calculated based on completeness (how much of the value matched) and accuracy (token distance)
+   *
+   * @example 1.0 for exact matches, 0.8 for close partial matches, 0.3 for distant fuzzy matches
    */
   score: number;
 }
 
+/**
+ * Represents a value with its original position that can be used in search operations.
+ * This interface is used internally by the search algorithm to maintain the relationship
+ * between search values and their original positions in the source array.
+ *
+ * @example
+ * ```typescript
+ * // Example of SortedValue objects created from a choices array
+ * const choices = ["red", "green", "blue"];
+ * const sortedValues: SortedValue[] = choices.map((value, index) => ({
+ *   value,
+ *   index
+ * }));
+ * // Results in:
+ * // [
+ * //   { value: "red", index: 0 },
+ * //   { value: "green", index: 1 },
+ * //   { value: "blue", index: 2 }
+ * // ]
+ * ```
+ */
 export interface SortedValue {
   /**
-   * The value to be searched for.
+   * The string value to be searched for during matching operations.
+   * This is the actual text content that will be compared against user input.
+   *
+   * @example "red", "green", "blue" when searching color choices
    */
   value: string;
 
   /**
-   * The index of the value in the original list.
+   * The zero-based index position of this value in the original source array.
+   * This allows the search algorithm to correlate found matches back to their
+   * original positions, which is essential for maintaining proper choice selection.
+   *
+   * @example 0 for the first item, 1 for the second item, etc.
    */
   index: number;
 }
 
 /**
- * INTERNAL: Low-level function that searches for a set of values within an utterance. Higher level
+ * Low-level function that searches for a set of values within an utterance. Higher level
  * functions like `findChoices()` and `recognizeChoices()` are layered above this function.  In most
  * cases its easier to just call one of the higher level functions instead but this function contains
  * the fuzzy search algorithm that drives choice recognition.
  *
+ * @internal
  * @param utterance The text or user utterance to search over.
  * @param values List of values to search over.
  * @param options (Optional) options used to tweak the search that's performed.

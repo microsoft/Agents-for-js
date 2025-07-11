@@ -11,6 +11,7 @@ const logger = debug('agents:memory-storage')
 /**
  * A simple in-memory storage provider that implements the Storage interface.
  *
+ * @remarks
  * This class provides a volatile storage solution that keeps data in memory,
  * which means data is lost when the process terminates. It's primarily useful for:
  * - Development and testing scenarios
@@ -18,7 +19,7 @@ const logger = debug('agents:memory-storage')
  * - Stateless environments where external storage isn't available
  *
  * MemoryStorage supports optimistic concurrency control through eTags and
- * can be used as a singleton through the getSingleInstance() method to
+ * can be used as a singleton through the {@link MemoryStorage.getSingleInstance | getSingleInstance() method} to
  * share state across different parts of an application.
  */
 export class MemoryStorage implements Storage {

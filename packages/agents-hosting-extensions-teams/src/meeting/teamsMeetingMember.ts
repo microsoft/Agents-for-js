@@ -7,7 +7,7 @@ import { TeamsChannelAccount } from '../activity-extensions/teamsChannelAccount'
 import { UserMeetingDetails } from './userMeetingDetails'
 
 /**
- * Interface representing a member of a Teams meeting.
+ * Represents a member of a Teams meeting.
  */
 export interface TeamsMeetingMember {
   /**
