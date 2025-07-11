@@ -5,6 +5,8 @@
 
 /**
  * Represents an Adaptive Card, which is a card framework that enables developers to exchange UI content in a common and consistent way.
+ *
+ * @remarks
  * @see {@link https://learn.microsoft.com/adaptive-cards/ | Adaptive Cards Documentation}
  */
 export interface AdaptiveCard {
