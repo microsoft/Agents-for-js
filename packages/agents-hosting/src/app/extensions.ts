@@ -24,6 +24,30 @@ export class AgentExtension<TState extends TurnState> {
     this.channelId = channelId
   }
 
+  /**
+   * Adds a route to the agent application that is only active for the channel specified in this extension.
+   * This method creates a channel-specific route by wrapping the provided route selector with an additional
+   * check to ensure the incoming activity matches the extension's channel ID.
+   *
+   * @param app - The agent application instance to add the route to
+   * @param routeSelector - A function that determines if the route should handle the incoming activity
+   * @param routeHandler - The handler function that will process the activity when the route is matched
+   * @param isInvokeRoute - Optional. Whether this route handles invoke activities. Defaults to false
+   * @param rank - Optional. The priority rank of this route for routing precedence. Defaults to RouteRank.Unspecified
+   *
+   * @example
+   * ```typescript
+   * const teamsExtension = new AgentExtension<MyState>('msteams');
+   * teamsExtension.addRoute(
+   *   app,
+   *   (context) => context.activity.type === 'message',
+   *   async (context, state) => {
+   *     // Handle Teams-specific message
+   *     await context.sendActivity('Hello from Teams!');
+   *   }
+   * );
+   * ```
+   */
   addRoute (
     app: AgentApplication<TState>,
     routeSelector: RouteSelector,
