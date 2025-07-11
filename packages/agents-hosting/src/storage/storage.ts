@@ -48,6 +48,7 @@ export type StorageKeyFactory = (context: TurnContext) => string | Promise<strin
 /**
  * Defines the interface for storage operations in the Agents platform.
  *
+ * @remarks
  * Storage providers persist state data across conversation turns, enabling
  * agents to maintain context over time. Different implementations may store
  * data in memory, databases, blob storage, or other persistence mechanisms.
