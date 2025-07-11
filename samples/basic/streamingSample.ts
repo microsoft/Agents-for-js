@@ -25,15 +25,15 @@ agent.onActivity('message', async (context: TurnContext, state: TurnState) => {
   context.streamingResponse.setFeedbackLoop(true)
   context.streamingResponse.setSensitivityLabel({ type: 'https://schema.org/Message', '@type': 'CreativeWork', name: 'Internal' })
   context.streamingResponse.setGeneratedByAILabel(true)
-  await context.streamingResponse.queueInformativeUpdate('starting streaming response')
+  context.streamingResponse.queueInformativeUpdate('starting streaming response')
   await sleep(1000)
   for (let i = 0; i < 5; i++) {
     console.log(`Streaming chunk ${i + 1}`)
-    await context.streamingResponse.queueTextChunk(`part [${i + 1}] `)
+    context.streamingResponse.queueTextChunk(`part [${i + 1}] `)
     await sleep(i * 500)
   }
-  await context.streamingResponse.queueTextChunk('This is the last part of the streaming response. [doc1] and [doc2]')
-  await context.streamingResponse.setCitations([
+  context.streamingResponse.queueTextChunk('This is the last part of the streaming response. [doc1] and [doc2]')
+  context.streamingResponse.setCitations([
     { title: 'Citation1', content: 'file', filepath: '', url: 'file:////' },
     { title: 'Citation2', content: 'loooonger content', filepath: '', url: 'file:////' }])
   await context.streamingResponse.endStream()
