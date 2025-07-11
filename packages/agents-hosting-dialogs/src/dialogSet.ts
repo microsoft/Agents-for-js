@@ -11,10 +11,47 @@ import { Dialog } from './dialog'
 import { DialogContext, DialogState } from './dialogContext'
 import { StringUtils } from './stringUtils'
 
+/**
+ * Interface for dialogs that have child dialog dependencies.
+ *
+ * @remarks
+ * Implement this interface on dialog classes that need to register child dialogs
+ * with their parent dialog set. When a dialog implementing this interface is added
+ * to a DialogSet, the DialogSet will automatically call getDependencies() and add
+ * all returned child dialogs to itself, ensuring proper dialog registration and
+ * avoiding runtime errors when the dialog tries to call child dialogs.
+ *
+ * This is particularly useful for complex dialogs that compose multiple sub-dialogs
+ * or for dialog libraries that need to ensure their dependencies are available.
+ *
+ * @example
+ * ```typescript
+ * class MyComplexDialog extends Dialog implements DialogDependencies {
+ *   private textPrompt = new TextPrompt('textPrompt');
+ *   private confirmPrompt = new ConfirmPrompt('confirmPrompt');
+ *
+ *   getDependencies(): Dialog[] {
+ *     return [this.textPrompt, this.confirmPrompt];
+ *   }
+ * }
+ * ```
+ */
 export interface DialogDependencies {
   /**
-     * Returns a dialogs child dialog dependencies so they can be added to a containers dialog set.
-     */
+   * Returns an array of child dialogs that this dialog depends on.
+   *
+   * @returns An array of Dialog instances that should be added to the parent DialogSet.
+   *
+   * @remarks
+   * This method is called automatically by DialogSet.add() when a dialog implementing
+   * this interface is added to the set. All returned dialogs will be recursively
+   * added to the same DialogSet, ensuring they are available when needed during
+   * dialog execution.
+   *
+   * The returned dialogs should be the actual Dialog instances that will be called
+   * by this dialog, not new instances. This ensures proper dialog lifecycle management
+   * and state consistency.
+   */
   getDependencies(): Dialog[];
 }
 
