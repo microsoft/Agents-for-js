@@ -5,9 +5,12 @@
 
 import { AgentType } from './agentType'
 import { ConnectionSettings } from './connectionSettings'
+import { debug } from '@microsoft/agents-activity/src/logger'
 import { PowerPlatformCloud } from './powerPlatformCloud'
 import { PrebuiltBotStrategy } from './strategies/prebuiltBotStrategy'
 import { PublishedBotStrategy } from './strategies/publishedBotStrategy'
+
+const logger = debug('copilot-studio:power-platform')
 
 /**
  * Generates the connection URL for Copilot Studio.
@@ -23,12 +26,14 @@ export function getCopilotStudioConnectionUrl (
   let cloudValue: PowerPlatformCloud = PowerPlatformCloud.Prod
 
   if (settings.directConnectUrl?.trim()) {
+    logger.debug(`Using direct connection: ${settings.directConnectUrl}`)
     if (!isValidUri(settings.directConnectUrl)) {
       throw new Error('directConnectUrl must be a valid URL')
     }
 
     // FIX for Missing Tenant ID
-    if (settings.directConnectUrl.toLocaleLowerCase().includes('tenants/00000000-0000-0000-0000-000000000000')) {
+    if (settings.directConnectUrl.toLowerCase().includes('tenants/00000000-0000-0000-0000-000000000000')) {
+      logger.debug(`Direct connection cannot be used, forcing default settings flow. Tenant ID is missing in the URL: ${settings.directConnectUrl}`)
       // Direct connection cannot be used, ejecting and forcing the normal settings flow:
       return getCopilotStudioConnectionUrl({ ...settings, directConnectUrl: '' }, conversationId)
     }
@@ -58,15 +63,17 @@ export function getCopilotStudioConnectionUrl (
   }
 
   if (cloudSetting !== PowerPlatformCloud.Unknown) {
+    logger.debug(`Using specified cloud setting: ${cloudSetting}`)
     cloudValue = cloudSetting
   }
 
   if (cloudSetting === PowerPlatformCloud.Other) {
     if (isNotEmptyCustomPowerPlatformCloud && isValidUri(settings.customPowerPlatformCloud!)) {
+      logger.debug(`Using custom Power Platform cloud: ${settings.customPowerPlatformCloud}`)
       cloudValue = PowerPlatformCloud.Other
     } else {
       throw new Error(
-        'customPowerPlatformCloud must be provided when PowerPlatformCloud is Other'
+        'customPowerPlatformCloud must be a valid URL'
       )
     }
   }
@@ -77,9 +84,11 @@ export function getCopilotStudioConnectionUrl (
     if (!Object.values(AgentType).includes(settings.copilotAgentType)) {
       throw new Error('Invalid AgentType enum key')
     } else {
+      logger.debug(`Using specified agent type: ${settings.copilotAgentType}`)
       agentType = settings.copilotAgentType
     }
   } else {
+    logger.debug('Using default agent type: Published')
     agentType = AgentType.Published
   }
 
@@ -98,7 +107,9 @@ export function getCopilotStudioConnectionUrl (
     }),
   }[agentType]()
 
-  return strategy.getConversationUrl(conversationId)
+  const url = strategy.getConversationUrl(conversationId)
+  logger.debug(`Generated Copilot Studio connection URL: ${url}`)
+  return url
 }
 
 /**

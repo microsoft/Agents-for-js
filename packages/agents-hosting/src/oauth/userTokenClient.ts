@@ -3,7 +3,7 @@
 
 import axios, { AxiosInstance } from 'axios'
 import { ConversationReference } from '@microsoft/agents-activity'
-import { debug } from '../logger'
+import { debug } from '@microsoft/agents-activity/src/logger'
 import { normalizeTokenExchangeState } from '../activityWireCompat'
 import { AadResourceUrls, SignInResource, TokenExchangeRequest, TokenOrSinginResourceResponse, TokenResponse, TokenStatus } from './userTokenClient.types'
 import { getProductInfo } from '../getProductInfo'

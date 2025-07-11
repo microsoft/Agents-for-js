@@ -1,6 +1,6 @@
 /** * Copyright (c) Microsoft Corporation. All rights reserved. * Licensed under the MIT License. */
 import { TurnContext } from './turnContext'
-import { debug } from './logger'
+import { debug } from '@microsoft/agents-activity/src/logger'
 
 const logger = debug('agents:middleware')
 
