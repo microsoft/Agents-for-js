@@ -6,7 +6,7 @@
 import { ConfidentialClientApplication, LogLevel, ManagedIdentityApplication, NodeSystemOptions } from '@azure/msal-node'
 import { AuthConfiguration } from './authConfiguration'
 import { AuthProvider } from './authProvider'
-import { debug } from '../logger'
+import { debug } from '@microsoft/agents-activity/src/logger'
 import { v4 } from 'uuid'
 
 import fs from 'fs'
@@ -82,7 +82,9 @@ export class MsalTokenProvider implements AuthProvider {
             logger.info(message)
             return
           case LogLevel.Warning:
-            logger.warn(message)
+            if (!message.includes('Warning - No client info in response')) {
+              logger.warn(message)
+            }
             return
           case LogLevel.Verbose:
             logger.debug(message)

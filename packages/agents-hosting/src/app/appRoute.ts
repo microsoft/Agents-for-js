@@ -25,6 +25,12 @@ export interface AppRoute<TState extends TurnState> {
   isInvokeRoute?: boolean;
 
   /**
+   * Optional rank of the route, used to determine the order in which routes are evaluated.
+   * 0 - number.MAX_VALUE. Ranks of the same value are evaluated in order of addition.
+   */
+  rank?: number;
+
+  /**
    * Optional list of authorization handlers that this route requires.
    * If provided, the route will check for these handlers before processing.
    */

@@ -4,7 +4,7 @@
  */
 
 import { TurnContext } from '../turnContext'
-import { debug } from '../logger'
+import { debug } from '@microsoft/agents-activity/src/logger'
 import { TurnState } from './turnState'
 import { Storage } from '../storage'
 import { OAuthFlow, TokenResponse } from '../oauth'
