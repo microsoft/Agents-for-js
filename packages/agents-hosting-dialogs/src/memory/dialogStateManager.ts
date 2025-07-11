@@ -12,15 +12,50 @@ import { DialogsComponentRegistration } from '../dialogsComponentRegistration'
 import { MemoryScope } from './scopes'
 import { PathResolver } from './pathResolvers'
 
+/**
+ * Configuration options for the DialogStateManager.
+ *
+ * @remarks
+ * This interface defines the configuration settings that control how the DialogStateManager
+ * resolves memory paths and manages different memory scopes within a dialog context.
+ * The configuration is shared across all DialogStateManager instances within a dialog chain
+ * and is cached in turn state for performance optimization.
+ */
 export interface DialogStateManagerConfiguration {
   /**
-     * List of path resolvers used to evaluate memory paths.
-     */
+   * List of path resolvers used to evaluate and transform memory path expressions.
+   *
+   * @remarks
+   * Path resolvers provide shortcut behavior for mapping path expressions to their
+   * actual memory locations. For example, a resolver might transform '$foo' to 'dialog.foo'
+   * or 'user.name' to 'user.profile.name'. Resolvers are applied in order during path
+   * transformation, allowing for complex path mapping scenarios.
+   *
+   * Common path resolver types include:
+   * - Dollar sign resolvers (e.g., $variable -> dialog.variable)
+   * - Scope alias resolvers (e.g., this -> dialog)
+   * - Custom application-specific resolvers
+   */
   readonly pathResolvers: PathResolver[];
 
   /**
-     * List of the supported memory scopes.
-     */
+   * List of the supported memory scopes available to the dialog state manager.
+   *
+   * @remarks
+   * Memory scopes are named root-level objects that provide access to different
+   * types of persistent and transient data within the dialog system. Each scope
+   * manages its own data lifecycle including loading, saving, and deletion operations.
+   *
+   * Common memory scope types include:
+   * - dialog: Dialog-specific data that persists across turns
+   * - user: User-specific data that persists across conversations
+   * - conversation: Conversation-specific data
+   * - turn: Turn-specific data (transient)
+   * - settings: Application configuration data
+   *
+   * Scopes can exist either in the dialog context or in turn state, and each
+   * scope determines whether it should be included in memory snapshots for debugging.
+   */
   readonly memoryScopes: MemoryScope[];
 }
 
