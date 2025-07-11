@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 import { startServer } from '@microsoft/agents-hosting-express'
-import { AgentApplication, MemoryStorage, TurnContext, TurnState, Storage } from '@microsoft/agents-hosting'
+import { AgentApplication, MemoryStorage, TurnContext, TurnState, RouteRank, Storage } from '@microsoft/agents-hosting'
 
 class EmptyAgent extends AgentApplication<TurnState> {
   constructor (storage?: Storage) {
@@ -13,6 +13,8 @@ class EmptyAgent extends AgentApplication<TurnState> {
     this.onMessage('fooBar', this.fooBar)
     this.onMessage('FOO', this.FOO)
     this.onActivity('message', this.echo)
+    this.onMessage('dupText', this.dupText1, undefined, RouteRank.Last) // Last evaluated route. Shouldn't be reached.
+    this.onMessage('dupText', this.dupText2, undefined, RouteRank.First) // First evaluated route. Should be executed first.
   }
 
   foo = async (ctx: TurnContext) => {
@@ -31,6 +33,14 @@ class EmptyAgent extends AgentApplication<TurnState> {
     let counter: number = state.getValue('conversation.counter') || 0
     await ctx.sendActivity(`[${counter++}]You said now: ${ctx.activity.text}`)
     state.setValue('conversation.counter', counter)
+  }
+
+  dupText1 = async (ctx: TurnContext) => {
+    await ctx.sendActivity('Last ranked dupText')
+  }
+
+  dupText2 = async (ctx: TurnContext) => {
+    await ctx.sendActivity('First ranked dupText')
   }
 }
 

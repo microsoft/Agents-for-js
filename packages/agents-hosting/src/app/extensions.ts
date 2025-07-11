@@ -1,6 +1,7 @@
 import { TurnContext } from '../turnContext'
 import { AgentApplication } from './agentApplication'
 import { RouteHandler } from './routeHandler'
+import { RouteRank } from './routeRank'
 import { RouteSelector } from './routeSelector'
 import { TurnState } from './turnState'
 
@@ -23,20 +24,15 @@ export class AgentExtension<TState extends TurnState> {
     this.channelId = channelId
   }
 
-  /**
-   * Adds a route to the agent application that is only active for this extension's channel.
-   * The route will only be triggered when the incoming activity's channel ID matches this extension's channel ID
-   * and the route selector returns true.
-   *
-   * @param app - The agent application to add the route to
-   * @param routeSelector - Function that determines if this route should handle the current context
-   * @param routeHandler - Function that handles the route when it's selected
-   * @param isInvokeRoute - Optional flag indicating if this is an invoke route (defaults to false)
-   */
-  addRoute (app: AgentApplication<TState>, routeSelector: RouteSelector, routeHandler: RouteHandler<TurnState>, isInvokeRoute: boolean = false) {
+  addRoute (
+    app: AgentApplication<TState>,
+    routeSelector: RouteSelector,
+    routeHandler: RouteHandler<TurnState>,
+    isInvokeRoute: boolean = false,
+    rank: number = RouteRank.Unspecified) {
     const ensureChannelMatches = async (context: TurnContext) => {
       return context.activity.channelId === this.channelId && routeSelector(context)
     }
-    app.addRoute(ensureChannelMatches, routeHandler)
+    app.addRoute(ensureChannelMatches, routeHandler, isInvokeRoute, rank)
   }
 }
