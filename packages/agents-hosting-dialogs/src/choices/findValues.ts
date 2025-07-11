@@ -73,14 +73,42 @@ export interface FoundValue {
   score: number;
 }
 
+/**
+ * Represents a value with its original position that can be used in search operations.
+ * This interface is used internally by the search algorithm to maintain the relationship
+ * between search values and their original positions in the source array.
+ *
+ * @example
+ * ```typescript
+ * // Example of SortedValue objects created from a choices array
+ * const choices = ["red", "green", "blue"];
+ * const sortedValues: SortedValue[] = choices.map((value, index) => ({
+ *   value,
+ *   index
+ * }));
+ * // Results in:
+ * // [
+ * //   { value: "red", index: 0 },
+ * //   { value: "green", index: 1 },
+ * //   { value: "blue", index: 2 }
+ * // ]
+ * ```
+ */
 export interface SortedValue {
   /**
-   * The value to be searched for.
+   * The string value to be searched for during matching operations.
+   * This is the actual text content that will be compared against user input.
+   *
+   * @example "red", "green", "blue" when searching color choices
    */
   value: string;
 
   /**
-   * The index of the value in the original list.
+   * The zero-based index position of this value in the original source array.
+   * This allows the search algorithm to correlate found matches back to their
+   * original positions, which is essential for maintaining proper choice selection.
+   *
+   * @example 0 for the first item, 1 for the second item, etc.
    */
   index: number;
 }
