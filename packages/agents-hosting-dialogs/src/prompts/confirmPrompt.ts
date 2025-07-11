@@ -9,9 +9,60 @@ import { ListStyle, Prompt, PromptOptions, PromptRecognizerResult, PromptValidat
 import { PromptCultureModels } from './promptCultureModels'
 import { Activity } from '@microsoft/agents-activity'
 
-// Need ChoiceDefaultsProperty so we can set choiceDefaults dynamically with lambda
+/**
+ * Defines locale-specific choice defaults for confirmation prompts.
+ *
+ * @remarks
+ * This interface represents a dictionary that maps locale strings to their corresponding
+ * choice configurations for confirmation prompts. Each locale entry contains the localized
+ * "yes" and "no" choices along with formatting options for how those choices should be
+ * presented to the user.
+ *
+ * The interface is designed to support dynamic configuration of choice defaults using
+ * lambda expressions or other dynamic assignment patterns.
+ *
+ * @example
+ * ```typescript
+ * const customChoiceDefaults: ChoiceDefaultsConfirmPrompt = {
+ *   'en-us': {
+ *     choices: ['Yes', 'No'],
+ *     options: {
+ *       inlineSeparator: ', ',
+ *       inlineOr: ' or ',
+ *       includeNumbers: true
+ *     }
+ *   },
+ *   'es-es': {
+ *     choices: ['Sí', 'No'],
+ *     options: {
+ *       inlineSeparator: ', ',
+ *       inlineOr: ' o ',
+ *       includeNumbers: true
+ *     }
+ *   }
+ * };
+ * ```
+ */
 export interface ChoiceDefaultsConfirmPrompt {
-  [locale: string]: { choices: (string | Choice)[]; options: ChoiceFactoryOptions };
+  /**
+   * Locale-specific choice configuration.
+   *
+   * @remarks
+   * The key is a locale string (e.g., 'en-us', 'fr-fr', 'de-de') and the value
+   * contains the localized choices and formatting options for that locale.
+   */
+  [locale: string]: {
+    /**
+     * Array of localized choice options, typically ["Yes", "No"] equivalents.
+     * Can be either string values or Choice objects for more complex configurations.
+     */
+    choices: (string | Choice)[];
+    /**
+     * Formatting options that control how the choices are presented to the user,
+     * including separators, conjunctions, and whether to include numbers.
+     */
+    options: ChoiceFactoryOptions
+  };
 }
 
 /**
