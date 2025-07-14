@@ -29,7 +29,7 @@ export interface MembershipSource {
   /**
    * The group ID of the team associated with this membership source.
    */
-  aadGroupId?: string
+  teamGroupId: string
 
   /**
    * Optional. The tenant ID for the user.
