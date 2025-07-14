@@ -27,7 +27,7 @@ export interface MembershipSource {
   membershipType: MembershipTypes;
 
   /**
-   * Optional. The AAD group for the user.
+   * The group ID of the team associated with this membership source.
    */
   aadGroupId?: string
 
