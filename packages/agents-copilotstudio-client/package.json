@@ -36,10 +36,12 @@
   "files": [
     "README.md",
     "dist/src",
-    "src"
+    "src",
+    "package.json"
   ],
   "exports": {
     ".": {
+      "types": "./dist/src/index.d.ts",
       "import": {
         "browser": "./dist/src/browser.mjs",
         "default": "./dist/src/index.js"
