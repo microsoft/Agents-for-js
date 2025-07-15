@@ -96,7 +96,7 @@ export const loadAuthConfigFromEnv: (cnxName?: string) => AuthConfiguration = (c
       certPemFile: process.env[`${cnxName}_certPemFile`],
       certKeyFile: process.env[`${cnxName}_certKeyFile`],
       connectionName: process.env[`${cnxName}_connectionName`],
-      FICClientId: process.env.FICClientId,
+      FICClientId: process.env[`${cnxName}_FICClientId`],
       issuers: [
         'https://api.botframework.com',
         `https://sts.windows.net/${process.env[`${cnxName}_tenantId`]}/`,

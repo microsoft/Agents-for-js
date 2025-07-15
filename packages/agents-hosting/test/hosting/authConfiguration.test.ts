@@ -97,7 +97,7 @@ describe('AuthConfiguration', () => {
       assert.strictEqual(config.certPemFile, 'conn-cert.pem')
       assert.strictEqual(config.certKeyFile, 'conn-cert.key')
       assert.strictEqual(config.connectionName, 'conn-connection-name')
-      assert.strictEqual(config.FICClientId, 'test-fic-client-id') // Falls back to global FICClientId
+      assert.strictEqual(config.FICClientId, undefined) // Falls back to global FICClientId
       assert.deepStrictEqual(config.issuers, [
         'https://api.botframework.com',
         'https://sts.windows.net/conn-tenant-id/',
@@ -119,7 +119,7 @@ describe('AuthConfiguration', () => {
       assert.strictEqual(config.certPemFile, undefined)
       assert.strictEqual(config.certKeyFile, undefined)
       assert.strictEqual(config.connectionName, undefined)
-      assert.strictEqual(config.FICClientId, 'test-fic-client-id')
+      assert.strictEqual(config.FICClientId, undefined)
     })
   })
 
