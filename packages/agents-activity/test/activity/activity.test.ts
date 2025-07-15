@@ -721,7 +721,7 @@ describe('Activity applyConversationReference', () => {
 
     const result = activity.applyConversationReference(reference, false)
 
-    assert.deepEqual(result, {
+    assert.deepEqual(result, Activity.fromObject({
       type: 'message',
       locale: 'en-US',
       id: 'activity123',
@@ -731,7 +731,7 @@ describe('Activity applyConversationReference', () => {
       from: { id: 'bot1', name: 'Bot' },
       recipient: { id: 'user1', name: 'User' },
       replyToId: 'refActivityId'
-    })
+    }))
   })
 
   it('should apply reference values for isIncoming true', () => {
@@ -753,7 +753,7 @@ describe('Activity applyConversationReference', () => {
 
     const result = activity.applyConversationReference(reference, true)
 
-    assert.deepEqual(result, {
+    assert.deepEqual(result, Activity.fromObject({
       type: 'message',
       id: 'refActivityId',
       locale: 'en-US',
@@ -762,7 +762,7 @@ describe('Activity applyConversationReference', () => {
       conversation: { id: 'conversation1' },
       from: { id: 'user1', name: 'User' },
       recipient: { id: 'bot1', name: 'Bot' }
-    })
+    }))
   })
 
   it('should apply reference values for reference.bot null and isIncoming false', () => {
@@ -784,7 +784,7 @@ describe('Activity applyConversationReference', () => {
 
     const result = activity.applyConversationReference(reference, false)
 
-    assert.deepEqual(result, {
+    assert.deepEqual(result, Activity.fromObject({
       type: 'message',
       locale: 'en-US',
       id: 'activity123',
@@ -794,7 +794,7 @@ describe('Activity applyConversationReference', () => {
       from: undefined,
       recipient: { id: 'user1', name: 'User' },
       replyToId: 'refActivityId'
-    })
+    }))
   })
 
   it('should apply reference values for reference.bot null and isIncoming true', () => {
@@ -816,7 +816,7 @@ describe('Activity applyConversationReference', () => {
 
     const result = activity.applyConversationReference(reference, true)
 
-    assert.deepEqual(result, {
+    assert.deepEqual(result, Activity.fromObject({
       type: 'message',
       id: 'refActivityId',
       locale: 'en-US',
@@ -825,7 +825,7 @@ describe('Activity applyConversationReference', () => {
       conversation: { id: 'conversation1' },
       from: { id: 'user1', name: 'User' },
       recipient: undefined
-    })
+    }))
   })
 })
 
