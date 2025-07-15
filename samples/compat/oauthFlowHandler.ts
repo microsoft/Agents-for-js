@@ -4,7 +4,7 @@
 import { startServer } from '@microsoft/agents-hosting-express'
 import { ActivityHandler, CardFactory, MessageFactory, TurnContext, OAuthFlow, Storage, FileStorage } from '@microsoft/agents-hosting'
 import { Template } from 'adaptivecards-templating'
-import { getUserInfo } from './../_shared/userGraphClient'
+import { getUserInfo } from './../_shared/userGraphClient.js'
 
 export class OAuthFlowHanlder extends ActivityHandler {
   oAuthFlow: OAuthFlow
