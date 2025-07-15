@@ -8,7 +8,7 @@ import { AppMemory } from './appMemory'
 import { InputFile } from './inputFileDownloader'
 import { TurnStateEntry } from './turnStateEntry'
 import { TurnContext } from '../turnContext'
-import { debug } from '@microsoft/agents-activity/src/logger'
+import { debug } from '@microsoft/agents-activity/logger'
 
 const logger = debug('agents:turnState')
 

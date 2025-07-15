@@ -6,7 +6,7 @@
 import { Activity, ActivityTypes, ConversationReference } from '@microsoft/agents-activity'
 import { BaseAdapter } from '../baseAdapter'
 import { ResourceResponse } from '../connector-client'
-import { debug } from '@microsoft/agents-activity/src/logger'
+import { debug } from '@microsoft/agents-activity/logger'
 import { TurnContext } from '../turnContext'
 import { AdaptiveCardsActions } from './adaptiveCards'
 import { AgentApplicationOptions } from './agentApplicationOptions'

@@ -3,12 +3,11 @@
  * Licensed under the MIT License.
  */
 
-import { Activity, addAIToActivity, Attachment, Entity } from '@microsoft/agents-activity'
+import { Activity, addAIToActivity, Attachment, Entity, ClientCitation, SensitivityUsageInfo } from '@microsoft/agents-activity'
 import { TurnContext } from '../../turnContext'
 import { Citation } from './citation'
 import { CitationUtil } from './citationUtil'
-import { debug } from '@microsoft/agents-activity/src/logger'
-import { ClientCitation, SensitivityUsageInfo } from '@microsoft/agents-activity/src/entity/AIEntity'
+import { debug } from '@microsoft/agents-activity/logger'
 
 const logger = debug('agents:streamingResponse')
 

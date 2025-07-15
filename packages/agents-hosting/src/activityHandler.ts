@@ -2,7 +2,7 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
-import { debug } from '@microsoft/agents-activity/src/logger'
+import { debug } from '@microsoft/agents-activity/logger'
 import { TurnContext } from './turnContext'
 import { Activity, ActivityTypes, Channels } from '@microsoft/agents-activity'
 import { StatusCodes } from './statusCodes'

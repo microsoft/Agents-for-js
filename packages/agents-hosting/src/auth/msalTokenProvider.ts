@@ -6,7 +6,7 @@
 import { ConfidentialClientApplication, LogLevel, ManagedIdentityApplication, NodeSystemOptions } from '@azure/msal-node'
 import { AuthConfiguration } from './authConfiguration'
 import { AuthProvider } from './authProvider'
-import { debug } from '@microsoft/agents-activity/src/logger'
+import { debug } from '@microsoft/agents-activity/logger'
 import { v4 } from 'uuid'
 
 import fs from 'fs'

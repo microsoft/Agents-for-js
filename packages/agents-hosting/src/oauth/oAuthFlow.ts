@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-import { debug } from '@microsoft/agents-activity/src/logger'
+import { debug } from '@microsoft/agents-activity/logger'
 import { Activity, ActivityTypes, Attachment } from '@microsoft/agents-activity'
 import {
   CardFactory,

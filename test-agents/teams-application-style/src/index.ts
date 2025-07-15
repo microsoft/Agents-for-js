@@ -14,10 +14,10 @@ async function loadModule () {
   let module
   switch (moduleName) {
     case 'teamsApp':
-      module = (await import('./teamsApp')).app
+      module = (await import('./teamsApp.js')).app
       return module
     case 'teamsMultiFeatureBot':
-      module = (await import('./teamsMultiFeatureBot')).app
+      module = (await import('./teamsMultiFeatureBot.js')).app
       return module
     default:
       throw new Error(`Agent with name ${moduleName} is not recognized.`)

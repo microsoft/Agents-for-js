@@ -5,7 +5,7 @@ import { Request, Response, Application } from 'express'
 import { TurnContext } from '../turnContext'
 import { v4 } from 'uuid'
 import { normalizeIncomingActivity } from '../activityWireCompat'
-import { debug } from '@microsoft/agents-activity/src/logger'
+import { debug } from '@microsoft/agents-activity/logger'
 import { ConversationState } from '../state'
 
 const logger = debug('agents:agent-client')

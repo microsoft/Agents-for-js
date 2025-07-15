@@ -8,8 +8,8 @@ import axios, { AxiosInstance, AxiosRequestConfig } from 'axios'
 import { getCopilotStudioConnectionUrl, getTokenAudience } from './powerPlatformEnvironment'
 import { Activity, ActivityTypes, ConversationAccount } from '@microsoft/agents-activity'
 import { ExecuteTurnRequest } from './executeTurnRequest'
-import { debug } from '@microsoft/agents-activity/src/logger'
-import pjson from '@microsoft/agents-copilotstudio-client/package.json'
+import { debug } from '@microsoft/agents-activity/logger'
+import { version } from '../package.json'
 import os from 'os'
 
 const logger = debug('copilot-studio:client')
@@ -133,13 +133,13 @@ export class CopilotStudioClient {
    * @returns A string containing the product information, including version and user agent.
    */
   private static getProductInfo (): string {
-    const version = `CopilotStudioClient.agents-sdk-js/${pjson.version}`
+    const versionString = `CopilotStudioClient.agents-sdk-js/${version}`
     let userAgent: string
 
     if (typeof window !== 'undefined' && window.navigator) {
-      userAgent = `${version} ${navigator.userAgent}`
+      userAgent = `${versionString} ${navigator.userAgent}`
     } else {
-      userAgent = `${version} nodejs/${process.version} ${os.platform()}-${os.arch()}/${os.release()}`
+      userAgent = `${versionString} nodejs/${process.version} ${os.platform()}-${os.arch()}/${os.release()}`
     }
 
     logger.debug(`User-Agent: ${userAgent}`)

@@ -31,10 +31,11 @@
   ],
   "exports": {
     ".": {
+      "types": "./dist/src/index.d.ts",
       "import": "./dist/src/index.js",
       "require": "./dist/src/index.js"
     },
-    "./src/logger": {
+    "./logger": {
       "types": "./dist/src/logger.d.ts",
       "import": "./dist/src/logger.js",
       "require": "./dist/src/logger.js"

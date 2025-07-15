@@ -5,7 +5,7 @@
 
 import express, { Response } from 'express'
 import { ActivityHandler, AgentApplication, AuthConfiguration, authorizeJWT, CloudAdapter, loadAuthConfigFromEnv, Request, TurnState } from '@microsoft/agents-hosting'
-
+import { version } from '@microsoft/agents-hosting/package.json'
 /**
  * Starts an Express server for handling Agent requests.
  *
@@ -53,7 +53,6 @@ export const startServer = (agent: AgentApplication<TurnState<any, any>> | Activ
 
   const port = process.env.PORT || 3978
   server.listen(port, async () => {
-    const version = (await import('@microsoft/agents-hosting/package.json')).version
     console.log(`\nServer listening to port ${port} on sdk ${version} for appId ${authConfig.clientId} debug ${process.env.DEBUG}`)
   }).on('error', console.error)
 }

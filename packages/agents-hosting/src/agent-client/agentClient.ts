@@ -1,7 +1,7 @@
 import { AuthConfiguration, MsalTokenProvider } from '../auth'
 import { Activity, ConversationReference, RoleTypes } from '@microsoft/agents-activity'
 import { v4 } from 'uuid'
-import { debug } from '@microsoft/agents-activity/src/logger'
+import { debug } from '@microsoft/agents-activity/logger'
 import { ConversationState } from '../state'
 import { TurnContext } from '../turnContext'
 

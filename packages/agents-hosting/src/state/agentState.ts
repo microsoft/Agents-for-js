@@ -7,7 +7,7 @@ import { Storage, StorageKeyFactory, StoreItem } from '../storage/storage'
 import { TurnContext } from '../turnContext'
 import { createHash } from 'node:crypto'
 import { AgentStatePropertyAccessor } from './agentStatePropertyAccesor'
-import { debug } from '@microsoft/agents-activity/src/logger'
+import { debug } from '@microsoft/agents-activity/logger'
 
 const logger = debug('agents:state')
 

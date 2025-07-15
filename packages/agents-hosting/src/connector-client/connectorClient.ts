@@ -2,7 +2,7 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
 import { AuthConfiguration } from '../auth/authConfiguration'
 import { AuthProvider } from '../auth/authProvider'
-import { debug } from '@microsoft/agents-activity/src/logger'
+import { debug } from '@microsoft/agents-activity/logger'
 import { Activity, ChannelAccount, ConversationParameters } from '@microsoft/agents-activity'
 import { ConversationsResult } from './conversationsResult'
 import { ConversationResourceResponse } from './conversationResourceResponse'
