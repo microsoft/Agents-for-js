@@ -95,7 +95,7 @@ describe('OAuthFlow', () => {
 
     it('should return cached token when available and not expired', async () => {
       // First call to populate cache
-      mockTokenProvider.expects('getAccessToken').twice().returns({ token: 'accessToken' })
+      mockTokenProvider.expects('getAccessToken').once().returns({ token: 'accessToken' })
       mockUserTokenClient.expects('getUserToken').once().withArgs('testSSO', 'test', 'testUser').returns({ token: 'cachedToken' })
       await oAuthFlow.getUserToken(context)
 
@@ -143,7 +143,7 @@ describe('OAuthFlow', () => {
 
     it('should return cached token when available', async () => {
       // First call to populate cache
-      mockTokenProvider.expects('getAccessToken').twice().returns({ token: 'accessToken' })
+      mockTokenProvider.expects('getAccessToken').once().returns({ token: 'accessToken' })
       mockUserTokenClient.expects('getTokenOrSignInResource').once().returns({ tokenResponse: { token: 'cachedToken' } })
       await oAuthFlow.beginFlow(context)
 
@@ -172,7 +172,7 @@ describe('OAuthFlow', () => {
     })
 
     it('should cache token when retrieved from service', async () => {
-      mockTokenProvider.expects('getAccessToken').twice().returns({ token: 'accessToken' })
+      mockTokenProvider.expects('getAccessToken').once().returns({ token: 'accessToken' })
       mockUserTokenClient.expects('getTokenOrSignInResource').once().returns({ tokenResponse: { token: 'newToken' } })
 
       const tokenResponse = await oAuthFlow.beginFlow(context)

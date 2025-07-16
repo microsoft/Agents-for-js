@@ -10,6 +10,7 @@ import {
 } from '../'
 import { UserTokenClient } from './userTokenClient'
 import { TokenExchangeRequest, TokenResponse } from './userTokenClient.types'
+import jwt, { JwtPayload } from 'jsonwebtoken'
 
 const logger = debug('agents:oauth-flow')
 
@@ -77,6 +78,8 @@ export class OAuthFlow {
    * The text of the OAuth card.
    */
   cardText: string = 'login'
+
+  _accessToken: JwtPayload | undefined
 
   /**
    * Creates a new instance of OAuthFlow.
@@ -333,8 +336,16 @@ export class OAuthFlow {
    * @param context The turn context used to get authentication credentials.
    */
   private async refreshToken (context: TurnContext) {
-    const accessToken = await context.adapter.authProvider.getAccessToken(context.adapter.authConfig, 'https://api.botframework.com')
-    this.userTokenClient.updateAuthToken(accessToken)
+    const chachedToken = this.tokenCache.get('__access_token__')
+    if (!chachedToken || Date.now() > chachedToken.expiresAt) {
+      const accessToken = await context.adapter.authProvider.getAccessToken(context.adapter.authConfig, 'https://api.botframework.com')
+      this._accessToken = jwt.decode(accessToken) as JwtPayload
+      this.tokenCache.set('__access_token__', {
+        token: { token: accessToken },
+        expiresAt: this._accessToken?.exp! - 1000 ? this._accessToken.exp! * 1000 : Date.now() + (10 * 60 * 1000) // Default to 10 minutes if no exp
+      })
+      this.userTokenClient.updateAuthToken(accessToken)
+    }
   }
 
   /**
