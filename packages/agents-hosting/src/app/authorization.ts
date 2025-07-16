@@ -285,7 +285,9 @@ export class Authorization {
     tokenResponse = await authHandler.flow?.getUserToken(context)
 
     if (tokenResponse?.token && tokenResponse.token.length > 0) {
-      delete authHandler.flow?.state.eTag
+      if (authHandler.flow?.state && authHandler.flow?.state.eTag) {
+        delete authHandler.flow?.state.eTag
+      }
       authHandler.flow!.state.flowStarted = false
       await authHandler.flow?.setFlowState(context, authHandler.flow.state)
       if (secRoute) {

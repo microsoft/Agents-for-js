@@ -32,6 +32,35 @@ export class UserTokenClient {
       }
     })
     axiosInstance.defaults.headers.common.Authorization = `Bearer ${token}`
+
+    axiosInstance.interceptors.response.use(
+      (config) => {
+        const { status, statusText, config: requestConfig } = config
+        logger.debug('Response: ', {
+          status,
+          statusText,
+          host: axiosInstance.getUri(),
+          url: requestConfig?.url,
+          data: config.config.data,
+          method: requestConfig?.method,
+        })
+        return config
+      },
+      (error) => {
+        const { code, message, stack, response } = error
+        const errorDetails = {
+          code,
+          host: axiosInstance.getUri(),
+          url: error.config.url,
+          method: error.config.method,
+          data: error.config.data,
+          message: message + JSON.stringify(response?.data),
+          stack,
+        }
+        return Promise.reject(errorDetails)
+      }
+    )
+
     this.client = axiosInstance
   }
 
@@ -64,14 +93,9 @@ export class UserTokenClient {
    * @returns A promise that resolves when the sign-out operation is complete.
    */
   async signOut (userId: string, connectionName: string, channelId: string) : Promise<void> {
-    try {
-      const params = { userId, connectionName, channelId }
-      const response = await this.client.delete('/api/usertoken/SignOut', { params })
-      if (response.status !== 200) {
-        throw new Error('Failed to sign out')
-      }
-    } catch (error: any) {
-      logger.error(error)
+    const params = { userId, connectionName, channelId }
+    const response = await this.client.delete('/api/usertoken/SignOut', { params })
+    if (response.status !== 200) {
       throw new Error('Failed to sign out')
     }
   }
@@ -84,22 +108,17 @@ export class UserTokenClient {
    * @returns A promise that resolves to the signing resource.
    */
   async getSignInResource (msAppId: string, connectionName: string, conversation: ConversationReference, relatesTo?: ConversationReference) : Promise<SignInResource> {
-    try {
-      const tokenExchangeState = {
-        connectionName,
-        conversation,
-        relatesTo,
-        msAppId
-      }
-      const tokenExchangeStateNormalized = normalizeTokenExchangeState(tokenExchangeState)
-      const state = Buffer.from(JSON.stringify(tokenExchangeStateNormalized)).toString('base64')
-      const params = { state }
-      const response = await this.client.get('/api/botsignin/GetSignInResource', { params })
-      return response.data as SignInResource
-    } catch (error: any) {
-      logger.error(error)
-      throw error
+    const tokenExchangeState = {
+      connectionName,
+      conversation,
+      relatesTo,
+      msAppId
     }
+    const tokenExchangeStateNormalized = normalizeTokenExchangeState(tokenExchangeState)
+    const state = Buffer.from(JSON.stringify(tokenExchangeStateNormalized)).toString('base64')
+    const params = { state }
+    const response = await this.client.get('/api/botsignin/GetSignInResource', { params })
+    return response.data as SignInResource
   }
 
   /**
@@ -111,17 +130,9 @@ export class UserTokenClient {
    * @returns A promise that resolves to the exchanged token.
    */
   async exchangeTokenAsync (userId: string, connectionName: string, channelId: string, tokenExchangeRequest: TokenExchangeRequest) : Promise<TokenResponse> {
-    try {
-      const params = { userId, connectionName, channelId }
-      const response = await this.client.post('/api/usertoken/exchange', tokenExchangeRequest, { params })
-      return response.data as TokenResponse
-    } catch (error: any) {
-      logger.error(error)
-      if (error.response?.data) {
-        logger.error(error.response.data)
-      }
-      return { token: undefined }
-    }
+    const params = { userId, connectionName, channelId }
+    const response = await this.client.post('/api/usertoken/exchange', tokenExchangeRequest, { params })
+    return response.data as TokenResponse
   }
 
   /**
@@ -136,7 +147,10 @@ export class UserTokenClient {
    * @param fwdUrl The forward URL.
    * @returns A promise that resolves to the token or sign-in resource response.
    */
-  async getTokenOrSignInResource (userId: string, connectionName: string, channelId: string, conversation: ConversationReference, relatesTo: ConversationReference, code: string, finalRedirect: string = '', fwdUrl: string = '') : Promise<TokenOrSinginResourceResponse> {
+  async getTokenOrSignInResource (
+    userId: string, connectionName: string, channelId: string,
+    conversation: ConversationReference, relatesTo: ConversationReference,
+    code: string, finalRedirect: string = '', fwdUrl: string = '') : Promise<TokenOrSinginResourceResponse> {
     const state = Buffer.from(JSON.stringify({ conversation, relatesTo, connectionName, msAppId: this.msAppId })).toString('base64')
     const params = { userId, connectionName, channelId, state, code, finalRedirect, fwdUrl }
     const response = await this.client.get('/api/usertoken/GetTokenOrSignInResource', { params })
