@@ -65,7 +65,7 @@ export class MemoryStorage implements Storage {
 
     const data: StoreItem = {}
     for (const key of keys) {
-      logger.info(`Reading key: ${key}`)
+      logger.debug(`Reading key: ${key}`)
       const item = this.memory[key]
       if (item) {
         data[key] = JSON.parse(item)
@@ -93,7 +93,7 @@ export class MemoryStorage implements Storage {
     }
 
     for (const [key, newItem] of Object.entries(changes)) {
-      logger.info(`Writing key: ${key}`)
+      logger.debug(`Writing key: ${key}`)
       const oldItemStr = this.memory[key]
       if (!oldItemStr || newItem.eTag === '*' || !newItem.eTag) {
         this.saveItem(key, newItem)
@@ -115,7 +115,7 @@ export class MemoryStorage implements Storage {
    * @returns A promise that resolves when the delete operation is complete
    */
   async delete (keys: string[]): Promise<void> {
-    logger.info(`Deleting keys: ${keys.join(', ')}`)
+    logger.debug(`Deleting keys: ${keys.join(', ')}`)
     for (const key of keys) {
       delete this.memory[key]
     }

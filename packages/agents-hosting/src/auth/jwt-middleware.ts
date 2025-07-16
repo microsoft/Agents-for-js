@@ -21,12 +21,12 @@ const logger = debug('agents:jwt-middleware')
 const verifyToken = async (raw: string, config: AuthConfiguration): Promise<JwtPayload> => {
   const getKey: GetPublicKeyOrSecret = (header: JwtHeader, callback: SignCallback) => {
     const payload = jwt.decode(raw) as JwtPayload
-    logger.info('jwt.decode ', JSON.stringify(payload))
+    logger.debug('jwt.decode ', JSON.stringify(payload))
     const jwksUri: string = payload.iss === 'https://api.botframework.com'
       ? 'https://login.botframework.com/v1/.well-known/keys'
       : `https://login.microsoftonline.com/${config.tenantId}/discovery/v2.0/keys`
 
-    logger.info(`fetching keys from ${jwksUri}`)
+    logger.debug(`fetching keys from ${jwksUri}`)
     const jwksClient: JwksClient = jwksRsa({ jwksUri })
 
     jwksClient.getSigningKey(header.kid, (err: Error | null, key: SigningKey | undefined): void => {
@@ -71,7 +71,7 @@ const verifyToken = async (raw: string, config: AuthConfiguration): Promise<JwtP
 export const authorizeJWT = (authConfig: AuthConfiguration) => {
   return async function (req: Request, res: Response, next: NextFunction) {
     let failed = false
-    logger.info('authorizing jwt')
+    logger.debug('authorizing jwt')
     const authHeader = req.headers.authorization as string
     if (authHeader) {
       const token: string = authHeader.split(' ')[1] // Extract the token from the Bearer string
