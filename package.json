@@ -44,7 +44,7 @@
     "@types/sinon": "^17.0.4",
     "@types/uuid": "^10.0.0",
     "esbuild": "^0.25.4",
-    "eslint": "^9.28.0",
+    "eslint": "^9.31.0",
     "global": "4.4.0",
     "neostandard": "^0.12.2",
     "nerdbank-gitversioning": "^3.7.115",
