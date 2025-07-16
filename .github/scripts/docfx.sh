@@ -1,0 +1,1 @@
+npx type2docfx packages/ docs/yaml
