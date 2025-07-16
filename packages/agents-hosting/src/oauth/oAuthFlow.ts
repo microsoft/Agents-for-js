@@ -79,8 +79,6 @@ export class OAuthFlow {
    */
   cardText: string = 'login'
 
-  _accessToken: JwtPayload | undefined
-
   /**
    * Creates a new instance of OAuthFlow.
    * @param storage The storage provider for persisting flow state.
@@ -339,10 +337,10 @@ export class OAuthFlow {
     const cachedToken = this.tokenCache.get('__access_token__')
     if (!cachedToken || Date.now() > cachedToken.expiresAt) {
       const accessToken = await context.adapter.authProvider.getAccessToken(context.adapter.authConfig, 'https://api.botframework.com')
-      this._accessToken = jwt.decode(accessToken) as JwtPayload
+      const decodedToken = jwt.decode(accessToken) as JwtPayload
       this.tokenCache.set('__access_token__', {
         token: { token: accessToken },
-        expiresAt: this._accessToken?.exp ? this._accessToken.exp * 1000 - 1000 : Date.now() + 10 * 60 * 1000
+        expiresAt: decodedToken?.exp ? decodedToken.exp * 1000 - 1000 : Date.now() + 10 * 60 * 1000
       })
       this.userTokenClient.updateAuthToken(accessToken)
     }
