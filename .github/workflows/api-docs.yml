@@ -32,18 +32,14 @@ jobs:
       - name: Build TS
         run: npm run build
 
-      - name: Build sample projects
-        run: |
-          for dir in ./test-agents/*/; do
-            echo "Building $dir"
-             (cd "$dir" && npm i && npm run build)
-          done
-
       - name: Set Version
         run: node setVersion.js
 
-      - name: Generate documentation
+      - name: Generate typedoc
         run: npm run docs
+
+      - name: Generate docfx
+        run: .github/scripts/docfx.sh
 
       - name: Upload static files as artifact
         id: deployment
