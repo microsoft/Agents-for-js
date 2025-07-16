@@ -101,7 +101,6 @@ export class OAuthFlow {
    * @throws Will throw an error if the channelId or from properties are not set in the activity.
    */
   public async getUserToken (context: TurnContext): Promise<TokenResponse> {
-    await this.refreshToken(context)
     const activity = context.activity
 
     if (!activity.channelId || !activity.from || !activity.from.id) {
@@ -117,6 +116,7 @@ export class OAuthFlow {
     }
 
     logger.info('Get token from user token service')
+    await this.refreshToken(context)
     const tokenResponse = await this.userTokenClient.getUserToken(this.absOauthConnectionName, activity.channelId, activity.from.id)
 
     // Cache the token if it's valid (has a token value)
