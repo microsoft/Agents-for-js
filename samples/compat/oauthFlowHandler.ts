@@ -8,7 +8,7 @@ import { getUserInfo } from './../_shared/userGraphClient.js'
 
 const authConfig = loadAuthConfigFromEnv()
 
-export class OAuthFlowHanlder extends ActivityHandler {
+export class OAuthFlowHandler extends ActivityHandler {
   oAuthFlow: OAuthFlow
 
   constructor (private storage: Storage) {
@@ -80,4 +80,4 @@ export class OAuthFlowHanlder extends ActivityHandler {
     await super.run(context)
   }
 }
-startServer(new OAuthFlowHanlder(new FileStorage('__state')))
+startServer(new OAuthFlowHandler(new FileStorage('__state')))

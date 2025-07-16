@@ -336,13 +336,13 @@ export class OAuthFlow {
    * @param context The turn context used to get authentication credentials.
    */
   private async refreshToken (context: TurnContext) {
-    const chachedToken = this.tokenCache.get('__access_token__')
-    if (!chachedToken || Date.now() > chachedToken.expiresAt) {
+    const cachedToken = this.tokenCache.get('__access_token__')
+    if (!cachedToken || Date.now() > cachedToken.expiresAt) {
       const accessToken = await context.adapter.authProvider.getAccessToken(context.adapter.authConfig, 'https://api.botframework.com')
       this._accessToken = jwt.decode(accessToken) as JwtPayload
       this.tokenCache.set('__access_token__', {
         token: { token: accessToken },
-        expiresAt: this._accessToken?.exp! - 1000 ? this._accessToken.exp! * 1000 : Date.now() + (10 * 60 * 1000) // Default to 10 minutes if no exp
+        expiresAt: this._accessToken?.exp ? this._accessToken.exp * 1000 - 1000 : Date.now() + 10 * 60 * 1000
       })
       this.userTokenClient.updateAuthToken(accessToken)
     }
