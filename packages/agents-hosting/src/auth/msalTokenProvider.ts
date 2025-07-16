@@ -79,7 +79,7 @@ export class MsalTokenProvider implements AuthProvider {
             logger.error(message)
             return
           case LogLevel.Info:
-            logger.debug(message)
+            logger.info(message)
             return
           case LogLevel.Warning:
             if (!message.includes('Warning - No client info in response')) {
@@ -193,7 +193,7 @@ export class MsalTokenProvider implements AuthProvider {
       system: this.sysOptions
     })
     const token = await cca.acquireTokenByClientCredential({ scopes })
-    logger.debug('got token using FIC client assertion')
+    logger.info('got token using FIC client assertion')
     return token?.accessToken as string
   }
 
@@ -214,7 +214,7 @@ export class MsalTokenProvider implements AuthProvider {
       resource: audience,
       forceRefresh: true
     })
-    logger.debug('got token for FIC')
+    logger.info('got token for FIC')
     return response.accessToken
   }
 }

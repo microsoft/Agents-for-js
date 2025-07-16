@@ -325,7 +325,7 @@ export class OAuthFlow {
     const key = this.getFlowStateKey(context)
     await this.storage.write({ [key]: flowState })
     this.state = flowState
-    logger.debug('Flow state set:', flowState)
+    logger.info('Flow state set:', flowState)
   }
 
   /**
