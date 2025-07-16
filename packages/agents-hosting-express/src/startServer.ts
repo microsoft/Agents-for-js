@@ -37,7 +37,7 @@ export const startServer = (agent: AgentApplication<TurnState<any, any>> | Activ
   const authConfig: AuthConfiguration = authConfiguration ?? loadAuthConfigFromEnv()
   let adapter: CloudAdapter
   if (agent instanceof ActivityHandler || !agent.adapter) {
-    adapter = new CloudAdapter(authConfig)
+    adapter = new CloudAdapter()
   } else {
     adapter = agent.adapter as CloudAdapter
   }

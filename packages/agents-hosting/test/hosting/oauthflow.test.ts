@@ -34,7 +34,7 @@ const testSigninResource : SignInResource = {
 }
 
 describe('OAuthFlow', () => {
-  const fakeUserTokenClient = new UserTokenClient('fakeToken', '123')
+  const fakeUserTokenClient = new UserTokenClient('123')
   const fakeAdapter = new CloudAdapter({ clientId: 'fakeClientId', clientSecret: 'fakeClientSecret', issuers: [] })
   let context: TurnContext
   let memory: MemoryStorage
@@ -64,7 +64,7 @@ describe('OAuthFlow', () => {
 
   describe('Constructor', () => {
     it('should create OAuthFlow with default values', () => {
-      const flow = new OAuthFlow(memory, 'testConnection')
+      const flow = new OAuthFlow(memory, 'testConnection', fakeUserTokenClient)
       assert.strictEqual(flow.absOauthConnectionName, 'testConnection')
       assert.strictEqual(flow.cardTitle, 'Sign in')
       assert.strictEqual(flow.cardText, 'login')

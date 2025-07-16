@@ -2,16 +2,18 @@
 // Licensed under the MIT License.
 
 import { startServer } from '@microsoft/agents-hosting-express'
-import { ActivityHandler, CardFactory, MessageFactory, TurnContext, OAuthFlow, Storage, FileStorage } from '@microsoft/agents-hosting'
+import { ActivityHandler, CardFactory, MessageFactory, TurnContext, OAuthFlow, Storage, FileStorage, UserTokenClient, loadAuthConfigFromEnv } from '@microsoft/agents-hosting'
 import { Template } from 'adaptivecards-templating'
 import { getUserInfo } from './../_shared/userGraphClient.js'
+
+const authConfig = loadAuthConfigFromEnv()
 
 export class OAuthFlowHanlder extends ActivityHandler {
   oAuthFlow: OAuthFlow
 
   constructor (private storage: Storage) {
     super()
-    this.oAuthFlow = new OAuthFlow(storage, process.env.connectionName!)
+    this.oAuthFlow = new OAuthFlow(storage, process.env.connectionName!, new UserTokenClient(authConfig.clientId))
 
     this.onConversationUpdate(async (context, next) => {
       await context.sendActivity('Welcome to the Web Chat SSO sample. Type "signin" to sign in or "signout" to sign out.')
