@@ -109,8 +109,8 @@ export class OAuthFlow {
     }
 
     const cacheKey = this.getCacheKey(context)
-
     const cachedEntry = this.tokenCache.get(cacheKey)
+
     if (cachedEntry && Date.now() < cachedEntry.expiresAt) {
       logger.info(`Returning cached token for user with cache key: ${cacheKey}`)
       return cachedEntry.token
@@ -333,11 +333,18 @@ export class OAuthFlow {
    * @param context The turn context used to get authentication credentials.
    */
   private async initializeTokenClient (context: TurnContext) {
-    if (this.userTokenClient === undefined || this.userTokenClient === null) {
-      const scope = 'https://api.botframework.com'
-      const accessToken = await context.adapter.authProvider.getAccessToken(context.adapter.authConfig, scope)
-      this.userTokenClient = new UserTokenClient(accessToken, context.adapter.authConfig!.clientId!)
+    const cachedToken = this.tokenCache.get(context.activity.conversation?.id!)
+    if (cachedToken && Date.now() < cachedToken.expiresAt) {
+      logger.debug(`Using cached token for conversation ID: ${context.activity.conversation?.id}`)
+      this.userTokenClient = new UserTokenClient(cachedToken.token.token!, context.adapter.authConfig!.clientId!)
+      return
     }
+    const accessToken = await context.adapter.authProvider.getAccessToken(context.adapter.authConfig, 'https://api.botframework.com')
+    this.tokenCache.set(context.activity.conversation?.id!, {
+      token: { token: accessToken },
+      expiresAt: Date.now() + (2 * 60 * 1000) // 2 minutes from now
+    })
+    this.userTokenClient = new UserTokenClient(accessToken, context.adapter.authConfig!.clientId!)
   }
 
   /**
