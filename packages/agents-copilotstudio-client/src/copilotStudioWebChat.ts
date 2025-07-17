@@ -304,7 +304,7 @@ export class CopilotStudioWebChat {
  * The created Observable handles promise resolution and rejection automatically,
  * converting them to appropriate next/error signals for subscribers.
  *
- * @template T - The type of value that the observable will emit
+ * @typeParam T - The type of value that the observable will emit
  * @param fn - An asynchronous function that receives a Subscriber and performs
  *             the desired async operation. The function should call subscriber.next()
  *             with results and subscriber.complete() when finished.

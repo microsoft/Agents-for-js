@@ -113,7 +113,7 @@ export function sanitizeBlobKey (key: string, options?: BlobsTranscriptStoreOpti
  * If a constructor is provided, validates that the value is an instance of that constructor.
  * Otherwise, performs a direct type assertion.
  *
- * @template T - The target type to cast to.
+ * @typeParam T - The target type to cast to.
  * @param value - The value to cast.
  * @param ctor - Optional constructor function to validate the value against.
  * @returns The value cast to type T.

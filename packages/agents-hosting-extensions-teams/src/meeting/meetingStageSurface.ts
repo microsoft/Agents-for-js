@@ -5,7 +5,7 @@
 
 /**
  * Represents the surface of a meeting stage.
- * @template T - The type of the content.
+ * @typeParam T - The type of the content.
  */
 export interface MeetingStageSurface<T> {
   /** The surface type, which is always 'meetingStage'. */

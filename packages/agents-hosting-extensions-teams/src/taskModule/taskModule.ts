@@ -54,7 +54,7 @@ export class TaskModule<TState extends TurnState> {
      * @remarks
      * Handlers should respond with another TaskInfo object, message string, or `null` to indicate
      * the task is completed.
-     * @template TData Optional. Type of the data object being passed to the handler.
+     * @typeParam TData Optional. Type of the data object being passed to the handler.
      * @param {string | RegExp | RouteSelector | string[] | RegExp[] | RouteSelector[]} verb - Name of the verb(s) to register the handler for.
      * @param {(context: TurnContext, state: TState, data: TData) => Promise<TaskModuleTaskInfo | string | null | undefined>} handler - Function to call when the handler is triggered.
      * @param {TurnContext} handler.context - Context for the current turn of conversation with the user.

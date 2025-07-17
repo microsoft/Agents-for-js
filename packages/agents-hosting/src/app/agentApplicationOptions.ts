@@ -16,7 +16,7 @@ import { TurnState } from './turnState'
  * This interface defines all the configurable aspects of an agent's behavior,
  * including adapter settings, storage, authorization, and various feature flags.
  *
- * @template TState - The type of turn state that extends TurnState, allowing for
+ * @typeParam TState - The type of turn state that extends TurnState, allowing for
  * custom state management specific to your agent's needs.
  */
 export interface AgentApplicationOptions<TState extends TurnState> {

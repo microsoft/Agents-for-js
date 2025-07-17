@@ -8,7 +8,7 @@ import { TaskModule } from './taskModule/taskModule'
 /**
  * Microsoft Teams-specific extension for agent applications that provides event handlers and functionality
  * for Teams-specific activities such as message operations, member management, channel operations, and team lifecycle events.
- * @template TState The type of turn state, extending TurnState
+ * @typeParam TState The type of turn state, extending TurnState
  */
 export class TeamsAgentExtension<TState extends TurnState = TurnState> extends AgentExtension<TState> {
   _app: AgentApplication<TState>

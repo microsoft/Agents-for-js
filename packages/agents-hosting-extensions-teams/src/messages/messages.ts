@@ -23,7 +23,7 @@ export enum MessageInvokeNames {
 /**
  * Handles message-related operations for Teams applications.
  * Provides methods for handling message fetch operations.
- * @template TState Type extending TurnState to be used by the application
+ * @typeParam TState Type extending TurnState to be used by the application
  */
 export class Messages<TState extends TurnState> {
   private readonly _app: AgentApplication<TState>
@@ -40,7 +40,7 @@ export class Messages<TState extends TurnState> {
    * Handles fetch requests for messages in Teams, which typically occur when
    * a message action is invoked.
    *
-   * @template TData Type of data expected in the message fetch request
+   * @typeParam TData Type of data expected in the message fetch request
    * @param handler Function to handle the message fetch request
    * @returns The TeamsApplication instance for chaining
    */

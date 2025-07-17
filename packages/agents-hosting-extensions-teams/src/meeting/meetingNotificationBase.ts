@@ -5,7 +5,7 @@
 
 /**
  * Represents the base structure of a meeting notification.
- * @template T - The type of the value.
+ * @typeParam T - The type of the value.
  */
 export interface MeetingNotificationBase<T> {
   /** The type of the notification. */

@@ -18,7 +18,7 @@ export class TeamsAttachmentDownloader<TState extends TurnState = TurnState> imp
 
   /**
      * Download any files relative to the current user's input.
-     * @template TState - Type of the state object passed to the `TurnContext.turnState` method.
+     * @typeParam TState - Type of the state object passed to the `TurnContext.turnState` method.
      * @param {TurnContext} context Context for the current turn of conversation.
      * @param {TState} state Application state for the current turn of conversation.
      * @returns {Promise<InputFile[]>} Promise that resolves to an array of downloaded input files.

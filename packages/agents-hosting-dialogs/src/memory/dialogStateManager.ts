@@ -131,7 +131,7 @@ export class DialogStateManager {
      *
      * @remarks
      * This always returns a CLONE of the memory, any modifications to the result will not affect memory.
-     * @template T The value type to return.
+     * @typeParam T The value type to return.
      * @param pathExpression Path expression to use.
      * @param defaultValue (Optional) default value to use if the path isn't found. May be a function that returns the default value to use.
      * @returns The found value or undefined if not found and no `defaultValue` specified.
