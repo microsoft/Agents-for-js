@@ -129,7 +129,9 @@ export interface ClientCitation {
 }
 
 /**
- * Sensitivity usage info for content sent to the user. This is used to provide information about the content to the user. See {@link ClientCitation} for more information.
+ * @summary Sensitivity usage info for content sent to the user.
+ * @remarks
+ * This is used to provide information about the content to the user. See {@link ClientCitation} for more information.
  */
 export interface SensitivityUsageInfo {
   /**
