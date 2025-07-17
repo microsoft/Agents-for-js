@@ -55,7 +55,9 @@ export type ClientCitationIconName =
     | 'PDF'
 
 /**
- * Represents a Teams client citation to be included in a message. [Learn more about Bot messages with AI-generated content](https://learn.microsoft.com/microsoftteams/platform/bots/how-to/bot-messages-ai-generated-content?tabs=before%2Cbotmessage)
+ *  @summary Represents a Teams client citation to be included in a message.
+ *  @remarks
+ *  [Learn more about Bot messages with AI-generated content](https://learn.microsoft.com/microsoftteams/platform/bots/how-to/bot-messages-ai-generated-content?tabs=before%2Cbotmessage)
  */
 export interface ClientCitation {
   /**
