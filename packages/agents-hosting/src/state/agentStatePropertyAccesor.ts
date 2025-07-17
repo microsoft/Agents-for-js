@@ -73,7 +73,7 @@ export interface StatePropertyAccessor<T = any> {
 }
 
 /**
- * Provides typed access to an Agent state property with automatic state loading and persistence management.
+ * @summary Provides typed access to an Agent state property with automatic state loading and persistence management.
  *
  * @remarks
  * AgentStatePropertyAccessor simplifies working with persisted state by abstracting
@@ -122,7 +122,7 @@ export interface StatePropertyAccessor<T = any> {
  *
  * ## Usage Examples
  *
- * ### Basic Usage
+ * @example Basic Usage
  * ```typescript
  * // Create a property accessor
  * const userProfile = userState.createProperty<UserProfile>("userProfile");
@@ -141,7 +141,7 @@ export interface StatePropertyAccessor<T = any> {
  * await userState.saveChanges(context); // Persist to storage
  * ```
  *
- * ### Working with Primitive Types
+ * @example Working with Primitive Types
  * ```typescript
  * const counterProperty = userState.createProperty<number>("counter");
  *
@@ -151,7 +151,7 @@ export interface StatePropertyAccessor<T = any> {
  * await userState.saveChanges(context);
  * ```
  *
- * ### Conditional Logic
+ * @example Conditional Logic
  * ```typescript
  * const settingsProperty = userState.createProperty<Settings>("settings");
  *
@@ -163,7 +163,7 @@ export interface StatePropertyAccessor<T = any> {
  * }
  * ```
  *
- * ### Custom Storage Keys
+ * @example Custom Storage Keys
  * ```typescript
  * // Store state with a custom key for multi-tenant scenarios
  * const customKey = { key: `tenant_${tenantId}` };
