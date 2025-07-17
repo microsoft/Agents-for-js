@@ -69,20 +69,6 @@
 			"path": "test-agents/state-agent"
 		},
 		{
-			"label": "build_teams",
-			"type": "npm",
-			"script": "build",
-			"group": {
-				"kind": "build",
-				"isDefault": false
-			},
-			"problemMatcher": [],
-			"dependsOn": [
-				"build_packages"
-			],
-			"path": "test-agents/teams-agent"
-		},
-		{
 			"label": "build_application_style",
 
 			"type": "npm",
@@ -96,20 +82,6 @@
 				"build_packages"
 			],
 			"path": "test-agents/application-style"
-		},
-		{
-			"label": "build_teams_application_style",
-			"type": "npm",
-			"script": "build",
-			"group": {
-				"kind": "build",
-				"isDefault": false
-			},
-			"problemMatcher": [],
-			"dependsOn": [
-				"build_packages"
-			],
-			"path": "test-agents/teams-application-style"
 		},
 		{
 			"label": "build_root_agent",
