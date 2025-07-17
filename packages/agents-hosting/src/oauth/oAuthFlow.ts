@@ -10,6 +10,7 @@ import {
 } from '../'
 import { UserTokenClient } from './userTokenClient'
 import { TokenExchangeRequest, TokenResponse } from './userTokenClient.types'
+import jwt, { JwtPayload } from 'jsonwebtoken'
 
 const logger = debug('agents:oauth-flow')
 
@@ -86,10 +87,10 @@ export class OAuthFlow {
    * @param cardTitle Optional title for the OAuth card. Defaults to 'Sign in'.
    * @param cardText Optional text for the OAuth card. Defaults to 'login'.
    */
-  constructor (private storage: Storage, absOauthConnectionName: string, tokenClient?: UserTokenClient, cardTitle?: string, cardText?: string) {
+  constructor (private storage: Storage, absOauthConnectionName: string, tokenClient: UserTokenClient, cardTitle?: string, cardText?: string) {
     this.state = { flowStarted: undefined, flowExpires: undefined, absOauthConnectionName }
     this.absOauthConnectionName = absOauthConnectionName
-    this.userTokenClient = tokenClient ?? null!
+    this.userTokenClient = tokenClient
     this.cardTitle = cardTitle ?? this.cardTitle
     this.cardText = cardText ?? this.cardText
   }
@@ -101,7 +102,6 @@ export class OAuthFlow {
    * @throws Will throw an error if the channelId or from properties are not set in the activity.
    */
   public async getUserToken (context: TurnContext): Promise<TokenResponse> {
-    await this.initializeTokenClient(context)
     const activity = context.activity
 
     if (!activity.channelId || !activity.from || !activity.from.id) {
@@ -117,6 +117,7 @@ export class OAuthFlow {
     }
 
     logger.info('Get token from user token service')
+    await this.refreshToken(context)
     const tokenResponse = await this.userTokenClient.getUserToken(this.absOauthConnectionName, activity.channelId, activity.from.id)
 
     // Cache the token if it's valid (has a token value)
@@ -143,7 +144,7 @@ export class OAuthFlow {
       throw new Error('connectionName is not set')
     }
     logger.info('Starting OAuth flow for connectionName:', this.absOauthConnectionName)
-    await this.initializeTokenClient(context)
+    await this.refreshToken(context)
 
     const act = context.activity
 
@@ -188,7 +189,7 @@ export class OAuthFlow {
    */
   public async continueFlow (context: TurnContext): Promise<TokenResponse> {
     this.state = await this.getFlowState(context)
-    await this.initializeTokenClient(context)
+    await this.refreshToken(context)
     if (this.state?.flowExpires !== 0 && Date.now() > this.state?.flowExpires!) {
       logger.warn('Flow expired')
       await context.sendActivity(MessageFactory.text('Sign-in session expired. Please try again.'))
@@ -287,7 +288,7 @@ export class OAuthFlow {
    * @returns A promise that resolves when the sign-out operation is complete.
    */
   public async signOut (context: TurnContext): Promise<void> {
-    await this.initializeTokenClient(context)
+    await this.refreshToken(context)
 
     // Clear cached token for this user
     const activity = context.activity
@@ -332,11 +333,16 @@ export class OAuthFlow {
    * Initializes the user token client if not already initialized.
    * @param context The turn context used to get authentication credentials.
    */
-  private async initializeTokenClient (context: TurnContext) {
-    if (this.userTokenClient === undefined || this.userTokenClient === null) {
-      const scope = 'https://api.botframework.com'
-      const accessToken = await context.adapter.authProvider.getAccessToken(context.adapter.authConfig, scope)
-      this.userTokenClient = new UserTokenClient(accessToken, context.adapter.authConfig!.clientId!)
+  private async refreshToken (context: TurnContext) {
+    const cachedToken = this.tokenCache.get('__access_token__')
+    if (!cachedToken || Date.now() > cachedToken.expiresAt) {
+      const accessToken = await context.adapter.authProvider.getAccessToken(context.adapter.authConfig, 'https://api.botframework.com')
+      const decodedToken = jwt.decode(accessToken) as JwtPayload
+      this.tokenCache.set('__access_token__', {
+        token: { token: accessToken },
+        expiresAt: decodedToken?.exp ? decodedToken.exp * 1000 - 1000 : Date.now() + 10 * 60 * 1000
+      })
+      this.userTokenClient.updateAuthToken(accessToken)
     }
   }
 

@@ -9,7 +9,7 @@ import { TurnContext } from './turnContext'
 import { Response } from 'express'
 import { Request } from './auth/request'
 import { ConnectorClient } from './connector-client/connectorClient'
-import { AuthConfiguration } from './auth/authConfiguration'
+import { AuthConfiguration, loadAuthConfigFromEnv } from './auth/authConfiguration'
 import { AuthProvider } from './auth/authProvider'
 import { Activity, ActivityEventNames, ActivityTypes, Channels, ConversationReference, DeliveryModes, ConversationParameters } from '@microsoft/agents-activity'
 import { ResourceResponse } from './connector-client/resourceResponse'
@@ -21,6 +21,7 @@ import { InvokeResponse } from './invoke/invokeResponse'
 import { AttachmentInfo } from './connector-client/attachmentInfo'
 import { AttachmentData } from './connector-client/attachmentData'
 import { normalizeIncomingActivity } from './activityWireCompat'
+import { UserTokenClient } from './oauth'
 
 const logger = debug('agents:cloud-adapter')
 
@@ -44,16 +45,11 @@ export class CloudAdapter extends BaseAdapter {
    * @param authConfig - The authentication configuration for securing communications
    * @param authProvider - Optional custom authentication provider. If not specified, a default MsalTokenProvider will be used
    */
-  constructor (authConfig: AuthConfiguration, authProvider?: AuthProvider) {
+  constructor (authConfig?: AuthConfiguration, authProvider?: AuthProvider, userTokenClient?: UserTokenClient) {
     super()
-
-    this.authConfig = authConfig
-
-    if (authProvider === undefined) {
-      this.authProvider = new MsalTokenProvider()
-    } else {
-      this.authProvider = authProvider
-    }
+    this.authConfig = authConfig ?? loadAuthConfigFromEnv()
+    this.authProvider = authProvider ?? new MsalTokenProvider()
+    this.userTokenClient = userTokenClient ?? new UserTokenClient(this.authConfig.clientId)
   }
 
   /**
