@@ -86,9 +86,9 @@ export interface StatePropertyAccessor<T = any> {
  * - **Memory Management**: Efficient in-memory caching with explicit persistence control
  * - **Custom Keys**: Support for custom storage keys for advanced scenarios
  *
- * ## Key Features
+ * ### Key Features
  *
- * ### Type Safety
+ * #### Type Safety
  * The accessor provides compile-time type checking when using TypeScript:
  * ```typescript
  * interface UserProfile {
@@ -98,7 +98,7 @@ export interface StatePropertyAccessor<T = any> {
  * const userProfile = userState.createProperty<UserProfile>("userProfile");
  * ```
  *
- * ### Automatic Default Value Handling
+ * #### Automatic Default Value Handling
  * When a property doesn't exist, default values are automatically cloned and stored:
  * ```typescript
  * // If userProfile doesn't exist, the default will be cloned and saved
@@ -108,7 +108,7 @@ export interface StatePropertyAccessor<T = any> {
  * });
  * ```
  *
- * ### Explicit Persistence Control
+ * #### Explicit Persistence Control
  * Changes are kept in memory until explicitly persisted:
  * ```typescript
  * // Modify the state
@@ -120,7 +120,7 @@ export interface StatePropertyAccessor<T = any> {
  * await userState.saveChanges(context);
  * ```
  *
- * ## Usage Examples
+ * ### Usage Examples
  *
  * @example Basic Usage
  * ```typescript
@@ -171,7 +171,7 @@ export interface StatePropertyAccessor<T = any> {
  * await dataProperty.set(context, updatedData, customKey);
  * ```
  *
- * ## Important Notes
+ * ### Important Notes
  *
  * - **Thread Safety**: This class is not thread-safe. Ensure proper synchronization in concurrent scenarios.
  * - **Memory Usage**: State objects are kept in memory until the context is disposed.
@@ -206,20 +206,19 @@ export class AgentStatePropertyAccessor<T = any> implements StatePropertyAccesso
   constructor (protected readonly state: AgentState, public readonly name: string) { }
 
   /**
-   * Deletes the property from the state storage.
-   *
+   * @summary Deletes the property from the state storage.
+   * @remarks
    * This operation removes the property from the in-memory state object but does not
    * automatically persist the change to the underlying storage. You must call
    * `state.saveChanges(context)` afterwards to persist the deletion.
    *
-   * @remarks
    * - If the property doesn't exist, this operation is a no-op
    * - The deletion only affects the in-memory state until `saveChanges()` is called
    * - After deletion, subsequent `get()` calls will return `undefined` (or the default value if provided)
    *
    * @param context The turn context for the current conversation turn
    * @param customKey Optional custom key for accessing state in a specific storage location.
-   *                  Useful for multi-tenant scenarios or when state needs to be partitioned.
+   * Useful for multi-tenant scenarios or when state needs to be partitioned.
    *
    * @returns A promise that resolves when the delete operation is complete
    *
@@ -252,15 +251,14 @@ export class AgentStatePropertyAccessor<T = any> implements StatePropertyAccesso
   }
 
   /**
-   * Retrieves the value of the property from state storage.
-   *
+   * @summary Retrieves the value of the property from state storage.
+   * @remarks
    * This method provides intelligent default value handling:
    * - If the property exists, its value is returned
    * - If the property doesn't exist and a default value is provided, the default is deep cloned,
    *   stored in state, and returned
    * - If the property doesn't exist and no default is provided, `undefined` is returned
    *
-   * @remarks
    * **Deep Cloning**: Default values are deep cloned using JSON serialization to prevent
    * reference sharing issues. This means:
    * - Functions, symbols, and circular references will be lost
@@ -331,13 +329,12 @@ export class AgentStatePropertyAccessor<T = any> implements StatePropertyAccesso
   }
 
   /**
-   * Sets the value of the property in state storage.
-   *
+   * @summary Sets the value of the property in state storage.
+   * @remarks
    * This operation updates the property in the in-memory state object but does not
    * automatically persist the change to the underlying storage. You must call
    * `state.saveChanges(context)` afterwards to persist the changes.
    *
-   * @remarks
    * **Memory vs Storage**: Changes are immediately reflected in memory and will be
    * available to subsequent `get()` calls within the same context, but are not
    * persisted to storage until `saveChanges()` is called.
