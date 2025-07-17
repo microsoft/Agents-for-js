@@ -159,6 +159,9 @@ export interface SensitivityUsageInfo {
    */
   position?: number;
 
+  /**
+    * Optional; if provided, the content is considered sensitive and should be handled accordingly.
+    */
   pattern?: {
     /**
      * Set to DefinedTerm
