@@ -29,7 +29,8 @@ export interface CopilotStudioWebChatSettings {
 }
 
 /**
- * Represents a connection interface for integrating Copilot Studio with WebChat.
+ * @summary Represents a connection interface for integrating Copilot Studio with WebChat.
+ * @remarks
  * This interface provides the necessary methods and observables to facilitate
  * bidirectional communication between a WebChat client and the Copilot Studio service.
  *
