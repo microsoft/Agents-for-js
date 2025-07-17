@@ -36,7 +36,7 @@
   ],
   "devDependencies": {
     "@microsoft/microsoft-graph-types": "^2.40.0",
-    "@microsoft/teams-app-test-tool": "^0.2.14",
+    "@microsoft/teams-app-test-tool": "^0.2.15",
     "@types/debug": "^4.1.12",
     "@types/express": "^5.0.3",
     "@types/express-serve-static-core": "^5.0.7",
@@ -44,7 +44,7 @@
     "@types/sinon": "^17.0.4",
     "@types/uuid": "^10.0.0",
     "esbuild": "^0.25.4",
-    "eslint": "^9.28.0",
+    "eslint": "^9.31.0",
     "global": "4.4.0",
     "neostandard": "^0.12.2",
     "nerdbank-gitversioning": "^3.7.115",
