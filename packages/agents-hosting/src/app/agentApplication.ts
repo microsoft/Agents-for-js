@@ -36,9 +36,9 @@ const TYPING_TIMER_DELAY = 1000
 export type ApplicationEventHandler<TState extends TurnState> = (context: TurnContext, state: TState) => Promise<boolean>
 
 /**
- * Main application class for handling agent conversations and routing.
+ * @summary Main application class for handling agent conversations and routing.
  *
- * @template TState - The state type extending TurnState.
+ * @typeParam TState - The state type extending TurnState.
  *
  * @remarks
  * The AgentApplication class provides a framework for building conversational agents.
@@ -79,7 +79,7 @@ export class AgentApplication<TState extends TurnState> {
   private readonly _adaptiveCards: AdaptiveCardsActions<TState>
 
   /**
-   * Creates a new instance of AgentApplication.
+   * @summary Creates a new instance of AgentApplication.
    *
    * @param options - Optional configuration options for the application.
    *
@@ -142,7 +142,7 @@ export class AgentApplication<TState extends TurnState> {
   }
 
   /**
-   * Gets the authorization instance for the application.
+   * @summary Gets the authorization instance for the application.
    *
    * @returns The authorization instance.
    * @throws Error if no authentication options were configured.
@@ -155,7 +155,7 @@ export class AgentApplication<TState extends TurnState> {
   }
 
   /**
-   * Gets the options used to configure the application.
+   * @summary Gets the options used to configure the application.
    *
    * @returns The application options.
    */
@@ -164,7 +164,7 @@ export class AgentApplication<TState extends TurnState> {
   }
 
   /**
-   * Gets the adapter used by the application.
+   * @summary Gets the adapter used by the application.
    *
    * @returns The adapter instance.
    */
@@ -173,7 +173,7 @@ export class AgentApplication<TState extends TurnState> {
   }
 
   /**
-   * Gets the adaptive cards actions handler for the application.
+   * @summary Gets the adaptive cards actions handler for the application.
    *
    * @returns The adaptive cards actions instance.
    *
