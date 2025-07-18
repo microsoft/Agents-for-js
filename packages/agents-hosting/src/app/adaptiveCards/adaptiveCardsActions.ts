@@ -34,7 +34,8 @@ enum AdaptiveCardInvokeResponseType {
 }
 
 /**
- * Represents a single search result item returned from an Adaptive Card search operation.
+ * @summary Represents a single search result item returned from an Adaptive Card search operation.
+ * @remarks
  * This interface defines the structure for search results that are displayed to users
  * when they perform searches within Adaptive Cards, such as typeahead or dropdown searches.
  *
@@ -48,7 +49,8 @@ enum AdaptiveCardInvokeResponseType {
  */
 export interface AdaptiveCardSearchResult {
   /**
-   * The display text shown to the user in the search results.
+   * @summary The display text shown to the user in the search results.
+   * @remarks
    * This is typically the human-readable label that appears in dropdowns,
    * typeahead suggestions, or search result lists.
    *
@@ -57,7 +59,8 @@ export interface AdaptiveCardSearchResult {
   title: string;
 
   /**
-   * The underlying value associated with this search result.
+   * @summary The underlying value associated with this search result.
+   * @remarks
    * This is usually the actual data value that gets selected when the user
    * chooses this result, such as an ID, email address, or other identifier.
    *
