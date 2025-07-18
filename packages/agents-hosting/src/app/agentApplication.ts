@@ -38,8 +38,6 @@ export type ApplicationEventHandler<TState extends TurnState> = (context: TurnCo
 /**
  * @summary Main application class for handling agent conversations and routing.
  *
- * @typeParam TState - The state type extending TurnState.
- *
  * @remarks
  * The AgentApplication class provides a framework for building conversational agents.
  * It handles routing activities to appropriate handlers, manages conversation state,
@@ -66,6 +64,8 @@ export type ApplicationEventHandler<TState extends TurnState> = (context: TurnCo
  *
  * await app.run(turnContext);
  * ```
+ *
+ * @typeParam TState - The state type extending TurnState.
  */
 export class AgentApplication<TState extends TurnState> {
   protected readonly _options: AgentApplicationOptions<TState>
