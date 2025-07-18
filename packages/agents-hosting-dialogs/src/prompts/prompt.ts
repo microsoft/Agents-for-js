@@ -103,12 +103,7 @@ export interface PromptRecognizerResult<T> {
 }
 
 /**
- * Function signature for providing a custom prompt validator.
- *
- * @example
- * ```typescript
- * type PromptValidator<T> = (prompt: PromptValidatorContext<T>) => Promise<boolean>;
- * ```
+ * @summary Function signature for providing a custom prompt validator.
  *
  * @remarks
  * The validator should be an asynchronous function that returns `true` if
@@ -118,6 +113,11 @@ export interface PromptRecognizerResult<T> {
  * > If the validator returns `false` the prompts default re-prompt logic will be run unless the
  * > validator sends a custom re-prompt to the user using `prompt.context.sendActivity()`. In that
  * > case the prompts default re-prompt logic will not be run.
+ *
+ * @example
+ * ```typescript
+ * type PromptValidator<T> = (prompt: PromptValidatorContext<T>) => Promise<boolean>;
+ * ```
  * @param T Type of recognizer result being validated.
  * @param prompt Contextual information containing the recognizer result and original options passed to the prompt.
  */
