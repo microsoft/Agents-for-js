@@ -29,5 +29,8 @@ export interface CopilotStudioConnectionSettings {
   directConnectUrl?: string
 
   /** Directs Copilot Studio Client to use the experimental endpoint if available. */
-  useExperimentalEndpoint?: boolean
+  useExperimentalEndpoint?: boolean,
+
+  /** The login authority to use for the connection. */
+  authority?: string
 }

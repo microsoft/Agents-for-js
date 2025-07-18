@@ -17,6 +17,7 @@ describe('AuthConfiguration', () => {
     process.env.certKeyFile = 'test-cert.key'
     process.env.connectionName = 'test-connection'
     process.env.FICClientId = 'test-fic-client-id'
+    process.env.authorityEndpoint = 'https://login.microsoftonline.com'
     process.env.NODE_ENV = 'development'
   })
 
@@ -40,6 +41,7 @@ describe('AuthConfiguration', () => {
         'https://sts.windows.net/test-tenant-id/',
         'https://login.microsoftonline.com/test-tenant-id/v2.0'
       ])
+      assert.strictEqual(config.authority, 'https://login.microsoftonline.com')
     })
 
     it('should throw an error if clientId is not provided in production', () => {
@@ -62,6 +64,7 @@ describe('AuthConfiguration', () => {
       delete process.env.certKeyFile
       delete process.env.connectionName
       delete process.env.FICClientId
+      delete process.env.authorityEndpoint
 
       const config = loadAuthConfigFromEnv()
       assert.strictEqual(config.tenantId, undefined)
@@ -75,6 +78,7 @@ describe('AuthConfiguration', () => {
         'https://sts.windows.net/undefined/',
         'https://login.microsoftonline.com/undefined/v2.0'
       ])
+      assert.strictEqual(config.authority, 'https://login.microsoftonline.com')
     })
   })
 
@@ -87,6 +91,7 @@ describe('AuthConfiguration', () => {
       process.env.myconn_certPemFile = 'conn-cert.pem'
       process.env.myconn_certKeyFile = 'conn-cert.key'
       process.env.myconn_connectionName = 'conn-connection-name'
+      process.env.myconn_authorityEndpoint = 'https://login.microsoftonline.com'
     })
 
     it('should load configuration from connection-specific environment variables', () => {
@@ -103,6 +108,7 @@ describe('AuthConfiguration', () => {
         'https://sts.windows.net/conn-tenant-id/',
         'https://login.microsoftonline.com/conn-tenant-id/v2.0'
       ])
+      assert.strictEqual(config.authority, 'https://login.microsoftonline.com')
     })
 
     it('should throw an error if connection-specific clientId is not found', () => {
@@ -120,6 +126,7 @@ describe('AuthConfiguration', () => {
       assert.strictEqual(config.certKeyFile, undefined)
       assert.strictEqual(config.connectionName, undefined)
       assert.strictEqual(config.FICClientId, undefined)
+      assert.deepStrictEqual(config.authority, 'https://login.microsoftonline.com')
     })
   })
 
@@ -146,6 +153,7 @@ describe('AuthConfiguration', () => {
         'https://sts.windows.net/microsoft-tenant-id/',
         'https://login.microsoftonline.com/microsoft-tenant-id/v2.0'
       ])
+      assert.strictEqual(config.authority, 'https://login.microsoftonline.com')
     })
 
     it('should throw an error if MicrosoftAppId is not provided in production', () => {
@@ -168,6 +176,7 @@ describe('AuthConfiguration', () => {
       delete process.env.certPemFile
       delete process.env.certKeyFile
       delete process.env.connectionName
+      delete process.env.authorityEndpoint
 
       const config = loadPrevAuthConfigFromEnv()
       assert.strictEqual(config.tenantId, undefined)
@@ -181,6 +190,7 @@ describe('AuthConfiguration', () => {
         'https://sts.windows.net/undefined/',
         'https://login.microsoftonline.com/undefined/v2.0'
       ])
+      assert.strictEqual(config.authority, 'https://login.microsoftonline.com')
     })
   })
 
@@ -194,7 +204,8 @@ describe('AuthConfiguration', () => {
         certKeyFile: 'cert.key',
         connectionName: 'test-connection',
         FICClientId: 'fic-client',
-        issuers: ['https://example.com']
+        issuers: ['https://example.com'],
+        authority: 'https://login.microsoftonline.us'
       }
 
       assert.strictEqual(config.tenantId, 'test-tenant')
@@ -205,6 +216,7 @@ describe('AuthConfiguration', () => {
       assert.strictEqual(config.connectionName, 'test-connection')
       assert.strictEqual(config.FICClientId, 'fic-client')
       assert.deepStrictEqual(config.issuers, ['https://example.com'])
+      assert.strictEqual(config.authority, 'https://login.microsoftonline.us')
     })
 
     it('should allow creating minimal AuthConfiguration with only required fields', () => {

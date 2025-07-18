@@ -3,7 +3,6 @@ import { describe, it, beforeEach } from 'node:test'
 import { TurnState } from './../../../src/app/turnState'
 
 // import { createTestTurnContextAndState } from './internals/testing/TestUtilities'
-// import { TeamsAdapter } from './TeamsAdapter'
 import { Activity } from '@microsoft/agents-activity'
 import { TestAdapter } from '../testStubs'
 import { TurnContext } from '../../../src/turnContext'

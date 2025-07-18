@@ -45,7 +45,15 @@ export interface AuthConfiguration {
   /**
    * The FIC (First-Party Integration Channel) client ID.
    */
-  FICClientId?: string
+  FICClientId?: string,
+
+  /**
+   * Entra Authentication Endpoint to use,  If not populated the Entra Public Cloud endpoint is assumed.
+   * This example of Public Cloud Endpoint is https://login.microsoftonline.com
+   @remarks
+   see also https://learn.microsoft.com/entra/identity-platform/authentication-national-cloud
+   */
+  authority?: string
 }
 
 /**
@@ -63,6 +71,7 @@ export interface AuthConfiguration {
  * FICClientId=your-FIC-client-id
  *
  * connectionName=your-connection-name
+ * authority=your-authority-endpoint
  * ```
  * @remarks
  * - `clientId` is required
@@ -71,6 +80,7 @@ export interface AuthConfiguration {
  */
 export const loadAuthConfigFromEnv: (cnxName?: string) => AuthConfiguration = (cnxName?: string) => {
   if (cnxName === undefined) {
+    const authority = process.env.authorityEndpoint ?? 'https://login.microsoftonline.com'
     if (process.env.clientId === undefined && process.env.NODE_ENV === 'production') {
       throw new Error('ClientId required in production')
     }
@@ -82,13 +92,15 @@ export const loadAuthConfigFromEnv: (cnxName?: string) => AuthConfiguration = (c
       certKeyFile: process.env.certKeyFile,
       connectionName: process.env.connectionName,
       FICClientId: process.env.FICClientId,
+      authority,
       issuers: [
         'https://api.botframework.com',
         `https://sts.windows.net/${process.env.tenantId}/`,
-        `https://login.microsoftonline.com/${process.env.tenantId}/v2.0`
-      ]
+        `${authority}/${process.env.tenantId}/v2.0`
+      ],
     }
   } else {
+    const authority = process.env[`${cnxName}_authorityEndpoint`] ?? 'https://login.microsoftonline.com'
     return {
       tenantId: process.env[`${cnxName}_tenantId`],
       clientId: process.env[`${cnxName}_clientId`] ?? (() => { throw new Error(`ClientId not found for connection: ${cnxName}`) })(),
@@ -97,10 +109,11 @@ export const loadAuthConfigFromEnv: (cnxName?: string) => AuthConfiguration = (c
       certKeyFile: process.env[`${cnxName}_certKeyFile`],
       connectionName: process.env[`${cnxName}_connectionName`],
       FICClientId: process.env[`${cnxName}_FICClientId`],
+      authority,
       issuers: [
         'https://api.botframework.com',
         `https://sts.windows.net/${process.env[`${cnxName}_tenantId`]}/`,
-        `https://login.microsoftonline.com/${process.env[`${cnxName}_tenantId`]}/v2.0`
+        `${authority}/${process.env[`${cnxName}_tenantId`]}/v2.0`
       ]
     }
   }
@@ -122,6 +135,7 @@ export const loadPrevAuthConfigFromEnv: () => AuthConfiguration = () => {
   if (process.env.MicrosoftAppId === undefined && process.env.NODE_ENV === 'production') {
     throw new Error('ClientId required in production')
   }
+  const authority = process.env.authorityEndpoint ?? 'https://login.microsoftonline.com'
   return {
     tenantId: process.env.MicrosoftAppTenantId,
     clientId: process.env.MicrosoftAppId!,
@@ -130,10 +144,11 @@ export const loadPrevAuthConfigFromEnv: () => AuthConfiguration = () => {
     certKeyFile: process.env.certKeyFile,
     connectionName: process.env.connectionName,
     FICClientId: process.env.MicrosoftAppClientId,
+    authority,
     issuers: [
       'https://api.botframework.com',
       `https://sts.windows.net/${process.env.MicrosoftAppTenantId}/`,
-      `https://login.microsoftonline.com/${process.env.MicrosoftAppTenantId}/v2.0`
+      `${authority}/${process.env.MicrosoftAppTenantId}/v2.0`
     ]
   }
 }

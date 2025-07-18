@@ -15,6 +15,8 @@ abstract class ConnectionOptions implements Omit<CopilotStudioConnectionSettings
   public appClientId: string = ''
   /** The tenant ID of the application. */
   public tenantId: string = ''
+  /** The login authority to use for the connection */
+  public authority?: string = ''
   /** The environment ID of the application. */
   public environmentId: string = ''
   /** The identifier of the agent. */
@@ -63,6 +65,9 @@ export class ConnectionSettings extends ConnectionOptions {
 
     const cloud = options.cloud ?? PowerPlatformCloud.Prod
     const copilotAgentType = options.copilotAgentType ?? AgentType.Published
+    const authority = options.authority && options.authority.trim() !== ''
+      ? options.authority
+      : 'https://login.microsoftonline.com'
 
     if (!Object.values(PowerPlatformCloud).includes(cloud as PowerPlatformCloud)) {
       throw new Error(`Invalid PowerPlatformCloud: '${cloud}'. Supported values: ${Object.values(PowerPlatformCloud).join(', ')}`)
@@ -72,7 +77,7 @@ export class ConnectionSettings extends ConnectionOptions {
       throw new Error(`Invalid AgentType: '${copilotAgentType}'. Supported values: ${Object.values(AgentType).join(', ')}`)
     }
 
-    Object.assign(this, { ...options, cloud, copilotAgentType })
+    Object.assign(this, { ...options, cloud, copilotAgentType, authority })
   }
 }
 
@@ -84,6 +89,7 @@ export const loadCopilotStudioConnectionSettingsFromEnv: () => ConnectionSetting
   return new ConnectionSettings({
     appClientId: process.env.appClientId ?? '',
     tenantId: process.env.tenantId ?? '',
+    authority: process.env.authorityEndpoint ?? 'https://login.microsoftonline.com',
     environmentId: process.env.environmentId ?? '',
     agentIdentifier: process.env.agentIdentifier ?? '',
     cloud: process.env.cloud as PowerPlatformCloud,

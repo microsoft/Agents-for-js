@@ -71,7 +71,7 @@ function getToken (settings: ConnectionSettings) : Promise<string> {
   const msalConfig: msal.Configuration = {
     auth: {
       clientId: settings.appClientId!,
-      authority: `https://login.microsoftonline.com/${settings.tenantId}`,
+      authority: `${settings.authority}/${settings.tenantId}`,
     },
     cache: {
       cachePlugin: new MsalCachePlugin(path.join(os.tmpdir(), 'msal.usercache.json'))

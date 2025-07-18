@@ -55,7 +55,7 @@ export class MsalTokenProvider implements AuthProvider {
     const cca = new ConfidentialClientApplication({
       auth: {
         clientId: authConfig.clientId as string,
-        authority: `https://login.microsoftonline.com/${authConfig.tenantId || 'botframework.com'}`,
+        authority: `${authConfig.authority}/${authConfig.tenantId || 'botframework.com'}`,
         clientSecret: authConfig.clientSecret
       },
       system: this.sysOptions
@@ -137,7 +137,7 @@ export class MsalTokenProvider implements AuthProvider {
     const cca = new ConfidentialClientApplication({
       auth: {
         clientId: authConfig.clientId || '',
-        authority: `https://login.microsoftonline.com/${authConfig.tenantId || 'botframework.com'}`,
+        authority: `${authConfig.authority}/${authConfig.tenantId || 'botframework.com'}`,
         clientCertificate: {
           privateKey: privateKey as string,
           thumbprint: pubKeyObject.fingerprint.replaceAll(':', ''),
@@ -163,7 +163,7 @@ export class MsalTokenProvider implements AuthProvider {
     const cca = new ConfidentialClientApplication({
       auth: {
         clientId: authConfig.clientId as string,
-        authority: `https://login.microsoftonline.com/${authConfig.tenantId || 'botframework.com'}`,
+        authority: `${authConfig.authority}/${authConfig.tenantId || 'botframework.com'}`,
         clientSecret: authConfig.clientSecret
       },
       system: this.sysOptions
@@ -187,7 +187,7 @@ export class MsalTokenProvider implements AuthProvider {
     const cca = new ConfidentialClientApplication({
       auth: {
         clientId: authConfig.clientId as string,
-        authority: `https://login.microsoftonline.com/${authConfig.tenantId}`,
+        authority: `${authConfig.authority}/${authConfig.tenantId}`,
         clientAssertion
       },
       system: this.sysOptions

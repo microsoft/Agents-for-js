@@ -70,22 +70,6 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "teams-agent",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "program": "${workspaceFolder}/test-agents/teams-agent/src/index.ts",
-            "outFiles": [
-                "${workspaceFolder}/**/dist/**/*.js"
-            ],
-            "preLaunchTask": "build_teams",
-            "envFile": "${workspaceFolder}/test-agents/teams-agent/.env",
-            "console": "integratedTerminal",
-            "internalConsoleOptions": "openOnSessionStart"
-        },
-        {
-            "type": "node",
-            "request": "launch",
             "name": "application-style",
             "skipFiles": [
                 "<node_internals>/**"
@@ -96,23 +80,6 @@
             ],
             "preLaunchTask": "build_application_style",
             "envFile": "${workspaceFolder}/test-agents/application-style/.env",
-            "console": "integratedTerminal",
-            "internalConsoleOptions": "openOnSessionStart"
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "teams-application-style",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "program": "${workspaceFolder}/test-agents/teams-application-style/src/index.ts",
-            "outFiles": [
-                "${workspaceFolder}/**/dist/**/*.js"
-            ],
-            "preLaunchTask": "build_teams_application_style",
-            "envFile": "${workspaceFolder}/test-agents/teams-application-style/.env",
-
             "console": "integratedTerminal",
             "internalConsoleOptions": "openOnSessionStart"
         },
