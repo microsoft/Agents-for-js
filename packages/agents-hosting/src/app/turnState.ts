@@ -40,7 +40,7 @@ export interface DefaultTempState {
 }
 
 /**
- * Base class defining a collection of turn state scopes.
+ * @summary Base class defining a collection of turn state scopes.
  * @remarks
  * Developers can create a derived class that extends `TurnState` to add additional state scopes.
  *
