@@ -12,7 +12,7 @@ import { DialogContext, DialogState } from './dialogContext'
 import { StringUtils } from './stringUtils'
 
 /**
- * Interface for dialogs that have child dialog dependencies.
+ * @summary Interface for dialogs that have child dialog dependencies.
  *
  * @remarks
  * Implement this interface on dialog classes that need to register child dialogs
@@ -38,9 +38,8 @@ import { StringUtils } from './stringUtils'
  */
 export interface DialogDependencies {
   /**
-   * Returns an array of child dialogs that this dialog depends on.
+   * @summary Returns an array of child dialogs that this dialog depends on.
    *
-   * @returns An array of Dialog instances that should be added to the parent DialogSet.
    *
    * @remarks
    * This method is called automatically by DialogSet.add() when a dialog implementing
@@ -51,6 +50,8 @@ export interface DialogDependencies {
    * The returned dialogs should be the actual Dialog instances that will be called
    * by this dialog, not new instances. This ensures proper dialog lifecycle management
    * and state consistency.
+   *
+   * @returns An array of Dialog instances that should be added to the parent DialogSet.
    */
   getDependencies(): Dialog[];
 }

@@ -31,7 +31,9 @@ export interface FindValuesOptions {
 }
 
 /**
- * Represents a value that was successfully found and matched during a search operation.
+ * @summary Represents a value that was successfully found and matched during a search operation.
+ *
+ * @remarks
  * This interface contains the matched value along with metadata about the match quality
  * and its position in the original search list.
  *
@@ -47,7 +49,8 @@ export interface FindValuesOptions {
  */
 export interface FoundValue {
   /**
-   * The exact value that was matched from the original search list.
+   * @summary The exact value that was matched from the original search list.
+   * @remarks
    * This is the original string value, not the user's input that matched it.
    *
    * @example "red" (when user typed "rd" and it matched "red")
@@ -55,7 +58,8 @@ export interface FoundValue {
   value: string;
 
   /**
-   * The zero-based index position of this value in the original list that was searched.
+   * @summary The zero-based index position of this value in the original list that was searched.
+   * @remarks
    * This allows you to correlate the found value back to its position in the source array.
    *
    * @example 0 (if "red" was the first item in the original choices array)
@@ -63,7 +67,8 @@ export interface FoundValue {
   index: number;
 
   /**
-   * A confidence score between 0 and 1 indicating the quality of the match.
+   * @summary A confidence score between 0 and 1 indicating the quality of the match.
+   * @remarks
    * - 1.0 indicates a perfect exact match
    * - Lower values indicate partial or fuzzy matches
    * - Calculated based on completeness (how much of the value matched) and accuracy (token distance)
@@ -74,7 +79,8 @@ export interface FoundValue {
 }
 
 /**
- * Represents a value with its original position that can be used in search operations.
+ * @summary Represents a value with its original position that can be used in search operations.
+ * @remarks
  * This interface is used internally by the search algorithm to maintain the relationship
  * between search values and their original positions in the source array.
  *
@@ -96,7 +102,8 @@ export interface FoundValue {
  */
 export interface SortedValue {
   /**
-   * The string value to be searched for during matching operations.
+   * @summary The string value to be searched for during matching operations.
+   * @remarks
    * This is the actual text content that will be compared against user input.
    *
    * @example "red", "green", "blue" when searching color choices
@@ -104,7 +111,8 @@ export interface SortedValue {
   value: string;
 
   /**
-   * The zero-based index position of this value in the original source array.
+   * @summary The zero-based index position of this value in the original source array.
+   * @remarks
    * This allows the search algorithm to correlate found matches back to their
    * original positions, which is essential for maintaining proper choice selection.
    *
@@ -114,8 +122,9 @@ export interface SortedValue {
 }
 
 /**
- * Low-level function that searches for a set of values within an utterance. Higher level
- * functions like `findChoices()` and `recognizeChoices()` are layered above this function.  In most
+ * @summary Low-level function that searches for a set of values within an utterance.
+ * @remarks
+ * Higher level functions like `findChoices()` and `recognizeChoices()` are layered above this function.  In most
  * cases its easier to just call one of the higher level functions instead but this function contains
  * the fuzzy search algorithm that drives choice recognition.
  *

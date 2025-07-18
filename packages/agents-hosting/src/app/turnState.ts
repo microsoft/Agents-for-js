@@ -40,7 +40,7 @@ export interface DefaultTempState {
 }
 
 /**
- * Base class defining a collection of turn state scopes.
+ * @summary Base class defining a collection of turn state scopes.
  * @remarks
  * Developers can create a derived class that extends `TurnState` to add additional state scopes.
  *
@@ -70,10 +70,10 @@ export interface DefaultTempState {
  *   }
  * }
  * ```
- * @template TConversationState - Type for conversation-scoped state
- * @template TUserState - Type for user-scoped state
- * @template TTempState - Type for temporary state that exists only for the current turn
- * @template TSSOState - Type for Single Sign-On (SSO) state
+ * @typeParam TConversationState - Type for conversation-scoped state
+ * @typeParam TUserState - Type for user-scoped state
+ * @typeParam TTempState - Type for temporary state that exists only for the current turn
+ * @typeParam TSSOState - Type for Single Sign-On (SSO) state
  */
 export class TurnState<
     TConversationState = DefaultConversationState,
@@ -248,7 +248,7 @@ export class TurnState<
   /**
    * Gets a value from state by dot-notation path.
    * Format: "scope.property" or just "property" (defaults to temp scope)
-   * @template TValue - The type of the value to retrieve
+   * @typeParam TValue - The type of the value to retrieve
    * @param path - The path to the value
    * @returns The value at the specified path
    */

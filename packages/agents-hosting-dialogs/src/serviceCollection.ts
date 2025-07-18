@@ -7,8 +7,8 @@ import { DepGraph } from 'dependency-graph'
 /**
  * Factory describes a generic factory function signature. The type is generic over a few parameters:
  *
- * @template Type type the factory produces
- * @template Initial true if the `initialValue` passed to the factory must be defined
+ * @typeParam Type type the factory produces
+ * @typeParam Initial true if the `initialValue` passed to the factory must be defined
  */
 export type Factory<Type, Initial extends boolean> = (
   initialValue: Initial extends true ? Type : Type | undefined,
@@ -18,9 +18,9 @@ export type Factory<Type, Initial extends boolean> = (
  * DependencyFactory is a function signature that produces an instance that depends on a set of
  * other services. The type is generic over a few parameters:
  *
- * @template Type type the factory produces
- * @template Dependencies the services this factory function depends on
- * @template Initial true if the `initialValue` passed to the factory must be defined
+ * @typeParam Type type the factory produces
+ * @typeParam Dependencies the services this factory function depends on
+ * @typeParam Initial true if the `initialValue` passed to the factory must be defined
  */
 export type DependencyFactory<Type, Dependencies, Initial extends boolean> = (
   dependencies: Dependencies,
@@ -50,7 +50,7 @@ export class ServiceCollection {
   /**
      * Construct a Providers instance
      *
-     * @template S services interface
+     * @typeParam S services interface
      * @param defaultServices default set of services
      */
   constructor (defaultServices: Record<string, unknown> = {}) {

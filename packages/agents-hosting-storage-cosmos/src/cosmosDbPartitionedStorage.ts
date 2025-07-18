@@ -9,7 +9,7 @@ import { Storage, StoreItems } from '@microsoft/agents-hosting'
 
 /**
  * A utility class to ensure that a specific asynchronous task is executed only once for a given key.
- * @template T The type of the result returned by the asynchronous task.
+ * @typeParam T The type of the result returned by the asynchronous task.
  */
 export class DoOnce<T> {
   private task: {

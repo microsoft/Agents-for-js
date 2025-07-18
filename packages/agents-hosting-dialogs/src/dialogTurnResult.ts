@@ -4,7 +4,7 @@ import { DialogTurnStatus } from './dialogTurnStatus'
  * Represents the result of a dialog context's attempt to begin, continue,
  * or otherwise manipulate one or more dialogs.
  *
- * @template T Optional. The type that represents a result returned by the active dialog when it
+ * @typeParam T Optional. The type that represents a result returned by the active dialog when it
  *      successfully completes.
  *
  * @remarks

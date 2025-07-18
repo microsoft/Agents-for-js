@@ -5,7 +5,7 @@
 
 /**
  * Represents a query with pagination and parameters.
- * @template TParams - The type of the query parameters.
+ * @typeParam TParams - The type of the query parameters.
  */
 export interface Query<TParams extends Record<string, any>> {
   /**

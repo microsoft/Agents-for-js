@@ -34,7 +34,8 @@ enum AdaptiveCardInvokeResponseType {
 }
 
 /**
- * Represents a single search result item returned from an Adaptive Card search operation.
+ * @summary Represents a single search result item returned from an Adaptive Card search operation.
+ * @remarks
  * This interface defines the structure for search results that are displayed to users
  * when they perform searches within Adaptive Cards, such as typeahead or dropdown searches.
  *
@@ -48,7 +49,8 @@ enum AdaptiveCardInvokeResponseType {
  */
 export interface AdaptiveCardSearchResult {
   /**
-   * The display text shown to the user in the search results.
+   * @summary The display text shown to the user in the search results.
+   * @remarks
    * This is typically the human-readable label that appears in dropdowns,
    * typeahead suggestions, or search result lists.
    *
@@ -57,7 +59,8 @@ export interface AdaptiveCardSearchResult {
   title: string;
 
   /**
-   * The underlying value associated with this search result.
+   * @summary The underlying value associated with this search result.
+   * @remarks
    * This is usually the actual data value that gets selected when the user
    * chooses this result, such as an ID, email address, or other identifier.
    *
@@ -68,7 +71,7 @@ export interface AdaptiveCardSearchResult {
 
 /**
  * A class to handle Adaptive Card actions such as executing actions, submitting actions, and performing searches.
- * @template TState - The type of the TurnState used in the application.
+ * @typeParam TState - The type of the TurnState used in the application.
  */
 export class AdaptiveCardsActions<TState extends TurnState> {
   /**
@@ -86,7 +89,7 @@ export class AdaptiveCardsActions<TState extends TurnState> {
 
   /**
    * Registers a handler for the Action.Execute event.
-   * @template TData - The type of the data passed to the handler.
+   * @typeParam TData - The type of the data passed to the handler.
    * @param verb - A string, RegExp, RouteSelector, or an array of these to match the action verb.
    * @param handler - A function to handle the action execution.
    * @returns The Teams application instance.
@@ -171,7 +174,7 @@ export class AdaptiveCardsActions<TState extends TurnState> {
 
   /**
    * Registers a handler for the Action.Submit event.
-   * @template TData - The type of the data passed to the handler.
+   * @typeParam TData - The type of the data passed to the handler.
    * @param verb - A string, RegExp, RouteSelector, or an array of these to match the action verb.
    * @param handler - A function to handle the action submission.
    * @returns The Teams application instance.

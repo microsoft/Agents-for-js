@@ -29,7 +29,8 @@ export interface CopilotStudioWebChatSettings {
 }
 
 /**
- * Represents a connection interface for integrating Copilot Studio with WebChat.
+ * @summary Represents a connection interface for integrating Copilot Studio with WebChat.
+ * @remarks
  * This interface provides the necessary methods and observables to facilitate
  * bidirectional communication between a WebChat client and the Copilot Studio service.
  *
@@ -86,7 +87,8 @@ export interface CopilotStudioWebChatConnection {
 }
 
 /**
- * A utility class that provides WebChat integration capabilities for Copilot Studio services.
+ * @summary A utility class that provides WebChat integration capabilities for Copilot Studio services.
+ * @remarks
  * This class acts as a bridge between Microsoft Bot Framework WebChat and Copilot Studio,
  * enabling seamless communication through a DirectLine-compatible interface.
  *
@@ -302,7 +304,7 @@ export class CopilotStudioWebChat {
  * The created Observable handles promise resolution and rejection automatically,
  * converting them to appropriate next/error signals for subscribers.
  *
- * @template T - The type of value that the observable will emit
+ * @typeParam T - The type of value that the observable will emit
  * @param fn - An asynchronous function that receives a Subscriber and performs
  *             the desired async operation. The function should call subscriber.next()
  *             with results and subscriber.complete() when finished.

@@ -15,7 +15,7 @@ import { TurnState } from './turnState'
  * a selector function that determines when the route should be activated with a handler
  * function that processes the matched activities.
  *
- * @template TState - The type of turn state that extends TurnState, allowing for
+ * @typeParam TState - The type of turn state that extends TurnState, allowing for
  *                    type-safe access to custom state properties within route handlers
  *
  * @example
