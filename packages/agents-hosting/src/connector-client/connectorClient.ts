@@ -66,19 +66,23 @@ export class ConnectorClient {
    * @param authConfig - The authentication configuration.
    * @param authProvider - The authentication provider.
    * @param scope - The scope for the authentication token.
+   * @param headers - The headers to include in the request.
    * @returns A new instance of ConnectorClient.
    */
   static async createClientWithAuthAsync (
     baseURL: string,
     authConfig: AuthConfiguration,
     authProvider: AuthProvider,
-    scope: string
+    scope: string,
+    headers?: Record<string, string | string[]>
   ): Promise<ConnectorClient> {
+    logger.debug('Incoming request headers', headers)
     const axiosInstance = axios.create({
       baseURL,
       headers: {
-        Accept: 'application/json',
-        'User-Agent': getProductInfo(),
+        ...headers || {},
+        'User-Agent': headers?.['user-agent'] ? `${headers['user-agent']} ${getProductInfo()}` : getProductInfo(),
+        Accept: 'application/json'
       },
       transformRequest: [
         (data, headers) => {

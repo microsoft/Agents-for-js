@@ -22,6 +22,7 @@ import { AttachmentInfo } from './connector-client/attachmentInfo'
 import { AttachmentData } from './connector-client/attachmentData'
 import { normalizeIncomingActivity } from './activityWireCompat'
 import { UserTokenClient } from './oauth'
+import { getHeadersToPropagate } from './headerPropagation'
 
 const logger = debug('agents:cloud-adapter')
 
@@ -84,18 +85,21 @@ export class CloudAdapter extends BaseAdapter {
    *
    * @param serviceUrl - The URL of the service to connect to
    * @param scope - The authentication scope to use
+   * @param headers - The headers to include in the request
    * @returns A promise that resolves to a ConnectorClient instance
    * @protected
    */
   protected async createConnectorClient (
     serviceUrl: string,
-    scope: string
+    scope: string,
+    headers?: Record<string, string | string[]>
   ): Promise<ConnectorClient> {
     return ConnectorClient.createClientWithAuthAsync(
       serviceUrl,
       this.authConfig,
       this.authProvider,
-      scope
+      scope,
+      headers
     )
   }
 
@@ -200,6 +204,11 @@ export class CloudAdapter extends BaseAdapter {
     request: Request,
     res: Response,
     logic: (context: TurnContext) => Promise<void>): Promise<void> {
+    const headers = getHeadersToPropagate(request.headers)
+    if (Object.keys(headers).length > 0) {
+      logger.debug('Headers to propagate: ', headers)
+    }
+
     const end = (status: StatusCodes, body?: unknown, isInvokeResponseOrExpectReplies: boolean = false) => {
       res.status(status)
       if (isInvokeResponseOrExpectReplies) {
@@ -228,7 +237,7 @@ export class CloudAdapter extends BaseAdapter {
     // if Delivery Mode == ExpectReplies, we don't need a connector client.
     if (this.resolveIfConnectorClientIsNeeded(activity)) {
       logger.debug('Creating connector client with scope: ', scope)
-      this.connectorClient = await this.createConnectorClient(activity.serviceUrl!, scope)
+      this.connectorClient = await this.createConnectorClient(activity.serviceUrl!, scope, headers)
       this.setConnectorClient(context)
     }
 
