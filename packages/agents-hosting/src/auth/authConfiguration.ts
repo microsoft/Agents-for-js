@@ -80,9 +80,7 @@ export interface AuthConfiguration {
  */
 export const loadAuthConfigFromEnv: (cnxName?: string) => AuthConfiguration = (cnxName?: string) => {
   if (cnxName === undefined) {
-    const authority = process.env.authorityEndpoint && process.env.authorityEndpoint.trim() !== ''
-      ? process.env.authorityEndpoint
-      : 'https://login.microsoftonline.com'
+    const authority = process.env.authorityEndpoint ?? 'https://login.microsoftonline.com'
     if (process.env.clientId === undefined && process.env.NODE_ENV === 'production') {
       throw new Error('ClientId required in production')
     }
@@ -102,9 +100,7 @@ export const loadAuthConfigFromEnv: (cnxName?: string) => AuthConfiguration = (c
       ],
     }
   } else {
-    const authority = process.env[`${cnxName}_authorityEndpoint`] && (process.env[`${cnxName}_authorityEndpoint`])?.trim() !== ''
-      ? process.env[`${cnxName}_authorityEndpoint`]
-      : 'https://login.microsoftonline.com'
+    const authority = process.env[`${cnxName}_authorityEndpoint`] ?? 'https://login.microsoftonline.com'
     return {
       tenantId: process.env[`${cnxName}_tenantId`],
       clientId: process.env[`${cnxName}_clientId`] ?? (() => { throw new Error(`ClientId not found for connection: ${cnxName}`) })(),
@@ -139,9 +135,7 @@ export const loadPrevAuthConfigFromEnv: () => AuthConfiguration = () => {
   if (process.env.MicrosoftAppId === undefined && process.env.NODE_ENV === 'production') {
     throw new Error('ClientId required in production')
   }
-  const authority = process.env.authorityEndpoint && process.env.authorityEndpoint.trim() !== ''
-    ? process.env.authorityEndpoint
-    : 'https://login.microsoftonline.com'
+  const authority = process.env.authorityEndpoint ?? 'https://login.microsoftonline.com'
   return {
     tenantId: process.env.MicrosoftAppTenantId,
     clientId: process.env.MicrosoftAppId!,
