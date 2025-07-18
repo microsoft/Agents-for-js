@@ -10,7 +10,7 @@ import { PromptCultureModels } from './promptCultureModels'
 import { Activity } from '@microsoft/agents-activity'
 
 /**
- * Defines locale-specific choice defaults for confirmation prompts.
+ * @summary Defines locale-specific choice defaults for confirmation prompts.
  *
  * @remarks
  * This interface represents a dictionary that maps locale strings to their corresponding
