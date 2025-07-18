@@ -20,6 +20,7 @@ import { TurnState } from './turnState'
 import { RouteRank } from './routeRank'
 import { RouteList } from './routeList'
 import { TranscriptLoggerMiddleware } from '../transcript'
+import { CloudAdapter } from '../cloudAdapter'
 
 const logger = debug('agents:app')
 
@@ -71,7 +72,7 @@ export class AgentApplication<TState extends TurnState> {
   protected readonly _routes: RouteList<TState> = new RouteList<TState>()
   protected readonly _beforeTurn: ApplicationEventHandler<TState>[] = []
   protected readonly _afterTurn: ApplicationEventHandler<TState>[] = []
-  private readonly _adapter?: BaseAdapter
+  private readonly _adapter?: CloudAdapter
   private readonly _authorization?: Authorization
   private _typingTimer: NodeJS.Timeout | undefined
   protected readonly _extensions: AgentExtension<TState>[] = []
@@ -118,10 +119,12 @@ export class AgentApplication<TState extends TurnState> {
 
     if (this._options.adapter) {
       this._adapter = this._options.adapter
+    } else {
+      this._adapter = new CloudAdapter()
     }
 
     if (this._options.authorization) {
-      this._authorization = new Authorization(this._options.storage!, this._options.authorization)
+      this._authorization = new Authorization(this._options.storage!, this._options.authorization, this._adapter?.userTokenClient!)
     }
 
     if (this._options.longRunningMessages && !this._adapter && !this._options.agentAppId) {

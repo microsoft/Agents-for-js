@@ -13,6 +13,7 @@ import { Activity, ConversationReference } from '@microsoft/agents-activity'
 import { ResourceResponse } from './connector-client/resourceResponse'
 import { AttachmentData } from './connector-client/attachmentData'
 import { AttachmentInfo } from './connector-client/attachmentInfo'
+import { UserTokenClient } from './oauth'
 
 const logger = debug('agents:base-adapter')
 
@@ -72,6 +73,11 @@ export abstract class BaseAdapter {
    * The authentication provider used for token management.
    */
   authProvider: AuthProvider = new MsalTokenProvider()
+
+  /**
+   * The user token client used for managing user tokens.
+   */
+  userTokenClient: UserTokenClient | null = null
 
   /**
    * The authentication configuration for the adapter.

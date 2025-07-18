@@ -15,14 +15,12 @@ const logger = debug('agents:user-token-client')
  */
 export class UserTokenClient {
   client: AxiosInstance
-  msAppId: string
   /**
    * Creates a new instance of UserTokenClient.
    * @param token The token to use for authentication.
    * @param msAppId The Microsoft application ID.
    */
-  constructor (token: string, appId: string) {
-    this.msAppId = appId
+  constructor (private msAppId: string) {
     const baseURL = 'https://api.botframework.com'
     const axiosInstance = axios.create({
       baseURL,
@@ -31,7 +29,35 @@ export class UserTokenClient {
         'User-Agent': getProductInfo(),
       }
     })
-    axiosInstance.defaults.headers.common.Authorization = `Bearer ${token}`
+    // axiosInstance.defaults.headers.common.Authorization = `Bearer ${token}`
+    axiosInstance.interceptors.response.use(
+      (config) => {
+        const { status, statusText, config: requestConfig } = config
+        logger.debug('Response: ', {
+          status,
+          statusText,
+          host: axiosInstance.getUri(),
+          url: requestConfig?.url,
+          data: config.config.data,
+          method: requestConfig?.method,
+        })
+        return config
+      },
+      (error) => {
+        const { code, status, message, stack, response } = error
+        if (status !== 404) {
+          const errorDetails = {
+            code,
+            host: axiosInstance.getUri(),
+            url: error.config.url,
+            method: error.config.method,
+            data: error.config.data,
+            message: message + JSON.stringify(response?.data),
+            stack,
+          }
+          return Promise.reject(errorDetails)
+        }
+      })
     this.client = axiosInstance
   }
 
@@ -44,16 +70,12 @@ export class UserTokenClient {
    * @returns A promise that resolves to the user token.
    */
   async getUserToken (connectionName: string, channelId: string, userId: string, code?: string) : Promise<TokenResponse> {
-    try {
-      const params = { connectionName, channelId, userId, code }
-      const response = await this.client.get('/api/usertoken/GetToken', { params })
+    const params = { connectionName, channelId, userId, code }
+    const response = await this.client.get('/api/usertoken/GetToken', { params })
+    if (response?.data) {
       return response.data as TokenResponse
-    } catch (error: any) {
-      if (error.response?.status !== 404) {
-        logger.error(error)
-      }
-      return { token: undefined }
     }
+    return { token: undefined }
   }
 
   /**
@@ -64,14 +86,9 @@ export class UserTokenClient {
    * @returns A promise that resolves when the sign-out operation is complete.
    */
   async signOut (userId: string, connectionName: string, channelId: string) : Promise<void> {
-    try {
-      const params = { userId, connectionName, channelId }
-      const response = await this.client.delete('/api/usertoken/SignOut', { params })
-      if (response.status !== 200) {
-        throw new Error('Failed to sign out')
-      }
-    } catch (error: any) {
-      logger.error(error)
+    const params = { userId, connectionName, channelId }
+    const response = await this.client.delete('/api/usertoken/SignOut', { params })
+    if (response.status !== 200) {
       throw new Error('Failed to sign out')
     }
   }
@@ -84,22 +101,17 @@ export class UserTokenClient {
    * @returns A promise that resolves to the signing resource.
    */
   async getSignInResource (msAppId: string, connectionName: string, conversation: ConversationReference, relatesTo?: ConversationReference) : Promise<SignInResource> {
-    try {
-      const tokenExchangeState = {
-        connectionName,
-        conversation,
-        relatesTo,
-        msAppId
-      }
-      const tokenExchangeStateNormalized = normalizeTokenExchangeState(tokenExchangeState)
-      const state = Buffer.from(JSON.stringify(tokenExchangeStateNormalized)).toString('base64')
-      const params = { state }
-      const response = await this.client.get('/api/botsignin/GetSignInResource', { params })
-      return response.data as SignInResource
-    } catch (error: any) {
-      logger.error(error)
-      throw error
+    const tokenExchangeState = {
+      connectionName,
+      conversation,
+      relatesTo,
+      msAppId
     }
+    const tokenExchangeStateNormalized = normalizeTokenExchangeState(tokenExchangeState)
+    const state = Buffer.from(JSON.stringify(tokenExchangeStateNormalized)).toString('base64')
+    const params = { state }
+    const response = await this.client.get('/api/botsignin/GetSignInResource', { params })
+    return response.data as SignInResource
   }
 
   /**
@@ -111,15 +123,11 @@ export class UserTokenClient {
    * @returns A promise that resolves to the exchanged token.
    */
   async exchangeTokenAsync (userId: string, connectionName: string, channelId: string, tokenExchangeRequest: TokenExchangeRequest) : Promise<TokenResponse> {
-    try {
-      const params = { userId, connectionName, channelId }
-      const response = await this.client.post('/api/usertoken/exchange', tokenExchangeRequest, { params })
+    const params = { userId, connectionName, channelId }
+    const response = await this.client.post('/api/usertoken/exchange', tokenExchangeRequest, { params })
+    if (response?.data) {
       return response.data as TokenResponse
-    } catch (error: any) {
-      logger.error(error)
-      if (error.response?.data) {
-        logger.error(error.response.data)
-      }
+    } else {
       return { token: undefined }
     }
   }
@@ -168,5 +176,9 @@ export class UserTokenClient {
     const params = { userId, connectionName, channelId }
     const response = await this.client.post('/api/usertoken/GetAadTokens', resourceUrls, { params })
     return response.data as Record<string, TokenResponse>
+  }
+
+  public updateAuthToken (token: string): void {
+    this.client.defaults.headers.common.Authorization = `Bearer ${token}`
   }
 }
