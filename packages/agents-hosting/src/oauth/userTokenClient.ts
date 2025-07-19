@@ -22,43 +22,60 @@ export class UserTokenClient {
    */
   constructor (private msAppId: string) {
     const baseURL = 'https://api.botframework.com'
-    const axiosInstance = axios.create({
+    this.client = axios.create({
       baseURL,
       headers: {
         Accept: 'application/json',
         'User-Agent': getProductInfo(),
       }
     })
-    // axiosInstance.defaults.headers.common.Authorization = `Bearer ${token}`
-    axiosInstance.interceptors.response.use(
+
+    this.client.interceptors.request.use((config) => {
+      const { method, url, data, headers, params } = config
+      // Clone headers and remove Authorization before logging
+      const { Authorization, authorization, ...headersToLog } = headers || {}
+      logger.debug('Request: ', {
+        host: this.client.getUri(),
+        url,
+        data,
+        method,
+        params,
+        headers: headersToLog
+      })
+      return config
+    })
+
+    this.client.interceptors.response.use(
       (config) => {
-        const { status, statusText, config: requestConfig } = config
+        const { status, statusText, config: requestConfig, headers } = config
         logger.debug('Response: ', {
           status,
           statusText,
-          host: axiosInstance.getUri(),
+          host: this.client.getUri(),
           url: requestConfig?.url,
           data: config.config.data,
           method: requestConfig?.method,
+          headers
         })
         return config
       },
       (error) => {
-        const { code, status, message, stack, response } = error
+        const { code, status, message, stack, response, headers } = error
+        const errorDetails = {
+          code,
+          host: this.client.getUri(),
+          url: error.config.url,
+          method: error.config.method,
+          data: error.config.data,
+          message: message + JSON.stringify(response?.data),
+          headers,
+          stack,
+        }
+        logger.debug('Response error: ', errorDetails)
         if (status !== 404) {
-          const errorDetails = {
-            code,
-            host: axiosInstance.getUri(),
-            url: error.config.url,
-            method: error.config.method,
-            data: error.config.data,
-            message: message + JSON.stringify(response?.data),
-            stack,
-          }
           return Promise.reject(errorDetails)
         }
       })
-    this.client = axiosInstance
   }
 
   /**
