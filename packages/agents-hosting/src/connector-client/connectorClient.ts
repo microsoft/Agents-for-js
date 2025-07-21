@@ -28,6 +28,20 @@ export class ConnectorClient {
    */
   protected constructor (axInstance: AxiosInstance) {
     this._axiosInstance = axInstance
+    this._axiosInstance.interceptors.request.use((config) => {
+      const { method, url, data, headers, params } = config
+      // Clone headers and remove Authorization before logging
+      const { Authorization, authorization, ...headersToLog } = headers || {}
+      logger.debug('Request: ', {
+        host: this._axiosInstance.getUri(),
+        url,
+        data,
+        method,
+        params,
+        headers: headersToLog
+      })
+      return config
+    })
     this._axiosInstance.interceptors.response.use(
       (config) => {
         const { status, statusText, config: requestConfig } = config

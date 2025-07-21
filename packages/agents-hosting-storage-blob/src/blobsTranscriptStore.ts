@@ -25,7 +25,7 @@ function formatTicks (timestamp: Date): string {
 }
 
 /**
- * Generates a sanitized prefix for a channel.
+ * @summary Generates a sanitized prefix for a channel.
  * @param channelId - The ID of the channel.
  * @returns A sanitized string prefix for the channel.
  */
@@ -59,7 +59,7 @@ function getBlobKey (activity: Activity, options?: BlobsTranscriptStoreOptions):
 }
 
 /**
- * Sanitizes a blob key for use with Azure Blob Storage.
+ * @summary Sanitizes a blob key for use with Azure Blob Storage.
  *
  * @remarks
  * This function performs the following operations:
@@ -68,13 +68,6 @@ function getBlobKey (activity: Activity, options?: BlobsTranscriptStoreOptions):
  * 3. Truncates the sanitized key to 1024 characters maximum
  * 4. URL encodes the key to ensure it's safe for use as a blob name
  * 5. Optionally decodes the key if the decodeTranscriptKey option is set
- *
- * @param key - The blob key string to sanitize. Must be non-empty.
- * @param options - Optional configuration options.
- * @param options.decodeTranscriptKey - If true, returns the URL-decoded version of the sanitized key.
- * @returns A sanitized blob key that is safe for use with Azure Blob Storage, truncated to 1024 characters.
- *
- * @throws {Error} When the provided key is null, undefined, or an empty string.
  *
  * @example
  * ```typescript
@@ -90,6 +83,13 @@ function getBlobKey (activity: Activity, options?: BlobsTranscriptStoreOptions):
  * const withEmptySegments = sanitizeBlobKey('channel1//conversation2///activity.json');
  * // Returns: 'channel1%2Fconversation2%2Factivity.json'
  * ```
+ *
+ * @param key - The blob key string to sanitize. Must be non-empty.
+ * @param options - Optional configuration options.
+ * @param options.decodeTranscriptKey - If true, returns the URL-decoded version of the sanitized key.
+ * @returns A sanitized blob key that is safe for use with Azure Blob Storage, truncated to 1024 characters.
+ *
+ * @throws {Error} When the provided key is null, undefined, or an empty string.
  */
 export function sanitizeBlobKey (key: string, options?: BlobsTranscriptStoreOptions): string {
   if (!key || key.length === 0) {
@@ -109,11 +109,12 @@ export function sanitizeBlobKey (key: string, options?: BlobsTranscriptStoreOpti
 }
 
 /**
- * Performs type casting with optional constructor validation.
+ * @summary Performs type casting with optional constructor validation.
+ * @remarks
  * If a constructor is provided, validates that the value is an instance of that constructor.
  * Otherwise, performs a direct type assertion.
  *
- * @template T - The target type to cast to.
+ * @typeParam T - The target type to cast to.
  * @param value - The value to cast.
  * @param ctor - Optional constructor function to validate the value against.
  * @returns The value cast to type T.

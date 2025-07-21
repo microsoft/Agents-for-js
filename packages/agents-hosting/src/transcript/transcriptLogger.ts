@@ -31,7 +31,7 @@ export interface TranscriptInfo {
 
 /**
  * Paged result of items.
- * @template T - The type of items in the paged result.
+ * @typeParam T - The type of items in the paged result.
  */
 export interface PagedResult<T> {
   /**
