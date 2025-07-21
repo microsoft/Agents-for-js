@@ -48,12 +48,13 @@ export class UserTokenClient {
       (config) => {
         const { status, statusText, config: requestConfig, headers } = config
         const { Authorization, authorization, ...headersToLog } = headers || {}
+        const { token, ...redactedData } = requestConfig?.data || {}
         logger.debug('Response: ', {
           status,
           statusText,
           host: this.client.getUri(),
           url: requestConfig?.url,
-          data: config.config?.data,
+          data: redactedData,
           method: requestConfig?.method,
           headers: headersToLog
         })
