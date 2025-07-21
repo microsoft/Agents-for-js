@@ -10,7 +10,7 @@ import { TurnState } from './turnState'
 
 /**
  * Maps an application's Turn State property to a State property.
- * @template T Optional. Type of the property being mapped. Defaults to any.
+ * @typeParam T Optional. Type of the property being mapped. Defaults to any.
  */
 export class TurnStateProperty<T = any> implements StatePropertyAccessor<T> {
   private readonly _state: TurnStateEntry
@@ -60,7 +60,7 @@ export class TurnStateProperty<T = any> implements StatePropertyAccessor<T> {
 
   /**
      * Replace's the state property value.
-     * @template T
+     * @typeParam T
      * @param {TurnContext} context The context object for the turn.
      * @param {T} value The value to assign to the state property.
      * @returns {Promise<void>} A promise that represents the work queued to execute.

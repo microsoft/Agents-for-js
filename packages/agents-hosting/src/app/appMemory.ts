@@ -23,7 +23,7 @@ export interface AppMemory {
 
   /**
    * Gets a value from the specified path.
-   * @template TValue The expected type of the value
+   * @typeParam TValue The expected type of the value
    * @param path The path to get the value from
    * @returns The value at the specified path cast to type TValue
    */

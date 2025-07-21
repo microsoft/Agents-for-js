@@ -9,7 +9,7 @@ import { TurnState } from './turnState'
  * Represents an extension that adds channel-specific routing functionality to an agent application.
  * This class allows you to register routes that are only active for a specific channel.
  *
- * @template TState - The type of turn state that extends TurnState
+ * @typeParam TState - The type of turn state that extends TurnState
  */
 export class AgentExtension<TState extends TurnState> {
   /** The channel ID that this extension is associated with */

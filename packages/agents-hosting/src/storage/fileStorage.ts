@@ -8,7 +8,7 @@ import fs from 'fs'
 import { Storage, StoreItem } from './storage'
 
 /**
- * A file-based storage implementation that persists data to the local filesystem.
+ * @summary A file-based storage implementation that persists data to the local filesystem.
  *
  * @remarks
  * FileStorage stores all data in a single JSON file named 'state.json' within a specified folder.
@@ -18,6 +18,16 @@ import { Storage, StoreItem } from './storage'
  * The storage format is a simple key-value JSON object where keys are strings and values
  * can be any JSON-serializable data. All operations are synchronous file I/O operations
  * wrapped in Promise interfaces to match the Storage contract.
+ *
+ * ### Warning
+ * This implementation does not provide:
+ * - Thread safety for concurrent access
+ * - Optimistic concurrency control (eTag support)
+ * - Atomic operations across multiple keys
+ * - Scale for large datasets
+ *
+ * For production scenarios requiring these features, consider using
+ * database-backed storage implementations instead.
  *
  * @example
  * ```typescript
@@ -37,15 +47,7 @@ import { Storage, StoreItem } from './storage'
  * await storage.delete(['conversation456']);
  * ```
  *
- * @warning
- * This implementation does not provide:
- * - Thread safety for concurrent access
- * - Optimistic concurrency control (eTag support)
- * - Atomic operations across multiple keys
- * - Scale for large datasets
- *
- * For production scenarios requiring these features, consider using
- * database-backed storage implementations instead.
+
  */
 export class FileStorage implements Storage {
   private _folder: string
