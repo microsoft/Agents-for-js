@@ -84,7 +84,7 @@ export class ConnectorClient {
    * @param headers - Optional headers to propagate in the request.
    * @returns A new instance of ConnectorClient.
    */
-  static async createClientWithAuthAsync (
+  static async createClientWithAuth (
     baseURL: string,
     authConfig: AuthConfiguration,
     authProvider: AuthProvider,
@@ -116,7 +116,7 @@ export class ConnectorClient {
    * @param continuationToken - The continuation token for pagination.
    * @returns A list of conversations.
    */
-  public async getConversationsAsync (continuationToken?: string): Promise<ConversationsResult> {
+  public async getConversations (continuationToken?: string): Promise<ConversationsResult> {
     const config: AxiosRequestConfig = {
       method: 'get',
       url: '/v3/conversations',
@@ -146,7 +146,7 @@ export class ConnectorClient {
    * @param body - The conversation parameters.
    * @returns The conversation resource response.
    */
-  public async createConversationAsync (body: ConversationParameters): Promise<ConversationResourceResponse> {
+  public async createConversation (body: ConversationParameters): Promise<ConversationResourceResponse> {
     // const payload = normalizeOutgoingConvoParams(body)
     const config: AxiosRequestConfig = {
       method: 'post',
@@ -167,7 +167,7 @@ export class ConnectorClient {
    * @param body - The activity object.
    * @returns The resource response.
    */
-  public async replyToActivityAsync (
+  public async replyToActivity (
     conversationId: string,
     activityId: string,
     body: Activity
@@ -195,7 +195,7 @@ export class ConnectorClient {
    * @param body - The activity object.
    * @returns The resource response.
    */
-  public async sendToConversationAsync (
+  public async sendToConversation (
     conversationId: string,
     body: Activity
   ): Promise<ResourceResponse> {
@@ -222,7 +222,7 @@ export class ConnectorClient {
    * @param body - The activity object.
    * @returns The resource response.
    */
-  public async updateActivityAsync (
+  public async updateActivity (
     conversationId: string,
     activityId: string,
     body: Activity
@@ -248,7 +248,7 @@ export class ConnectorClient {
    * @param activityId - The ID of the activity.
    * @returns A promise that resolves when the activity is deleted.
    */
-  public async deleteActivityAsync (
+  public async deleteActivity (
     conversationId: string,
     activityId: string
   ): Promise<void> {

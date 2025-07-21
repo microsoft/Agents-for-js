@@ -220,7 +220,7 @@ describe('CloudAdapter', function () {
           serviceUrl: 'serviceUrl'
         }
       )
-      mockConnectorClient.replyToActivityAsync.resolves({ id: 'id' })
+      mockConnectorClient.replyToActivity.resolves({ id: 'id' })
 
       assert.deepStrictEqual(await cloudAdapter.sendActivities(context, [activity]), [{ id: 'id' }])
 
@@ -240,7 +240,7 @@ describe('CloudAdapter', function () {
           serviceUrl: 'serviceUrl'
         }
       )
-      mockConnectorClient.sendToConversationAsync.resolves({ id: 'id' })
+      mockConnectorClient.sendToConversation.resolves({ id: 'id' })
 
       assert.deepStrictEqual(await cloudAdapter.sendActivities(context, [activity]), [{ id: 'id' }])
 

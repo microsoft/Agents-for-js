@@ -94,7 +94,7 @@ export class CloudAdapter extends BaseAdapter {
     scope: string,
     headers?: HeaderPropagationCollection
   ): Promise<ConnectorClient> {
-    return ConnectorClient.createClientWithAuthAsync(
+    return ConnectorClient.createClientWithAuth(
       serviceUrl,
       this.authConfig,
       this.authProvider,
@@ -126,7 +126,7 @@ export class CloudAdapter extends BaseAdapter {
   }
 
   async createTurnContextWithScope (activity: Activity, logic: AgentHandler, scope: string): Promise<TurnContext> {
-    this.connectorClient = await ConnectorClient.createClientWithAuthAsync(activity.serviceUrl!, this.authConfig!, this.authProvider, scope)
+    this.connectorClient = await ConnectorClient.createClientWithAuth(activity.serviceUrl!, this.authConfig!, this.authProvider, scope)
     return new TurnContext(this, activity)
   }
 
@@ -166,9 +166,9 @@ export class CloudAdapter extends BaseAdapter {
         }
 
         if (activity.replyToId) {
-          response = await this.connectorClient.replyToActivityAsync(activity.conversation.id, activity.replyToId, activity)
+          response = await this.connectorClient.replyToActivity(activity.conversation.id, activity.replyToId, activity)
         } else {
-          response = await this.connectorClient.sendToConversationAsync(activity.conversation.id, activity)
+          response = await this.connectorClient.sendToConversation(activity.conversation.id, activity)
         }
       }
 
@@ -191,7 +191,7 @@ export class CloudAdapter extends BaseAdapter {
     if (!activity.serviceUrl || (activity.conversation == null) || !activity.conversation.id || !activity.id) {
       throw new Error('Invalid activity object')
     }
-    return await this.connectorClient.replyToActivityAsync(activity.conversation.id, activity.id, activity)
+    return await this.connectorClient.replyToActivity(activity.conversation.id, activity.id, activity)
   }
 
   /**
@@ -299,7 +299,7 @@ export class CloudAdapter extends BaseAdapter {
       throw new Error('Invalid activity object')
     }
 
-    const response = await this.connectorClient.updateActivityAsync(
+    const response = await this.connectorClient.updateActivity(
       activity.conversation.id,
       activity.id,
       activity
@@ -323,7 +323,7 @@ export class CloudAdapter extends BaseAdapter {
       throw new Error('Invalid conversation reference object')
     }
 
-    await this.connectorClient.deleteActivityAsync(reference.conversation.id, reference.activityId)
+    await this.connectorClient.deleteActivity(reference.conversation.id, reference.activityId)
   }
 
   /**
@@ -436,7 +436,7 @@ export class CloudAdapter extends BaseAdapter {
     if (!logic) throw new TypeError('`logic` must be defined')
 
     const restClient = await this.createConnectorClient(serviceUrl, audience)
-    const createConversationResult = await restClient.createConversationAsync(conversationParameters)
+    const createConversationResult = await restClient.createConversation(conversationParameters)
     const createActivity = this.createCreateActivity(
       createConversationResult.id,
       channelId,
