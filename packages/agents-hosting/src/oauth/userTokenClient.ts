@@ -32,7 +32,6 @@ export class UserTokenClient {
 
     this.client.interceptors.request.use((config) => {
       const { method, url, data, headers, params } = config
-      // Clone headers and remove Authorization before logging
       const { Authorization, authorization, ...headersToLog } = headers || {}
       logger.debug('Request: ', {
         host: this.client.getUri(),
@@ -48,19 +47,21 @@ export class UserTokenClient {
     this.client.interceptors.response.use(
       (config) => {
         const { status, statusText, config: requestConfig, headers } = config
+        const { Authorization, authorization, ...headersToLog } = headers || {}
         logger.debug('Response: ', {
           status,
           statusText,
           host: this.client.getUri(),
           url: requestConfig?.url,
-          data: config.config.data,
+          data: config.config?.data,
           method: requestConfig?.method,
-          headers
+          headers: headersToLog
         })
         return config
       },
       (error) => {
-        const { code, status, message, stack, response, headers } = error
+        const { code, status, message, stack, response } = error
+        const { headers } = response || {}
         const errorDetails = {
           code,
           host: this.client.getUri(),
@@ -72,7 +73,7 @@ export class UserTokenClient {
           stack,
         }
         logger.debug('Response error: ', errorDetails)
-        if (status !== 404) {
+        if (errorDetails.url === '/api/usertoken/GetToken' && status !== 404) {
           return Promise.reject(errorDetails)
         }
       })
