@@ -16,6 +16,7 @@ import { Activity } from '@microsoft/agents-activity'
  * @remarks
  * This interface is used to define the default options for rendering choices in prompts,
  * such as separators, inline options, and whether to include numbers.
+ *
  */
 export interface ChoiceDefaultsChoicePrompt {
   /**
@@ -24,6 +25,7 @@ export interface ChoiceDefaultsChoicePrompt {
    * @remarks
    * Each locale key maps to a `ChoiceFactoryOptions` object that defines the
    * default behavior for rendering choices in that locale.
+   *
    */
   [locale: string]: ChoiceFactoryOptions;
 }
@@ -34,6 +36,7 @@ export interface ChoiceDefaultsChoicePrompt {
  * @remarks
  * By default the prompt will return to the calling dialog a {@link FoundChoice} object containing the
  * choice that was selected.
+ *
  */
 export class ChoicePrompt extends Prompt<FoundChoice> {
   /**
@@ -52,6 +55,7 @@ export class ChoicePrompt extends Prompt<FoundChoice> {
      *
      * @remarks
      * Defaults to `ListStyle.auto`.
+     *
      */
   style: ListStyle
 

@@ -37,6 +37,10 @@ export interface RecognizerResult {
 /**
  * Finds the intent with the highest confidence score from a recognizer result.
  *
+ * @param result - The recognizer result containing intents and their scores
+ * @returns An object containing the top-scoring intent name and its confidence score
+ * @throws {Error} Throws an error if the result is empty or doesn't contain intents
+ *
  * @remarks
  * This function iterates through all intents in the recognizer result and returns
  * the intent name and score for the intent with the highest confidence score.
@@ -57,9 +61,6 @@ export interface RecognizerResult {
  * // Returns: { intent: "BookFlight", score: 0.95 }
  * ```
  *
- * @param result - The recognizer result containing intents and their scores
- * @returns An object containing the top-scoring intent name and its confidence score
- * @throws {Error} Throws an error if the result is empty or doesn't contain intents
  */
 export const getTopScoringIntent = (result: RecognizerResult): { intent: string; score: number } => {
   if (!result || !result.intents) {

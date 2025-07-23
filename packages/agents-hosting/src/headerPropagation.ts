@@ -94,36 +94,48 @@ export interface HeaderPropagationDefinition {
 export interface HeaderPropagationCollection {
   /**
    * The collection of incoming headers from the incoming request.
-   * @remarks This collection is built based on the headers received in the request.
+   *
+   * @remarks
+   * This collection is built based on the headers received in the request.
    */
   incoming: Record<string, string>
   /**
    * The collection of headers that will be propagated to outgoing requests.
-   * @remarks This collection is built based on the incoming headers and the definition provided.
+   *
+   * @remarks
+   * This collection is built based on the incoming headers and the definition provided.
    */
   outgoing: Record<string, string>
   /**
    * Propagates the incoming header value to the outgoing collection based on the header definition key.
    * @param headers List of header keys to propagate.
-   * @remarks If the header does not exist in the incoming headers, it will be ignored.
+   *
+   * @remarks
+   * If the header does not exist in the incoming headers, it will be ignored.
    */
   propagate(headers: string[]): void
   /**
    * Adds a header definition to the outgoing collection.
    * @param headers Headers to add to the outgoing collection.
-   * @remarks If the header already exists, it will not be added.
+   *
+   * @remarks
+   * If the header already exists, it will not be added.
    */
   add(headers: Record<string, string>): void
   /**
    * Concatenates a header definition to the outgoing collection.
    * @param headers Headers to concatenate to the outgoing collection.
-   * @remarks If the header does not exist in the incoming headers, it will be ignored. Unless the header is already present in the outgoing collection.
+   *
+   * @remarks
+   * If the header does not exist in the incoming headers, it will be ignored. Unless the header is already present in the outgoing collection.
    */
   concat(headers: Record<string, string>): void
   /**
    * Overrides a header definition in the outgoing collection.
    * @param headers Headers to override in the outgoing collection.
-   * @remarks If the header does not exist in the incoming headers, it will be added to the outgoing collection.
+   *
+   * @remarks
+   * If the header does not exist in the incoming headers, it will be added to the outgoing collection.
    */
   override(headers: Record<string, string>): void
 }

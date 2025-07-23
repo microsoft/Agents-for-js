@@ -38,6 +38,8 @@ export type ApplicationEventHandler<TState extends TurnState> = (context: TurnCo
 /**
  * Main application class for handling agent conversations and routing.
  *
+ * @typeParam TState - The state type extending TurnState.
+ *
  * @remarks
  * The AgentApplication class provides a framework for building conversational agents.
  * It handles routing activities to appropriate handlers, manages conversation state,
@@ -65,7 +67,6 @@ export type ApplicationEventHandler<TState extends TurnState> = (context: TurnCo
  * await app.run(turnContext);
  * ```
  *
- * @typeParam TState - The state type extending TurnState.
  */
 export class AgentApplication<TState extends TurnState> {
   protected readonly _options: AgentApplicationOptions<TState>
@@ -209,6 +210,7 @@ export class AgentApplication<TState extends TurnState> {
    *   await context.sendActivity('Sorry, something went wrong!');
    * });
    * ```
+   *
    */
   public onError (handler: (context: TurnContext, error: Error) => Promise<void>): this {
     if (this._adapter) {
@@ -243,6 +245,7 @@ export class AgentApplication<TState extends TurnState> {
    *   RouteRank.First // rank
    * );
    * ```
+   *
    */
   public addRoute (selector: RouteSelector, handler: RouteHandler<TState>, isInvokeRoute: boolean = false, rank: number = RouteRank.Unspecified, authHandlers: string[] = []): this {
     this._routes.addRoute(selector, handler, isInvokeRoute, rank, authHandlers)
@@ -268,6 +271,7 @@ export class AgentApplication<TState extends TurnState> {
    *   await context.sendActivity('I received your message');
    * });
    * ```
+   *
    */
   public onActivity (
     type: string | RegExp | RouteSelector | (string | RegExp | RouteSelector)[],
@@ -306,6 +310,7 @@ export class AgentApplication<TState extends TurnState> {
    *   }
    * });
    * ```
+   *
    */
   public onConversationUpdate (
     event: ConversationUpdateEvents,
@@ -383,6 +388,7 @@ export class AgentApplication<TState extends TurnState> {
    *   await context.sendActivity('How can I help you?');
    * });
    * ```
+   *
    */
   public onMessage (
     keyword: string | RegExp | RouteSelector | (string | RegExp | RouteSelector)[],
@@ -414,6 +420,7 @@ export class AgentApplication<TState extends TurnState> {
    *   await context.sendActivity('You have successfully signed in!');
    * });
    * ```
+   *
    */
   public onSignInSuccess (handler: (context: TurnContext, state: TurnState, id?: string) => Promise<void>): this {
     if (this.options.authorization) {
@@ -443,6 +450,7 @@ export class AgentApplication<TState extends TurnState> {
    *   await context.sendActivity('Sign-in failed. Please try again.');
    * });
    * ```
+   *
    */
   public onSignInFailure (handler: (context: TurnContext, state: TurnState, id?: string) => Promise<void>): this {
     if (this.options.authorization) {
@@ -475,6 +483,7 @@ export class AgentApplication<TState extends TurnState> {
    *   }
    * });
    * ```
+   *
    */
   public onMessageReactionAdded (
     handler: (context: TurnContext, state: TState) => Promise<void>,
@@ -509,6 +518,7 @@ export class AgentApplication<TState extends TurnState> {
    *   }
    * });
    * ```
+   *
    */
   public onMessageReactionRemoved (
     handler: (context: TurnContext, state: TState) => Promise<void>,
@@ -539,6 +549,7 @@ export class AgentApplication<TState extends TurnState> {
    * const app = new AgentApplication();
    * await app.run(turnContext);
    * ```
+   *
    */
   public async run (turnContext:TurnContext): Promise<void> {
     await this.runInternal(turnContext)
@@ -573,6 +584,7 @@ export class AgentApplication<TState extends TurnState> {
    *   console.log('No handler matched the activity');
    * }
    * ```
+   *
    */
   public async runInternal (turnContext: TurnContext): Promise<boolean> {
     logger.info('Running application with activity:', turnContext.activity.id!)
@@ -688,6 +700,7 @@ export class AgentApplication<TState extends TurnState> {
    * // From an existing context
    * await app.sendProactiveActivity(turnContext, 'Important notification!');
    * ```
+   *
    */
   public async sendProactiveActivity (
     context: TurnContext | ConversationReference,
@@ -724,6 +737,7 @@ export class AgentApplication<TState extends TurnState> {
    * await turnContext.sendActivity('Response after processing');
    * // Typing timer automatically stops when sending a message
    * ```
+   *
    */
   public startTypingTimer (context: TurnContext): void {
     if (context.activity.type === ActivityTypes.Message && !this._typingTimer) {
@@ -782,6 +796,7 @@ export class AgentApplication<TState extends TurnState> {
    *   console.log('Extension registered:', ext.name);
    * });
    * ```
+   *
    */
   public registerExtension<T extends AgentExtension<TState>> (extension: T, regcb : (ext:T) => void): void {
     if (this._extensions.includes(extension)) {
@@ -807,6 +822,7 @@ export class AgentApplication<TState extends TurnState> {
    * // Do some processing...
    * app.stopTypingTimer(); // Manually stop the typing indicator
    * ```
+   *
    */
   public stopTypingTimer (): void {
     if (this._typingTimer) {
@@ -834,6 +850,7 @@ export class AgentApplication<TState extends TurnState> {
    *   return true; // Continue execution
    * });
    * ```
+   *
    */
   public onTurn (
     event: TurnEvents | TurnEvents[],

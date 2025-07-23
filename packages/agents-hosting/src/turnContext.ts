@@ -105,14 +105,15 @@ export class TurnContext {
   /**
    * Sends a trace activity for debugging purposes.
    *
-   * Trace activities are typically used for debugging and are only visible in
-   * channels that support them, like the Bot Framework Emulator.
-   *
    * @param name The name/category of the trace
    * @param value The value/data to include in the trace
    * @param valueType Optional type name for the value
    * @param label Optional descriptive label for the trace
    * @returns A promise that resolves to the resource response or undefined
+   *
+   * @remarks
+   * Trace activities are typically used for debugging and are only visible in
+   * channels that support them, like the Bot Framework Emulator.
    */
   async sendTraceActivity (name: string, value?: any, valueType?: string, label?: string): Promise<ResourceResponse | undefined> {
     const traceActivityObj = {
@@ -130,14 +131,15 @@ export class TurnContext {
   /**
    * Sends an activity to the sender of the incoming activity.
    *
-   * This is the primary method used to respond to the user. It automatically
-   * addresses the response to the correct conversation and recipient using
-   * information from the incoming activity.
-   *
    * @param activityOrText The activity to send or a string for a simple message
    * @param speak Optional text to be spoken by the agent
    * @param inputHint Optional input hint to indicate if the agent is expecting input
    * @returns A promise that resolves to the resource response or undefined
+   *
+   * @remarks
+   * This is the primary method used to respond to the user. It automatically
+   * addresses the response to the correct conversation and recipient using
+   * information from the incoming activity.
    */
   async sendActivity (activityOrText: string | Activity, speak?: string, inputHint?: string): Promise<ResourceResponse | undefined> {
     let activityObject: {}
@@ -158,12 +160,13 @@ export class TurnContext {
   /**
    * Sends multiple activities to the sender of the incoming activity.
    *
+   * @param activities The array of activities to send
+   * @returns A promise that resolves to an array of resource responses
+   *
+   * @remarks
    * This method applies conversation references to each activity and
    * emits them through the middleware chain before sending them to
    * the adapter.
-   *
-   * @param activities The array of activities to send
-   * @returns A promise that resolves to an array of resource responses
    */
   async sendActivities (activities: Activity[]): Promise<ResourceResponse[]> {
     let sentNonTraceActivity = false
@@ -215,11 +218,12 @@ export class TurnContext {
   /**
    * Updates an existing activity in the conversation.
    *
-   * This can be used to edit previously sent activities, for example to
-   * update the content of an adaptive card or change a message.
-   *
    * @param activity The activity to update with its ID specified
    * @returns A promise that resolves when the activity has been updated
+   *
+   * @remarks
+   * This can be used to edit previously sent activities, for example to
+   * update the content of an adaptive card or change a message.
    */
   async updateActivity (activity: Activity): Promise<void> {
     const ref: ConversationReference = this.activity.getConversationReference()
@@ -281,11 +285,12 @@ export class TurnContext {
   /**
    * Registers a handler for intercepting and processing activities being sent.
    *
-   * This method follows a middleware pattern, allowing multiple handlers to
-   * be chained together. Handlers can modify activities or inject new ones.
-   *
    * @param handler The handler to register
    * @returns The current TurnContext instance for chaining
+   *
+   * @remarks
+   * This method follows a middleware pattern, allowing multiple handlers to
+   * be chained together. Handlers can modify activities or inject new ones.
    */
   onSendActivities (handler: SendActivitiesHandler): this {
     this._onSendActivities.push(handler)
@@ -329,6 +334,7 @@ export class TurnContext {
   /**
    * Gets the adapter that created this context.
    *
+   * @remarks
    * The adapter is responsible for sending and receiving activities
    * to and from the user's channel.
    */
@@ -339,6 +345,7 @@ export class TurnContext {
   /**
    * Gets the incoming activity that started this turn.
    *
+   * @remarks
    * This is the activity that was received from the user or channel
    * and triggered the creation of this context.
    */
@@ -349,6 +356,7 @@ export class TurnContext {
   /**
    * Gets or sets whether the turn has sent a response to the user.
    *
+   * @remarks
    * This is used to track whether the agent has responded to the user's
    * activity. Once set to true, it cannot be set back to false.
    */
@@ -366,6 +374,7 @@ export class TurnContext {
   /**
    * Gets or sets the locale for the turn.
    *
+   * @remarks
    * The locale affects language-dependent operations like
    * formatting dates or numbers.
    */
@@ -390,6 +399,7 @@ export class TurnContext {
   /**
    * Gets the turn state collection for storing data during the turn.
    *
+   * @remarks
    * The turn state collection provides a dictionary-like interface
    * for storing arbitrary data that needs to be accessible during
    * the processing of the current turn.
@@ -405,15 +415,16 @@ export class TurnContext {
   /**
    * Emits events to registered middleware handlers.
    *
-   * This internal method implements the middleware pattern, allowing
-   * handlers to be chained together with each having the option to
-   * short-circuit the chain.
-   *
    * @param handlers Array of handlers to execute
    * @param arg The argument to pass to each handler
    * @param next The function to execute at the end of the middleware chain
    * @returns A promise that resolves to the result from the handlers or next function
    * @private
+   *
+   * @remarks
+   * This internal method implements the middleware pattern, allowing
+   * handlers to be chained together with each having the option to
+   * short-circuit the chain.
    */
   private async emit<A, T>(handlers: Array<(context: TurnContext, arg: A, next: () => Promise<T>) => Promise<T>>, arg: A, next: () => Promise<T>): Promise<T> {
     const runHandlers = async ([handler, ...remaining]: typeof handlers): Promise<T> => {

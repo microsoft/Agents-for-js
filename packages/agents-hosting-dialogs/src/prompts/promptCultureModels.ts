@@ -8,6 +8,8 @@ import { Culture } from '@microsoft/recognizers-text-suite'
 export interface PromptCultureModel {
   /**
    * The locale identifier for this culture model.
+   *
+   * @remarks
    * This follows the standard IETF language tag format (e.g., "en-US", "fr-FR", "ja-JP").
    * Used to identify the target language and region for localization.
    *
@@ -22,6 +24,8 @@ export interface PromptCultureModel {
 
   /**
    * The separator string used to delimit items in a list when presenting choices.
+   *
+   * @remarks
    * This is typically used between items in the middle of a list, not before the final item.
    *
    * @example
@@ -33,6 +37,8 @@ export interface PromptCultureModel {
 
   /**
    * The conjunction string used before the final item in a two-item list.
+   *
+   * @remarks
    * This is used when presenting exactly two choices to the user.
    *
    * @example
@@ -46,6 +52,8 @@ export interface PromptCultureModel {
 
   /**
    * The conjunction string used before the final item in a list of three or more items.
+   *
+   * @remarks
    * This combines with the separator to create properly formatted choice lists.
    *
    * @example
@@ -59,6 +67,8 @@ export interface PromptCultureModel {
 
   /**
    * The affirmative response word in the target language.
+   *
+   * @remarks
    * Used in confirmation prompts and boolean choice scenarios.
    *
    * @example
@@ -72,6 +82,8 @@ export interface PromptCultureModel {
 
   /**
    * The negative response word in the target language.
+   *
+   * @remarks
    * Used in confirmation prompts and boolean choice scenarios.
    *
    * @example
@@ -211,8 +223,11 @@ export class PromptCultureModels {
      *
      * @param cultureCode The locale string to normalize (e.g., "en-US").
      * @returns The normalized locale string.
-     * @remarks This is mostly a copy/paste from https://github.com/microsoft/Recognizers-Text/blob/master/JavaScript/packages/recognizers-text/src/culture.ts#L39
+     *
+     * @remarks
+     * This is mostly a copy/paste from https://github.com/microsoft/Recognizers-Text/blob/master/JavaScript/packages/recognizers-text/src/culture.ts#L39
      *          This doesn't directly use Recognizers-Text's MapToNearestLanguage because if they add language support before we do, it will break our prompts.
+     *
      */
   static mapToNearestLanguage (cultureCode: string): string {
     if (cultureCode) {

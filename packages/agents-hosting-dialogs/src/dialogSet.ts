@@ -76,12 +76,13 @@ export class DialogSet {
   /**
      * Creates a new DialogSet instance.
      *
+     * @param dialogState (Optional) state property used to persist the sets dialog stack.
+     *
      * @remarks
      * If the `dialogState` parameter is not passed in, calls to `createContext`
      * will return an error.  You will need to create a {@link DialogContext} for the set manually and
      * pass in your own state object for persisting the sets dialog stack:
      *
-     * @param dialogState (Optional) state property used to persist the sets dialog stack.
      */
   constructor (dialogState?: AgentStatePropertyAccessor<DialogState>) {
     this.dialogState = dialogState
@@ -91,8 +92,10 @@ export class DialogSet {
      * Returns a 32-bit hash of the all the `Dialog.version` values in the set.
      *
      * @returns A version that will change when any of the child dialogs version changes.
+     *
      * @remarks
      * This hash is persisted to state storage and used to detect changes to a dialog set.
+     *
      */
   getVersion (): string {
     if (!this._version) {
@@ -112,14 +115,15 @@ export class DialogSet {
   /**
      * Adds a new dialog or prompt to the set.
      *
+     * @param dialog The dialog or prompt to add.
+     * If a telemetryClient is present on the dialog set, it will be added to each dialog.
+     * @returns The dialog set after the operation is complete.
+     *
      * @remarks
      * If the {@link Dialog.id} being added already exists in the set, the dialogs id will be updated to
      * include a suffix which makes it unique. So adding 2 dialogs named "duplicate" to the set
      * would result in the first one having an id of "duplicate" and the second one having an id
      * of "duplicate2".
-     * @param dialog The dialog or prompt to add.
-     * If a telemetryClient is present on the dialog set, it will be added to each dialog.
-     * @returns The dialog set after the operation is complete.
      */
   add<T extends Dialog>(dialog: T): this {
     if (!(dialog instanceof Dialog)) {
@@ -184,6 +188,7 @@ export class DialogSet {
 
   /**
      * Finds a dialog that was previously added to the set using add.
+     *
      * @param dialogId ID of the dialog or prompt to lookup.
      * @returns The dialog if found; otherwise undefined.
      */

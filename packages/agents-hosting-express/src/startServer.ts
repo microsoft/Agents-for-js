@@ -9,6 +9,11 @@ import { version } from '@microsoft/agents-hosting/package.json'
 /**
  * Starts an Express server for handling Agent requests.
  *
+ * @param agent - The AgentApplication or ActivityHandler instance to process incoming activities.
+ * @param authConfiguration - Optional custom authentication configuration. If not provided,
+ * configuration will be loaded from environment variables using loadAuthConfigFromEnv().
+ * @returns void - This function does not return a value as it starts a long-running server process.
+ *
  * @remarks
  * This function sets up an Express server with the necessary middleware and routes for handling
  * agent requests. It configures JWT authorization middleware and sets up the message endpoint.
@@ -27,11 +32,6 @@ import { version } from '@microsoft/agents-hosting/package.json'
  *
  * startServer(app);
  * ```
- *
- * @param agent - The AgentApplication or ActivityHandler instance to process incoming activities.
- * @param authConfiguration - Optional custom authentication configuration. If not provided,
- * configuration will be loaded from environment variables using loadAuthConfigFromEnv().
- * @returns void - This function does not return a value as it starts a long-running server process.
  *
  */
 export const startServer = (agent: AgentApplication<TurnState<any, any>> | ActivityHandler, authConfiguration?: AuthConfiguration) => {

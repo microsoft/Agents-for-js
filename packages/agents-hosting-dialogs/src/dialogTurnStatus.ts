@@ -9,6 +9,7 @@ export enum DialogTurnStatus {
      *
      * @remarks
      * Indicates that the dialog stack was initially empty when the operation was attempted.
+     *
      */
   empty = 'empty',
 

@@ -17,11 +17,12 @@ const logger = debug('agents:attachmentDownloader')
 /**
  * A utility class for downloading input files from activity attachments.
  *
+ * @typeParam TState - The type of the turn state used in the application.
+ *
  * @remarks
  * This class provides functionality to filter and download attachments from a turn context,
  * supporting various content types and handling authentication for secure URLs.
  *
- * @typeParam TState - The type of the turn state used in the application.
  */
 export class AttachmentDownloader<TState extends TurnState = TurnState> implements InputFileDownloader<TState> {
   private _httpClient: AxiosInstance
@@ -36,6 +37,7 @@ export class AttachmentDownloader<TState extends TurnState = TurnState> implemen
 
   /**
    * Downloads files from the attachments in the current turn context.
+   *
    * @param context The turn context containing the activity with attachments.
    * @param state The turn state for the current conversation.
    * @returns A promise that resolves to an array of downloaded input files.

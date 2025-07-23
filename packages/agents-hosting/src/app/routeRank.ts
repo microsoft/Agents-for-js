@@ -26,10 +26,13 @@
  * this.onMessage('dupText', handler1, undefined, RouteRank.Last);
  * this.onMessage('dupText', handler2, undefined, RouteRank.First); // This executes first
  * ```
+ *
  */
 export enum RouteRank {
   /**
-   * Highest priority rank (value: 0). Routes with this rank are evaluated first
+   * Highest priority rank (value: 0).
+   *
+   * Routes with this rank are evaluated
    * before any other routes. Use this for critical routes that must take precedence
    * over all others, such as high-priority message handlers or override handlers
    * that should execute before any other matching routes.
@@ -37,7 +40,9 @@ export enum RouteRank {
   First = 0,
 
   /**
-   * Lowest priority rank (value: Number.MAX_VALUE). Routes with this rank are
+   * Lowest priority rank (value: Number.MAX_VALUE).
+   *
+   * Routes with this rank are
    * evaluated last, after all other routes have been considered. Ideal for
    * catch-all message handlers, fallback activity handlers, or default responses
    * that should only match when no other routes apply.
@@ -45,7 +50,9 @@ export enum RouteRank {
   Last = Number.MAX_VALUE,
 
   /**
-   * Default priority rank (value: Number.MAX_VALUE / 2). This is the standard
+   * Default priority rank (value: Number.MAX_VALUE / 2).
+   *
+   * This is the standard
    * rank for most routes that don't require special ordering. Routes with this
    * rank are evaluated after high-priority routes but before low-priority ones.
    * Use this when you don't need to specify a particular evaluation order.

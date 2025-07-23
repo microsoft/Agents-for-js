@@ -55,13 +55,14 @@ export abstract class DialogContainer<O extends object = {}> extends Dialog<O> {
   /**
      * Returns internal version identifier for this container.
      *
+     * @returns Version which represents the change of the internals of this container.
+     *
      * @remarks
      * DialogContainers detect changes of all sub-components in the container and map that to a `versionChanged` event.
      * Because they do this, DialogContainers "hide" the internal changes and just have the .id. This isolates changes
      * to the container level unless a container doesn't handle it.  To support this DialogContainers define a
      * protected method getInternalVersion() which computes if this dialog or child dialogs have changed
      * which is then examined via calls to checkForVersionChange().
-     * @returns Version which represents the change of the internals of this container.
      */
   protected getInternalVersion (): string {
     return this.dialogs.getVersion()
@@ -71,9 +72,11 @@ export abstract class DialogContainer<O extends object = {}> extends Dialog<O> {
      * Checks to see if a containers child dialogs have changed since the current dialog instance
      * was started.
      *
+     * @param dialogContext Current dialog context.
+     *
      * @remarks
      * This should be called at the start of `beginDialog()`, `continueDialog()`, and `resumeDialog()`.
-     * @param dialogContext Current dialog context.
+     *
      */
   protected async checkForVersionChange (dialogContext: DialogContext): Promise<void> {
     const current = dialogContext.activeDialog.version

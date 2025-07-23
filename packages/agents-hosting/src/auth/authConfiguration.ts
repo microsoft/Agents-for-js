@@ -48,16 +48,24 @@ export interface AuthConfiguration {
   FICClientId?: string,
 
   /**
-   * Entra Authentication Endpoint to use,  If not populated the Entra Public Cloud endpoint is assumed.
+   * Entra Authentication Endpoint to use.
+   *
+   * @remarks
+   * If not populated the Entra Public Cloud endpoint is assumed.
    * This example of Public Cloud Endpoint is https://login.microsoftonline.com
-   @remarks
-   see also https://learn.microsoft.com/entra/identity-platform/authentication-national-cloud
+   * see also https://learn.microsoft.com/entra/identity-platform/authentication-national-cloud
    */
   authority?: string
 }
 
 /**
  * Loads the authentication configuration from environment variables.
+ *
+ * @returns The authentication configuration.
+ * @throws Will throw an error if clientId is not provided in production.
+ *
+ * @remarks
+ * - `clientId` is required
  *
  * @example
  * ```
@@ -73,10 +81,7 @@ export interface AuthConfiguration {
  * connectionName=your-connection-name
  * authority=your-authority-endpoint
  * ```
- * @remarks
- * - `clientId` is required
- * @returns The authentication configuration.
- * @throws Will throw an error if clientId is not provided in production.
+ *
  */
 export const loadAuthConfigFromEnv: (cnxName?: string) => AuthConfiguration = (cnxName?: string) => {
   if (cnxName === undefined) {
@@ -122,14 +127,16 @@ export const loadAuthConfigFromEnv: (cnxName?: string) => AuthConfiguration = (c
 /**
  * Loads the agent authentication configuration from previous version environment variables.
  *
+ * @returns The agent authentication configuration.
+ * @throws Will throw an error if MicrosoftAppId is not provided in production.
+ *
  * @example
  * ```
  * MicrosoftAppId=your-client-id
  * MicrosoftAppPassword=your-client-secret
  * MicrosoftAppTenantId=your-tenant-id
  * ```
- * @returns The agent authentication configuration.
- * @throws Will throw an error if MicrosoftAppId is not provided in production.
+ *
  */
 export const loadPrevAuthConfigFromEnv: () => AuthConfiguration = () => {
   if (process.env.MicrosoftAppId === undefined && process.env.NODE_ENV === 'production') {

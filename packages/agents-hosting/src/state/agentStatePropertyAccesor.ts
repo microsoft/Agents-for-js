@@ -9,28 +9,35 @@ import { AgentState, CustomKey } from './agentState'
 /**
  * Interface for accessing a property in state storage with type safety.
  *
- * The interface defines standard methods for working with persisted state properties,
+ * @typeParam T The type of the property being accessed
+ *
+ * @remarks
+ * This interface defines standard methods for working with persisted state properties,
  * allowing property access with strong typing to reduce errors when working with
  * complex state objects.
  *
- * @typeParam T The type of the property being accessed
  */
 export interface StatePropertyAccessor<T = any> {
   /**
    * Deletes the persisted property from its backing storage object.
    *
+   * @param context Context for the current turn of conversation with the user.
+   *
    * @remarks
    * The properties backing storage object SHOULD be loaded into memory on first access.
    *
-   * ```JavaScript
+   * @example
+   * ```javascript
    * await myProperty.delete(context);
    * ```
-   * @param context Context for the current turn of conversation with the user.
+   *
    */
   delete(context: TurnContext): Promise<void>;
 
   /**
    * Reads a persisted property from its backing storage object.
+   *
+   * @param context Context for the current turn of conversation with the user.
    *
    * @remarks
    * The properties backing storage object SHOULD be loaded into memory on first access.
@@ -39,10 +46,11 @@ export interface StatePropertyAccessor<T = any> {
    * specified, a clone of the `defaultValue` SHOULD be copied to the storage object. If a
    * `defaultValue` has not been specified then a value of `undefined` SHOULD be returned.
    *
-   * ```JavaScript
+   * @example
+   * ```javascript
    * const value = await myProperty.get(context, { count: 0 });
    * ```
-   * @param context Context for the current turn of conversation with the user.
+   *
    */
   get(context: TurnContext): Promise<T | undefined>;
 
@@ -57,17 +65,20 @@ export interface StatePropertyAccessor<T = any> {
   /**
    * Assigns a new value to the properties backing storage object.
    *
+   * @param context Context for the current turn of conversation with the user.
+   * @param value Value to assign.
+   *
    * @remarks
    * The properties backing storage object SHOULD be loaded into memory on first access.
    *
    * Depending on the state systems implementation, an additional step may be required to
    * persist the actual changes to disk.
    *
-   * ```JavaScript
+   * @example
+   * ```javascript
    * await myProperty.set(context, value);
    * ```
-   * @param context Context for the current turn of conversation with the user.
-   * @param value Value to assign.
+   *
    */
   set(context: TurnContext, value: T): Promise<void>;
 }
@@ -75,8 +86,10 @@ export interface StatePropertyAccessor<T = any> {
 /**
  * Provides typed access to an Agent state property with automatic state loading and persistence management.
  *
+ * @typeParam T The type of the property being accessed. Can be any serializable type.
+ *
  * @remarks
- * AgentStatePropertyAccessor simplifies working with persisted state by abstracting
+ * `AgentStatePropertyAccessor` simplifies working with persisted state by abstracting
  * the complexity of loading state from storage and manipulating specific properties.
  * It provides a type-safe interface for state management with automatic handling of:
  *
@@ -87,6 +100,11 @@ export interface StatePropertyAccessor<T = any> {
  * - **Custom Keys**: Support for custom storage keys for advanced scenarios
  *
  * ### Key Features
+ *
+ * Key features of `AgentStatePropertyAccessor` include:
+ * - [Type Safety](#type-safety)
+ * - [Automatic Default Value Handling](#automatic-default-value-handling)
+ * - [Explicit Persistence Control](#explicit-persistence-control)
  *
  * #### Type Safety
  * The accessor provides compile-time type checking when using TypeScript:
@@ -178,8 +196,6 @@ export interface StatePropertyAccessor<T = any> {
  * - **Persistence**: Always call `state.saveChanges(context)` to persist changes to storage.
  * - **Deep Cloning**: Default values are deep cloned using JSON serialization, which may not work with complex objects containing functions or circular references.
  *
- * @typeParam T The type of the property being accessed. Can be any serializable type.
- *
  * @see {@link AgentState.createProperty} for creating property accessors
  * @see {@link StatePropertyAccessor} for the interface definition
  */
@@ -187,12 +203,12 @@ export class AgentStatePropertyAccessor<T = any> implements StatePropertyAccesso
   /**
    * Creates a new instance of AgentStatePropertyAccessor.
    *
+   * @param state The agent state object that manages the backing storage for this property
+   * @param name The unique name of the property within the state object. This name is used as the key in the state storage.
+   *
    * @remarks
    * This constructor is typically not called directly. Instead, use {@link AgentState.createProperty}
    * to create property accessors, which ensures proper integration with the state management system.
-   *
-   * @param state The agent state object that manages the backing storage for this property
-   * @param name The unique name of the property within the state object. This name is used as the key in the state storage.
    *
    * @example
    * ```typescript
@@ -202,11 +218,17 @@ export class AgentStatePropertyAccessor<T = any> implements StatePropertyAccesso
    * // Direct construction (not recommended)
    * const accessor = new AgentStatePropertyAccessor<UserProfile>(userState, "userProfile");
    * ```
+   *
    */
   constructor (protected readonly state: AgentState, public readonly name: string) { }
 
   /**
    * Deletes the property from the state storage.
+   *
+   * @param context The turn context for the current conversation turn
+   * @param customKey Optional custom key for accessing state in a specific storage location.
+   * Useful for multi-tenant scenarios or when state needs to be partitioned.
+   * @returns A promise that resolves when the delete operation is complete
    *
    * @remarks
    * This operation removes the property from the in-memory state object but does not
@@ -217,13 +239,7 @@ export class AgentStatePropertyAccessor<T = any> implements StatePropertyAccesso
    * - The deletion only affects the in-memory state until `saveChanges()` is called
    * - After deletion, subsequent `get()` calls will return `undefined` (or the default value if provided)
    *
-   * @param context The turn context for the current conversation turn
-   * @param customKey Optional custom key for accessing state in a specific storage location.
-   * Useful for multi-tenant scenarios or when state needs to be partitioned.
-   *
-   * @returns A promise that resolves when the delete operation is complete
-   *
-   * @example
+   * @example Basic usage
    * ```typescript
    * const userSettings = userState.createProperty<UserSettings>("settings");
    *
@@ -243,6 +259,7 @@ export class AgentStatePropertyAccessor<T = any> implements StatePropertyAccesso
    * await userSettings.delete(context, tenantKey);
    * await userState.saveChanges(context);
    * ```
+   *
    */
   async delete (context: TurnContext, customKey?: CustomKey): Promise<void> {
     const obj: any = await this.state.load(context, false, customKey)
@@ -253,6 +270,14 @@ export class AgentStatePropertyAccessor<T = any> implements StatePropertyAccesso
 
   /**
    * Retrieves the value of the property from state storage.
+   *
+   * @param context The turn context for the current conversation turn
+   * @param defaultValue Optional default value to use if the property doesn't exist.
+   *                    When provided, this value is deep cloned and stored in state.
+   * @param customKey Optional custom key for accessing state in a specific storage location.
+   *                  Useful for multi-tenant scenarios or when state needs to be partitioned.
+   *
+   * @returns A promise that resolves to the property value, the cloned default value, or `undefined`
    *
    * @remarks
    * This method provides intelligent default value handling:
@@ -269,14 +294,6 @@ export class AgentStatePropertyAccessor<T = any> implements StatePropertyAccesso
    *
    * **Performance**: The first access loads state from storage; subsequent accesses use
    * the in-memory cached version until the context is disposed.
-   *
-   * @param context The turn context for the current conversation turn
-   * @param defaultValue Optional default value to use if the property doesn't exist.
-   *                    When provided, this value is deep cloned and stored in state.
-   * @param customKey Optional custom key for accessing state in a specific storage location.
-   *                  Useful for multi-tenant scenarios or when state needs to be partitioned.
-   *
-   * @returns A promise that resolves to the property value, the cloned default value, or `undefined`
    *
    * @example Basic usage
    * ```typescript
@@ -316,6 +333,7 @@ export class AgentStatePropertyAccessor<T = any> implements StatePropertyAccesso
    * const tenantKey = { key: `tenant_${tenantId}` };
    * const tenantData = await dataProperty.get(context, defaultData, tenantKey);
    * ```
+   *
    */
   async get (context: TurnContext, defaultValue?: T, customKey?: CustomKey): Promise<T> {
     const obj: any = await this.state.load(context, false, customKey)
@@ -333,6 +351,13 @@ export class AgentStatePropertyAccessor<T = any> implements StatePropertyAccesso
   /**
    * Sets the value of the property in state storage.
    *
+   * @param context The turn context for the current conversation turn
+   * @param value The value to assign to the property. Can be any serializable value.
+   * @param customKey Optional custom key for accessing state in a specific storage location.
+   *                  Useful for multi-tenant scenarios or when state needs to be partitioned.
+   *
+   * @returns A promise that resolves when the set operation is complete
+   *
    * @remarks
    * This operation updates the property in the in-memory state object but does not
    * automatically persist the change to the underlying storage. You must call
@@ -348,13 +373,6 @@ export class AgentStatePropertyAccessor<T = any> implements StatePropertyAccesso
    *
    * **Type Safety**: When using TypeScript, the value must match the property's
    * declared type parameter.
-   *
-   * @param context The turn context for the current conversation turn
-   * @param value The value to assign to the property. Can be any serializable value.
-   * @param customKey Optional custom key for accessing state in a specific storage location.
-   *                  Useful for multi-tenant scenarios or when state needs to be partitioned.
-   *
-   * @returns A promise that resolves when the set operation is complete
    *
    * @example Basic usage
    * ```typescript
@@ -397,6 +415,7 @@ export class AgentStatePropertyAccessor<T = any> implements StatePropertyAccesso
    * await dataProperty.set(context, updatedData, tenantKey);
    * await userState.saveChanges(context);
    * ```
+   *
    */
   async set (context: TurnContext, value: T, customKey?: CustomKey): Promise<void> {
     const obj: any = await this.state.load(context, false, customKey)

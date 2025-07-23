@@ -11,7 +11,7 @@
  */
 export interface AdaptiveCard {
   /**
-   * The type of the card, which must always be 'AdaptiveCard'.
+   * The type of the card, which must always be `AdaptiveCard`.
    */
   type: 'AdaptiveCard'
   [key: string]: any
