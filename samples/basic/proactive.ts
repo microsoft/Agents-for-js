@@ -1,7 +1,7 @@
 import { ActivityHandler, AgentApplication, AuthConfiguration, authorizeJWT, CloudAdapter, loadAuthConfigFromEnv, MemoryStorage, TurnContext, TurnState, Request } from '@microsoft/agents-hosting'
 import express, { Response } from 'express'
 import pjson from '@microsoft/agents-hosting/package.json'
-import { ConversationReference } from '../../packages/agents-activity/src/index.js'
+import { ConversationReference } from '@microsoft/agents-activity'
 
 const echo = new AgentApplication<TurnState>({ storage: new MemoryStorage() })
 echo.onConversationUpdate('membersAdded', async (context: TurnContext) => {
