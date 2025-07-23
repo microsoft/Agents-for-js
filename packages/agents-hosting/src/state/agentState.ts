@@ -44,7 +44,8 @@ export interface CustomKey {
 }
 
 /**
- * @summary Manages the state of an Agent across turns in a conversation.
+ * Manages the state of an Agent across turns in a conversation.
+ *
  * @remarks
  * AgentState provides functionality to persist and retrieve state data using
  * a storage provider. It handles caching state in the turn context for performance,

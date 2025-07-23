@@ -73,7 +73,7 @@ export interface StatePropertyAccessor<T = any> {
 }
 
 /**
- * @summary Provides typed access to an Agent state property with automatic state loading and persistence management.
+ * Provides typed access to an Agent state property with automatic state loading and persistence management.
  *
  * @remarks
  * AgentStatePropertyAccessor simplifies working with persisted state by abstracting
@@ -206,7 +206,8 @@ export class AgentStatePropertyAccessor<T = any> implements StatePropertyAccesso
   constructor (protected readonly state: AgentState, public readonly name: string) { }
 
   /**
-   * @summary Deletes the property from the state storage.
+   * Deletes the property from the state storage.
+   *
    * @remarks
    * This operation removes the property from the in-memory state object but does not
    * automatically persist the change to the underlying storage. You must call
@@ -251,7 +252,8 @@ export class AgentStatePropertyAccessor<T = any> implements StatePropertyAccesso
   }
 
   /**
-   * @summary Retrieves the value of the property from state storage.
+   * Retrieves the value of the property from state storage.
+   *
    * @remarks
    * This method provides intelligent default value handling:
    * - If the property exists, its value is returned
@@ -329,7 +331,8 @@ export class AgentStatePropertyAccessor<T = any> implements StatePropertyAccesso
   }
 
   /**
-   * @summary Sets the value of the property in state storage.
+   * Sets the value of the property in state storage.
+   *
    * @remarks
    * This operation updates the property in the in-memory state object but does not
    * automatically persist the change to the underlying storage. You must call

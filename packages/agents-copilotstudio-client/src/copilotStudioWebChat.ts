@@ -29,7 +29,8 @@ export interface CopilotStudioWebChatSettings {
 }
 
 /**
- * @summary Represents a connection interface for integrating Copilot Studio with WebChat.
+ * Represents a connection interface for integrating Copilot Studio with WebChat.
+ *
  * @remarks
  * This interface provides the necessary methods and observables to facilitate
  * bidirectional communication between a WebChat client and the Copilot Studio service.
@@ -87,7 +88,8 @@ export interface CopilotStudioWebChatConnection {
 }
 
 /**
- * @summary A utility class that provides WebChat integration capabilities for Copilot Studio services.
+ * A utility class that provides WebChat integration capabilities for Copilot Studio services.
+ *
  * @remarks
  * This class acts as a bridge between Microsoft Bot Framework WebChat and Copilot Studio,
  * enabling seamless communication through a DirectLine-compatible interface.

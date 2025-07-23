@@ -25,7 +25,7 @@ function formatTicks (timestamp: Date): string {
 }
 
 /**
- * @summary Generates a sanitized prefix for a channel.
+ * Generates a sanitized prefix for a channel.
  * @param channelId - The ID of the channel.
  * @returns A sanitized string prefix for the channel.
  */
@@ -59,7 +59,7 @@ function getBlobKey (activity: Activity, options?: BlobsTranscriptStoreOptions):
 }
 
 /**
- * @summary Sanitizes a blob key for use with Azure Blob Storage.
+ * Sanitizes a blob key for use with Azure Blob Storage.
  *
  * @remarks
  * This function performs the following operations:
@@ -109,7 +109,7 @@ export function sanitizeBlobKey (key: string, options?: BlobsTranscriptStoreOpti
 }
 
 /**
- * @summary Performs type casting with optional constructor validation.
+ * Performs type casting with optional constructor validation.
  * @remarks
  * If a constructor is provided, validates that the value is an instance of that constructor.
  * Otherwise, performs a direct type assertion.

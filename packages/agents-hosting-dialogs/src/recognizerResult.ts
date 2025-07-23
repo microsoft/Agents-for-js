@@ -35,7 +35,7 @@ export interface RecognizerResult {
 }
 
 /**
- * @summary Finds the intent with the highest confidence score from a recognizer result.
+ * Finds the intent with the highest confidence score from a recognizer result.
  *
  * @remarks
  * This function iterates through all intents in the recognizer result and returns

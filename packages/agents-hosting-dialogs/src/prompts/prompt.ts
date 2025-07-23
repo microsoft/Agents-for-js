@@ -103,7 +103,7 @@ export interface PromptRecognizerResult<T> {
 }
 
 /**
- * @summary Function signature for providing a custom prompt validator.
+ * Function signature for providing a custom prompt validator.
  *
  * @remarks
  * The validator should be an asynchronous function that returns `true` if

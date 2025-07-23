@@ -8,7 +8,7 @@ import fs from 'fs'
 import { Storage, StoreItem } from './storage'
 
 /**
- * @summary A file-based storage implementation that persists data to the local filesystem.
+ * A file-based storage implementation that persists data to the local filesystem.
  *
  * @remarks
  * FileStorage stores all data in a single JSON file named 'state.json' within a specified folder.

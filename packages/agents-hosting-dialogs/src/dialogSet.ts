@@ -12,7 +12,7 @@ import { DialogContext, DialogState } from './dialogContext'
 import { StringUtils } from './stringUtils'
 
 /**
- * @summary Interface for dialogs that have child dialog dependencies.
+ * Interface for dialogs that have child dialog dependencies.
  *
  * @remarks
  * Implement this interface on dialog classes that need to register child dialogs
@@ -38,7 +38,7 @@ import { StringUtils } from './stringUtils'
  */
 export interface DialogDependencies {
   /**
-   * @summary Returns an array of child dialogs that this dialog depends on.
+   * Returns an array of child dialogs that this dialog depends on.
    *
    *
    * @remarks

@@ -7,7 +7,7 @@ import express, { Response } from 'express'
 import { ActivityHandler, AgentApplication, AuthConfiguration, authorizeJWT, CloudAdapter, loadAuthConfigFromEnv, Request, TurnState } from '@microsoft/agents-hosting'
 import { version } from '@microsoft/agents-hosting/package.json'
 /**
- * @summary Starts an Express server for handling Agent requests.
+ * Starts an Express server for handling Agent requests.
  *
  * @remarks
  * This function sets up an Express server with the necessary middleware and routes for handling
