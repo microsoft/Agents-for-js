@@ -433,6 +433,11 @@ export class CloudAdapter extends BaseAdapter {
     conversationParameters: ConversationParameters,
     logic: (context: TurnContext) => Promise<void>
   ): Promise<void> {
+    if (channelId === 'webchat') {
+      logger.warn('Webchat channel is not supported for createConversationAsync')
+      return
+    }
+
     if (typeof serviceUrl !== 'string' || !serviceUrl) {
       throw new TypeError('`serviceUrl` must be a non-empty string')
     }
