@@ -11,7 +11,7 @@ import { ConversationData, UserProfile } from './state'
 
 const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
 
-const blobStorage = new BlobsStorage(process.env.BLOB_STORAGE_CONNECTION_STRING!, process.env.BLOB_CONTAINER_ID!)
+const blobStorage = new BlobsStorage(process.env.BLOB_CONTAINER_ID!, process.env.BLOB_STORAGE_CONNECTION_STRING!)
 const conversationState = new ConversationState(blobStorage)
 const userState = new UserState(blobStorage)
 
