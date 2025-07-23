@@ -1,7 +1,7 @@
 /**
  * Contains state information for an instance of a dialog on the stack.
  *
- * @template T Optional. The type that represents state information for the dialog.
+ * @typeParam T Optional. The type that represents state information for the dialog.
  *
  * @remarks
  * This contains information for a specific instance of a dialog on a dialog stack.

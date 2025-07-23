@@ -7,12 +7,7 @@ import express, { Response } from 'express'
 import { ActivityHandler, AgentApplication, AuthConfiguration, authorizeJWT, CloudAdapter, loadAuthConfigFromEnv, Request, TurnState } from '@microsoft/agents-hosting'
 import { version } from '@microsoft/agents-hosting/package.json'
 /**
- * Starts an Express server for handling Agent requests.
- *
- * @param agent - The AgentApplication or ActivityHandler instance to process incoming activities.
- * @param authConfiguration - Optional custom authentication configuration. If not provided,
- *                           configuration will be loaded from environment variables using loadAuthConfigFromEnv().
- * @returns void - This function does not return a value as it starts a long-running server process.
+ * @summary Starts an Express server for handling Agent requests.
  *
  * @remarks
  * This function sets up an Express server with the necessary middleware and routes for handling
@@ -32,6 +27,12 @@ import { version } from '@microsoft/agents-hosting/package.json'
  *
  * startServer(app);
  * ```
+ *
+ * @param agent - The AgentApplication or ActivityHandler instance to process incoming activities.
+ * @param authConfiguration - Optional custom authentication configuration. If not provided,
+ * configuration will be loaded from environment variables using loadAuthConfigFromEnv().
+ * @returns void - This function does not return a value as it starts a long-running server process.
+ *
  */
 export const startServer = (agent: AgentApplication<TurnState<any, any>> | ActivityHandler, authConfiguration?: AuthConfiguration) => {
   const authConfig: AuthConfiguration = authConfiguration ?? loadAuthConfigFromEnv()
@@ -41,6 +42,9 @@ export const startServer = (agent: AgentApplication<TurnState<any, any>> | Activ
   } else {
     adapter = agent.adapter as CloudAdapter
   }
+
+  const headerPropagation = (agent as AgentApplication<TurnState<any, any>>)?.options.headerPropagation
+
   const server = express()
   server.use(express.json())
   server.use(authorizeJWT(authConfig))
@@ -48,7 +52,7 @@ export const startServer = (agent: AgentApplication<TurnState<any, any>> | Activ
   server.post('/api/messages', (req: Request, res: Response) =>
     adapter.process(req, res, (context) =>
       agent.run(context)
-    )
+    , headerPropagation)
   )
 
   const port = process.env.PORT || 3978

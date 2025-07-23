@@ -22,6 +22,7 @@ import { AttachmentInfo } from './connector-client/attachmentInfo'
 import { AttachmentData } from './connector-client/attachmentData'
 import { normalizeIncomingActivity } from './activityWireCompat'
 import { UserTokenClient } from './oauth'
+import { HeaderPropagation, HeaderPropagationCollection, HeaderPropagationDefinition } from './headerPropagation'
 
 const logger = debug('agents:cloud-adapter')
 
@@ -84,18 +85,21 @@ export class CloudAdapter extends BaseAdapter {
    *
    * @param serviceUrl - The URL of the service to connect to
    * @param scope - The authentication scope to use
+   * @param headers - Optional headers to propagate in the request
    * @returns A promise that resolves to a ConnectorClient instance
    * @protected
    */
   protected async createConnectorClient (
     serviceUrl: string,
-    scope: string
+    scope: string,
+    headers?: HeaderPropagationCollection
   ): Promise<ConnectorClient> {
-    return ConnectorClient.createClientWithAuthAsync(
+    return ConnectorClient.createClientWithAuth(
       serviceUrl,
       this.authConfig,
       this.authProvider,
-      scope
+      scope,
+      headers
     )
   }
 
@@ -122,7 +126,7 @@ export class CloudAdapter extends BaseAdapter {
   }
 
   async createTurnContextWithScope (activity: Activity, logic: AgentHandler, scope: string): Promise<TurnContext> {
-    this.connectorClient = await ConnectorClient.createClientWithAuthAsync(activity.serviceUrl!, this.authConfig!, this.authProvider, scope)
+    this.connectorClient = await ConnectorClient.createClientWithAuth(activity.serviceUrl!, this.authConfig!, this.authProvider, scope)
     return new TurnContext(this, activity)
   }
 
@@ -162,9 +166,9 @@ export class CloudAdapter extends BaseAdapter {
         }
 
         if (activity.replyToId) {
-          response = await this.connectorClient.replyToActivityAsync(activity.conversation.id, activity.replyToId, activity)
+          response = await this.connectorClient.replyToActivity(activity.conversation.id, activity.replyToId, activity)
         } else {
-          response = await this.connectorClient.sendToConversationAsync(activity.conversation.id, activity)
+          response = await this.connectorClient.sendToConversation(activity.conversation.id, activity)
         }
       }
 
@@ -187,7 +191,7 @@ export class CloudAdapter extends BaseAdapter {
     if (!activity.serviceUrl || (activity.conversation == null) || !activity.conversation.id || !activity.id) {
       throw new Error('Invalid activity object')
     }
-    return await this.connectorClient.replyToActivityAsync(activity.conversation.id, activity.id, activity)
+    return await this.connectorClient.replyToActivity(activity.conversation.id, activity.id, activity)
   }
 
   /**
@@ -195,11 +199,19 @@ export class CloudAdapter extends BaseAdapter {
    * @param request - The incoming request.
    * @param res - The response to send.
    * @param logic - The logic to execute.
+   * @param headerPropagation - Optional function to handle header propagation.
    */
   public async process (
     request: Request,
     res: Response,
-    logic: (context: TurnContext) => Promise<void>): Promise<void> {
+    logic: (context: TurnContext) => Promise<void>,
+    headerPropagation?: HeaderPropagationDefinition): Promise<void> {
+    const headers = new HeaderPropagation(request.headers)
+    if (headerPropagation && typeof headerPropagation === 'function') {
+      headerPropagation(headers)
+      logger.debug('Headers to propagate: ', headers)
+    }
+
     const end = (status: StatusCodes, body?: unknown, isInvokeResponseOrExpectReplies: boolean = false) => {
       res.status(status)
       if (isInvokeResponseOrExpectReplies) {
@@ -228,7 +240,7 @@ export class CloudAdapter extends BaseAdapter {
     // if Delivery Mode == ExpectReplies, we don't need a connector client.
     if (this.resolveIfConnectorClientIsNeeded(activity)) {
       logger.debug('Creating connector client with scope: ', scope)
-      this.connectorClient = await this.createConnectorClient(activity.serviceUrl!, scope)
+      this.connectorClient = await this.createConnectorClient(activity.serviceUrl!, scope, headers)
       this.setConnectorClient(context)
     }
 
@@ -287,7 +299,7 @@ export class CloudAdapter extends BaseAdapter {
       throw new Error('Invalid activity object')
     }
 
-    const response = await this.connectorClient.updateActivityAsync(
+    const response = await this.connectorClient.updateActivity(
       activity.conversation.id,
       activity.id,
       activity
@@ -311,7 +323,7 @@ export class CloudAdapter extends BaseAdapter {
       throw new Error('Invalid conversation reference object')
     }
 
-    await this.connectorClient.deleteActivityAsync(reference.conversation.id, reference.activityId)
+    await this.connectorClient.deleteActivity(reference.conversation.id, reference.activityId)
   }
 
   /**
@@ -424,7 +436,7 @@ export class CloudAdapter extends BaseAdapter {
     if (!logic) throw new TypeError('`logic` must be defined')
 
     const restClient = await this.createConnectorClient(serviceUrl, audience)
-    const createConversationResult = await restClient.createConversationAsync(conversationParameters)
+    const createConversationResult = await restClient.createConversation(conversationParameters)
     const createActivity = this.createCreateActivity(
       createConversationResult.id,
       channelId,

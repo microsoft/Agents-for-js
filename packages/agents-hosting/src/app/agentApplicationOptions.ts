@@ -10,13 +10,14 @@ import { AdaptiveCardsOptions } from './adaptiveCards'
 import { InputFileDownloader } from './inputFileDownloader'
 import { AuthorizationHandlers } from './authorization'
 import { TurnState } from './turnState'
+import { HeaderPropagationDefinition } from '../headerPropagation'
 
 /**
  * Configuration options for creating and initializing an Agent Application.
  * This interface defines all the configurable aspects of an agent's behavior,
  * including adapter settings, storage, authorization, and various feature flags.
  *
- * @template TState - The type of turn state that extends TurnState, allowing for
+ * @typeParam TState - The type of turn state that extends TurnState, allowing for
  * custom state management specific to your agent's needs.
  */
 export interface AgentApplicationOptions<TState extends TurnState> {
@@ -129,4 +130,13 @@ export interface AgentApplicationOptions<TState extends TurnState> {
    * Optional. The transcript logger to use for logging conversations. If not provided, no logging will occur.
    */
   transcriptLogger?: TranscriptLogger
+
+  /**
+   * Optional. A function to handle header propagation for incoming requests.
+   * This allows the agent to manage headers from incoming requests and propagate
+   * them to outgoing requests as needed.
+   *
+   * @default undefined
+   */
+  headerPropagation?: HeaderPropagationDefinition
 }

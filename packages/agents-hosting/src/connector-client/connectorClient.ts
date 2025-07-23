@@ -11,6 +11,7 @@ import { AttachmentInfo } from './attachmentInfo'
 import { AttachmentData } from './attachmentData'
 import { normalizeOutgoingActivity } from '../activityWireCompat'
 import { getProductInfo } from '../getProductInfo'
+import { HeaderPropagation, HeaderPropagationCollection } from '../headerPropagation'
 const logger = debug('agents:connector-client')
 
 export { getProductInfo }
@@ -27,6 +28,20 @@ export class ConnectorClient {
    */
   protected constructor (axInstance: AxiosInstance) {
     this._axiosInstance = axInstance
+    this._axiosInstance.interceptors.request.use((config) => {
+      const { method, url, data, headers, params } = config
+      // Clone headers and remove Authorization before logging
+      const { Authorization, authorization, ...headersToLog } = headers || {}
+      logger.debug('Request: ', {
+        host: this._axiosInstance.getUri(),
+        url,
+        data,
+        method,
+        params,
+        headers: headersToLog
+      })
+      return config
+    })
     this._axiosInstance.interceptors.response.use(
       (config) => {
         const { status, statusText, config: requestConfig } = config
@@ -66,20 +81,23 @@ export class ConnectorClient {
    * @param authConfig - The authentication configuration.
    * @param authProvider - The authentication provider.
    * @param scope - The scope for the authentication token.
+   * @param headers - Optional headers to propagate in the request.
    * @returns A new instance of ConnectorClient.
    */
-  static async createClientWithAuthAsync (
+  static async createClientWithAuth (
     baseURL: string,
     authConfig: AuthConfiguration,
     authProvider: AuthProvider,
-    scope: string
+    scope: string,
+    headers?: HeaderPropagationCollection
   ): Promise<ConnectorClient> {
+    const headerPropagation = headers ?? new HeaderPropagation({ 'User-Agent': '' })
+    headerPropagation.concat({ 'User-Agent': getProductInfo() })
+    headerPropagation.override({ Accept: 'application/json' })
+
     const axiosInstance = axios.create({
       baseURL,
-      headers: {
-        Accept: 'application/json',
-        'User-Agent': getProductInfo(),
-      },
+      headers: headerPropagation.outgoing,
       transformRequest: [
         (data, headers) => {
           return JSON.stringify(normalizeOutgoingActivity(data))
@@ -98,7 +116,7 @@ export class ConnectorClient {
    * @param continuationToken - The continuation token for pagination.
    * @returns A list of conversations.
    */
-  public async getConversationsAsync (continuationToken?: string): Promise<ConversationsResult> {
+  public async getConversations (continuationToken?: string): Promise<ConversationsResult> {
     const config: AxiosRequestConfig = {
       method: 'get',
       url: '/v3/conversations',
@@ -128,7 +146,7 @@ export class ConnectorClient {
    * @param body - The conversation parameters.
    * @returns The conversation resource response.
    */
-  public async createConversationAsync (body: ConversationParameters): Promise<ConversationResourceResponse> {
+  public async createConversation (body: ConversationParameters): Promise<ConversationResourceResponse> {
     // const payload = normalizeOutgoingConvoParams(body)
     const config: AxiosRequestConfig = {
       method: 'post',
@@ -149,7 +167,7 @@ export class ConnectorClient {
    * @param body - The activity object.
    * @returns The resource response.
    */
-  public async replyToActivityAsync (
+  public async replyToActivity (
     conversationId: string,
     activityId: string,
     body: Activity
@@ -177,7 +195,7 @@ export class ConnectorClient {
    * @param body - The activity object.
    * @returns The resource response.
    */
-  public async sendToConversationAsync (
+  public async sendToConversation (
     conversationId: string,
     body: Activity
   ): Promise<ResourceResponse> {
@@ -204,7 +222,7 @@ export class ConnectorClient {
    * @param body - The activity object.
    * @returns The resource response.
    */
-  public async updateActivityAsync (
+  public async updateActivity (
     conversationId: string,
     activityId: string,
     body: Activity
@@ -230,7 +248,7 @@ export class ConnectorClient {
    * @param activityId - The ID of the activity.
    * @returns A promise that resolves when the activity is deleted.
    */
-  public async deleteActivityAsync (
+  public async deleteActivity (
     conversationId: string,
     activityId: string
   ): Promise<void> {
