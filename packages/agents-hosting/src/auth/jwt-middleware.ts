@@ -72,25 +72,32 @@ export const authorizeJWT = (authConfig: AuthConfiguration) => {
   return async function (req: Request, res: Response, next: NextFunction) {
     let failed = false
     logger.debug('authorizing jwt')
-    const authHeader = req.headers.authorization as string
-    if (authHeader) {
-      const token: string = authHeader.split(' ')[1] // Extract the token from the Bearer string
-      try {
-        const user = await verifyToken(token, authConfig)
-        logger.debug('token verified for ', user)
-        req.user = user
-      } catch (err: Error | any) {
-        failed = true
-        logger.error(err)
-        res.status(401).send({ 'jwt-auth-error': err.message })
-      }
+    if (req.method !== 'POST' && req.method !== 'GET') {
+      failed = true
+      logger.warn('Method not allowed', req.method)
+      res.status(405).send({ 'jwt-auth-error': 'Method not allowed' })
     } else {
-      if (!authConfig.clientId && process.env.NODE_ENV !== 'production') {
-        logger.info('using anonymous auth')
-        req.user = { name: 'anonymous' }
+      const authHeader = req.headers.authorization as string
+      if (authHeader) {
+        const token: string = authHeader.split(' ')[1] // Extract the token from the Bearer string
+        try {
+          const user = await verifyToken(token, authConfig)
+          logger.debug('token verified for ', user)
+          req.user = user
+        } catch (err: Error | any) {
+          failed = true
+          logger.error(err)
+          res.status(401).send({ 'jwt-auth-error': err.message })
+        }
       } else {
-        logger.error('authorization header not found')
-        res.status(401).send({ 'jwt-auth-error': 'authorization header not found' })
+        if (!authConfig.clientId && process.env.NODE_ENV !== 'production') {
+          logger.info('using anonymous auth')
+          req.user = { name: 'anonymous' }
+        } else {
+          failed = true
+          logger.error('authorization header not found')
+          res.status(401).send({ 'jwt-auth-error': 'authorization header not found' })
+        }
       }
     }
     if (!failed) {

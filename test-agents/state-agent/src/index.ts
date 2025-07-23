@@ -9,7 +9,7 @@ import { BlobsStorage, BlobsTranscriptStore } from '@microsoft/agents-hosting-st
 import { StateManagementAgent } from './agent'
 
 /* AZURE BLOB STORAGE - Uncomment the code in this section to use Azure blob storage */
-const blobStorage = new BlobsStorage(process.env.BLOB_STORAGE_CONNECTION_STRING!, process.env.BLOB_CONTAINER_ID!)
+const blobStorage = new BlobsStorage(process.env.BLOB_CONTAINER_ID!, process.env.BLOB_STORAGE_CONNECTION_STRING!)
 const blobTranscriptStore = new BlobsTranscriptStore(process.env.BLOB_STORAGE_CONNECTION_STRING!, process.env.BLOB_CONTAINER_ID!)
 const conversationState = new ConversationState(blobStorage)
 const userState = new UserState(blobStorage)
