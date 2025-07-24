@@ -10,7 +10,7 @@ import { PromptCultureModels } from './promptCultureModels'
 import { Activity } from '@microsoft/agents-activity'
 
 /**
- * @summary Defines locale-specific choice defaults for confirmation prompts.
+ * Defines locale-specific choice defaults for confirmation prompts.
  *
  * @remarks
  * This interface represents a dictionary that maps locale strings to their corresponding
@@ -50,6 +50,7 @@ export interface ChoiceDefaultsConfirmPrompt {
    * @remarks
    * The key is a locale string (e.g., 'en-us', 'fr-fr', 'de-de') and the value
    * contains the localized choices and formatting options for that locale.
+   *
    */
   [locale: string]: {
     /**
@@ -71,6 +72,7 @@ export interface ChoiceDefaultsConfirmPrompt {
  * @remarks
  * By default the prompt will return to the calling dialog a `boolean` representing the users
  * selection.
+ *
  */
 export class ConfirmPrompt extends Prompt<boolean> {
   /**
@@ -89,6 +91,7 @@ export class ConfirmPrompt extends Prompt<boolean> {
      *
      * @remarks
      * Defaults to {@link ListStyle.auto}.
+     *
      */
   style: ListStyle
 

@@ -7,7 +7,12 @@ import express, { Response } from 'express'
 import { ActivityHandler, AgentApplication, AuthConfiguration, authorizeJWT, CloudAdapter, loadAuthConfigFromEnv, Request, TurnState } from '@microsoft/agents-hosting'
 import { version } from '@microsoft/agents-hosting/package.json'
 /**
- * @summary Starts an Express server for handling Agent requests.
+ * Starts an Express server for handling Agent requests.
+ *
+ * @param agent - The AgentApplication or ActivityHandler instance to process incoming activities.
+ * @param authConfiguration - Optional custom authentication configuration. If not provided,
+ * configuration will be loaded from environment variables using loadAuthConfigFromEnv().
+ * @returns void - This function does not return a value as it starts a long-running server process.
  *
  * @remarks
  * This function sets up an Express server with the necessary middleware and routes for handling
@@ -27,11 +32,6 @@ import { version } from '@microsoft/agents-hosting/package.json'
  *
  * startServer(app);
  * ```
- *
- * @param agent - The AgentApplication or ActivityHandler instance to process incoming activities.
- * @param authConfiguration - Optional custom authentication configuration. If not provided,
- * configuration will be loaded from environment variables using loadAuthConfigFromEnv().
- * @returns void - This function does not return a value as it starts a long-running server process.
  *
  */
 export const startServer = (agent: AgentApplication<TurnState<any, any>> | ActivityHandler, authConfiguration?: AuthConfiguration) => {

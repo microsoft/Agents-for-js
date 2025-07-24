@@ -10,13 +10,13 @@ import { TurnState } from './turnState'
 /**
  * Represents a route configuration for handling bot activities within an application.
  *
+ * @typeParam TState - The type of turn state that extends TurnState, allowing for
+ *                    type-safe access to custom state properties within route handlers
+ *
  * @remarks
  * An AppRoute defines how incoming activities are matched and processed by combining
  * a selector function that determines when the route should be activated with a handler
  * function that processes the matched activities.
- *
- * @typeParam TState - The type of turn state that extends TurnState, allowing for
- *                    type-safe access to custom state properties within route handlers
  *
  * @example
  * ```typescript
@@ -27,6 +27,7 @@ import { TurnState } from './turnState'
  *   }
  * };
  * ```
+ *
  */
 export interface AppRoute<TState extends TurnState> {
   /**
@@ -53,18 +54,20 @@ export interface AppRoute<TState extends TurnState> {
   /**
    * Indicates whether this route is an invoke route.
    *
+   * @default false
+   *
    * @remarks
    * Invoke routes are used for specific types of activities, such as messaging extensions,
    * adaptive card actions, or other invoke-based interactions. When set to true, this route
    * will be processed differently than regular message routes, typically with special
    * handling for invoke responses.
    *
-   * @default false
    */
   isInvokeRoute?: boolean;
 
   /**
    * Optional rank of the route, used to determine the order in which routes are evaluated.
+   *
    * 0 - number.MAX_VALUE. Ranks of the same value are evaluated in order of addition.
    */
   rank?: number;
@@ -82,6 +85,7 @@ export interface AppRoute<TState extends TurnState> {
    * ```typescript
    * authHandlers: ['oauth', 'admin-only']
    * ```
+   *
    */
   authHandlers?: string[]
 }

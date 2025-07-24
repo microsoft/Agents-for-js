@@ -129,12 +129,14 @@ export class DialogStateManager {
   /**
      * Get the value from memory using path expression.
      *
-     * @remarks
-     * This always returns a CLONE of the memory, any modifications to the result will not affect memory.
      * @typeParam T The value type to return.
      * @param pathExpression Path expression to use.
      * @param defaultValue (Optional) default value to use if the path isn't found. May be a function that returns the default value to use.
      * @returns The found value or undefined if not found and no `defaultValue` specified.
+     *
+     * @remarks
+     * This always returns a CLONE of the memory, any modifications to the result will not affect memory.
+     *
      */
   getValue<T = any>(pathExpression: string, defaultValue?: T | (() => T)): T {
     function returnDefault (): T {
@@ -274,6 +276,7 @@ export class DialogStateManager {
      *
      * @remarks
      * This should be called at the beginning of the turn.
+     *
      */
   async loadAllScopes (): Promise<void> {
     const scopes = this.configuration.memoryScopes
@@ -287,6 +290,7 @@ export class DialogStateManager {
      *
      * @remarks
      * This should be called at the end of the turn.
+     *
      */
   async saveAllChanges (): Promise<void> {
     const scopes = this.configuration.memoryScopes
@@ -315,11 +319,12 @@ export class DialogStateManager {
   /**
      * Normalizes the path segments of a passed in path.
      *
-     * @remarks
-     * A path of `profile.address[0]` will be normalized to `profile.address.0`.
      * @param pathExpression The path to normalize.
      * @param allowNestedPaths Optional. If `false` then detection of a nested path will cause an empty path to be returned. Defaults to 'true'.
      * @returns The normalized path.
+     *
+     * @remarks
+     * A path of `profile.address[0]` will be normalized to `profile.address.0`.
      */
   parsePath (pathExpression: string, allowNestedPaths = true): (string | number)[] {
     // Expand path segments

@@ -39,10 +39,12 @@ export class MemoryStorage implements Storage {
   /**
    * Gets a single shared instance of the MemoryStorage class.
    *
+   * @returns The singleton instance of MemoryStorage
+   *
+   * @remarks
    * Using this method ensures that the same storage instance is used across
    * the application, allowing for shared state without passing references.
    *
-   * @returns The singleton instance of MemoryStorage
    */
   static getSingleInstance (): MemoryStorage {
     if (!MemoryStorage.instance) {
@@ -78,14 +80,15 @@ export class MemoryStorage implements Storage {
   /**
    * Writes storage items to memory.
    *
+   * @param changes The items to write, indexed by key
+   * @returns A promise that resolves when the write operation is complete
+   * @throws Will throw an error if changes are not provided or if there's an eTag conflict
+   *
+   * @remarks
    * This method supports optimistic concurrency control through eTags.
    * If an item has an eTag, it will only be updated if the existing item
    * has the same eTag. If an item has an eTag of '*' or no eTag, it will
    * always be written regardless of the current state.
-   *
-   * @param changes The items to write, indexed by key
-   * @returns A promise that resolves when the write operation is complete
-   * @throws Will throw an error if changes are not provided or if there's an eTag conflict
    */
   async write (changes: StoreItem): Promise<void> {
     if (!changes || changes.length === 0) {
@@ -124,13 +127,15 @@ export class MemoryStorage implements Storage {
   /**
    * Saves an item to memory with a new eTag.
    *
+   * @param key The key of the item to save
+   * @param item The item to save
+   *
+   * @remarks
    * This private method handles the details of:
    * - Creating a clone of the item to prevent modification of the original
    * - Generating a new eTag for optimistic concurrency control
    * - Converting the item to a JSON string for storage
    *
-   * @param key The key of the item to save
-   * @param item The item to save
    * @private
    */
   private saveItem (key: string, item: unknown): void {

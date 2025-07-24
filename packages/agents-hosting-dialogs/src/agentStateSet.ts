@@ -6,29 +6,31 @@ import { AgentState, TurnContext } from '@microsoft/agents-hosting'
 
 /**
  * A collection of `AgentState` plugins that should be loaded or saved in parallel as a single unit.
+ *
+ * @remarks
  * See `AutoSaveStateMiddleware` for an implementation of this class.
  */
 export class AgentStateSet {
   /**
-     * Array of the sets `AgentState` plugins.
-     */
+    * Array of the sets `AgentState` plugins.
+    */
   readonly agentStates: AgentState[] = []
 
   /**
-     * Creates a new AgentStateSet instance.
-     *
-     * @param agentStates One or more AgentState plugins to register.
-     */
+    * Creates a new AgentStateSet instance.
+    *
+    * @param agentStates One or more AgentState plugins to register.
+    */
   constructor (...agentStates: AgentState[]) {
     AgentStateSet.prototype.add.apply(this, agentStates)
   }
 
   /**
-     * Registers one or more `AgentState` plugins with the set.
-     *
-     * @param agentStates One or more AgentState plugins to register.
-     * @returns The updated AgentStateSet.
-     */
+    * Registers one or more `AgentState` plugins with the set.
+    *
+    * @param agentStates One or more AgentState plugins to register.
+    * @returns The updated AgentStateSet.
+    */
   add (...agentStates: AgentState[]): this {
     agentStates.forEach((agentstate: AgentState) => {
       if (typeof agentstate.load === 'function' && typeof agentstate.saveChanges === 'function') {
@@ -42,14 +44,15 @@ export class AgentStateSet {
   }
 
   /**
-     * Calls the {@link AgentState.load | AgentState.load method} on all of the AgentState plugins in the set.
-     *
-     * @remarks
-     * This will trigger all of the plugins to read in their state in parallel.
-     *
-     * @param context Context for current turn of conversation with the user.
-     * @param force (Optional) If `true` the cache will be bypassed and the state will always be read in directly from storage. Defaults to `false`.
-     */
+    * Calls the {@link AgentState.load | AgentState.load method} on all of the AgentState plugins in the set.
+    *
+    * @param context Context for current turn of conversation with the user.
+    * @param force (Optional) If `true` the cache will be bypassed and the state will always be read in directly from storage. Defaults to `false`.
+    *
+    * @remarks
+    * This will trigger all of the plugins to read in their state in parallel.
+    *
+    */
   async loadAll (context: TurnContext, force = false): Promise<void> {
     const promises: Promise<any>[] = this.agentStates.map((agentstate: AgentState) => agentstate.load(context, force))
 
@@ -57,14 +60,14 @@ export class AgentStateSet {
   }
 
   /**
-     * Calls {@link AgentState.saveChanges | AgentState.saveChanges method} on all of the AgentState plugins in the set.
-     *
-     * @remarks
-     * This will trigger all of the plugins to write out their state in parallel.
-     *
-     * @param context Context for current turn of conversation with the user.
-     * @param force (Optional) if `true` the state will always be written out regardless of its change state. Defaults to `false`.
-     */
+    * Calls {@link AgentState.saveChanges | AgentState.saveChanges method} on all of the AgentState plugins in the set.
+    *
+    * @param context Context for current turn of conversation with the user.
+    * @param force (Optional) if `true` the state will always be written out regardless of its change state. Defaults to `false`.
+    *
+    * @remarks
+    * This will trigger all of the plugins to write out their state in parallel.
+    */
   async saveAllChanges (context: TurnContext, force = false): Promise<void> {
     const promises: Promise<void>[] = this.agentStates.map((agentstate: AgentState) =>
       agentstate.saveChanges(context, force)

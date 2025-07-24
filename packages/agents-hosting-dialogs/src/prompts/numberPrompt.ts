@@ -18,6 +18,7 @@ Object.values(locales).forEach((locale) => Globalize.load(locale))
  *
  * @remarks
  * By default the prompt will return to the calling dialog a `number` representing the users input.
+ *
  */
 export class NumberPrompt extends Prompt<number> {
   /**

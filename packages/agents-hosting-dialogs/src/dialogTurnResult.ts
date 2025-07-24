@@ -26,6 +26,7 @@ export interface DialogTurnResult<T = any> {
      * the stack is now empty,
      * the last dialog on the stack completed normally,
      * and the last dialog returned a result to the dialog context.
+     *
      */
   result?: T;
 

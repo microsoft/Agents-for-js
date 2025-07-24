@@ -67,7 +67,7 @@ export interface AuthorizationHandlers extends Record<string, AuthHandler> {}
  * - Sign-in success/failure event handling
  * - Automatic configuration from environment variables
  *
- * Example usage:
+ * @example
  * ```typescript
  * const auth = new Authorization(storage, {
  *   'microsoft': {
@@ -81,6 +81,7 @@ export interface AuthorizationHandlers extends Record<string, AuthHandler> {}
  *   await context.sendActivity('Welcome! You are now signed in.');
  * });
  * ```
+ *
  */
 export class Authorization {
   /**
@@ -92,10 +93,6 @@ export class Authorization {
   /**
    * Creates a new instance of Authorization.
    *
-   * @param storage - The storage system to use for state management.
-   * @param authHandlers - Configuration for OAuth providers.
-   * @throws {Error} If storage is null/undefined or no auth handlers are provided.
-   *
    * @remarks
    * The constructor initializes all configured auth handlers and sets up OAuth flows.
    * It automatically configures handler properties from environment variables if not provided:
@@ -103,7 +100,7 @@ export class Authorization {
    * - Connection title: {handlerId}_connectionTitle
    * - Connection text: {handlerId}_connectionText
    *
-   * Example usage:
+   * @example
    * ```typescript
    * const auth = new Authorization(storage, {
    *   'microsoft': {
@@ -115,6 +112,11 @@ export class Authorization {
    *   }
    * });
    * ```
+   *
+   * @param storage - The storage system to use for state management.
+   * @param authHandlers - Configuration for OAuth providers.
+   * @throws {Error} If storage is null/undefined or no auth handlers are provided.
+   *
    */
   constructor (private storage: Storage, authHandlers: AuthorizationHandlers, userTokenClient: UserTokenClient) {
     if (storage === undefined || storage === null) {
@@ -145,19 +147,20 @@ export class Authorization {
    * @param authHandlerId - ID of the auth handler to use.
    * @returns A promise that resolves to the token response from the OAuth provider.
    * @throws {Error} If the auth handler is not configured.
-   * @public
    *
    * @remarks
    * This method retrieves an existing token for the specified auth handler.
    * The token may be cached and will be retrieved from the OAuth provider if needed.
    *
-   * Example usage:
+   * @example
    * ```typescript
    * const tokenResponse = await auth.getToken(context, 'microsoft');
    * if (tokenResponse.token) {
    *   console.log('User is authenticated');
    * }
    * ```
+   *
+   * @public
    */
   public async getToken (context: TurnContext, authHandlerId: string): Promise<TokenResponse> {
     logger.info('getToken from user token service for authHandlerId:', authHandlerId)
@@ -188,14 +191,13 @@ export class Authorization {
    * @param authHandlerId - ID of the auth handler to use.
    * @returns A promise that resolves to the exchanged token response.
    * @throws {Error} If the auth handler is not configured.
-   * @public
    *
    * @remarks
    * This method handles token exchange scenarios, particularly for on-behalf-of (OBO) flows.
    * It checks if the current token is exchangeable (e.g., has audience starting with 'api://')
    * and performs the appropriate token exchange using MSAL.
    *
-   * Example usage:
+   * @example
    * ```typescript
    * const exchangedToken = await auth.exchangeToken(
    *   context,
@@ -203,6 +205,8 @@ export class Authorization {
    *   'microsoft'
    * );
    * ```
+   *
+   * @public
    */
   public async exchangeToken (context: TurnContext, scopes: string[], authHandlerId: string): Promise<TokenResponse> {
     logger.info('exchangeToken from user token service for authHandlerId:', authHandlerId)
@@ -256,7 +260,6 @@ export class Authorization {
    * @param authHandlerId - ID of the auth handler to use.
    * @returns A promise that resolves to the token response from the OAuth provider.
    * @throws {Error} If the auth handler is not configured.
-   * @public
    *
    * @remarks
    * This method manages the complete OAuth authentication flow:
@@ -267,7 +270,7 @@ export class Authorization {
    * The method automatically manages the sign-in state and continuation activities,
    * allowing the conversation to resume after successful authentication.
    *
-   * Example usage:
+   * @example
    * ```typescript
    * const tokenResponse = await auth.beginOrContinueFlow(context, state, 'microsoft');
    * if (tokenResponse && tokenResponse.token) {
@@ -275,6 +278,8 @@ export class Authorization {
    *   await context.sendActivity('Authentication successful!');
    * }
    * ```
+   *
+   * @public
    */
   public async beginOrContinueFlow (context: TurnContext, state: TurnState, authHandlerId: string, secRoute: boolean = true) : Promise<TokenResponse> {
     const authHandler = this.getAuthHandlerOrThrow(authHandlerId)
@@ -329,14 +334,13 @@ export class Authorization {
    * @param authHandlerId - Optional ID of the auth handler to use for sign out. If not provided, signs out from all handlers.
    * @returns A promise that resolves when sign out is complete.
    * @throws {Error} If the specified auth handler is not configured.
-   * @public
    *
    * @remarks
    * This method clears the user's token and resets the authentication state.
    * If no specific authHandlerId is provided, it signs out from all configured handlers.
    * This ensures complete cleanup of authentication state across all providers.
    *
-   * Example usage:
+   * @example
    * ```typescript
    * // Sign out from specific handler
    * await auth.signOut(context, state, 'microsoft');
@@ -344,6 +348,8 @@ export class Authorization {
    * // Sign out from all handlers
    * await auth.signOut(context, state);
    * ```
+   *
+   * @public
    */
   async signOut (context: TurnContext, state: TurnState, authHandlerId?: string) : Promise<void> {
     logger.info('signOut for authHandlerId:', authHandlerId)
@@ -368,20 +374,21 @@ export class Authorization {
    * Sets a handler to be called when sign-in is successfully completed.
    *
    * @param handler - The handler function to call on successful sign-in.
-   * @public
    *
    * @remarks
    * This method allows you to register a callback that will be invoked whenever
    * a user successfully completes the authentication process. The handler receives
    * the turn context, state, and the ID of the auth handler that was used.
    *
-   * Example usage:
+   * @example
    * ```typescript
    * auth.onSignInSuccess(async (context, state, authHandlerId) => {
    *   await context.sendActivity(`Welcome! You signed in using ${authHandlerId}.`);
    *   // Perform any post-authentication setup
    * });
    * ```
+   *
+   * @public
    */
   public onSignInSuccess (handler: (context: TurnContext, state: TurnState, authHandlerId?: string) => Promise<void>) {
     this._signInSuccessHandler = handler
@@ -397,7 +404,6 @@ export class Authorization {
    * Sets a handler to be called when sign-in fails.
    *
    * @param handler - The handler function to call on sign-in failure.
-   * @public
    *
    * @remarks
    * This method allows you to register a callback that will be invoked whenever
@@ -410,13 +416,15 @@ export class Authorization {
    * - Network connectivity issues
    * - OAuth provider errors
    *
-   * Example usage:
+   * @example
    * ```typescript
    * auth.onSignInFailure(async (context, state, authHandlerId, errorMessage) => {
    *   await context.sendActivity(`Sign-in failed: ${errorMessage || 'Unknown error'}`);
    *   await context.sendActivity('Please try signing in again.');
    * });
    * ```
+   *
+   * @public
    */
   public onSignInFailure (handler: (context: TurnContext, state: TurnState, authHandlerId?: string, errorMessage?: string) => Promise<void>) {
     this._signInFailureHandler = handler

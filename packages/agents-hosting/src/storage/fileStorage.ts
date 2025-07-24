@@ -8,7 +8,7 @@ import fs from 'fs'
 import { Storage, StoreItem } from './storage'
 
 /**
- * @summary A file-based storage implementation that persists data to the local filesystem.
+ * A file-based storage implementation that persists data to the local filesystem.
  *
  * @remarks
  * FileStorage stores all data in a single JSON file named 'state.json' within a specified folder.
@@ -47,7 +47,6 @@ import { Storage, StoreItem } from './storage'
  * await storage.delete(['conversation456']);
  * ```
  *
-
  */
 export class FileStorage implements Storage {
   private _folder: string
@@ -57,6 +56,7 @@ export class FileStorage implements Storage {
    * Creates a new FileStorage instance that stores data in the specified folder.
    *
    * @param folder The absolute or relative path to the folder where the state.json file will be stored
+   * @throws May throw filesystem errors if the folder cannot be created or accessed
    *
    * @remarks
    * The constructor performs the following initialization steps:
@@ -64,7 +64,6 @@ export class FileStorage implements Storage {
    * 2. Creates an empty state.json file if it doesn't exist
    * 3. Loads existing data from state.json into memory for fast access
    *
-   * @throws May throw filesystem errors if the folder cannot be created or accessed
    */
   constructor (folder: string) {
     this._folder = folder
@@ -83,13 +82,13 @@ export class FileStorage implements Storage {
    *
    * @param keys Array of keys to read from storage
    * @returns Promise resolving to an object containing the requested items (keys that don't exist are omitted)
-   *
    * @throws ReferenceError if keys array is empty or undefined
    *
    * @remarks
    * This method reads from the in-memory cache that was loaded during construction,
    * making it very fast but potentially returning stale data if the file was
    * modified by external processes.
+   *
    */
   read (keys: string[]) : Promise<StoreItem> {
     return new Promise((resolve, reject) => {
@@ -119,8 +118,10 @@ export class FileStorage implements Storage {
    * to the state.json file. The file is written with pretty-printing (2-space indentation)
    * for better readability during development and debugging.
    *
-   * Note: This implementation does not support eTag-based optimistic concurrency control.
-   * Any eTag values in the changes object are ignored.
+   * > [!NOTE]
+   * > This implementation does not support eTag-based optimistic concurrency control.
+   * > Any eTag values in the changes object are ignored.
+   *
    */
   write (changes: StoreItem) : Promise<void> {
     const keys = Object.keys(changes)
@@ -143,6 +144,7 @@ export class FileStorage implements Storage {
    * This method removes the specified keys from both the in-memory cache
    * and writes the updated state to the state.json file. Keys that don't
    * exist in storage are silently ignored.
+   *
    */
   delete (keys: string[]) : Promise<void> {
     return new Promise((resolve, reject) => {

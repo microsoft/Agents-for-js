@@ -15,6 +15,7 @@ import { RecognizerResult, getTopScoringIntent } from './recognizerResult'
  * This interface defines the configuration properties that can be used to customize
  * the behavior and identification of a recognizer. Recognizers use this configuration
  * to set up their basic properties and operational parameters.
+ *
  */
 export interface RecognizerConfiguration {
   /**
@@ -24,6 +25,7 @@ export interface RecognizerConfiguration {
    * The id property allows you to distinguish between multiple recognizer instances
    * and can be useful for logging, debugging, and telemetry purposes. If not provided,
    * the recognizer will operate without a specific identifier.
+   *
    */
   id?: string;
 }
@@ -35,6 +37,7 @@ export interface RecognizerConfiguration {
  * Recognizers process user input, such as text or speech, and return structured data representing
  * the recognized intents, entities, and other relevant information. This class provides a foundation
  * for creating custom recognizers by defining common methods and properties.
+ *
  */
 export class Recognizer extends Configurable implements RecognizerConfiguration {
   /**

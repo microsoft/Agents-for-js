@@ -13,6 +13,8 @@ const logger = debug('agents:state')
 
 /**
  * Represents agent state that has been cached in the turn context.
+ *
+ * @remarks
  * Used internally to track state changes and avoid unnecessary storage operations.
  */
 export interface CachedAgentState {
@@ -28,6 +30,8 @@ export interface CachedAgentState {
 
 /**
  * Represents a custom key for storing state in a specific location.
+ *
+ * @remarks
  * Allows state to be persisted with channel and conversation identifiers
  * independent of the current context.
  */
@@ -44,7 +48,8 @@ export interface CustomKey {
 }
 
 /**
- * @summary Manages the state of an Agent across turns in a conversation.
+ * Manages the state of an Agent across turns in a conversation.
+ *
  * @remarks
  * AgentState provides functionality to persist and retrieve state data using
  * a storage provider. It handles caching state in the turn context for performance,
@@ -64,10 +69,12 @@ export class AgentState {
 
   /**
    * Creates a property accessor for the specified property.
-   * Property accessors provide typed access to properties within the state object.
    *
    * @param name The name of the property to access
    * @returns A property accessor for the specified property
+   *
+   * @remarks
+   * Property accessors provide typed access to properties within the state object.
    */
   createProperty<T = any>(name: string): AgentStatePropertyAccessor<T> {
     const prop: AgentStatePropertyAccessor<T> = new AgentStatePropertyAccessor<T>(this, name)
@@ -76,12 +83,14 @@ export class AgentState {
 
   /**
    * Loads the state from storage into the turn context.
-   * If state is already cached in the turn context and force is not set, the cached version will be used.
    *
    * @param context The turn context to load state into
    * @param force If true, forces a reload from storage even if state is cached
    * @param customKey Optional custom storage key to use instead of the default
    * @returns A promise that resolves to the loaded state object
+   *
+   * @remarks
+   * If state is already cached in the turn context and force is not set, the cached version will be used.
    */
   public async load (context: TurnContext, force = false, customKey?: CustomKey): Promise<any> {
     const cached: CachedAgentState = context.turnState.get(this.stateKey)
@@ -103,12 +112,14 @@ export class AgentState {
 
   /**
    * Saves the state to storage if it has changed since it was loaded.
-   * Change detection uses a hash of the state object to determine if saving is necessary.
    *
    * @param context The turn context containing the state to save
    * @param force If true, forces a save to storage even if no changes are detected
    * @param customKey Optional custom storage key to use instead of the default
    * @returns A promise that resolves when the save operation is complete
+   *
+   * @remarks
+   * Change detection uses a hash of the state object to determine if saving is necessary.
    */
   public async saveChanges (context: TurnContext, force = false, customKey?: CustomKey): Promise<void> {
     let cached: CachedAgentState = context.turnState.get(this.stateKey)
@@ -151,11 +162,14 @@ export class AgentState {
 
   /**
    * Clears the state by setting it to an empty object in the turn context.
-   * Note: This does not remove the state from storage, it only clears the in-memory representation.
-   * Call saveChanges() after this to persist the empty state to storage.
    *
    * @param context The turn context containing the state to clear
    * @returns A promise that resolves when the clear operation is complete
+   *
+   * @remarks
+   * This does not remove the state from storage, it only clears the in-memory representation.
+   * Call saveChanges() after this to persist the empty state to storage.
+   *
    */
   public async clear (context: TurnContext): Promise<void> {
     const emptyObjectToForceSave = { state: {}, hash: '' }
@@ -193,10 +207,12 @@ export class AgentState {
 
   /**
    * Calculates a hash for the specified state object to detect changes.
-   * The eTag property is excluded from the hash calculation.
    *
    * @param item The state object to calculate the hash for
    * @returns A string hash representing the state
+   *
+   * @remarks
+   * The eTag property is excluded from the hash calculation.
    * @private
    */
   private readonly calculateChangeHash = (item: StoreItem): string => {

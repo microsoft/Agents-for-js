@@ -11,6 +11,7 @@ import { Attachment, InputHints } from '@microsoft/agents-activity'
  *
  * @remarks
  * By default the prompt will return to the calling dialog an `Attachment[]`.
+ *
  */
 export class AttachmentPrompt extends Prompt<Attachment[]> {
   // eslint-disable-next-line @typescript-eslint/no-useless-constructor

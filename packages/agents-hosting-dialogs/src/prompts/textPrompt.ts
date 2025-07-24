@@ -13,6 +13,7 @@ import { InputHints } from '@microsoft/agents-activity'
  *
  * @remarks
  * By default the prompt will return to the calling dialog a `string` representing the users reply.
+ *
  */
 export class TextPrompt extends Prompt<string> {
   // eslint-disable-next-line @typescript-eslint/no-useless-constructor
@@ -72,10 +73,12 @@ export class TextPrompt extends Prompt<string> {
      * turn of conversation.
      * @param _event DialogEvent, the event being raised.
      * @returns Whether the event is handled by the current dialog and further processing should stop.
+     *
      * @remarks
      * This is a good place to perform interception of an event as returning `true` will prevent
      * any further bubbling of the event to the dialogs parents and will also prevent any child
      * dialogs from performing their default processing.
+     *
      */
   protected async onPreBubbleEvent (_dc: DialogContext, _event: DialogEvent): Promise<boolean> {
     return false

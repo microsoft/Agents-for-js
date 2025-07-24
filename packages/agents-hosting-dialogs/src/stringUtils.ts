@@ -26,12 +26,13 @@ export class StringUtils {
   /**
      * UniqueHash - create a unique hash from a string.
      *
-     * @remarks
-     * The source for this function was derived from the following article:
-     *
-     * https://werxltd.com/wp/2010/05/13/javascript-implementation-of-javas-string-hashcode-method/
      * @param text Text to hash.
      * @returns A string which is an unique hash.
+     *
+     * @remarks
+     * The source for this function was derived from the following article:
+     * https://werxltd.com/wp/2010/05/13/javascript-implementation-of-javas-string-hashcode-method/
+     *
      */
   static hash (text: string): string {
     const length = text.length

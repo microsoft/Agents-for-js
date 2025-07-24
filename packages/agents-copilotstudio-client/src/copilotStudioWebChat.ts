@@ -29,7 +29,8 @@ export interface CopilotStudioWebChatSettings {
 }
 
 /**
- * @summary Represents a connection interface for integrating Copilot Studio with WebChat.
+ * Represents a connection interface for integrating Copilot Studio with WebChat.
+ *
  * @remarks
  * This interface provides the necessary methods and observables to facilitate
  * bidirectional communication between a WebChat client and the Copilot Studio service.
@@ -87,7 +88,8 @@ export interface CopilotStudioWebChatConnection {
 }
 
 /**
- * @summary A utility class that provides WebChat integration capabilities for Copilot Studio services.
+ * A utility class that provides WebChat integration capabilities for Copilot Studio services.
+ *
  * @remarks
  * This class acts as a bridge between Microsoft Bot Framework WebChat and Copilot Studio,
  * enabling seamless communication through a DirectLine-compatible interface.
@@ -150,22 +152,7 @@ export class CopilotStudioWebChat {
   /**
    * Creates a DirectLine-compatible connection for integrating Copilot Studio with WebChat.
    *
-   * This method establishes a real-time communication channel between WebChat and the
-   * Copilot Studio service. The returned connection object implements the DirectLine
-   * protocol, making it fully compatible with Microsoft Bot Framework WebChat components.
-   *
-   * ## Connection Lifecycle:
-   * 1. **Initialization**: Creates observables for connection status and activity streaming
-   * 2. **Conversation Start**: Automatically initiates conversation when first activity is posted
-   * 3. **Message Flow**: Handles bidirectional message exchange with proper sequencing
-   * 4. **Cleanup**: Provides graceful connection termination
-   *
-   * ## Message Processing:
-   * - User messages are validated and sent to Copilot Studio
-   * - Agent responses are received and formatted for WebChat
-   * - All activities include timestamps and sequence IDs for proper ordering
-   * - Optional typing indicators provide visual feedback during processing
-   *
+
    * @param client - A configured CopilotStudioClient instance that handles the underlying
    *                 communication with the Copilot Studio service. This client should be
    *                 properly authenticated and configured with the target bot details.
@@ -181,6 +168,23 @@ export class CopilotStudioWebChat {
    *
    * @throws Error if the provided client is not properly configured or if there are
    *         issues establishing the initial connection to the Copilot Studio service.
+   *
+   * @remarks
+   * This method establishes a real-time communication channel between WebChat and the
+   * Copilot Studio service. The returned connection object implements the DirectLine
+   * protocol, making it fully compatible with Microsoft Bot Framework WebChat components.
+   *
+   * ## Connection Lifecycle:
+   * 1. **Initialization**: Creates observables for connection status and activity streaming
+   * 2. **Conversation Start**: Automatically initiates conversation when first activity is posted
+   * 3. **Message Flow**: Handles bidirectional message exchange with proper sequencing
+   * 4. **Cleanup**: Provides graceful connection termination
+   *
+   * ## Message Processing:
+   * - User messages are validated and sent to Copilot Studio
+   * - Agent responses are received and formatted for WebChat
+   * - All activities include timestamps and sequence IDs for proper ordering
+   * - Optional typing indicators provide visual feedback during processing
    *
    * @example
    * ```typescript
@@ -297,18 +301,19 @@ export class CopilotStudioWebChat {
 /**
  * Creates an RxJS Observable that wraps an asynchronous function execution.
  *
+ * @typeParam T - The type of value that the observable will emit
+ * @param fn - An asynchronous function that receives a Subscriber and performs
+ *             the desired async operation. The function should call subscriber.next()
+ *             with results and subscriber.complete() when finished.
+ * @returns A new Observable that executes the provided function and emits its results
+ *
+ * @remarks
  * This utility function provides a clean way to convert async/await patterns
  * into Observable streams, enabling integration with reactive programming patterns
  * used throughout the WebChat connection implementation.
  *
  * The created Observable handles promise resolution and rejection automatically,
  * converting them to appropriate next/error signals for subscribers.
- *
- * @typeParam T - The type of value that the observable will emit
- * @param fn - An asynchronous function that receives a Subscriber and performs
- *             the desired async operation. The function should call subscriber.next()
- *             with results and subscriber.complete() when finished.
- * @returns A new Observable that executes the provided function and emits its results
  *
  * @example
  * ```typescript

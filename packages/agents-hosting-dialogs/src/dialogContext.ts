@@ -80,8 +80,10 @@ export class DialogContext {
      * @param dialogs The `DialogSet` for which to create the dialog context.
      * @param contextOrDialogContext The `TurnContext` object for the current turn.
      * @param state The state object to use to read and write `DialogState` to storage.
+     *
      * @remarks
      * Passing in a `DialogContext` instance will clone the dialog context.
+     *
      */
   constructor (dialogs: DialogSet, contextOrDialogContext: TurnContext, state: DialogState)
 
@@ -91,8 +93,10 @@ export class DialogContext {
      * @param dialogs The `DialogSet` for which to create the dialog context.
      * @param contextOrDialogContext The `DialogContext` object for the current turn.
      * @param state The state object to use to read and write `DialogState` to storage.
+     *
      * @remarks
      * Passing in a `DialogContext` instance will clone the dialog context.
+     *
      */
   constructor (dialogs: DialogSet, contextOrDialogContext: DialogContext, state: DialogState)
 
@@ -102,7 +106,10 @@ export class DialogContext {
      * @param dialogs The `DialogSet` for which to create the dialog context.
      * @param contextOrDialogContext The `TurnContext` or `DialogContext` for the current turn.
      * @param state The state object to use to read and write `DialogState` to storage.
-     * @remarks Passing in a `DialogContext` instance will clone the dialog context.
+     *
+     * @remarks
+     * Passing in a `DialogContext` instance will clone the dialog context.
+     *
      */
   constructor (dialogs: DialogSet, contextOrDialogContext: TurnContext | DialogContext, state: DialogState) {
     this.dialogs = dialogs
@@ -147,12 +154,15 @@ export class DialogContext {
      * When it attempts to start a dialog, the dialog context searches for the {@link Dialog.id}
      * in its {@link DialogContext.dialogs}. If the dialog to start is not found
      * in this dialog context, it searches in its parent dialog context, and so on.
+     *
      */
   parent: DialogContext | undefined
 
   /**
-     * @returns Dialog context for child if the active dialog is a container.
-     */
+   * Gets the dialog context for the child if the active dialog is a container.
+   *
+   * @returns Dialog context for child if the active dialog is a container.
+   */
   get child (): DialogContext | undefined {
     const instance = this.activeDialog
     if (instance !== undefined) {
@@ -167,9 +177,13 @@ export class DialogContext {
   }
 
   /**
-     * @returns The state information for the dialog on the top of the dialog stack, or `undefined` if
-     * the stack is empty.
-     */
+   * Gets the state information for the dialog on the top of the dialog stack, or `undefined` if
+   * the stack is empty.
+   *
+   * @returns The state information for the dialog on the top of the dialog stack, or `undefined` if
+   * the stack is empty.
+   *
+   */
   get activeDialog (): DialogInstance | undefined {
     return this.stack.length > 0 ? this.stack[this.stack.length - 1] : undefined
   }
@@ -185,8 +199,10 @@ export class DialogContext {
   services: TurnContextStateCollection = new TurnContextStateCollection()
 
   /**
-     * @returns The current dialog manager instance.
-     */
+   * Gets the current dialog manager instance.
+   *
+   * @returns The current dialog manager instance.
+   */
   get dialogManager (): DialogManager {
     return this.context.turnState.get(DialogTurnStateConstants.dialogManager)
   }
@@ -219,6 +235,7 @@ export class DialogContext {
      * @param dialogId ID of the dialog to start.
      * @param options Optional. Arguments to pass into the dialog when it starts.
      * @returns {Promise<DialogTurnResult>} a promise resolving to the dialog turn result.
+     *
      * @remarks
      * If there's already an active dialog on the stack, that dialog will be paused until
      * it is again the top dialog on the stack.
@@ -258,6 +275,7 @@ export class DialogContext {
      * @param eventName Optional. Name of a custom event to raise as dialogs are cancelled. This defaults to DialogEvents.cancelDialog.
      * @param eventValue Optional. Value to pass along with custom cancellation event.
      * @returns {Promise<DialogTurnResult>} a promise resolving to the dialog turn result.
+     *
      * @remarks
      * This calls each dialog's {@link Dialog.endDialog | endDialog method} before
      * removing the dialog from the stack.
@@ -305,6 +323,7 @@ export class DialogContext {
      *
      * @param dialogId ID of the dialog to search for.
      * @returns The dialog for the provided ID.
+     *
      * @remarks
      * If the dialog to start is not found in the {@link DialogSet} associated
      * with this dialog context, it attempts to find the dialog in its parent dialog context.
@@ -345,6 +364,7 @@ export class DialogContext {
      * the object with which to format the prompt dialog.
      * @param choices Optional. Array of choices for the user to choose from,
      * for use with a {@link ChoicePrompt}.
+     *
      * @remarks
      * This helper method formats the object to use as the `options` parameter, and then calls
      * {@link DialogContext.beginDialog} to start the specified prompt dialog.
@@ -365,7 +385,9 @@ export class DialogContext {
      * @param choices Optional. Array of choices for the user to choose from,
      * for use with a {@link ChoicePrompt}.
      * @returns {Promise<DialogTurnResult>} a promise resolving to the dialog turn result.
-     * @remarks This helper method formats the object to use as the `options` parameter, and then calls
+     *
+     * @remarks
+     * This helper method formats the object to use as the `options` parameter, and then calls
      * {@link DialogContext.beginDialog} to start the specified prompt dialog.
      *
      */
@@ -396,6 +418,7 @@ export class DialogContext {
      * {@link DialogContext.continueDialog} method.
      *
      * @returns {Promise<DialogTurnResult>} a promise resolving to the dialog turn result.
+     *
      * @remarks
      * After the call completes, you can check the turn context's {@link @microsoft/agents-hosting.TurnContext.responded | TurnContext.responded}
      * property to determine if the dialog sent a reply to the user.
@@ -443,6 +466,7 @@ export class DialogContext {
      *      on the stack, or if this was the last dialog on the stack, a parent dialog context or
      *      the agent's turn handler.
      * @returns {Promise<DialogTurnResult>} a promise resolving to the dialog turn result.
+     *
      * @remarks
      * The _parent_ dialog is the next dialog on the dialog stack, if there is one. This method
      * calls the parent's {@link Dialog.resumeDialog} method,
@@ -488,6 +512,7 @@ export class DialogContext {
      * @param dialogId ID of the dialog to start.
      * @param options Optional. Arguments to pass into the new dialog when it starts.
      * @returns {Promise<DialogTurnResult>} a promise resolving to the dialog turn result.
+     *
      * @remarks
      * This is particularly useful for creating a loop or redirecting to another dialog.
      *
@@ -538,13 +563,14 @@ export class DialogContext {
   /**
      * Searches for a dialog with a given ID.
      *
-     * @remarks
-     * Emits a named event for the current dialog, or someone who started it, to handle.
      * @param name Name of the event to raise.
      * @param value Optional. Value to send along with the event.
      * @param bubble Optional. Flag to control whether the event should be bubbled to its parent if not handled locally. Defaults to a value of `true`.
      * @param fromLeaf Optional. Whether the event is emitted from a leaf node.
      * @returns `true` if the event was handled.
+     *
+     * @remarks
+     * Emits a named event for the current dialog, or someone who started it, to handle.
      */
   async emitEvent (name: string, value?: any, bubble = true, fromLeaf = false): Promise<boolean> {
     // Initialize event
