@@ -43,18 +43,17 @@
     "@types/sinon": "^17.0.4",
     "@types/uuid": "^10.0.0",
     "esbuild": "^0.25.4",
-    "eslint": "^9.31.0",
+    "eslint": "^9.32.0",
     "global": "4.4.0",
     "neostandard": "^0.12.2",
     "nerdbank-gitversioning": "^3.7.115",
     "npm-run-all": "^4.1.5",
     "sinon": "^21.0.0",
     "tsx": "^4.20.3",
-    "typedoc": "^0.28.4",
+    "typedoc": "^0.28.8",
     "typescript": "^5.8.3"
   },
   "engines": {
     "node": ">=20.0.0"
-  },
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
+  }
 }
