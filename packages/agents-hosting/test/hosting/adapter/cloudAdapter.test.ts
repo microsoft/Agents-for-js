@@ -155,7 +155,7 @@ describe('CloudAdapter', function () {
       sinon.assert.calledOnceWithExactly((res as any).status, 200)
       sinon.assert.notCalled((res as any).setHeader)
       sinon.assert.notCalled((res as any).send)
-      sinon.assert.calledOnce(createConnectorClientSpy)
+      sinon.assert.calledTwice(createConnectorClientSpy)
 
       stubfromObject.restore()
     })
