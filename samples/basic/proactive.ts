@@ -14,10 +14,20 @@ app.onMessage('/diag', async (context: TurnContext) => {
 app.onActivity('message', async (context: TurnContext, state: TurnState) => {
   let counter: number = state.getValue('conversation.counter') || 0
   await context.sendActivity(`[${counter++}]You said: ${context.activity.text}`)
-  state.setValue('conversation.counter', counter)
+  const channelId = context.activity.channelId
+  let proactiveUrl = ''
+  switch (channelId) {
+    case 'webchat':
+      proactiveUrl = `http://localhost:3978/api/push-webchat?cid=${context.activity.conversation?.id}&rid=${context.activity.recipient?.id}`
+      break
+    case 'msteams':
+      proactiveUrl = `http://localhost:3978/api/push-teams?uid=${context.activity.from?.aadObjectId}`
+      break
+  }
   await context.sendActivity(`Welcome to proactive sample, send a GET request to  
-        [Conversation Id: ${context.activity.conversation?.id.substring(0, 10)}..](http://localhost:3978/api/push?cid=${context.activity.conversation?.id}&aid=${context.activity.recipient?.id}&chid=${context.activity.channelId}) 
-        to see the proactive message feature in action.`)
+    [${proactiveUrl}](${proactiveUrl}) 
+    to see the proactive message feature in action.`)
+  state.setValue('conversation.counter', counter)
 })
 
 const startServer = (agent: AgentApplication<TurnState<any, any>>, authConfiguration?: AuthConfiguration) => {
@@ -32,42 +42,20 @@ const startServer = (agent: AgentApplication<TurnState<any, any>>, authConfigura
   const server = express()
   server.use(express.json())
 
-  server.get('/api/proactive', async (req: Request, res: Response) => {
-    const conversationId = req.query.cid as string
-    if (!conversationId) {
-      res.status(400).send('Missing conversationId query parameter')
-      return
-    }
-    const conversationReference: ConversationReference = {
-      agent: {},
-      conversation: {
-        id: conversationId
-      },
-      channelId: 'msteams',
-      serviceUrl: `https://smba.trafficmanager.net/amer/${authConfig.tenantId}/`
-    }
-    const msg = 'This is a proactive message sent from the server. timestamp' + Date.now()
-    await adapter.continueConversation(conversationReference, async (context) => {
-      await context.sendActivity(msg)
-    })
-    res.status(200).send(msg)
-  })
-
-  server.get('/api/push', async (req: Request, res: Response) => {
-    const agentId = req.query.aid as string
-    const channelId = req.query.chid as string || 'webchat'
-    const msg = 'This is a proactive message sent from the server. timestamp' + Date.now()
-    const activity = Activity.fromObject({ type: 'message', text: msg, channelId, recipient: { id: agentId } })
-    const serviceUrl = channelId === 'webchat' ? 'https://webchat.botframework.com/' : `https://smba.trafficmanager.net/amer/${authConfig.tenantId}/`
-
+  server.get('/api/push-teams', async (req: Request, res: Response) => {
+    const uid = req.query.uid as string
+    const msg = 'This is a proactive message sent from the server. timestamp ' + Date.now()
+    const channelId = 'msteams'
+    const serviceUrl = `https://smba.trafficmanager.net/amer/${authConfig.tenantId}/`
+    const activity = Activity.fromObject({ type: 'message', text: msg, channelId, recipient: { id: ' ' }, serviceUrl })
     await adapter.createConversationAsync(authConfig.clientId, channelId, serviceUrl, 'https://api.botframework.com', {
       agent: {
-        id: agentId,
-        name: 'ridobot'
+        id: ' ',
+        name: ''
       },
-      channelData: { userType: 'bot' },
+      channelData: { },
       isGroup: false,
-      members: [{ name: 'rido', id: '330e28be-23d7-4c85-8cec-cd3a30dcd01e' }],
+      members: [{ name: '', id: uid }],
       tenantId: authConfig.tenantId,
       activity
     },
@@ -77,27 +65,28 @@ const startServer = (agent: AgentApplication<TurnState<any, any>>, authConfigura
         await context.sendActivity(activity)
       })
     })
+    res.status(200).send(msg)
+  })
 
-    // const conversationReference: ConversationReference = {
-    //   agent: {
-    //     id: agentId,
-    //     name: ''
-    //   },
-    //   user: {
-    //     id: '330e28be-23d7-4c85-8cec-cd3a30dcd01e',
-    //     name: ''
-    //   },
-    //   conversation: {
-    //     id: conversationId
-    //   },
-    //   channelId,
-    //   serviceUrl
-    // }
-    // console.log('Conversation Reference:', conversationReference)
-    // const msg = 'This is a proactive message sent from the server. timestamp' + Date.now()
-    // await adapter.continueConversation(conversationReference, async (context) => {
-    //   await context.sendActivity(msg)
-    // })
+  server.get('/api/push-webchat', async (req: Request, res: Response) => {
+    const conversationId = req.query.cid as string
+    const recipientId = req.query.rid as string
+    if (!conversationId) {
+      res.status(400).send('Missing conversationId query parameter')
+      return
+    }
+    const conversationReference: ConversationReference = {
+      agent: { id: recipientId },
+      conversation: {
+        id: conversationId
+      },
+      channelId: 'webchat',
+      serviceUrl: 'https://webchat.botframework.com/'
+    }
+    const msg = 'This is a proactive message sent from the server. timestamp ' + Date.now()
+    await adapter.continueConversation(conversationReference, async (context) => {
+      await context.sendActivity(msg)
+    })
     res.status(200).send(msg)
   })
 
