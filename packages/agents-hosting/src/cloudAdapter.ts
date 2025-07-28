@@ -165,10 +165,7 @@ export class CloudAdapter extends BaseAdapter {
           throw new Error('Invalid activity object')
         }
 
-        if (!this.connectorClient) {
-          this.connectorClient = await this.createConnectorClient(activity.serviceUrl, 'https://api.botframework.com')
-          this.setConnectorClient(context)
-        }
+        this.connectorClient = await this.createConnectorClient(activity.serviceUrl, 'https://api.botframework.com')
 
         if (activity.replyToId) {
           response = await this.connectorClient.replyToActivity(activity.conversation.id, activity.replyToId, activity)
