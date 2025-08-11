@@ -80,4 +80,4 @@ export class OAuthFlowHandler extends ActivityHandler {
     await super.run(context)
   }
 }
-startServer(new OAuthFlowHandler(new FileStorage('__state')))
+startServer(new OAuthFlowHandler(new FileStorage('../__oauth_state')))
