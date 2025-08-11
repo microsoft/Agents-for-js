@@ -68,7 +68,7 @@ export interface CopilotStudioWebChatConnection {
    * The method validates that the activity contains meaningful content and handles
    * the complete message flow including optional typing indicators.
    *
-   * @param activity - The user activity to send. Must contain a non-empty text field.
+   * @param activity - The user activity to send.
    * @returns An observable that emits the unique activity ID upon successful posting.
    * @throws Error if the activity text is empty or if the connection is not properly initialized.
    */
@@ -254,8 +254,8 @@ export class CopilotStudioWebChat {
       postActivity (activity: Activity) {
         logger.info('--> Preparing to send activity to Copilot Studio ...')
 
-        if (!activity.text?.trim()) {
-          throw new Error('Activity text cannot be empty.')
+        if (!activity) {
+          throw new Error('Activity cannot be null.')
         }
 
         if (!activitySubscriber) {
@@ -271,7 +271,8 @@ export class CopilotStudioWebChat {
             notifyActivity({ ...activity, id })
             notifyTyping()
 
-            const activities = await client.askQuestionAsync(activity.text!)
+            const activities = await client.sendActivity(activity)
+
             for (const responseActivity of activities) {
               notifyActivity(responseActivity)
             }
