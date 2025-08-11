@@ -191,6 +191,16 @@ export class CopilotStudioClient {
     }
     const activity = Activity.fromObject(activityObj)
 
+    return this.sendActivity(activity)
+  }
+
+  /**
+   * Sends an activity to the Copilot Studio service and retrieves the response activities.
+   * @param activity The activity to send.
+   * @param conversationId The ID of the conversation. Defaults to the current conversation ID.
+   * @returns A promise that resolves to an array of activities containing the responses.
+   */
+  public async sendActivity (activity: Activity, conversationId: string = this.conversationId) {
     const localConversationId = activity.conversation?.id ?? conversationId
     const uriExecute = getCopilotStudioConnectionUrl(this.settings, localConversationId)
     const qbody: ExecuteTurnRequest = new ExecuteTurnRequest(activity)
@@ -206,7 +216,7 @@ export class CopilotStudioClient {
       responseType: 'stream',
       adapter: 'fetch'
     }
-    logger.info(`Asking question: ${question} ...`)
+    logger.info('Sending activity...', activity)
     const values = await this.postRequestAsync(config)
     logger.info(`Received ${values.length} activities.`, values)
     return values
