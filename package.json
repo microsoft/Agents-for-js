@@ -27,7 +27,8 @@
     "build:clean": "npm run clean:dist && npm run build",
     "postbuild": "npm run build:browser",
     "test": "node --test  --test-reporter=spec  --import tsx  --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=test-report.xml './packages/*/test/**/*.test.ts'",
-    "docs": "typedoc --skipErrorChecking"
+    "docs": "typedoc --skipErrorChecking",
+    "play": "agentsplayground"
   },
   "license": "MIT",
   "workspaces": [
