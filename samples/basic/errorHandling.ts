@@ -37,6 +37,7 @@ agent.onActivity('message', async (context: TurnContext) => {
 agent.onError(async (context: TurnContext, error: Error) => {
   console.error(`An error occurred: ${error}`)
   await context.sendActivity('Sorry, something went wrong!')
+  await context.sendTraceActivity('Error handling trace', error.stack, error.message)
 })
 
 startServer(agent)

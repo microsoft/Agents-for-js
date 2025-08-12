@@ -13,6 +13,7 @@ class EmptyAgent extends AgentApplication<TurnState> {
     this.onConversationUpdate('membersAdded', this.help)
     this.onMessage('/help', this.help)
     this.onMessage('/diag', this.diag)
+    this.onActivity('typing', this.typing)
     this.onActivity('message', this.echo)
   }
 
@@ -32,6 +33,14 @@ class EmptyAgent extends AgentApplication<TurnState> {
     const md = (text: string) => '```\n' + text + '\n```'
     await ctx.sendActivity(md(JSON.stringify(state, null, 2)))
   }
+
+  typing = async (ctx: TurnContext) => {
+    console.log('Typing event triggered')
+    await ctx.sendActivity('User is typing...')
+  }
 }
 
-startServer(new EmptyAgent(new MemoryStorage()))
+const server = startServer(new EmptyAgent(new MemoryStorage()))
+server.get('/', (req, res) => {
+  res.send(`Empty Agent running on node sdk ${version}`)
+})
