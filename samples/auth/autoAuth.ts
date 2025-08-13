@@ -18,8 +18,8 @@ class OneProvider extends AgentApplication<TurnState> {
     })
     this.onConversationUpdate('membersAdded', this._status)
     this.authorization.onSignInSuccess(this._singinSuccess)
-    // this.authorization.onSignInFailure(this._singinFailure)
-    this.onMessage('/logout', this._logout)
+    this.authorization.onSignInFailure(this._singinFailure)
+    this.onMessage(/^\/logout/, this._logout)
     this.onMessage('/me', this._profileRequest, ['graph'])
     this.onMessage('/prs', this._pullRequests, ['github'])
     this.onMessage('/status', this._status, ['graph', 'github'])
@@ -37,8 +37,15 @@ class OneProvider extends AgentApplication<TurnState> {
   }
 
   private _logout = async (context: TurnContext, state: TurnState): Promise<void> => {
-    await this.authorization.signOut(context, state)
-    await context.sendActivity(MessageFactory.text('user logged out'))
+    // /logout <github|graph> (e.g. /logout github) to log out from a specific handler.
+    // /logout (e.g. /logout) to log out from all handlers.
+    const handlerId = context.activity.text?.split(' ', 2)?.[1]?.trim()
+    await this.authorization.signOut(context, state, handlerId)
+    if (handlerId) {
+      await context.sendActivity(MessageFactory.text(`User logged out from '${handlerId}' handler`))
+    } else {
+      await context.sendActivity(MessageFactory.text('User logged out from all handlers'))
+    }
   }
 
   private _invoke = async (context: TurnContext, state: TurnState): Promise<void> => {

@@ -12,7 +12,7 @@ import { AdaptiveCardsActions } from './adaptiveCards'
 import { AgentApplicationOptions } from './agentApplicationOptions'
 import { ConversationUpdateEvents } from './conversationUpdateEvents'
 import { AgentExtension } from './extensions'
-import { Authorization, SignInState } from './authorization'
+import { Authorization } from '../oauth'
 import { RouteHandler } from './routeHandler'
 import { RouteSelector } from './routeSelector'
 import { TurnEvents } from './turnEvents'
@@ -452,7 +452,7 @@ export class AgentApplication<TState extends TurnState> {
    * ```
    *
    */
-  public onSignInFailure (handler: (context: TurnContext, state: TurnState, id?: string) => Promise<void>): this {
+  public onSignInFailure (handler: (context: TurnContext, state: TurnState, id?: string, errorMessage?: string) => Promise<void>): this {
     if (this.options.authorization) {
       this.authorization.onSignInFailure(handler)
     } else {
@@ -589,6 +589,11 @@ export class AgentApplication<TState extends TurnState> {
   public async runInternal (turnContext: TurnContext): Promise<boolean> {
     logger.info('Running application with activity:', turnContext.activity.id!)
     return await this.startLongRunningCall(turnContext, async (context) => {
+      if (turnContext.activity.type === ActivityTypes.Typing) {
+        // Ignore typing activities
+        return false
+      }
+
       try {
         if (this._options.startTypingTimer) {
           this.startTypingTimer(context)
@@ -606,23 +611,14 @@ export class AgentApplication<TState extends TurnState> {
         const state = turnStateFactory()
         await state.load(context, storage)
 
-        const signInState : SignInState = state.getValue('user.__SIGNIN_STATE_')
-        logger.debug('SignIn State:', signInState)
-        if (this._authorization && signInState && signInState.completed === false) {
-          const flowState = await this._authorization.authHandlers[signInState.handlerId!]?.flow?.getFlowState(context)
-          logger.debug('Flow State:', flowState)
-          if (flowState && flowState.flowStarted === true) {
-            const tokenResponse = await this._authorization.beginOrContinueFlow(turnContext, state, signInState?.handlerId!)
-            const savedAct = Activity.fromObject(signInState?.continuationActivity!)
-            if (tokenResponse?.token && tokenResponse.token.length > 0) {
-              logger.info('resending continuation activity:', savedAct.text)
-              await this.run(new TurnContext(context.adapter, savedAct))
-              await state.deleteValue('user.__SIGNIN_STATE_')
-              return true
-            }
-          }
-
-          // return true
+        const flow = await this._authorization?.beginOrContinueFlow(turnContext, state)
+        if (flow?.handler?.status === 'success' && flow?.token?.trim()) {
+          const savedAct = Activity.fromObject(flow.handler.continuationActivity!)
+          logger.info(`Resending continuation activity for authHandlerId:'${flow.handler.id}'`, savedAct.text)
+          await this.run(new TurnContext(context.adapter, savedAct))
+          return true
+        } else if (flow?.handler?.status === 'failure') {
+          return false
         }
 
         if (!(await this.callEventHandlers(context, state, this._beforeTurn))) {
@@ -632,38 +628,38 @@ export class AgentApplication<TState extends TurnState> {
 
         if (Array.isArray(this._options.fileDownloaders) && this._options.fileDownloaders.length > 0) {
           const inputFiles = state.temp.inputFiles ?? []
-          for (let i = 0; i < this._options.fileDownloaders.length; i++) {
-            const files = await this._options.fileDownloaders[i].downloadFiles(context, state)
+          for (const file of this._options.fileDownloaders) {
+            const files = await file.downloadFiles(context, state)
             inputFiles.push(...files)
           }
           state.temp.inputFiles = inputFiles
         }
 
         for (const route of this._routes) {
-          if (await route.selector(context)) {
-            if (route.authHandlers === undefined || route.authHandlers.length === 0) {
-              await route.handler(context, state)
-            } else {
-              let signInComplete = false
-              for (const authHandlerId of route.authHandlers) {
-                logger.info(`Executing route handler for authHandlerId: ${authHandlerId}`)
-                const tokenResponse = await this._authorization?.beginOrContinueFlow(turnContext, state, authHandlerId)
-                signInComplete = (tokenResponse?.token !== undefined && tokenResponse?.token.length > 0)
-                if (!signInComplete) {
-                  break
-                }
-              }
-              if (signInComplete) {
-                await route.handler(context, state)
-              }
-            }
-
-            if (await this.callEventHandlers(context, state, this._afterTurn)) {
-              await state.save(context, storage)
-            }
-
-            return true
+          if (!(await route.selector(context))) {
+            continue
           }
+
+          let isSignedIn = false
+          const authHandlers = route.authHandlers ?? []
+          for (const authHandlerId of authHandlers) {
+            logger.info(`Executing route handler for authHandlerId: '${authHandlerId}'`)
+            const flow = await this._authorization?.beginOrContinueFlow(turnContext, state, authHandlerId)
+            isSignedIn = flow?.handler?.status === 'success'
+            if (!isSignedIn) {
+              break
+            }
+          }
+
+          if (isSignedIn || authHandlers.length === 0) {
+            await route.handler(context, state)
+          }
+
+          if (await this.callEventHandlers(context, state, this._afterTurn)) {
+            await state.save(context, storage)
+          }
+
+          return true
         }
 
         if (await this.callEventHandlers(context, state, this._afterTurn)) {

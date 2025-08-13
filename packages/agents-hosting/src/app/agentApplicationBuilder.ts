@@ -3,10 +3,10 @@
  * Licensed under the MIT License.
  */
 
-import { Storage } from '../storage'
+import type { AgentApplicationOptions } from './agentApplicationOptions'
+import type { Storage } from '../storage'
+import type { AuthorizationHandlers } from '../oauth'
 import { AgentApplication } from './agentApplication'
-import { AgentApplicationOptions } from './agentApplicationOptions'
-import { AuthorizationHandlers } from './authorization'
 import { TurnState } from './turnState'
 
 /**
