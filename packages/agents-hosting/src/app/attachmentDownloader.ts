@@ -69,6 +69,13 @@ export class AttachmentDownloader<TState extends TurnState = TurnState> implemen
     return files
   }
 
+  /**
+   * Downloads files from the attachments in the current turn context and stores them in state.
+   *
+   * @param context The turn context containing the activity with attachments.
+   * @param state The turn state to store the files in.
+   * @returns A promise that resolves when the downloaded files are stored.
+   */
   public async downloadAndStoreFiles (context: TurnContext, state: TState): Promise<void> {
     const files = await this.downloadFiles(context)
     state.setValue(this._stateKey, files)
