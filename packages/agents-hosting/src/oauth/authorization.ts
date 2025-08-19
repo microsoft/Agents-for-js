@@ -3,53 +3,27 @@
  * Licensed under the MIT License.
  */
 
-import { TurnContext } from '../turnContext'
 import { debug } from '@microsoft/agents-activity/logger'
-import { TurnState } from './turnState'
+
+import type { AuthorizationHandlers, SignInHandlerState } from './authorization.types'
+import type { TokenResponse } from './userTokenClient.types'
+import { SignInContext } from './signInContext'
+import { SignInStorage } from './signInStorage'
+import { OAuthFlow } from './oAuthFlow'
+import { UserTokenClient } from './userTokenClient'
+import { TurnState } from '../app/turnState'
+import { TurnContext } from '../turnContext'
 import { Storage } from '../storage'
-import { OAuthFlow, TokenResponse, UserTokenClient } from '../oauth'
-import { AuthConfiguration, loadAuthConfigFromEnv, MsalTokenProvider } from '../auth'
-import jwt, { JwtPayload } from 'jsonwebtoken'
-import { Activity } from '@microsoft/agents-activity'
 
 const logger = debug('agents:authorization')
 
 /**
- * Represents the state of a sign-in process.
- * @interface SignInState
+ * Represents the response from beginning or continuing an OAuth flow.
+ * @interface BeginOrContinueFlowResponse
  */
-export interface SignInState {
-  /** Optional activity to continue with after sign-in completion. */
-  continuationActivity?: Activity,
-  /** Identifier of the auth handler being used. */
-  handlerId?: string,
-  /** Whether the sign-in process has been completed. */
-  completed?: boolean
+export interface BeginOrContinueFlowResponse extends TokenResponse {
+  handler?: SignInHandlerState
 }
-
-/**
- * Interface defining an authorization handler for OAuth flows.
- * @interface AuthHandler
- */
-export interface AuthHandler {
-  /** Connection name for the auth provider. */
-  name?: string,
-  /** The OAuth flow implementation. */
-  flow?: OAuthFlow,
-  /** Title to display on auth cards/UI. */
-  title?: string,
-  /** Text to display on auth cards/UI. */
-  text?: string,
-
-  cnxPrefix?: string
-}
-
-/**
- * Options for configuring user authorization.
- * Contains settings to configure OAuth connections.
- * @interface AuthorizationHandlers
- */
-export interface AuthorizationHandlers extends Record<string, AuthHandler> {}
 
 /**
  * Class responsible for managing authorization and OAuth flows.
@@ -84,6 +58,23 @@ export interface AuthorizationHandlers extends Record<string, AuthHandler> {}
  *
  */
 export class Authorization {
+  /**
+   * Private handler for successful sign-in events.
+   * @private
+   */
+  private _signInSuccessHandler: Parameters<Authorization['onSignInSuccess']>[0] | null = null
+
+  /**
+   * Private handler for failed sign-in events.
+   * @private
+   */
+  private _signInFailureHandler: Parameters<Authorization['onSignInFailure']>[0] | null = null
+  /**
+   * Storage instance used for managing sign-in state.
+   * @private
+   */
+  private _signInStorage: SignInStorage
+
   /**
    * Dictionary of configured authentication handlers.
    * @public
@@ -138,6 +129,19 @@ export class Authorization {
       currentAuthHandler.flow = new OAuthFlow(this.storage, currentAuthHandler.name, userTokenClient, currentAuthHandler.title, currentAuthHandler.text)
     }
     logger.info('Authorization handlers configured with', Object.keys(this.authHandlers).length, 'handlers')
+    this._signInStorage = new SignInStorage(this.storage, this.authHandlers)
+  }
+
+  /**
+   * Creates a sign-in context for managing OAuth flows.
+   *
+   * @param context - The context object for the current turn.
+   * @param handlerId - Optional ID of the auth handler to use.
+   * @param isStartedFromRoute - Whether the flow is started from an AgentApplication route. Defaults to true.
+   * @private
+   */
+  private createSignInContext (context: TurnContext, handlerId?: string, isStartedFromRoute: boolean = true): SignInContext {
+    return new SignInContext(this._signInStorage, this.authHandlers, context, handlerId, isStartedFromRoute)
   }
 
   /**
@@ -146,7 +150,6 @@ export class Authorization {
    * @param context - The context object for the current turn.
    * @param authHandlerId - ID of the auth handler to use.
    * @returns A promise that resolves to the token response from the OAuth provider.
-   * @throws {Error} If the auth handler is not configured.
    *
    * @remarks
    * This method retrieves an existing token for the specified auth handler.
@@ -162,25 +165,9 @@ export class Authorization {
    *
    * @public
    */
-  public async getToken (context: TurnContext, authHandlerId: string): Promise<TokenResponse> {
-    logger.info('getToken from user token service for authHandlerId:', authHandlerId)
-    const authHandler = this.getAuthHandlerOrThrow(authHandlerId)
-    return await authHandler.flow?.getUserToken(context)!
-  }
-
-  /**
-   * Gets the auth handler by ID or throws an error if not found.
-   *
-   * @param authHandlerId - ID of the auth handler to retrieve.
-   * @returns The auth handler instance.
-   * @throws {Error} If the auth handler with the specified ID is not configured.
-   * @private
-   */
-  private getAuthHandlerOrThrow (authHandlerId: string): AuthHandler {
-    if (!Object.prototype.hasOwnProperty.call(this.authHandlers, authHandlerId)) {
-      throw new Error(`AuthHandler with ID ${authHandlerId} not configured`)
-    }
-    return this.authHandlers[authHandlerId]
+  public getToken (context: TurnContext, authHandlerId: string): Promise<TokenResponse> {
+    const signInContext = this.createSignInContext(context, authHandlerId)
+    return signInContext.getUserToken()
   }
 
   /**
@@ -190,7 +177,6 @@ export class Authorization {
    * @param scopes - Array of scopes to request for the new token.
    * @param authHandlerId - ID of the auth handler to use.
    * @returns A promise that resolves to the exchanged token response.
-   * @throws {Error} If the auth handler is not configured.
    *
    * @remarks
    * This method handles token exchange scenarios, particularly for on-behalf-of (OBO) flows.
@@ -208,48 +194,9 @@ export class Authorization {
    *
    * @public
    */
-  public async exchangeToken (context: TurnContext, scopes: string[], authHandlerId: string): Promise<TokenResponse> {
-    logger.info('exchangeToken from user token service for authHandlerId:', authHandlerId)
-    const authHandler = this.getAuthHandlerOrThrow(authHandlerId)
-    const tokenResponse = await authHandler.flow?.getUserToken(context)!
-    if (this.isExchangeable(tokenResponse.token)) {
-      return await this.handleObo(context, tokenResponse.token!, scopes, authHandler.cnxPrefix)
-    }
-    return tokenResponse
-  }
-
-  /**
-   * Checks if a token is exchangeable for an on-behalf-of flow.
-   *
-   * @param token - The token to check.
-   * @returns True if the token is exchangeable, false otherwise.
-   * @private
-   */
-  private isExchangeable (token: string | undefined): boolean {
-    if (!token || typeof token !== 'string') {
-      return false
-    }
-    const payload = jwt.decode(token) as JwtPayload
-    return payload?.aud?.indexOf('api://') === 0
-  }
-
-  /**
-   * Handles on-behalf-of token exchange using MSAL.
-   *
-   * @param context - The context object for the current turn.
-   * @param token - The token to exchange.
-   * @param scopes - Array of scopes to request for the new token.
-   * @returns A promise that resolves to the exchanged token response.
-   * @private
-   */
-  private async handleObo (context: TurnContext, token: string, scopes: string[], cnxPrefix?: string): Promise<TokenResponse> {
-    const msalTokenProvider = new MsalTokenProvider()
-    let authConfig: AuthConfiguration = context.adapter.authConfig
-    if (cnxPrefix) {
-      authConfig = loadAuthConfigFromEnv(cnxPrefix)
-    }
-    const newToken = await msalTokenProvider.acquireTokenOnBehalfOf(authConfig, scopes, token)
-    return { token: newToken }
+  public exchangeToken (context: TurnContext, scopes: string[], authHandlerId: string): Promise<TokenResponse> {
+    const signInContext = this.createSignInContext(context, authHandlerId)
+    return signInContext.exchangeToken(scopes)
   }
 
   /**
@@ -258,8 +205,8 @@ export class Authorization {
    * @param context - The context object for the current turn.
    * @param state - The state object for the current turn.
    * @param authHandlerId - ID of the auth handler to use.
+   * @param isStartedFromRoute - Whether the flow is started from an AgentApplication route. Defaults to true.
    * @returns A promise that resolves to the token response from the OAuth provider.
-   * @throws {Error} If the auth handler is not configured.
    *
    * @remarks
    * This method manages the complete OAuth authentication flow:
@@ -281,49 +228,13 @@ export class Authorization {
    *
    * @public
    */
-  public async beginOrContinueFlow (context: TurnContext, state: TurnState, authHandlerId: string, secRoute: boolean = true) : Promise<TokenResponse> {
-    const authHandler = this.getAuthHandlerOrThrow(authHandlerId)
-    logger.info('beginOrContinueFlow for authHandlerId:', authHandlerId)
-    const signInState: SignInState | undefined = state.getValue('user.__SIGNIN_STATE_') || { continuationActivity: undefined, handlerId: undefined, completed: false }
-    const flow = authHandler.flow!
-    let tokenResponse: TokenResponse | undefined
-    tokenResponse = await authHandler.flow?.getUserToken(context)
+  public async beginOrContinueFlow (context: TurnContext, state: TurnState, authHandlerId?: string, isStartedFromRoute: boolean = true) : Promise<BeginOrContinueFlowResponse> {
+    const signInContext = this.createSignInContext(context, authHandlerId, isStartedFromRoute)
+    signInContext.onSuccess(() => this._signInSuccessHandler?.(context, state, signInContext.handler.id))
+    signInContext.onFailure((err) => this._signInFailureHandler?.(context, state, signInContext.handler.id, err))
 
-    if (tokenResponse?.token && tokenResponse.token.length > 0) {
-      delete authHandler.flow?.state.eTag
-      authHandler.flow!.state.flowStarted = false
-      await authHandler.flow?.setFlowState(context, authHandler.flow.state)
-      if (secRoute) {
-        return tokenResponse!
-      }
-    }
-
-    if (flow.state === null || flow.state?.flowStarted === false || flow.state?.flowStarted === undefined) {
-      tokenResponse = await flow.beginFlow(context)
-      if (secRoute && tokenResponse?.token === undefined) {
-        signInState!.continuationActivity = context.activity
-        signInState!.handlerId = authHandlerId
-        state.setValue('user.__SIGNIN_STATE_', signInState)
-      }
-    } else {
-      tokenResponse = await flow.continueFlow(context)
-      if (tokenResponse && tokenResponse.token) {
-        if (this._signInSuccessHandler) {
-          await this._signInSuccessHandler(context, state, authHandlerId)
-        }
-        if (secRoute) {
-          state.deleteValue('user.__SIGNIN_STATE_')
-        }
-      } else {
-        logger.warn('Failed to complete OAuth flow, no token received')
-        if (this._signInFailureHandler) {
-          await this._signInFailureHandler(context, state, authHandlerId, 'Failed to complete the OAuth flow')
-        }
-        // signInState!.completed = false
-        // state.setValue('user.__SIGNIN_STATE_', signInState)
-      }
-    }
-    return tokenResponse!
+    const tokenResponse = await signInContext.getToken()
+    return { token: tokenResponse?.token, handler: signInContext.handler }
   }
 
   /**
@@ -333,7 +244,6 @@ export class Authorization {
    * @param state - The state object for the current turn.
    * @param authHandlerId - Optional ID of the auth handler to use for sign out. If not provided, signs out from all handlers.
    * @returns A promise that resolves when sign out is complete.
-   * @throws {Error} If the specified auth handler is not configured.
    *
    * @remarks
    * This method clears the user's token and resets the authentication state.
@@ -352,23 +262,16 @@ export class Authorization {
    * @public
    */
   async signOut (context: TurnContext, state: TurnState, authHandlerId?: string) : Promise<void> {
-    logger.info('signOut for authHandlerId:', authHandlerId)
-    if (authHandlerId === undefined) { // aw
-      for (const ah in this.authHandlers) {
-        const flow = this.authHandlers[ah].flow
-        await flow?.signOut(context)
-      }
-    } else {
-      const authHandler = this.getAuthHandlerOrThrow(authHandlerId)
-      await authHandler.flow?.signOut(context)
+    if (authHandlerId?.trim()) {
+      const signInContext = this.createSignInContext(context, authHandlerId)
+      return signInContext?.signOut()
+    }
+
+    for (const id in this.authHandlers) {
+      const signInContext = this.createSignInContext(context, id)
+      await signInContext?.signOut()
     }
   }
-
-  /**
-   * Private handler for successful sign-in events.
-   * @private
-   */
-  _signInSuccessHandler: ((context: TurnContext, state: TurnState, authHandlerId?: string) => Promise<void>) | null = null
 
   /**
    * Sets a handler to be called when sign-in is successfully completed.
@@ -390,15 +293,9 @@ export class Authorization {
    *
    * @public
    */
-  public onSignInSuccess (handler: (context: TurnContext, state: TurnState, authHandlerId?: string) => Promise<void>) {
+  public onSignInSuccess (handler: (context: TurnContext, state: TurnState, authHandlerId?: string) => Promise<void> | void) {
     this._signInSuccessHandler = handler
   }
-
-  /**
-   * Private handler for failed sign-in events.
-   * @private
-   */
-  _signInFailureHandler: ((context: TurnContext, state: TurnState, authHandlerId?: string, errorMessage?: string) => Promise<void>) | null = null
 
   /**
    * Sets a handler to be called when sign-in fails.
@@ -426,7 +323,7 @@ export class Authorization {
    *
    * @public
    */
-  public onSignInFailure (handler: (context: TurnContext, state: TurnState, authHandlerId?: string, errorMessage?: string) => Promise<void>) {
+  public onSignInFailure (handler: (context: TurnContext, state: TurnState, authHandlerId?: string, errorMessage?: string) => Promise<void> | void) {
     this._signInFailureHandler = handler
   }
 }

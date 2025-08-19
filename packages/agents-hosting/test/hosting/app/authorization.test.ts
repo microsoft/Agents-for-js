@@ -103,15 +103,15 @@ describe('AgentApplication', () => {
     }
   })
 
-  it('should throw when using a non-existent auth handler id', () => {
+  it('should throw when using a non-existent auth handler id', async () => {
     const app = new AgentApplication({
       storage: new MemoryStorage(),
       authorization: {
         testAuth: { name: 'test' }
       }
     })
-    assert.rejects(async () => {
-      await app.authorization.getToken({} as any, 'nonExistinghandler')
+    await assert.rejects(async () => {
+      await app.authorization.getToken({ activity: { channelId: 'test', from: { id: 'user1' } } } as any, 'nonExistinghandler')
     }, { message: 'AuthHandler with ID nonExistinghandler not configured' })
   })
 })

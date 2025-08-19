@@ -3,14 +3,14 @@
  * Licensed under the MIT License.
  */
 
-import { CloudAdapter } from '../cloudAdapter'
-import { Storage } from '../storage'
-import { TranscriptLogger } from '../transcript'
-import { AdaptiveCardsOptions } from './adaptiveCards'
-import { InputFileDownloader } from './inputFileDownloader'
-import { AuthorizationHandlers } from './authorization'
+import type { AdaptiveCardsOptions } from './adaptiveCards'
+import type { InputFileDownloader } from './inputFileDownloader'
+import type { TranscriptLogger } from '../transcript'
+import type { AuthorizationHandlers } from '../oauth'
+import type { HeaderPropagationDefinition } from '../headerPropagation'
+import type { Storage } from '../storage'
 import { TurnState } from './turnState'
-import { HeaderPropagationDefinition } from '../headerPropagation'
+import { CloudAdapter } from '../cloudAdapter'
 
 /**
  * Configuration options for creating and initializing an Agent Application.

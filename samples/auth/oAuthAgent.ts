@@ -111,8 +111,8 @@ class OAuthAgent extends AgentApplication<TurnState> {
     const isMagicCode = context.activity.text?.match(/^\d{6}$/)
     if (isMagicCode) {
       for (const ah in this.authorization.authHandlers) {
-        const flow = this.authorization.authHandlers[ah].flow
-        if (flow?.state?.flowStarted) {
+        const flowState = await this.authorization.authHandlers[ah].flow?.getFlowState(context)
+        if (flowState?.flowStarted) {
           const tresp = await this.authorization.beginOrContinueFlow(context, state, ah, false)
           if (tresp && !tresp.token) {
             await context.sendActivity(MessageFactory.text('Failed to complete the flow ' + ah))
