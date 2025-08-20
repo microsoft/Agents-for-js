@@ -590,87 +590,36 @@ export class AgentApplication<TState extends TurnState> {
     logger.info('Running application with activity:', turnContext.activity.id!)
     return await this.startLongRunningCall(turnContext, async (context) => {
       try {
-        if (this._options.startTypingTimer) {
-          this.startTypingTimer(context)
-        }
-
-        if (this._options.removeRecipientMention && context.activity.type === ActivityTypes.Message) {
-          context.activity.removeRecipientMention()
-        }
-
-        if (this._options.normalizeMentions && context.activity.type === ActivityTypes.Message) {
-          context.activity.normalizeMentions()
-        }
+        await this.initializeTurn(context)
 
         const { storage, turnStateFactory } = this._options
         const state = turnStateFactory()
         await state.load(context, storage)
 
-        const signInState : SignInState = state.getValue('user.__SIGNIN_STATE_')
-        logger.debug('SignIn State:', signInState)
-        if (this._authorization && signInState && signInState.completed === false) {
-          const flowState = await this._authorization.authHandlers[signInState.handlerId!]?.flow?.getFlowState(context)
-          logger.debug('Flow State:', flowState)
-          if (flowState && flowState.flowStarted === true) {
-            const tokenResponse = await this._authorization.beginOrContinueFlow(turnContext, state, signInState?.handlerId!)
-            const savedAct = Activity.fromObject(signInState?.continuationActivity!)
-            if (tokenResponse?.token && tokenResponse.token.length > 0) {
-              logger.info('resending continuation activity:', savedAct.text)
-              await this.run(new TurnContext(context.adapter, savedAct))
-              await state.deleteValue('user.__SIGNIN_STATE_')
-              return true
-            }
-          }
-
-          // return true
+        // Handle authentication flows
+        const authResult = await this.handleAuthentication(context, state)
+        if (authResult) {
+          return true
         }
 
+        // Execute before-turn handlers
         if (!(await this.callEventHandlers(context, state, this._beforeTurn))) {
           await state.save(context, storage)
           return false
         }
 
-        if (Array.isArray(this._options.fileDownloaders) && this._options.fileDownloaders.length > 0) {
-          const inputFiles = state.temp.inputFiles ?? []
-          for (let i = 0; i < this._options.fileDownloaders.length; i++) {
-            const files = await this._options.fileDownloaders[i].downloadFiles(context, state)
-            inputFiles.push(...files)
-          }
-          state.temp.inputFiles = inputFiles
-        }
+        // Process file downloads
+        await this.processFileDownloads(context, state)
 
-        for (const route of this._routes) {
-          if (await route.selector(context)) {
-            if (route.authHandlers === undefined || route.authHandlers.length === 0) {
-              await route.handler(context, state)
-            } else {
-              let signInComplete = false
-              for (const authHandlerId of route.authHandlers) {
-                logger.info(`Executing route handler for authHandlerId: ${authHandlerId}`)
-                const tokenResponse = await this._authorization?.beginOrContinueFlow(turnContext, state, authHandlerId)
-                signInComplete = (tokenResponse?.token !== undefined && tokenResponse?.token.length > 0)
-                if (!signInComplete) {
-                  break
-                }
-              }
-              if (signInComplete) {
-                await route.handler(context, state)
-              }
-            }
+        // Route to handlers
+        const routeHandled = await this.processRoutes(context, state)
 
-            if (await this.callEventHandlers(context, state, this._afterTurn)) {
-              await state.save(context, storage)
-            }
-
-            return true
-          }
-        }
-
+        // Execute after-turn handlers and save state
         if (await this.callEventHandlers(context, state, this._afterTurn)) {
           await state.save(context, storage)
         }
 
-        return false
+        return routeHandled
       } catch (err: any) {
         logger.error(err)
         throw err
@@ -678,6 +627,114 @@ export class AgentApplication<TState extends TurnState> {
         this.stopTypingTimer()
       }
     })
+  }
+
+  /**
+   * Initializes the turn by starting typing timer and processing mentions.
+   */
+  protected async initializeTurn (context: TurnContext): Promise<void> {
+    if (this._options.startTypingTimer) {
+      this.startTypingTimer(context)
+    }
+
+    if (context.activity.type === ActivityTypes.Message) {
+      if (this._options.removeRecipientMention) {
+        context.activity.removeRecipientMention()
+      }
+
+      if (this._options.normalizeMentions) {
+        context.activity.normalizeMentions()
+      }
+    }
+  }
+
+  /**
+   * Handles authentication flows if needed.
+   * @returns True if authentication handling completed the turn, false to continue processing.
+   */
+  protected async handleAuthentication (context: TurnContext, state: TState): Promise<boolean> {
+    if (!this._authorization) {
+      return false
+    }
+
+    const signInState: SignInState = state.getValue('user.__SIGNIN_STATE_')
+    logger.debug('SignIn State:', signInState)
+
+    if (signInState && signInState.completed === false) {
+      const flowState = await this._authorization.authHandlers[signInState.handlerId!]?.flow?.getFlowState(context)
+      logger.debug('Flow State:', flowState)
+
+      if (flowState && flowState.flowStarted === true) {
+        const tokenResponse = await this._authorization.beginOrContinueFlow(context, state, signInState?.handlerId!)
+        const savedAct = Activity.fromObject(signInState?.continuationActivity!)
+
+        if (tokenResponse?.token && tokenResponse.token.length > 0) {
+          logger.info('resending continuation activity:', savedAct.text)
+          await this.run(new TurnContext(context.adapter, savedAct))
+          await state.deleteValue('user.__SIGNIN_STATE_')
+          return true
+        }
+      }
+    }
+
+    return false
+  }
+
+  /**
+   * Processes file downloads if file downloaders are configured.
+   */
+  protected async processFileDownloads (context: TurnContext, state: TState): Promise<void> {
+    if (!Array.isArray(this._options.fileDownloaders) || this._options.fileDownloaders.length === 0) {
+      return
+    }
+
+    const inputFiles = state.temp.inputFiles ?? []
+    for (const downloader of this._options.fileDownloaders) {
+      const files = await downloader.downloadFiles(context, state)
+      inputFiles.push(...files)
+    }
+    state.temp.inputFiles = inputFiles
+  }
+
+  /**
+   * Processes route matching and handler execution.
+   * @returns True if a route was matched and handled, false otherwise.
+   */
+  protected async processRoutes (context: TurnContext, state: TState): Promise<boolean> {
+    for (const route of this._routes) {
+      if (await route.selector(context)) {
+        if (!route.authHandlers || route.authHandlers.length === 0) {
+          await route.handler(context, state)
+        } else {
+          const signInComplete = await this.processRouteAuthentication(context, state, route.authHandlers)
+          if (signInComplete) {
+            await route.handler(context, state)
+          }
+        }
+
+        return true
+      }
+    }
+
+    return false
+  }
+
+  /**
+   * Processes authentication for routes that require it.
+   * @returns True if all required authentications are complete, false otherwise.
+   */
+  protected async processRouteAuthentication (context: TurnContext, state: TState, authHandlers: string[]): Promise<boolean> {
+    for (const authHandlerId of authHandlers) {
+      logger.info(`Executing route handler for authHandlerId: ${authHandlerId}`)
+      const tokenResponse = await this._authorization?.beginOrContinueFlow(context, state, authHandlerId)
+      const signInComplete = (tokenResponse?.token !== undefined && tokenResponse?.token.length > 0)
+
+      if (!signInComplete) {
+        return false
+      }
+    }
+
+    return true
   }
 
   /**

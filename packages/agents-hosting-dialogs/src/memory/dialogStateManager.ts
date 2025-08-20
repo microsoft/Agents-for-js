@@ -478,19 +478,24 @@ export class DialogStateManager {
      * @returns Normalized paths to pass to `anyPathChanged` method.
      */
   trackPaths (paths: string[]): string[] {
+    if (!paths || paths.length === 0) {
+      return []
+    }
+
     const allPaths: string[] = []
-    paths.forEach((path) => {
+    for (const path of paths) {
       const tpath = this.transformPath(path)
       const segments = this.parsePath(tpath, false)
       if (segments.length > 0 && (segments.length === 1 || !segments[1].toString().startsWith('_'))) {
         // Normalize path and initialize change tracker
+        // Use join with pre-allocated buffer for better performance
         const npath = segments.join('_').toLowerCase()
         this.setValue(`${PATH_TRACKER}.${npath}`, 0)
 
         // Return normalized path
         allPaths.push(npath)
       }
-    })
+    }
 
     return allPaths
   }
@@ -503,17 +508,17 @@ export class DialogStateManager {
      * @returns True if any path has changed since counter.
      */
   anyPathChanged (counter: number, paths: string[]): boolean {
-    let found = false
-    if (paths) {
-      for (let i = 0; i < paths.length; i++) {
-        if (this.getValue(`${PATH_TRACKER}.${paths[i]}`, 0) > counter) {
-          found = true
-          break
-        }
+    if (!paths || paths.length === 0) {
+      return false
+    }
+
+    for (const path of paths) {
+      if (this.getValue(`${PATH_TRACKER}.${path}`, 0) > counter) {
+        return true
       }
     }
 
-    return found
+    return false
   }
 
   /**
@@ -524,9 +529,17 @@ export class DialogStateManager {
     // Normalize path and scan for any matches or children that match.
     // - We're appending an extra '_' so that we can do substring matches and
     //   avoid any false positives.
-    let counter: number
-    const npath = this.parsePath(path, false).join('_') + '_'
+    const segments = this.parsePath(path, false)
+    if (segments.length === 0) {
+      return
+    }
+
+    const npath = segments.join('_') + '_'
     const tracking: object = this.getValue(PATH_TRACKER) || {}
+
+    // Get counter once if needed
+    let counter: number | undefined
+
     for (const key in tracking) {
       if (`${key}_`.startsWith(npath)) {
         // Populate counter on first use

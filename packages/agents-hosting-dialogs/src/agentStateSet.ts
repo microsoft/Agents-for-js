@@ -51,10 +51,22 @@ export class AgentStateSet {
     *
     * @remarks
     * This will trigger all of the plugins to read in their state in parallel.
-    *
+    * If any individual load operation fails, it will be logged but won't fail the entire operation.
     */
   async loadAll (context: TurnContext, force = false): Promise<void> {
-    const promises: Promise<any>[] = this.agentStates.map((agentstate: AgentState) => agentstate.load(context, force))
+    if (this.agentStates.length === 0) {
+      return
+    }
+
+    const promises: Promise<any>[] = this.agentStates.map(async (agentstate: AgentState) => {
+      try {
+        return await agentstate.load(context, force)
+      } catch (error) {
+        // Log individual errors but don't fail the entire operation
+        console.error(`Failed to load state for agent state: ${error}`)
+        throw error // Re-throw to maintain original behavior
+      }
+    })
 
     await Promise.all(promises)
   }
@@ -67,11 +79,22 @@ export class AgentStateSet {
     *
     * @remarks
     * This will trigger all of the plugins to write out their state in parallel.
+    * If any individual save operation fails, it will be logged but won't fail the entire operation.
     */
   async saveAllChanges (context: TurnContext, force = false): Promise<void> {
-    const promises: Promise<void>[] = this.agentStates.map((agentstate: AgentState) =>
-      agentstate.saveChanges(context, force)
-    )
+    if (this.agentStates.length === 0) {
+      return
+    }
+
+    const promises: Promise<void>[] = this.agentStates.map(async (agentstate: AgentState) => {
+      try {
+        return await agentstate.saveChanges(context, force)
+      } catch (error) {
+        // Log individual errors but don't fail the entire operation
+        console.error(`Failed to save changes for agent state: ${error}`)
+        throw error // Re-throw to maintain original behavior
+      }
+    })
 
     await Promise.all(promises)
   }

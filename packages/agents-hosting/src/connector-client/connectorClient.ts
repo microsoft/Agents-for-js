@@ -50,21 +50,31 @@ export class ConnectorClient {
           statusText,
           host: this._axiosInstance.getUri(),
           url: requestConfig?.url,
-          data: config.config.data,
           method: requestConfig?.method,
+          // Exclude potentially sensitive response data from logs
+          dataSize: typeof config.config.data === 'string' ? config.config.data.length : 'object'
         })
         return config
       },
       (error) => {
         const { code, message, stack, response } = error
+
+        // Sanitize error data to prevent sensitive information leakage
+        const sanitizedData = error.config?.data
+          ? (typeof error.config.data === 'string' ? `[${error.config.data.length} chars]` : '[object]')
+          : undefined
+
         const errorDetails = {
           code,
           host: this._axiosInstance.getUri(),
-          url: error.config.url,
-          method: error.config.method,
-          data: error.config.data,
-          message: message + JSON.stringify(response?.data),
-          stack,
+          url: error.config?.url,
+          method: error.config?.method,
+          data: sanitizedData,
+          message,
+          // Sanitize response data in error messages
+          responseStatus: response?.status,
+          responseSize: response?.data ? (typeof response.data === 'string' ? response.data.length : 'object') : undefined,
+          stack
         }
         return Promise.reject(errorDetails)
       }

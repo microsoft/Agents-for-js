@@ -378,8 +378,12 @@ export class TurnState<
       throw new Error(this._stateNotLoadedString)
     }
 
-    let changes: StoreItems | undefined
-    let deletions: string[] | undefined
+    // Pre-allocate arrays to avoid repeated allocation
+    const changes: StoreItems = {}
+    const deletions: string[] = []
+    let hasChanges = false
+    let hasDeletions = false
+
     for (const key in this._scopes) {
       if (!Object.prototype.hasOwnProperty.call(this._scopes, key)) {
         continue
@@ -387,34 +391,26 @@ export class TurnState<
       const entry = this._scopes[key]
       if (entry.storageKey) {
         if (entry.isDeleted) {
-          if (deletions) {
-            deletions.push(entry.storageKey)
-          } else {
-            deletions = [entry.storageKey]
-          }
+          deletions.push(entry.storageKey)
+          hasDeletions = true
         } else if (entry.hasChanged) {
-          if (!changes) {
-            changes = {}
-          }
-
           changes[entry.storageKey] = entry.value
+          hasChanges = true
         }
       }
     }
 
-    if (storage) {
+    if (storage && (hasChanges || hasDeletions)) {
       const promises: Promise<void>[] = []
-      if (changes) {
+      if (hasChanges) {
         promises.push(storage.write(changes))
       }
 
-      if (deletions) {
+      if (hasDeletions) {
         promises.push(storage.delete(deletions))
       }
 
-      if (promises.length > 0) {
-        await Promise.all(promises)
-      }
+      await Promise.all(promises)
     }
   }
 
