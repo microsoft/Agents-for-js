@@ -14,6 +14,11 @@ import jwt, { JwtPayload } from 'jsonwebtoken'
 
 const logger = debug('agents:oauth-flow')
 
+// OAuth Flow Constants
+const DEFAULT_CACHE_EXPIRY_MINUTES = 10
+const DEFAULT_FLOW_EXPIRY_MINUTES = 5
+const MAGIC_CODE_REGEX = /^\d{6}$/
+
 /**
  * Represents the state of the OAuth flow.
  * @interface FlowState
@@ -65,6 +70,11 @@ export class OAuthFlow {
   private tokenCache: Map<string, CachedToken> = new Map()
 
   /**
+   * Timer for periodic cache cleanup to prevent memory leaks.
+   */
+  private cacheCleanupTimer: NodeJS.Timeout | undefined
+
+  /**
    * The name of the OAuth connection.
    */
   absOauthConnectionName: string
@@ -93,6 +103,40 @@ export class OAuthFlow {
     this.userTokenClient = tokenClient
     this.cardTitle = cardTitle ?? this.cardTitle
     this.cardText = cardText ?? this.cardText
+
+    // Start periodic cache cleanup to prevent memory leaks
+    this.startCacheCleanup()
+  }
+
+  /**
+   * Starts periodic cache cleanup to remove expired tokens.
+   */
+  private startCacheCleanup (): void {
+    if (this.cacheCleanupTimer) {
+      return
+    }
+
+    this.cacheCleanupTimer = setInterval(() => {
+      const now = Date.now()
+      for (const [key, cachedToken] of this.tokenCache.entries()) {
+        if (now >= cachedToken.expiresAt) {
+          this.tokenCache.delete(key)
+          logger.debug(`Expired token removed from cache: ${key}`)
+        }
+      }
+    }, DEFAULT_CACHE_EXPIRY_MINUTES * 60 * 1000) // Run cleanup every cache expiry period
+  }
+
+  /**
+   * Stops the cache cleanup timer and clears all cached tokens.
+   */
+  public dispose (): void {
+    if (this.cacheCleanupTimer) {
+      clearInterval(this.cacheCleanupTimer)
+      this.cacheCleanupTimer = undefined
+    }
+    this.tokenCache.clear()
+    logger.debug('OAuth flow disposed and cache cleared')
   }
 
   /**
@@ -122,12 +166,12 @@ export class OAuthFlow {
 
     // Cache the token if it's valid (has a token value)
     if (tokenResponse && tokenResponse.token) {
-      const cacheExpiry = Date.now() + (10 * 60 * 1000) // 10 minutes from now
+      const cacheExpiry = Date.now() + (DEFAULT_CACHE_EXPIRY_MINUTES * 60 * 1000)
       this.tokenCache.set(cacheKey, {
         token: tokenResponse,
         expiresAt: cacheExpiry
       })
-      logger.info('Token cached for 10 minutes')
+      logger.info(`Token cached for ${DEFAULT_CACHE_EXPIRY_MINUTES} minutes`)
     }
 
     return tokenResponse
@@ -163,12 +207,12 @@ export class OAuthFlow {
       // Cache the token if it's valid
       if (act.channelId && act.from && act.from.id) {
         const cacheKey = this.getCacheKey(context)
-        const cacheExpiry = Date.now() + (10 * 60 * 1000) // 10 minutes from now
+        const cacheExpiry = Date.now() + (DEFAULT_CACHE_EXPIRY_MINUTES * 60 * 1000)
         this.tokenCache.set(cacheKey, {
           token: output.tokenResponse,
           expiresAt: cacheExpiry
         })
-        logger.info('Token cached for 10 minutes in beginFlow')
+        logger.info(`Token cached for ${DEFAULT_CACHE_EXPIRY_MINUTES} minutes in beginFlow`)
         this.state = { flowStarted: false, flowExpires: 0, absOauthConnectionName: this.absOauthConnectionName }
       }
       logger.info('Token retrieved successfully')
@@ -176,7 +220,11 @@ export class OAuthFlow {
     }
     const oCard: Attachment = CardFactory.oauthCard(this.absOauthConnectionName, this.cardTitle, this.cardText, output.signInResource)
     await context.sendActivity(MessageFactory.attachment(oCard))
-    this.state = { flowStarted: true, flowExpires: Date.now() + 60 * 5 * 1000, absOauthConnectionName: this.absOauthConnectionName }
+    this.state = {
+      flowStarted: true,
+      flowExpires: Date.now() + (DEFAULT_FLOW_EXPIRY_MINUTES * 60 * 1000),
+      absOauthConnectionName: this.absOauthConnectionName
+    }
     await this.storage.write({ [this.getFlowStateKey(context)]: this.state })
     logger.info('OAuth card sent, flow started')
     return undefined
@@ -199,7 +247,7 @@ export class OAuthFlow {
     const contFlowActivity = context.activity
     if (contFlowActivity.type === ActivityTypes.Message) {
       const magicCode = contFlowActivity.text as string
-      if (magicCode.match(/^\d{6}$/)) {
+      if (MAGIC_CODE_REGEX.test(magicCode)) {
         const result = await this.userTokenClient?.getUserToken(this.absOauthConnectionName, contFlowActivity.channelId!, contFlowActivity.from?.id!, magicCode)!
         if (result && result.token) {
           // Cache the token if it's valid

@@ -91,11 +91,15 @@ export class MemoryStorage implements Storage {
    * always be written regardless of the current state.
    */
   async write (changes: StoreItem): Promise<void> {
-    if (!changes || changes.length === 0) {
+    if (!changes || (typeof changes === 'object' && Object.keys(changes).length === 0)) {
       throw new ReferenceError('Changes are required when writing.')
     }
 
     for (const [key, newItem] of Object.entries(changes)) {
+      if (!key || typeof key !== 'string') {
+        throw new ReferenceError('Invalid key provided for writing.')
+      }
+
       logger.debug(`Writing key: ${key}`)
       const oldItemStr = this.memory[key]
       if (!oldItemStr || newItem.eTag === '*' || !newItem.eTag) {
