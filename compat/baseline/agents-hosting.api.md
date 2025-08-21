@@ -319,8 +319,9 @@ export interface AttachmentData {
 
 // @public
 export class AttachmentDownloader<TState extends TurnState = TurnState> implements InputFileDownloader<TState> {
-    constructor();
-    downloadFiles(context: TurnContext, state: TState): Promise<InputFile[]>;
+    constructor(stateKey?: string);
+    downloadAndStoreFiles(context: TurnContext, state: TState): Promise<void>;
+    downloadFiles(context: TurnContext): Promise<InputFile[]>;
 }
 
 // @public
@@ -580,11 +581,6 @@ export interface DefaultConversationState {
 }
 
 // @public
-export interface DefaultTempState {
-    inputFiles: InputFile[];
-}
-
-// @public
 export interface DefaultUserState {
 }
 
@@ -670,7 +666,8 @@ export interface InputFile {
 
 // @public
 export interface InputFileDownloader<TState extends TurnState = TurnState> {
-    downloadFiles(context: TurnContext, state: TState): Promise<InputFile[]>;
+    downloadAndStoreFiles(context: TurnContext, state: TState): Promise<void>;
+    downloadFiles(context: TurnContext): Promise<InputFile[]>;
 }
 
 // @public
@@ -1140,11 +1137,10 @@ export class TurnContextStateCollection extends Map<any, any> {
 export type TurnEvents = 'beforeTurn' | 'afterTurn';
 
 // @public
-export class TurnState<TConversationState = DefaultConversationState, TUserState = DefaultUserState, TTempState = DefaultTempState> implements AppMemory {
+export class TurnState<TConversationState = DefaultConversationState, TUserState = DefaultUserState> implements AppMemory {
     get conversation(): TConversationState;
     set conversation(value: TConversationState);
     deleteConversationState(): void;
-    deleteTempState(): void;
     deleteUserState(): void;
     deleteValue(path: string): void;
     getScope(scope: string): TurnStateEntry | undefined;
@@ -1155,8 +1151,6 @@ export class TurnState<TConversationState = DefaultConversationState, TUserState
     protected onComputeStorageKeys(context: TurnContext): Promise<Record<string, string>>;
     save(context: TurnContext, storage?: Storage_2): Promise<void>;
     setValue(path: string, value: unknown): void;
-    get temp(): TTempState;
-    set temp(value: TTempState);
     get user(): TUserState;
     set user(value: TUserState);
 }

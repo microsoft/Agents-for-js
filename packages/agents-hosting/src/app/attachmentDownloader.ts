@@ -26,23 +26,26 @@ const logger = debug('agents:attachmentDownloader')
  */
 export class AttachmentDownloader<TState extends TurnState = TurnState> implements InputFileDownloader<TState> {
   private _httpClient: AxiosInstance
+  private _stateKey: string
 
   /**
    * Creates an instance of AttachmentDownloader.
    * This class is responsible for downloading input files from attachments.
+   *
+   * @param stateKey The key to store files in state. Defaults to 'inputFiles'.
    */
-  public constructor () {
+  public constructor (stateKey: string = 'inputFiles') {
     this._httpClient = axios.create()
+    this._stateKey = stateKey
   }
 
   /**
    * Downloads files from the attachments in the current turn context.
    *
    * @param context The turn context containing the activity with attachments.
-   * @param state The turn state for the current conversation.
    * @returns A promise that resolves to an array of downloaded input files.
    */
-  public async downloadFiles (context: TurnContext, state: TState): Promise<InputFile[]> {
+  public async downloadFiles (context: TurnContext): Promise<InputFile[]> {
     const attachments = context.activity.attachments?.filter((a) => !a.contentType.startsWith('text/html'))
     if (!attachments || attachments.length === 0) {
       logger.info('No Attachments to download')
@@ -64,6 +67,18 @@ export class AttachmentDownloader<TState extends TurnState = TurnState> implemen
 
     logger.info('Attachments downloaded')
     return files
+  }
+
+  /**
+   * Downloads files from the attachments in the current turn context and stores them in state.
+   *
+   * @param context The turn context containing the activity with attachments.
+   * @param state The turn state to store the files in.
+   * @returns A promise that resolves when the downloaded files are stored.
+   */
+  public async downloadAndStoreFiles (context: TurnContext, state: TState): Promise<void> {
+    const files = await this.downloadFiles(context)
+    state.setValue(this._stateKey, files)
   }
 
   private async downloadFile (attachment: Attachment, accessToken: string): Promise<InputFile | undefined> {

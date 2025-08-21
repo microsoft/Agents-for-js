@@ -31,11 +31,19 @@ export interface InputFile {
  */
 export interface InputFileDownloader<TState extends TurnState = TurnState> {
   /**
-   * Downloads files based on the provided turn context and state.
+   * Downloads files based on the provided turn context.
+   *
+   * @param context - The turn context for the current operation.
+   * @returns A promise that resolves to an array of input files.
+   */
+  downloadFiles(context: TurnContext): Promise<InputFile[]>;
+
+  /**
+   * Downloads files based on the provided turn context and store them in the provided state.
    *
    * @param context - The turn context for the current operation.
    * @param state - The state associated with the current turn.
-   * @returns A promise that resolves to an array of input files.
+   * @returns A promise that resolves once the files have been saved into state (void).
    */
-  downloadFiles(context: TurnContext, state: TState): Promise<InputFile[]>;
+  downloadAndStoreFiles(context: TurnContext, state: TState): Promise<void>;
 }

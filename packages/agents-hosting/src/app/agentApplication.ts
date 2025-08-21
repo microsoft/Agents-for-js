@@ -631,12 +631,9 @@ export class AgentApplication<TState extends TurnState> {
         }
 
         if (Array.isArray(this._options.fileDownloaders) && this._options.fileDownloaders.length > 0) {
-          const inputFiles = state.temp.inputFiles ?? []
           for (let i = 0; i < this._options.fileDownloaders.length; i++) {
-            const files = await this._options.fileDownloaders[i].downloadFiles(context, state)
-            inputFiles.push(...files)
+            await this._options.fileDownloaders[i].downloadAndStoreFiles(context, state)
           }
-          state.temp.inputFiles = inputFiles
         }
 
         for (const route of this._routes) {

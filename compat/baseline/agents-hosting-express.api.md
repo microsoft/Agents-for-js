@@ -8,6 +8,7 @@ import { ActivityHandler } from '@microsoft/agents-hosting';
 import { AgentApplication } from '@microsoft/agents-hosting';
 import { AuthConfiguration } from '@microsoft/agents-hosting';
 import express from 'express';
+import express from 'express';
 import { TurnState } from '@microsoft/agents-hosting';
 
 // @public
