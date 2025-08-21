@@ -48,7 +48,7 @@ export class StreamingResponse {
      * @param {TurnContext} context - Context for the current turn of conversation with the user.
      * @returns {TurnContext} - The context for the current turn of conversation with the user.
      */
-  public constructor (context: TurnContext) {
+  public constructor (context: TurnContext, private delayInMs: number = 1500) {
     this._context = context
   }
 
@@ -236,7 +236,7 @@ export class StreamingResponse {
      *
      * @returns {Promise<void>} - A promise representing the async operation.
      */
-  public waitForQueue (): Promise<void> {
+  private waitForQueue (): Promise<void> {
     return this._queueSync || Promise.resolve()
   }
 
@@ -370,7 +370,7 @@ export class StreamingResponse {
 
     // Send activity
     const response = await this._context.sendActivity(activity)
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+    await new Promise((resolve) => setTimeout(resolve, this.delayInMs))
 
     // Save assigned stream ID
     if (!this._streamId) {
