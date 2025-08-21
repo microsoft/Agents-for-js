@@ -45,7 +45,6 @@ export class Activity {
     static getContinuationActivity(reference: ConversationReference): Activity;
     getConversationReference(): ConversationReference;
     getMentions(activity: Activity): Mention[];
-    getMentions(activity: Activity): Mention[];
     getReplyConversationReference(replyId: string): ConversationReference;
     historyDisclosed?: boolean;
     id?: string;

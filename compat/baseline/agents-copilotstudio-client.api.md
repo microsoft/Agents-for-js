@@ -28,7 +28,6 @@ export class CopilotStudioClient {
     askQuestionAsync(question: string, conversationId?: string): Promise<Activity[]>;
     static scopeFromSettings: (settings: ConnectionSettings) => string;
     sendActivity(activity: Activity, conversationId?: string): Promise<Activity[]>;
-    sendActivity(activity: Activity, conversationId?: string): Promise<Activity[]>;
     startConversationAsync(emitStartConversationEvent?: boolean): Promise<Activity>;
 }
 
