@@ -12,7 +12,7 @@ import { version } from '@microsoft/agents-hosting/package.json'
  * @param agent - The AgentApplication or ActivityHandler instance to process incoming activities.
  * @param authConfiguration - Optional custom authentication configuration. If not provided,
  * configuration will be loaded from environment variables using loadAuthConfigFromEnv().
- * @returns express - The Express server instance.
+ * @returns {express.Express} - The Express server instance.
  *
  * @remarks
  * This function sets up an Express server with the necessary middleware and routes for handling
