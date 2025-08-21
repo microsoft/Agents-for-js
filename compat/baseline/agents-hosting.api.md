@@ -985,7 +985,7 @@ export interface StoreItems {
 
 // @public
 export class StreamingResponse {
-    constructor(context: TurnContext);
+    constructor(context: TurnContext, delayInMs?: number);
     get citations(): ClientCitation[] | undefined;
     endStream(): Promise<void>;
     getMessage(): string;
@@ -999,7 +999,6 @@ export class StreamingResponse {
     setSensitivityLabel(sensitivityLabel: SensitivityUsageInfo): void;
     get streamId(): string | undefined;
     get updatesSent(): number;
-    waitForQueue(): Promise<void>;
 }
 
 // @public

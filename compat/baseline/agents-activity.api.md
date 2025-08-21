@@ -44,6 +44,7 @@ export class Activity {
     static fromObject(o: object): Activity;
     static getContinuationActivity(reference: ConversationReference): Activity;
     getConversationReference(): ConversationReference;
+    getMentions(activity: Activity): Mention[];
     getReplyConversationReference(replyId: string): ConversationReference;
     historyDisclosed?: boolean;
     id?: string;
@@ -65,6 +66,7 @@ export class Activity {
     reactionsRemoved?: MessageReaction[];
     recipient?: ChannelAccount;
     relatesTo?: ConversationReference;
+    removeMentionText(id: string): string;
     removeRecipientMention(): string;
     replyToId?: string;
     semanticAction?: SemanticAction;

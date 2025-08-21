@@ -7,10 +7,11 @@
 import { ActivityHandler } from '@microsoft/agents-hosting';
 import { AgentApplication } from '@microsoft/agents-hosting';
 import { AuthConfiguration } from '@microsoft/agents-hosting';
+import express from 'express';
 import { TurnState } from '@microsoft/agents-hosting';
 
 // @public
-export const startServer: (agent: AgentApplication<TurnState<any, any>> | ActivityHandler, authConfiguration?: AuthConfiguration) => void;
+export const startServer: (agent: AgentApplication<TurnState<any, any>> | ActivityHandler, authConfiguration?: AuthConfiguration) => express.Express;
 
 // (No @packageDocumentation comment for this package)
 
