@@ -20,7 +20,7 @@
   "types": "dist/src/index.d.ts",
   "dependencies": {
     "@azure/core-auth": "^1.10.0",
-    "@azure/msal-node": "^3.7.0",
+    "@azure/msal-node": "^3.7.2",
     "@microsoft/agents-activity": "file:../agents-activity",
     "axios": "^1.11.0",
     "jsonwebtoken": "^9.0.2",
