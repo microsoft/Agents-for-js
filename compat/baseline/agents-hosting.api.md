@@ -982,14 +982,16 @@ export interface StoreItems {
 
 // @public
 export class StreamingResponse {
-    constructor(context: TurnContext, delayInMs?: number);
+    constructor(context: TurnContext);
     get citations(): ClientCitation[] | undefined;
+    get delayInMs(): number;
     endStream(): Promise<void>;
     getMessage(): string;
     queueInformativeUpdate(text: string): void;
     queueTextChunk(text: string, citations?: Citation[]): void;
     setAttachments(attachments: Attachment[]): void;
     setCitations(citations: Citation[]): void;
+    setDelayInMs(delayInMs: number): void;
     setFeedbackLoop(enableFeedbackLoop: boolean): void;
     setFeedbackLoopType(feedbackLoopType: 'default' | 'custom'): void;
     setGeneratedByAILabel(enableGeneratedByAILabel: boolean): void;

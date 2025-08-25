@@ -279,8 +279,8 @@ export const activityZodSchema: z.ZodObject<{
             type: string;
             title: string;
             value?: any;
-            text?: string | undefined;
             image?: string | undefined;
+            text?: string | undefined;
             displayText?: string | undefined;
             channelData?: unknown;
             imageAltText?: string | undefined;
@@ -288,8 +288,8 @@ export const activityZodSchema: z.ZodObject<{
             type: string;
             title: string;
             value?: any;
-            text?: string | undefined;
             image?: string | undefined;
+            text?: string | undefined;
             displayText?: string | undefined;
             channelData?: unknown;
             imageAltText?: string | undefined;
@@ -300,8 +300,8 @@ export const activityZodSchema: z.ZodObject<{
             type: string;
             title: string;
             value?: any;
-            text?: string | undefined;
             image?: string | undefined;
+            text?: string | undefined;
             displayText?: string | undefined;
             channelData?: unknown;
             imageAltText?: string | undefined;
@@ -312,8 +312,8 @@ export const activityZodSchema: z.ZodObject<{
             type: string;
             title: string;
             value?: any;
-            text?: string | undefined;
             image?: string | undefined;
+            text?: string | undefined;
             displayText?: string | undefined;
             channelData?: unknown;
             imageAltText?: string | undefined;
@@ -327,15 +327,15 @@ export const activityZodSchema: z.ZodObject<{
         thumbnailUrl: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
         contentType: string;
-        name?: string | undefined;
         contentUrl?: string | undefined;
         content?: unknown;
+        name?: string | undefined;
         thumbnailUrl?: string | undefined;
     }, {
         contentType: string;
-        name?: string | undefined;
         contentUrl?: string | undefined;
         content?: unknown;
+        name?: string | undefined;
         thumbnailUrl?: string | undefined;
     }>, "many">>;
     entities: z.ZodOptional<z.ZodArray<z.ZodObject<{
@@ -424,7 +424,6 @@ export const activityZodSchema: z.ZodObject<{
         channelId: z.ZodString;
         serviceUrl: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
-        channelId: string;
         conversation: {
             id: string;
             name?: string | undefined;
@@ -435,6 +434,7 @@ export const activityZodSchema: z.ZodObject<{
             conversationType?: string | undefined;
             tenantId?: string | undefined;
         };
+        channelId: string;
         user?: {
             id?: string | undefined;
             name?: string | undefined;
@@ -442,9 +442,8 @@ export const activityZodSchema: z.ZodObject<{
             role?: string | undefined;
             properties?: unknown;
         } | undefined;
-        serviceUrl?: string | undefined;
-        locale?: string | undefined;
         activityId?: string | undefined;
+        locale?: string | undefined;
         agent?: {
             id?: string | undefined;
             name?: string | undefined;
@@ -452,8 +451,8 @@ export const activityZodSchema: z.ZodObject<{
             role?: string | undefined;
             properties?: unknown;
         } | null | undefined;
+        serviceUrl?: string | undefined;
     }, {
-        channelId: string;
         conversation: {
             id: string;
             name?: string | undefined;
@@ -464,6 +463,7 @@ export const activityZodSchema: z.ZodObject<{
             conversationType?: string | undefined;
             tenantId?: string | undefined;
         };
+        channelId: string;
         user?: {
             id?: string | undefined;
             name?: string | undefined;
@@ -471,9 +471,8 @@ export const activityZodSchema: z.ZodObject<{
             role?: string | undefined;
             properties?: unknown;
         } | undefined;
-        serviceUrl?: string | undefined;
-        locale?: string | undefined;
         activityId?: string | undefined;
+        locale?: string | undefined;
         agent?: {
             id?: string | undefined;
             name?: string | undefined;
@@ -481,6 +480,7 @@ export const activityZodSchema: z.ZodObject<{
             role?: string | undefined;
             properties?: unknown;
         } | null | undefined;
+        serviceUrl?: string | undefined;
     }>>;
     code: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["unknown", "completedSuccessfully", "userCancelled", "agentTimedOut", "agentIssuedInvalidMessage", "channelFailed"]>, z.ZodString]>>;
     expiration: z.ZodOptional<z.ZodString>;
@@ -509,25 +509,41 @@ export const activityZodSchema: z.ZodObject<{
         }, z.ZodTypeAny, "passthrough">>>;
     }, "strip", z.ZodTypeAny, {
         id: string;
+        state: string;
         entities: Record<string, z.objectOutputType<{
             type: z.ZodString;
         }, z.ZodTypeAny, "passthrough">>;
-        state: string;
     }, {
         id: string;
+        state: string;
         entities: Record<string, z.objectInputType<{
             type: z.ZodString;
         }, z.ZodTypeAny, "passthrough">>;
-        state: string;
     }>>;
 }, "strip", z.ZodTypeAny, {
     type: string;
     value?: unknown;
     code?: string | undefined;
-    text?: string | undefined;
     id?: string | undefined;
-    channelId?: string | undefined;
+    entities?: z.objectOutputType<{
+        type: z.ZodString;
+    }, z.ZodTypeAny, "passthrough">[] | undefined;
+    text?: string | undefined;
+    channelData?: any;
     name?: string | undefined;
+    locale?: string | undefined;
+    conversation?: {
+        id: string;
+        name?: string | undefined;
+        aadObjectId?: string | undefined;
+        role?: string | undefined;
+        properties?: unknown;
+        isGroup?: boolean | undefined;
+        conversationType?: string | undefined;
+        tenantId?: string | undefined;
+    } | undefined;
+    channelId?: string | undefined;
+    serviceUrl?: string | undefined;
     from?: {
         id?: string | undefined;
         name?: string | undefined;
@@ -539,17 +555,6 @@ export const activityZodSchema: z.ZodObject<{
     localTimestamp?: Date | undefined;
     localTimezone?: string | undefined;
     callerId?: string | undefined;
-    serviceUrl?: string | undefined;
-    conversation?: {
-        id: string;
-        name?: string | undefined;
-        aadObjectId?: string | undefined;
-        role?: string | undefined;
-        properties?: unknown;
-        isGroup?: boolean | undefined;
-        conversationType?: string | undefined;
-        tenantId?: string | undefined;
-    } | undefined;
     recipient?: {
         id?: string | undefined;
         name?: string | undefined;
@@ -581,19 +586,17 @@ export const activityZodSchema: z.ZodObject<{
     }[] | undefined;
     topicName?: string | undefined;
     historyDisclosed?: boolean | undefined;
-    locale?: string | undefined;
     speak?: string | undefined;
     inputHint?: string | undefined;
     summary?: string | undefined;
-    channelData?: any;
     suggestedActions?: {
         to: string[];
         actions: {
             type: string;
             title: string;
             value?: any;
-            text?: string | undefined;
             image?: string | undefined;
+            text?: string | undefined;
             displayText?: string | undefined;
             channelData?: unknown;
             imageAltText?: string | undefined;
@@ -601,20 +604,16 @@ export const activityZodSchema: z.ZodObject<{
     } | undefined;
     attachments?: {
         contentType: string;
-        name?: string | undefined;
         contentUrl?: string | undefined;
         content?: unknown;
+        name?: string | undefined;
         thumbnailUrl?: string | undefined;
     }[] | undefined;
-    entities?: z.objectOutputType<{
-        type: z.ZodString;
-    }, z.ZodTypeAny, "passthrough">[] | undefined;
     action?: string | undefined;
     replyToId?: string | undefined;
     label?: string | undefined;
     valueType?: string | undefined;
     relatesTo?: {
-        channelId: string;
         conversation: {
             id: string;
             name?: string | undefined;
@@ -625,6 +624,7 @@ export const activityZodSchema: z.ZodObject<{
             conversationType?: string | undefined;
             tenantId?: string | undefined;
         };
+        channelId: string;
         user?: {
             id?: string | undefined;
             name?: string | undefined;
@@ -632,9 +632,8 @@ export const activityZodSchema: z.ZodObject<{
             role?: string | undefined;
             properties?: unknown;
         } | undefined;
-        serviceUrl?: string | undefined;
-        locale?: string | undefined;
         activityId?: string | undefined;
+        locale?: string | undefined;
         agent?: {
             id?: string | undefined;
             name?: string | undefined;
@@ -642,6 +641,7 @@ export const activityZodSchema: z.ZodObject<{
             role?: string | undefined;
             properties?: unknown;
         } | null | undefined;
+        serviceUrl?: string | undefined;
     } | undefined;
     expiration?: string | undefined;
     importance?: string | undefined;
@@ -653,19 +653,35 @@ export const activityZodSchema: z.ZodObject<{
     }[] | undefined;
     semanticAction?: {
         id: string;
+        state: string;
         entities: Record<string, z.objectOutputType<{
             type: z.ZodString;
         }, z.ZodTypeAny, "passthrough">>;
-        state: string;
     } | undefined;
 }, {
     type: string;
     value?: unknown;
     code?: string | undefined;
-    text?: string | undefined;
     id?: string | undefined;
-    channelId?: string | undefined;
+    entities?: z.objectInputType<{
+        type: z.ZodString;
+    }, z.ZodTypeAny, "passthrough">[] | undefined;
+    text?: string | undefined;
+    channelData?: any;
     name?: string | undefined;
+    locale?: string | undefined;
+    conversation?: {
+        id: string;
+        name?: string | undefined;
+        aadObjectId?: string | undefined;
+        role?: string | undefined;
+        properties?: unknown;
+        isGroup?: boolean | undefined;
+        conversationType?: string | undefined;
+        tenantId?: string | undefined;
+    } | undefined;
+    channelId?: string | undefined;
+    serviceUrl?: string | undefined;
     from?: {
         id?: string | undefined;
         name?: string | undefined;
@@ -677,17 +693,6 @@ export const activityZodSchema: z.ZodObject<{
     localTimestamp?: string | Date | undefined;
     localTimezone?: string | undefined;
     callerId?: string | undefined;
-    serviceUrl?: string | undefined;
-    conversation?: {
-        id: string;
-        name?: string | undefined;
-        aadObjectId?: string | undefined;
-        role?: string | undefined;
-        properties?: unknown;
-        isGroup?: boolean | undefined;
-        conversationType?: string | undefined;
-        tenantId?: string | undefined;
-    } | undefined;
     recipient?: {
         id?: string | undefined;
         name?: string | undefined;
@@ -719,19 +724,17 @@ export const activityZodSchema: z.ZodObject<{
     }[] | undefined;
     topicName?: string | undefined;
     historyDisclosed?: boolean | undefined;
-    locale?: string | undefined;
     speak?: string | undefined;
     inputHint?: string | undefined;
     summary?: string | undefined;
-    channelData?: any;
     suggestedActions?: {
         to: string[];
         actions: {
             type: string;
             title: string;
             value?: any;
-            text?: string | undefined;
             image?: string | undefined;
+            text?: string | undefined;
             displayText?: string | undefined;
             channelData?: unknown;
             imageAltText?: string | undefined;
@@ -739,20 +742,16 @@ export const activityZodSchema: z.ZodObject<{
     } | undefined;
     attachments?: {
         contentType: string;
-        name?: string | undefined;
         contentUrl?: string | undefined;
         content?: unknown;
+        name?: string | undefined;
         thumbnailUrl?: string | undefined;
     }[] | undefined;
-    entities?: z.objectInputType<{
-        type: z.ZodString;
-    }, z.ZodTypeAny, "passthrough">[] | undefined;
     action?: string | undefined;
     replyToId?: string | undefined;
     label?: string | undefined;
     valueType?: string | undefined;
     relatesTo?: {
-        channelId: string;
         conversation: {
             id: string;
             name?: string | undefined;
@@ -763,6 +762,7 @@ export const activityZodSchema: z.ZodObject<{
             conversationType?: string | undefined;
             tenantId?: string | undefined;
         };
+        channelId: string;
         user?: {
             id?: string | undefined;
             name?: string | undefined;
@@ -770,9 +770,8 @@ export const activityZodSchema: z.ZodObject<{
             role?: string | undefined;
             properties?: unknown;
         } | undefined;
-        serviceUrl?: string | undefined;
-        locale?: string | undefined;
         activityId?: string | undefined;
+        locale?: string | undefined;
         agent?: {
             id?: string | undefined;
             name?: string | undefined;
@@ -780,6 +779,7 @@ export const activityZodSchema: z.ZodObject<{
             role?: string | undefined;
             properties?: unknown;
         } | null | undefined;
+        serviceUrl?: string | undefined;
     } | undefined;
     expiration?: string | undefined;
     importance?: string | undefined;
@@ -791,10 +791,10 @@ export const activityZodSchema: z.ZodObject<{
     }[] | undefined;
     semanticAction?: {
         id: string;
+        state: string;
         entities: Record<string, z.objectInputType<{
             type: z.ZodString;
         }, z.ZodTypeAny, "passthrough">>;
-        state: string;
     } | undefined;
 }>;
 
