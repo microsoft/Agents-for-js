@@ -29,6 +29,7 @@ export class StreamingResponse {
   private _message: string = ''
   private _attachments?: Attachment[]
   private _ended = false
+  private _delayInMs = 1500
 
   // Queue for outgoing activities
   private _queue: Array<() => Activity> = []
@@ -48,7 +49,7 @@ export class StreamingResponse {
      * @param {TurnContext} context - Context for the current turn of conversation with the user.
      * @returns {TurnContext} - The context for the current turn of conversation with the user.
      */
-  public constructor (context: TurnContext, private delayInMs: number = 1500) {
+  public constructor (context: TurnContext) {
     this._context = context
   }
 
@@ -78,6 +79,13 @@ export class StreamingResponse {
      */
   public get updatesSent (): number {
     return this._nextSequence - 1
+  }
+
+  /**
+   * Gets the delay in milliseconds between chunks.
+   */
+  public get delayInMs (): number {
+    return this._delayInMs
   }
 
   /**
@@ -220,6 +228,14 @@ export class StreamingResponse {
      */
   public setGeneratedByAILabel (enableGeneratedByAILabel: boolean): void {
     this._enableGeneratedByAILabel = enableGeneratedByAILabel
+  }
+
+  /**
+   * Sets the delay in milliseconds between chunks.
+   * @param delayInMs The delay in milliseconds.
+   */
+  public setDelayInMs (delayInMs: number): void {
+    this._delayInMs = delayInMs
   }
 
   /**
