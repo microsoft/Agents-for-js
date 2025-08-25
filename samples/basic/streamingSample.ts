@@ -22,6 +22,7 @@ agent.onActivity('invoke', async (context: TurnContext, state: TurnState) => {
 })
 
 agent.onActivity('message', async (context: TurnContext, state: TurnState) => {
+  context.streamingResponse.setDelayInMs(500)
   context.streamingResponse.setFeedbackLoop(true)
   context.streamingResponse.setSensitivityLabel({ type: 'https://schema.org/Message', '@type': 'CreativeWork', name: 'Internal' })
   context.streamingResponse.setGeneratedByAILabel(true)

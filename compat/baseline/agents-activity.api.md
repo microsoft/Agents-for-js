@@ -279,6 +279,7 @@ export const activityZodSchema: z.ZodObject<{
             value?: any;
             image?: string | undefined;
             text?: string | undefined;
+            text?: string | undefined;
             displayText?: string | undefined;
             channelData?: unknown;
             imageAltText?: string | undefined;
