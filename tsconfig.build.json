@@ -23,6 +23,9 @@
         "path": "packages/agents-hosting-dialogs"
       },
       {
+        "path": "packages/agents-hosting-extensions-teams"
+      },
+      {
         "path": "test-agents/application-style"
       },
       {
