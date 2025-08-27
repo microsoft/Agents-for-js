@@ -571,8 +571,8 @@ export class AgentApplication<TState extends TurnState> {
    * 2. Processes mentions if configured
    * 3. Loads turn state
    * 4. Handles authentication flows
-   * 5. Executes before-turn event handlers
-   * 6. Downloads files if file downloaders are configured
+   * 5. Downloads files if file downloaders are configured
+   * 6. Executes before-turn event handlers
    * 7. Routes to appropriate handlers
    * 8. Executes after-turn event handlers
    * 9. Saves turn state
@@ -625,15 +625,15 @@ export class AgentApplication<TState extends TurnState> {
           // return true
         }
 
-        if (!(await this.callEventHandlers(context, state, this._beforeTurn))) {
-          await state.save(context, storage)
-          return false
-        }
-
         if (Array.isArray(this._options.fileDownloaders) && this._options.fileDownloaders.length > 0) {
           for (let i = 0; i < this._options.fileDownloaders.length; i++) {
             await this._options.fileDownloaders[i].downloadAndStoreFiles(context, state)
           }
+        }
+
+        if (!(await this.callEventHandlers(context, state, this._beforeTurn))) {
+          await state.save(context, storage)
+          return false
         }
 
         for (const route of this._routes) {
