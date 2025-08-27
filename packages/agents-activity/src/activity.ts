@@ -24,6 +24,7 @@ import { InputHints, inputHintsZodSchema } from './inputHints'
 import { MessageReaction, messageReactionZodSchema } from './messageReaction'
 import { TextFormatTypes, textFormatTypesZodSchema } from './textFormatTypes'
 import { TextHighlight, textHighlightZodSchema } from './textHighlight'
+import { ProductInfo } from './entity/productInfo'
 
 /**
  * Zod schema for validating an Activity object.
@@ -605,5 +606,10 @@ export class Activity {
 
   public toJsonString (): string {
     return JSON.stringify(this)
+  }
+
+  public get subChannel (): string | null {
+    const prodInfo : ProductInfo = this.entities?.find(entity => entity.type === 'ProductInfo') as ProductInfo
+    return prodInfo?.id || null
   }
 }
