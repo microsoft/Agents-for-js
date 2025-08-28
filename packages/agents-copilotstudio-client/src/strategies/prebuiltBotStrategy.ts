@@ -7,7 +7,7 @@ import { Strategy } from './strategy'
 
 export interface PrebuiltBotStrategySettings {
   readonly host: URL;
-  readonly identifier: string;
+  readonly schema: string;
 }
 
 export class PrebuiltBotStrategy implements Strategy {
@@ -15,10 +15,10 @@ export class PrebuiltBotStrategy implements Strategy {
   private baseURL: URL
 
   constructor (settings: PrebuiltBotStrategySettings) {
-    const { identifier, host } = settings
+    const { schema, host } = settings
 
     this.baseURL = new URL(
-      `/copilotstudio/prebuilt/authenticated/bots/${identifier}`,
+      `/copilotstudio/prebuilt/authenticated/bots/${schema}`,
       host
     )
     this.baseURL.searchParams.append('api-version', this.API_VERSION)

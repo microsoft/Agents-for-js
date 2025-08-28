@@ -11,16 +11,10 @@ import { PowerPlatformCloud } from './powerPlatformCloud'
  * Configuration options for establishing a connection to Copilot Studio.
  */
 abstract class ConnectionOptions implements Omit<CopilotStudioConnectionSettings, 'cloud' | 'copilotAgentType'> {
-  /** The client ID of the application. */
-  public appClientId: string = ''
-  /** The tenant ID of the application. */
-  public tenantId: string = ''
-  /** The login authority to use for the connection */
-  public authority?: string = ''
   /** The environment ID of the application. */
-  public environmentId: string = ''
+  public environmentId?: string
   /** The identifier of the agent. */
-  public agentIdentifier: string = ''
+  public schemaName?: string
   /** The cloud environment of the application. */
   public cloud?: PowerPlatformCloud | keyof typeof PowerPlatformCloud
   /** The custom Power Platform cloud URL, if any. */
@@ -63,21 +57,28 @@ export class ConnectionSettings extends ConnectionOptions {
       return
     }
 
-    const cloud = options.cloud ?? PowerPlatformCloud.Prod
-    const copilotAgentType = options.copilotAgentType ?? AgentType.Published
-    const authority = options.authority && options.authority.trim() !== ''
-      ? options.authority
-      : 'https://login.microsoftonline.com'
+    let cloud: PowerPlatformCloud
+    let copilotAgentType: AgentType
 
-    if (!Object.values(PowerPlatformCloud).includes(cloud as PowerPlatformCloud)) {
-      throw new Error(`Invalid PowerPlatformCloud: '${cloud}'. Supported values: ${Object.values(PowerPlatformCloud).join(', ')}`)
+    if (!options.cloud) {
+      cloud = PowerPlatformCloud.Prod
+    } else {
+      cloud = options.cloud as PowerPlatformCloud
+      if (!Object.values(PowerPlatformCloud).includes(cloud)) {
+        throw new Error(`Invalid PowerPlatformCloud: '${cloud}'. Supported values: ${Object.values(PowerPlatformCloud).join(', ')}`)
+      }
     }
 
-    if (!Object.values(AgentType).includes(copilotAgentType as AgentType)) {
-      throw new Error(`Invalid AgentType: '${copilotAgentType}'. Supported values: ${Object.values(AgentType).join(', ')}`)
+    if (!options.copilotAgentType) {
+      copilotAgentType = AgentType.Published
+    } else {
+      copilotAgentType = options.copilotAgentType as AgentType
+      if (!Object.values(AgentType).includes(copilotAgentType)) {
+        throw new Error(`Invalid AgentType: '${copilotAgentType}'. Supported values: ${Object.values(AgentType).join(', ')}`)
+      }
     }
 
-    Object.assign(this, { ...options, cloud, copilotAgentType, authority })
+    Object.assign(this, { ...options, cloud, copilotAgentType })
   }
 }
 
@@ -85,17 +86,14 @@ export class ConnectionSettings extends ConnectionOptions {
  * Loads the connection settings for Copilot Studio from environment variables.
  * @returns The connection settings.
  */
-export const loadCopilotStudioConnectionSettingsFromEnv: () => ConnectionSettings = () => {
-  return new ConnectionSettings({
-    appClientId: process.env.appClientId ?? '',
-    tenantId: process.env.tenantId ?? '',
-    authority: process.env.authorityEndpoint ?? 'https://login.microsoftonline.com',
+export const loadCopilotStudioConnectionSettingsFromEnv: () => CopilotStudioConnectionSettings = () => {
+  return {
     environmentId: process.env.environmentId ?? '',
-    agentIdentifier: process.env.agentIdentifier ?? '',
+    schemaName: process.env.schemaName ?? '',
     cloud: process.env.cloud as PowerPlatformCloud,
     customPowerPlatformCloud: process.env.customPowerPlatformCloud,
     copilotAgentType: process.env.copilotAgentType as AgentType,
     directConnectUrl: process.env.directConnectUrl,
     useExperimentalEndpoint: process.env.useExperimentalEndpoint?.toLowerCase() === 'true'
-  })
+  }
 }
