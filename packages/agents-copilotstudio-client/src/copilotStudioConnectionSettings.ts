@@ -28,6 +28,6 @@ export interface CopilotStudioConnectionSettings {
   /** URL provided to connect directly to Copilot Studio endpoint. When provided all other settings are ignored. */
   directConnectUrl?: string
 
-  /** Directs Copilot Studio Client to use the experimental endpoint if available. */
+  /** Directs Copilot Studio Client to use the experimental endpoint if available. Default value is false. */
   useExperimentalEndpoint?: boolean
 }

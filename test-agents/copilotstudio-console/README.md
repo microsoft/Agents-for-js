@@ -13,7 +13,7 @@ To setup for this sample, you will need the following:
 
 1. Create a Agent in [Copilot Studio](https://copilotstudio.microsoft.com)
     1. Publish your newly created Agent
-    1. In Copilot Studio, go to Settings => Advanced => Metadata and copy the following values. You will need them later:
+    1. In Copilot Studio, go to Settings > Advanced > Metadata. Copy the following values for later configueration:
         1. Schema name
         1. Environment Id
 
@@ -30,7 +30,7 @@ This step will require permissions to Create application identities in your Azur
     1. In the Redirect URI url box, type in `http://localhost` (**note: use HTTP, not HTTPS**)
     1. Then click register.
 1. In your newly created application
-    1. On the Overview page, note down for use later when configuring the example application:
+    1. On the Overview page, note the following for later configuration:
         1. the Application (client) ID
         1. the Directory (tenant) ID
     1. Go to Manage
@@ -53,7 +53,7 @@ This step will require permissions to Create application identities in your Azur
 2. Fill in the values you recorded during setup:
     - `environmentId`: The Copilot Studio Environment Id.
     - `schemaName`: The Copilot Studio Schema name.
-    - `directConnectUrl`: The URL used to connect to the Copilot Studio service (use this OR environmentId + schemaName).
+    - `directConnectUrl`: The URL to connect directly to the Copilot Studio service. When provided, `environmentId` + `schemaName` are ignored.
     - `tenantId`: The App Registration Directory (tenant) ID.
     - `appClientId`: The App Registration Application (client) ID.
 
@@ -71,11 +71,11 @@ This step will require permissions to Create application identities in your Azur
 
 ### Optional Configuration
 This sample allows to configure the following settings in the .env file:
-   - `authorityEndpoint`: The login authority to use for the connection. Defaults to "https://login.microsoftonline.com".
-   - `cloud`: The cloud hosting the Power Platform Services. Default value is "Prod".
-   - `customPowerPlatformCloud`: The Power Platform API endpoint to use if cloud is configured as "Other".
-   - `copilotAgentType`: The type of Copilot Studio Agent (Published or Prebuilt). Default value is "Published".
-   - `useExperimentalEndpoint`: The flag to use the "x-ms-d2e-experimental" header as URL for subsequent calls to the Copilot Studio service.
+   - `authorityEndpoint`: The login authority to use for the connection. Default: "https://login.microsoftonline.com".
+   - `cloud`: The cloud hosting the Power Platform Services. Default: "Prod".
+   - `customPowerPlatformCloud`: The Power Platform API endpoint when cloud is set to "Other".
+   - `copilotAgentType`: The type of Copilot Studio Agent (Published or Prebuilt). Default: "Published".
+   - `useExperimentalEndpoint`: The flag to use the URL provided via the  "x-ms-d2e-experimental" header for subsequent calls to the Copilot Studio service.
 ### Running the Sample
 
 1. Install dependencies:

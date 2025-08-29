@@ -6,11 +6,11 @@
 import { ConnectionSettings, loadCopilotStudioConnectionSettingsFromEnv } from '@microsoft/agents-copilotstudio-client'
 
 export class SampleConnectionSettings extends ConnectionSettings {
-  public appClientId: string = ''
-  public tenantId: string = ''
-  public authority: string = 'https://login.microsoftonline.com'
-  public useS2SConnection: boolean = false
-  public appClientSecret: string = ''
+  public readonly appClientId: string = ''
+  public readonly tenantId: string = ''
+  public readonly authority: string = 'https://login.microsoftonline.com'
+  public readonly useS2SConnection: boolean = false
+  public readonly appClientSecret: string = ''
 
   constructor () {
     const settings = loadCopilotStudioConnectionSettingsFromEnv()

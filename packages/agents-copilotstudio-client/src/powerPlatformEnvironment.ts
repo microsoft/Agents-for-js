@@ -35,8 +35,8 @@ export function getCopilotStudioConnectionUrl (
 
     // FIX for Missing Tenant ID
     if (settings.directConnectUrl.toLowerCase().includes('tenants/00000000-0000-0000-0000-000000000000')) {
-      logger.debug(`Direct connection cannot be used, forcing default settings flow. Tenant ID is missing in the URL: ${settings.directConnectUrl}`)
-      // Direct connection cannot be used, ejecuting and forcing the normal settings flow:
+      logger.warn(`Direct connection cannot be used, forcing default settings flow. Tenant ID is missing in the URL: ${settings.directConnectUrl}`)
+      // Direct connection cannot be used, ejecting and forcing the normal settings flow:
       return getCopilotStudioConnectionUrl({ ...settings, directConnectUrl: '' }, conversationId)
     }
 
