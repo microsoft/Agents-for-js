@@ -8,7 +8,7 @@ export interface Strategy {
 }
 
 /**
- * Settings required to configure the BotStrategy.
+ * Settings required to configure the Strategy.
  */
 export interface StrategySettings {
   /**

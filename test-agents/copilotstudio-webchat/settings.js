@@ -27,7 +27,7 @@ export class SampleConnectionSettings extends ConnectionSettings {
       // Flag to use the "x-ms-d2e-experimental" header URL on subsequent calls to the Copilot Studio service.
       useExperimentalEndpoint: false
     })
-    // App ID of the App Registration used to log in, this should be in the same tenant as the Copilot.
+    // App ID of the App Registration used to log in; should be in the same tenant as the Copilot Studio agent.
     this.appClientId = ''
     // Tenant ID of the App Registration used to log in; must match the Copilot’s tenant.
     this.tenantId = ''

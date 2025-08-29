@@ -3,10 +3,10 @@
  * Licensed under the MIT License.
  */
 
-import { Strategy, StrategySettings } from './strategy'
+import type { Strategy, StrategySettings } from './strategy'
 
 /**
- * Strategy for constructing PowerPlatform API connection URL for prebuilt agents.
+ * Strategy for constructing PowerPlatform API connection URLs for prebuilt agents.
  */
 export class PrebuiltBotStrategy implements Strategy {
   private readonly API_VERSION = '2022-03-01-preview'

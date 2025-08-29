@@ -55,11 +55,11 @@ This step requires permissions to create application identities in your Azure te
     - `schemaName`: The Copilot Studio Schema name.
     - `tenantId`: The App Registration Directory (tenant) ID.
     - `appClientId`: The App Registration Application (client) ID.
-3. Alternatively, you can provide a direct URL to connect to Copilot Studio instead of specifying the `environmentId` and `agentIdentifier` values:
+3. Alternatively, you can provide a direct URL to connect to Copilot Studio instead of specifying the `environmentId` and `schemaName` values:
     - `directConnectUrl`: The URL to connect to the Copilot Studio service.
 
 ### Optional Configuration
-This sample allows to configure the following settings in the .env file:
+This sample lets you configure the following settings in the .env file:
    - `authorityEndpoint`: The login authority to use for the connection. Default: "https://login.microsoftonline.com".
    - `cloud`: The cloud hosting the Power Platform Services. Default: "Prod".
    - `customPowerPlatformCloud`: The Power Platform API endpoint when cloud is set to "Other".
