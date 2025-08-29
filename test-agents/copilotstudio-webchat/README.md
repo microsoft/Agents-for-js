@@ -52,12 +52,20 @@ This step requires permissions to create application identities in your Azure te
 1. Open the [settings.js](./settings.js) file.
 2. Fill in the values you recorded during setup:
     - `environmentId`: The Copilot Studio Environment Id.
-    - `agentIdentifier`: The Copilot Studio Schema name.
+    - `schemaName`: The Copilot Studio Schema name.
     - `tenantId`: The App Registration Directory (tenant) ID.
     - `appClientId`: The App Registration Application (client) ID.
 3. Alternatively, you can provide a direct URL to connect to Copilot Studio instead of specifying the `environmentId` and `agentIdentifier` values:
     - `directConnectUrl`: The URL to connect to the Copilot Studio service.
 
+### Optional Configuration
+This sample allows to configure the following settings in the .env file:
+   - `authorityEndpoint`: The login authority to use for the connection. Default: "https://login.microsoftonline.com".
+   - `cloud`: The cloud hosting the Power Platform Services. Default: "Prod".
+   - `customPowerPlatformCloud`: The Power Platform API endpoint when cloud is set to "Other".
+   - `copilotAgentType`: The type of Copilot Studio Agent (Published or Prebuilt). Default: "Published".
+   - `useExperimentalEndpoint`: The flag to use the URL provided via the  "x-ms-d2e-experimental" header for subsequent calls to the Copilot Studio service.
+   
 ## 5. Run the Sample
 
 1. **Open the project in VS Code.**

@@ -76,6 +76,7 @@ This sample allows to configure the following settings in the .env file:
    - `customPowerPlatformCloud`: The Power Platform API endpoint when cloud is set to "Other".
    - `copilotAgentType`: The type of Copilot Studio Agent (Published or Prebuilt). Default: "Published".
    - `useExperimentalEndpoint`: The flag to use the URL provided via the  "x-ms-d2e-experimental" header for subsequent calls to the Copilot Studio service.
+
 ### Running the Sample
 
 1. Install dependencies:
