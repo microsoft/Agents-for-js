@@ -57,25 +57,15 @@ export class ConnectionSettings extends ConnectionOptions {
       return
     }
 
-    let cloud: PowerPlatformCloud
-    let copilotAgentType: AgentType
+    const cloud = options.cloud?.trim() || PowerPlatformCloud.Prod
+    const copilotAgentType = options.copilotAgentType?.trim() || AgentType.Published
 
-    if (!options.cloud) {
-      cloud = PowerPlatformCloud.Prod
-    } else {
-      cloud = options.cloud as PowerPlatformCloud
-      if (!Object.values(PowerPlatformCloud).includes(cloud)) {
-        throw new Error(`Invalid PowerPlatformCloud: '${cloud}'. Supported values: ${Object.values(PowerPlatformCloud).join(', ')}`)
-      }
+    if (!Object.values(PowerPlatformCloud).includes(cloud as PowerPlatformCloud)) {
+      throw new Error(`Invalid PowerPlatformCloud: '${cloud}'. Supported values: ${Object.values(PowerPlatformCloud).join(', ')}`)
     }
 
-    if (!options.copilotAgentType) {
-      copilotAgentType = AgentType.Published
-    } else {
-      copilotAgentType = options.copilotAgentType as AgentType
-      if (!Object.values(AgentType).includes(copilotAgentType)) {
-        throw new Error(`Invalid AgentType: '${copilotAgentType}'. Supported values: ${Object.values(AgentType).join(', ')}`)
-      }
+    if (!Object.values(AgentType).includes(copilotAgentType as AgentType)) {
+      throw new Error(`Invalid AgentType: '${copilotAgentType}'. Supported values: ${Object.values(AgentType).join(', ')}`)
     }
 
     Object.assign(this, { ...options, cloud, copilotAgentType })
