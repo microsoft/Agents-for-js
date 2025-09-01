@@ -3,22 +3,20 @@
  * Licensed under the MIT License.
  */
 
-import { Strategy } from './strategy'
+import type { Strategy, StrategySettings } from './strategy'
 
-export interface PrebuiltBotStrategySettings {
-  readonly host: URL;
-  readonly identifier: string;
-}
-
+/**
+ * Strategy for constructing PowerPlatform API connection URLs for prebuilt agents.
+ */
 export class PrebuiltBotStrategy implements Strategy {
   private readonly API_VERSION = '2022-03-01-preview'
   private baseURL: URL
 
-  constructor (settings: PrebuiltBotStrategySettings) {
-    const { identifier, host } = settings
+  constructor (settings: StrategySettings) {
+    const { schema, host } = settings
 
     this.baseURL = new URL(
-      `/copilotstudio/prebuilt/authenticated/bots/${identifier}`,
+      `/copilotstudio/prebuilt/authenticated/bots/${schema}`,
       host
     )
     this.baseURL.searchParams.append('api-version', this.API_VERSION)
