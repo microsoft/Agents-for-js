@@ -5,7 +5,7 @@ on:
   pull_request:
     branches:
       - main
-      - dev*
+      - release/*
 
 permissions:
   contents: read
