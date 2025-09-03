@@ -25,7 +25,7 @@ steps:
     customFeed: OneCRM/DPX-Tools-Upstream
     verbose: true
     workingDir: .
-  displayName: 'npm install'
+  displayName: 'npm ci'
 
 - script: node setVersion.js
   displayName: set version
