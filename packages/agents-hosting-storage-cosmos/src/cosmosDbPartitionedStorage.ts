@@ -207,7 +207,7 @@ export class CosmosDbPartitionedStorage implements Storage {
   /**
    * Initializes the Cosmos DB container.
    */
-  private async initialize (): Promise<void> {
+  async initialize (): Promise<void> {
     if (!this.container) {
       if (!this.client) {
         this.client = new CosmosClient(this.cosmosDbStorageOptions.cosmosClientOptions!)
