@@ -1,6 +1,6 @@
 pr:
 - main
-- feat/*
+- release/*
 
 pool:
   vmImage: ubuntu-latest
