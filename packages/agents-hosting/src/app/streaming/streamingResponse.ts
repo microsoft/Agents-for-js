@@ -29,6 +29,7 @@ export class StreamingResponse {
   private _message: string = ''
   private _attachments?: Attachment[]
   private _ended = false
+  private _delayInMs = 1500
 
   // Queue for outgoing activities
   private _queue: Array<() => Activity> = []
@@ -78,6 +79,13 @@ export class StreamingResponse {
      */
   public get updatesSent (): number {
     return this._nextSequence - 1
+  }
+
+  /**
+   * Gets the delay in milliseconds between chunks.
+   */
+  public get delayInMs (): number {
+    return this._delayInMs
   }
 
   /**
@@ -183,7 +191,8 @@ export class StreamingResponse {
           appearance: {
             '@type': 'DigitalDocument',
             name: citation.title || `Document #${currPos + 1}`,
-            abstract: CitationUtil.snippet(citation.content, 477)
+            abstract: CitationUtil.snippet(citation.content, 477),
+            url: citation.url!
           }
         }
         currPos++
@@ -223,6 +232,14 @@ export class StreamingResponse {
   }
 
   /**
+   * Sets the delay in milliseconds between chunks.
+   * @param delayInMs The delay in milliseconds.
+   */
+  public setDelayInMs (delayInMs: number): void {
+    this._delayInMs = delayInMs
+  }
+
+  /**
      * Returns the most recently streamed message.
      *
      * @returns The streamed message.
@@ -236,7 +253,7 @@ export class StreamingResponse {
      *
      * @returns {Promise<void>} - A promise representing the async operation.
      */
-  public waitForQueue (): Promise<void> {
+  private waitForQueue (): Promise<void> {
     return this._queueSync || Promise.resolve()
   }
 
@@ -370,7 +387,7 @@ export class StreamingResponse {
 
     // Send activity
     const response = await this._context.sendActivity(activity)
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+    await new Promise((resolve) => setTimeout(resolve, this.delayInMs))
 
     // Save assigned stream ID
     if (!this._streamId) {
