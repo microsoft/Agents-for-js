@@ -191,7 +191,8 @@ export class StreamingResponse {
           appearance: {
             '@type': 'DigitalDocument',
             name: citation.title || `Document #${currPos + 1}`,
-            abstract: CitationUtil.snippet(citation.content, 477)
+            abstract: CitationUtil.snippet(citation.content, 477),
+            url: citation.url!
           }
         }
         currPos++
