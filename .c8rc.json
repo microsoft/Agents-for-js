@@ -1,0 +1,31 @@
+{
+  "src": [
+    "packages/*/src"
+  ],
+  "exclude": [
+    "packages/*/test/**",
+    "packages/*/dist/**",
+    "test-agents/**",
+    "samples/**",
+    "**/*.test.ts",
+    "**/*.d.ts"
+  ],
+  "include": [
+    "packages/*/src/**/*.ts"
+  ],
+  "extension": [
+    ".ts"
+  ],
+  "reporter": [
+    "text",
+    "html",
+    "lcov",
+    "json"
+  ],
+  "reports-dir": "./coverage",
+  "all": true,
+  "lines": 80,
+  "functions": 80,
+  "branches": 80,
+  "statements": 80
+}
