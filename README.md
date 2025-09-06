@@ -48,6 +48,22 @@ The packages include the source code in the `src`, along with the sourcemaps in 
 
 We are using `eslint` configured with [neostandard](https://github.com/neostandard/neostandard)
 
+### Testing and Code Coverage
+
+The repository includes comprehensive testing and code coverage configuration:
+
+- **Run tests**: `npm run test`
+- **Run tests with JUnit reporting**: `npm run test:junit`
+- **Run tests with code coverage**: `npm run test:coverage`
+- **CI-friendly coverage with JUnit**: `npm run test:coverage:ci`
+
+Code coverage reports are generated in multiple formats:
+- **HTML reports**: Available in `coverage/index.html` for interactive browsing
+- **LCOV format**: `coverage/lcov.info` for integration with CI/CD tools and IDEs
+- **JSON summary**: `coverage/coverage-summary.json` for automated processing
+
+Coverage configuration can be found in `.c8rc.json` with thresholds set at 80% for lines, functions, branches, and statements.
+
 ## Contributing
 
 This project welcomes contributions and suggestions.  Most contributions require you to agree to a

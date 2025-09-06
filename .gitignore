@@ -7,3 +7,7 @@ test-report.xml
 tsconfig.tsbuildinfo
 devTools/
 generated
+
+# Coverage reports
+coverage/
+.nyc_output/
