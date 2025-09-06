@@ -38,7 +38,7 @@ jobs:
         run: npm run build
 
       - name: Run tests
-        run: npm test
+        run: npm run test:junit
 
       - name: Build samples
         run: npm run build:samples
