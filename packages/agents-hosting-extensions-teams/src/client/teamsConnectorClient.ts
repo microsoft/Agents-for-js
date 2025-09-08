@@ -238,13 +238,13 @@ export class TeamsConnectorClient {
   /**
    * Sends a message to all users in a tenant.
    * @param activity - The activity to send.
-   * @param tenandId - The tenant ID.
+   * @param tenantId - The tenant ID.
    * @returns A TeamsBatchOperationResponse object containing the response.
    */
-  public async sendMessageToAllUsersInTenant (activity: Activity, tenandId: string): Promise<TeamsBatchOperationResponse> {
+  public async sendMessageToAllUsersInTenant (activity: Activity, tenantId: string): Promise<TeamsBatchOperationResponse> {
     const content = {
       activity,
-      tenandId
+      tenantId
     }
     const config: AxiosRequestConfig = {
       method: 'post',
