@@ -613,6 +613,9 @@ export interface InputFileDownloader<TState extends TurnState = TurnState> {
 }
 
 // @public
+export const INVOKE_RESPONSE_KEY: unique symbol;
+
+// @public
 export class InvokeException<T = unknown> extends Error {
     constructor(status: StatusCodes, response?: T | undefined);
     createInvokeResponse(): InvokeResponse;

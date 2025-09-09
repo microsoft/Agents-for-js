@@ -1,7 +1,6 @@
 import { strict as assert, strict } from 'assert'
 import { afterEach, beforeEach, describe, it } from 'node:test'
-import { AuthConfiguration, CloudAdapter, Request, TurnContext } from '../../../src'
-import { INVOKE_RESPONSE_KEY } from '../../../src/activityHandler'
+import { AuthConfiguration, CloudAdapter, INVOKE_RESPONSE_KEY, Request, TurnContext } from '../../../src'
 import sinon, { SinonSandbox } from 'sinon'
 import { Activity, ActivityTypes, ConversationReference, DeliveryModes } from '@microsoft/agents-activity'
 import { ConnectorClient } from '../../../src/connector-client/connectorClient'
