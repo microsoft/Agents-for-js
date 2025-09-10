@@ -10,7 +10,7 @@ import { z } from 'zod'
  */
 export enum MembershipSourceTypes {
   /**
-   * The user is a direct member of the current channel.
+   * The source is that of a channel and the user is a member of that channel.
    */
   Channel = 'channel',
 
