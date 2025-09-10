@@ -7,47 +7,65 @@ import { TurnContext } from '../turnContext'
 
 /**
  * Represents an item to be stored in a storage provider.
+ *
+ * @remarks
  * Each item can contain arbitrary data along with an optional eTag for optimistic concurrency control.
  */
 export interface StoreItem {
   /**
    * Optional eTag used for optimistic concurrency control.
+   *
+   * @remarks
    * When set to '*', it indicates that the write should proceed regardless of existing data.
    * When comparing eTags, exact string matching is used to determine if data has changed.
+   *
    */
   eTag?: string;
 
   /**
    * Additional properties can be stored in the item.
+   *
+   * @remarks
    * Each storage provider may have specific requirements or limitations on property names and values.
+   *
    */
   [key: string]: any;
 }
 
 /**
  * Represents a collection of store items indexed by key.
+ *
+ * @remarks
  * Used as the return type for storage read operations.
+ *
  */
 export interface StoreItems {
   /**
    * Keys are the storage item identifiers, and values are the stored items.
+   *
+   * @remarks
    * If a requested key is not found during a read operation, it will not appear in this collection.
+   *
    */
   [key: string]: any;
 }
 
 /**
  * A factory function to generate storage keys based on the conversation context.
- * Allows different storage strategies based on the conversation state.
  *
  * @param context The TurnContext for the current turn of conversation
  * @returns A string key for storage that uniquely identifies where to store the data
+ *
+ * @remarks
+ * Allows different storage strategies based on the conversation state.
+ *
  */
 export type StorageKeyFactory = (context: TurnContext) => string | Promise<string>
 
 /**
  * Defines the interface for storage operations in the Agents platform.
  *
+ * @remarks
  * Storage providers persist state data across conversation turns, enabling
  * agents to maintain context over time. Different implementations may store
  * data in memory, databases, blob storage, or other persistence mechanisms.

@@ -6,11 +6,10 @@
 import { Activity, ActivityTypes, ConversationReference } from '@microsoft/agents-activity'
 import { BaseAdapter } from '../baseAdapter'
 import { ResourceResponse } from '../connector-client'
-import { debug } from '../logger'
+import { debug } from '@microsoft/agents-activity/logger'
 import { TurnContext } from '../turnContext'
 import { AdaptiveCardsActions } from './adaptiveCards'
 import { AgentApplicationOptions } from './agentApplicationOptions'
-import { AppRoute } from './appRoute'
 import { ConversationUpdateEvents } from './conversationUpdateEvents'
 import { AgentExtension } from './extensions'
 import { Authorization, SignInState } from './authorization'
@@ -18,6 +17,10 @@ import { RouteHandler } from './routeHandler'
 import { RouteSelector } from './routeSelector'
 import { TurnEvents } from './turnEvents'
 import { TurnState } from './turnState'
+import { RouteRank } from './routeRank'
+import { RouteList } from './routeList'
+import { TranscriptLoggerMiddleware } from '../transcript'
+import { CloudAdapter } from '../cloudAdapter'
 
 const logger = debug('agents:app')
 
@@ -25,7 +28,7 @@ const TYPING_TIMER_DELAY = 1000
 
 /**
  * Event handler function type for application events.
- * @template TState - The state type extending TurnState.
+ * @typeParam TState - The state type extending TurnState.
  * @param context - The turn context containing activity information.
  * @param state - The current turn state.
  * @returns A promise that resolves to a boolean indicating whether to continue execution.
@@ -35,7 +38,7 @@ export type ApplicationEventHandler<TState extends TurnState> = (context: TurnCo
 /**
  * Main application class for handling agent conversations and routing.
  *
- * @template TState - The state type extending TurnState.
+ * @typeParam TState - The state type extending TurnState.
  *
  * @remarks
  * The AgentApplication class provides a framework for building conversational agents.
@@ -50,10 +53,10 @@ export type ApplicationEventHandler<TState extends TurnState> = (context: TurnCo
  * - Extensible architecture with custom extensions
  * - Event handlers for before/after turn processing
  *
- * Example usage:
+ * @example
  * ```typescript
  * const app = new AgentApplication<MyState>({
- *   storage: myStorage,
+ *   storage: new MemoryStorage(),
  *   adapter: myAdapter
  * });
  *
@@ -63,13 +66,14 @@ export type ApplicationEventHandler<TState extends TurnState> = (context: TurnCo
  *
  * await app.run(turnContext);
  * ```
+ *
  */
 export class AgentApplication<TState extends TurnState> {
   protected readonly _options: AgentApplicationOptions<TState>
-  protected readonly _routes: AppRoute<TState>[] = []
+  protected readonly _routes: RouteList<TState> = new RouteList<TState>()
   protected readonly _beforeTurn: ApplicationEventHandler<TState>[] = []
   protected readonly _afterTurn: ApplicationEventHandler<TState>[] = []
-  private readonly _adapter?: BaseAdapter
+  private readonly _adapter?: CloudAdapter
   private readonly _authorization?: Authorization
   private _typingTimer: NodeJS.Timeout | undefined
   protected readonly _extensions: AgentExtension<TState>[] = []
@@ -91,13 +95,14 @@ export class AgentApplication<TState extends TurnState> {
    * - removeRecipientMention: true
    * - turnStateFactory: Creates a new TurnState instance
    *
-   * Example usage:
+   * @example
    * ```typescript
    * const app = new AgentApplication({
-   *   storage: myStorage,
+   *   storage: new MemoryStorage(),
    *   adapter: myAdapter,
    *   startTypingTimer: true,
-   *   authorization: { connectionName: 'oauth' }
+   *   authorization: { connectionName: 'oauth' },
+   *   transcriptLogger: myTranscriptLogger,
    * });
    * ```
    */
@@ -108,20 +113,31 @@ export class AgentApplication<TState extends TurnState> {
       startTypingTimer: options?.startTypingTimer !== undefined ? options.startTypingTimer : false,
       longRunningMessages: options?.longRunningMessages !== undefined ? options.longRunningMessages : false,
       removeRecipientMention: options?.removeRecipientMention !== undefined ? options.removeRecipientMention : true,
+      transcriptLogger: options?.transcriptLogger || undefined,
     }
 
     this._adaptiveCards = new AdaptiveCardsActions<TState>(this)
 
     if (this._options.adapter) {
       this._adapter = this._options.adapter
+    } else {
+      this._adapter = new CloudAdapter()
     }
 
     if (this._options.authorization) {
-      this._authorization = new Authorization(this._options.storage!, this._options.authorization)
+      this._authorization = new Authorization(this._options.storage!, this._options.authorization, this._adapter?.userTokenClient!)
     }
 
     if (this._options.longRunningMessages && !this._adapter && !this._options.agentAppId) {
       throw new Error('The Application.longRunningMessages property is unavailable because no adapter was configured in the app.')
+    }
+
+    if (this._options.transcriptLogger) {
+      if (!this._options.adapter) {
+        throw new Error('The Application.transcriptLogger property is unavailable because no adapter was configured in the app.')
+      } else {
+        this._adapter?.use(new TranscriptLoggerMiddleware(this._options.transcriptLogger))
+      }
     }
     logger.debug('AgentApplication created with options:', this._options)
   }
@@ -166,9 +182,9 @@ export class AgentApplication<TState extends TurnState> {
    * The adaptive cards actions handler provides functionality for handling
    * adaptive card interactions, such as submit actions and other card-based events.
    *
-   * Example usage:
+   * @example
    * ```typescript
-   * app.adaptiveCards.onSubmit('myCardId', async (context, state, data) => {
+   * app.adaptiveCards.actionSubmit('doStuff', async (context, state, data) => {
    *   await context.sendActivity(`Received data: ${JSON.stringify(data)}`);
    * });
    * ```
@@ -187,13 +203,14 @@ export class AgentApplication<TState extends TurnState> {
    * This method allows you to handle any errors that occur during turn processing.
    * The handler will receive the turn context and the error that occurred.
    *
-   * Example usage:
+   * @example
    * ```typescript
    * app.onError(async (context, error) => {
    *   console.error(`An error occurred: ${error.message}`);
    *   await context.sendActivity('Sorry, something went wrong!');
    * });
    * ```
+   *
    */
   public onError (handler: (context: TurnContext, error: Error) => Promise<void>): this {
     if (this._adapter) {
@@ -208,24 +225,30 @@ export class AgentApplication<TState extends TurnState> {
    * @param selector - The selector function that determines if a route should handle the current activity.
    * @param handler - The handler function that will be called if the selector returns true.
    * @param isInvokeRoute - Whether this route is for invoke activities. Defaults to false.
+   * @param rank - The rank of the route, used to determine the order of evaluation. Defaults to RouteRank.Unspecified.
    * @param authHandlers - Array of authentication handler names for this route. Defaults to empty array.
    * @returns The current instance of the application.
    *
    * @remarks
-   * Routes are evaluated in the order they are added. The first route with a selector that returns true will be used.
+   * Routes are evaluated by rank order (if provided), otherwise, in the order they are added.
+   * Invoke-based activities receive special treatment and are matched separately as they typically
+   * have shorter execution timeouts.
    *
-   * Example usage:
+   * @example
    * ```typescript
    * app.addRoute(
    *   async (context) => context.activity.type === ActivityTypes.Message,
    *   async (context, state) => {
    *     await context.sendActivity('I received your message');
-   *   }
+   *   },
+   *   false, // isInvokeRoute
+   *   RouteRank.First // rank
    * );
    * ```
+   *
    */
-  public addRoute (selector: RouteSelector, handler: RouteHandler<TState>, isInvokeRoute: boolean = false, authHandlers: string[] = []): this {
-    this._routes.push({ selector, handler, isInvokeRoute, authHandlers })
+  public addRoute (selector: RouteSelector, handler: RouteHandler<TState>, isInvokeRoute: boolean = false, rank: number = RouteRank.Unspecified, authHandlers: string[] = []): this {
+    this._routes.addRoute(selector, handler, isInvokeRoute, rank, authHandlers)
     return this
   }
 
@@ -235,27 +258,30 @@ export class AgentApplication<TState extends TurnState> {
    * @param type - The activity type(s) to handle. Can be a string, RegExp, RouteSelector, or array of these types.
    * @param handler - The handler function that will be called when the specified activity type is received.
    * @param authHandlers - Array of authentication handler names for this activity. Defaults to empty array.
+   * @param rank - The rank of the route, used to determine the order of evaluation. Defaults to RouteRank.Unspecified.
    * @returns The current instance of the application.
    *
    * @remarks
    * This method allows you to register handlers for specific activity types such as 'message', 'conversationUpdate', etc.
    * You can specify multiple activity types by passing an array.
    *
-   * Example usage:
+   * @example
    * ```typescript
    * app.onActivity(ActivityTypes.Message, async (context, state) => {
    *   await context.sendActivity('I received your message');
    * });
    * ```
+   *
    */
   public onActivity (
     type: string | RegExp | RouteSelector | (string | RegExp | RouteSelector)[],
     handler: (context: TurnContext, state: TState) => Promise<void>,
-    authHandlers: string[] = []
+    authHandlers: string[] = [],
+    rank: RouteRank = RouteRank.Unspecified
   ): this {
     (Array.isArray(type) ? type : [type]).forEach((t) => {
       const selector = this.createActivitySelector(t)
-      this.addRoute(selector, handler, false, authHandlers)
+      this.addRoute(selector, handler, false, rank, authHandlers)
     })
     return this
   }
@@ -266,13 +292,14 @@ export class AgentApplication<TState extends TurnState> {
    * @param event - The conversation update event to handle (e.g., 'membersAdded', 'membersRemoved').
    * @param handler - The handler function that will be called when the specified event occurs.
    * @param authHandlers - Array of authentication handler names for this event. Defaults to empty array.
+   * @param rank - The rank of the route, used to determine the order of evaluation. Defaults to RouteRank.Unspecified.
    * @returns The current instance of the application.
    * @throws Error if the handler is not a function.
    *
    * @remarks
    * Conversation update events occur when the state of a conversation changes, such as when members join or leave.
    *
-   * Example usage:
+   * @example
    * ```typescript
    * app.onConversationUpdate('membersAdded', async (context, state) => {
    *   const membersAdded = context.activity.membersAdded;
@@ -283,11 +310,13 @@ export class AgentApplication<TState extends TurnState> {
    *   }
    * });
    * ```
+   *
    */
   public onConversationUpdate (
     event: ConversationUpdateEvents,
     handler: (context: TurnContext, state: TState) => Promise<void>,
-    authHandlers: string[] = []
+    authHandlers: string[] = [],
+    rank: RouteRank = RouteRank.Unspecified
   ): this {
     if (typeof handler !== 'function') {
       throw new Error(
@@ -296,7 +325,7 @@ export class AgentApplication<TState extends TurnState> {
     }
 
     const selector = this.createConversationUpdateSelector(event)
-    this.addRoute(selector, handler, false, authHandlers)
+    this.addRoute(selector, handler, false, rank, authHandlers)
     return this
   }
 
@@ -340,6 +369,7 @@ export class AgentApplication<TState extends TurnState> {
    *                  Can be a string, RegExp, RouteSelector, or array of these types.
    * @param handler - The handler function that will be called when a matching message is received.
    * @param authHandlers - Array of authentication handler names for this message handler. Defaults to empty array.
+   * @param rank - The rank of the route, used to determine the order of evaluation. Defaults to RouteRank.Unspecified.
    * @returns The current instance of the application.
    *
    * @remarks
@@ -348,25 +378,27 @@ export class AgentApplication<TState extends TurnState> {
    * If keyword is a RegExp, it tests the message text against the regular expression.
    * If keyword is a function, it calls the function with the context to determine if the message matches.
    *
-   * Example usage:
+   * @example
    * ```typescript
    * app.onMessage('hello', async (context, state) => {
    *   await context.sendActivity('Hello there!');
    * });
    *
-   * app.onMessage(/help/, async (context, state) => {
+   * app.onMessage(/help/i, async (context, state) => {
    *   await context.sendActivity('How can I help you?');
    * });
    * ```
+   *
    */
   public onMessage (
     keyword: string | RegExp | RouteSelector | (string | RegExp | RouteSelector)[],
     handler: (context: TurnContext, state: TState) => Promise<void>,
-    authHandlers: string[] = []
+    authHandlers: string[] = [],
+    rank: RouteRank = RouteRank.Unspecified
   ): this {
     (Array.isArray(keyword) ? keyword : [keyword]).forEach((k) => {
       const selector = this.createMessageSelector(k)
-      this.addRoute(selector, handler, false, authHandlers)
+      this.addRoute(selector, handler, false, rank, authHandlers)
     })
     return this
   }
@@ -382,12 +414,13 @@ export class AgentApplication<TState extends TurnState> {
    * This method allows you to perform actions after a user has successfully authenticated.
    * The handler will receive the turn context and state.
    *
-   * Example usage:
+   * @example
    * ```typescript
    * app.onSignInSuccess(async (context, state) => {
    *   await context.sendActivity('You have successfully signed in!');
    * });
    * ```
+   *
    */
   public onSignInSuccess (handler: (context: TurnContext, state: TurnState, id?: string) => Promise<void>): this {
     if (this.options.authorization) {
@@ -411,12 +444,13 @@ export class AgentApplication<TState extends TurnState> {
    * This method allows you to handle cases where a user fails to authenticate,
    * such as when they cancel the sign-in process or an error occurs.
    *
-   * Example usage:
+   * @example
    * ```typescript
    * app.onSignInFailure(async (context, state) => {
    *   await context.sendActivity('Sign-in failed. Please try again.');
    * });
    * ```
+   *
    */
   public onSignInFailure (handler: (context: TurnContext, state: TurnState, id?: string) => Promise<void>): this {
     if (this.options.authorization) {
@@ -433,13 +467,14 @@ export class AgentApplication<TState extends TurnState> {
    * Adds a handler for message reaction added events.
    *
    * @param handler - The handler function that will be called when a message reaction is added.
+   * @param rank - The rank of the route, used to determine the order of evaluation. Defaults to RouteRank.Unspecified.
    * @returns The current instance of the application.
    *
    * @remarks
    * This method registers a handler that will be invoked when a user adds a reaction to a message,
    * such as a like, heart, or other emoji reaction.
    *
-   * Example usage:
+   * @example
    * ```typescript
    * app.onMessageReactionAdded(async (context, state) => {
    *   const reactionsAdded = context.activity.reactionsAdded;
@@ -448,15 +483,18 @@ export class AgentApplication<TState extends TurnState> {
    *   }
    * });
    * ```
+   *
    */
-  public onMessageReactionAdded (handler: (context: TurnContext, state: TState) => Promise<void>): this {
+  public onMessageReactionAdded (
+    handler: (context: TurnContext, state: TState) => Promise<void>,
+    rank: RouteRank = RouteRank.Unspecified): this {
     const selector = async (context: TurnContext): Promise<boolean> => {
       return context.activity.type === ActivityTypes.MessageReaction &&
              Array.isArray(context.activity.reactionsAdded) &&
              context.activity.reactionsAdded.length > 0
     }
 
-    this.addRoute(selector, handler)
+    this.addRoute(selector, handler, false, rank)
     return this
   }
 
@@ -464,13 +502,14 @@ export class AgentApplication<TState extends TurnState> {
    * Adds a handler for message reaction removed events.
    *
    * @param handler - The handler function that will be called when a message reaction is removed.
+   * @param rank - The rank of the route, used to determine the order of evaluation. Defaults to RouteRank.Unspecified.
    * @returns The current instance of the application.
    *
    * @remarks
    * This method registers a handler that will be invoked when a user removes a reaction from a message,
    * such as unliking or removing an emoji reaction.
    *
-   * Example usage:
+   * @example
    * ```typescript
    * app.onMessageReactionRemoved(async (context, state) => {
    *   const reactionsRemoved = context.activity.reactionsRemoved;
@@ -479,15 +518,18 @@ export class AgentApplication<TState extends TurnState> {
    *   }
    * });
    * ```
+   *
    */
-  public onMessageReactionRemoved (handler: (context: TurnContext, state: TState) => Promise<void>): this {
+  public onMessageReactionRemoved (
+    handler: (context: TurnContext, state: TState) => Promise<void>,
+    rank: RouteRank = RouteRank.Unspecified): this {
     const selector = async (context: TurnContext): Promise<boolean> => {
       return context.activity.type === ActivityTypes.MessageReaction &&
              Array.isArray(context.activity.reactionsRemoved) &&
              context.activity.reactionsRemoved.length > 0
     }
 
-    this.addRoute(selector, handler)
+    this.addRoute(selector, handler, false, rank)
     return this
   }
 
@@ -502,11 +544,12 @@ export class AgentApplication<TState extends TurnState> {
    * It delegates the actual processing to the `runInternal` method, which handles
    * the core logic for routing and executing handlers.
    *
-   * Example usage:
+   * @example
    * ```typescript
    * const app = new AgentApplication();
    * await app.run(turnContext);
    * ```
+   *
    */
   public async run (turnContext:TurnContext): Promise<void> {
     await this.runInternal(turnContext)
@@ -528,19 +571,20 @@ export class AgentApplication<TState extends TurnState> {
    * 2. Processes mentions if configured
    * 3. Loads turn state
    * 4. Handles authentication flows
-   * 5. Executes before-turn event handlers
-   * 6. Downloads files if file downloaders are configured
+   * 5. Downloads files if file downloaders are configured
+   * 6. Executes before-turn event handlers
    * 7. Routes to appropriate handlers
    * 8. Executes after-turn event handlers
    * 9. Saves turn state
    *
-   * Example usage:
+   * @example
    * ```typescript
    * const handled = await app.runInternal(turnContext);
    * if (!handled) {
    *   console.log('No handler matched the activity');
    * }
    * ```
+   *
    */
   public async runInternal (turnContext: TurnContext): Promise<boolean> {
     logger.info('Running application with activity:', turnContext.activity.id!)
@@ -581,18 +625,15 @@ export class AgentApplication<TState extends TurnState> {
           // return true
         }
 
+        if (Array.isArray(this._options.fileDownloaders) && this._options.fileDownloaders.length > 0) {
+          for (let i = 0; i < this._options.fileDownloaders.length; i++) {
+            await this._options.fileDownloaders[i].downloadAndStoreFiles(context, state)
+          }
+        }
+
         if (!(await this.callEventHandlers(context, state, this._beforeTurn))) {
           await state.save(context, storage)
           return false
-        }
-
-        if (Array.isArray(this._options.fileDownloaders) && this._options.fileDownloaders.length > 0) {
-          const inputFiles = state.temp.inputFiles ?? []
-          for (let i = 0; i < this._options.fileDownloaders.length; i++) {
-            const files = await this._options.fileDownloaders[i].downloadFiles(context, state)
-            inputFiles.push(...files)
-          }
-          state.temp.inputFiles = inputFiles
         }
 
         for (const route of this._routes) {
@@ -648,7 +689,7 @@ export class AgentApplication<TState extends TurnState> {
    * @remarks
    * This method allows you to send messages proactively to a conversation, outside the normal turn flow.
    *
-   * Example usage:
+   * @example
    * ```typescript
    * // With conversation reference
    * await app.sendProactiveActivity(conversationReference, 'Important notification!');
@@ -656,6 +697,7 @@ export class AgentApplication<TState extends TurnState> {
    * // From an existing context
    * await app.sendProactiveActivity(turnContext, 'Important notification!');
    * ```
+   *
    */
   public async sendProactiveActivity (
     context: TurnContext | ConversationReference,
@@ -685,13 +727,14 @@ export class AgentApplication<TState extends TurnState> {
    * The typing indicator helps provide feedback to users that the agent is processing
    * their message, especially when responses might take time to generate.
    *
-   * Example usage:
+   * @example
    * ```typescript
    * app.startTypingTimer(turnContext);
    * // Do some processing...
    * await turnContext.sendActivity('Response after processing');
    * // Typing timer automatically stops when sending a message
    * ```
+   *
    */
   public startTypingTimer (context: TurnContext): void {
     if (context.activity.type === ActivityTypes.Message && !this._typingTimer) {
@@ -734,7 +777,7 @@ export class AgentApplication<TState extends TurnState> {
   /**
    * Registers an extension with the application.
    *
-   * @template T - The extension type extending AgentExtension.
+   * @typeParam T - The extension type extending AgentExtension.
    * @param extension - The extension instance to register.
    * @param regcb - Callback function called after successful registration.
    * @throws Error if the extension is already registered.
@@ -743,13 +786,14 @@ export class AgentApplication<TState extends TurnState> {
    * Extensions provide a way to add custom functionality to the application.
    * Each extension can only be registered once to prevent conflicts.
    *
-   * Example usage:
+   * @example
    * ```typescript
    * const myExtension = new MyCustomExtension();
    * app.registerExtension(myExtension, (ext) => {
    *   console.log('Extension registered:', ext.name);
    * });
    * ```
+   *
    */
   public registerExtension<T extends AgentExtension<TState>> (extension: T, regcb : (ext:T) => void): void {
     if (this._extensions.includes(extension)) {
@@ -769,12 +813,13 @@ export class AgentApplication<TState extends TurnState> {
    * from being sent. It's typically called automatically when a message is sent, but
    * can also be called manually to stop the typing indicator.
    *
-   * Example usage:
+   * @example
    * ```typescript
    * app.startTypingTimer(turnContext);
    * // Do some processing...
    * app.stopTypingTimer(); // Manually stop the typing indicator
    * ```
+   *
    */
   public stopTypingTimer (): void {
     if (this._typingTimer) {
@@ -795,13 +840,14 @@ export class AgentApplication<TState extends TurnState> {
    * Handlers added for 'beforeTurn' are executed before routing logic.
    * Handlers added for 'afterTurn' are executed after routing logic.
    *
-   * Example usage:
+   * @example
    * ```typescript
    * app.onTurn('beforeTurn', async (context, state) => {
    *   console.log('Processing before turn');
    *   return true; // Continue execution
    * });
    * ```
+   *
    */
   public onTurn (
     event: TurnEvents | TurnEvents[],

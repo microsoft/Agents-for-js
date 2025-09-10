@@ -13,19 +13,19 @@ async function loadApp () {
   let module
   switch (moduleName) {
     case 'webChat':
-      module = (await import('./webChat')).app
+      module = (await import('./webChat.js')).app
       return module
     case 'stateApp':
-      module = (await import('./stateApp')).app
+      module = (await import('./stateApp.js')).app
       return module
     case 'stateBlobApp':
-      module = (await import('./stateBlobApp')).app
+      module = (await import('./stateBlobApp.js')).app
       return module
     case 'stateCosmosApp':
-      module = (await import('./stateCosmosApp')).app
+      module = (await import('./stateCosmosApp.js')).app
       return module
     case 'webChatSso':
-      module = (await import('./webChatSso')).app
+      module = (await import('./webChatSso.js')).app
       return module
     default:
       throw new Error(`Agent with name ${moduleName} is not recognized.`)

@@ -4,13 +4,14 @@
  */
 
 import { Storage, StoreItem } from './storage'
-import { debug } from '../logger'
+import { debug } from '@microsoft/agents-activity/logger'
 
 const logger = debug('agents:memory-storage')
 
 /**
  * A simple in-memory storage provider that implements the Storage interface.
  *
+ * @remarks
  * This class provides a volatile storage solution that keeps data in memory,
  * which means data is lost when the process terminates. It's primarily useful for:
  * - Development and testing scenarios
@@ -18,7 +19,7 @@ const logger = debug('agents:memory-storage')
  * - Stateless environments where external storage isn't available
  *
  * MemoryStorage supports optimistic concurrency control through eTags and
- * can be used as a singleton through the getSingleInstance() method to
+ * can be used as a singleton through the {@link MemoryStorage.getSingleInstance | getSingleInstance() method} to
  * share state across different parts of an application.
  */
 export class MemoryStorage implements Storage {
@@ -38,10 +39,12 @@ export class MemoryStorage implements Storage {
   /**
    * Gets a single shared instance of the MemoryStorage class.
    *
+   * @returns The singleton instance of MemoryStorage
+   *
+   * @remarks
    * Using this method ensures that the same storage instance is used across
    * the application, allowing for shared state without passing references.
    *
-   * @returns The singleton instance of MemoryStorage
    */
   static getSingleInstance (): MemoryStorage {
     if (!MemoryStorage.instance) {
@@ -64,7 +67,7 @@ export class MemoryStorage implements Storage {
 
     const data: StoreItem = {}
     for (const key of keys) {
-      logger.info(`Reading key: ${key}`)
+      logger.debug(`Reading key: ${key}`)
       const item = this.memory[key]
       if (item) {
         data[key] = JSON.parse(item)
@@ -77,14 +80,15 @@ export class MemoryStorage implements Storage {
   /**
    * Writes storage items to memory.
    *
+   * @param changes The items to write, indexed by key
+   * @returns A promise that resolves when the write operation is complete
+   * @throws Will throw an error if changes are not provided or if there's an eTag conflict
+   *
+   * @remarks
    * This method supports optimistic concurrency control through eTags.
    * If an item has an eTag, it will only be updated if the existing item
    * has the same eTag. If an item has an eTag of '*' or no eTag, it will
    * always be written regardless of the current state.
-   *
-   * @param changes The items to write, indexed by key
-   * @returns A promise that resolves when the write operation is complete
-   * @throws Will throw an error if changes are not provided or if there's an eTag conflict
    */
   async write (changes: StoreItem): Promise<void> {
     if (!changes || changes.length === 0) {
@@ -92,7 +96,7 @@ export class MemoryStorage implements Storage {
     }
 
     for (const [key, newItem] of Object.entries(changes)) {
-      logger.info(`Writing key: ${key}`)
+      logger.debug(`Writing key: ${key}`)
       const oldItemStr = this.memory[key]
       if (!oldItemStr || newItem.eTag === '*' || !newItem.eTag) {
         this.saveItem(key, newItem)
@@ -114,7 +118,7 @@ export class MemoryStorage implements Storage {
    * @returns A promise that resolves when the delete operation is complete
    */
   async delete (keys: string[]): Promise<void> {
-    logger.info(`Deleting keys: ${keys.join(', ')}`)
+    logger.debug(`Deleting keys: ${keys.join(', ')}`)
     for (const key of keys) {
       delete this.memory[key]
     }
@@ -123,13 +127,15 @@ export class MemoryStorage implements Storage {
   /**
    * Saves an item to memory with a new eTag.
    *
+   * @param key The key of the item to save
+   * @param item The item to save
+   *
+   * @remarks
    * This private method handles the details of:
    * - Creating a clone of the item to prevent modification of the original
    * - Generating a new eTag for optimistic concurrency control
    * - Converting the item to a JSON string for storage
    *
-   * @param key The key of the item to save
-   * @param item The item to save
    * @private
    */
   private saveItem (key: string, item: unknown): void {

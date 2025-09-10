@@ -6,7 +6,7 @@
 import { CardAction } from '@microsoft/agents-activity'
 
 /**
- * Interface representing a Card Image.
+ * Represents a Card Image.
  */
 export interface CardImage {
   /** The URL of the image. */

@@ -10,69 +10,69 @@ export enum PowerPlatformCloud {
   /**
    * Unknown cloud environment.
    */
-  Unknown = -1,
+  Unknown = 'Unknown',
   /**
    * Experimental cloud environment.
    */
-  Exp = 0,
+  Exp = 'Exp',
   /**
    * Development cloud environment.
    */
-  Dev = 1,
+  Dev = 'Dev',
   /**
    * Test cloud environment.
    */
-  Test = 2,
+  Test = 'Test',
   /**
    * Pre-production cloud environment.
    */
-  Preprod = 3,
+  Preprod = 'Preprod',
   /**
    * First release cloud environment.
    */
-  FirstRelease = 4,
+  FirstRelease = 'FirstRelease',
   /**
    * Production cloud environment.
    */
-  Prod = 5,
+  Prod = 'Prod',
   /**
    * Government cloud environment.
    */
-  Gov = 6,
+  Gov = 'Gov',
   /**
    * High security cloud environment.
    */
-  High = 7,
+  High = 'High',
   /**
    * Department of Defense cloud environment.
    */
-  DoD = 8,
+  DoD = 'DoD',
   /**
    * Mooncake cloud environment.
    */
-  Mooncake = 9,
+  Mooncake = 'Mooncake',
   /**
    * Ex cloud environment.
    */
-  Ex = 10,
+  Ex = 'Ex',
   /**
    * Rx cloud environment.
    */
-  Rx = 11,
+  Rx = 'Rx',
   /**
    * Private cloud environment.
    */
-  Prv = 12,
+  Prv = 'Prv',
   /**
    * Local cloud environment.
    */
-  Local = 13,
+  Local = 'Local',
   /**
    * French government cloud environment.
    */
-  GovFR = 14,
+  GovFR = 'GovFR',
   /**
    * Other cloud environment.
    */
-  Other = 100
+  Other = 'Other',
 }

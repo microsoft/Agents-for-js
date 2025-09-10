@@ -5,7 +5,7 @@ on:
   pull_request:
     branches:
       - main
-      - dev*
+      - release/*
 
 permissions:
   contents: read
@@ -37,11 +37,11 @@ jobs:
       - name: Build TS
         run: npm run build
 
-      - name: Build samples
-        run: npm run build:samples
-
       - name: Run tests
         run: npm test
+
+      - name: Build samples
+        run: npm run build:samples
       
       - name: Set Version
         run: node setVersion.js

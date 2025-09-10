@@ -156,7 +156,7 @@ export class TeamsInfo {
       //   context.activity.serviceUrl
       // )
       const connectorClient : ConnectorClient = context.turnState.get<ConnectorClient>('connectorClient')
-      const conversationResourceResponse = await connectorClient.createConversationAsync(convoParams)
+      const conversationResourceResponse = await connectorClient.createConversation(convoParams)
       conversationReference = context.activity.getConversationReference()
       conversationReference.conversation!.id = conversationResourceResponse.id
       newActivityId = conversationResourceResponse.activityId

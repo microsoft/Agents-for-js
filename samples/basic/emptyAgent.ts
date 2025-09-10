@@ -3,6 +3,8 @@
 
 import { startServer } from '@microsoft/agents-hosting-express'
 import { AgentApplication, MemoryStorage, TurnContext, TurnState, Storage } from '@microsoft/agents-hosting'
+import pkg from '@microsoft/agents-hosting/package.json'
+const version = pkg.version
 
 class EmptyAgent extends AgentApplication<TurnState> {
   constructor (storage?: Storage) {
@@ -11,6 +13,7 @@ class EmptyAgent extends AgentApplication<TurnState> {
     this.onConversationUpdate('membersAdded', this.help)
     this.onMessage('/help', this.help)
     this.onMessage('/diag', this.diag)
+    this.onActivity('typing', this.typing)
     this.onActivity('message', this.echo)
   }
 
@@ -26,11 +29,18 @@ class EmptyAgent extends AgentApplication<TurnState> {
   }
 
   diag = async (ctx: TurnContext, state: TurnState) => {
-    const version = (await import('@microsoft/agents-hosting/package.json')).version
     await ctx.sendActivity(`Empty Agent running on node sdk ${version}`)
     const md = (text: string) => '```\n' + text + '\n```'
     await ctx.sendActivity(md(JSON.stringify(state, null, 2)))
   }
+
+  typing = async (ctx: TurnContext) => {
+    console.log('Typing event triggered')
+    await ctx.sendActivity('User is typing...')
+  }
 }
 
-startServer(new EmptyAgent(new MemoryStorage()))
+const server = startServer(new EmptyAgent(new MemoryStorage()))
+server.get('/', (req, res) => {
+  res.send(`Empty Agent running on node sdk ${version}`)
+})

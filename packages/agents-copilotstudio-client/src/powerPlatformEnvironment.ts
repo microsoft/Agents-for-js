@@ -5,9 +5,12 @@
 
 import { AgentType } from './agentType'
 import { ConnectionSettings } from './connectionSettings'
+import { debug } from '@microsoft/agents-activity/logger'
 import { PowerPlatformCloud } from './powerPlatformCloud'
 import { PrebuiltBotStrategy } from './strategies/prebuiltBotStrategy'
 import { PublishedBotStrategy } from './strategies/publishedBotStrategy'
+
+const logger = debug('copilot-studio:power-platform')
 
 /**
  * Generates the connection URL for Copilot Studio.
@@ -20,15 +23,15 @@ export function getCopilotStudioConnectionUrl (
   settings: ConnectionSettings,
   conversationId?: string
 ): string {
-  let cloudValue: PowerPlatformCloud = PowerPlatformCloud.Prod
-
   if (settings.directConnectUrl?.trim()) {
+    logger.debug(`Using direct connection: ${settings.directConnectUrl}`)
     if (!isValidUri(settings.directConnectUrl)) {
       throw new Error('directConnectUrl must be a valid URL')
     }
 
     // FIX for Missing Tenant ID
-    if (settings.directConnectUrl.toLocaleLowerCase().includes('tenants/00000000-0000-0000-0000-000000000000')) {
+    if (settings.directConnectUrl.toLowerCase().includes('tenants/00000000-0000-0000-0000-000000000000')) {
+      logger.debug(`Direct connection cannot be used, forcing default settings flow. Tenant ID is missing in the URL: ${settings.directConnectUrl}`)
       // Direct connection cannot be used, ejecting and forcing the normal settings flow:
       return getCopilotStudioConnectionUrl({ ...settings, directConnectUrl: '' }, conversationId)
     }
@@ -36,56 +39,33 @@ export function getCopilotStudioConnectionUrl (
     return createURL(settings.directConnectUrl, conversationId).href
   }
 
-  const isNotEmptyCloud = settings.cloud && settings.cloud.toString().trim() !== ''
-  const isNotEmptyCustomPowerPlatformCloud = settings.customPowerPlatformCloud !== undefined && settings.customPowerPlatformCloud.trim() !== ''
+  const cloudSetting = settings.cloud ?? PowerPlatformCloud.Prod
+  const agentType = settings.copilotAgentType ?? AgentType.Published
 
-  if (isNotEmptyCloud && !Object.values(PowerPlatformCloud).includes(settings.cloud!)) {
-    throw new Error('Invalid PowerPlatformCloud enum key')
-  }
-
-  const cloudSetting = isNotEmptyCloud ? settings.cloud! : PowerPlatformCloud.Unknown
-
-  if (cloudSetting === PowerPlatformCloud.Other && isNotEmptyCustomPowerPlatformCloud) {
-    throw new Error('customPowerPlatformCloud must be provided when PowerPlatformCloud is Other')
-  }
+  logger.debug(`Using cloud setting: ${cloudSetting}`)
+  logger.debug(`Using agent type: ${agentType}`)
 
   if (!settings.environmentId?.trim()) {
     throw new Error('EnvironmentId must be provided')
   }
 
-  if (settings.agentIdentifier === undefined || settings.agentIdentifier.trim() === '') {
+  if (!settings.agentIdentifier?.trim()) {
     throw new Error('AgentIdentifier must be provided')
   }
 
-  if (cloudSetting !== PowerPlatformCloud.Unknown) {
-    cloudValue = cloudSetting
-  }
-
   if (cloudSetting === PowerPlatformCloud.Other) {
-    if (isNotEmptyCustomPowerPlatformCloud && isValidUri(settings.customPowerPlatformCloud!)) {
-      cloudValue = PowerPlatformCloud.Other
+    if (!settings.customPowerPlatformCloud?.trim()) {
+      throw new Error('customPowerPlatformCloud must be provided when PowerPlatformCloud is Other')
+    } else if (isValidUri(settings.customPowerPlatformCloud)) {
+      logger.debug(`Using custom Power Platform cloud: ${settings.customPowerPlatformCloud}`)
     } else {
       throw new Error(
-        'customPowerPlatformCloud must be provided when PowerPlatformCloud is Other'
+        'customPowerPlatformCloud must be a valid URL'
       )
     }
   }
 
-  let agentType: AgentType
-
-  if (settings.copilotAgentType && settings.copilotAgentType.toString().trim() !== '') {
-    if (!Object.values(AgentType).includes(settings.copilotAgentType)) {
-      throw new Error('Invalid AgentType enum key')
-    } else {
-      agentType = settings.copilotAgentType
-    }
-  } else {
-    agentType = AgentType.Published
-  }
-
-  settings.customPowerPlatformCloud = isNotEmptyCustomPowerPlatformCloud ? settings.customPowerPlatformCloud : 'api.unknown.powerplatform.com'
-
-  const host = getEnvironmentEndpoint(cloudValue, settings.environmentId, settings.customPowerPlatformCloud)
+  const host = getEnvironmentEndpoint(cloudSetting, settings.environmentId, settings.customPowerPlatformCloud)
 
   const strategy = {
     [AgentType.Published]: () => new PublishedBotStrategy({
@@ -98,7 +78,9 @@ export function getCopilotStudioConnectionUrl (
     }),
   }[agentType]()
 
-  return strategy.getConversationUrl(conversationId)
+  const url = strategy.getConversationUrl(conversationId)
+  logger.debug(`Generated Copilot Studio connection URL: ${url}`)
+  return url
 }
 
 /**

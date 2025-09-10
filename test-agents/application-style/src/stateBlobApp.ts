@@ -5,7 +5,7 @@ import { TurnState, TurnContext, AgentApplication } from '@microsoft/agents-host
 import { ActivityTypes } from '@microsoft/agents-activity'
 import { BlobsStorage, BlobsTranscriptStore } from '@microsoft/agents-hosting-storage-blob'
 
-const blobStorage = new BlobsStorage(process.env.BLOB_STORAGE_CONNECTION_STRING!, process.env.BLOB_CONTAINER_ID!)
+const blobStorage = new BlobsStorage(process.env.BLOB_CONTAINER_ID!, process.env.BLOB_STORAGE_CONNECTION_STRING!)
 const blobTranscriptStore = new BlobsTranscriptStore(process.env.BLOB_STORAGE_CONNECTION_STRING!, process.env.BLOB_CONTAINER_ID!)
 
 interface ConversationData {

@@ -20,10 +20,10 @@
         "path": "packages/agents-hosting-storage-cosmos"
       },
       {
-        "path": "packages/agents-hosting-extensions-teams"
+        "path": "packages/agents-hosting-dialogs"
       },
       {
-        "path": "packages/agents-hosting-dialogs"
+        "path": "packages/agents-hosting-extensions-teams"
       },
       {
         "path": "test-agents/application-style"
@@ -48,12 +48,6 @@
       },
       {
         "path": "test-agents/root-agent"
-      },
-      {
-        "path": "test-agents/teams-agent"
-      },
-      {
-        "path": "test-agents/teams-application-style"
       }
     ]
   }

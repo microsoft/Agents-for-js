@@ -11,10 +11,48 @@ import { Dialog } from './dialog'
 import { DialogContext, DialogState } from './dialogContext'
 import { StringUtils } from './stringUtils'
 
+/**
+ * Interface for dialogs that have child dialog dependencies.
+ *
+ * @remarks
+ * Implement this interface on dialog classes that need to register child dialogs
+ * with their parent dialog set. When a dialog implementing this interface is added
+ * to a DialogSet, the DialogSet will automatically call getDependencies() and add
+ * all returned child dialogs to itself, ensuring proper dialog registration and
+ * avoiding runtime errors when the dialog tries to call child dialogs.
+ *
+ * This is particularly useful for complex dialogs that compose multiple sub-dialogs
+ * or for dialog libraries that need to ensure their dependencies are available.
+ *
+ * @example
+ * ```typescript
+ * class MyComplexDialog extends Dialog implements DialogDependencies {
+ *   private textPrompt = new TextPrompt('textPrompt');
+ *   private confirmPrompt = new ConfirmPrompt('confirmPrompt');
+ *
+ *   getDependencies(): Dialog[] {
+ *     return [this.textPrompt, this.confirmPrompt];
+ *   }
+ * }
+ * ```
+ */
 export interface DialogDependencies {
   /**
-     * Returns a dialogs child dialog dependencies so they can be added to a containers dialog set.
-     */
+   * Returns an array of child dialogs that this dialog depends on.
+   *
+   *
+   * @remarks
+   * This method is called automatically by DialogSet.add() when a dialog implementing
+   * this interface is added to the set. All returned dialogs will be recursively
+   * added to the same DialogSet, ensuring they are available when needed during
+   * dialog execution.
+   *
+   * The returned dialogs should be the actual Dialog instances that will be called
+   * by this dialog, not new instances. This ensures proper dialog lifecycle management
+   * and state consistency.
+   *
+   * @returns An array of Dialog instances that should be added to the parent DialogSet.
+   */
   getDependencies(): Dialog[];
 }
 
@@ -26,7 +64,7 @@ export interface DialogDependencies {
  * persist the dialog stack for the set:
  *
  * To interact with the sets dialogs you can call `createcontext` with the
- * current {@link @microsoft/agents-hosting.TurnContext}. That will create a {@link DialogContext} that can be used to start or continue
+ * current {@link TurnContext}. That will create a {@link DialogContext} that can be used to start or continue
  * execution of the sets dialogs:
  *
  */
@@ -38,12 +76,13 @@ export class DialogSet {
   /**
      * Creates a new DialogSet instance.
      *
+     * @param dialogState (Optional) state property used to persist the sets dialog stack.
+     *
      * @remarks
      * If the `dialogState` parameter is not passed in, calls to `createContext`
      * will return an error.  You will need to create a {@link DialogContext} for the set manually and
      * pass in your own state object for persisting the sets dialog stack:
      *
-     * @param dialogState (Optional) state property used to persist the sets dialog stack.
      */
   constructor (dialogState?: AgentStatePropertyAccessor<DialogState>) {
     this.dialogState = dialogState
@@ -53,8 +92,10 @@ export class DialogSet {
      * Returns a 32-bit hash of the all the `Dialog.version` values in the set.
      *
      * @returns A version that will change when any of the child dialogs version changes.
+     *
      * @remarks
      * This hash is persisted to state storage and used to detect changes to a dialog set.
+     *
      */
   getVersion (): string {
     if (!this._version) {
@@ -74,14 +115,15 @@ export class DialogSet {
   /**
      * Adds a new dialog or prompt to the set.
      *
+     * @param dialog The dialog or prompt to add.
+     * If a telemetryClient is present on the dialog set, it will be added to each dialog.
+     * @returns The dialog set after the operation is complete.
+     *
      * @remarks
      * If the {@link Dialog.id} being added already exists in the set, the dialogs id will be updated to
      * include a suffix which makes it unique. So adding 2 dialogs named "duplicate" to the set
      * would result in the first one having an id of "duplicate" and the second one having an id
      * of "duplicate2".
-     * @param dialog The dialog or prompt to add.
-     * If a telemetryClient is present on the dialog set, it will be added to each dialog.
-     * @returns The dialog set after the operation is complete.
      */
   add<T extends Dialog>(dialog: T): this {
     if (!(dialog instanceof Dialog)) {
@@ -146,6 +188,7 @@ export class DialogSet {
 
   /**
      * Finds a dialog that was previously added to the set using add.
+     *
      * @param dialogId ID of the dialog or prompt to lookup.
      * @returns The dialog if found; otherwise undefined.
      */

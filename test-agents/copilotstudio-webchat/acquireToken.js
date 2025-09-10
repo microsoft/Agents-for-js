@@ -9,7 +9,7 @@ export async function acquireToken (settings) {
   const msalInstance = new window.msal.PublicClientApplication({
     auth: {
       clientId: settings.appClientId,
-      authority: `https://login.microsoftonline.com/${settings.tenantId}`,
+      authority: `${settings.authority}/${settings.tenantId}`,
     },
   })
 

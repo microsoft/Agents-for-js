@@ -34,6 +34,7 @@ export interface DateTimeResolution {
  *
  * @remarks
  * By default the prompt will return to the calling dialog a {@link DateTimeResolution | DateTimeResolution[] }.
+ *
  */
 export class DateTimePrompt extends Prompt<DateTimeResolution[]> {
   /**

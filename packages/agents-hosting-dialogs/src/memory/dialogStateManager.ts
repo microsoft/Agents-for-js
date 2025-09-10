@@ -12,15 +12,50 @@ import { DialogsComponentRegistration } from '../dialogsComponentRegistration'
 import { MemoryScope } from './scopes'
 import { PathResolver } from './pathResolvers'
 
+/**
+ * Configuration options for the DialogStateManager.
+ *
+ * @remarks
+ * This interface defines the configuration settings that control how the DialogStateManager
+ * resolves memory paths and manages different memory scopes within a dialog context.
+ * The configuration is shared across all DialogStateManager instances within a dialog chain
+ * and is cached in turn state for performance optimization.
+ */
 export interface DialogStateManagerConfiguration {
   /**
-     * List of path resolvers used to evaluate memory paths.
-     */
+   * List of path resolvers used to evaluate and transform memory path expressions.
+   *
+   * @remarks
+   * Path resolvers provide shortcut behavior for mapping path expressions to their
+   * actual memory locations. For example, a resolver might transform '$foo' to 'dialog.foo'
+   * or 'user.name' to 'user.profile.name'. Resolvers are applied in order during path
+   * transformation, allowing for complex path mapping scenarios.
+   *
+   * Common path resolver types include:
+   * - Dollar sign resolvers (e.g., $variable -> dialog.variable)
+   * - Scope alias resolvers (e.g., this -> dialog)
+   * - Custom application-specific resolvers
+   */
   readonly pathResolvers: PathResolver[];
 
   /**
-     * List of the supported memory scopes.
-     */
+   * List of the supported memory scopes available to the dialog state manager.
+   *
+   * @remarks
+   * Memory scopes are named root-level objects that provide access to different
+   * types of persistent and transient data within the dialog system. Each scope
+   * manages its own data lifecycle including loading, saving, and deletion operations.
+   *
+   * Common memory scope types include:
+   * - dialog: Dialog-specific data that persists across turns
+   * - user: User-specific data that persists across conversations
+   * - conversation: Conversation-specific data
+   * - turn: Turn-specific data (transient)
+   * - settings: Application configuration data
+   *
+   * Scopes can exist either in the dialog context or in turn state, and each
+   * scope determines whether it should be included in memory snapshots for debugging.
+   */
   readonly memoryScopes: MemoryScope[];
 }
 
@@ -29,7 +64,7 @@ const PATH_TRACKER = 'dialog._tracker.paths'
 const DIALOG_STATE_MANAGER_CONFIGURATION = 'DialogStateManagerConfiguration'
 
 /**
- * The DialogStateManager manages memory scopes and path resolvers.
+ * Manages memory scopes and path resolvers.
  *
  * @remarks
  * MemoryScopes are named root level objects, which can exist either in the dialog context or off
@@ -94,12 +129,14 @@ export class DialogStateManager {
   /**
      * Get the value from memory using path expression.
      *
-     * @remarks
-     * This always returns a CLONE of the memory, any modifications to the result will not affect memory.
-     * @template T The value type to return.
+     * @typeParam T The value type to return.
      * @param pathExpression Path expression to use.
      * @param defaultValue (Optional) default value to use if the path isn't found. May be a function that returns the default value to use.
      * @returns The found value or undefined if not found and no `defaultValue` specified.
+     *
+     * @remarks
+     * This always returns a CLONE of the memory, any modifications to the result will not affect memory.
+     *
      */
   getValue<T = any>(pathExpression: string, defaultValue?: T | (() => T)): T {
     function returnDefault (): T {
@@ -239,6 +276,7 @@ export class DialogStateManager {
      *
      * @remarks
      * This should be called at the beginning of the turn.
+     *
      */
   async loadAllScopes (): Promise<void> {
     const scopes = this.configuration.memoryScopes
@@ -252,6 +290,7 @@ export class DialogStateManager {
      *
      * @remarks
      * This should be called at the end of the turn.
+     *
      */
   async saveAllChanges (): Promise<void> {
     const scopes = this.configuration.memoryScopes
@@ -280,11 +319,12 @@ export class DialogStateManager {
   /**
      * Normalizes the path segments of a passed in path.
      *
-     * @remarks
-     * A path of `profile.address[0]` will be normalized to `profile.address.0`.
      * @param pathExpression The path to normalize.
      * @param allowNestedPaths Optional. If `false` then detection of a nested path will cause an empty path to be returned. Defaults to 'true'.
      * @returns The normalized path.
+     *
+     * @remarks
+     * A path of `profile.address[0]` will be normalized to `profile.address.0`.
      */
   parsePath (pathExpression: string, allowNestedPaths = true): (string | number)[] {
     // Expand path segments

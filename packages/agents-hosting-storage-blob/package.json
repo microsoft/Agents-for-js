@@ -16,17 +16,19 @@
   "main": "dist/index.js",
   "types": "dist/src/index.d.ts",
   "dependencies": {
-    "@azure/storage-blob": "^12.27.0",
+    "@azure/storage-blob": "^12.28.0",
     "@microsoft/agents-hosting": "file:../../packages/agents-hosting"
   },
   "license": "MIT",
   "files": [
     "README.md",
     "dist/src",
-    "src"
+    "src",
+    "package.json"
   ],
   "exports": {
     ".": {
+      "types": "./dist/src/index.d.ts",
       "import": "./dist/src/index.js",
       "require": "./dist/src/index.js"
     },

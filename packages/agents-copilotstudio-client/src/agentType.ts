@@ -10,9 +10,9 @@ export enum AgentType {
   /**
    * Represents a published agent.
    */
-  Published = 0,
+  Published = 'Published',
   /**
    * Represents a prebuilt agent.
    */
-  Prebuilt = 1
+  Prebuilt = 'Prebuilt',
 }

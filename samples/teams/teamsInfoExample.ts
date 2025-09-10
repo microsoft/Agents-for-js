@@ -30,8 +30,8 @@ app
     await context.sendActivity(`Hello ${JSON.stringify(thisTeam)}, I am your friendly bot!`)
   })
   .onMessage('getMeetingInfo', async (context) => {
-    const thisTeam = await TeamsInfo.getMeetingInfo(context)
-    await context.sendActivity(`Hello ${JSON.stringify(thisTeam)}, I am your friendly bot!`)
+    const thisMeeting = await TeamsInfo.getMeetingInfo(context)
+    await context.sendActivity(`Hello ${JSON.stringify(thisMeeting)}, I am your friendly bot!`)
   })
   .onMessage('sendMessageToAllUsersInTeam', async (context) => {
     const teamsChannelData = parseTeamsChannelData(context.activity.channelData)

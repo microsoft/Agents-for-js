@@ -3,17 +3,17 @@
  * Licensed under the MIT License.
  */
 
-import { Activity, addAIToActivity, Attachment, Entity } from '@microsoft/agents-activity'
+import { Activity, addAIToActivity, Attachment, Entity, ClientCitation, SensitivityUsageInfo } from '@microsoft/agents-activity'
 import { TurnContext } from '../../turnContext'
 import { Citation } from './citation'
 import { CitationUtil } from './citationUtil'
-import { debug } from '../../logger'
-import { ClientCitation, SensitivityUsageInfo } from '@microsoft/agents-activity/src/entity/AIEntity'
+import { debug } from '@microsoft/agents-activity/logger'
 
 const logger = debug('agents:streamingResponse')
 
 /**
  * A helper class for streaming responses to the client.
+ *
  * @remarks
  * This class is used to send a series of updates to the client in a single response. The expected
  * sequence of calls is:
@@ -29,6 +29,7 @@ export class StreamingResponse {
   private _message: string = ''
   private _attachments?: Attachment[]
   private _ended = false
+  private _delayInMs = 1500
 
   // Queue for outgoing activities
   private _queue: Array<() => Activity> = []
@@ -44,6 +45,7 @@ export class StreamingResponse {
 
   /**
      * Creates a new StreamingResponse instance.
+     *
      * @param {TurnContext} context - Context for the current turn of conversation with the user.
      * @returns {TurnContext} - The context for the current turn of conversation with the user.
      */
@@ -53,7 +55,9 @@ export class StreamingResponse {
 
   /**
      * Gets the stream ID of the current response.
+     *
      * @returns {string | undefined} - The stream ID of the current response.
+     *
      * @remarks
      * Assigned after the initial update is sent.
      */
@@ -70,6 +74,7 @@ export class StreamingResponse {
 
   /**
      * Gets the number of updates sent for the stream.
+     *
      * @returns {number} - The number of updates sent for the stream.
      */
   public get updatesSent (): number {
@@ -77,7 +82,15 @@ export class StreamingResponse {
   }
 
   /**
+   * Gets the delay in milliseconds between chunks.
+   */
+  public get delayInMs (): number {
+    return this._delayInMs
+  }
+
+  /**
      * Queues an informative update to be sent to the client.
+     *
      * @param {string} text Text of the update to send.
      */
   public queueInformativeUpdate (text: string): void {
@@ -89,20 +102,24 @@ export class StreamingResponse {
     this.queueActivity(() => Activity.fromObject({
       type: 'typing',
       text,
-      channelData: {
+      entities: [{
+        type: 'streaminfo',
         streamType: 'informative',
         streamSequence: this._nextSequence++
-      } as StreamingChannelData
+      }]
     }))
   }
 
   /**
      * Queues a chunk of partial message text to be sent to the client
+     *
+     * @param {string} text Partial text of the message to send.
+     * @param {Citation[]} citations Citations to be included in the message.
+     *
      * @remarks
      * The text we be sent as quickly as possible to the client. Chunks may be combined before
      * delivery to the client.
-     * @param {string} text Partial text of the message to send.
-     * @param {Citation[]} citations Citations to be included in the message.
+     *
      */
   public queueTextChunk (text: string, citations?: Citation[]): void {
     if (this._ended) {
@@ -121,6 +138,7 @@ export class StreamingResponse {
 
   /**
      * Ends the stream by sending the final message to the client.
+     *
      * @returns {Promise<void>} - A promise representing the async operation
      */
   public endStream (): Promise<void> {
@@ -138,6 +156,7 @@ export class StreamingResponse {
 
   /**
      * Sets the attachments to attach to the final chunk.
+     *
      * @param attachments List of attachments.
      */
   public setAttachments (attachments: Attachment[]): void {
@@ -146,6 +165,7 @@ export class StreamingResponse {
 
   /**
      * Sets the sensitivity label to attach to the final chunk.
+     *
      * @param sensitivityLabel The sensitivty label.
      */
   public setSensitivityLabel (sensitivityLabel: SensitivityUsageInfo): void {
@@ -154,6 +174,7 @@ export class StreamingResponse {
 
   /**
      * Sets the citations for the full message.
+     *
      * @param {Citation[]} citations Citations to be included in the message.
      */
   public setCitations (citations: Citation[]): void {
@@ -170,7 +191,8 @@ export class StreamingResponse {
           appearance: {
             '@type': 'DigitalDocument',
             name: citation.title || `Document #${currPos + 1}`,
-            abstract: CitationUtil.snippet(citation.content, 477)
+            abstract: CitationUtil.snippet(citation.content, 477),
+            url: citation.url!
           }
         }
         currPos++
@@ -183,6 +205,7 @@ export class StreamingResponse {
      * Sets the Feedback Loop in Teams that allows a user to
      * give thumbs up or down to a response.
      * Default is `false`.
+     *
      * @param enableFeedbackLoop If true, the feedback loop is enabled.
      */
   public setFeedbackLoop (enableFeedbackLoop: boolean): void {
@@ -191,6 +214,7 @@ export class StreamingResponse {
 
   /**
      * Sets the type of UI to use for the feedback loop.
+     *
      * @param feedbackLoopType The type of the feedback loop.
      */
   public setFeedbackLoopType (feedbackLoopType: 'default' | 'custom'): void {
@@ -200,6 +224,7 @@ export class StreamingResponse {
   /**
      * Sets the the Generated by AI label in Teams
      * Default is `false`.
+     *
      * @param enableGeneratedByAILabel If true, the label is added.
      */
   public setGeneratedByAILabel (enableGeneratedByAILabel: boolean): void {
@@ -207,7 +232,16 @@ export class StreamingResponse {
   }
 
   /**
+   * Sets the delay in milliseconds between chunks.
+   * @param delayInMs The delay in milliseconds.
+   */
+  public setDelayInMs (delayInMs: number): void {
+    this._delayInMs = delayInMs
+  }
+
+  /**
      * Returns the most recently streamed message.
+     *
      * @returns The streamed message.
      */
   public getMessage (): string {
@@ -216,14 +250,16 @@ export class StreamingResponse {
 
   /**
      * Waits for the outgoing activity queue to be empty.
+     *
      * @returns {Promise<void>} - A promise representing the async operation.
      */
-  public waitForQueue (): Promise<void> {
+  private waitForQueue (): Promise<void> {
     return this._queueSync || Promise.resolve()
   }
 
   /**
      * Queues the next chunk of text to be sent to the client.
+     *
      * @private
      */
   private queueNextChunk (): void {
@@ -242,20 +278,22 @@ export class StreamingResponse {
           type: 'message',
           text: this._message || 'end of stream response',
           attachments: this._attachments,
-          channelData: {
+          entities: [{
+            type: 'streaminfo',
             streamType: 'final',
             streamSequence: this._nextSequence++
-          } as StreamingChannelData
+          }]
         })
       } else {
         // Send typing activity
         return Activity.fromObject({
           type: 'typing',
           text: this._message,
-          channelData: {
+          entities: [{
+            type: 'streaminfo',
             streamType: 'streaming',
             streamSequence: this._nextSequence++
-          } as StreamingChannelData
+          }]
         })
       }
     })
@@ -270,7 +308,7 @@ export class StreamingResponse {
     // If there's no sync in progress, start one
     if (!this._queueSync) {
       this._queueSync = this.drainQueue().catch((err) => {
-        logger.error(`Error occured when sending activity while streaming: "${err}".`)
+        logger.error(`Error occurred when sending activity while streaming: "${JSON.stringify(err)}".`)
         // throw err
       })
     }
@@ -278,6 +316,7 @@ export class StreamingResponse {
 
   /**
      * Sends any queued activities to the client until the queue is empty.
+     *
      * @returns {Promise<void>} - A promise that will be resolved once the queue is empty.
      * @private
      */
@@ -303,6 +342,7 @@ export class StreamingResponse {
 
   /**
      * Sends an activity to the client and saves the stream ID returned.
+     *
      * @param {Activity} activity - The activity to send.
      * @returns {Promise<void>} - A promise representing the async operation.
      * @private
@@ -311,20 +351,19 @@ export class StreamingResponse {
     // Set activity ID to the assigned stream ID
     if (this._streamId) {
       activity.id = this._streamId
-      activity.channelData = Object.assign({}, activity.channelData, { streamId: this._streamId })
+      if (!activity.entities) {
+        activity.entities = []
+      }
+      if (!activity.entities[0]) {
+        activity.entities[0] = {} as Entity
+      }
+      activity.entities[0].streamId = this._streamId
     }
-
-    activity.entities = [
-      {
-        type: 'streaminfo',
-        ...activity.channelData
-      } as Entity
-    ]
 
     if (this._citations && this._citations.length > 0 && !this._ended) {
       // Filter out the citations unused in content.
       const currCitations = CitationUtil.getUsedCitations(this._message, this._citations) ?? undefined
-      activity.entities.push({
+      activity.entities!.push({
         type: 'https://schema.org/Message',
         '@type': 'Message',
         '@context': 'https://schema.org',
@@ -335,73 +374,24 @@ export class StreamingResponse {
 
     // Add in Powered by AI feature flags
     if (this._ended) {
-      if (this._enableFeedbackLoop && this._feedbackLoopType) {
-        activity.channelData = Object.assign({}, activity.channelData, {
-          feedbackLoop: { type: this._feedbackLoopType }
-        })
-      } else {
-        activity.channelData = Object.assign({}, activity.channelData, {
-          feedbackLoopEnabled: this._enableFeedbackLoop
-        })
+      activity.channelData = {
+        feedbackLoopEnabled: this._enableFeedbackLoop ?? false,
+        ...(this._feedbackLoopType ? { type: this._feedbackLoopType } : {})
       }
 
       // Add in Generated by AI
       if (this._enableGeneratedByAILabel) {
         addAIToActivity(activity, this._citations, this._sensitivityLabel)
-        // activity.entities.push({
-        //   type: 'https://schema.org/Message',
-        //   '@type': 'Message',
-        //   '@context': 'https://schema.org',
-        //   '@id': '',
-        //   additionalType: ['AIGeneratedContent'],
-        //   citation: this._citations && this._citations.length > 0 ? this._citations : [],
-        //   usageInfo: this._sensitivityLabel
-        // } as unknown as Entity)
       }
     }
 
     // Send activity
     const response = await this._context.sendActivity(activity)
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+    await new Promise((resolve) => setTimeout(resolve, this.delayInMs))
 
     // Save assigned stream ID
     if (!this._streamId) {
       this._streamId = response?.id
     }
   }
-}
-
-/**
- * @private
- * Structure of the outgoing channelData field for streaming responses.
- * @remarks
- * The expected sequence of streamTypes is:
- *
- * `informative`, `streaming`, `streaming`, ..., `final`.
- *
- * Once a `final` message is sent, the stream is considered ended.
- */
-interface StreamingChannelData {
-  /**
-     * The type of message being sent.
-     * @remarks
-     * `informative` - An informative update.
-     * `streaming` - A chunk of partial message text.
-     * `final` - The final message.
-     */
-  streamType: 'informative' | 'streaming' | 'final';
-
-  /**
-     * Sequence number of the message in the stream.
-     * @remarks
-     * Starts at 1 for the first message and increments from there.
-     */
-  streamSequence: number;
-
-  /**
-     * ID of the stream.
-     * @remarks
-     * Assigned after the initial update is sent.
-     */
-  streamId?: string;
 }

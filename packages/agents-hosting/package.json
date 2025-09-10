@@ -19,11 +19,10 @@
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
   "dependencies": {
-    "@azure/core-auth": "^1.9.0",
-    "@azure/msal-node": "^3.6.0",
+    "@azure/core-auth": "^1.10.0",
+    "@azure/msal-node": "^3.7.2",
     "@microsoft/agents-activity": "file:../agents-activity",
-    "axios": "^1.9.0",
-    "debug": "^4.3.7",
+    "axios": "^1.11.0",
     "jsonwebtoken": "^9.0.2",
     "jwks-rsa": "^3.2.0"
   },
@@ -31,10 +30,12 @@
   "files": [
     "README.md",
     "dist/src",
-    "src"
+    "src",
+    "package.json"
   ],
   "exports": {
     ".": {
+      "types": "./dist/src/index.d.ts",
       "import": "./dist/src/index.js",
       "require": "./dist/src/index.js"
     },

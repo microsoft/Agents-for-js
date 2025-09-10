@@ -1,7 +1,7 @@
 import * as z from 'zod'
 import StreamConsumers from 'stream/consumers'
 import { Activity } from '@microsoft/agents-activity'
-
+import { TokenCredential } from '@azure/core-auth'
 import {
   AnonymousCredential,
   BlobItem,
@@ -58,6 +58,39 @@ function getBlobKey (activity: Activity, options?: BlobsTranscriptStoreOptions):
   )
 }
 
+/**
+ * Sanitizes a blob key for use with Azure Blob Storage.
+ *
+ * @param key - The blob key string to sanitize. Must be non-empty.
+ * @param options - Optional configuration options.
+ * @param options.decodeTranscriptKey - If true, returns the URL-decoded version of the sanitized key.
+ * @returns A sanitized blob key that is safe for use with Azure Blob Storage, truncated to 1024 characters.
+ * @throws {Error} When the provided key is null, undefined, or an empty string.
+ *
+ * @remarks
+ * This function performs the following operations:
+ * 1. Validates that the key is not empty
+ * 2. Removes empty path segments by splitting on '/' and filtering out empty parts
+ * 3. Truncates the sanitized key to 1024 characters maximum
+ * 4. URL encodes the key to ensure it's safe for use as a blob name
+ * 5. Optionally decodes the key if the decodeTranscriptKey option is set
+ *
+ * @example
+ * ```typescript
+ * // Basic sanitization with encoding
+ * const sanitized = sanitizeBlobKey('channel1/conversation2/activity.json');
+ * // Returns: 'channel1%2Fconversation2%2Factivity.json'
+ *
+ * // Sanitization with decoding option
+ * const decoded = sanitizeBlobKey('channel1/conversation2/activity.json', { decodeTranscriptKey: true });
+ * // Returns: 'channel1/conversation2/activity.json'
+ *
+ * // Handles empty path segments
+ * const withEmptySegments = sanitizeBlobKey('channel1//conversation2///activity.json');
+ * // Returns: 'channel1%2Fconversation2%2Factivity.json'
+ * ```
+ *
+ */
 export function sanitizeBlobKey (key: string, options?: BlobsTranscriptStoreOptions): string {
   if (!key || key.length === 0) {
     throw new Error('Please provide a non-empty key')
@@ -75,6 +108,27 @@ export function sanitizeBlobKey (key: string, options?: BlobsTranscriptStoreOpti
   return encodedKey
 }
 
+/**
+ * Performs type casting with optional constructor validation.
+ *
+ * @typeParam T - The target type to cast to.
+ * @param value - The value to cast.
+ * @param ctor - Optional constructor function to validate the value against.
+ * @returns The value cast to type T.
+ *
+ * @remarks
+ * If a constructor is provided, validates that the value is an instance of that constructor.
+ * Otherwise, performs a direct type assertion.
+ *
+ * @example
+ * ```typescript
+ * // With constructor validation
+ * const dateValue = maybeCast(someValue, Date);
+ *
+ * // Direct type assertion
+ * const stringValue = maybeCast<string>(someValue);
+ * ```
+ */
 export function maybeCast<T> (value: unknown, ctor?: { new (...args: any[]): T }): T {
   if (ctor != null && value instanceof ctor) {
     return value
@@ -111,6 +165,7 @@ export class BlobsTranscriptStore implements TranscriptStore {
 
   /**
    * Constructs a new instance of the BlobsTranscriptStore class.
+   *
    * @param connectionString - The connection string for the Azure Blob Storage account.
    * @param containerName - The name of the container to use for storing transcripts.
    * @param options - Optional configuration options for the store.
@@ -122,7 +177,7 @@ export class BlobsTranscriptStore implements TranscriptStore {
     containerName: string,
     options?: BlobsTranscriptStoreOptions,
     blobServiceUri = '',
-    tokenCredential?: StorageSharedKeyCredential | AnonymousCredential
+    tokenCredential?: StorageSharedKeyCredential | AnonymousCredential | TokenCredential
   ) {
     if (blobServiceUri !== '' && tokenCredential !== null) {
       z.object({ blobServiceUri: z.string() }).parse({
@@ -167,6 +222,7 @@ export class BlobsTranscriptStore implements TranscriptStore {
 
   /**
    * Retrieves transcript activities for a specific conversation.
+   *
    * @param channelId - The ID of the channel.
    * @param conversationId - The ID of the conversation.
    * @param continuationToken - Optional token for paginated results.
@@ -243,6 +299,7 @@ export class BlobsTranscriptStore implements TranscriptStore {
 
   /**
    * Lists all transcripts for a specific channel.
+   *
    * @param channelId - The ID of the channel.
    * @param continuationToken - Optional token for paginated results.
    * @returns A promise resolving to a paged result of transcript information.
@@ -289,6 +346,7 @@ export class BlobsTranscriptStore implements TranscriptStore {
 
   /**
    * Deletes all transcripts for a specific conversation.
+   *
    * @param channelId - The ID of the channel.
    * @param conversationId - The ID of the conversation.
    * @returns A promise that resolves when the deletion is complete.
@@ -323,6 +381,7 @@ export class BlobsTranscriptStore implements TranscriptStore {
 
   /**
    * Logs an activity to the transcript store.
+   *
    * @param activity - The activity to log.
    * @param options - Optional configuration options for the operation.
    * @returns A promise that resolves when the activity is logged.

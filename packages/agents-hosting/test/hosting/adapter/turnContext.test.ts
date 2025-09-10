@@ -1,6 +1,6 @@
 import { strict as assert } from 'assert'
 import { describe, it } from 'node:test'
-import { AttachmentData, AttachmentInfo, MessageFactory, ResourceResponse, TurnContext } from '../../../src'
+import { AttachmentData, AttachmentInfo, AuthConfiguration, MessageFactory, ResourceResponse, TurnContext } from '../../../src'
 import { Activity, ActivityTypes, ConversationReference, DeliveryModes } from '@microsoft/agents-activity'
 import { BaseAdapter } from '../../../src/baseAdapter'
 
@@ -29,6 +29,15 @@ const testTraceMessage: Activity = Activity.fromObject(
 )
 
 class SimpleAdapter extends BaseAdapter {
+  authConfig: AuthConfiguration
+  constructor () {
+    super()
+    this.authConfig = {
+      clientId: 'test-client-id',
+      issuers: []
+    }
+  }
+
   getAttachmentInfo (attachmentId: string): Promise<AttachmentInfo> {
     throw new Error('Method not implemented.')
   }

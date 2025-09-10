@@ -28,10 +28,12 @@ export class WaterfallDialog<O extends object = {}> extends Dialog<O> {
   /**
      * Creates a new waterfall dialog containing the given array of steps.
      *
-     * @remarks
-     * See the {@link WaterfallDialog.addStep | addStep function} for details on creating a valid step function.
      * @param dialogId Unique ID of the dialog within the component or set its being added to.
      * @param steps (Optional) array of asynchronous waterfall step functions.
+     *
+     * @remarks
+     * See the {@link WaterfallDialog.addStep | addStep function} for details on creating a valid step function.
+
      */
   constructor (dialogId: string, steps?: WaterfallStep<O>[]) {
     super(dialogId)
@@ -70,9 +72,11 @@ export class WaterfallDialog<O extends object = {}> extends Dialog<O> {
      * @param dialogContext The {@link DialogContext} for the current turn of conversation.
      * @param options Optional, initial information to pass to the Dialog.
      * @returns A Promise representing the asynchronous operation.
+     *
      * @remarks
      * If the task is successful, the result indicates whether the Dialog is still
      * active after the turn has been processed by the dialog.
+     *
      */
   async beginDialog (dialogContext: DialogContext, options?: O): Promise<DialogTurnResult> {
     const state: WaterfallDialogState = dialogContext.activeDialog.state as WaterfallDialogState
@@ -91,10 +95,12 @@ export class WaterfallDialog<O extends object = {}> extends Dialog<O> {
      *
      * @param dialogContext The {@link DialogContext} for the current turn of conversation.
      * @returns A Promise representing the asynchronous operation.
+     *
      * @remarks
      * If the task is successful, the result indicates whether the dialog is still
      * active after the turn has been processed by the dialog. The result may also contain a
      * return value.
+     *
      */
   async continueDialog (dialogContext: DialogContext): Promise<DialogTurnResult> {
     // Don't do anything for non-message activities
@@ -125,11 +131,12 @@ export class WaterfallDialog<O extends object = {}> extends Dialog<O> {
   /**
      * Called when an individual waterfall step is being executed.
      *
+     * @param step Context object for the waterfall step to execute.
+     * @returns A promise with the DialogTurnResult.
+     *
      * @remarks
      * SHOULD be overridden by derived class that want to add custom logging semantics.
      *
-     * @param step Context object for the waterfall step to execute.
-     * @returns A promise with the DialogTurnResult.
      */
   protected async onStep (step: WaterfallStepContext<O>): Promise<DialogTurnResult> {
     return await this.steps[step.index](step)

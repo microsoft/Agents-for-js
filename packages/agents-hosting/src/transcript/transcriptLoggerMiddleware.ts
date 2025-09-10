@@ -3,7 +3,7 @@ import { ResourceResponse } from '../connector-client'
 import { Middleware } from '../middlewareSet'
 import { TranscriptLogger } from './transcriptLogger'
 import { Activity, ActivityEventNames, ActivityTypes, ConversationReference, RoleTypes } from '@microsoft/agents-activity'
-import { debug } from '../logger'
+import { debug } from '@microsoft/agents-activity/logger'
 
 const appLogger = debug('agents:rest-client')
 

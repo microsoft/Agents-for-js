@@ -6,7 +6,7 @@
 import { z } from 'zod'
 
 /**
- * Interface representing an attachment.
+ * Represents an attachment.
  */
 export interface Attachment {
   /**

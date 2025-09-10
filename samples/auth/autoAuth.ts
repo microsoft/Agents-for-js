@@ -4,8 +4,8 @@
 import { startServer } from '@microsoft/agents-hosting-express'
 import { AgentApplication, CardFactory, MemoryStorage, MessageFactory, TurnContext, TurnState } from '@microsoft/agents-hosting'
 import { Template } from 'adaptivecards-templating'
-import { getUserInfo } from '../_shared/userGraphClient'
-import { getCurrentProfile, getPullRequests } from '../_shared/githubApiClient'
+import { getUserInfo } from '../_shared/userGraphClient.js'
+import { getCurrentProfile, getPullRequests } from '../_shared/githubApiClient.js'
 
 class OneProvider extends AgentApplication<TurnState> {
   constructor () {
@@ -104,5 +104,4 @@ class OneProvider extends AgentApplication<TurnState> {
     }
   }
 }
-
 startServer(new OneProvider())

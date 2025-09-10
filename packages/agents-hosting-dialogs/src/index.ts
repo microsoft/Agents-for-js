@@ -34,3 +34,6 @@ export * from './configuration'
 export * from './intentScore'
 
 export { runDialog } from './dialogHelper'
+
+// Type-only re-export to avoid TypeDoc issues
+export type { TurnContext } from '@microsoft/agents-hosting'

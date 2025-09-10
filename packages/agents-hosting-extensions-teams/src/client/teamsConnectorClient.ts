@@ -10,6 +10,9 @@ import { TeamsChannelData } from '../activity-extensions'
 import { BatchFailedEntriesResponse, BatchOperationStateResponse, CancelOperationResponse, TeamDetails, TeamsBatchOperationResponse, TeamsMember, TeamsPagedMembersResult } from './teamsConnectorClient.types'
 import { ConnectorClient } from '@microsoft/agents-hosting'
 
+interface ConversationList {
+  conversations?: ChannelInfo[]
+}
 /**
  * A client for interacting with Microsoft Teams APIs.
  * Extends the ConnectorClient class to provide Teams-specific functionalities.
@@ -145,7 +148,8 @@ export class TeamsConnectorClient {
       url: `v3/teams/${teamId}/conversations`
     }
     const response = await this.axiosInstance(config)
-    return response.data
+    const convList: ConversationList = response.data
+    return convList.conversations || []
   }
 
   /**
@@ -234,13 +238,13 @@ export class TeamsConnectorClient {
   /**
    * Sends a message to all users in a tenant.
    * @param activity - The activity to send.
-   * @param tenandId - The tenant ID.
+   * @param tenantId - The tenant ID.
    * @returns A TeamsBatchOperationResponse object containing the response.
    */
-  public async sendMessageToAllUsersInTenant (activity: Activity, tenandId: string): Promise<TeamsBatchOperationResponse> {
+  public async sendMessageToAllUsersInTenant (activity: Activity, tenantId: string): Promise<TeamsBatchOperationResponse> {
     const content = {
       activity,
-      tenandId
+      tenantId
     }
     const config: AxiosRequestConfig = {
       method: 'post',

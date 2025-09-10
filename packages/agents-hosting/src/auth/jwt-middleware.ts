@@ -8,7 +8,7 @@ import { Response, NextFunction } from 'express'
 import { Request } from './request'
 import jwksRsa, { JwksClient, SigningKey } from 'jwks-rsa'
 import jwt, { JwtHeader, JwtPayload, SignCallback, GetPublicKeyOrSecret } from 'jsonwebtoken'
-import { debug } from '../logger'
+import { debug } from '@microsoft/agents-activity/logger'
 
 const logger = debug('agents:jwt-middleware')
 
@@ -21,12 +21,12 @@ const logger = debug('agents:jwt-middleware')
 const verifyToken = async (raw: string, config: AuthConfiguration): Promise<JwtPayload> => {
   const getKey: GetPublicKeyOrSecret = (header: JwtHeader, callback: SignCallback) => {
     const payload = jwt.decode(raw) as JwtPayload
-    logger.info('jwt.decode ', JSON.stringify(payload))
+    logger.debug('jwt.decode ', JSON.stringify(payload))
     const jwksUri: string = payload.iss === 'https://api.botframework.com'
       ? 'https://login.botframework.com/v1/.well-known/keys'
-      : `https://login.microsoftonline.com/${config.tenantId}/discovery/v2.0/keys`
+      : `${config.authority}/${config.tenantId}/discovery/v2.0/keys`
 
-    logger.info(`fetching keys from ${jwksUri}`)
+    logger.debug(`fetching keys from ${jwksUri}`)
     const jwksClient: JwksClient = jwksRsa({ jwksUri })
 
     jwksClient.getSigningKey(header.kid, (err: Error | null, key: SigningKey | undefined): void => {
@@ -71,26 +71,33 @@ const verifyToken = async (raw: string, config: AuthConfiguration): Promise<JwtP
 export const authorizeJWT = (authConfig: AuthConfiguration) => {
   return async function (req: Request, res: Response, next: NextFunction) {
     let failed = false
-    logger.info('authorizing jwt')
-    const authHeader = req.headers.authorization as string
-    if (authHeader) {
-      const token: string = authHeader.split(' ')[1] // Extract the token from the Bearer string
-      try {
-        const user = await verifyToken(token, authConfig)
-        logger.debug('token verified for ', user)
-        req.user = user
-      } catch (err: Error | any) {
-        failed = true
-        logger.error(err)
-        res.status(401).send({ 'jwt-auth-error': err.message })
-      }
+    logger.debug('authorizing jwt')
+    if (req.method !== 'POST' && req.method !== 'GET') {
+      failed = true
+      logger.warn('Method not allowed', req.method)
+      res.status(405).send({ 'jwt-auth-error': 'Method not allowed' })
     } else {
-      if (!authConfig.clientId && process.env.NODE_ENV !== 'production') {
-        logger.info('using anonymous auth')
-        req.user = { name: 'anonymous' }
+      const authHeader = req.headers.authorization as string
+      if (authHeader) {
+        const token: string = authHeader.split(' ')[1] // Extract the token from the Bearer string
+        try {
+          const user = await verifyToken(token, authConfig)
+          logger.debug('token verified for ', user)
+          req.user = user
+        } catch (err: Error | any) {
+          failed = true
+          logger.error(err)
+          res.status(401).send({ 'jwt-auth-error': err.message })
+        }
       } else {
-        logger.error('authorization header not found')
-        res.status(401).send({ 'jwt-auth-error': 'authorization header not found' })
+        if (!authConfig.clientId && process.env.NODE_ENV !== 'production') {
+          logger.info('using anonymous auth')
+          req.user = { name: 'anonymous' }
+        } else {
+          failed = true
+          logger.error('authorization header not found')
+          res.status(401).send({ 'jwt-auth-error': 'authorization header not found' })
+        }
       }
     }
     if (!failed) {

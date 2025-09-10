@@ -6,7 +6,7 @@
 import { z } from 'zod'
 
 /**
- * Interface representing the search parameters for adaptive cards.
+ * Represents the search parameters for adaptive cards.
  */
 export interface AdaptiveCardsSearchParams {
   /**

@@ -4,6 +4,8 @@
 
 The `@microsoft/agents-copilotstudio-client` package allows you to interact with Copilot Studio Agents using the Direct Engine Protocol. This client library is designed to facilitate communication with agents, enabling seamless integration and interaction within your JavaScript or TypeScript applications.
 
+This package provides exports for CommonJS and ES6 modules, and also a bundle to be used in the browser.
+
 > [!NOTE]
 > The Client needs to be initialized with a valid JWT Token.
 
@@ -99,14 +101,14 @@ The following are the most _common_ options:
 
 Using Environment ID and Copilot Studio Agent Schema Name:
 
-```env
-environmentId= your-environment-id
+```
+environmentId=your-environment-id
 agentIdentifier=your-agent-schema-name
 ```
 
 Using the DirectConnectUrl:
 
-```env
+```
 directConnectUrl=https://direct.connect.url
 ```
 

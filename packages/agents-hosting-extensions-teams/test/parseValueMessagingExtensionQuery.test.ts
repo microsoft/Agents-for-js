@@ -37,7 +37,7 @@ describe('parseValueMessagingExtensionQuery test', () => {
     assert.deepEqual(messagingExtensionQuery, messagingExtensionQueryObj)
   })
 
-  it('Should trhow with wrong commandId', () => {
+  it('Should throw with wrong commandId', () => {
     const messagingExtensionQueryObj = {
       commandId: 1,
       parameters: [{
@@ -68,7 +68,7 @@ describe('parseValueMessagingExtensionQuery test', () => {
     assert.deepEqual(messagingExtensionQuery, messagingExtensionQueryObj)
   })
 
-  it('Should trhow with wrong parameters', () => {
+  it('Should throw with wrong parameters', () => {
     const messagingExtensionQueryObj = {
       commandId: 'commandId',
       parameters: {
@@ -99,7 +99,7 @@ describe('parseValueMessagingExtensionQuery test', () => {
     assert.deepEqual(messagingExtensionQuery, messagingExtensionQueryObj)
   })
 
-  it('Should trhow with wrong queryOptions', () => {
+  it('Should throw with wrong queryOptions', () => {
     const messagingExtensionQueryObj = {
       commandId: 1,
       parameters: [{
@@ -133,7 +133,7 @@ describe('parseValueMessagingExtensionQuery test', () => {
     assert.deepEqual(messagingExtensionQuery, messagingExtensionQueryObj)
   })
 
-  it('Should trhow with wrong state', () => {
+  it('Should throw with wrong state', () => {
     const messagingExtensionQueryObj = {
       commandId: 1,
       parameters: [{

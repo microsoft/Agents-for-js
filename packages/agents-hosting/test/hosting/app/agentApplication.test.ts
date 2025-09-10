@@ -6,6 +6,12 @@ import { TestAdapter } from '../testStubs'
 import { Activity, ActivityTypes } from '@microsoft/agents-activity'
 import { MessageFactory } from '../../../src/messageFactory'
 import { TurnContext } from '../../../src/turnContext'
+import { RouteList } from './../../../src/app/routeList'
+import { TurnState } from './../../../src/app/turnState'
+import { RouteRank } from './../../../src/app/routeRank'
+import { CloudAdapter } from '../../../src/cloudAdapter'
+import { createStubInstance, SinonStub } from 'sinon'
+import { ConsoleTranscriptLogger } from '../../../src/transcript/consoleTranscriptLogger'
 
 const createTestActivity = () => Activity.fromObject({
   type: 'message',
@@ -40,6 +46,7 @@ describe('Application', () => {
     assert.equal(app.options.storage, undefined)
     assert.equal(app.options.authorization, undefined)
     assert.equal(app.options.startTypingTimer, false)
+    assert.equal(app.options.transcriptLogger, undefined)
   })
 
   it('should route to an activity handler', async () => {
@@ -172,5 +179,177 @@ describe('Application', () => {
     await context.sendActivity('/yo')
     assert.equal(timesCalled, 1)
     assert.equal(handled, true)
+  })
+
+  it('should add TranscriptLoggerMiddleware', async () => {
+    const logger = new ConsoleTranscriptLogger()
+    const adapter: CloudAdapter = createStubInstance(CloudAdapter)
+
+    const app = new AgentApplication({ adapter, transcriptLogger: logger })
+
+    assert.notEqual(app.adapter, undefined)
+    const useStub = adapter.use as SinonStub
+    assert.equal(useStub.calledOnce, true)
+    const calledWith = useStub.getCall(0).args[0]
+    assert.equal(calledWith.constructor.name, 'TranscriptLoggerMiddleware')
+  })
+
+  it('should throw for transcriptLogger when no adapter is provided', async () => {
+    const logger = new ConsoleTranscriptLogger()
+
+    assert.throws(() => new AgentApplication({ transcriptLogger: logger }))
+  })
+})
+
+describe('RouteList', () => {
+  it('should order by rank', async () => {
+    const values: string[] = []
+    const routeList: RouteList<TurnState> = new RouteList()
+
+    routeList.addRoute(
+      () => { return new Promise<true>(resolve => resolve(true)) },
+      () => {
+        values.push('1')
+        return new Promise<void>(resolve => resolve())
+      },
+      false,
+      2
+    )
+
+    routeList.addRoute(
+      () => { return new Promise<true>(resolve => resolve(true)) },
+      () => {
+        values.push('2')
+        return new Promise<void>(resolve => resolve())
+      },
+      false,
+      0
+    )
+
+    routeList.addRoute(
+      () => { return new Promise<true>(resolve => resolve(true)) },
+      () => {
+        values.push('3')
+        return new Promise<void>(resolve => resolve())
+      },
+      false,
+      1
+    )
+
+    routeList.addRoute(
+      () => { return new Promise<true>(resolve => resolve(true)) },
+      () => {
+        values.push('4')
+        return new Promise<void>(resolve => resolve())
+      },
+      false,
+      1
+    )
+
+    for (const route of routeList) {
+      await route.handler({} as any, {} as any)
+    }
+
+    assert.equal(4, values.length)
+    assert.equal('2', values[0])
+    assert.equal('3', values[1])
+    assert.equal('4', values[2])
+    assert.equal('1', values[3])
+  })
+
+  it('should order by invoke then by order of addition', async () => {
+    const values: string[] = []
+    const routeList: RouteList<TurnState> = new RouteList()
+
+    routeList.addRoute(
+      () => { return new Promise<true>(resolve => resolve(true)) },
+      () => {
+        values.push('2')
+        return new Promise<void>(resolve => resolve())
+      },
+      false
+    )
+
+    routeList.addRoute(
+      () => { return new Promise<true>(resolve => resolve(true)) },
+      () => {
+        values.push('1')
+        return new Promise<void>(resolve => resolve())
+      },
+      false
+    )
+
+    routeList.addRoute(
+      () => { return new Promise<true>(resolve => resolve(true)) },
+      () => {
+        values.push('invoke')
+        return new Promise<void>(resolve => resolve())
+      },
+      true
+    )
+
+    for (const route of routeList) {
+      await route.handler({} as any, {} as any)
+    }
+
+    assert.equal(3, values.length)
+    assert.equal('invoke', values[0])
+    assert.equal('2', values[1])
+    assert.equal('1', values[2])
+  })
+
+  it('should order by invoke then by rank', async () => {
+    const values: string[] = []
+    const routeList: RouteList<TurnState> = new RouteList()
+
+    routeList.addRoute(
+      () => { return new Promise<true>(resolve => resolve(true)) },
+      () => {
+        values.push('2')
+        return new Promise<void>(resolve => resolve())
+      },
+      false,
+      RouteRank.Unspecified
+    )
+
+    routeList.addRoute(
+      () => { return new Promise<true>(resolve => resolve(true)) },
+      () => {
+        values.push('1')
+        return new Promise<void>(resolve => resolve())
+      },
+      false,
+      0
+    )
+
+    routeList.addRoute(
+      () => { return new Promise<true>(resolve => resolve(true)) },
+      () => {
+        values.push('invoke1')
+        return new Promise<void>(resolve => resolve())
+      },
+      true,
+      RouteRank.Last
+    )
+
+    routeList.addRoute(
+      () => { return new Promise<true>(resolve => resolve(true)) },
+      () => {
+        values.push('invoke2')
+        return new Promise<void>(resolve => resolve())
+      },
+      true,
+      0
+    )
+
+    for (const route of routeList) {
+      await route.handler({} as any, {} as any)
+    }
+
+    assert.equal(4, values.length)
+    assert.equal('invoke2', values[0])
+    assert.equal('invoke1', values[1])
+    assert.equal('1', values[2])
+    assert.equal('2', values[3])
   })
 })

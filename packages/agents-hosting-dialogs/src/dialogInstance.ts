@@ -1,7 +1,7 @@
 /**
  * Contains state information for an instance of a dialog on the stack.
  *
- * @template T Optional. The type that represents state information for the dialog.
+ * @typeParam T Optional. The type that represents state information for the dialog.
  *
  * @remarks
  * This contains information for a specific instance of a dialog on a dialog stack.
@@ -11,22 +11,22 @@
  */
 export interface DialogInstance<T = any> {
   /**
-       * ID of this dialog
-       *
-       * @remarks
-       * Dialog state is associated with a specific dialog set.
-       * This ID is the the dialog's Dialog.id within that dialog set.
-       *
-       */
+   * ID of this dialog
+   *
+   * @remarks
+   * Dialog state is associated with a specific dialog set.
+   * This ID is the the dialog's Dialog.id within that dialog set.
+   *
+   */
   id: string;
 
   /**
-       * The state information for this instance of this dialog.
-       */
+   * The state information for this instance of this dialog.
+   */
   state: T;
 
   /**
-       * Hash code used to detect that a dialog has changed since the curent instance was started.
-       */
+   * Hash code used to detect that a dialog has changed since the current instance was started.
+   */
   version?: string;
 }

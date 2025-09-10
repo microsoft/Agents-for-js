@@ -8,33 +8,33 @@
  */
 export enum DialogReason {
   /**
-       * The dialog is being started from DialogContext.beginDialog or DialogContext.replaceDialog.
-       */
+   * The dialog is being started from DialogContext.beginDialog or DialogContext.replaceDialog.
+   */
   beginCalled = 'beginCalled',
 
   /**
-       * The dialog is being continued from DialogContext.continueDialog.
-       */
+   * The dialog is being continued from DialogContext.continueDialog.
+   */
   continueCalled = 'continueCalled',
 
   /**
-       * The dialog is being ended from DialogContext.endDialog.
-       */
+   * The dialog is being ended from DialogContext.endDialog.
+   */
   endCalled = 'endCalled',
 
   /**
-       * The dialog is being ended from DialogContext.replaceDialog.
-       */
+   * The dialog is being ended from DialogContext.replaceDialog.
+   */
   replaceCalled = 'replaceCalled',
 
   /**
-       * The dialog is being cancelled from DialogContext.cancelAllDialogs.
-       */
+   * The dialog is being cancelled from DialogContext.cancelAllDialogs.
+   */
   cancelCalled = 'cancelCalled',
 
   /**
-       * A step in a WaterfallDialog is being called
-       * because the previous step in the waterfall dialog called WaterfallStepContext.next.
-       */
+   * A step in a WaterfallDialog is being called
+   * because the previous step in the waterfall dialog called WaterfallStepContext.next.
+   */
   nextCalled = 'nextCalled',
 }

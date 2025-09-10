@@ -5,7 +5,8 @@
 import { Activity } from '@microsoft/agents-activity'
 import { AgentApplication, FileStorage, TurnContext, TurnState, Storage, UserState, ConversationState } from '@microsoft/agents-hosting'
 import { startServer } from '@microsoft/agents-hosting-express'
-
+import pkg from '@microsoft/agents-hosting/package.json'
+const version = pkg.version
 // interface ActHistory {
 //   timestamp: Date
 //   activity: Activity
@@ -50,7 +51,6 @@ class StateAgent extends AgentApplication<TurnState<CounterState, AuthState>> {
   }
 
   diag = async (ctx: TurnContext, state: TurnState) => {
-    const version = (await import('@microsoft/agents-hosting/package.json')).version
     await ctx.sendActivity(`Empty Agent running on node sdk ${version}`)
     const md = (text: string) => '```\n' + text + '\n```'
     await ctx.sendActivity(md(JSON.stringify(state, null, 2)))

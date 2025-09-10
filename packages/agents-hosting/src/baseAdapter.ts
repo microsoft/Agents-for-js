@@ -8,16 +8,29 @@ import { AuthProvider } from './auth/authProvider'
 import { MsalTokenProvider } from './auth/msalTokenProvider'
 import { Middleware, MiddlewareHandler, MiddlewareSet } from './middlewareSet'
 import { TurnContext } from './turnContext'
-import { debug } from './logger'
+import { debug } from '@microsoft/agents-activity/logger'
 import { Activity, ConversationReference } from '@microsoft/agents-activity'
 import { ResourceResponse } from './connector-client/resourceResponse'
 import { AttachmentData } from './connector-client/attachmentData'
 import { AttachmentInfo } from './connector-client/attachmentInfo'
+import { UserTokenClient } from './oauth'
 
 const logger = debug('agents:base-adapter')
 
 /**
- * Base class for all adapters, providing middleware and error handling capabilities.
+ * Abstract base class for all adapters in the Agents framework.
+ *
+ * @remarks
+ * This class provides core functionality for handling conversations, managing middleware,
+ * authentication, and error handling. Adapters are responsible for translating between
+ * the Agents framework and specific communication channels (like Teams, Web Chat, etc.).
+ *
+ * Key features:
+ * - Middleware pipeline for processing incoming and outgoing activities
+ * - Error handling and recovery mechanisms
+ * - Authentication provider integration
+ * - Abstract methods for channel-specific operations
+ * - Context management with revocable proxies for security
  */
 export abstract class BaseAdapter {
   /**
@@ -41,8 +54,19 @@ export abstract class BaseAdapter {
     await context.sendActivity('To continue to run this agent, please fix the source code.')
   }
 
+  /**
+   * Symbol key used to store agent identity information in the TurnContext.
+   */
   readonly AgentIdentityKey = Symbol('AgentIdentity')
+
+  /**
+   * Symbol key used to store connector client instances in the TurnContext.
+   */
   readonly ConnectorClientKey = Symbol('ConnectorClient')
+
+  /**
+   * Symbol key used to store OAuth scope information in the TurnContext.
+   */
   readonly OAuthScopeKey = Symbol('OAuthScope')
 
   /**
@@ -51,9 +75,14 @@ export abstract class BaseAdapter {
   authProvider: AuthProvider = new MsalTokenProvider()
 
   /**
+   * The user token client used for managing user tokens.
+   */
+  userTokenClient: UserTokenClient | null = null
+
+  /**
    * The authentication configuration for the adapter.
    */
-  authConfig: AuthConfiguration = { issuers: [] }
+  abstract authConfig: AuthConfiguration
 
   /**
    * Sends a set of activities to the conversation.
@@ -140,6 +169,17 @@ export abstract class BaseAdapter {
     return this
   }
 
+  /**
+   * This method creates a revocable proxy for the given target object.
+   * If the environment does not support Proxy.revocable, it returns the original object.
+   * @remarks
+   * This is used to enhance security by allowing the proxy to be revoked after use,
+   * preventing further access to the underlying object.
+   *
+   * @param target The target object to be proxied.
+   * @param handler Optional proxy handler to customize behavior.
+   * @returns An object containing the proxy and a revoke function.
+   */
   private makeRevocable<T extends Record<string, any>>(
     target: T,
     handler?: ProxyHandler<T>
@@ -171,6 +211,7 @@ export abstract class BaseAdapter {
       context.locale = context.activity.locale
     }
 
+    // Create a revocable proxy for the context which will automatically be revoked upon completion of the turn.
     const pContext = this.makeRevocable(context)
 
     try {
@@ -187,6 +228,8 @@ export abstract class BaseAdapter {
       }
     } finally {
       pContext.revoke()
+      // Accessing the context after this point, will throw a TypeError.
+      // e.g.: "TypeError: Cannot perform 'get' on a proxy that has been revoked"
     }
   }
 }

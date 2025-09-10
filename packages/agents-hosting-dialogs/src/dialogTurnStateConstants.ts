@@ -6,8 +6,10 @@
 /**
  * Provides constants used to manage the state of a dialog turn.
  *
+ * @remarks
  * These constants are used as keys to store and retrieve specific state information
  * during the execution of a dialog turn.
+ *
  */
 export class DialogTurnStateConstants {
   /**

@@ -141,30 +141,6 @@ export class TeamsAgentExtension<TState extends TurnState = TurnState> extends A
     return this
   }
 
-  onTeamsChannelShared (handler: RouteHandler<TurnState>) {
-    const routeSel: RouteSelector = (context: TurnContext) => {
-      const channelData = parseTeamsChannelData(context.activity.channelData)
-      return Promise.resolve(context.activity.type === ActivityTypes.ConversationUpdate &&
-                context.activity.channelId === 'msteams' &&
-                channelData &&
-                channelData.eventType === 'channelShared')
-    }
-    this.addRoute(this._app, routeSel, handler, false)
-    return this
-  }
-
-  onTeamsChannelUnshared (handler: RouteHandler<TurnState>) {
-    const routeSel: RouteSelector = (context: TurnContext) => {
-      const channelData = parseTeamsChannelData(context.activity.channelData)
-      return Promise.resolve(context.activity.type === ActivityTypes.ConversationUpdate &&
-                context.activity.channelId === 'msteams' &&
-                channelData &&
-                channelData.eventType === 'channelUnshared')
-    }
-    this.addRoute(this._app, routeSel, handler, false)
-    return this
-  }
-
   onTeamsTeamRenamed (handler: RouteHandler<TurnState>) {
     const routeSel: RouteSelector = (context: TurnContext) => {
       const channelData = parseTeamsChannelData(context.activity.channelData)

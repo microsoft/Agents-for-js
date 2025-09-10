@@ -12,8 +12,10 @@ import { z } from 'zod'
  */
 export class TeamsAttachmentDownloader<TState extends TurnState = TurnState> implements InputFileDownloader<TState> {
   private _httpClient: AxiosInstance
-  public constructor () {
+  private _stateKey: string
+  public constructor (stateKey: string = 'inputFiles') {
     this._httpClient = axios.create()
+    this._stateKey = stateKey
   }
 
   /**
@@ -23,7 +25,7 @@ export class TeamsAttachmentDownloader<TState extends TurnState = TurnState> imp
      * @param {TState} state Application state for the current turn of conversation.
      * @returns {Promise<InputFile[]>} Promise that resolves to an array of downloaded input files.
      */
-  public async downloadFiles (context: TurnContext, state: TState): Promise<InputFile[]> {
+  public async downloadFiles (context: TurnContext): Promise<InputFile[]> {
     // Filter out HTML attachments
     const attachments = context.activity.attachments?.filter((a) => !a.contentType.startsWith('text/html'))
     if (!attachments || attachments.length === 0) {
@@ -74,5 +76,17 @@ export class TeamsAttachmentDownloader<TState extends TurnState = TurnState> imp
       }
     }
     return inputFile
+  }
+
+  /**
+   * Downloads files from the attachments in the current turn context and stores them in state.
+   *
+   * @param context The turn context containing the activity with attachments.
+   * @param state The turn state to store the files in.
+   * @returns A promise that resolves when the downloaded files are stored.
+   */
+  public async downloadAndStoreFiles (context: TurnContext, state: TState): Promise<void> {
+    const files = await this.downloadFiles(context)
+    state.setValue(this._stateKey, files)
   }
 }

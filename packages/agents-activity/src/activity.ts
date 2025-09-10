@@ -399,9 +399,6 @@ export class Activity {
     if (this.channelId === null || this.channelId === undefined) {
       throw new Error('Activity ChannelId undefined')
     }
-    if (this.serviceUrl === null || this.serviceUrl === undefined) {
-      throw new Error('Activity ServiceUrl undefined')
-    }
 
     return {
       activityId: this.getAppropriateReplyToId(),
@@ -463,7 +460,7 @@ export class Activity {
    * @param activity The activity.
    * @returns The list of mentions.
    */
-  private getMentions (activity: Activity): Mention[] {
+  public getMentions (activity: Activity): Mention[] {
     const result: Mention[] = []
     if (activity.entities !== undefined) {
       for (let i = 0; i < activity.entities.length; i++) {
@@ -571,7 +568,7 @@ export class Activity {
    * @param id The ID of the mention to remove.
    * @returns The updated text.
    */
-  private removeMentionText (id: string): string {
+  public removeMentionText (id: string): string {
     const mentions = this.getMentions(this)
     const mentionsFiltered = mentions.filter((mention): boolean => mention.mentioned.id === id)
     if ((mentionsFiltered.length > 0) && this.text) {

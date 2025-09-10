@@ -5,10 +5,9 @@
 
 import { Storage, StoreItems } from '../storage'
 import { AppMemory } from './appMemory'
-import { InputFile } from './inputFileDownloader'
 import { TurnStateEntry } from './turnStateEntry'
 import { TurnContext } from '../turnContext'
-import { debug } from '../logger'
+import { debug } from '@microsoft/agents-activity/logger'
 
 const logger = debug('agents:turnState')
 
@@ -31,19 +30,16 @@ export interface DefaultConversationState {}
 export interface DefaultUserState {}
 
 /**
- * Default interface for temporary state that persists only during the current turn.
- * Contains properties used for handling user input, file attachments, and OAuth flows.
- */
-export interface DefaultTempState {
-  /** Collection of files attached to the current message */
-  inputFiles: InputFile[];
-}
-
-/**
  * Base class defining a collection of turn state scopes.
+ *
+ * @typeParam TConversationState - Type for conversation-scoped state
+ * @typeParam TUserState - Type for user-scoped state
+ *
  * @remarks
  * Developers can create a derived class that extends `TurnState` to add additional state scopes.
- * ```JavaScript
+ *
+ * @example
+ * ```javascript
  * class MyTurnState extends TurnState {
  *   protected async onComputeStorageKeys(context) {
  *     const keys = await super.onComputeStorageKeys(context);
@@ -68,15 +64,11 @@ export interface DefaultTempState {
  *   }
  * }
  * ```
- * @template TConversationState - Type for conversation-scoped state
- * @template TUserState - Type for user-scoped state
- * @template TTempState - Type for temporary state that exists only for the current turn
- * @template TSSOState - Type for Single Sign-On (SSO) state
+ *
  */
 export class TurnState<
     TConversationState = DefaultConversationState,
-    TUserState = DefaultUserState,
-    TTempState = DefaultTempState
+    TUserState = DefaultUserState
 > implements AppMemory {
   private _scopes: Record<string, TurnStateEntry> = {}
   private _isLoaded = false
@@ -85,9 +77,12 @@ export class TurnState<
 
   /**
    * Gets the conversation-scoped state.
-   * This state is shared by all users in the same conversation.
+   *
    * @returns The conversation state object
    * @throws Error if state hasn't been loaded
+   *
+   * @remarks
+   * This state is shared by all users in the same conversation.
    */
   public get conversation (): TConversationState {
     const scope = this.getScope(CONVERSATION_SCOPE)
@@ -99,6 +94,7 @@ export class TurnState<
 
   /**
    * Sets the conversation-scoped state.
+   *
    * @param value - The new conversation state object
    * @throws Error if state hasn't been loaded
    */
@@ -112,6 +108,7 @@ export class TurnState<
 
   /**
    * Gets whether the state has been loaded from storage
+   *
    * @returns True if the state has been loaded, false otherwise
    */
   public get isLoaded (): boolean {
@@ -119,37 +116,13 @@ export class TurnState<
   }
 
   /**
-   * Gets the temporary state for the current turn.
-   * This state is not persisted between turns.
-   * @returns The temporary state object
-   * @throws Error if state hasn't been loaded
-   */
-  public get temp (): TTempState {
-    const scope = this.getScope(TEMP_SCOPE)
-    if (!scope) {
-      throw new Error(this._stateNotLoadedString)
-    }
-    return scope.value as TTempState
-  }
-
-  /**
-   * Sets the temporary state for the current turn.
-   * @param value - The new temporary state object
-   * @throws Error if state hasn't been loaded
-   */
-  public set temp (value: TTempState) {
-    const scope = this.getScope(TEMP_SCOPE)
-    if (!scope) {
-      throw new Error(this._stateNotLoadedString)
-    }
-    scope.replace(value as Record<string, unknown>)
-  }
-
-  /**
    * Gets the user-scoped state.
-   * This state is unique to each user and persists across conversations.
+   *
    * @returns The user state object
    * @throws Error if state hasn't been loaded
+   *
+   * @remarks
+   * This state is unique to each user and persists across conversations.
    */
   public get user (): TUserState {
     const scope = this.getScope(USER_SCOPE)
@@ -161,6 +134,7 @@ export class TurnState<
 
   /**
    * Sets the user-scoped state.
+   *
    * @param value - The new user state object
    * @throws Error if state hasn't been loaded
    */
@@ -174,8 +148,11 @@ export class TurnState<
 
   /**
    * Marks the conversation state for deletion.
-   * The state will be deleted from storage on the next call to save().
+   *
    * @throws Error if state hasn't been loaded
+   *
+   * @remarks
+   * The state will be deleted from storage on the next call to save().
    */
   public deleteConversationState (): void {
     const scope = this.getScope(CONVERSATION_SCOPE)
@@ -186,22 +163,12 @@ export class TurnState<
   }
 
   /**
-   * Marks the temporary state for deletion.
-   * Since temporary state is not persisted, this just clears the in-memory object.
-   * @throws Error if state hasn't been loaded
-   */
-  public deleteTempState (): void {
-    const scope = this.getScope(TEMP_SCOPE)
-    if (!scope) {
-      throw new Error(this._stateNotLoadedString)
-    }
-    scope.delete()
-  }
-
-  /**
    * Marks the user state for deletion.
-   * The state will be deleted from storage on the next call to save().
+   *
    * @throws Error if state hasn't been loaded
+   *
+   * @remarks
+   * The state will be deleted from storage on the next call to save().
    */
   public deleteUserState (): void {
     const scope = this.getScope(USER_SCOPE)
@@ -213,6 +180,7 @@ export class TurnState<
 
   /**
    * Gets a specific state scope by name.
+   *
    * @param scope - The name of the scope to retrieve
    * @returns The state entry for the scope, or undefined if not found
    */
@@ -222,8 +190,12 @@ export class TurnState<
 
   /**
    * Deletes a value from state by dot-notation path.
-   * Format: "scope.property" or just "property" (defaults to temp scope)
+   *
    * @param path - The path to the value to delete
+   *
+   * @remarks
+   * Format: "scope.property" or just "property" (defaults to temp scope)
+   * The temp scope is internal-only, not persisted to storage, and exists only for the current turn.
    */
   public deleteValue (path: string): void {
     const { scope, name } = this.getScopeAndName(path)
@@ -234,9 +206,12 @@ export class TurnState<
 
   /**
    * Checks if a value exists in state by dot-notation path.
-   * Format: "scope.property" or just "property" (defaults to temp scope)
+   *
    * @param path - The path to check
    * @returns True if the value exists, false otherwise
+   *
+   * @remarks
+   * Format: "scope.property" or just "property" (defaults to temp scope)
    */
   public hasValue (path: string): boolean {
     const { scope, name } = this.getScopeAndName(path)
@@ -245,10 +220,13 @@ export class TurnState<
 
   /**
    * Gets a value from state by dot-notation path.
-   * Format: "scope.property" or just "property" (defaults to temp scope)
-   * @template TValue - The type of the value to retrieve
+   *
+   * @typeParam TValue - The type of the value to retrieve
    * @param path - The path to the value
    * @returns The value at the specified path
+   *
+   * @remarks
+   * Format: "scope.property" or just "property" (defaults to temp scope)
    */
   public getValue<TValue = unknown>(path: string): TValue {
     const { scope, name } = this.getScopeAndName(path)
@@ -257,9 +235,12 @@ export class TurnState<
 
   /**
    * Sets a value in state by dot-notation path.
-   * Format: "scope.property" or just "property" (defaults to temp scope)
+   *
    * @param path - The path to set
    * @param value - The value to set
+   *
+   * @remarks
+   * Format: "scope.property" or just "property" (defaults to temp scope)
    */
   public setValue (path: string, value: unknown): void {
     const { scope, name } = this.getScopeAndName(path)
@@ -268,6 +249,7 @@ export class TurnState<
 
   /**
    * Loads state from storage into memory.
+   *
    * @param context - The turn context
    * @param storage - Optional storage provider (if not provided, state will be in-memory only)
    * @param force - If true, forces a reload from storage even if state is already loaded
@@ -319,11 +301,14 @@ export class TurnState<
 
   /**
    * Saves state changes to storage.
-   * Only changed scopes will be persisted.
+   *
    * @param context - The turn context
    * @param storage - Optional storage provider (if not provided, state changes won't be persisted)
    * @returns Promise that resolves when the save operation is complete
    * @throws Error if state hasn't been loaded
+   *
+   * @remarks
+   * Only changed scopes will be persisted.
    */
   public async save (context: TurnContext, storage?: Storage): Promise<void> {
     if (!this._isLoaded && this._loadingPromise) {
@@ -376,9 +361,13 @@ export class TurnState<
 
   /**
    * Computes the storage keys for each scope based on the turn context.
-   * Override this method in derived classes to add or modify storage keys.
+   *
    * @param context - The turn context
    * @returns Promise that resolves to a dictionary of scope names to storage keys
+   *
+   * @remarks
+   * Override this method in derived classes to add or modify storage keys.
+   *
    * @protected
    */
   protected onComputeStorageKeys (context: TurnContext): Promise<Record<string, string>> {
@@ -412,9 +401,13 @@ export class TurnState<
 
   /**
    * Parses a dot-notation path into scope and property name.
-   * If no scope is specified, defaults to the temp scope.
+   *
    * @param path - The path to parse (format: "scope.property" or just "property")
    * @returns Object containing the scope entry and property name
+   *
+   * @remarks
+   * If no scope is specified, defaults to the temp scope.
+   *
    * @private
    */
   private getScopeAndName (path: string): { scope: TurnStateEntry; name: string } {
