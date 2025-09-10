@@ -2,8 +2,8 @@ import { Activity, ActivityTypes } from '@microsoft/agents-activity'
 import assert from 'assert'
 import { describe, it } from 'node:test'
 import { parseTeamsChannelData } from '../../src/activity-extensions/teamsChannelDataParser'
-import { ChannelInfo } from '../activity-extensions/channelInfo'
-import { ChannelTypes } from '../activity-extensions/channelTypes'
+import { ChannelInfo } from '../../src/activity-extensions/channelInfo'
+import { ChannelTypes } from '../../src/activity-extensions/channelTypes'
 
 describe('parseTeamsChannelData test', () => {
   it('Parse with no properties defined', () => {
