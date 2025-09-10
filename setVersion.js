@@ -35,11 +35,17 @@ const setPackageVersionAndBuildNumber = async versionInfo => {
   })
 }
 
-const handleError = err => console.error('Failed to update the package version number. nerdbank-gitversion failed: ' + err)
+const handleError = err => {
+  console.error('Failed to update the package version number. nerdbank-gitversion failed: ' + err)
+  // Exit with error code in CI environments where version setting is critical
+  if (process.env.CI || process.env.GITHUB_ACTIONS) {
+    process.exit(1)
+  }
+}
 
-const v = await nbgv.getVersion('.')
 try {
-  setPackageVersionAndBuildNumber(v)
+  const v = await nbgv.getVersion('.')
+  await setPackageVersionAndBuildNumber(v)
 } catch (err) {
   handleError(err)
 }
