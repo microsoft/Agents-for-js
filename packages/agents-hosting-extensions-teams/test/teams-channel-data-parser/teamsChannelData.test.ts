@@ -19,7 +19,7 @@ describe('parseTeamsChannelData test', () => {
     const channelInfo = {
       id: 'id',
       name: 'name',
-      type: 'type'
+      type: 'shared'
     }
     const teamsChannelDataObject = {
       channel: channelInfo
