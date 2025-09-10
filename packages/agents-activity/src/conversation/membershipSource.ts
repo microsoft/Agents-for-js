@@ -45,6 +45,6 @@ export const membershipSourceZodSchema = z.object({
   id: z.string().min(1),
   name: z.string().optional(),
   membershipType: membershipTypeZodSchema,
-  aadGroupId: z.string().min(1).optional(),
+  teamsGroupId: z.string().min(1).optional(),
   tenantId: z.string().min(1).optional(),
 })
