@@ -15,7 +15,7 @@ export enum MembershipSourceTypes {
   Channel = 'channel',
 
   /**
-   * The user is a member of a team that is a member of the current channel.
+   * The source is that of a team and the user is a member of that team.
    */
   Team = 'team',
 }
