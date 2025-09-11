@@ -47,7 +47,7 @@ export class UserTokenClient {
       (config) => {
         const { status, statusText, config: requestConfig, headers } = config
         const { Authorization, authorization, ...headersToLog } = headers || {}
-        const { token, ...redactedData } = requestConfig?.data || {}
+        const { token, ...redactedData } = JSON.parse(requestConfig?.data ?? '{}') || {}
         logger.debug('Response: ', {
           status,
           statusText,
