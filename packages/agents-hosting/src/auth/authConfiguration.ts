@@ -56,6 +56,11 @@ export interface AuthConfiguration {
    * see also https://learn.microsoft.com/entra/identity-platform/authentication-national-cloud
    */
   authority?: string
+
+  /**
+   * The path to K8s provided token.
+   */
+  WIDAssertionFile?: string
 }
 
 /**
@@ -98,6 +103,7 @@ export const loadAuthConfigFromEnv: (cnxName?: string) => AuthConfiguration = (c
       connectionName: process.env.connectionName,
       FICClientId: process.env.FICClientId,
       authority,
+      WIDAssertionFile: process.env.WIDAssertionFile,
       issuers: [
         'https://api.botframework.com',
         `https://sts.windows.net/${process.env.tenantId}/`,
@@ -152,6 +158,7 @@ export const loadPrevAuthConfigFromEnv: () => AuthConfiguration = () => {
     connectionName: process.env.connectionName,
     FICClientId: process.env.MicrosoftAppClientId,
     authority,
+    WIDAssertionFile: process.env.WIDAssertionFile,
     issuers: [
       'https://api.botframework.com',
       `https://sts.windows.net/${process.env.MicrosoftAppTenantId}/`,
