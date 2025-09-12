@@ -22,7 +22,7 @@
     "@azure/core-auth": "^1.10.0",
     "@azure/msal-node": "^3.7.2",
     "@microsoft/agents-activity": "file:../agents-activity",
-    "axios": "^1.11.0",
+    "axios": "^1.12.1",
     "jsonwebtoken": "^9.0.2",
     "jwks-rsa": "^3.2.0"
   },
