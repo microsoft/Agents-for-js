@@ -222,7 +222,8 @@ describe('AuthConfiguration', () => {
     it('should allow creating minimal AuthConfiguration with only required fields', () => {
       const config: AuthConfiguration = {
         clientId: 'test-client',
-        issuers: ['https://api.botframework.com']
+        issuers: ['https://api.botframework.com'],
+        authority: 'https://login.microsoftonline.com'
       }
 
       assert.deepStrictEqual(config.issuers, ['https://api.botframework.com'])

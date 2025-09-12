@@ -5,7 +5,7 @@ export class TestAdapter extends BaseAdapter {
   authConfig: AuthConfiguration
   constructor () {
     super()
-    this.authConfig = { clientId: 'cid', issuers: [] }
+    this.authConfig = { clientId: 'cid', issuers: [], authority: 'https://login.microsoftonline.com' }
   }
 
   async sendActivities (context: TurnContext, activities: Activity[]): Promise<ResourceResponse[]> {

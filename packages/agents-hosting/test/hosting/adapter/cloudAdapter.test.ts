@@ -18,7 +18,8 @@ describe('CloudAdapter', function () {
     tenantId: 'tenantId',
     clientId: 'clientId',
     clientSecret: 'clientSecret',
-    issuers: ['issuers']
+    issuers: ['issuers'],
+    authority: 'https://login.microsoftonline.com'
   }
 
   beforeEach(function () {

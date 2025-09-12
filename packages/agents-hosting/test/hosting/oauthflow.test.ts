@@ -49,7 +49,7 @@ describe('OAuthFlow', () => {
 
   beforeEach(() => {
     testActivity = createTestActivity()
-    adapter = new CloudAdapter({ clientId: 'fakeClientId', clientSecret: 'fakeClientSecret', issuers: [] }, fakeMsalTokenProvider, fakeUserTokenClient)
+    adapter = new CloudAdapter({ clientId: 'fakeClientId', clientSecret: 'fakeClientSecret', issuers: [], authority: 'https://login.microsoftonline.com' }, fakeMsalTokenProvider, fakeUserTokenClient)
     context = new TurnContext(adapter, testActivity)
     memory = new MemoryStorage()
     clock = sinon.useFakeTimers(Date.now())

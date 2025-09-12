@@ -26,6 +26,7 @@ describe('authorizeJWT', () => {
     config = {
       tenantId: 'tenant-id',
       clientId: 'client-id',
+      authority: 'https://login.microsoftonline.com',
       issuers: ['issuer']
     }
   })

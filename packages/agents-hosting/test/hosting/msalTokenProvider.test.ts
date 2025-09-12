@@ -18,7 +18,8 @@ describe('MsalTokenProvider', () => {
       tenantId: 'test-tenant-id',
       certPemFile: 'test-cert.pem',
       certKeyFile: 'test-key.pem',
-      issuers: ['test-issuer']
+      issuers: ['test-issuer'],
+      authority: 'https://login.microsoftonline.com'
     }
   })
 

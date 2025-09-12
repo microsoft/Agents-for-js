@@ -55,7 +55,7 @@ export interface AuthConfiguration {
    * This example of Public Cloud Endpoint is https://login.microsoftonline.com
    * see also https://learn.microsoft.com/entra/identity-platform/authentication-national-cloud
    */
-  authority?: string
+  authority: string
 }
 
 /**

@@ -34,7 +34,8 @@ class SimpleAdapter extends BaseAdapter {
     super()
     this.authConfig = {
       clientId: 'test-client-id',
-      issuers: []
+      issuers: [],
+      authority: 'https://login.microsoftonline.com'
     }
   }
 
