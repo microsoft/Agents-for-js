@@ -3,8 +3,8 @@
  * Licensed under the MIT License.
  */
 
-import { TurnContext } from '../turnContext'
-import { TurnState } from './turnState'
+import { TurnContext } from '../../turnContext'
+import { TurnState } from '../turnState'
 
 /**
  * A handler function for routing operations in a specific turn context and state.

@@ -2,49 +2,50 @@
 // Licensed under the MIT License.
 
 import { startServer } from '@microsoft/agents-hosting-express'
-import { AgentApplication, MemoryStorage, MessageFactory, TurnContext, TurnState } from '@microsoft/agents-hosting'
+import { AgentApplication, Authorization, MemoryStorage, MessageFactory, TurnContext, TurnState } from '@microsoft/agents-hosting'
 
 class OneProvider extends AgentApplication<TurnState> {
+  private auth = new Authorization(this)
+  private guards = this.auth.initialize({
+    graph: { name: 'SSOSelf' }
+  })
+
   constructor () {
-    super({
-      storage: new MemoryStorage(),
-      authorization: {
-        graph: { name: 'SSOSelf' }
-      }
-    })
+    super({ storage: new MemoryStorage() })
+
     this.onConversationUpdate('membersAdded', this._status)
-    this.authorization.onSignInSuccess(this._singinSuccess)
     this.onMessage('logout', this._logout)
     this.onActivity('invoke', this._invoke)
-    this.onActivity('message', this._message, ['graph'])
+    this.onActivity('message', this._message, [this.guards.graph])
+
+    this.guards.graph.onSuccess(this._singninSuccess)
   }
 
-  private _status = async (context: TurnContext, state: TurnState): Promise<void> => {
+  private _status = async (context: TurnContext): Promise<void> => {
     await context.sendActivity(MessageFactory.text('Welcome to the Basic App demo!'))
-    const tresp = await this.authorization.getToken(context, 'graph')
-    if (tresp && tresp.token) {
-      await context.sendActivity(MessageFactory.text('Token received: ' + tresp.token?.length))
+    const graph = await this.guards.graph.context(context)
+    if (graph.token) {
+      await context.sendActivity(MessageFactory.text(`Token received: ${graph.token.length}`))
     } else {
-      await context.sendActivity(MessageFactory.text('Token request status: '))
+      await context.sendActivity(MessageFactory.text('Token request status: unknown'))
     }
   }
 
-  private _logout = async (context: TurnContext, state: TurnState): Promise<void> => {
-    await this.authorization.signOut(context, state, 'graph')
+  private _logout = async (context: TurnContext): Promise<void> => {
+    await this.guards.graph.logout(context)
     await context.sendActivity(MessageFactory.text('user logged out'))
   }
 
-  private _invoke = async (context: TurnContext, state: TurnState): Promise<void> => {
+  private _invoke = async (context: TurnContext): Promise<void> => {
     await context.sendActivity(MessageFactory.text('Invoke received.'))
   }
 
-  private _singinSuccess = async (context: TurnContext, state: TurnState): Promise<void> => {
-    await context.sendActivity(MessageFactory.text('User signed in successfully'))
+  private _singninSuccess = async (context: TurnContext): Promise<void> => {
+    await context.sendActivity(MessageFactory.text(`User signed in successfully from ${this.guards.graph.id}`))
   }
 
-  private _message = async (context: TurnContext, state: TurnState): Promise<void> => {
-    await this.authorization.beginOrContinueFlow(context, state, 'graph')
-    await context.sendActivity(MessageFactory.text('You said.' + context.activity.text))
+  private _message = async (context: TurnContext): Promise<void> => {
+    await context.sendActivity(MessageFactory.text(`You said ${context.activity.text}`))
   }
 }
 

@@ -2,39 +2,39 @@
 // Licensed under the MIT License.
 
 import { startServer } from '@microsoft/agents-hosting-express'
-import { AgentApplication, MemoryStorage, MessageFactory, TurnContext, TurnState } from '@microsoft/agents-hosting'
+import { AgentApplication, Authorization, AuthorizationGuard, MemoryStorage, MessageFactory, TurnContext, TurnState } from '@microsoft/agents-hosting'
 
 class OboApp extends AgentApplication<TurnState> {
+  private auth = new Authorization(this)
+  private guards = this.auth.initialize({
+    mcs: { name: 'OBOTest', scopes: ['https://api.powerplatform.com/.default'] }
+  })
+
   constructor () {
-    super({
-      storage: new MemoryStorage(),
-      authorization: {
-        mcs: { name: 'OBOTest' }
-      }
-    })
+    super({ storage: new MemoryStorage() })
+
     this.onConversationUpdate('membersAdded', this._status)
-    this.authorization.onSignInSuccess(this._singinSuccess)
-    this.onActivity('message', this._message, ['mcs'])
+    this.onActivity('message', this._message, [this.guards.mcs])
+
+    this.auth.onSuccess(this._signinSuccess)
   }
 
-  private _status = async (context: TurnContext, state: TurnState): Promise<void> => {
+  private _status = async (context: TurnContext): Promise<void> => {
     await context.sendActivity(MessageFactory.text('Welcome to the Basic App demo!'))
-    const tresp = await this.authorization.getToken(context, 'mcs')
-    if (tresp) {
-      await context.sendActivity(MessageFactory.text('Token received: ' + tresp.token?.length))
+    const mcs = await this.guards.mcs.context(context)
+    if (mcs.token) {
+      await context.sendActivity(MessageFactory.text(`OBO Token received: ${mcs.token.length || 0}`))
     } else {
-      await context.sendActivity(MessageFactory.text('Token request status: ' + tresp || 'unknown'))
+      await context.sendActivity(MessageFactory.text('Token request status: unknown'))
     }
-    const oboToken = await this.authorization.exchangeToken(context, ['https://api.powerplatform.com/.default'], 'mcs')
-    await context.sendActivity(MessageFactory.text('OBO Token received: ' + (oboToken?.token?.length || 0)))
   }
 
-  private _singinSuccess = async (context: TurnContext, state: TurnState): Promise<void> => {
-    await context.sendActivity(MessageFactory.text('User signed in successfully'))
+  private _signinSuccess = async (guard: AuthorizationGuard, context: TurnContext): Promise<void> => {
+    await context.sendActivity(MessageFactory.text(`User signed in successfully from ${guard.id}`))
   }
 
-  private _message = async (context: TurnContext, state: TurnState): Promise<void> => {
-    await context.sendActivity(MessageFactory.text('You said.' + context.activity.text))
+  private _message = async (context: TurnContext): Promise<void> => {
+    await context.sendActivity(MessageFactory.text(`You said ${context.activity.text}`))
   }
 }
 

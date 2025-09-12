@@ -6,9 +6,9 @@ import { TestAdapter } from '../testStubs'
 import { Activity, ActivityTypes } from '@microsoft/agents-activity'
 import { MessageFactory } from '../../../src/messageFactory'
 import { TurnContext } from '../../../src/turnContext'
-import { RouteList } from './../../../src/app/routeList'
-import { TurnState } from './../../../src/app/turnState'
-import { RouteRank } from './../../../src/app/routeRank'
+import { RouteList } from '../../../src/app/routing/routeList'
+import { TurnState } from '../../../src/app/turnState'
+import { RouteRank } from '../../../src/app/routing/routeRank'
 import { CloudAdapter } from '../../../src/cloudAdapter'
 import { createStubInstance, SinonStub } from 'sinon'
 import { ConsoleTranscriptLogger } from '../../../src/transcript/consoleTranscriptLogger'
@@ -44,7 +44,6 @@ describe('Application', () => {
     assert.notEqual(app.options, undefined)
     assert.equal(app.options.adapter, undefined)
     assert.equal(app.options.storage, undefined)
-    assert.equal(app.options.authorization, undefined)
     assert.equal(app.options.startTypingTimer, false)
     assert.equal(app.options.transcriptLogger, undefined)
   })

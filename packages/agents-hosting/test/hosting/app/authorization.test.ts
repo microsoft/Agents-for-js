@@ -1,75 +1,41 @@
 import { strict as assert } from 'assert'
 import { describe, it } from 'node:test'
 
-import { AgentApplication } from './../../../src/app'
+import { AgentApplication, Authorization } from './../../../src/app'
 import { MemoryStorage } from '../../../src/storage'
 
 describe('AgentApplication', () => {
-  it('should intitalize with underfined authorization', () => {
-    const app = new AgentApplication()
-    assert.equal(app.options.authorization, undefined)
-  })
-
   it('should throw without storage', () => {
-    assert.throws(() => {
-      const app = new AgentApplication({
-        authorization: {}
-      })
-      assert.equal(app.options.authorization, undefined)
-    }, { message: 'Storage is required for UserAuthorization' })
+    assert.throws(() => new Authorization(new AgentApplication()), { message: 'Storage is required for Authorization. Ensure that a storage provider is configured in the AgentApplication options.' })
   })
 
   it('should not allow empty handlers', () => {
     assert.throws(() => {
-      const app = new AgentApplication({
-        storage: new MemoryStorage(),
-        authorization: {}
-      })
-      assert.equal(app.options.authorization, undefined)
-    }, { message: 'The authorization does not have any auth handlers' })
+      const app = new AgentApplication({ storage: new MemoryStorage() })
+      const auth = new Authorization(app)
+      auth.initialize({})
+    }, { message: 'Cannot initialize Authorization with empty options' })
   })
 
   it('should initialize successfully with valid auth configuration', () => {
-    const app = new AgentApplication({
-      storage: new MemoryStorage(),
-      authorization: {
-        testAuth: { name: 'TestConnection' }
-      }
-    })
-    assert.ok(app.authorization)
-    assert.deepEqual(Object.keys(app.options.authorization!), ['testAuth'])
-  })
+    const app = new AgentApplication({ storage: new MemoryStorage() })
+    const auth = new Authorization(app)
+    const guards = auth.initialize({ testAuth: { name: 'TestConnection' } })
 
-  it('should throw when accessing authorization without configuring it', () => {
-    const app = new AgentApplication()
-    assert.throws(() => {
-      const auth = app.authorization
-      assert.equal(auth, undefined)
-    }, { message: 'The Application.authorization property is unavailable because no authorization options were configured.' })
-  })
-
-  it('should throw when registering onSignInSuccess without authorization', () => {
-    const app = new AgentApplication()
-    assert.throws(() => {
-      app.onSignInSuccess(async () => {})
-    }, { message: 'The Application.authorization property is unavailable because no authorization options were configured.' })
+    assert.equal(guards.testAuth.settings.name, 'TestConnection')
   })
 
   it('should support multiple auth handlers', () => {
-    const app = new AgentApplication({
-      storage: new MemoryStorage(),
-      authorization: {
-        authOne: { name: 'FirstConnection', title: 'Auth One' },
-        authTwo: { name: 'SecondConnection', title: 'Auth Two' }
-      }
+    const app = new AgentApplication({ storage: new MemoryStorage() })
+    const auth = new Authorization(app)
+    const guards = auth.initialize({
+      authOne: { name: 'FirstConnection', title: 'Auth One' },
+      authTwo: { name: 'SecondConnection', title: 'Auth Two' }
     })
 
-    const authHandlers = app.authorization.authHandlers
-    assert.equal(Object.keys(authHandlers).length, 2)
-    const one = app.authorization.authHandlers['authOne']
-    const two = app.authorization.authHandlers['authTwo']
-    assert.equal(one.name, 'FirstConnection')
-    assert.equal(two.name, 'SecondConnection')
+    assert.equal(Object.keys(guards).length, 2)
+    assert.equal(guards.authOne.settings.name, 'FirstConnection')
+    assert.equal(guards.authTwo.settings.name, 'SecondConnection')
   })
 
   it('should use connection parameters from environment when not explicitly provided', () => {
@@ -86,32 +52,16 @@ describe('AgentApplication', () => {
     }
 
     try {
-      const app = new AgentApplication({
-        storage: new MemoryStorage(),
-        authorization: {
-          testAuth: { }
-        }
-      })
+      const app = new AgentApplication({ storage: new MemoryStorage() })
+      const auth = new Authorization(app)
+      const guards = auth.initialize({ testAuth: {} })
 
-      const authHandler = app.authorization.authHandlers['testAuth']
-      assert.equal(authHandler.name, 'EnvConnection')
-      assert.equal(authHandler.title, 'Env Title')
-      assert.equal(authHandler.text, 'Env Text')
+      assert.equal(guards.testAuth.settings.name, 'EnvConnection')
+      assert.equal(guards.testAuth.settings.title, 'Env Title')
+      assert.equal(guards.testAuth.settings.text, 'Env Text')
     } finally {
       // Restore original env
       process.env = originalEnv
     }
-  })
-
-  it('should throw when using a non-existent auth handler id', () => {
-    const app = new AgentApplication({
-      storage: new MemoryStorage(),
-      authorization: {
-        testAuth: { name: 'test' }
-      }
-    })
-    assert.rejects(async () => {
-      await app.authorization.getToken({} as any, 'nonExistinghandler')
-    }, { message: 'AuthHandler with ID nonExistinghandler not configured' })
   })
 })
