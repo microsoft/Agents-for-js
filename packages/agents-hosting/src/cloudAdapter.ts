@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { AgentHandler, INVOKE_RESPONSE_KEY } from './activityHandler'
+import { INVOKE_RESPONSE_KEY } from './activityHandler'
 import { BaseAdapter } from './baseAdapter'
 import { TurnContext } from './turnContext'
 import { Response } from 'express'
@@ -116,16 +116,15 @@ export class CloudAdapter extends BaseAdapter {
   }
 
   /**
-   * Creates a TurnContext for the given activity and logic.
+   * Creates a TurnContext for the given activity.
    * @param activity - The activity to process.
-   * @param logic - The logic to execute.
    * @returns The created TurnContext.
    */
-  createTurnContext (activity: Activity, logic: AgentHandler): TurnContext {
+  private createTurnContext (activity: Activity): TurnContext {
     return new TurnContext(this, activity)
   }
 
-  async createTurnContextWithScope (activity: Activity, logic: AgentHandler, scope: string): Promise<TurnContext> {
+  private async createTurnContextWithScope (activity: Activity, scope: string): Promise<TurnContext> {
     this.connectorClient = await ConnectorClient.createClientWithAuth(activity.serviceUrl!, this.authConfig!, this.authProvider, scope)
     return new TurnContext(this, activity)
   }
@@ -236,7 +235,7 @@ export class CloudAdapter extends BaseAdapter {
     }
 
     logger.debug('Received activity: ', activity)
-    const context = this.createTurnContext(activity, logic)
+    const context = this.createTurnContext(activity)
     const scope = request.user?.azp ?? request.user?.appid ?? 'https://api.botframework.com'
 
     // if Delivery Mode == ExpectReplies, we don't need a connector client.
@@ -341,9 +340,9 @@ export class CloudAdapter extends BaseAdapter {
 
     let context
     if (isResponse) {
-      context = await this.createTurnContextWithScope(Activity.getContinuationActivity(reference), logic, 'https://api.botframework.com')
+      context = await this.createTurnContextWithScope(Activity.getContinuationActivity(reference), 'https://api.botframework.com')
     } else {
-      context = this.createTurnContext(Activity.getContinuationActivity(reference), logic)
+      context = this.createTurnContext(Activity.getContinuationActivity(reference))
     }
     await this.runMiddleware(context, logic)
   }
