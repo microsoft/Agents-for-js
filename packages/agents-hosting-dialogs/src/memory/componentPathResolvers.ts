@@ -19,7 +19,7 @@ const componentPathResolvers = z.custom<ComponentPathResolvers>(
 )
 
 /**
- * Check if a ComponentRegistration) is ComponentPathResolvers or not.
+ * Check if a ComponentRegistration is ComponentPathResolvers or not.
  *
  * @param {any} component The component registration.
  * @returns {boolean} Type check result.
