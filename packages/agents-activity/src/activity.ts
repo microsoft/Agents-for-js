@@ -71,7 +71,7 @@ export const activityZodSchema = z.object({
   deliveryMode: z.union([deliveryModesZodSchema, z.string().min(1)]).optional(),
   listenFor: z.array(z.string().min(1)).optional(),
   textHighlights: z.array(textHighlightZodSchema).optional(),
-  semanticAction: semanticActionZodSchema.optional()
+  semanticAction: semanticActionZodSchema.optional(),
 })
 
 /**
