@@ -25,10 +25,10 @@ export class ConnectionSettings extends ConnectionOptions {
 // @public
 export class CopilotStudioClient {
     constructor(settings: ConnectionSettings, token: string);
-    askQuestionAsync(question: string, conversationId?: string): Promise<Activity[]>;
+    askQuestionAsync(question: string, conversationId?: string): AsyncGenerator<Activity>;
     static scopeFromSettings: (settings: ConnectionSettings) => string;
-    sendActivity(activity: Activity, conversationId?: string): Promise<Activity[]>;
-    startConversationAsync(emitStartConversationEvent?: boolean): Promise<Activity>;
+    sendActivity(activity: Activity, conversationId?: string): AsyncGenerator<Activity>;
+    startConversationAsync(emitStartConversationEvent?: boolean): AsyncGenerator<Activity>;
 }
 
 // @public

@@ -218,12 +218,12 @@ export class CopilotStudioWebChat {
 
       logger.debug('--> Connection established.')
       notifyTyping()
-      const activity = await client.startConversationAsync()
-      // Remove replyToId to avoid timeout issues with WebChat on first activity.
-      delete activity.replyToId
-      conversation = activity.conversation
-      sequence = 0
-      notifyActivity(activity)
+
+      for await (const activity of client.startConversationAsync()) {
+        delete activity.replyToId
+        conversation = activity.conversation
+        notifyActivity(activity)
+      }
     })
 
     const notifyActivity = (activity: Partial<Activity>) => {
@@ -232,9 +232,10 @@ export class CopilotStudioWebChat {
         timestamp: new Date().toISOString(),
         channelData: {
           ...activity.channelData,
-          'webchat:sequence-id': sequence++,
+          'webchat:sequence-id': sequence,
         },
       }
+      sequence++
       logger.debug(`Notify '${newActivity.type}' activity to WebChat:`, newActivity)
       activitySubscriber?.next(newActivity)
     }
@@ -276,15 +277,16 @@ export class CopilotStudioWebChat {
             notifyActivity(newActivity)
             notifyTyping()
 
-            const activities = await client.sendActivity(newActivity)
+            // Notify WebChat immediately that the message was sent
+            subscriber.next(newActivity.id!)
 
-            for (const responseActivity of activities) {
+            // Stream the agent's response, but don't block the UI
+            for await (const responseActivity of client.sendActivity(newActivity)) {
               notifyActivity(responseActivity)
+              logger.info('<-- Activity received correctly from Copilot Studio.')
             }
 
-            subscriber.next(newActivity.id!)
             subscriber.complete()
-            logger.info('<-- Activity received correctly from Copilot Studio.')
           } catch (error) {
             logger.error('Error sending Activity to Copilot Studio:', error)
             subscriber.error(error)
