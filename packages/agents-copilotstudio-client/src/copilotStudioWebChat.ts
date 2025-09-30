@@ -5,7 +5,7 @@
 
 import { v4 as uuid } from 'uuid'
 
-import { Activity, ConversationAccount } from '@microsoft/agents-activity'
+import { Activity, Attachment, ConversationAccount } from '@microsoft/agents-activity'
 import { Observable, BehaviorSubject, type Subscriber } from 'rxjs'
 
 import { CopilotStudioClient } from './copilotStudioClient'
@@ -218,10 +218,12 @@ export class CopilotStudioWebChat {
 
       logger.debug('--> Connection established.')
       notifyTyping()
-      const activity = await client.startConversationAsync()
-      conversation = activity.conversation
-      sequence = 0
-      notifyActivity(activity)
+
+      for await (const activity of client.startConversationAsync()) {
+        delete activity.replyToId
+        conversation = activity.conversation
+        notifyActivity(activity)
+      }
     })
 
     const notifyActivity = (activity: Partial<Activity>) => {
@@ -230,9 +232,10 @@ export class CopilotStudioWebChat {
         timestamp: new Date().toISOString(),
         channelData: {
           ...activity.channelData,
-          'webchat:sequence-id': sequence++,
+          'webchat:sequence-id': sequence,
         },
       }
+      sequence++
       logger.debug(`Notify '${newActivity.type}' activity to WebChat:`, newActivity)
       activitySubscriber?.next(newActivity)
     }
@@ -264,22 +267,26 @@ export class CopilotStudioWebChat {
 
         return createObservable<string>(async (subscriber) => {
           try {
-            const id = uuid()
-
             logger.info('--> Sending activity to Copilot Studio ...')
+            const newActivity = Activity.fromObject({
+              ...activity,
+              id: uuid(),
+              attachments: await processAttachments(activity)
+            })
 
-            notifyActivity({ ...activity, id })
+            notifyActivity(newActivity)
             notifyTyping()
 
-            const activities = await client.sendActivity(activity)
+            // Notify WebChat immediately that the message was sent
+            subscriber.next(newActivity.id!)
 
-            for (const responseActivity of activities) {
+            // Stream the agent's response, but don't block the UI
+            for await (const responseActivity of client.sendActivity(newActivity)) {
               notifyActivity(responseActivity)
+              logger.info('<-- Activity received correctly from Copilot Studio.')
             }
 
-            subscriber.next(id)
             subscriber.complete()
-            logger.info('--> Activity received correctly from Copilot Studio.')
           } catch (error) {
             logger.error('Error sending Activity to Copilot Studio:', error)
             subscriber.error(error)
@@ -297,6 +304,74 @@ export class CopilotStudioWebChat {
       },
     }
   }
+}
+
+/**
+ * Processes activity attachments.
+ * @param activity The activity to process for attachments.
+ * @returns A promise that resolves to the activity with all attachments converted.
+ */
+async function processAttachments (activity: Activity): Promise<Attachment[]> {
+  if (activity.type !== 'message' || !activity.attachments?.length) {
+    return activity.attachments || []
+  }
+
+  const attachments: Attachment[] = []
+  for (const attachment of activity.attachments) {
+    const processed = await processBlobAttachment(attachment)
+    attachments.push(processed)
+  }
+
+  return attachments
+}
+
+/**
+ * Processes a blob attachment to convert its content URL to a data URL.
+ * @param attachment The attachment to process.
+ * @returns A promise that resolves to the processed attachment.
+ */
+async function processBlobAttachment (attachment: Attachment): Promise<Attachment> {
+  let newContentUrl = attachment.contentUrl
+  if (!newContentUrl?.startsWith('blob:')) {
+    return attachment
+  }
+
+  try {
+    const response = await fetch(newContentUrl)
+    if (!response.ok) {
+      throw new Error(`Failed to fetch blob URL: ${response.status} ${response.statusText}`)
+    }
+
+    const blob = await response.blob()
+    const arrayBuffer = await blob.arrayBuffer()
+    const base64 = arrayBufferToBase64(arrayBuffer)
+    newContentUrl = `data:${blob.type};base64,${base64}`
+  } catch (error) {
+    newContentUrl = attachment.contentUrl
+    logger.error('Error processing blob attachment:', newContentUrl, error)
+  }
+
+  return { ...attachment, contentUrl: newContentUrl }
+}
+
+/**
+ * Converts an ArrayBuffer to a base64 string.
+ * @param buffer The ArrayBuffer to convert.
+ * @returns The base64 encoded string.
+ */
+function arrayBufferToBase64 (buffer: ArrayBuffer): string {
+  // Node.js environment
+  const BufferClass = typeof globalThis.Buffer === 'function' ? globalThis.Buffer : undefined
+  if (BufferClass && typeof BufferClass.from === 'function') {
+    return BufferClass.from(buffer).toString('base64')
+  }
+
+  // Browser environment
+  let binary = ''
+  for (const byte of new Uint8Array(buffer)) {
+    binary += String.fromCharCode(byte)
+  }
+  return btoa(binary)
 }
 
 /**

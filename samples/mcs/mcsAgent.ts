@@ -48,14 +48,14 @@ class McsAgent extends AgentApplication<TurnState> {
     const cpsClient = this.createClient(mcs.token!)
 
     if (cid === undefined || cid === null || cid.length === 0) {
-      const newAct = await cpsClient.startConversationAsync()
-      if (newAct.type === ActivityTypes.Message) {
-        await context.sendActivity(newAct.text!)
-        state.setValue('conversation.conversationId', newAct.conversation!.id)
+      for await (const newAct of cpsClient.startConversationAsync()) {
+        if (newAct.type === ActivityTypes.Message) {
+          await context.sendActivity(newAct)
+          state.setValue('conversation.conversationId', newAct.conversation!.id)
+        }
       }
     } else {
-      const resp = await cpsClient!.askQuestionAsync(context.activity.text!, cid)
-      for await (const activity of resp) {
+      for await (const activity of cpsClient!.askQuestionAsync(context.activity.text!, cid)) {
         console.log('Received activity:', activity.type, activity.text)
         if (activity.type === 'message') {
           await context.sendActivity(activity)
