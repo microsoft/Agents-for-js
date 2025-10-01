@@ -39,7 +39,7 @@
   "devDependencies": {
     "@microsoft/api-extractor": "^7.52.13",
     "@microsoft/m365agentsplayground": "^0.2.18",
-    "@microsoft/microsoft-graph-types": "^2.40.0",
+    "@microsoft/microsoft-graph-types": "^2.43.0",
     "@types/debug": "^4.1.12",
     "@types/express": "^5.0.3",
     "@types/express-serve-static-core": "^5.0.7",
