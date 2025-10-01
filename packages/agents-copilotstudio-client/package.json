@@ -30,7 +30,7 @@
     "@microsoft/agents-activity": "file:../agents-activity",
     "eventsource-client": "^1.2.0",
     "rxjs": "7.8.2",
-    "uuid": "^11.1.0"
+    "uuid": "^13.0.0"
   },
   "license": "MIT",
   "files": [
