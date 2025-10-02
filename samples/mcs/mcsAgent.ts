@@ -3,52 +3,49 @@
 
 import { startServer } from '@microsoft/agents-hosting-express'
 import { CopilotStudioClient, loadCopilotStudioConnectionSettingsFromEnv } from '@microsoft/agents-copilotstudio-client'
-import { AgentApplication, MemoryStorage, MessageFactory, TurnContext, TurnState } from '@microsoft/agents-hosting'
+import { AgentApplication, Authorization, AuthorizationGuard, MemoryStorage, MessageFactory, TurnContext, TurnState } from '@microsoft/agents-hosting'
 import { Activity, ActivityTypes } from '@microsoft/agents-activity'
 
 class McsAgent extends AgentApplication<TurnState> {
+  private auth = new Authorization(this)
+  private guards = this.auth.initialize({
+    mcs: { text: 'Login into MCS', title: 'MCS Login', scopes: ['https://api.powerplatform.com/.default'] },
+  })
+
   constructor () {
     super({
       storage: new MemoryStorage(),
-      authorization: {
-        mcs: { text: 'Login into MCS', title: 'MCS Login' },
-      },
       startTypingTimer: true,
       longRunningMessages: false
     })
 
     this.onConversationUpdate('membersAdded', this._status)
-    this.authorization.onSignInSuccess(this._singinSuccess)
     this.onMessage('/logout', this._signOut)
-    // this.onActivity('invoke', this._invoke)
-    this.onActivity('message', this._message, ['mcs'])
+    this.onActivity('message', this._message, [this.guards.mcs])
+
+    this.auth.onSuccess(this._signinSuccess)
   }
 
-  private _signOut = async (context: TurnContext, state: TurnState): Promise<void> => {
-    await this.authorization.signOut(context, state)
+  private _signOut = async (context: TurnContext): Promise<void> => {
+    await this.auth.logout(context)
     await context.sendActivity(MessageFactory.text('User signed out'))
   }
 
-  private _status = async (context: TurnContext, state: TurnState): Promise<void> => {
+  private _status = async (context: TurnContext): Promise<void> => {
     await context.sendActivity(MessageFactory.text('Welcome to the MCS Agent demo!, ready to chat with MCS!'))
   }
 
-  private _singinSuccess = async (context: TurnContext, state: TurnState): Promise<void> => {
-    await context.sendActivity(MessageFactory.text('User signed in successfully'))
+  private _signinSuccess = async (guard: AuthorizationGuard, context: TurnContext): Promise<void> => {
+    await context.sendActivity(MessageFactory.text(`User signed in successfully from ${guard.id}`))
   }
-
-  // private _invoke = async (context: TurnContext, state: TurnState): Promise<void> => {
-  //   await context.sendActivity(MessageFactory.text('Invoke received.'))
-  // }
 
   private _message = async (context: TurnContext, state: TurnState): Promise<void> => {
     const cid = state.getValue<string>('conversation.conversationId')
-    const oboToken = await this.authorization.exchangeToken(context, ['https://api.powerplatform.com/.default'], 'mcs')
-    if (!oboToken.token) {
-      await this._status(context, state)
-      return
+    const mcs = await this.guards.mcs.context(context)
+    if (!mcs.token) {
+      return await this._status(context)
     }
-    const cpsClient = this.createClient(oboToken.token!)
+    const cpsClient = this.createClient(mcs.token!)
 
     if (cid === undefined || cid === null || cid.length === 0) {
       for await (const newAct of cpsClient.startConversationAsync()) {

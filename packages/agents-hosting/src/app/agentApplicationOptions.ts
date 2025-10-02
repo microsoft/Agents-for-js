@@ -8,7 +8,6 @@ import { Storage } from '../storage'
 import { TranscriptLogger } from '../transcript'
 import { AdaptiveCardsOptions } from './adaptiveCards'
 import { InputFileDownloader } from './inputFileDownloader'
-import { AuthorizationHandlers } from './authorization'
 import { TurnState } from './turnState'
 import { HeaderPropagationDefinition } from '../headerPropagation'
 
@@ -87,15 +86,6 @@ export interface AgentApplicationOptions<TState extends TurnState> {
    * @default undefined (no file downloading capability)
    */
   fileDownloaders?: InputFileDownloader<TState>[];
-
-  /**
-   * Handlers for managing user authentication and authorization within the agent.
-   * This includes OAuth flows, token management, and permission validation.
-   * Use this to implement secure access to protected resources or user-specific data.
-   *
-   * @default undefined (no authorization required)
-   */
-  authorization?: AuthorizationHandlers;
 
   /**
    * Configuration options for handling Adaptive Card actions and interactions.

@@ -3,9 +3,10 @@
  * Licensed under the MIT License.
  */
 
+import { Guard } from '../guards/types'
 import { RouteHandler } from './routeHandler'
 import { RouteSelector } from './routeSelector'
-import { TurnState } from './turnState'
+import { TurnState } from '../turnState'
 
 /**
  * Represents a route configuration for handling bot activities within an application.
@@ -76,16 +77,20 @@ export interface AppRoute<TState extends TurnState> {
    * Optional list of authorization handlers that this route requires.
    *
    * @remarks
-   * If provided, the route will check for these authorization handlers before processing
-   * the activity. Each string in the array should correspond to a registered authorization
-   * handler name. All specified handlers must pass authorization checks before the route
+   * If provided, all specified guards must authorize the activity before the route
    * handler is invoked.
    *
    * @example
    * ```typescript
-   * authHandlers: ['oauth', 'admin-only']
+   * const auth = new Authorization(app)
+   * const guards = auth.initialize({
+   *   graph: { text: 'Sign in with Microsoft Graph', title: 'Graph Sign In' },
+   *   github: { text: 'Sign in with GitHub', title: 'GitHub Sign In' },
+   * })
+   *
+   * guards: [guards.graph, guards.github]
    * ```
    *
    */
-  authHandlers?: string[]
+  guards?: Guard[]
 }

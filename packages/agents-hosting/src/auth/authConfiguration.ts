@@ -35,7 +35,7 @@ export interface AuthConfiguration {
   /**
    * A list of valid issuers for the authentication configuration.
    */
-  issuers: string[]
+  issuers?: string[]
 
   /**
    * The connection name for the authentication configuration.
@@ -157,5 +157,55 @@ export const loadPrevAuthConfigFromEnv: () => AuthConfiguration = () => {
       `https://sts.windows.net/${process.env.MicrosoftAppTenantId}/`,
       `${authority}/${process.env.MicrosoftAppTenantId}/v2.0`
     ]
+  }
+}
+
+/**
+ * Loads the authentication configuration from the provided config or from the environment variables
+ * providing default values for authority and issuers.
+ *
+ * @returns The authentication configuration.
+ * @throws Will throw an error if clientId is not provided in production.
+ *
+ * @remarks
+ * - `clientId` is required
+ *
+ * @example
+ * ```
+ * tenantId=your-tenant-id
+ * clientId=your-client-id
+ * clientSecret=your-client-secret
+ *
+ * certPemFile=your-cert-pem-file
+ * certKeyFile=your-cert-key-file
+ *
+ * FICClientId=your-FIC-client-id
+ *
+ * connectionName=your-connection-name
+ * authority=your-authority-endpoint
+ * ```
+ *
+ */
+export function getAuthConfigWithDefaults (config?: AuthConfiguration): AuthConfiguration {
+  const clientId = config?.clientId ?? process.env.clientId
+  if (clientId === undefined && process.env.NODE_ENV === 'production') {
+    throw new Error('ClientId required in production')
+  }
+  const tenantId = config?.tenantId ?? process.env.tenantId
+  const authority = config?.authority ?? process.env.authorityEndpoint ?? 'https://login.microsoftonline.com'
+  return {
+    clientId: clientId!,
+    tenantId,
+    clientSecret: config?.clientSecret ?? process.env.clientSecret,
+    certPemFile: config?.certPemFile ?? process.env.certPemFile,
+    certKeyFile: config?.certKeyFile ?? process.env.certKeyFile,
+    connectionName: config?.connectionName ?? process.env.connectionName,
+    FICClientId: config?.FICClientId ?? process.env.FICClientId,
+    authority,
+    issuers: config?.issuers ?? [
+      'https://api.botframework.com',
+      `https://sts.windows.net/${tenantId}/`,
+      `${authority}/${tenantId}/v2.0`
+    ],
   }
 }

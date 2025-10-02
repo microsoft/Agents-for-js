@@ -10,7 +10,6 @@ import { AdaptiveCardHandler } from './adaptiveCards'
 import { CardFactoryHandler } from './cardFactoryHandler'
 import { MultiFeatureHandler } from './multiFeature'
 import { StateManagementHandler } from './state'
-import { WebChatSsoHandler } from './webChatSso'
 
 const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
 const conversationReferences: { [key: string]: ConversationReference } = {}
@@ -23,10 +22,6 @@ const createAgent = (agentName: string) => {
       return new CardFactoryHandler()
     case 'MultiFeatureAgent':
       return new MultiFeatureHandler(conversationReferences)
-    case 'webChatSso': {
-      const memoryStorage = new MemoryStorage()
-      return new WebChatSsoHandler(memoryStorage)
-    }
     case 'StateManagementAgent': {
       /* AZURE BLOB STORAGE - Uncomment the code in this section to use Azure blob storage */
       // const blobStorage = new AzureBlobStorage(process.env.BLOB_STORAGE_CONNECTION_STRING!, process.env.BLOB_CONTAINER_ID!)

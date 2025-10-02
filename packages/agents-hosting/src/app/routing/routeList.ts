@@ -4,10 +4,11 @@
  */
 
 import { AppRoute } from './appRoute'
+import { Guard } from '../guards/types'
 import { RouteHandler } from './routeHandler'
 import { RouteRank } from './routeRank'
 import { RouteSelector } from './routeSelector'
-import { TurnState } from './turnState'
+import { TurnState } from '../turnState'
 
 export class RouteList<TState extends TurnState> {
   private _routes: Array<AppRoute<TState>> = []
@@ -17,9 +18,9 @@ export class RouteList<TState extends TurnState> {
     handler: RouteHandler<TState>,
     isInvokeRoute: boolean = false,
     rank: number = RouteRank.Unspecified,
-    authHandlers: string[] = []
+    guards: Guard[] = []
   ): this {
-    this._routes.push({ selector, handler, isInvokeRoute, rank, authHandlers })
+    this._routes.push({ selector, handler, isInvokeRoute, rank, guards })
 
     // Invoke selectors are first, then order by rank ascending
     this._routes.sort((a, b) => {
