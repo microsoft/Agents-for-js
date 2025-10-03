@@ -9,7 +9,7 @@ import { TurnContext } from './turnContext'
 import { Response } from 'express'
 import { Request } from './auth/request'
 import { ConnectorClient } from './connector-client/connectorClient'
-import { AuthConfiguration, loadAuthConfigFromEnv } from './auth/authConfiguration'
+import { AuthConfiguration, loadAuthConfigFromEnv, applyAuthConfigDefaults } from './auth/authConfiguration'
 import { AuthProvider } from './auth/authProvider'
 import { Activity, ActivityEventNames, ActivityTypes, Channels, ConversationReference, DeliveryModes, ConversationParameters } from '@microsoft/agents-activity'
 import { ResourceResponse } from './connector-client/resourceResponse'
@@ -48,7 +48,7 @@ export class CloudAdapter extends BaseAdapter {
    */
   constructor (authConfig?: AuthConfiguration, authProvider?: AuthProvider, userTokenClient?: UserTokenClient) {
     super()
-    this.authConfig = authConfig ?? loadAuthConfigFromEnv()
+    this.authConfig = authConfig ? applyAuthConfigDefaults(authConfig) : loadAuthConfigFromEnv()
     this.authProvider = authProvider ?? new MsalTokenProvider()
     this.userTokenClient = userTokenClient ?? new UserTokenClient(this.authConfig.clientId)
   }
