@@ -854,13 +854,6 @@ export enum AttachmentLayoutTypes {
 }
 
 // @public
-export const CallerIdConstants: {
-    PublicAzureChannel: string;
-    USGovChannel: string;
-    AgentPrefix: string;
-};
-
-// @public
 export interface CardAction {
     channelData?: unknown;
     displayText?: string;
@@ -1029,11 +1022,6 @@ export enum EndOfConversationCodes {
 export interface Entity {
     [key: string]: unknown;
     type: string;
-}
-
-// @public
-export interface ExpectedReplies {
-    activities: Activity[];
 }
 
 // @public
