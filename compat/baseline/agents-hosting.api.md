@@ -184,7 +184,6 @@ export class AgentApplication<TState extends TurnState> {
     // (undocumented)
     protected readonly _routes: RouteList<TState>;
     run(turnContext: TurnContext): Promise<void>;
-    runInternal(turnContext: TurnContext): Promise<boolean>;
     sendProactiveActivity(context: TurnContext | ConversationReference, activityOrText: string | Activity, speak?: string, inputHint?: string): Promise<ResourceResponse | undefined>;
     protected startLongRunningCall(context: TurnContext, handler: (context: TurnContext) => Promise<boolean>): Promise<boolean>;
     startTypingTimer(context: TurnContext): void;
@@ -218,9 +217,6 @@ export interface AgentApplicationOptions<TState extends TurnState> {
     transcriptLogger?: TranscriptLogger;
     turnStateFactory: () => TState;
 }
-
-// @public
-export const AgentCallbackHandlerKey = "agentCallbackHandler";
 
 // @public
 export class AgentClient {
@@ -298,15 +294,6 @@ export interface AppMemory {
     getValue<TValue = unknown>(path: string): TValue;
     hasValue(path: string): boolean;
     setValue(path: string, value: unknown): void;
-}
-
-// @public
-export interface AppRoute<TState extends TurnState> {
-    authHandlers?: string[];
-    handler: RouteHandler<TState>;
-    isInvokeRoute?: boolean;
-    rank?: number;
-    selector: RouteSelector;
 }
 
 // @public
@@ -425,14 +412,6 @@ export abstract class BaseAdapter {
 }
 
 // @public
-export interface CachedAgentState {
-    hash: string;
-    state: {
-        [id: string]: any;
-    };
-}
-
-// @public
 export class CardFactory {
     static actions(actions: (CardAction | string)[] | undefined): CardAction[];
     static adaptiveCard(card: any): Attachment;
@@ -466,23 +445,6 @@ export interface Citation {
 }
 
 // @public
-export interface Claim {
-    // (undocumented)
-    readonly type: string;
-    // (undocumented)
-    readonly value: string;
-}
-
-// @public
-export class ClaimsIdentity {
-    constructor(claims: Claim[], authenticationType?: string | boolean | undefined);
-    // (undocumented)
-    readonly claims: Claim[];
-    getClaimValue(claimType: string): string | null;
-    get isAuthenticated(): boolean;
-}
-
-// @public
 export class CloudAdapter extends BaseAdapter {
     constructor(authConfig?: AuthConfiguration, authProvider?: AuthProvider, userTokenClient?: UserTokenClient);
     // (undocumented)
@@ -492,9 +454,6 @@ export class CloudAdapter extends BaseAdapter {
     protected createConnectorClient(serviceUrl: string, scope: string, headers?: HeaderPropagationCollection): Promise<ConnectorClient>;
     createConversationAsync(agentAppId: string, channelId: string, serviceUrl: string, audience: string, conversationParameters: ConversationParameters, logic: (context: TurnContext) => Promise<void>): Promise<void>;
     protected createCreateActivity(createdConversationId: string | undefined, channelId: string, serviceUrl: string, conversationParameters: ConversationParameters): Activity;
-    createTurnContext(activity: Activity, logic: AgentHandler): TurnContext;
-    // (undocumented)
-    createTurnContextWithScope(activity: Activity, logic: AgentHandler, scope: string): Promise<TurnContext>;
     deleteActivity(context: TurnContext, reference: Partial<ConversationReference>): Promise<void>;
     getAttachment(attachmentId: string, viewId: string): Promise<NodeJS.ReadableStream>;
     getAttachmentInfo(attachmentId: string): Promise<AttachmentInfo>;
@@ -613,23 +572,6 @@ export interface FlowState {
 
 // @public
 export const getProductInfo: () => string;
-
-// @public
-export class HeaderPropagation implements HeaderPropagationCollection {
-    constructor(headers: Record<string, string | string[] | undefined>);
-    // (undocumented)
-    add(headers: Record<string, string>): void;
-    // (undocumented)
-    concat(headers: Record<string, string>): void;
-    // (undocumented)
-    get incoming(): Record<string, string>;
-    // (undocumented)
-    get outgoing(): Record<string, string>;
-    // (undocumented)
-    override(headers: Record<string, string>): void;
-    // (undocumented)
-    propagate(headers: string[]): void;
-}
 
 // @public
 export interface HeaderPropagationCollection {
@@ -877,14 +819,6 @@ export interface ResourceResponse {
 // @public
 export type RouteHandler<TState extends TurnState> = (context: TurnContext, state: TState) => Promise<void>;
 
-// @public (undocumented)
-export class RouteList<TState extends TurnState> {
-    // (undocumented)
-    [Symbol.iterator](): Iterator<AppRoute<TState>>;
-    // (undocumented)
-    addRoute(selector: RouteSelector, handler: RouteHandler<TState>, isInvokeRoute?: boolean, rank?: number, authHandlers?: string[]): this;
-}
-
 // @public
 export enum RouteRank {
     First = 0,
@@ -1084,12 +1018,6 @@ export interface TranscriptInfo {
 // @public
 export interface TranscriptLogger {
     logActivity(activity: Activity): void | Promise<void>;
-}
-
-// @public
-export class TranscriptLoggerMiddleware implements Middleware {
-    constructor(logger: TranscriptLogger);
-    onTurn(context: TurnContext, next: () => Promise<void>): Promise<void>;
 }
 
 // @public
