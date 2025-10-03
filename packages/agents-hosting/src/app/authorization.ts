@@ -10,7 +10,7 @@ import { Storage } from '../storage'
 import { OAuthFlow, TokenResponse, UserTokenClient } from '../oauth'
 import { AuthConfiguration, loadAuthConfigFromEnv, MsalTokenProvider } from '../auth'
 import jwt, { JwtPayload } from 'jsonwebtoken'
-import { Activity } from '@microsoft/agents-activity'
+import { Activity, ActivityTypes } from '@microsoft/agents-activity'
 
 const logger = debug('agents:authorization')
 
@@ -281,7 +281,14 @@ export class Authorization {
    *
    * @public
    */
-  public async beginOrContinueFlow (context: TurnContext, state: TurnState, authHandlerId: string, secRoute: boolean = true) : Promise<TokenResponse> {
+  public async beginOrContinueFlow (context: TurnContext, state: TurnState, authHandlerId: string, secRoute: boolean = true) : Promise<TokenResponse | undefined> {
+    if (context.activity.type === ActivityTypes.Invoke && context.activity.name === 'signin/tokenExchange') {
+      if (await this.isTokenExchangeDuplicated(context)) {
+        logger.debug('Skipping duplicated signin/tokenExchange invoke activity.')
+        return undefined
+      }
+    }
+
     const authHandler = this.getAuthHandlerOrThrow(authHandlerId)
     logger.info('beginOrContinueFlow for authHandlerId:', authHandlerId)
     const signInState: SignInState | undefined = state.getValue('user.__SIGNIN_STATE_') || { continuationActivity: undefined, handlerId: undefined, completed: false }
@@ -299,6 +306,7 @@ export class Authorization {
     }
 
     if (flow.state === null || flow.state?.flowStarted === false || flow.state?.flowStarted === undefined) {
+      await this.deleteTokenExchange(context)
       tokenResponse = await flow.beginFlow(context)
       if (secRoute && tokenResponse?.token === undefined) {
         signInState!.continuationActivity = context.activity
@@ -353,7 +361,8 @@ export class Authorization {
    */
   async signOut (context: TurnContext, state: TurnState, authHandlerId?: string) : Promise<void> {
     logger.info('signOut for authHandlerId:', authHandlerId)
-    if (authHandlerId === undefined) { // aw
+    await this.deleteTokenExchange(context)
+    if (authHandlerId === undefined) {
       for (const ah in this.authHandlers) {
         const flow = this.authHandlers[ah].flow
         await flow?.signOut(context)
@@ -428,5 +437,53 @@ export class Authorization {
    */
   public onSignInFailure (handler: (context: TurnContext, state: TurnState, authHandlerId?: string, errorMessage?: string) => Promise<void>) {
     this._signInFailureHandler = handler
+  }
+
+  /**
+   * Generates a storage key for persisting token exchange state.
+   * @param context The turn context containing activity information.
+   * @returns The storage key string in format: oauth/channelId/conversationId/userId/flowState/exchange.
+   * @throws Will throw an error if required activity properties are missing.
+   */
+  private getTokenExchangeKey (context: TurnContext): string {
+    const channelId = context.activity.channelId
+    const userId = context.activity.from?.id
+    if (!channelId || !userId) {
+      throw new Error('ChannelId and userId must be set in the activity')
+    }
+    return `oauth/${channelId}/${userId}/flowState/exchange`
+  }
+
+  /**
+   * Checks if a token exchange request is duplicated.
+   * @param context The turn context.
+   * @returns True if the token exchange request is duplicated, false otherwise.
+   */
+  private async isTokenExchangeDuplicated (context: TurnContext) {
+    const key = this.getTokenExchangeKey(context)
+    try {
+      await this.storage.write({ [key]: { exchanged: true, timestamp: Date.now() } }, { ifNotExists: true })
+      return false
+    } catch (error) {
+      return true
+    }
+  }
+
+  /**
+   * Deletes the token exchange state from storage.
+   * @param context The turn context.
+   * @returns A promise that resolves when the state is deleted.
+   */
+  private async deleteTokenExchange (context: TurnContext) {
+    try {
+      await this.storage.delete([this.getTokenExchangeKey(context)])
+    } catch (error) {
+      if ((error as Error).message?.toLowerCase().includes('not found')) {
+        logger.debug('No token exchange state to delete')
+        return
+      }
+
+      throw error
+    }
   }
 }

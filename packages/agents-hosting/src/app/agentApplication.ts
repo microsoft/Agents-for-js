@@ -608,21 +608,34 @@ export class AgentApplication<TState extends TurnState> {
 
         const signInState : SignInState = state.getValue('user.__SIGNIN_STATE_')
         logger.debug('SignIn State:', signInState)
+        let flowFinished = false
         if (this._authorization && signInState && signInState.completed === false) {
           const flowState = await this._authorization.authHandlers[signInState.handlerId!]?.flow?.getFlowState(context)
           logger.debug('Flow State:', flowState)
           if (flowState && flowState.flowStarted === true) {
             const tokenResponse = await this._authorization.beginOrContinueFlow(turnContext, state, signInState?.handlerId!)
-            const savedAct = Activity.fromObject(signInState?.continuationActivity!)
+            if (tokenResponse === undefined) {
+              return false
+            }
+
             if (tokenResponse?.token && tokenResponse.token.length > 0) {
+              const savedAct = Activity.fromObject(signInState?.continuationActivity!)
               logger.info('resending continuation activity:', savedAct.text)
-              await this.run(new TurnContext(context.adapter, savedAct))
               await state.deleteValue('user.__SIGNIN_STATE_')
+              await state.save(context, storage)
+              await this.run(new TurnContext(context.adapter, savedAct))
               return true
             }
           }
 
-          // return true
+          flowFinished = true
+        } else {
+          flowFinished = true
+        }
+
+        if (flowFinished && this._authorization && turnContext.activity.type === ActivityTypes.Invoke && turnContext.activity.name === 'signin/tokenExchange') {
+          logger.debug('Ignoring signin/tokenExchange invoke because no sign-in is in progress.')
+          return false
         }
 
         if (Array.isArray(this._options.fileDownloaders) && this._options.fileDownloaders.length > 0) {
@@ -645,6 +658,10 @@ export class AgentApplication<TState extends TurnState> {
               for (const authHandlerId of route.authHandlers) {
                 logger.info(`Executing route handler for authHandlerId: ${authHandlerId}`)
                 const tokenResponse = await this._authorization?.beginOrContinueFlow(turnContext, state, authHandlerId)
+                if (tokenResponse === undefined) {
+                  break
+                }
+
                 signInComplete = (tokenResponse?.token !== undefined && tokenResponse?.token.length > 0)
                 if (!signInComplete) {
                   break
