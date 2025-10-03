@@ -2,4 +2,5 @@
 // Licensed under the MIT License.
 
 export * from './blobsStorage'
-export * from './blobsTranscriptStore'
+export { BlobsTranscriptStore } from './blobsTranscriptStore'
+export { BlobsTranscriptStoreOptions } from './blobsTranscriptStore'
