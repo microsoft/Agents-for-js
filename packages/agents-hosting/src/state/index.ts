@@ -1,4 +1,5 @@
 export * from './userState'
 export * from './conversationState'
 export * from './agentStatePropertyAccesor'
-export * from './agentState'
+export { AgentState } from './agentState'
+export { CustomKey } from './agentState'
