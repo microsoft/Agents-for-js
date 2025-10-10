@@ -129,7 +129,7 @@ export function sanitizeBlobKey (key: string, options?: BlobsTranscriptStoreOpti
  * const stringValue = maybeCast<string>(someValue);
  * ```
  */
-export function maybeCast<T> (value: unknown, ctor?: { new (...args: any[]): T }): T {
+function maybeCast<T> (value: unknown, ctor?: { new (...args: any[]): T }): T {
   if (ctor != null && value instanceof ctor) {
     return value
   }
