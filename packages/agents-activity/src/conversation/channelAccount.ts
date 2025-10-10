@@ -5,6 +5,7 @@
 
 import { z } from 'zod'
 import { roleTypeZodSchema, RoleTypes } from './roleTypes'
+import { MembershipSource } from './membershipSource'
 
 /**
  * Represents a channel account.
@@ -34,6 +35,11 @@ export interface ChannelAccount {
    * Additional properties of the channel account.
    */
   properties?: unknown
+
+  /**
+   * List of membership sources associated with the channel account.
+   */
+  membershipSources?: MembershipSource[]
 }
 
 /**
