@@ -1,8 +1,10 @@
 import { strict as assert } from 'assert'
 import { describe, it } from 'node:test'
 
-import { AgentApplication } from './../../../src/app'
+import { AgentApplication, TurnState } from './../../../src/app'
 import { MemoryStorage } from '../../../src/storage'
+import { TurnContext } from '../../../src'
+import { Activity, ActivityTypes } from '@microsoft/agents-activity'
 
 describe('AgentApplication', () => {
   it('should intitalize with underfined authorization', () => {
@@ -113,5 +115,37 @@ describe('AgentApplication', () => {
     assert.rejects(async () => {
       await app.authorization.getToken({} as any, 'nonExistinghandler')
     }, { message: 'AuthHandler with ID nonExistinghandler not configured' })
+  })
+
+  it('should handle duplicate token exchange requests', async () => {
+    const storage = new MemoryStorage()
+    const app = new AgentApplication({
+      storage,
+      authorization: {
+        testAuth: { name: 'test' }
+      }
+    })
+
+    const exchangeActivity = Activity.fromObject({
+      type: ActivityTypes.Invoke,
+      channelId: 'msteams',
+      from: { id: 'user1' },
+      recipient: { id: 'bot' },
+      conversation: { id: 'convo1' },
+      name: 'signin/tokenExchange',
+      value: { id: 'testId' }
+    })
+    const context = new TurnContext(app.adapter, exchangeActivity)
+    const state = new TurnState()
+    await state.load(context, storage)
+
+    await assert.rejects(async () => {
+      await app.authorization.beginOrContinueFlow(context, state, 'nonExistinghandler')
+    }, { message: 'AuthHandler with ID nonExistinghandler not configured' })
+
+    // Second call should be skipped as duplicate
+    const duplicated = await app.authorization.beginOrContinueFlow(context, state, 'testAuth')
+
+    assert.strictEqual(duplicated, undefined)
   })
 })

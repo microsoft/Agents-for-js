@@ -5,7 +5,7 @@
 
 import path from 'path'
 import fs from 'fs'
-import { Storage, StoreItem } from './storage'
+import { Storage, StorageWriteOptions, StoreItem, StoreItems } from './storage'
 
 /**
  * A file-based storage implementation that persists data to the local filesystem.
@@ -50,7 +50,7 @@ import { Storage, StoreItem } from './storage'
  */
 export class FileStorage implements Storage {
   private _folder: string
-  private _stateFile: Record<string, string>
+  private _stateFile: Record<string, any>
 
   /**
    * Creates a new FileStorage instance that stores data in the specified folder.
@@ -123,13 +123,17 @@ export class FileStorage implements Storage {
    * > Any eTag values in the changes object are ignored.
    *
    */
-  write (changes: StoreItem) : Promise<void> {
+  write (changes: StoreItems, options?: StorageWriteOptions) : Promise<StoreItems> {
     const keys = Object.keys(changes)
     for (const key of keys) {
+      if (options?.ifNotExists && key in this._stateFile) {
+        throw new Error(`Storage: error writing "${key}" as it already exists.`)
+      }
       this._stateFile[key] = changes[key]
     }
+
     fs.writeFileSync(this._folder + '/state.json', JSON.stringify(this._stateFile, null, 2))
-    return Promise.resolve()
+    return Promise.resolve(changes)
   }
 
   /**

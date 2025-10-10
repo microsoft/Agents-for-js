@@ -280,27 +280,6 @@ describe('OAuthFlow', () => {
       assert.strictEqual(flowResult?.token, 'exchangedToken')
     })
 
-    it('should handle duplicate token exchange requests', async () => {
-      const activeState: FlowState = { flowStarted: true, flowExpires: Date.now() + 10000, absOauthConnectionName: 'test' }
-      const tokenExchangeRequest = { id: 'duplicateId' }
-      oAuthFlow.tokenExchangeId = 'duplicateId' // Set as already processed
-
-      const exchangeActivity = createTestActivity({
-        type: ActivityTypes.Invoke,
-        name: 'signin/tokenExchange',
-        value: tokenExchangeRequest
-      })
-      const exchangeContext = new TurnContext(adapter, exchangeActivity)
-      const stateKey = 'oauth/test/testUser/flowState'
-      await memory.write({ [stateKey]: activeState })
-      mockTokenProvider.expects('getAccessToken').once().returns({ token: 'accessToken' })
-      mockUserTokenClient.expects('exchangeTokenAsync').never()
-
-      const token = await oAuthFlow.continueFlow(exchangeContext)
-
-      assert.strictEqual(token?.token, undefined)
-    })
-
     it('should cache token when retrieved via magic code', async () => {
       const activeState: FlowState = { flowStarted: true, flowExpires: Date.now() + 10000, absOauthConnectionName: 'test' }
       const stateKey = 'oauth/test/testUser/flowState'
