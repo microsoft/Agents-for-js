@@ -212,9 +212,6 @@ export interface DateTimeResolution {
 }
 
 // @public
-export function defaultTokenizer(text: string, _locale?: string): Token[];
-
-// @public
 export type DependencyFactory<Type, Dependencies, Initial extends boolean> = (dependencies: Dependencies, initialValue: Initial extends true ? Type : Type | undefined) => Type;
 
 // @public
@@ -445,13 +442,6 @@ export interface DialogTurnResult<T = any> {
 }
 
 // @public
-export class DialogTurnStateConstants {
-    static configuration: symbol;
-    static dialogManager: symbol;
-    static queueStorage: symbol;
-}
-
-// @public
 export enum DialogTurnStatus {
     cancelled = "cancelled",
     complete = "complete",
@@ -478,9 +468,6 @@ export interface FindChoicesOptions extends FindValuesOptions {
     recognizeNumbers?: boolean;
     recognizeOrdinals?: boolean;
 }
-
-// @internal
-export function findValues(utterance: string, values: SortedValue[], options?: FindValuesOptions): ModelResult<FoundValue>[];
 
 // @public
 export interface FindValuesOptions {
@@ -523,12 +510,6 @@ export interface IntentScore {
 }
 
 // @public
-export function isComponentMemoryScopes(component: unknown): component is ComponentMemoryScopes;
-
-// @public
-export function isComponentPathResolvers(component: unknown): component is ComponentPathResolvers;
-
-// @public
 export enum ListStyle {
     auto = 1,
     heroCard = 5,
@@ -562,9 +543,6 @@ export interface ModelResult<T extends Record<string, any> = {}> {
 }
 
 // @public
-export const noOpConfiguration: Configuration;
-
-// @public
 export class NumberPrompt extends Prompt<number> {
     constructor(dialogId: string, validator?: PromptValidator<number>, defaultLocale?: string);
     defaultLocale?: string;
@@ -593,31 +571,6 @@ export abstract class Prompt<T> extends Dialog {
     protected abstract onRecognize(context: TurnContext, state: object, options: PromptOptions): Promise<PromptRecognizerResult<T>>;
     repromptDialog(context: TurnContext, instance: DialogInstance): Promise<void>;
     resumeDialog(dialogContext: DialogContext, _reason: DialogReason, _result?: any): Promise<DialogTurnResult>;
-}
-
-// @public
-export interface PromptCultureModel {
-    inlineOr: string;
-    inlineOrMore: string;
-    locale: string;
-    noInLanguage: string;
-    separator: string;
-    yesInLanguage: string;
-}
-
-// @public
-export class PromptCultureModels {
-    static Chinese: PromptCultureModel;
-    static Dutch: PromptCultureModel;
-    static English: PromptCultureModel;
-    static French: PromptCultureModel;
-    static German: PromptCultureModel;
-    static getSupportedCultures: () => PromptCultureModel[];
-    static Italian: PromptCultureModel;
-    static Japanese: PromptCultureModel;
-    static mapToNearestLanguage(cultureCode: string): string;
-    static Portuguese: PromptCultureModel;
-    static Spanish: PromptCultureModel;
 }
 
 // @public
@@ -715,17 +668,6 @@ export class SettingsMemoryScope extends MemoryScope {
 }
 
 // @public
-export interface SortedValue {
-    index: number;
-    value: string;
-}
-
-// @public
-export interface TemplateInterface<T, D = Record<string, unknown>> {
-    bind(dialogContext: DialogContext, data?: D): Promise<T>;
-}
-
-// @public
 export class TextPrompt extends Prompt<string> {
     constructor(dialogId?: string, validator?: PromptValidator<string>);
     protected onPreBubbleEvent(_dc: DialogContext, _event: DialogEvent): Promise<boolean>;
@@ -739,17 +681,6 @@ export class ThisMemoryScope extends MemoryScope {
     getMemory(dialogContext: DialogContext): object;
     setMemory(dialogContext: DialogContext, memory: object): void;
 }
-
-// @public
-export interface Token {
-    end: number;
-    normalized: string;
-    start: number;
-    text: string;
-}
-
-// @public
-export type TokenizerFunction = (text: string, locale?: string) => Token[];
 
 export { TurnContext }
 
