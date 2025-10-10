@@ -1,5 +1,5 @@
 import { startServer } from '@microsoft/agents-hosting-express'
-import { AgentApplication, CloudAdapter, MemoryStorage, TurnContext, TurnState } from '@microsoft/agents-hosting'
+import { AgentApplication, MemoryStorage, TurnContext, TurnState } from '@microsoft/agents-hosting'
 
 // Only used for testing purposes to verify header propagation.
 let incomingHeaders: Record<string, string> = {}
