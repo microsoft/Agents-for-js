@@ -12,15 +12,16 @@ import { AdaptiveCardsActions } from './adaptiveCards'
 import { AgentApplicationOptions } from './agentApplicationOptions'
 import { ConversationUpdateEvents } from './conversationUpdateEvents'
 import { AgentExtension } from './extensions'
-import { Authorization, SignInState } from './authorization'
-import { RouteHandler } from './routeHandler'
-import { RouteSelector } from './routeSelector'
+import { RouteHandler } from './routing/routeHandler'
+import { RouteSelector } from './routing/routeSelector'
 import { TurnEvents } from './turnEvents'
 import { TurnState } from './turnState'
-import { RouteRank } from './routeRank'
-import { RouteList } from './routeList'
+import { RouteRank } from './routing/routeRank'
+import { RouteList } from './routing/routeList'
 import { TranscriptLoggerMiddleware } from '../transcript'
 import { CloudAdapter } from '../cloudAdapter'
+import { Guard } from './guards/types'
+import { RouteManager } from './routing/routeManager'
 
 const logger = debug('agents:app')
 
@@ -74,7 +75,6 @@ export class AgentApplication<TState extends TurnState> {
   protected readonly _beforeTurn: ApplicationEventHandler<TState>[] = []
   protected readonly _afterTurn: ApplicationEventHandler<TState>[] = []
   private readonly _adapter?: CloudAdapter
-  private readonly _authorization?: Authorization
   private _typingTimer: NodeJS.Timeout | undefined
   protected readonly _extensions: AgentExtension<TState>[] = []
   private readonly _adaptiveCards: AdaptiveCardsActions<TState>
@@ -86,7 +86,7 @@ export class AgentApplication<TState extends TurnState> {
    *
    * @remarks
    * The constructor initializes the application with default settings and applies
-   * any provided options. It sets up the adapter, authorization, and other core
+   * any provided options. It sets up the adapter, and other core
    * components based on the configuration.
    *
    * Default options:
@@ -101,7 +101,6 @@ export class AgentApplication<TState extends TurnState> {
    *   storage: new MemoryStorage(),
    *   adapter: myAdapter,
    *   startTypingTimer: true,
-   *   authorization: { connectionName: 'oauth' },
    *   transcriptLogger: myTranscriptLogger,
    * });
    * ```
@@ -124,10 +123,6 @@ export class AgentApplication<TState extends TurnState> {
       this._adapter = new CloudAdapter()
     }
 
-    if (this._options.authorization) {
-      this._authorization = new Authorization(this._options.storage!, this._options.authorization, this._adapter?.userTokenClient!)
-    }
-
     if (this._options.longRunningMessages && !this._adapter && !this._options.agentAppId) {
       throw new Error('The Application.longRunningMessages property is unavailable because no adapter was configured in the app.')
     }
@@ -140,19 +135,6 @@ export class AgentApplication<TState extends TurnState> {
       }
     }
     logger.debug('AgentApplication created with options:', this._options)
-  }
-
-  /**
-   * Gets the authorization instance for the application.
-   *
-   * @returns The authorization instance.
-   * @throws Error if no authentication options were configured.
-   */
-  public get authorization (): Authorization {
-    if (!this._authorization) {
-      throw new Error('The Application.authorization property is unavailable because no authorization options were configured.')
-    }
-    return this._authorization
   }
 
   /**
@@ -226,7 +208,7 @@ export class AgentApplication<TState extends TurnState> {
    * @param handler - The handler function that will be called if the selector returns true.
    * @param isInvokeRoute - Whether this route is for invoke activities. Defaults to false.
    * @param rank - The rank of the route, used to determine the order of evaluation. Defaults to RouteRank.Unspecified.
-   * @param authHandlers - Array of authentication handler names for this route. Defaults to empty array.
+   * @param guards - Array of authorization guards for this route. Defaults to empty array.
    * @returns The current instance of the application.
    *
    * @remarks
@@ -247,8 +229,8 @@ export class AgentApplication<TState extends TurnState> {
    * ```
    *
    */
-  public addRoute (selector: RouteSelector, handler: RouteHandler<TState>, isInvokeRoute: boolean = false, rank: number = RouteRank.Unspecified, authHandlers: string[] = []): this {
-    this._routes.addRoute(selector, handler, isInvokeRoute, rank, authHandlers)
+  public addRoute (selector: RouteSelector, handler: RouteHandler<TState>, isInvokeRoute: boolean = false, rank: number = RouteRank.Unspecified, guards: Guard[] = []): this {
+    this._routes.addRoute(selector, handler, isInvokeRoute, rank, guards)
     return this
   }
 
@@ -257,7 +239,7 @@ export class AgentApplication<TState extends TurnState> {
    *
    * @param type - The activity type(s) to handle. Can be a string, RegExp, RouteSelector, or array of these types.
    * @param handler - The handler function that will be called when the specified activity type is received.
-   * @param authHandlers - Array of authentication handler names for this activity. Defaults to empty array.
+   * @param guards - Array of authorization guards for this activity. Defaults to empty array.
    * @param rank - The rank of the route, used to determine the order of evaluation. Defaults to RouteRank.Unspecified.
    * @returns The current instance of the application.
    *
@@ -276,12 +258,12 @@ export class AgentApplication<TState extends TurnState> {
   public onActivity (
     type: string | RegExp | RouteSelector | (string | RegExp | RouteSelector)[],
     handler: (context: TurnContext, state: TState) => Promise<void>,
-    authHandlers: string[] = [],
+    guards: Guard[] = [],
     rank: RouteRank = RouteRank.Unspecified
   ): this {
     (Array.isArray(type) ? type : [type]).forEach((t) => {
       const selector = this.createActivitySelector(t)
-      this.addRoute(selector, handler, false, rank, authHandlers)
+      this.addRoute(selector, handler, false, rank, guards)
     })
     return this
   }
@@ -291,7 +273,7 @@ export class AgentApplication<TState extends TurnState> {
    *
    * @param event - The conversation update event to handle (e.g., 'membersAdded', 'membersRemoved').
    * @param handler - The handler function that will be called when the specified event occurs.
-   * @param authHandlers - Array of authentication handler names for this event. Defaults to empty array.
+   * @param guards - Array of authorization guards for this event. Defaults to empty array.
    * @param rank - The rank of the route, used to determine the order of evaluation. Defaults to RouteRank.Unspecified.
    * @returns The current instance of the application.
    * @throws Error if the handler is not a function.
@@ -315,7 +297,7 @@ export class AgentApplication<TState extends TurnState> {
   public onConversationUpdate (
     event: ConversationUpdateEvents,
     handler: (context: TurnContext, state: TState) => Promise<void>,
-    authHandlers: string[] = [],
+    guards: Guard[] = [],
     rank: RouteRank = RouteRank.Unspecified
   ): this {
     if (typeof handler !== 'function') {
@@ -325,7 +307,7 @@ export class AgentApplication<TState extends TurnState> {
     }
 
     const selector = this.createConversationUpdateSelector(event)
-    this.addRoute(selector, handler, false, rank, authHandlers)
+    this.addRoute(selector, handler, false, rank, guards)
     return this
   }
 
@@ -368,7 +350,7 @@ export class AgentApplication<TState extends TurnState> {
    * @param keyword - The keyword, pattern, or selector function to match against message text.
    *                  Can be a string, RegExp, RouteSelector, or array of these types.
    * @param handler - The handler function that will be called when a matching message is received.
-   * @param authHandlers - Array of authentication handler names for this message handler. Defaults to empty array.
+   * @param guards - Array of authorization guards for this message handler. Defaults to empty array.
    * @param rank - The rank of the route, used to determine the order of evaluation. Defaults to RouteRank.Unspecified.
    * @returns The current instance of the application.
    *
@@ -393,73 +375,13 @@ export class AgentApplication<TState extends TurnState> {
   public onMessage (
     keyword: string | RegExp | RouteSelector | (string | RegExp | RouteSelector)[],
     handler: (context: TurnContext, state: TState) => Promise<void>,
-    authHandlers: string[] = [],
+    guards: Guard[] = [],
     rank: RouteRank = RouteRank.Unspecified
   ): this {
     (Array.isArray(keyword) ? keyword : [keyword]).forEach((k) => {
       const selector = this.createMessageSelector(k)
-      this.addRoute(selector, handler, false, rank, authHandlers)
+      this.addRoute(selector, handler, false, rank, guards)
     })
-    return this
-  }
-
-  /**
-   * Sets a handler to be called when a user successfully signs in.
-   *
-   * @param handler - The handler function to be called after successful sign-in.
-   * @returns The current instance of the application.
-   * @throws Error if authentication options were not configured.
-   *
-   * @remarks
-   * This method allows you to perform actions after a user has successfully authenticated.
-   * The handler will receive the turn context and state.
-   *
-   * @example
-   * ```typescript
-   * app.onSignInSuccess(async (context, state) => {
-   *   await context.sendActivity('You have successfully signed in!');
-   * });
-   * ```
-   *
-   */
-  public onSignInSuccess (handler: (context: TurnContext, state: TurnState, id?: string) => Promise<void>): this {
-    if (this.options.authorization) {
-      this.authorization.onSignInSuccess(handler)
-    } else {
-      throw new Error(
-        'The Application.authorization property is unavailable because no authorization options were configured.'
-      )
-    }
-    return this
-  }
-
-  /**
-   * Sets a handler to be called when a sign-in attempt fails.
-   *
-   * @param handler - The handler function to be called after a failed sign-in attempt.
-   * @returns The current instance of the application.
-   * @throws Error if authentication options were not configured.
-   *
-   * @remarks
-   * This method allows you to handle cases where a user fails to authenticate,
-   * such as when they cancel the sign-in process or an error occurs.
-   *
-   * @example
-   * ```typescript
-   * app.onSignInFailure(async (context, state) => {
-   *   await context.sendActivity('Sign-in failed. Please try again.');
-   * });
-   * ```
-   *
-   */
-  public onSignInFailure (handler: (context: TurnContext, state: TurnState, id?: string) => Promise<void>): this {
-    if (this.options.authorization) {
-      this.authorization.onSignInFailure(handler)
-    } else {
-      throw new Error(
-        'The Application.authorization property is unavailable because no authorization options were configured.'
-      )
-    }
     return this
   }
 
@@ -587,6 +509,10 @@ export class AgentApplication<TState extends TurnState> {
    *
    */
   public async runInternal (turnContext: TurnContext): Promise<boolean> {
+    if (turnContext.activity.type === ActivityTypes.Typing) {
+      return false
+    }
+
     logger.info('Running application with activity:', turnContext.activity.id!)
     return await this.startLongRunningCall(turnContext, async (context) => {
       try {
@@ -606,68 +532,32 @@ export class AgentApplication<TState extends TurnState> {
         const state = turnStateFactory()
         await state.load(context, storage)
 
-        const signInState : SignInState = state.getValue('user.__SIGNIN_STATE_')
-        logger.debug('SignIn State:', signInState)
-        if (this._authorization && signInState && signInState.completed === false) {
-          const flowState = await this._authorization.authHandlers[signInState.handlerId!]?.flow?.getFlowState(context)
-          logger.debug('Flow State:', flowState)
-          if (flowState && flowState.flowStarted === true) {
-            const tokenResponse = await this._authorization.beginOrContinueFlow(turnContext, state, signInState?.handlerId!)
-            const savedAct = Activity.fromObject(signInState?.continuationActivity!)
-            if (tokenResponse?.token && tokenResponse.token.length > 0) {
-              logger.info('resending continuation activity:', savedAct.text)
-              await this.run(new TurnContext(context.adapter, savedAct))
-              await state.deleteValue('user.__SIGNIN_STATE_')
-              return true
-            }
-          }
+        const manager = await RouteManager.initialize(this, this._routes, context)
+        const newContext = manager.context ?? context
 
-          // return true
+        if (await manager.guarded()) {
+          await state.save(newContext, storage)
+          return false
         }
 
         if (Array.isArray(this._options.fileDownloaders) && this._options.fileDownloaders.length > 0) {
           for (let i = 0; i < this._options.fileDownloaders.length; i++) {
-            await this._options.fileDownloaders[i].downloadAndStoreFiles(context, state)
+            await this._options.fileDownloaders[i].downloadAndStoreFiles(newContext, state)
           }
         }
 
-        if (!(await this.callEventHandlers(context, state, this._beforeTurn))) {
-          await state.save(context, storage)
+        if (!(await this.callEventHandlers(newContext, state, this._beforeTurn))) {
+          await state.save(newContext, storage)
           return false
         }
 
-        for (const route of this._routes) {
-          if (await route.selector(context)) {
-            if (route.authHandlers === undefined || route.authHandlers.length === 0) {
-              await route.handler(context, state)
-            } else {
-              let signInComplete = false
-              for (const authHandlerId of route.authHandlers) {
-                logger.info(`Executing route handler for authHandlerId: ${authHandlerId}`)
-                const tokenResponse = await this._authorization?.beginOrContinueFlow(turnContext, state, authHandlerId)
-                signInComplete = (tokenResponse?.token !== undefined && tokenResponse?.token.length > 0)
-                if (!signInComplete) {
-                  break
-                }
-              }
-              if (signInComplete) {
-                await route.handler(context, state)
-              }
-            }
+        const result = await manager.handler(state)
 
-            if (await this.callEventHandlers(context, state, this._afterTurn)) {
-              await state.save(context, storage)
-            }
-
-            return true
-          }
+        if (await this.callEventHandlers(newContext, state, this._afterTurn)) {
+          await state.save(newContext, storage)
         }
 
-        if (await this.callEventHandlers(context, state, this._afterTurn)) {
-          await state.save(context, storage)
-        }
-
-        return false
+        return result
       } catch (err: any) {
         logger.error(err)
         throw err

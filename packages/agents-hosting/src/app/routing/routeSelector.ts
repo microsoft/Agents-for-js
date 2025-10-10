@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { TurnContext } from '../turnContext'
+import { TurnContext } from '../../turnContext'
 
 /**
  * A function that determines whether a specific condition is met in the given turn context.

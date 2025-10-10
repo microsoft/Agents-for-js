@@ -6,7 +6,6 @@
 import { Storage } from '../storage'
 import { AgentApplication } from './agentApplication'
 import { AgentApplicationOptions } from './agentApplicationOptions'
-import { AuthorizationHandlers } from './authorization'
 import { TurnState } from './turnState'
 
 /**
@@ -41,26 +40,6 @@ export class AgentApplicationBuilder<TState extends TurnState = TurnState> {
    */
   public withTurnStateFactory (turnStateFactory: () => TState): this {
     this._options.turnStateFactory = turnStateFactory
-    return this
-  }
-
-  /**
-   * Configures whether the agent should display typing indicators.
-   * @param startTypingTimer Whether to show typing indicators
-   * @returns This builder instance for chaining
-   */
-  // public setStartTypingTimer (startTypingTimer: boolean): this {
-  //   this._options.startTypingTimer = startTypingTimer
-  //   return this
-  // }
-
-  /**
-   * Sets authentication options for the AgentApplication.
-   * @param authHandlers The user identity authentication options
-   * @returns This builder instance for chaining
-   */
-  public withAuthorization (authHandlers: AuthorizationHandlers): this {
-    this._options.authorization = authHandlers
     return this
   }
 
