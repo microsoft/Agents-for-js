@@ -504,7 +504,7 @@ export class AgentApplication<TState extends TurnState> {
              (!isAgenticRoute || context.activity.isAgenticRequest())
     }
 
-    this.addRoute(selector, handler, false, rank, undefined, isAgenticRoute)
+    this.addRoute(selector, handler, false, rank, [], isAgenticRoute)
     return this
   }
 

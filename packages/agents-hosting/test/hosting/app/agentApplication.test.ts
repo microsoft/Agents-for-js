@@ -64,6 +64,29 @@ describe('Application', () => {
     assert.equal(handled, true)
   })
 
+  it('should route to an agentic activity handler', async () => {
+    let called = false
+
+    app.onActivity(ActivityTypes.Message, async (context, state) => {
+      assert.notEqual(context, undefined)
+      assert.notEqual(state, undefined)
+      called = true
+    }, [], undefined, true) // isAgenticRoute is true
+    const agenticActivity = Activity.fromObject({
+      type: 'message',
+      from: { id: 'test', name: 'test' },
+      conversation: { id: 'test' },
+      recipient: { id: 'recipientId', role: 'agenticUser' },
+      text: 'test',
+      channelId: 'test'
+    })
+    const context = new TurnContext(testAdapter, agenticActivity)
+    const handled = await app.runInternal(context)
+    await context.sendActivity(agenticActivity)
+    assert.equal(called, true)
+    assert.equal(handled, true)
+  })
+
   it('should route to a message handler with string', async () => {
     let called = false
 
@@ -75,6 +98,29 @@ describe('Application', () => {
     const context = new TurnContext(testAdapter, testActivity)
     const handled = await app.runInternal(context)
     await context.sendActivity(MessageFactory.text('/yo'))
+    assert.equal(called, true)
+    assert.equal(handled, true)
+  })
+
+  it('should route to an agentic message handler with string', async () => {
+    let called = false
+
+    app.onMessage('/yo', async (context, state) => {
+      assert.notEqual(context, undefined)
+      assert.notEqual(state, undefined)
+      called = true
+    }, [], undefined, true) // isAgenticRoute is true
+    const agenticActivity = Activity.fromObject({
+      type: 'message',
+      from: { id: 'test', name: 'test' },
+      conversation: { id: 'test' },
+      recipient: { id: 'recipientId', role: 'agenticUser' },
+      text: '/yo',
+      channelId: 'test'
+    })
+    const context = new TurnContext(testAdapter, agenticActivity)
+    const handled = await app.runInternal(context)
+    await context.sendActivity(agenticActivity)
     assert.equal(called, true)
     assert.equal(handled, true)
   })
@@ -351,5 +397,96 @@ describe('RouteList', () => {
     assert.equal('invoke1', values[1])
     assert.equal('1', values[2])
     assert.equal('2', values[3])
+  })
+
+  it('should order by agentic, then invoke, then by rank', async () => {
+    const values: string[] = []
+    const routeList: RouteList<TurnState> = new RouteList()
+
+    routeList.addRoute(
+      () => { return new Promise<true>(resolve => resolve(true)) },
+      () => {
+        values.push('2')
+        return new Promise<void>(resolve => resolve())
+      },
+      false
+    )
+
+    routeList.addRoute(
+      () => { return new Promise<true>(resolve => resolve(true)) },
+      () => {
+        values.push('1')
+        return new Promise<void>(resolve => resolve())
+      },
+      false
+    )
+
+    routeList.addRoute(
+      () => { return new Promise<true>(resolve => resolve(true)) },
+      () => {
+        values.push('3')
+        return new Promise<void>(resolve => resolve())
+      },
+      false,
+      RouteRank.First
+    )
+
+    routeList.addRoute(
+      () => { return new Promise<true>(resolve => resolve(true)) },
+      () => {
+        values.push('invoke')
+        return new Promise<void>(resolve => resolve())
+      },
+      true
+    )
+
+    routeList.addRoute(
+      () => { return new Promise<true>(resolve => resolve(true)) },
+      () => {
+        values.push('agenticInvoke2')
+        return new Promise<void>(resolve => resolve())
+      },
+      true,
+      undefined,
+      undefined,
+      true
+    )
+
+    routeList.addRoute(
+      () => { return new Promise<true>(resolve => resolve(true)) },
+      () => {
+        values.push('agenticInvoke1')
+        return new Promise<void>(resolve => resolve())
+      },
+      true,
+      RouteRank.First,
+      undefined,
+      true
+    )
+
+    routeList.addRoute(
+      () => { return new Promise<true>(resolve => resolve(true)) },
+      () => {
+        values.push('agentic')
+        return new Promise<void>(resolve => resolve())
+      },
+      false,
+      undefined,
+      undefined,
+      true
+    )
+
+    for (const route of routeList) {
+      await route.handler({} as any, {} as any)
+    }
+
+    assert.equal(7, values.length)
+    assert.equal('agenticInvoke1', values[0])
+    assert.equal('agenticInvoke2', values[1])
+    assert.equal('invoke', values[2])
+    assert.equal('agentic', values[3])
+    assert.equal('3', values[4])
+    assert.equal('2', values[5])
+    assert.equal('1', values[6])
   })
 })
