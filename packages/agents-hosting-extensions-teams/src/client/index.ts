@@ -3,5 +3,4 @@
  * Licensed under the MIT License.
  */
 
-export * from './teamsConnectorClient'
 export * from './teamsConnectorClient.types'
