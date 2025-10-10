@@ -10,7 +10,6 @@ import {
 } from '../'
 import { UserTokenClient } from './userTokenClient'
 import { TokenExchangeRequest, TokenResponse } from './userTokenClient.types'
-import jwt, { JwtPayload } from 'jsonwebtoken'
 
 const logger = debug('agents:oauth-flow')
 
@@ -290,7 +289,6 @@ export class OAuthFlow {
    * @returns A promise that resolves when the sign-out operation is complete.
    */
   public async signOut (context: TurnContext): Promise<void> {
-
     // Clear cached token for this user
     const activity = context.activity
     if (activity.channelId && activity.from && activity.from.id) {

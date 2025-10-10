@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { AgentHandler, INVOKE_RESPONSE_KEY } from './activityHandler'
+import { INVOKE_RESPONSE_KEY } from './activityHandler'
 import { BaseAdapter } from './baseAdapter'
 import { TurnContext } from './turnContext'
 import { Response } from 'express'
@@ -110,14 +110,14 @@ export class CloudAdapter extends BaseAdapter {
     )
   }
 
-  protected async createConnectorClientWithIdentity(
+  protected async createConnectorClientWithIdentity (
     identity: JwtPayload,
     activity: Activity,
     scope: string,
     headers?: HeaderPropagationCollection) {
-    const tokenProvider = this.connectionManager.getTokenProvider(identity.aud, activity.serviceUrl ?? '');
+    const tokenProvider = this.connectionManager.getTokenProvider(identity.aud, activity.serviceUrl ?? '')
 
-    let connectorClient;
+    let connectorClient
     if (activity.isAgenticRequest()) {
       logger.debug('Activity is from an agentic source, using special scope', activity.recipient)
 
@@ -152,7 +152,7 @@ export class CloudAdapter extends BaseAdapter {
     return connectorClient
   }
 
-  static createIdentity(appId: string) : JwtPayload {
+  static createIdentity (appId: string) : JwtPayload {
     return {
       aud: appId
     } as JwtPayload
