@@ -35,7 +35,7 @@ export interface AuthConfiguration {
   /**
    * A list of valid issuers for the authentication configuration.
    */
-  issuers: string[]
+  issuers?: string[]
 
   /**
    * The connection name for the authentication configuration.
@@ -56,6 +56,47 @@ export interface AuthConfiguration {
    * see also https://learn.microsoft.com/entra/identity-platform/authentication-national-cloud
    */
   authority?: string
+}
+
+/**
+ * Applies default values to a partial AuthConfiguration object.
+ *
+ * @param config - The authentication configuration to apply defaults to
+ * @returns The authentication configuration with defaults applied.
+ * @throws Will throw an error if clientId is not provided in production.
+ *
+ * @remarks
+ * This function ensures that all required fields have appropriate default values,
+ * including authority endpoint, issuers array, and validates clientId in production environments.
+ * It applies the same default logic as `loadAuthConfigFromEnv`.
+ *
+ * @example
+ * ```
+ * const customConfig = {
+ *   clientId: 'your-client-id',
+ *   clientSecret: 'your-client-secret',
+ *   tenantId: 'your-tenant-id'
+ * }
+ * 
+ * const configWithDefaults = applyAuthConfigDefaults(customConfig)
+ * // configWithDefaults.authority will be 'https://login.microsoftonline.com'
+ * // configWithDefaults.issuers will contain the standard issuers array
+ * ```
+ */
+export const applyAuthConfigDefaults = (config: AuthConfiguration): AuthConfiguration => {
+  const authority = config.authority ?? 'https://login.microsoftonline.com'
+  if (config.clientId === undefined && process.env.NODE_ENV === 'production') {
+    throw new Error('ClientId required in production')
+  }
+  return {
+    ...config,
+    authority,
+    issuers: config.issuers ?? [
+      'https://api.botframework.com',
+      `https://sts.windows.net/${config.tenantId}/`,
+      `${authority}/${config.tenantId}/v2.0`
+    ]
+  }
 }
 
 /**
