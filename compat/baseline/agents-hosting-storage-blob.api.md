@@ -43,14 +43,6 @@ export interface BlobsTranscriptStoreOptions {
     storagePipelineOptions?: StoragePipelineOptions;
 }
 
-// @public
-export function maybeCast<T>(value: unknown, ctor?: {
-    new (...args: any[]): T;
-}): T;
-
-// @public
-export function sanitizeBlobKey(key: string, options?: BlobsTranscriptStoreOptions): string;
-
 // (No @packageDocumentation comment for this package)
 
 ```
