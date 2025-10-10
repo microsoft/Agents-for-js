@@ -13,7 +13,7 @@ export class OAuthFlowHandler extends ActivityHandler {
 
   constructor (private storage: Storage) {
     super()
-    this.oAuthFlow = new OAuthFlow(storage, process.env.connectionName!, new UserTokenClient(authConfig.clientId))
+    this.oAuthFlow = new OAuthFlow(storage, process.env.connectionName!, new UserTokenClient(authConfig.clientId!))
 
     this.onConversationUpdate(async (context, next) => {
       await context.sendActivity('Welcome to the Web Chat SSO sample. Type "signin" to sign in or "signout" to sign out.')

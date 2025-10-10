@@ -10,11 +10,13 @@ describe('authorizeJWT', () => {
   let res: Partial<Response>
   let next: NextFunction
   let config: AuthConfiguration
+  let connections: Map<string, AuthConfiguration>
 
   beforeEach(() => {
     req = {
       headers: {},
       method: 'POST',
+      user: { aud: 'client-id' }
     }
     res = {
       status: sinon.stub().returnsThis(),
@@ -23,16 +25,28 @@ describe('authorizeJWT', () => {
 
     next = sinon.stub() as unknown as NextFunction
 
+    connections = new Map<string, AuthConfiguration>()
+    connections.set('test', {
+      clientId: 'client-id',
+      tenantId: 'tenant-id',
+      issuers: ['issuer'],
+      authority: 'http://login.microsoftonline.com'
+    })
+
     config = {
       tenantId: 'tenant-id',
       clientId: 'client-id',
-      issuers: ['issuer']
+      issuers: ['issuer'],
+      connections
     }
   })
 
   it('should call next with no error if token is valid', async () => {
     const token = 'valid-token'
     req.headers.authorization = `Bearer ${token}`
+    req.user = { aud: config.clientId }
+
+    const decodeStub = sinon.stub(jwt, 'decode').returns({ aud: config.clientId })
 
     const verifyStub = sinon.stub(jwt, 'verify').callsFake((token, secretOrPublicKey, options, callback) => {
       if (callback) {
@@ -45,6 +59,7 @@ describe('authorizeJWT', () => {
     assert((next as sinon.SinonStub).calledOnce)
     assert((next as sinon.SinonStub).calledWith())
 
+    decodeStub.restore()
     verifyStub.restore()
   })
 

@@ -36,11 +36,14 @@ app
   .onMessage('sendMessageToAllUsersInTeam', async (context) => {
     const teamsChannelData = parseTeamsChannelData(context.activity.channelData)
     const teamId = teamsChannelData.team?.id
-    const batchResp = await TeamsInfo.sendMessageToAllUsersInTeam(context, MessageFactory.text('msg from agent to all users in team'), context.adapter.authConfig.tenantId!, teamId!)
+    const tenantId = teamsChannelData.tenant?.id
+    const batchResp = await TeamsInfo.sendMessageToAllUsersInTeam(context, MessageFactory.text('msg from agent to all users in team'), tenantId!, teamId!)
     console.log(batchResp.operationId)
   })
   .onMessage('sendMessageToAllUsersInTenant', async (context) => {
-    const batchResp = await TeamsInfo.sendMessageToAllUsersInTenant(context, MessageFactory.text('msg from agent to all users in team'), context.adapter.authConfig.tenantId!)
+    const teamsChannelData = parseTeamsChannelData(context.activity.channelData)
+    const tenantId = teamsChannelData.tenant?.id
+    const batchResp = await TeamsInfo.sendMessageToAllUsersInTenant(context, MessageFactory.text('msg from agent to all users in team'), tenantId!)
     console.log(batchResp.operationId)
   })
 

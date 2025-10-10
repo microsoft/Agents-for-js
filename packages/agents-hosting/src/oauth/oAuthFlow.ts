@@ -10,7 +10,6 @@ import {
 } from '../'
 import { UserTokenClient } from './userTokenClient'
 import { TokenExchangeRequest, TokenResponse } from './userTokenClient.types'
-import jwt, { JwtPayload } from 'jsonwebtoken'
 
 const logger = debug('agents:oauth-flow')
 
@@ -45,9 +44,10 @@ interface CachedToken {
  */
 export class OAuthFlow {
   /**
+   * @deprecated
    * The user token client used for managing user tokens.
    */
-  userTokenClient: UserTokenClient
+  userTokenClient?: UserTokenClient
 
   /**
    * The current state of the OAuth flow.
@@ -87,10 +87,9 @@ export class OAuthFlow {
    * @param cardTitle Optional title for the OAuth card. Defaults to 'Sign in'.
    * @param cardText Optional text for the OAuth card. Defaults to 'login'.
    */
-  constructor (private storage: Storage, absOauthConnectionName: string, tokenClient: UserTokenClient, cardTitle?: string, cardText?: string) {
+  constructor (private storage: Storage, absOauthConnectionName: string, tokenClient?: UserTokenClient, cardTitle?: string, cardText?: string) {
     this.state = { flowStarted: undefined, flowExpires: undefined, absOauthConnectionName }
     this.absOauthConnectionName = absOauthConnectionName
-    this.userTokenClient = tokenClient
     this.cardTitle = cardTitle ?? this.cardTitle
     this.cardText = cardText ?? this.cardText
   }
@@ -117,8 +116,8 @@ export class OAuthFlow {
     }
 
     logger.info('Get token from user token service')
-    await this.refreshToken(context)
-    const tokenResponse = await this.userTokenClient.getUserToken(this.absOauthConnectionName, activity.channelId, activity.from.id)
+    const userTokenClient = context.turnState.get('userTokenClient')
+    const tokenResponse = await userTokenClient.getUserToken(this.absOauthConnectionName, activity.channelId, activity.from.id)
 
     // Cache the token if it's valid (has a token value)
     if (tokenResponse && tokenResponse.token) {
@@ -144,7 +143,6 @@ export class OAuthFlow {
       throw new Error('connectionName is not set')
     }
     logger.info('Starting OAuth flow for connectionName:', this.absOauthConnectionName)
-    await this.refreshToken(context)
 
     const act = context.activity
 
@@ -158,7 +156,8 @@ export class OAuthFlow {
       }
     }
 
-    const output = await this.userTokenClient.getTokenOrSignInResource(act.from?.id!, this.absOauthConnectionName, act.channelId!, act.getConversationReference(), act.relatesTo!, undefined!)
+    const userTokenClient = context.turnState.get('userTokenClient')
+    const output = await userTokenClient.getTokenOrSignInResource(act.from?.id!, this.absOauthConnectionName, act.channelId!, act.getConversationReference(), act.relatesTo!, undefined!)
     if (output && output.tokenResponse) {
       // Cache the token if it's valid
       if (act.channelId && act.from && act.from.id) {
@@ -189,7 +188,6 @@ export class OAuthFlow {
    */
   public async continueFlow (context: TurnContext): Promise<TokenResponse> {
     this.state = await this.getFlowState(context)
-    await this.refreshToken(context)
     if (this.state?.flowExpires !== 0 && Date.now() > this.state?.flowExpires!) {
       logger.warn('Flow expired')
       await context.sendActivity(MessageFactory.text('Sign-in session expired. Please try again.'))
@@ -200,7 +198,8 @@ export class OAuthFlow {
     if (contFlowActivity.type === ActivityTypes.Message) {
       const magicCode = contFlowActivity.text as string
       if (magicCode.match(/^\d{6}$/)) {
-        const result = await this.userTokenClient?.getUserToken(this.absOauthConnectionName, contFlowActivity.channelId!, contFlowActivity.from?.id!, magicCode)!
+        const userTokenClient = context.turnState.get('userTokenClient')
+        const result = await userTokenClient?.getUserToken(this.absOauthConnectionName, contFlowActivity.channelId!, contFlowActivity.from?.id!, magicCode)!
         if (result && result.token) {
           // Cache the token if it's valid
           if (contFlowActivity.channelId && contFlowActivity.from && contFlowActivity.from.id) {
@@ -234,7 +233,8 @@ export class OAuthFlow {
       logger.info('Continuing OAuth flow with verifyState')
       const tokenVerifyState = contFlowActivity.value as TokenVerifyState
       const magicCode = tokenVerifyState.state
-      const result = await this.userTokenClient?.getUserToken(this.absOauthConnectionName, contFlowActivity.channelId!, contFlowActivity.from?.id!, magicCode)!
+      const userTokenClient = context.turnState.get('userTokenClient')
+      const result = await userTokenClient?.getUserToken(this.absOauthConnectionName, contFlowActivity.channelId!, contFlowActivity.from?.id!, magicCode)!
       // Cache the token if it's valid
       if (result && result.token && contFlowActivity.channelId && contFlowActivity.from && contFlowActivity.from.id) {
         const cacheKey = this.getCacheKey(context)
@@ -256,7 +256,8 @@ export class OAuthFlow {
         return { token: undefined }
       }
       this.tokenExchangeId = tokenExchangeRequest.id!
-      const userTokenResp = await this.userTokenClient?.exchangeTokenAsync(contFlowActivity.from?.id!, this.absOauthConnectionName, contFlowActivity.channelId!, tokenExchangeRequest)
+      const userTokenClient = context.turnState.get('userTokenClient')
+      const userTokenResp = await userTokenClient?.exchangeTokenAsync(contFlowActivity.from?.id!, this.absOauthConnectionName, contFlowActivity.channelId!, tokenExchangeRequest)
       if (userTokenResp && userTokenResp.token) {
         // Cache the token if it's valid
         if (contFlowActivity.channelId && contFlowActivity.from && contFlowActivity.from.id) {
@@ -288,8 +289,6 @@ export class OAuthFlow {
    * @returns A promise that resolves when the sign-out operation is complete.
    */
   public async signOut (context: TurnContext): Promise<void> {
-    await this.refreshToken(context)
-
     // Clear cached token for this user
     const activity = context.activity
     if (activity.channelId && activity.from && activity.from.id) {
@@ -298,7 +297,8 @@ export class OAuthFlow {
       logger.info('Cached token cleared for user')
     }
 
-    await this.userTokenClient?.signOut(context.activity.from?.id as string, this.absOauthConnectionName, context.activity.channelId as string)
+    const userTokenClient = context.turnState.get('userTokenClient')
+    await userTokenClient?.signOut(context.activity.from?.id as string, this.absOauthConnectionName, context.activity.channelId as string)
     this.state = { flowStarted: false, flowExpires: 0, absOauthConnectionName: this.absOauthConnectionName }
     await this.storage.delete([this.getFlowStateKey(context)])
     logger.info('User signed out successfully from connection:', this.absOauthConnectionName)
@@ -327,23 +327,6 @@ export class OAuthFlow {
     await this.storage.write({ [key]: flowState })
     this.state = flowState
     logger.debug(`Flow state set: ${JSON.stringify(flowState)}`)
-  }
-
-  /**
-   * Initializes the user token client if not already initialized.
-   * @param context The turn context used to get authentication credentials.
-   */
-  private async refreshToken (context: TurnContext) {
-    const cachedToken = this.tokenCache.get('__access_token__')
-    if (!cachedToken || Date.now() > cachedToken.expiresAt) {
-      const accessToken = await context.adapter.authProvider.getAccessToken(context.adapter.authConfig, 'https://api.botframework.com')
-      const decodedToken = jwt.decode(accessToken) as JwtPayload
-      this.tokenCache.set('__access_token__', {
-        token: { token: accessToken },
-        expiresAt: decodedToken?.exp ? decodedToken.exp * 1000 - 1000 : Date.now() + 10 * 60 * 1000
-      })
-      this.userTokenClient.updateAuthToken(accessToken)
-    }
   }
 
   /**

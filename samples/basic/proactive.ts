@@ -48,7 +48,7 @@ const startServer = (agent: AgentApplication<TurnState<any, any>>, authConfigura
     const channelId = 'msteams'
     const serviceUrl = `https://smba.trafficmanager.net/amer/${authConfig.tenantId}/`
     const activity = Activity.fromObject({ type: 'message', text: msg, channelId, recipient: { id: ' ' }, serviceUrl })
-    await adapter.createConversationAsync(authConfig.clientId, channelId, serviceUrl, 'https://api.botframework.com', {
+    await adapter.createConversationAsync(authConfig.clientId!, channelId, serviceUrl, 'https://api.botframework.com', {
       agent: {
         id: ' ',
         name: ''

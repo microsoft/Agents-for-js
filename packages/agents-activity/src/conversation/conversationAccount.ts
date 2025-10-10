@@ -36,6 +36,11 @@ export interface ConversationAccount {
   name?: string
 
   /**
+   * The topic of the conversation.
+   */
+  topic?: string
+
+  /**
    * The Azure Active Directory object ID of the conversation account.
    */
   aadObjectId?: string

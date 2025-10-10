@@ -27,6 +27,26 @@ export interface ChannelAccount {
   aadObjectId?: string
 
   /**
+   * Tenant ID of the user.
+   */
+  tenantId?: string
+
+  /**
+   * The UPN of an agentic user
+   */
+  agenticUserId?: string
+
+  /**
+   * The client ID of an agentic app
+   */
+  agenticAppId?: string
+
+  /**
+   * The parent blueprint ID of an agentic instance
+   */
+  agenticAppBlueprintId?: string
+
+  /**
    * The role of the channel account.
    */
   role?: RoleTypes | string
@@ -49,6 +69,10 @@ export const channelAccountZodSchema = z.object({
   id: z.string().min(1).optional(),
   name: z.string().optional(),
   aadObjectId: z.string().min(1).optional(),
+  tenantId: z.string().min(1).optional(),
+  agenticUserId: z.string().min(1).optional(),
+  agenticAppId: z.string().min(1).optional(),
+  agenticAppBlueprintId: z.string().min(1).optional(),
   role: z.union([roleTypeZodSchema, z.string().min(1)]).optional(),
   properties: z.unknown().optional()
 })

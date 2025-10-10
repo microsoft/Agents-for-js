@@ -4,9 +4,11 @@
 import axios, { AxiosInstance } from 'axios'
 import { ConversationReference } from '@microsoft/agents-activity'
 import { debug } from '@microsoft/agents-activity/logger'
-import { normalizeTokenExchangeState } from '../activityWireCompat'
+import { normalizeOutgoingActivity, normalizeTokenExchangeState } from '../activityWireCompat'
 import { AadResourceUrls, SignInResource, TokenExchangeRequest, TokenOrSinginResourceResponse, TokenResponse, TokenStatus } from './userTokenClient.types'
 import { getProductInfo } from '../getProductInfo'
+import { AuthProvider, MsalTokenProvider } from '../auth'
+import { HeaderPropagationCollection } from '../headerPropagation'
 
 const logger = debug('agents:user-token-client')
 
@@ -15,19 +17,31 @@ const logger = debug('agents:user-token-client')
  */
 export class UserTokenClient {
   client: AxiosInstance
+  private msAppId: string = ''
   /**
    * Creates a new instance of UserTokenClient.
    * @param msAppId The Microsoft application ID.
    */
-  constructor (private msAppId: string) {
-    const baseURL = 'https://api.botframework.com'
-    this.client = axios.create({
-      baseURL,
-      headers: {
-        Accept: 'application/json',
-        'User-Agent': getProductInfo(),
-      }
-    })
+  constructor (msAppId: string)
+  /**
+   * Creates a new instance of UserTokenClient.
+   * @param axiosInstance The axios instance.
+   */
+  constructor (axiosInstance: AxiosInstance)
+
+  constructor (param: string | AxiosInstance) {
+    if (typeof param === 'string') {
+      const baseURL = 'https://api.botframework.com'
+      this.client = axios.create({
+        baseURL,
+        headers: {
+          Accept: 'application/json',
+          'User-Agent': getProductInfo(),
+        }
+      })
+    } else {
+      this.client = param
+    }
 
     this.client.interceptors.request.use((config) => {
       const { method, url, data, headers, params } = config
@@ -77,6 +91,40 @@ export class UserTokenClient {
           return Promise.reject(errorDetails)
         }
       })
+  }
+
+  /**
+   * Creates a new instance of UserTokenClient with authentication.
+   * @param baseURL - The base URL for the API.
+   * @param authConfig - The authentication configuration.
+   * @param authProvider - The authentication provider.
+   * @param scope - The scope for the authentication token.
+   * @param headers - Optional headers to propagate in the request.
+   * @returns A new instance of ConnectorClient.
+   */
+  static async createClientWithScope (
+    baseURL: string,
+    authProvider: AuthProvider,
+    scope: string,
+    headers?: HeaderPropagationCollection
+  ): Promise<UserTokenClient> {
+    // TODO: add header propagation logic
+    const axiosInstance = axios.create({
+      baseURL,
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': getProductInfo(),
+      },
+      transformRequest: [
+        (data, headers) => {
+          return JSON.stringify(normalizeOutgoingActivity(data))
+        }]
+    })
+    const token = await (authProvider as MsalTokenProvider).getAccessToken(scope)
+    if (token.length > 1) {
+      axiosInstance.defaults.headers.common.Authorization = `Bearer ${token}`
+    }
+    return new UserTokenClient(axiosInstance)
   }
 
   /**

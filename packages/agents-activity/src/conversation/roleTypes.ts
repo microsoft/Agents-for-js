@@ -23,9 +23,19 @@ export enum RoleTypes {
    * Represents a skill in the conversation.
    */
   Skill = 'skill',
+
+  /**
+   * Agentic AI - AAI role
+   */
+  AgenticIdentity = 'agenticAppInstance',
+
+  /**
+   * Agentic AI - AAI role.
+   */
+  AgenticUser = 'agenticUser'
 }
 
 /**
  * Zod schema for validating role types.
  */
-export const roleTypeZodSchema = z.enum(['user', 'bot', 'skill'])
+export const roleTypeZodSchema = z.enum(['user', 'bot', 'skill', 'agenticAppInstance', 'agenticUser'])
