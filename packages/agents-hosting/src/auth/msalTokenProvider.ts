@@ -21,7 +21,7 @@ const logger = debug('agents:msal')
  * Provides tokens using MSAL.
  */
 export class MsalTokenProvider implements AuthProvider {
-  private _agenticTokenCache: MemoryCache<string>
+  private readonly _agenticTokenCache: MemoryCache<string>
   public readonly connectionSettings?: AuthConfiguration
 
   constructor (connectionSettings?: AuthConfiguration) {

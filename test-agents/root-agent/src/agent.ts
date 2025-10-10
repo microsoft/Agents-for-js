@@ -40,7 +40,7 @@ export class RootHandlerWithBlobStorageMemory extends ActivityHandler {
         console.log('activityStarts', activityStarts)
 
         context.activity.text = `${userProfile.name}: ${context.activity.text}`
-        await agentClient.postActivity(context.activity, context.adapter.authConfig, this.conversationState, context)
+        await agentClient.postActivity(context.activity, {} as any, this.conversationState, context)
       }
 
       await next()

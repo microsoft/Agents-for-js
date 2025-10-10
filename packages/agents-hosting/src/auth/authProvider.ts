@@ -39,4 +39,12 @@ export interface AuthProvider {
    * @returns a promise that resolves to the access token.
    */
   getAgenticUserToken: (agentAppInstanceId: string, upn: string, scopes: string[]) => Promise<string>
+
+  acquireTokenOnBehalfOf (scopes: string[], oboAssertion: string): Promise<string>
+  acquireTokenOnBehalfOf (authConfig: AuthConfiguration, scopes: string[], oboAssertion: string): Promise<string>
+  acquireTokenOnBehalfOf (
+    authConfigOrScopes: AuthConfiguration | string[],
+    scopesOrOboAssertion?: string[] | string,
+    oboAssertion?: string
+  ): Promise<string>
 }

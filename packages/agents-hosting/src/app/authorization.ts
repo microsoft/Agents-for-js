@@ -8,9 +8,9 @@ import { debug } from '@microsoft/agents-activity/logger'
 import { TurnState } from './turnState'
 import { Storage } from '../storage'
 import { OAuthFlow, TokenResponse, UserTokenClient } from '../oauth'
-import { AuthConfiguration, loadAuthConfigFromEnv, MsalTokenProvider } from '../auth'
 import jwt, { JwtPayload } from 'jsonwebtoken'
 import { Activity } from '@microsoft/agents-activity'
+import { Connections } from '../auth/connections'
 
 const logger = debug('agents:authorization')
 
@@ -40,6 +40,8 @@ export interface AuthHandler {
   title?: string,
   /** Text to display on auth cards/UI. */
   text?: string,
+
+  oboConnectionName?: string,
 
   cnxPrefix?: string
 }
@@ -90,6 +92,8 @@ export class Authorization {
    */
   authHandlers: AuthorizationHandlers
 
+  connections: Connections
+
   /**
    * Creates a new instance of Authorization.
    *
@@ -118,7 +122,7 @@ export class Authorization {
    * @throws {Error} If storage is null/undefined or no auth handlers are provided.
    *
    */
-  constructor (private storage: Storage, authHandlers: AuthorizationHandlers, userTokenClient: UserTokenClient) {
+  constructor (private storage: Storage, authHandlers: AuthorizationHandlers, userTokenClient: UserTokenClient, connections: Connections) {
     if (storage === undefined || storage === null) {
       throw new Error('Storage is required for UserAuthorization')
     }
@@ -126,6 +130,7 @@ export class Authorization {
       throw new Error('The authorization does not have any auth handlers')
     }
     this.authHandlers = authHandlers
+    this.connections = connections
     for (const ah in this.authHandlers) {
       if (this.authHandlers![ah].name === undefined && process.env[ah + '_connectionName'] === undefined) {
         throw new Error(`AuthHandler name ${ah}_connectionName not set in autorization and not found in env vars.`)
@@ -135,6 +140,7 @@ export class Authorization {
       currentAuthHandler.title = currentAuthHandler.title ?? process.env[ah + '_connectionTitle'] as string
       currentAuthHandler.text = currentAuthHandler.text ?? process.env[ah + '_connectionText'] as string
       currentAuthHandler.cnxPrefix = currentAuthHandler.cnxPrefix ?? process.env[ah + '_cnxPrefix'] as string
+      currentAuthHandler.oboConnectionName = currentAuthHandler.text ?? process.env[ah + '_oboConnectionName'] as string
       currentAuthHandler.flow = new OAuthFlow(this.storage, currentAuthHandler.name, userTokenClient, currentAuthHandler.title, currentAuthHandler.text)
     }
     logger.info('Authorization handlers configured with', Object.keys(this.authHandlers).length, 'handlers')
@@ -213,7 +219,7 @@ export class Authorization {
     const authHandler = this.getAuthHandlerOrThrow(authHandlerId)
     const tokenResponse = await authHandler.flow?.getUserToken(context)!
     if (this.isExchangeable(tokenResponse.token)) {
-      return await this.handleObo(context, tokenResponse.token!, scopes, authHandler.cnxPrefix)
+      return await this.handleObo(context, tokenResponse.token!, scopes, authHandler)
     }
     return tokenResponse
   }
@@ -242,13 +248,15 @@ export class Authorization {
    * @returns A promise that resolves to the exchanged token response.
    * @private
    */
-  private async handleObo (context: TurnContext, token: string, scopes: string[], cnxPrefix?: string): Promise<TokenResponse> {
-    const msalTokenProvider = new MsalTokenProvider()
-    let authConfig: AuthConfiguration = context.adapter.authConfig
-    if (cnxPrefix) {
-      authConfig = loadAuthConfigFromEnv(cnxPrefix)
+  private async handleObo (context: TurnContext, token: string, scopes: string[], authHandler: AuthHandler): Promise<TokenResponse> {
+    let msalTokenProvider
+    if (authHandler.oboConnectionName) {
+      msalTokenProvider = this.connections.getConnection(authHandler.oboConnectionName)
+    } else {
+      msalTokenProvider = this.connections.getDefaultConnection()
     }
-    const newToken = await msalTokenProvider.acquireTokenOnBehalfOf(authConfig, scopes, token)
+
+    const newToken = await msalTokenProvider.acquireTokenOnBehalfOf(scopes, token)
     return { token: newToken }
   }
 

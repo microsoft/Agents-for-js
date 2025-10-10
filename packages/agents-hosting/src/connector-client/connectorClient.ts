@@ -91,40 +91,22 @@ export class ConnectorClient {
     scope: string,
     headers?: HeaderPropagationCollection
   ): Promise<ConnectorClient> {
-    const headerPropagation = headers ?? new HeaderPropagation({ 'User-Agent': '' })
-    headerPropagation.concat({ 'User-Agent': getProductInfo() })
-    headerPropagation.override({ Accept: 'application/json' })
-
-    const axiosInstance = axios.create({
-      baseURL,
-      headers: headerPropagation.outgoing,
-      transformRequest: [
-        (data, headers) => {
-          return JSON.stringify(normalizeOutgoingActivity(data))
-        }]
-    })
-
     const token = await authProvider.getAccessToken(authConfig, scope)
-    if (token.length > 1) {
-      axiosInstance.defaults.headers.common.Authorization = `Bearer ${token}`
-    }
-    return new ConnectorClient(axiosInstance)
+    return this.createClientWithToken(baseURL, token, headers)
   }
 
   /**
    * Creates a new instance of ConnectorClient with token.
    * @param baseURL - The base URL for the API.
    * @param token - The authentication token.
-   * @param scope - The scope for the authentication token.
    * @param headers - Optional headers to propagate in the request.
    * @returns A new instance of ConnectorClient.
    */
-  static async createClientWithToken (
+  static createClientWithToken (
     baseURL: string,
     token: string,
-    scope: string,
     headers?: HeaderPropagationCollection
-  ): Promise<ConnectorClient> {
+  ): ConnectorClient {
     const headerPropagation = headers ?? new HeaderPropagation({ 'User-Agent': '' })
     headerPropagation.concat({ 'User-Agent': getProductInfo() })
     headerPropagation.override({ Accept: 'application/json' })
@@ -138,7 +120,9 @@ export class ConnectorClient {
         }]
     })
 
-    axiosInstance.defaults.headers.common.Authorization = `Bearer ${token}`
+    if (token.length > 1) {
+      axiosInstance.defaults.headers.common.Authorization = `Bearer ${token}`
+    }
 
     return new ConnectorClient(axiosInstance)
   }

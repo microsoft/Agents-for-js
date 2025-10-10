@@ -7,6 +7,7 @@ import { TurnContextStateCollection } from './turnContextStateCollection'
 import { AttachmentInfo } from './connector-client/attachmentInfo'
 import { AttachmentData } from './connector-client/attachmentData'
 import { StreamingResponse } from './app/streaming/streamingResponse'
+import { JwtPayload } from 'jsonwebtoken'
 
 /**
  * Defines a handler for processing and sending activities.
@@ -71,20 +72,23 @@ export class TurnContext {
   private readonly _turn = 'turn'
   private readonly _locale = 'locale'
   private readonly _streamingResponse: StreamingResponse
+  private readonly _identity?: JwtPayload
+
   /**
    * Initializes a new instance of the TurnContext class.
    *
    * @param adapterOrContext The adapter that created this context, or another TurnContext to clone
    * @param request The activity for the turn (required when first parameter is an adapter)
    */
-  constructor (adapterOrContext: BaseAdapter, request: Activity)
+  constructor (adapterOrContext: BaseAdapter, request: Activity, identity: JwtPayload)
   constructor (adapterOrContext: TurnContext)
-  constructor (adapterOrContext: BaseAdapter | TurnContext, request?: Activity) {
+  constructor (adapterOrContext: BaseAdapter | TurnContext, request?: Activity, identity?: JwtPayload) {
     if (adapterOrContext instanceof TurnContext) {
       adapterOrContext.copyTo(this)
     } else {
       this._adapter = adapterOrContext
       this._activity = request as Activity
+      this._identity = identity as JwtPayload
     }
     this._streamingResponse = new StreamingResponse(this)
   }
@@ -349,6 +353,10 @@ export class TurnContext {
    */
   get activity (): Activity {
     return this._activity as Activity
+  }
+
+  get identity (): JwtPayload {
+    return this._identity as JwtPayload
   }
 
   /**

@@ -69,7 +69,7 @@ app.use(authorizeJWT(authConfig))
 
 app.get('/api/notify', async (_req: Request, res: Response) => {
   for (const conversationReference of Object.values(conversationReferences)) {
-    await adapter.continueConversation(conversationReference, async context => {
+    await adapter.continueConversation(_req.user!, conversationReference, async context => {
       await context.sendActivity('proactive hello')
     })
   }

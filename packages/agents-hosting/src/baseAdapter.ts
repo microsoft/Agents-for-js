@@ -3,7 +3,6 @@
  * Licensed under the MIT License.
  */
 
-import { AuthConfiguration } from './auth/authConfiguration'
 import { AuthProvider } from './auth/authProvider'
 import { MsalTokenProvider } from './auth/msalTokenProvider'
 import { Middleware, MiddlewareHandler, MiddlewareSet } from './middlewareSet'
@@ -14,6 +13,7 @@ import { ResourceResponse } from './connector-client/resourceResponse'
 import { AttachmentData } from './connector-client/attachmentData'
 import { AttachmentInfo } from './connector-client/attachmentInfo'
 import { UserTokenClient } from './oauth'
+import { JwtPayload } from 'jsonwebtoken'
 
 const logger = debug('agents:base-adapter')
 
@@ -80,11 +80,6 @@ export abstract class BaseAdapter {
   userTokenClient: UserTokenClient | null = null
 
   /**
-   * The authentication configuration for the adapter.
-   */
-  abstract authConfig: AuthConfiguration
-
-  /**
    * Sends a set of activities to the conversation.
    * @param context - The TurnContext for the current turn.
    * @param activities - The activities to send.
@@ -115,6 +110,7 @@ export abstract class BaseAdapter {
    * @returns A promise representing the completion of the continue operation.
    */
   abstract continueConversation (
+    botAppIdOrIdentity: string | JwtPayload,
     reference: Partial<ConversationReference>,
     logic: (revocableContext: TurnContext) => Promise<void>
   ): Promise<void>

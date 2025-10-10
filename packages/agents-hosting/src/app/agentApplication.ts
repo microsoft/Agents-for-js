@@ -21,6 +21,7 @@ import { RouteRank } from './routeRank'
 import { RouteList } from './routeList'
 import { TranscriptLoggerMiddleware } from '../transcript'
 import { CloudAdapter } from '../cloudAdapter'
+import { JwtPayload } from 'jsonwebtoken'
 
 const logger = debug('agents:app')
 
@@ -125,7 +126,7 @@ export class AgentApplication<TState extends TurnState> {
     }
 
     if (this._options.authorization) {
-      this._authorization = new Authorization(this._options.storage!, this._options.authorization, this._adapter?.userTokenClient!)
+      this._authorization = new Authorization(this._options.storage!, this._options.authorization, this._adapter?.userTokenClient!, this._adapter.connectionManager)
     }
 
     if (this._options.longRunningMessages && !this._adapter && !this._options.agentAppId) {
@@ -343,6 +344,7 @@ export class AgentApplication<TState extends TurnState> {
    * @throws Error if the adapter is not configured.
    */
   protected async continueConversationAsync (
+    botAppIdOrIdentity: string | JwtPayload,
     conversationReferenceOrContext: ConversationReference | TurnContext,
     logic: (context: TurnContext) => Promise<void>
   ): Promise<void> {
@@ -364,7 +366,7 @@ export class AgentApplication<TState extends TurnState> {
       reference = conversationReferenceOrContext
     }
 
-    await this._adapter.continueConversation(reference, logic)
+    await this._adapter.continueConversation(botAppIdOrIdentity, reference, logic)
   }
 
   /**
@@ -629,8 +631,8 @@ export class AgentApplication<TState extends TurnState> {
             const savedAct = Activity.fromObject(signInState?.continuationActivity!)
             if (tokenResponse?.token && tokenResponse.token.length > 0) {
               logger.info('resending continuation activity:', savedAct.text)
-              await this.run(new TurnContext(context.adapter, savedAct))
-              await state.deleteValue('user.__SIGNIN_STATE_')
+              await this.run(new TurnContext(context.adapter, savedAct, turnContext.identity))
+              state.deleteValue('user.__SIGNIN_STATE_')
               return true
             }
           }
@@ -713,13 +715,14 @@ export class AgentApplication<TState extends TurnState> {
    *
    */
   public async sendProactiveActivity (
+    botAppIdOrIdentity: string | JwtPayload,
     context: TurnContext | ConversationReference,
     activityOrText: string | Activity,
     speak?: string,
     inputHint?: string
   ): Promise<ResourceResponse | undefined> {
     let response: ResourceResponse | undefined
-    await this.continueConversationAsync(context, async (ctx) => {
+    await this.continueConversationAsync(botAppIdOrIdentity, context, async (ctx) => {
       response = await ctx.sendActivity(activityOrText, speak, inputHint)
     })
 
@@ -918,7 +921,7 @@ export class AgentApplication<TState extends TurnState> {
   ): Promise<boolean> {
     if (context.activity.type === ActivityTypes.Message && this._options.longRunningMessages) {
       return new Promise<boolean>((resolve, reject) => {
-        this.continueConversationAsync(context, async (ctx) => {
+        this.continueConversationAsync(context.identity, context, async (ctx) => {
           try {
             for (const key in context.activity) {
               (ctx.activity as any)[key] = (context.activity as any)[key]
