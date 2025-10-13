@@ -14,7 +14,6 @@ export class CosmosDbPartitionedStorage implements Storage_2 {
     // (undocumented)
     [key: string]: any;
     delete(keys: string[]): Promise<void>;
-    initialize(): Promise<void>;
     length: number;
     read(keys: string[]): Promise<StoreItems>;
     write(changes: StoreItems): Promise<void>;
@@ -28,11 +27,6 @@ export interface CosmosDbPartitionedStorageOptions {
     cosmosClientOptions?: CosmosClientOptions;
     databaseId: string;
     keySuffix?: string;
-}
-
-// @public
-export class DoOnce<T> {
-    waitFor(key: string, fn: () => Promise<T>): Promise<T>;
 }
 
 // (No @packageDocumentation comment for this package)
