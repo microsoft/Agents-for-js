@@ -113,10 +113,11 @@ export class CloudAdapter extends BaseAdapter {
     scope: string,
     headers?: HeaderPropagationCollection) {
     let audience
-    if (Array.isArray(identity.aud))
+    if (Array.isArray(identity.aud)) {
       audience = identity.aud[0]
-    else
+    } else {
       audience = identity.aud
+    }
 
     if (!audience) {
       // anonymous
@@ -192,9 +193,9 @@ export class CloudAdapter extends BaseAdapter {
    * @protected
    */
   protected async createUserTokenClient (
-    tokenServiceEndpoint: string = "https://api.botframework.com",
-    scope: string = "https://api.botframework.com/.default",
-    audience: string = "https://api.botframework.com",
+    tokenServiceEndpoint: string = 'https://api.botframework.com',
+    scope: string = 'https://api.botframework.com/.default',
+    audience: string = 'https://api.botframework.com',
     headers?: HeaderPropagationCollection
   ): Promise<UserTokenClient> {
     // get the correct token provider

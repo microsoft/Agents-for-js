@@ -3,8 +3,6 @@
  * Licensed under the MIT License.
  */
 
-import { AuthProvider } from './auth/authProvider'
-import { MsalTokenProvider } from './auth/msalTokenProvider'
 import { Middleware, MiddlewareHandler, MiddlewareSet } from './middlewareSet'
 import { TurnContext } from './turnContext'
 import { debug } from '@microsoft/agents-activity/logger'
@@ -12,7 +10,6 @@ import { Activity, ConversationReference } from '@microsoft/agents-activity'
 import { ResourceResponse } from './connector-client/resourceResponse'
 import { AttachmentData } from './connector-client/attachmentData'
 import { AttachmentInfo } from './connector-client/attachmentInfo'
-import { UserTokenClient } from './oauth'
 import { JwtPayload } from 'jsonwebtoken'
 
 const logger = debug('agents:base-adapter')
