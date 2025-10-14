@@ -192,16 +192,16 @@ export class CloudAdapter extends BaseAdapter {
    * @protected
    */
   protected async createUserTokenClient (
-    serviceUrl: string,
-    scope: string,
-    audience: string,
+    tokenServiceEndpoint: string = "https://api.botframework.com",
+    scope: string = "https://api.botframework.com/.default",
+    audience: string = "https://api.botframework.com",
     headers?: HeaderPropagationCollection
   ): Promise<UserTokenClient> {
     // get the correct token provider
-    const tokenProvider = this.connectionManager.getTokenProvider(audience, serviceUrl)
+    const tokenProvider = this.connectionManager.getTokenProvider(audience, tokenServiceEndpoint)
 
     return UserTokenClient.createClientWithScope(
-      serviceUrl,
+      tokenServiceEndpoint,
       tokenProvider,
       scope,
       headers
@@ -329,7 +329,7 @@ export class CloudAdapter extends BaseAdapter {
     const connectorClient = await this.createConnectorClientWithIdentity(request.user!, activity, scope, headers)
     this.setConnectorClient(context, connectorClient)
 
-    const userTokenClient = await this.createUserTokenClient(activity.serviceUrl!, 'https://api.botframework.com', 'https://api.botframework.com')
+    const userTokenClient = await this.createUserTokenClient()
     this.setUserTokenClient(context, userTokenClient)
 
     if (
@@ -441,7 +441,7 @@ export class CloudAdapter extends BaseAdapter {
     const connectorClient = await this.createConnectorClientWithIdentity(identity, continuationActivity, scope)
     this.setConnectorClient(context, connectorClient)
 
-    const userTokenClient = await this.createUserTokenClient(reference.serviceUrl, 'https://api.botframework.com/.default', 'https://api.botframework.com')
+    const userTokenClient = await this.createUserTokenClient()
     this.setUserTokenClient(context, userTokenClient)
 
     await this.runMiddleware(context, logic)
@@ -537,7 +537,7 @@ export class CloudAdapter extends BaseAdapter {
     if (!logic) throw new TypeError('`logic` must be defined')
 
     const restClient = await this.createConnectorClient(serviceUrl, audience, audience)
-    const userTokenClient = await this.createUserTokenClient(serviceUrl, audience, audience)
+    const userTokenClient = await this.createUserTokenClient()
     const createConversationResult = await restClient.createConversation(conversationParameters)
     const createActivity = this.createCreateActivity(
       createConversationResult.id,
