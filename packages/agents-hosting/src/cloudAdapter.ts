@@ -117,9 +117,18 @@ export class CloudAdapter extends BaseAdapter {
       audience = identity.aud[0]
     else
       audience = identity.aud
-    const tokenProvider = this.connectionManager.getTokenProvider(audience!, activity.serviceUrl ?? '')
+
+    if (!audience) {
+      // anonymous
+      return ConnectorClient.createClientWithToken(
+        activity.serviceUrl!,
+        null!,
+        headers
+      )
+    }
 
     let connectorClient
+    const tokenProvider = this.connectionManager.getTokenProvider(audience!, activity.serviceUrl ?? '')
     if (activity.isAgenticRequest()) {
       logger.debug('Activity is from an agentic source, using special scope', activity.recipient)
 

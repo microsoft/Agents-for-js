@@ -120,7 +120,7 @@ export class ConnectorClient {
         }]
     })
 
-    if (token.length > 1) {
+    if (token && token.length > 1) {
       axiosInstance.defaults.headers.common.Authorization = `Bearer ${token}`
     }
 
