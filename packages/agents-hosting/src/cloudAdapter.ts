@@ -329,7 +329,7 @@ export class CloudAdapter extends BaseAdapter {
     const connectorClient = await this.createConnectorClientWithIdentity(request.user!, activity, scope, headers)
     this.setConnectorClient(context, connectorClient)
 
-    const userTokenClient = await this.createUserTokenClient(activity.serviceUrl!, 'https://api.botframework.com/.default', 'https://api.botframework.com')
+    const userTokenClient = await this.createUserTokenClient(activity.serviceUrl!, 'https://api.botframework.com', 'https://api.botframework.com')
     this.setUserTokenClient(context, userTokenClient)
 
     if (
