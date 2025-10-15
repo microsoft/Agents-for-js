@@ -67,8 +67,8 @@ describe('AgentApplication', () => {
 
     const authHandlers = (app.authorization as any).manager._handlers
     assert.equal(Object.keys(authHandlers).length, 2)
-    const one = authHandlers['authOne']._settings
-    const two = authHandlers['authTwo']._settings
+    const one = authHandlers['authOne']._options
+    const two = authHandlers['authTwo']._options
     assert.equal(one.name, 'FirstConnection')
     assert.equal(two.name, 'SecondConnection')
   })
@@ -94,7 +94,7 @@ describe('AgentApplication', () => {
         }
       })
 
-      const authHandler: AzureBotAuthorizationOptions = (app.authorization as any).manager._handlers['testAuth']._settings
+      const authHandler: AzureBotAuthorizationOptions = (app.authorization as any).manager._handlers['testAuth']._options
       assert.equal(authHandler.name, 'EnvConnection')
       assert.equal(authHandler.title, 'Env Title')
       assert.equal(authHandler.text, 'Env Text')
