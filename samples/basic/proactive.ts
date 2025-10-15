@@ -61,7 +61,7 @@ const startServer = (agent: AgentApplication<TurnState<any, any>>, authConfigura
     },
     async (context) => {
       const conversationReference = context.activity.getConversationReference()
-      await adapter.continueConversation(conversationReference, async (context) => {
+      await adapter.continueConversation(authConfig.clientId!, conversationReference, async (context) => {
         await context.sendActivity(activity)
       })
     })
@@ -84,7 +84,7 @@ const startServer = (agent: AgentApplication<TurnState<any, any>>, authConfigura
       serviceUrl: 'https://webchat.botframework.com/'
     }
     const msg = 'This is a proactive message sent from the server. timestamp ' + Date.now()
-    await adapter.continueConversation(conversationReference, async (context) => {
+    await adapter.continueConversation(authConfig.clientId!, conversationReference, async (context) => {
       await context.sendActivity(msg)
     })
     res.status(200).send(msg)
