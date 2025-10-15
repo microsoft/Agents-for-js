@@ -327,7 +327,7 @@ export class CloudAdapter extends BaseAdapter {
 
     const context = this.createTurnContext(activity, request.user!)
     const scope = request.user?.azp ?? request.user?.appid ?? 'https://api.botframework.com'
-      // if Delivery Mode == ExpectReplies, we don't need a connector client.
+    // if Delivery Mode == ExpectReplies, we don't need a connector client.
     if (this.resolveIfConnectorClientIsNeeded(activity)) {
       const connectorClient = await this.createConnectorClientWithIdentity(request.user!, activity, scope, headers)
       this.setConnectorClient(context, connectorClient)
