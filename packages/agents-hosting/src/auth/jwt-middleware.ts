@@ -104,7 +104,6 @@ export const authorizeJWT = (authConfig: AuthConfiguration) => {
         } catch (err: Error | any) {
           failed = true
           logger.error(err)
-          console.log('>>>>>>>>>>', err.message);
           res.status(401).send({ 'jwt-auth-error': err.message })
         }
       } else {
