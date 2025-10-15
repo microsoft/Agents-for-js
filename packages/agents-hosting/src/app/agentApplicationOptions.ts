@@ -8,9 +8,9 @@ import { Storage } from '../storage'
 import { TranscriptLogger } from '../transcript'
 import { AdaptiveCardsOptions } from './adaptiveCards'
 import { InputFileDownloader } from './inputFileDownloader'
-import { AuthorizationHandlers } from './authorization'
 import { TurnState } from './turnState'
 import { HeaderPropagationDefinition } from '../headerPropagation'
+import { AuthorizationOptions } from './auth/types'
 import { Connections } from '../auth/connections'
 
 /**
@@ -96,7 +96,7 @@ export interface AgentApplicationOptions<TState extends TurnState> {
    *
    * @default undefined (no authorization required)
    */
-  authorization?: AuthorizationHandlers;
+  authorization?: AuthorizationOptions;
 
   /**
    * Configuration options for handling Adaptive Card actions and interactions.
