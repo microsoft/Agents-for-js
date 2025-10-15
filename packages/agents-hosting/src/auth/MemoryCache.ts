@@ -12,13 +12,10 @@ export class MemoryCache<T> {
   private cache = new Map<string, { value: T; validUntil: number }>()
   private purgeInterval?: NodeJS.Timeout
 
-  constructor () {
-  }
-
   /**
    * Clears the purge interval to allow the process to exit cleanly
    */
-  destroy(): void {
+  destroy (): void {
     if (this.purgeInterval) {
       clearInterval(this.purgeInterval)
       this.purgeInterval = undefined
