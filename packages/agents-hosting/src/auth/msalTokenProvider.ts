@@ -208,13 +208,13 @@ export class MsalTokenProvider implements AuthProvider {
     return token.data.access_token
   }
 
-  public async getAgenticUserToken (agentAppInstanceId: string, upn: string, scopes: string[]): Promise<string> {
+  public async getAgenticUserToken (agentAppInstanceId: string, agenticUserId: string, scopes: string[]): Promise<string> {
     logger.debug('Getting agentic user token')
     const agentToken = await this.getAgenticApplicationToken(agentAppInstanceId)
     const instanceToken = await this.getAgenticInstanceToken(agentAppInstanceId)
 
     const token = await this.acquireTokenByForAgenticScenarios(agentAppInstanceId, agentToken, scopes, {
-      username: upn,
+      username: agenticUserId,
       user_federated_identity_credential: instanceToken,
       grant_type: 'user_fic',
     })
