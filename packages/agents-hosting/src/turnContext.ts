@@ -80,7 +80,7 @@ export class TurnContext {
    * @param adapterOrContext The adapter that created this context, or another TurnContext to clone
    * @param request The activity for the turn (required when first parameter is an adapter)
    */
-  constructor (adapterOrContext: BaseAdapter, request: Activity, identity: JwtPayload)
+  constructor (adapterOrContext: BaseAdapter, request: Activity, identity?: JwtPayload)
   constructor (adapterOrContext: TurnContext)
   constructor (adapterOrContext: BaseAdapter | TurnContext, request?: Activity, identity?: JwtPayload) {
     if (adapterOrContext instanceof TurnContext) {
