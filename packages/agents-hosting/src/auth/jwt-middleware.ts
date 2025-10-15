@@ -22,6 +22,9 @@ const verifyToken = async (raw: string, config: AuthConfiguration): Promise<JwtP
   const payload = jwt.decode(raw) as JwtPayload
   logger.debug('jwt.decode ', JSON.stringify(payload))
 
+  if (!payload) {
+    throw new Error('invalid token')
+  }
   const audience = payload.aud
 
   const matchingEntry = config.connections && config.connections.size > 0
@@ -101,6 +104,7 @@ export const authorizeJWT = (authConfig: AuthConfiguration) => {
         } catch (err: Error | any) {
           failed = true
           logger.error(err)
+          console.log('>>>>>>>>>>', err.message);
           res.status(401).send({ 'jwt-auth-error': err.message })
         }
       } else {
