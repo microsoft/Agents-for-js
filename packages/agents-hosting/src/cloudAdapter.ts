@@ -194,7 +194,7 @@ export class CloudAdapter extends BaseAdapter {
    */
   protected async createUserTokenClient (
     tokenServiceEndpoint: string = 'https://api.botframework.com',
-    scope: string = 'https://api.botframework.com/.default',
+    scope: string = 'https://api.botframework.com',
     audience: string = 'https://api.botframework.com',
     headers?: HeaderPropagationCollection
   ): Promise<UserTokenClient> {
