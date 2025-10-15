@@ -1,6 +1,6 @@
 import { strict as assert, strict } from 'assert'
 import { afterEach, beforeEach, describe, it } from 'node:test'
-import { AuthConfiguration, CloudAdapter, INVOKE_RESPONSE_KEY, Request, TurnContext } from '../../../src'
+import { AuthConfiguration, CloudAdapter, INVOKE_RESPONSE_KEY, MsalConnectionManager, Request, TurnContext, UserTokenClient } from '../../../src'
 import sinon, { SinonSandbox } from 'sinon'
 import { Activity, ActivityTypes, ConversationReference, DeliveryModes } from '@microsoft/agents-activity'
 import { ConnectorClient } from '../../../src/connector-client/connectorClient'
@@ -9,10 +9,14 @@ import { Response } from 'express'
 describe('CloudAdapter', function () {
   let sandbox: SinonSandbox
   let mockConnectorClient: sinon.SinonStubbedInstance<ConnectorClient>
+  let mockConnectionManager: sinon.SinonStubbedInstance<MsalConnectionManager>
+  let mockUserTokenClient: sinon.SinonStubbedInstance<UserTokenClient>
   let cloudAdapter: CloudAdapter
   let req: Request
   let res: Partial<Response>
   let createConnectorClientSpy: sinon.SinonStub
+  let createConnectorClientWithIdentitySpy: sinon.SinonStub
+  let createUserTokenClientSpy: sinon.SinonStub
 
   const authentication: AuthConfiguration = {
     tenantId: 'tenantId',
@@ -24,9 +28,15 @@ describe('CloudAdapter', function () {
   beforeEach(function () {
     sandbox = sinon.createSandbox({ useFakeTimers: true })
     mockConnectorClient = sinon.createStubInstance(ConnectorClient)
+    mockConnectionManager = sinon.createStubInstance(MsalConnectionManager)
+    mockUserTokenClient = sinon.createStubInstance(UserTokenClient)
     cloudAdapter = new CloudAdapter(authentication);
-    (cloudAdapter as any).connectorClient = mockConnectorClient
+    (cloudAdapter as any).connectionManager = mockConnectionManager
+
     createConnectorClientSpy = sinon.stub(cloudAdapter as any, 'createConnectorClient').returns(mockConnectorClient)
+    createConnectorClientWithIdentitySpy = sinon.stub(cloudAdapter as any, 'createConnectorClientWithIdentity').returns(mockConnectorClient)
+    createUserTokenClientSpy = sinon.stub(cloudAdapter as any, 'createUserTokenClient').returns(mockUserTokenClient)
+
     req = {
       headers: {},
       body: {}
@@ -72,7 +82,7 @@ describe('CloudAdapter', function () {
       sinon.assert.calledOnceWithExactly((res as any).setHeader, 'content-type', 'application/json')
       sinon.assert.calledOnce((res as any).send)
       sinon.assert.calledOnce((res as any).end)
-      sinon.assert.calledOnce(createConnectorClientSpy)
+      sinon.assert.calledOnce(createConnectorClientWithIdentitySpy)
 
       stubfromObject.restore()
     })
@@ -95,7 +105,7 @@ describe('CloudAdapter', function () {
       sinon.assert.calledOnceWithExactly((res as any).status, 200)
       sinon.assert.calledOnceWithExactly((res as any).setHeader, 'content-type', 'application/json')
       sinon.assert.notCalled((res as any).send)
-      sinon.assert.calledOnce(createConnectorClientSpy)
+      sinon.assert.calledOnce(createConnectorClientWithIdentitySpy)
 
       stubfromObject.restore()
     })
@@ -112,7 +122,7 @@ describe('CloudAdapter', function () {
       sinon.assert.calledOnceWithExactly((res as any).status, 501)
       sinon.assert.calledOnceWithExactly((res as any).setHeader, 'content-type', 'application/json')
       sinon.assert.notCalled((res as any).send)
-      sinon.assert.calledOnce(createConnectorClientSpy)
+      sinon.assert.calledOnce(createConnectorClientWithIdentitySpy)
 
       stubfromObject.restore()
     })
@@ -134,7 +144,7 @@ describe('CloudAdapter', function () {
       sinon.assert.calledOnceWithExactly((res as any).status, 200)
       sinon.assert.calledOnceWithExactly((res as any).setHeader, 'content-type', 'application/json')
       sinon.assert.calledOnceWithExactly((res as any).send, JSON.stringify({ activities: [activity] }))
-      sinon.assert.notCalled(createConnectorClientSpy) // No connector client created for ExpectReplies without serviceUrl
+      sinon.assert.notCalled(createConnectorClientWithIdentitySpy) // No connector client created for ExpectReplies without serviceUrl
 
       stubfromObject.restore()
     })
@@ -155,7 +165,7 @@ describe('CloudAdapter', function () {
       sinon.assert.calledOnceWithExactly((res as any).status, 200)
       sinon.assert.notCalled((res as any).setHeader)
       sinon.assert.notCalled((res as any).send)
-      sinon.assert.calledTwice(createConnectorClientSpy)
+      sinon.assert.calledOnce(createConnectorClientWithIdentitySpy)
 
       stubfromObject.restore()
     })
@@ -220,6 +230,8 @@ describe('CloudAdapter', function () {
           serviceUrl: 'serviceUrl'
         }
       )
+
+      context.turnState.set(cloudAdapter.ConnectorClientKey, mockConnectorClient)
       mockConnectorClient.replyToActivity.resolves({ id: 'id' })
 
       assert.deepStrictEqual(await cloudAdapter.sendActivities(context, [activity]), [{ id: 'id' }])
@@ -241,6 +253,8 @@ describe('CloudAdapter', function () {
         }
       )
       mockConnectorClient.sendToConversation.resolves({ id: 'id' })
+
+      context.turnState.set(cloudAdapter.ConnectorClientKey, mockConnectorClient)
 
       assert.deepStrictEqual(await cloudAdapter.sendActivities(context, [activity]), [{ id: 'id' }])
 
@@ -284,7 +298,7 @@ describe('CloudAdapter', function () {
       const { logic, verify } = bootstrap()
 
       // @ts-expect-error
-      await cloudAdapter.continueConversation(conversationReference, logic)
+      await cloudAdapter.continueConversation(authentication.clientId, conversationReference, logic)
 
       verify()
     })
@@ -306,7 +320,7 @@ describe('CloudAdapter', function () {
       const error = new Error('Invalid conversation reference object')
 
       await assert.rejects(
-        cloudAdapter.continueConversation(conversationReference, (context) => {
+        cloudAdapter.continueConversation(authentication.clientId as string, conversationReference, (context) => {
           logic(context)
 
           throw error
