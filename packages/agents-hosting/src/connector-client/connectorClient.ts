@@ -192,9 +192,12 @@ export class ConnectorClient {
     if (!conversationId || !activityId) {
       throw new Error('conversationId and activityId are required')
     }
+
+    const trimmedConversationId: string = conversationId.length > 325 ? conversationId.substring(0, 325) : conversationId
+
     const config: AxiosRequestConfig = {
       method: 'post',
-      url: `v3/conversations/${conversationId}/activities/${encodeURIComponent(activityId)}`,
+      url: `v3/conversations/${trimmedConversationId}/activities/${encodeURIComponent(activityId)}`,
       headers: {
         'Content-Type': 'application/json'
       },
@@ -219,9 +222,12 @@ export class ConnectorClient {
     if (!conversationId) {
       throw new Error('conversationId is required')
     }
+
+    const trimmedConversationId: string = conversationId.length > 325 ? conversationId.substring(0, 325) : conversationId
+
     const config: AxiosRequestConfig = {
       method: 'post',
-      url: `v3/conversations/${conversationId}/activities`,
+      url: `v3/conversations/${trimmedConversationId}/activities`,
       headers: {
         'Content-Type': 'application/json'
       },
