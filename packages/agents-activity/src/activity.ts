@@ -632,7 +632,7 @@ export class Activity {
    */
   public getAgenticUser (): string | undefined {
     if (this.isAgenticRequest()) {
-      return this.recipient?.id
+      return this.recipient?.agenticUserId
     }
     return undefined
   }
