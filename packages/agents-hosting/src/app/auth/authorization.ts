@@ -3,10 +3,14 @@
  * Licensed under the MIT License.
  */
 
+import { debug } from '@microsoft/agents-activity/logger'
 import { TokenResponse } from '../../oauth'
 import { TurnContext } from '../../turnContext'
 import { TurnState } from '../turnState'
 import { AuthorizationManager } from './authorizationManager'
+import { AuthorizationHandlerTokenOptions } from './types'
+
+const logger = debug('agents:authorization')
 
 /**
  * Class responsible for managing authorization and OAuth flows.
@@ -61,6 +65,7 @@ export class Authorization {
   }
 
   /**
+   * @deprecated
    * Exchanges a token for a new token with different scopes.
    *
    * @param context - The context object for the current turn.
@@ -85,10 +90,55 @@ export class Authorization {
    *
    * @public
    */
-  public async exchangeToken (context: TurnContext, scopes: string[], authHandlerId: string): Promise<TokenResponse> {
-    const handler = this.getHandler(authHandlerId)
-    const { token } = await handler.token(context, scopes)
-    return { token }
+  public async exchangeToken (context: TurnContext, scopes: string[], authHandlerId: string): Promise<TokenResponse>
+  /**
+   * Exchanges a token for a new token with different scopes.
+   *
+   * @param context - The context object for the current turn.
+   * @param authHandlerId - ID of the auth handler to use.
+   * @param options - Optional token options.
+   * If `connection` is not provided, the `AgentApplication.authorization.obo.connection` is used, otherwise the default connection is used.
+   * If `scopes` are not provided, the `AgentApplication.authorization.obo.scopes` are used.
+   * @returns A promise that resolves to the exchanged token response.
+   * @throws {Error} If the auth handler is not configured.
+   *
+   * @remarks
+   * This method handles token exchange scenarios, particularly for on-behalf-of (OBO) flows.
+   * It checks if the current token is exchangeable (e.g., has audience starting with 'api://')
+   * and performs the appropriate token exchange using MSAL.
+   *
+   * @example
+   * ```typescript
+   * const exchangedToken = await auth.exchangeToken(
+   *   context,
+   *   'microsoft',
+   *   { connection: 'oboConnection', scopes: ['https://graph.microsoft.com/.default'] }
+   * });
+   * ```
+   *
+   * @public
+   */
+  public async exchangeToken (context: TurnContext, authHandlerId: string, options?: AuthorizationHandlerTokenOptions): Promise<TokenResponse>
+
+  /**
+   * @internal
+   * Internal implementation of exchangeToken method.
+   * Handles both overloads and performs the actual token exchange logic.
+   */
+  public async exchangeToken (context: TurnContext, authHandlerId: string[] | string, options?: AuthorizationHandlerTokenOptions | string): Promise<TokenResponse> {
+    if (authHandlerId instanceof Array && typeof options === 'string') {
+      logger.warn('Authorization.exchangeToken(context, scopes, authHandlerId) is deprecated. Use Authorization.exchangeToken(context, authHandlerId, options) instead.')
+      const [handlerId, handlerScopes] = [options, authHandlerId]
+      return this.exchangeToken(context, handlerId, { scopes: handlerScopes })
+    }
+
+    if (typeof authHandlerId === 'string' && typeof options === 'object') {
+      const handler = this.getHandler(authHandlerId)
+      const { token } = await handler.token(context, options)
+      return { token }
+    }
+
+    throw new Error('Invalid parameters for exchangeToken method.')
   }
 
   /**

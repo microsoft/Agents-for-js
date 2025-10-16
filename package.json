@@ -26,7 +26,7 @@
     "build": "tsc --build --verbose tsconfig.build.json",
     "build:clean": "npm run clean:dist && npm run build",
     "postbuild": "npm run build:browser",
-    "test": "node --test  --test-reporter=spec  --import tsx  --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=test-report.xml './packages/*/test/**/*.test.ts'",
+    "test": "node --test  --test-reporter=spec  --import tsx  --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=test-report.xml ./packages/*/test/**/*.test.ts",
     "docs": "typedoc --skipErrorChecking",
     "compat": "node compat.mjs",
     "play": "agentsplayground"

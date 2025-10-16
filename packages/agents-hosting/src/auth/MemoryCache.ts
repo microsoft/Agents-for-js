@@ -10,14 +10,24 @@ const CACHE_PURGE_INTERVAL = 60000 // 60 seconds
  */
 export class MemoryCache<T> {
   private cache = new Map<string, { value: T; validUntil: number }>()
+  private purgeInterval?: NodeJS.Timeout
 
-  constructor () {
-    setInterval(() => this.purge(), CACHE_PURGE_INTERVAL)
+  /**
+   * Clears the purge interval to allow the process to exit cleanly
+   */
+  destroy (): void {
+    if (this.purgeInterval) {
+      clearInterval(this.purgeInterval)
+      this.purgeInterval = undefined
+    }
   }
 
   set (key: string, value: T, ttlSeconds: number): void {
     const validUntil = Date.now() + (ttlSeconds * 1000)
     this.cache.set(key, { value, validUntil })
+    if (!this.purgeInterval) {
+      this.purgeInterval = setInterval(() => this.purge(), CACHE_PURGE_INTERVAL)
+    }
   }
 
   get (key: string): T | undefined {

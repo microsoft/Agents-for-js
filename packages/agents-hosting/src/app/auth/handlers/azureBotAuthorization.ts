@@ -4,7 +4,7 @@
  */
 
 import { debug } from '@microsoft/agents-activity/logger'
-import { AuthorizationHandlerStatus, AuthorizationHandler, ActiveAuthorizationHandler, AuthorizationHandlerSettings } from '../types'
+import { AuthorizationHandlerStatus, AuthorizationHandler, ActiveAuthorizationHandler, AuthorizationHandlerSettings, AuthorizationHandlerTokenOptions } from '../types'
 import { MessageFactory } from '../../../messageFactory'
 import { CardFactory } from '../../../cards'
 import { TurnContext } from '../../../turnContext'
@@ -53,6 +53,20 @@ export interface AzureBotAuthorizationOptionsMessages {
 }
 
 /**
+ * Settings for on-behalf-of token acquisition.
+ */
+export interface AzureBotAuthorizationOptionsOBO {
+  /**
+   * Connection name to use for on-behalf-of token acquisition.
+   */
+  connection?: string
+  /**
+   * Scopes to request for on-behalf-of token acquisition.
+   */
+  scopes?: string[]
+}
+
+/**
  * Interface defining an authorization handler configuration.
  */
 export interface AzureBotAuthorizationOptions {
@@ -64,24 +78,45 @@ export interface AzureBotAuthorizationOptions {
   type?: undefined
   /**
    * Connection name for the auth provider.
+   * @remarks
+   * When using environment variables, this can be set using the `${authHandlerId}_connectionName` variable.
    */
   name?: string,
   /**
    * Title to display on auth cards/UI.
+   * @remarks
+   * When using environment variables, this can be set using the `${authHandlerId}_connectionTitle` variable.
    */
   title?: string,
   /**
    * Text to display on auth cards/UI.
+   * @remarks
+   * When using environment variables, this can be set using the `${authHandlerId}_connectionText` variable.
    */
   text?: string,
   /**
    * Maximum number of attempts for entering the magic code. Defaults to 2.
+   * @remarks
+   * When using environment variables, this can be set using the `${authHandlerId}_maxAttempts` variable.
    */
   maxAttempts?: number
   /**
    * Messages to display for various authentication scenarios.
+   * @remarks
+   * When using environment variables, these can be set using the following variables:
+   * - `${authHandlerId}_messages_invalidCode`
+   * - `${authHandlerId}_messages_invalidCodeFormat`
+   * - `${authHandlerId}_messages_maxAttemptsExceeded`
    */
   messages?: AzureBotAuthorizationOptionsMessages
+  /**
+   * Settings for on-behalf-of token acquisition.
+   * @remarks
+   * When using environment variables, these can be set using the following variables:
+   * - `${authHandlerId}_obo_connection`
+   * - `${authHandlerId}_obo_scopes` (comma-separated values, e.g. `scope1,scope2`)
+   */
+  obo?: AzureBotAuthorizationOptionsOBO
 }
 
 /**
@@ -139,13 +174,17 @@ export class AzureBotAuthorization implements AuthorizationHandler {
   private loadOptions (settings: AzureBotAuthorizationOptions) {
     const result: AzureBotAuthorizationOptions = {
       name: settings.name ?? (process.env[`${this.id}_connectionName`]),
-      title: settings.title ?? (process.env[`${this.id}_connectionTitle`]),
-      text: settings.text ?? (process.env[`${this.id}_connectionText`]),
+      title: settings.title ?? (process.env[`${this.id}_connectionTitle`]) ?? 'Sign-in',
+      text: settings.text ?? (process.env[`${this.id}_connectionText`]) ?? 'Please sign-in to continue',
       maxAttempts: settings.maxAttempts ?? parseInt(process.env[`${this.id}_maxAttempts`]!),
       messages: {
         invalidCode: settings.messages?.invalidCode ?? process.env[`${this.id}_messages_invalidCode`],
         invalidCodeFormat: settings.messages?.invalidCodeFormat ?? process.env[`${this.id}_messages_invalidCodeFormat`],
         maxAttemptsExceeded: settings.messages?.maxAttemptsExceeded ?? process.env[`${this.id}_messages_maxAttemptsExceeded`],
+      },
+      obo: {
+        connection: settings.obo?.connection ?? process.env[`${this.id}_obo_connection`],
+        scopes: settings.obo?.scopes ?? this.loadScopes(process.env[`${this.id}_obo_scopes`]),
       }
     }
 
@@ -184,10 +223,10 @@ export class AzureBotAuthorization implements AuthorizationHandler {
   /**
    * Retrieves the token for the user, optionally using on-behalf-of flow for specified scopes.
    * @param context The turn context.
-   * @param scopes Optional scopes for on-behalf-of token acquisition.
+   * @param options Optional options for token acquisition, including connection and scopes for on-behalf-of flow.
    * @returns The token response containing the token or undefined if not available.
    */
-  async token (context: TurnContext, scopes?: string[]): Promise<TokenResponse> {
+  async token (context: TurnContext, options?: AuthorizationHandlerTokenOptions): Promise<TokenResponse> {
     let { token } = this.getContext(context)
 
     if (!token?.trim()) {
@@ -203,11 +242,7 @@ export class AzureBotAuthorization implements AuthorizationHandler {
       return { token: undefined }
     }
 
-    if (!scopes || scopes.length === 0) {
-      return { token }
-    }
-
-    return await this.handleOBO(token, scopes)
+    return await this.handleOBO(token, options)
   }
 
   /**
@@ -337,20 +372,25 @@ export class AzureBotAuthorization implements AuthorizationHandler {
   /**
    * Handles on-behalf-of token acquisition.
    */
-  private async handleOBO (token:string, scopes: string[]): Promise<TokenResponse> {
+  private async handleOBO (token:string, options?: AuthorizationHandlerTokenOptions): Promise<TokenResponse> {
+    const oboConnection = options?.connection ?? this._options.obo?.connection
+    const oboScopes = options?.scopes && options.scopes.length > 0 ? options.scopes : this._options.obo?.scopes
+
+    if (!oboScopes || oboScopes.length === 0) {
+      return { token }
+    }
+
     if (!this.isExchangeable(token)) {
       throw new Error(this.prefix('The current token is not exchangeable for an on-behalf-of flow. Ensure the token audience starts with \'api://\'.'))
     }
 
     try {
-      // TODO: add obo connection from setting in replacement of this._settings.name!, in this case
-      const oboProvider = this.settings.connections.getConnection(this._options.name!)
-      const newToken = await oboProvider.acquireTokenOnBehalfOf(scopes, token)
-      logger.debug(this.prefix('Successfully acquired on-behalf-of token'))
+      const provider = oboConnection ? this.settings.connections.getConnection(oboConnection) : this.settings.connections.getDefaultConnection()
+      const newToken = await provider.acquireTokenOnBehalfOf(oboScopes, token)
+      logger.debug(this.prefix('Successfully acquired on-behalf-of token'), { connection: oboConnection, scopes: oboScopes })
       return { token: newToken }
     } catch (error) {
-      const reason = `Failed to exchange on-behalf-of token for scopes: [${scopes.join(', ')}]`
-      logger.error(this.prefix(reason), error)
+      logger.error(this.prefix('Failed to exchange on-behalf-of token'), { connection: oboConnection, scopes: oboScopes }, error)
       return { token: undefined }
     }
   }
@@ -501,5 +541,18 @@ export class AzureBotAuthorization implements AuthorizationHandler {
       const message = this._options.messages?.maxAttemptsExceeded ?? 'You have exceeded the maximum number of sign-in attempts ({maxAttempts}). Please try again with a new sign-in request.'
       return message.replaceAll('{maxAttempts}', maxAttempts.toString())
     },
+  }
+
+  /**
+   * Loads the OAuth scopes from the environment variables.
+   */
+  private loadScopes (value:string | undefined): string[] {
+    return value?.split(',').reduce<string[]>((acc, scope) => {
+      const trimmed = scope.trim()
+      if (trimmed) {
+        acc.push(trimmed)
+      }
+      return acc
+    }, []) ?? []
   }
 }

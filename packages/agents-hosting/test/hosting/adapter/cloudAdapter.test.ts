@@ -1,6 +1,6 @@
 import { strict as assert, strict } from 'assert'
 import { afterEach, beforeEach, describe, it } from 'node:test'
-import { AuthConfiguration, CloudAdapter, INVOKE_RESPONSE_KEY, MsalConnectionManager, Request, TurnContext } from '../../../src'
+import { AuthConfiguration, CloudAdapter, INVOKE_RESPONSE_KEY, MsalConnectionManager, Request, UserTokenClient, TurnContext } from '../../../src'
 import sinon, { SinonSandbox } from 'sinon'
 import { Activity, ActivityTypes, ConversationReference, DeliveryModes } from '@microsoft/agents-activity'
 import { ConnectorClient } from '../../../src/connector-client/connectorClient'
@@ -10,13 +10,11 @@ describe('CloudAdapter', function () {
   let sandbox: SinonSandbox
   let mockConnectorClient: sinon.SinonStubbedInstance<ConnectorClient>
   let mockConnectionManager: sinon.SinonStubbedInstance<MsalConnectionManager>
-  // let mockUserTokenClient: sinon.SinonStubbedInstance<UserTokenClient>
+  let mockUserTokenClient: sinon.SinonStubbedInstance<UserTokenClient>
   let cloudAdapter: CloudAdapter
   let req: Request
   let res: Partial<Response>
-  // let createConnectorClientSpy: sinon.SinonStub
   let createConnectorClientWithIdentitySpy: sinon.SinonStub
-  // let createUserTokenClientSpy: sinon.SinonStub
 
   const authentication: AuthConfiguration = {
     tenantId: 'tenantId',
@@ -29,13 +27,13 @@ describe('CloudAdapter', function () {
     sandbox = sinon.createSandbox({ useFakeTimers: true })
     mockConnectorClient = sinon.createStubInstance(ConnectorClient)
     mockConnectionManager = sinon.createStubInstance(MsalConnectionManager)
-    // mockUserTokenClient = sinon.createStubInstance(UserTokenClient)
+    mockUserTokenClient = sinon.createStubInstance(UserTokenClient)
     cloudAdapter = new CloudAdapter(authentication);
     (cloudAdapter as any).connectionManager = mockConnectionManager
 
-    // createConnectorClientSpy = sinon.stub(cloudAdapter as any, 'createConnectorClient').returns(mockConnectorClient)
+    sinon.stub(cloudAdapter as any, 'createConnectorClient').returns(mockConnectorClient)
+    sinon.stub(cloudAdapter as any, 'createUserTokenClient').returns(mockUserTokenClient)
     createConnectorClientWithIdentitySpy = sinon.stub(cloudAdapter as any, 'createConnectorClientWithIdentity').returns(mockConnectorClient)
-    // createUserTokenClientSpy = sinon.stub(cloudAdapter as any, 'createUserTokenClient').returns(mockUserTokenClient)
 
     req = {
       headers: {},

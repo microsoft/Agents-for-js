@@ -64,10 +64,10 @@ export interface AuthorizationHandler {
   /**
    * Retrieves an access token for the specified scopes.
    * @param context The turn context.
-   * @param scopes The scopes to request.
+   * @param options Optional token request options.
    * @returns The access token response.
    */
-  token(context: TurnContext, scopes?: string[]): Promise<TokenResponse>;
+  token(context: TurnContext, options?: AuthorizationHandlerTokenOptions): Promise<TokenResponse>;
   /**
    * Registers a callback to be invoked when the sign-in process is successful.
    * @param callback The callback to invoke on success.
@@ -92,4 +92,18 @@ export interface AuthorizationHandlerSettings {
    * Connections instance for managing authentication connections.
    */
   connections: Connections
+}
+
+/**
+ * Options for token requests in authorization handlers.
+ */
+export interface AuthorizationHandlerTokenOptions {
+  /**
+   * Optional name of the connection to use for the token request. Usually used for OBO flows.
+   */
+  connection?: string
+  /**
+   * Optional scopes to request in the token. Usually used for OBO flows.
+   */
+  scopes?: string[]
 }
