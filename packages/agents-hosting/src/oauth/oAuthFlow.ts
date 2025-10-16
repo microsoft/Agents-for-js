@@ -55,11 +55,6 @@ export class OAuthFlow {
   state: FlowState
 
   /**
-   * The ID of the token exchange request, used to deduplicate requests.
-   */
-  tokenExchangeId: string | null = null
-
-  /**
    * In-memory cache for tokens with expiration.
    */
   private tokenCache: Map<string, CachedToken> = new Map()
@@ -174,6 +169,7 @@ export class OAuthFlow {
       logger.info('Token retrieved successfully')
       return output.tokenResponse
     }
+
     const oCard: Attachment = CardFactory.oauthCard(this.absOauthConnectionName, this.cardTitle, this.cardText, output.signInResource)
     await context.sendActivity(MessageFactory.attachment(oCard))
     this.state = { flowStarted: true, flowExpires: Date.now() + 60 * 5 * 1000, absOauthConnectionName: this.absOauthConnectionName }
@@ -213,7 +209,7 @@ export class OAuthFlow {
             logger.info('Token cached for 10 minutes in continueFlow (magic code)')
           }
 
-          await this.storage.delete([this.getFlowStateKey(context)])
+          await this.deleteFlowState(context)
           logger.info('Token retrieved successfully')
           return result
         } else {
@@ -251,11 +247,6 @@ export class OAuthFlow {
     if (contFlowActivity.type === ActivityTypes.Invoke && contFlowActivity.name === 'signin/tokenExchange') {
       logger.info('Continuing OAuth flow with tokenExchange')
       const tokenExchangeRequest = contFlowActivity.value as TokenExchangeRequest
-      if (this.tokenExchangeId === tokenExchangeRequest.id) { // dedupe
-        logger.debug('Token exchange request already processed, skipping')
-        return { token: undefined }
-      }
-      this.tokenExchangeId = tokenExchangeRequest.id!
       const userTokenResp = await this.userTokenClient?.exchangeTokenAsync(contFlowActivity.from?.id!, this.absOauthConnectionName, contFlowActivity.channelId!, tokenExchangeRequest)
       if (userTokenResp && userTokenResp.token) {
         // Cache the token if it's valid
@@ -300,7 +291,7 @@ export class OAuthFlow {
 
     await this.userTokenClient?.signOut(context.activity.from?.id as string, this.absOauthConnectionName, context.activity.channelId as string)
     this.state = { flowStarted: false, flowExpires: 0, absOauthConnectionName: this.absOauthConnectionName }
-    await this.storage.delete([this.getFlowStateKey(context)])
+    await this.deleteFlowState(context)
     logger.info('User signed out successfully from connection:', this.absOauthConnectionName)
   }
 
@@ -312,7 +303,7 @@ export class OAuthFlow {
   public async getFlowState (context: TurnContext) : Promise<FlowState> {
     const key = this.getFlowStateKey(context)
     const data = await this.storage.read([key])
-    const flowState: FlowState = data[key] // ?? { flowStarted: false, flowExpires: 0 }
+    const flowState = data[key] as FlowState ?? { flowStarted: false, flowExpires: 0, absOauthConnectionName: this.absOauthConnectionName }
     return flowState
   }
 
@@ -374,5 +365,24 @@ export class OAuthFlow {
       throw new Error('ChannelId, conversationId, and userId must be set in the activity')
     }
     return `oauth/${channelId}/${userId}/${this.absOauthConnectionName}/flowState`
+  }
+
+  /**
+   * Deletes the flow state for the OAuth flow.
+   * @param context The turn context.
+   * @returns A promise that resolves when the flow state is deleted.
+   */
+  private async deleteFlowState (context: TurnContext) {
+    try {
+      await this.storage.delete([this.getFlowStateKey(context)])
+    } catch (error) {
+      // Silently ignore not-found errors as the state may have already been cleaned up
+      if (error instanceof Error && error.message.toLowerCase().includes('not found')) {
+        logger.debug('Flow state already deleted')
+        return
+      }
+
+      throw error
+    }
   }
 }
