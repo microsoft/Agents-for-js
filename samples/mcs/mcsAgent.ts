@@ -43,7 +43,7 @@ class McsAgent extends AgentApplication<TurnState> {
 
   private _message = async (context: TurnContext, state: TurnState): Promise<void> => {
     const cid = state.getValue<string>('conversation.conversationId')
-    const oboToken = await this.authorization.exchangeToken(context, ['https://api.powerplatform.com/.default'], 'mcs')
+    const oboToken = await this.authorization.exchangeToken(context, 'mcs', { scopes: ['https://api.powerplatform.com/.default'] })
     if (!oboToken.token) {
       await this._status(context, state)
       return

@@ -25,7 +25,7 @@ class OboApp extends AgentApplication<TurnState> {
     } else {
       await context.sendActivity(MessageFactory.text('Token request status: ' + tresp || 'unknown'))
     }
-    const oboToken = await this.authorization.exchangeToken(context, ['https://api.powerplatform.com/.default'], 'mcs')
+    const oboToken = await this.authorization.exchangeToken(context, 'mcs', { scopes: ['https://api.powerplatform.com/.default'] })
     await context.sendActivity(MessageFactory.text('OBO Token received: ' + (oboToken?.token?.length || 0)))
   }
 

@@ -96,9 +96,10 @@ export class Authorization {
    *
    * @param context - The context object for the current turn.
    * @param authHandlerId - ID of the auth handler to use.
-   * @param options - Optional token options.
-   * If `connection` is not provided, the `AgentApplication.authorization.obo.connection` is used, otherwise the default connection is used.
-   * If `scopes` are not provided, the `AgentApplication.authorization.obo.scopes` are used.
+   * @param options - Optional token options. If `connection` and `scopes` are NOT provided, the auth handler's configured options are used
+   * (`AgentApplication.authorization.obo.connection` and `AgentApplication.authorization.obo.scopes`), and the token exchange operation will happen automatically,
+   * meaning that this method should not be called, otherwise it will perform the token exchange operation twice.
+   * Provide `options` only when you need to override the `AgentApplication.authorization.obo` configuration for a specific call.
    * @returns A promise that resolves to the exchanged token response.
    * @throws {Error} If the auth handler is not configured.
    *
