@@ -214,7 +214,7 @@ export class MsalTokenProvider implements AuthProvider {
     const instanceToken = await this.getAgenticInstanceToken(agentAppInstanceId)
 
     const token = await this.acquireTokenByForAgenticScenarios(agentAppInstanceId, agentToken, scopes, {
-      username: agenticUserId,
+      user_id: agenticUserId,
       user_federated_identity_credential: instanceToken,
       grant_type: 'user_fic',
     })
