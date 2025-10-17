@@ -228,7 +228,7 @@ export class CloudAdapter extends BaseAdapter {
    * @param logic - The logic to execute.
    * @returns The created TurnContext.
    */
-  createTurnContext (activity: Activity, identity: JwtPayload): TurnContext {
+  createTurnContext (activity: Activity, identity?: JwtPayload): TurnContext {
     return new TurnContext(this, activity, identity)
   }
 
