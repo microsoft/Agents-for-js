@@ -348,46 +348,46 @@ export class Activity {
     return activity
   }
 
-    get channelId(): string | undefined {
-        const subChannel = this.entities?.find(e => e.type === 'ProductInfo')?.id;
-        return this._channelId?.concat(subChannel ? `:${subChannel}` : ''); 
-    }
+  get channelId (): string | undefined {
+    const subChannel = this.entities?.find(e => e.type === 'ProductInfo')?.id
+    return this._channelId?.concat(subChannel ? `:${subChannel}` : '')
+  }
 
-    set channelId(value: string) {
-        const [channel, subChannel] = value?.split(':') ?? [undefined, undefined];
-        // if they passed in a value but the channel is blank, this is invalid
-        if (value && !channel) {
-            throw new Error('Invalid channelId. Found subChannel but no main channel.');
-        }
-        this._channelId = channel;
-        if (subChannel) {
-            this.entities = this.entities || [];
-            // remove any previous ProductInfo entities
-            this.entities = this.entities.filter(e => e.type !== 'ProductInfo');
-            // push in the new ProductInfo
-            this.entities.push({ type: 'ProductInfo', id: subChannel });
-        } else {
-            if (this.entities) {
-                this.entities = this.entities.filter(e => e.type !== 'ProductInfo');
-            }
-        }
+  set channelId (value: string) {
+    const [channel, subChannel] = value?.split(':') ?? [undefined, undefined]
+    // if they passed in a value but the channel is blank, this is invalid
+    if (value && !channel) {
+      throw new Error('Invalid channelId. Found subChannel but no main channel.')
     }
+    this._channelId = channel
+    if (subChannel) {
+      this.entities = this.entities || []
+      // remove any previous ProductInfo entities
+      this.entities = this.entities.filter(e => e.type !== 'ProductInfo')
+      // push in the new ProductInfo
+      this.entities.push({ type: 'ProductInfo', id: subChannel })
+    } else {
+      if (this.entities) {
+        this.entities = this.entities.filter(e => e.type !== 'ProductInfo')
+      }
+    }
+  }
 
-    set channelIdChannel(value) {
-        this._channelId = value;
-    }
+  set channelIdChannel (value) {
+    this._channelId = value
+  }
 
-    get channelIdChannel() {
-        return this._channelId;
-    }
-    
-    get channelIdSubChannel() {
-        return this.entities?.find(e => e.type === 'ProductInfo')?.id;
-    }
+  get channelIdChannel () {
+    return this._channelId
+  }
 
-    set channelIdSubChannel(value) {
-        this.channelId = `${this._channelId}${value ? `:${value}` : ''}`;
-    }
+  get channelIdSubChannel () {
+    return this.entities?.find(e => e.type === 'ProductInfo')?.id
+  }
+
+  set channelIdSubChannel (value) {
+    this.channelId = `${this._channelId}${value ? `:${value}` : ''}`
+  }
 
   /**
    * Creates a continuation activity from a conversation reference.
@@ -646,9 +646,9 @@ export class Activity {
   }
 
   public toJsonString (): string {
-    const copy = {...this} as any;
-    copy.channelId = copy._channelId;
-    delete copy._channelId;
+    const copy = { ...this } as any
+    copy.channelId = copy._channelId
+    delete copy._channelId
     return JSON.stringify(copy)
   }
 
