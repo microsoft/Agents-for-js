@@ -31,6 +31,10 @@ export function normalizeOutgoingActivity (payload: any): object {
     delete relatesTo['agent']
     relatesTo['bot'] = ov
   }
+  if (payload && payload['_channelId']) {
+    payload['channelId'] = payload['_channelId']
+    delete payload['_channelId']
+  }
   return payload
 }
 
