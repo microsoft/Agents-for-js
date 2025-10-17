@@ -99,6 +99,22 @@
 
             "console": "integratedTerminal",
             "internalConsoleOptions": "openOnSessionStart"
-        }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "agenticai",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/test-agents/agentic-ai/src/index.ts",
+            "outFiles": [
+                "${workspaceFolder}/**/dist/**/*.js"
+            ],
+            "preLaunchTask": "build_agentic",
+            "envFile": "${workspaceFolder}/test-agents/agentic-ai/.env",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "openOnSessionStart"
+        },
     ]
 }

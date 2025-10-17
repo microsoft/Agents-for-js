@@ -64,6 +64,8 @@ export interface AuthConfiguration {
    */
   authority?: string
 
+  scope?: string
+
   /**
    * A map of connection names to their respective authentication configurations.
    */
@@ -183,6 +185,7 @@ export const loadPrevAuthConfigFromEnv: () => AuthConfiguration = () => {
       connectionName: process.env.connectionName,
       FICClientId: process.env.MicrosoftAppClientId,
       authority,
+      scope: process.env.scope,
       issuers: getDefaultIssuers(process.env.MicrosoftAppTenantId ?? '', authority),
       altBlueprintConnectionName: process.env.altBlueprintConnectionName,
       WIDAssertionFile: process.env.WIDAssertionFile,
@@ -348,6 +351,7 @@ function buildLegacyAuthConfig (envPrefix: string = '', customConfig?: AuthConfi
     connectionName: customConfig?.connectionName ?? process.env[`${prefix}connectionName`],
     FICClientId: customConfig?.FICClientId ?? process.env[`${prefix}FICClientId`],
     authority,
+    scope: customConfig?.scope ?? process.env[`${prefix}scope`],
     issuers: customConfig?.issuers ?? getDefaultIssuers(tenantId as string, authority),
     altBlueprintConnectionName: customConfig?.altBlueprintConnectionName ?? process.env[`${prefix}altBlueprintConnectionName`],
     WIDAssertionFile: customConfig?.WIDAssertionFile ?? process.env[`${prefix}WIDAssertionFile`]
