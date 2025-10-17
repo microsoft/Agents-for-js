@@ -171,6 +171,9 @@ export class AzureBotAuthorization implements AuthorizationHandler {
     this._options = this.loadOptions(options)
   }
 
+  /**
+   * Loads and validates the authorization handler options.
+   */
   private loadOptions (settings: AzureBotAuthorizationOptions) {
     const result: AzureBotAuthorizationOptions = {
       name: settings.name ?? (process.env[`${this.id}_connectionName`]),
@@ -256,7 +259,7 @@ export class AzureBotAuthorization implements AuthorizationHandler {
     const connection = this._options.name!
 
     if (!channel || !user) {
-      throw new Error('Both \'activity.channelId\' and \'activity.from.id\' are required to perform signout.')
+      throw new Error(this.prefix('Both \'activity.channelId\' and \'activity.from.id\' are required to perform signout.'))
     }
 
     logger.debug(this.prefix(`Signing out User '${user}' from => Channel: '${channel}', Connection: '${connection}'`), context.activity)
@@ -365,6 +368,9 @@ export class AzureBotAuthorization implements AuthorizationHandler {
       return result
     } catch (error) {
       await this.sendInvokeResponse(context, { status: 500 })
+      if (error instanceof Error) {
+        error.message = this.prefix(error.message)
+      }
       throw error
     }
   }

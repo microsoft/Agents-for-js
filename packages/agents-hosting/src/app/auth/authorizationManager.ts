@@ -8,7 +8,7 @@ import { AgentApplication } from '../agentApplication'
 import { AgenticAuthorization, AzureBotAuthorization } from './handlers'
 import { TurnContext } from '../../turnContext'
 import { HandlerStorage } from './handlerStorage'
-import { ActiveAuthorizationHandler, AuthorizationHandlerStatus, AuthorizationHandler, AuthorizationHandlerSettings } from './types'
+import { ActiveAuthorizationHandler, AuthorizationHandlerStatus, AuthorizationHandler, AuthorizationHandlerSettings, AuthorizationOptions } from './types'
 import { Connections } from '../../auth/connections'
 
 const logger = debug('agents:authorization:manager')
@@ -62,12 +62,31 @@ export class AuthorizationManager {
 
     const settings: AuthorizationHandlerSettings = { storage: app.options.storage, connections }
     for (const [id, handler] of Object.entries(app.options.authorization)) {
-      if (handler.type === 'agentic') {
-        this._handlers[id] = new AgenticAuthorization(id, handler, settings)
+      const options = this.loadOptions(id, handler)
+      if (options.type === 'agentic') {
+        this._handlers[id] = new AgenticAuthorization(id, options, settings)
       } else {
-        this._handlers[id] = new AzureBotAuthorization(id, handler, settings)
+        this._handlers[id] = new AzureBotAuthorization(id, options, settings)
       }
     }
+  }
+
+  /**
+   * Loads and validates the authorization handler options.
+   */
+  private loadOptions (id: string, options: AuthorizationOptions[string]) {
+    const result: AuthorizationOptions[string] = {
+      ...options,
+      type: (options.type ?? process.env[`${id}_type`])?.toLowerCase() as typeof options.type,
+    }
+
+    // Validate supported types, agentic, and default (Azure Bot - undefined)
+    const supportedTypes = ['agentic', undefined]
+    if (!supportedTypes.includes(result.type)) {
+      throw new Error(`Unsupported authorization handler type: '${result.type}' for auth handler: '${id}'. Supported types are: '${supportedTypes.filter(Boolean).join('\', \'')}'.`)
+    }
+
+    return result
   }
 
   /**
