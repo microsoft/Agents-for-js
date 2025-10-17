@@ -1,6 +1,6 @@
 import { strict as assert } from 'assert'
 import { describe, it, beforeEach, afterEach } from 'node:test'
-import { AuthConfiguration, loadAuthConfigFromEnv, loadPrevAuthConfigFromEnv } from '../../src'
+import { AuthConfiguration, getAuthConfigWithDefaults, loadAuthConfigFromEnv, loadPrevAuthConfigFromEnv } from '../../src'
 
 describe('AuthConfiguration', () => {
   let originalEnv: NodeJS.ProcessEnv
@@ -187,10 +187,85 @@ describe('AuthConfiguration', () => {
       assert.strictEqual(config.connectionName, undefined)
       assert.deepStrictEqual(config.issuers, [
         'https://api.botframework.com',
-        'https://sts.windows.net/undefined/',
-        'https://login.microsoftonline.com/undefined/v2.0'
+        'https://sts.windows.net//',
+        'https://login.microsoftonline.com//v2.0'
       ])
       assert.strictEqual(config.authority, 'https://login.microsoftonline.com')
+    })
+  })
+
+  describe('getAuthConfigWithDefaults', () => {
+    it('should load configuration with defaults', () => {
+      delete process.env.authorityEndpoint
+
+      const customConfig: AuthConfiguration = {
+        clientId: 'custom-test-client',
+        clientSecret: 'custom-test-secret',
+        tenantId: 'custom-test-tenant',
+        issuers: ['https://example.com'],
+        altBlueprintConnectionName: 'blue-connection'
+      }
+      const config: AuthConfiguration = getAuthConfigWithDefaults(customConfig)
+      assert.strictEqual(config.tenantId, 'custom-test-tenant')
+      assert.strictEqual(config.clientId, 'custom-test-client')
+      assert.strictEqual(config.clientSecret, 'custom-test-secret')
+      assert.strictEqual(config.certPemFile, 'test-cert.pem')
+      assert.strictEqual(config.certKeyFile, 'test-cert.key')
+      assert.strictEqual(config.connectionName, 'test-connection')
+      assert.strictEqual(config.FICClientId, 'test-fic-client-id')
+      assert.deepStrictEqual(config.issuers, ['https://example.com'])
+      assert.strictEqual(config.authority, 'https://login.microsoftonline.com')
+      assert.strictEqual(config.altBlueprintConnectionName, 'blue-connection')
+      assert.strictEqual(config.connections?.size, 1)
+      assert.strictEqual(config.connectionsMap?.length, 1)
+    })
+
+    it('should load configuration with connections', () => {
+      delete process.env.authorityEndpoint
+
+      const connections = new Map<string, AuthConfiguration>()
+      connections.set('test-conn', { clientId: 'custom-test-client', clientSecret: 'custom-test-secret', tenantId: 'custom-test-tenant' })
+
+      const customConfig: AuthConfiguration = {
+        connections,
+        connectionsMap: [{ connection: 'test-conn', serviceUrl: '*' }]
+      }
+      const config: AuthConfiguration = getAuthConfigWithDefaults(customConfig)
+      assert.strictEqual(config.tenantId, 'custom-test-tenant')
+      assert.strictEqual(config.clientId, 'custom-test-client')
+      assert.strictEqual(config.clientSecret, 'custom-test-secret')
+      assert.strictEqual(config.certPemFile, 'test-cert.pem')
+      assert.strictEqual(config.certKeyFile, 'test-cert.key')
+      assert.strictEqual(config.connectionName, 'test-connection')
+      assert.strictEqual(config.FICClientId, 'test-fic-client-id')
+      assert.deepStrictEqual(config.issuers?.length, 3)
+      assert.strictEqual(config.authority, 'https://login.microsoftonline.com')
+      assert.strictEqual(config.altBlueprintConnectionName, undefined)
+      assert.strictEqual(config.connections?.size, 1)
+      assert.strictEqual(config.connectionsMap?.length, 1)
+      assert.strictEqual(config.connectionsMap[0].connection, 'test-conn')
+    })
+
+    it('should load from env with defaults', () => {
+      delete process.env.authorityEndpoint
+
+      const config: AuthConfiguration = getAuthConfigWithDefaults()
+      assert.strictEqual(config.tenantId, 'test-tenant-id')
+      assert.strictEqual(config.clientId, 'test-client-id')
+      assert.strictEqual(config.clientSecret, 'test-client-secret')
+      assert.strictEqual(config.certPemFile, 'test-cert.pem')
+      assert.strictEqual(config.certKeyFile, 'test-cert.key')
+      assert.strictEqual(config.connectionName, 'test-connection')
+      assert.strictEqual(config.FICClientId, 'test-fic-client-id')
+      assert.strictEqual(config.authority, 'https://login.microsoftonline.com')
+      assert.deepStrictEqual(config.issuers, [
+        'https://api.botframework.com',
+        'https://sts.windows.net/test-tenant-id/',
+        'https://login.microsoftonline.com/test-tenant-id/v2.0'
+      ])
+      assert.strictEqual(config.altBlueprintConnectionName, undefined)
+      assert.strictEqual(config.connections?.size, 1)
+      assert.strictEqual(config.connectionsMap?.length, 1)
     })
   })
 

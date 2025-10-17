@@ -38,15 +38,15 @@ class SimpleAdapter extends BaseAdapter {
     }
   }
 
-  getAttachmentInfo (attachmentId: string): Promise<AttachmentInfo> {
+  getAttachmentInfo (context: TurnContext, attachmentId: string): Promise<AttachmentInfo> {
     throw new Error('Method not implemented.')
   }
 
-  getAttachment (attachmentId: string, viewId: string): Promise<NodeJS.ReadableStream> {
+  getAttachment (context: TurnContext, attachmentId: string, viewId: string): Promise<NodeJS.ReadableStream> {
     throw new Error('Method not implemented.')
   }
 
-  uploadAttachment (conversationId: string, attachmentData: AttachmentData): Promise<ResourceResponse> {
+  uploadAttachment (context: TurnContext, conversationId: string, attachmentData: AttachmentData): Promise<ResourceResponse> {
     throw new Error('Method not implemented.')
   }
 
@@ -81,6 +81,7 @@ class SimpleAdapter extends BaseAdapter {
   }
 
   async continueConversation (
+    botAppIdOrIdentity: string | any,
     reference: Partial<ConversationReference>,
     logic: (revocableContext: TurnContext) => Promise<void>
   ) {

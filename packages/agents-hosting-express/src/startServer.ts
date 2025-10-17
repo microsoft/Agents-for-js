@@ -4,7 +4,7 @@
  */
 
 import express, { Response } from 'express'
-import { ActivityHandler, AgentApplication, AuthConfiguration, authorizeJWT, CloudAdapter, HeaderPropagationDefinition, loadAuthConfigFromEnv, Request, TurnState } from '@microsoft/agents-hosting'
+import { ActivityHandler, AgentApplication, AuthConfiguration, authorizeJWT, CloudAdapter, getAuthConfigWithDefaults, HeaderPropagationDefinition, Request, TurnState } from '@microsoft/agents-hosting'
 import { version } from '@microsoft/agents-hosting/package.json'
 /**
  * Starts an Express server for handling Agent requests.
@@ -35,7 +35,7 @@ import { version } from '@microsoft/agents-hosting/package.json'
  *
  */
 export const startServer = (agent: AgentApplication<TurnState<any, any>> | ActivityHandler, authConfiguration?: AuthConfiguration) : express.Express => {
-  const authConfig: AuthConfiguration = authConfiguration ?? loadAuthConfigFromEnv()
+  const authConfig: AuthConfiguration = getAuthConfigWithDefaults(authConfiguration)
   let adapter: CloudAdapter
   let headerPropagation: HeaderPropagationDefinition | undefined
   if (agent instanceof ActivityHandler || !agent.adapter) {

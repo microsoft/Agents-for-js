@@ -24,6 +24,7 @@ import { InputHints, inputHintsZodSchema } from './inputHints'
 import { MessageReaction, messageReactionZodSchema } from './messageReaction'
 import { TextFormatTypes, textFormatTypesZodSchema } from './textFormatTypes'
 import { TextHighlight, textHighlightZodSchema } from './textHighlight'
+import { RoleTypes } from './conversation/roleTypes'
 
 /**
  * Zod schema for validating an Activity object.
@@ -605,5 +606,34 @@ export class Activity {
 
   public toJsonString (): string {
     return JSON.stringify(this)
+  }
+
+  /**
+   * Does this activity represent an agentic request?
+   * @returns True if agentiic
+   */
+  public isAgenticRequest (): boolean {
+    return this.recipient?.role === RoleTypes.AgenticUser || this.recipient?.role === RoleTypes.AgenticIdentity
+  }
+
+  /**
+   * Gets the agent instance ID from the context if its agentic
+   * @returns agent instance id as string
+   */
+  public getAgenticInstanceId (): string | undefined {
+    if (this.isAgenticRequest()) {
+      return this.recipient?.agenticAppId
+    }
+    return undefined
+  }
+
+  /**
+   * Gets the agentic user (UPN) from the context if it's an agentic request.
+   */
+  public getAgenticUser (): string | undefined {
+    if (this.isAgenticRequest()) {
+      return this.recipient?.agenticUserId
+    }
+    return undefined
   }
 }
