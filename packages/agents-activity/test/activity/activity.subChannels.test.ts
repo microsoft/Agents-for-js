@@ -1,7 +1,6 @@
 import { strict as assert } from 'assert'
 import { describe, it } from 'node:test'
 import { Activity } from '../../src'
-import { json } from 'stream/consumers'
 
 describe('properly handle subchannel entities', () => {
   it('should deserialize into the expected channel id', () => {
@@ -48,16 +47,14 @@ describe('properly handle subchannel entities', () => {
 
   it('should gracefully handle ids with multple colons', () => {
     const activity = new Activity('message')
-    activity.channelId = 'foo:bar:baz:qux';
+    activity.channelId = 'foo:bar:baz:qux'
 
     assert.strictEqual(activity.channelIdChannel, 'foo')
     assert.strictEqual(activity.channelIdSubChannel, 'bar:baz:qux')
 
-    activity.channelIdSubChannel = 'zing:pow';
+    activity.channelIdSubChannel = 'zing:pow'
     assert.strictEqual(activity.channelId, 'foo:zing:pow')
-
   })
-
 
   it('different methods of setting channel should serialize the same', () => {
     const a = new Activity('message')

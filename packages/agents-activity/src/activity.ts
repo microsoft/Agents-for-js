@@ -349,13 +349,21 @@ export class Activity {
     return activity
   }
 
+  /**
+   * Return the combined channel:subChannel value like agent:email
+   */
   get channelId (): string | undefined {
     return this._channelId?.concat(this.channelIdSubChannel ? `:${this.channelIdSubChannel}` : '')
   }
 
-  static parseChannelId(value: string): [string | undefined, string | undefined] {
-    let channel = undefined;
-    let subChannel = undefined;
+  /**
+   * Given a composite channelId like agent:email, return the channel and subChannel.
+   * @param value
+   * @returns [channel, subChannel]
+   */
+  static parseChannelId (value: string): [string | undefined, string | undefined] {
+    let channel
+    let subChannel
     if (value && value.indexOf(':') !== -1) {
       channel = value.substring(0, value.indexOf(':'))
       subChannel = value.substring(value.indexOf(':') + 1)
@@ -365,36 +373,52 @@ export class Activity {
     return [channel, subChannel]
   }
 
+  /**
+   * Sets the channel ID for the activity - if a subChannel is provided, will create the necessary ProductInfo entity
+   * @param value The channel ID value.
+   */
   set channelId (value: string) {
     const [channel, subChannel] = Activity.parseChannelId(value)
 
     // if they passed in a value but the channel is blank, this is invalid
     if (value && !channel) {
-      throw new Error(`Invalid channelId ${ value }. Found subChannel but no main channel.`)
+      throw new Error(`Invalid channelId ${value}. Found subChannel but no main channel.`)
     }
     this._channelId = channel
     if (subChannel) {
       addProductInfoToActivity(this, subChannel)
     } else {
-      clearProductInfoFromActivity(this);
+      clearProductInfoFromActivity(this)
     }
   }
 
+  /**
+   * Sets the primary channel ID for the activity.
+   */
   set channelIdChannel (value) {
     this._channelId = value
   }
 
+  /**
+   * Returns the primary channel ID for the activity.
+   */
   get channelIdChannel () {
     return this._channelId
   }
 
+  /**
+   * Returns the sub-channel ID for the activity.
+   */
   get channelIdSubChannel () {
     return this.entities?.find(e => e.type === 'ProductInfo')?.id
   }
 
+  /**
+   * Sets the sub-channel ID for the activity.
+   */
   set channelIdSubChannel (value) {
     if (!this._channelId) {
-      throw new Error('Primary channel must be set before setting subChannel');
+      throw new Error('Primary channel must be set before setting subChannel')
     }
     this.channelId = `${this._channelId}${value ? `:${value}` : ''}`
   }
