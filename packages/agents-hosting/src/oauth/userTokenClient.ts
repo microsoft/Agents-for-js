@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 import axios, { AxiosInstance } from 'axios'
-import { ConversationReference } from '@microsoft/agents-activity'
+import { Activity, ConversationReference } from '@microsoft/agents-activity'
 import { debug } from '@microsoft/agents-activity/logger'
 import { normalizeOutgoingActivity, normalizeTokenExchangeState } from '../activityWireCompat'
 import { AadResourceUrls, SignInResource, TokenExchangeRequest, TokenOrSinginResourceResponse, TokenResponse, TokenStatus } from './userTokenClient.types'
@@ -130,12 +130,13 @@ export class UserTokenClient {
   /**
    * Gets the user token.
    * @param connectionName The connection name.
-   * @param channelId The channel ID.
+   * @param channelIdComposite The channel ID.
    * @param userId The user ID.
    * @param code The optional code.
    * @returns A promise that resolves to the user token.
    */
-  async getUserToken (connectionName: string, channelId: string, userId: string, code?: string) : Promise<TokenResponse> {
+  async getUserToken (connectionName: string, channelIdComposite: string, userId: string, code?: string) : Promise<TokenResponse> {
+    const [channelId, subChannelId] = Activity.parseChannelId(channelIdComposite)
     const params = { connectionName, channelId, userId, code }
     const response = await this.client.get('/api/usertoken/GetToken', { params })
     if (response?.data) {
@@ -148,10 +149,11 @@ export class UserTokenClient {
    * Signs the user out.
    * @param userId The user ID.
    * @param connectionName The connection name.
-   * @param channelId The channel ID.
+   * @param channelIdComposite The channel ID.
    * @returns A promise that resolves when the sign-out operation is complete.
    */
-  async signOut (userId: string, connectionName: string, channelId: string) : Promise<void> {
+  async signOut (userId: string, connectionName: string, channelIdComposite: string) : Promise<void> {
+    const [channelId, subChannelId] = Activity.parseChannelId(channelIdComposite)
     const params = { userId, connectionName, channelId }
     const response = await this.client.delete('/api/usertoken/SignOut', { params })
     if (response.status !== 200) {
@@ -185,11 +187,12 @@ export class UserTokenClient {
    * Exchanges the token.
    * @param userId The user ID.
    * @param connectionName The connection name.
-   * @param channelId The channel ID.
+   * @param channelIdComposite The channel ID.
    * @param tokenExchangeRequest The token exchange request.
    * @returns A promise that resolves to the exchanged token.
    */
-  async exchangeTokenAsync (userId: string, connectionName: string, channelId: string, tokenExchangeRequest: TokenExchangeRequest) : Promise<TokenResponse> {
+  async exchangeTokenAsync (userId: string, connectionName: string, channelIdComposite: string, tokenExchangeRequest: TokenExchangeRequest) : Promise<TokenResponse> {
+    const [channelId, subChannelId] = Activity.parseChannelId(channelIdComposite)
     const params = { userId, connectionName, channelId }
     const response = await this.client.post('/api/usertoken/exchange', tokenExchangeRequest, { params })
     if (response?.data) {
@@ -203,7 +206,7 @@ export class UserTokenClient {
    * Gets the token or sign-in resource.
    * @param userId The user ID.
    * @param connectionName The connection name.
-   * @param channelId The channel ID.
+   * @param channelIdComposite The channel ID.
    * @param conversation The conversation reference.
    * @param relatesTo The related conversation reference.
    * @param code The code.
@@ -211,7 +214,8 @@ export class UserTokenClient {
    * @param fwdUrl The forward URL.
    * @returns A promise that resolves to the token or sign-in resource response.
    */
-  async getTokenOrSignInResource (userId: string, connectionName: string, channelId: string, conversation: ConversationReference, relatesTo: ConversationReference, code: string, finalRedirect: string = '', fwdUrl: string = '') : Promise<TokenOrSinginResourceResponse> {
+  async getTokenOrSignInResource (userId: string, connectionName: string, channelIdComposite: string, conversation: ConversationReference, relatesTo: ConversationReference, code: string, finalRedirect: string = '', fwdUrl: string = '') : Promise<TokenOrSinginResourceResponse> {
+    const [channelId, subChannelId] = Activity.parseChannelId(channelIdComposite)
     const state = Buffer.from(JSON.stringify({ conversation, relatesTo, connectionName, msAppId: this.msAppId })).toString('base64')
     const params = { userId, connectionName, channelId, state, code, finalRedirect, fwdUrl }
     const response = await this.client.get('/api/usertoken/GetTokenOrSignInResource', { params })
@@ -221,11 +225,12 @@ export class UserTokenClient {
   /**
    * Gets the token status.
    * @param userId The user ID.
-   * @param channelId The channel ID.
+   * @param channelIdComposite The channel ID.
    * @param include The optional include parameter.
    * @returns A promise that resolves to the token status.
    */
-  async getTokenStatus (userId: string, channelId: string, include: string = null!): Promise<TokenStatus[]> {
+  async getTokenStatus (userId: string, channelIdComposite: string, include: string = null!): Promise<TokenStatus[]> {
+    const [channelId, subChannelId] = Activity.parseChannelId(channelIdComposite)
     const params = { userId, channelId, include }
     const response = await this.client.get('/api/usertoken/GetTokenStatus', { params })
     return response.data as TokenStatus[]
@@ -235,11 +240,12 @@ export class UserTokenClient {
    * Gets the AAD tokens.
    * @param userId The user ID.
    * @param connectionName The connection name.
-   * @param channelId The channel ID.
+   * @param channelIdComposite The channel ID.
    * @param resourceUrls The resource URLs.
    * @returns A promise that resolves to the AAD tokens.
    */
-  async getAadTokens (userId: string, connectionName: string, channelId: string, resourceUrls: AadResourceUrls) : Promise<Record<string, TokenResponse>> {
+  async getAadTokens (userId: string, connectionName: string, channelIdComposite: string, resourceUrls: AadResourceUrls) : Promise<Record<string, TokenResponse>> {
+    const [channelId, subChannelId] = Activity.parseChannelId(channelIdComposite)
     const params = { userId, connectionName, channelId }
     const response = await this.client.post('/api/usertoken/GetAadTokens', resourceUrls, { params })
     return response.data as Record<string, TokenResponse>

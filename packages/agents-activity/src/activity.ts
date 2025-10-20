@@ -353,7 +353,7 @@ export class Activity {
     return this._channelId?.concat(this.channelIdSubChannel ? `:${this.channelIdSubChannel}` : '')
   }
 
-  set channelId (value: string) {
+  static parseChannelId(value: string): [string | undefined, string | undefined] {
     let channel = undefined;
     let subChannel = undefined;
     if (value && value.indexOf(':') !== -1) {
@@ -362,6 +362,12 @@ export class Activity {
     } else {
       channel = value
     }
+    return [channel, subChannel]
+  }
+
+  set channelId (value: string) {
+    const [channel, subChannel] = Activity.parseChannelId(value)
+
     // if they passed in a value but the channel is blank, this is invalid
     if (value && !channel) {
       throw new Error(`Invalid channelId ${ value }. Found subChannel but no main channel.`)
@@ -650,6 +656,7 @@ export class Activity {
   }
 
   public toJsonString (): string {
+    // Use channelId instead of _channelId when outputting json
     const copy = { ...this } as any
     copy.channelId = copy._channelId
     delete copy._channelId
