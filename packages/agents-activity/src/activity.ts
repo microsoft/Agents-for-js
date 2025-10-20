@@ -95,7 +95,7 @@ export class Activity {
   id?: string
 
   /**
-   * The channel ID where the activity originated.
+   * The primary channel ID where the activity originated.
    */
   _channelId?: string
 
