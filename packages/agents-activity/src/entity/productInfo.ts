@@ -21,11 +21,10 @@ export const clearProductInfoFromActivity = (activity: Activity): void => {
   }
 }
 
-
 /**
  * Add a new ProductInfo entity to the activity and ensure only one exists
- * @param activity 
- * @param id 
+ * @param activity
+ * @param id
  */
 export const addProductInfoToActivity = (activity: Activity, id: string) : void => {
   const productInfo: ProductInfo = {
