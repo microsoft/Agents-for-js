@@ -12,6 +12,7 @@ import { ActivityImportance, activityImportanceZodSchema } from './activityImpor
 import { ActivityTypes, activityTypesZodSchema } from './activityTypes'
 import { Attachment, attachmentZodSchema } from './attachment/attachment'
 import { AttachmentLayoutTypes, attachmentLayoutTypesZodSchema } from './attachment/attachmentLayoutTypes'
+import { addProductInfoToActivity, clearProductInfoFromActivity } from './entity/productInfo'
 import { ChannelAccount, channelAccountZodSchema } from './conversation/channelAccount'
 import { Channels } from './conversation/channels'
 import { ConversationAccount, conversationAccountZodSchema } from './conversation/conversationAccount'
@@ -349,27 +350,27 @@ export class Activity {
   }
 
   get channelId (): string | undefined {
-    const subChannel = this.entities?.find(e => e.type === 'ProductInfo')?.id
-    return this._channelId?.concat(subChannel ? `:${subChannel}` : '')
+    return this._channelId?.concat(this.channelIdSubChannel ? `:${this.channelIdSubChannel}` : '')
   }
 
   set channelId (value: string) {
-    const [channel, subChannel] = value?.split(':') ?? [undefined, undefined]
+    let channel = undefined;
+    let subChannel = undefined;
+    if (value && value.indexOf(':') !== -1) {
+      channel = value.substring(0, value.indexOf(':'))
+      subChannel = value.substring(value.indexOf(':') + 1)
+    } else {
+      channel = value
+    }
     // if they passed in a value but the channel is blank, this is invalid
     if (value && !channel) {
-      throw new Error('Invalid channelId. Found subChannel but no main channel.')
+      throw new Error(`Invalid channelId ${ value }. Found subChannel but no main channel.`)
     }
     this._channelId = channel
     if (subChannel) {
-      this.entities = this.entities || []
-      // remove any previous ProductInfo entities
-      this.entities = this.entities.filter(e => e.type !== 'ProductInfo')
-      // push in the new ProductInfo
-      this.entities.push({ type: 'ProductInfo', id: subChannel })
+      addProductInfoToActivity(this, subChannel)
     } else {
-      if (this.entities) {
-        this.entities = this.entities.filter(e => e.type !== 'ProductInfo')
-      }
+      clearProductInfoFromActivity(this);
     }
   }
 
@@ -386,6 +387,9 @@ export class Activity {
   }
 
   set channelIdSubChannel (value) {
+    if (!this._channelId) {
+      throw new Error('Primary channel must be set before setting subChannel');
+    }
     this.channelId = `${this._channelId}${value ? `:${value}` : ''}`
   }
 

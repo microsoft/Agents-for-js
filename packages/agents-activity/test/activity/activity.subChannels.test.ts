@@ -46,6 +46,19 @@ describe('properly handle subchannel entities', () => {
     assert.strictEqual(object.entities[0].id, 'bar')
   })
 
+  it('should gracefully handle ids with multple colons', () => {
+    const activity = new Activity('message')
+    activity.channelId = 'foo:bar:baz:qux';
+
+    assert.strictEqual(activity.channelIdChannel, 'foo')
+    assert.strictEqual(activity.channelIdSubChannel, 'bar:baz:qux')
+
+    activity.channelIdSubChannel = 'zing:pow';
+    assert.strictEqual(activity.channelId, 'foo:zing:pow')
+
+  })
+
+
   it('different methods of setting channel should serialize the same', () => {
     const a = new Activity('message')
     a.channelIdChannel = 'foo'
