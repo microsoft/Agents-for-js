@@ -11,13 +11,22 @@ export interface ProductInfo extends Entity {
   id: string;
 }
 
-// remove any previous ProductInfo entities
+/**
+ * Remove any ProductInfo entities from the activity
+ * @param activity
+ */
 export const clearProductInfoFromActivity = (activity: Activity): void => {
   if (activity && activity.entities && activity.entities.length) {
     activity.entities = activity.entities.filter(e => e.type !== 'ProductInfo')
   }
 }
 
+
+/**
+ * Add a new ProductInfo entity to the activity and ensure only one exists
+ * @param activity 
+ * @param id 
+ */
 export const addProductInfoToActivity = (activity: Activity, id: string) : void => {
   const productInfo: ProductInfo = {
     type: 'ProductInfo',
