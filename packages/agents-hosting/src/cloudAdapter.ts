@@ -9,11 +9,12 @@ import { TurnContext } from './turnContext'
 import { Response } from 'express'
 import { Request } from './auth/request'
 import { ConnectorClient } from './connector-client/connectorClient'
-import { AuthConfiguration, loadAuthConfigFromEnv } from './auth/authConfiguration'
+import { AuthConfiguration, getAuthConfigWithDefaults } from './auth/authConfiguration'
 import { AuthProvider } from './auth/authProvider'
-import { Activity, ActivityEventNames, ActivityTypes, Channels, ConversationReference, DeliveryModes, ConversationParameters } from '@microsoft/agents-activity'
+import { ApxProductionScope } from './auth/authConstants'
+import { MsalConnectionManager } from './auth/msalConnectionManager'
+import { Activity, ActivityEventNames, ActivityTypes, Channels, ConversationReference, DeliveryModes, ConversationParameters, RoleTypes } from '@microsoft/agents-activity'
 import { ResourceResponse } from './connector-client/resourceResponse'
-import { MsalTokenProvider } from './auth/msalTokenProvider'
 import * as uuid from 'uuid'
 import { debug } from '@microsoft/agents-activity/logger'
 import { StatusCodes } from './statusCodes'
@@ -23,6 +24,7 @@ import { AttachmentData } from './connector-client/attachmentData'
 import { normalizeIncomingActivity } from './activityWireCompat'
 import { UserTokenClient } from './oauth'
 import { HeaderPropagation, HeaderPropagationCollection, HeaderPropagationDefinition } from './headerPropagation'
+import { JwtPayload } from 'jsonwebtoken'
 
 const logger = debug('agents:cloud-adapter')
 
@@ -30,27 +32,26 @@ const logger = debug('agents:cloud-adapter')
  * Adapter for handling agent interactions with various channels through cloud-based services.
  *
  * @remarks
- * CloudAdapter processes incoming HTTP requests from Microsoft Bot Framework channels,
+ * CloudAdapter processes incoming HTTP requests from Azure Bot Service channels,
  * authenticates them, and generates outgoing responses. It manages the communication
  * flow between agents and users across different channels, handling activities, attachments,
  * and conversation continuations.
  */
 export class CloudAdapter extends BaseAdapter {
   /**
-   * Client for connecting to the Bot Framework Connector service
+   * Client for connecting to the Azure Bot Service
    */
-  public connectorClient!: ConnectorClient
-  authConfig: AuthConfiguration
+  connectionManager: MsalConnectionManager
+
   /**
    * Creates an instance of CloudAdapter.
    * @param authConfig - The authentication configuration for securing communications
-   * @param authProvider - Optional custom authentication provider. If not specified, a default MsalTokenProvider will be used
+   * @param authProvider - No longer used
    */
   constructor (authConfig?: AuthConfiguration, authProvider?: AuthProvider, userTokenClient?: UserTokenClient) {
     super()
-    this.authConfig = authConfig ?? loadAuthConfigFromEnv()
-    this.authProvider = authProvider ?? new MsalTokenProvider()
-    this.userTokenClient = userTokenClient ?? new UserTokenClient(this.authConfig.clientId)
+    authConfig = getAuthConfigWithDefaults(authConfig)
+    this.connectionManager = new MsalConnectionManager(undefined, undefined, authConfig)
   }
 
   /**
@@ -92,15 +93,82 @@ export class CloudAdapter extends BaseAdapter {
   protected async createConnectorClient (
     serviceUrl: string,
     scope: string,
+    audience: string,
     headers?: HeaderPropagationCollection
   ): Promise<ConnectorClient> {
-    return ConnectorClient.createClientWithAuth(
+    // get the correct token provider
+    const tokenProvider = this.connectionManager.getTokenProvider(audience, serviceUrl)
+
+    const token = await tokenProvider.getAccessToken(scope)
+    return ConnectorClient.createClientWithToken(
       serviceUrl,
-      this.authConfig,
-      this.authProvider,
-      scope,
+      token,
       headers
     )
+  }
+
+  protected async createConnectorClientWithIdentity (
+    identity: JwtPayload,
+    activity: Activity,
+    scope: string,
+    headers?: HeaderPropagationCollection) {
+    let audience
+    if (Array.isArray(identity.aud)) {
+      audience = identity.aud[0]
+    } else {
+      audience = identity.aud
+    }
+
+    if (!audience) {
+      // anonymous
+      return ConnectorClient.createClientWithToken(
+        activity.serviceUrl!,
+        null!,
+        headers
+      )
+    }
+
+    let connectorClient
+    const tokenProvider = this.connectionManager.getTokenProvider(audience!, activity.serviceUrl ?? '')
+    if (activity.isAgenticRequest()) {
+      logger.debug('Activity is from an agentic source, using special scope', activity.recipient)
+
+      if (activity.recipient?.role === RoleTypes.AgenticIdentity && activity.getAgenticInstanceId()) {
+        // get agentic instance token
+        const token = await tokenProvider.getAgenticInstanceToken(activity.getAgenticInstanceId() ?? '')
+        connectorClient = ConnectorClient.createClientWithToken(
+          activity.serviceUrl!,
+          token,
+          headers
+        )
+      } else if (activity.recipient?.role === RoleTypes.AgenticUser && activity.getAgenticInstanceId() && activity.getAgenticUser()) {
+        const scope = tokenProvider.connectionSettings?.scope ?? ApxProductionScope
+        const token = await tokenProvider.getAgenticUserToken(activity.getAgenticInstanceId() ?? '', activity.getAgenticUser() ?? '', [scope])
+
+        connectorClient = ConnectorClient.createClientWithToken(
+          activity.serviceUrl!,
+          token,
+          headers
+        )
+      } else {
+        throw new Error('Could not create connector client for agentic user')
+      }
+    } else {
+      const token = await tokenProvider.getAccessToken(scope)
+      connectorClient = ConnectorClient.createClientWithToken(
+        activity.serviceUrl!,
+        token,
+        headers
+      )
+    }
+
+    return connectorClient
+  }
+
+  static createIdentity (appId: string) : JwtPayload {
+    return {
+      aud: appId
+    } as JwtPayload
   }
 
   /**
@@ -110,24 +178,60 @@ export class CloudAdapter extends BaseAdapter {
    * @protected
    */
   protected setConnectorClient (
-    context: TurnContext
+    context: TurnContext,
+    connectorClient?: ConnectorClient
   ) {
-    context.turnState.set('connectorClient', this.connectorClient)
+    context.turnState.set(this.ConnectorClientKey, connectorClient)
   }
 
   /**
+   * Creates a user token client for a specific service URL and scope.
+   *
+   * @param serviceUrl - The URL of the service to connect to
+   * @param scope - The authentication scope to use
+   * @param headers - Optional headers to propagate in the request
+   * @returns A promise that resolves to a ConnectorClient instance
+   * @protected
+   */
+  protected async createUserTokenClient (
+    tokenServiceEndpoint: string = 'https://api.botframework.com',
+    scope: string = 'https://api.botframework.com',
+    audience: string = 'https://api.botframework.com',
+    headers?: HeaderPropagationCollection
+  ): Promise<UserTokenClient> {
+    // get the correct token provider
+    const tokenProvider = this.connectionManager.getTokenProvider(audience, tokenServiceEndpoint)
+
+    return UserTokenClient.createClientWithScope(
+      tokenServiceEndpoint,
+      tokenProvider,
+      scope,
+      headers
+    )
+  }
+
+  /**
+   * Sets the user token client on the turn context.
+   *
+   * @param context - The current turn context
+   * @protected
+   */
+  protected setUserTokenClient (
+    context: TurnContext,
+    userTokenClient?: UserTokenClient
+  ) {
+    context.turnState.set(this.UserTokenClientKey, userTokenClient)
+  }
+
+  /**
+   * @deprecated This function will not be supported in future versions.  Create TurnContext directly.
    * Creates a TurnContext for the given activity and logic.
    * @param activity - The activity to process.
    * @param logic - The logic to execute.
    * @returns The created TurnContext.
    */
-  createTurnContext (activity: Activity, logic: AgentHandler): TurnContext {
-    return new TurnContext(this, activity)
-  }
-
-  async createTurnContextWithScope (activity: Activity, logic: AgentHandler, scope: string): Promise<TurnContext> {
-    this.connectorClient = await ConnectorClient.createClientWithAuth(activity.serviceUrl!, this.authConfig!, this.authProvider, scope)
-    return new TurnContext(this, activity)
+  createTurnContext (activity: Activity, logic: AgentHandler, identity?: JwtPayload): TurnContext {
+    return new TurnContext(this, activity, identity)
   }
 
   /**
@@ -165,12 +269,10 @@ export class CloudAdapter extends BaseAdapter {
           throw new Error('Invalid activity object')
         }
 
-        this.connectorClient = await this.createConnectorClient(activity.serviceUrl, 'https://api.botframework.com')
-
         if (activity.replyToId) {
-          response = await this.connectorClient.replyToActivity(activity.conversation.id, activity.replyToId, activity)
+          response = await context.turnState.get(this.ConnectorClientKey).replyToActivity(activity.conversation.id, activity.replyToId, activity)
         } else {
-          response = await this.connectorClient.sendToConversation(activity.conversation.id, activity)
+          response = await context.turnState.get(this.ConnectorClientKey).sendToConversation(activity.conversation.id, activity)
         }
       }
 
@@ -182,18 +284,6 @@ export class CloudAdapter extends BaseAdapter {
     }
 
     return responses
-  }
-
-  /**
-   * Replies to an activity.
-   * @param activity - The activity to reply to.
-   * @returns A promise representing the ResourceResponse for the sent activity.
-   */
-  async replyToActivity (activity: Activity): Promise<ResourceResponse> {
-    if (!activity.serviceUrl || (activity.conversation == null) || !activity.conversation.id || !activity.id) {
-      throw new Error('Invalid activity object')
-    }
-    return await this.connectorClient.replyToActivity(activity.conversation.id, activity.id, activity)
   }
 
   /**
@@ -236,14 +326,18 @@ export class CloudAdapter extends BaseAdapter {
     }
 
     logger.debug('Received activity: ', activity)
-    const context = this.createTurnContext(activity, logic)
-    const scope = request.user?.azp ?? request.user?.appid ?? 'https://api.botframework.com'
 
+    const context = new TurnContext(this, activity, request.user!)
+    const scope = request.user?.azp ?? request.user?.appid ?? 'https://api.botframework.com'
     // if Delivery Mode == ExpectReplies, we don't need a connector client.
     if (this.resolveIfConnectorClientIsNeeded(activity)) {
-      logger.debug('Creating connector client with scope: ', scope)
-      this.connectorClient = await this.createConnectorClient(activity.serviceUrl!, scope, headers)
-      this.setConnectorClient(context)
+      const connectorClient = await this.createConnectorClientWithIdentity(request.user!, activity, scope, headers)
+      this.setConnectorClient(context, connectorClient)
+    }
+
+    if (!activity.isAgenticRequest()) {
+      const userTokenClient = await this.createUserTokenClient()
+      this.setUserTokenClient(context, userTokenClient)
     }
 
     if (
@@ -259,7 +353,6 @@ export class CloudAdapter extends BaseAdapter {
 
     await this.runMiddleware(context, logic)
     const invokeResponse = this.processTurnResults(context)
-
     return end(invokeResponse?.status ?? StatusCodes.OK, invokeResponse?.body)
   }
 
@@ -301,7 +394,7 @@ export class CloudAdapter extends BaseAdapter {
       throw new Error('Invalid activity object')
     }
 
-    const response = await this.connectorClient.updateActivity(
+    const response = await context.turnState.get(this.ConnectorClientKey).updateActivity(
       activity.conversation.id,
       activity.id,
       activity
@@ -325,7 +418,7 @@ export class CloudAdapter extends BaseAdapter {
       throw new Error('Invalid conversation reference object')
     }
 
-    await this.connectorClient.deleteActivity(reference.conversation.id, reference.activityId)
+    await context.turnState.get(this.ConnectorClientKey).deleteActivity(reference.conversation.id, reference.activityId)
   }
 
   /**
@@ -334,25 +427,39 @@ export class CloudAdapter extends BaseAdapter {
    * @param logic - The logic to execute.
    * @returns A promise representing the completion of the continue operation.
    */
-  async continueConversation (reference: ConversationReference, logic: (revocableContext: TurnContext) => Promise<void>, isResponse: Boolean = false): Promise<void> {
+  async continueConversation (
+    botAppIdOrIdentity: string | JwtPayload,
+    reference: ConversationReference,
+    logic: (revocableContext: TurnContext) => Promise<void>,
+    isResponse: Boolean = false): Promise<void> {
     if (!reference || !reference.serviceUrl || (reference.conversation == null) || !reference.conversation.id) {
       throw new Error('Invalid conversation reference object')
     }
 
-    let context
-    if (isResponse) {
-      context = await this.createTurnContextWithScope(Activity.getContinuationActivity(reference), logic, 'https://api.botframework.com')
-    } else {
-      context = this.createTurnContext(Activity.getContinuationActivity(reference), logic)
-    }
+    const botAppId = typeof botAppIdOrIdentity === 'string' ? botAppIdOrIdentity : botAppIdOrIdentity.aud as string
+
+    const identity =
+        typeof botAppIdOrIdentity !== 'string'
+          ? botAppIdOrIdentity
+          : CloudAdapter.createIdentity(botAppId)
+
+    const continuationActivity = Activity.getContinuationActivity(reference)
+    const context = new TurnContext(this, Activity.getContinuationActivity(reference), identity)
+    const scope = identity.azp ?? identity.appid ?? 'https://api.botframework.com'
+    const connectorClient = await this.createConnectorClientWithIdentity(identity, continuationActivity, scope)
+    this.setConnectorClient(context, connectorClient)
+
+    const userTokenClient = await this.createUserTokenClient()
+    this.setUserTokenClient(context, userTokenClient)
+
     await this.runMiddleware(context, logic)
   }
 
   /**
- * Processes the turn results and returns an InvokeResponse if applicable.
- * @param context - The TurnContext for the current turn.
- * @returns The InvokeResponse if applicable, otherwise undefined.
- */
+  * Processes the turn results and returns an InvokeResponse if applicable.
+  * @param context - The TurnContext for the current turn.
+  * @returns The InvokeResponse if applicable, otherwise undefined.
+  */
   protected processTurnResults (context: TurnContext): InvokeResponse | undefined {
     logger.info('<--Sending back turn results')
     // Handle ExpectedReplies scenarios where all activities have been buffered and sent back at once in an invoke response.
@@ -437,7 +544,8 @@ export class CloudAdapter extends BaseAdapter {
     if (!conversationParameters) throw new TypeError('`conversationParameters` must be defined')
     if (!logic) throw new TypeError('`logic` must be defined')
 
-    const restClient = await this.createConnectorClient(serviceUrl, audience)
+    const restClient = await this.createConnectorClient(serviceUrl, audience, audience)
+    const userTokenClient = await this.createUserTokenClient()
     const createConversationResult = await restClient.createConversation(conversationParameters)
     const createActivity = this.createCreateActivity(
       createConversationResult.id,
@@ -445,17 +553,24 @@ export class CloudAdapter extends BaseAdapter {
       serviceUrl,
       conversationParameters
     )
-    const context = new TurnContext(this, createActivity)
+    const context = new TurnContext(this, createActivity, CloudAdapter.createIdentity(agentAppId))
+    this.setConnectorClient(context, restClient)
+    this.setUserTokenClient(context, userTokenClient)
     await this.runMiddleware(context, logic)
   }
 
   /**
+   * @deprecated This function will not be supported in future versions.  Use TurnContext.turnState.get<ConnectorClient>(CloudAdapter.ConnectorClientKey).
    * Uploads an attachment.
    * @param conversationId - The conversation ID.
    * @param attachmentData - The attachment data.
    * @returns A promise representing the ResourceResponse for the uploaded attachment.
    */
-  async uploadAttachment (conversationId: string, attachmentData: AttachmentData): Promise<ResourceResponse> {
+  async uploadAttachment (context: TurnContext, conversationId: string, attachmentData: AttachmentData): Promise<ResourceResponse> {
+    if (context === undefined) {
+      throw new Error('context is required')
+    }
+
     if (conversationId === undefined) {
       throw new Error('conversationId is required')
     }
@@ -464,29 +579,39 @@ export class CloudAdapter extends BaseAdapter {
       throw new Error('attachmentData is required')
     }
 
-    return await this.connectorClient.uploadAttachment(conversationId, attachmentData)
+    return await context.turnState.get<ConnectorClient>(this.ConnectorClientKey).uploadAttachment(conversationId, attachmentData)
   }
 
   /**
+   * @deprecated This function will not be supported in future versions.  Use TurnContext.turnState.get<ConnectorClient>(CloudAdapter.ConnectorClientKey).
    * Gets attachment information.
    * @param attachmentId - The attachment ID.
    * @returns A promise representing the AttachmentInfo for the requested attachment.
    */
-  async getAttachmentInfo (attachmentId: string): Promise<AttachmentInfo> {
+  async getAttachmentInfo (context: TurnContext, attachmentId: string): Promise<AttachmentInfo> {
+    if (context === undefined) {
+      throw new Error('context is required')
+    }
+
     if (attachmentId === undefined) {
       throw new Error('attachmentId is required')
     }
 
-    return await this.connectorClient.getAttachmentInfo(attachmentId)
+    return await context.turnState.get<ConnectorClient>(this.ConnectorClientKey).getAttachmentInfo(attachmentId)
   }
 
   /**
+   * @deprecated This function will not be supported in future versions.  Use TurnContext.turnState.get<ConnectorClient>(CloudAdapter.ConnectorClientKey).
    * Gets an attachment.
    * @param attachmentId - The attachment ID.
    * @param viewId - The view ID.
    * @returns A promise representing the NodeJS.ReadableStream for the requested attachment.
    */
-  async getAttachment (attachmentId: string, viewId: string): Promise<NodeJS.ReadableStream> {
+  async getAttachment (context: TurnContext, attachmentId: string, viewId: string): Promise<NodeJS.ReadableStream> {
+    if (context === undefined) {
+      throw new Error('context is required')
+    }
+
     if (attachmentId === undefined) {
       throw new Error('attachmentId is required')
     }
@@ -495,6 +620,6 @@ export class CloudAdapter extends BaseAdapter {
       throw new Error('viewId is required')
     }
 
-    return await this.connectorClient.getAttachment(attachmentId, viewId)
+    return await context.turnState.get<ConnectorClient>(this.ConnectorClientKey).getAttachment(attachmentId, viewId)
   }
 }

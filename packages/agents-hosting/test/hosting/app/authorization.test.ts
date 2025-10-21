@@ -3,6 +3,7 @@ import { describe, it } from 'node:test'
 
 import { AgentApplication } from './../../../src/app'
 import { MemoryStorage } from '../../../src/storage'
+import { AzureBotAuthorizationOptions } from '../../../src/app/auth/handlers'
 
 describe('AgentApplication', () => {
   it('should intitalize with underfined authorization', () => {
@@ -16,7 +17,7 @@ describe('AgentApplication', () => {
         authorization: {}
       })
       assert.equal(app.options.authorization, undefined)
-    }, { message: 'Storage is required for UserAuthorization' })
+    }, { message: 'Storage is required for Authorization. Ensure that a storage provider is configured in the AgentApplication options.' })
   })
 
   it('should not allow empty handlers', () => {
@@ -26,7 +27,7 @@ describe('AgentApplication', () => {
         authorization: {}
       })
       assert.equal(app.options.authorization, undefined)
-    }, { message: 'The authorization does not have any auth handlers' })
+    }, { message: 'The AgentApplication.authorization does not have any auth handlers' })
   })
 
   it('should initialize successfully with valid auth configuration', () => {
@@ -64,10 +65,10 @@ describe('AgentApplication', () => {
       }
     })
 
-    const authHandlers = app.authorization.authHandlers
+    const authHandlers = (app.authorization as any).manager._handlers
     assert.equal(Object.keys(authHandlers).length, 2)
-    const one = app.authorization.authHandlers['authOne']
-    const two = app.authorization.authHandlers['authTwo']
+    const one = authHandlers['authOne']._options
+    const two = authHandlers['authTwo']._options
     assert.equal(one.name, 'FirstConnection')
     assert.equal(two.name, 'SecondConnection')
   })
@@ -93,7 +94,7 @@ describe('AgentApplication', () => {
         }
       })
 
-      const authHandler = app.authorization.authHandlers['testAuth']
+      const authHandler: AzureBotAuthorizationOptions = (app.authorization as any).manager._handlers['testAuth']._options
       assert.equal(authHandler.name, 'EnvConnection')
       assert.equal(authHandler.title, 'Env Title')
       assert.equal(authHandler.text, 'Env Text')
@@ -112,6 +113,6 @@ describe('AgentApplication', () => {
     })
     assert.rejects(async () => {
       await app.authorization.getToken({} as any, 'nonExistinghandler')
-    }, { message: 'AuthHandler with ID nonExistinghandler not configured' })
+    }, { message: "Cannot find auth handler with ID 'nonExistinghandler'. Ensure it is configured in the agent application options." })
   })
 })

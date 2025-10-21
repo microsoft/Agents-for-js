@@ -12,6 +12,7 @@ import { ActivityImportance, activityImportanceZodSchema } from './activityImpor
 import { ActivityTypes, activityTypesZodSchema } from './activityTypes'
 import { Attachment, attachmentZodSchema } from './attachment/attachment'
 import { AttachmentLayoutTypes, attachmentLayoutTypesZodSchema } from './attachment/attachmentLayoutTypes'
+import { addProductInfoToActivity, clearProductInfoFromActivity } from './entity/productInfo'
 import { ChannelAccount, channelAccountZodSchema } from './conversation/channelAccount'
 import { Channels } from './conversation/channels'
 import { ConversationAccount, conversationAccountZodSchema } from './conversation/conversationAccount'
@@ -24,6 +25,7 @@ import { InputHints, inputHintsZodSchema } from './inputHints'
 import { MessageReaction, messageReactionZodSchema } from './messageReaction'
 import { TextFormatTypes, textFormatTypesZodSchema } from './textFormatTypes'
 import { TextHighlight, textHighlightZodSchema } from './textHighlight'
+import { RoleTypes } from './conversation/roleTypes'
 
 /**
  * Zod schema for validating an Activity object.
@@ -93,9 +95,9 @@ export class Activity {
   id?: string
 
   /**
-   * The channel ID where the activity originated.
+   * The primary channel ID where the activity originated.
    */
-  channelId?: string
+  _channelId?: string
 
   /**
    * The account of the sender of the activity.
@@ -345,6 +347,80 @@ export class Activity {
     const activity = new Activity(parsedActivity.type)
     Object.assign(activity, parsedActivity)
     return activity
+  }
+
+  /**
+   * Return the combined channel:subChannel value like agent:email
+   */
+  get channelId (): string | undefined {
+    return this._channelId?.concat(this.channelIdSubChannel ? `:${this.channelIdSubChannel}` : '')
+  }
+
+  /**
+   * Given a composite channelId like agent:email, return the channel and subChannel.
+   * @param value
+   * @returns [channel, subChannel]
+   */
+  static parseChannelId (value: string): [string | undefined, string | undefined] {
+    let channel
+    let subChannel
+    if (value && value.indexOf(':') !== -1) {
+      channel = value.substring(0, value.indexOf(':'))
+      subChannel = value.substring(value.indexOf(':') + 1)
+    } else {
+      channel = value
+    }
+    return [channel, subChannel]
+  }
+
+  /**
+   * Sets the channel ID for the activity - if a subChannel is provided, will create the necessary ProductInfo entity
+   * @param value The channel ID value.
+   */
+  set channelId (value: string) {
+    const [channel, subChannel] = Activity.parseChannelId(value)
+
+    // if they passed in a value but the channel is blank, this is invalid
+    if (value && !channel) {
+      throw new Error(`Invalid channelId ${value}. Found subChannel but no main channel.`)
+    }
+    this._channelId = channel
+    if (subChannel) {
+      addProductInfoToActivity(this, subChannel)
+    } else {
+      clearProductInfoFromActivity(this)
+    }
+  }
+
+  /**
+   * Sets the primary channel ID for the activity.
+   */
+  set channelIdChannel (value) {
+    this._channelId = value
+  }
+
+  /**
+   * Returns the primary channel ID for the activity.
+   */
+  get channelIdChannel () {
+    return this._channelId
+  }
+
+  /**
+   * Returns the sub-channel ID for the activity.
+   */
+  get channelIdSubChannel () {
+    return this.entities?.find(e => e.type === 'ProductInfo')?.id
+  }
+
+  /**
+   * Sets the sub-channel ID for the activity.
+   */
+  set channelIdSubChannel (value) {
+    if (!this._channelId) {
+      throw new Error('Primary channel must be set before setting subChannel')
+    }
+    this.channelId = `${this._channelId}${value ? `:${value}` : ''}`
   }
 
   /**
@@ -604,6 +680,39 @@ export class Activity {
   }
 
   public toJsonString (): string {
-    return JSON.stringify(this)
+    // Use channelId instead of _channelId when outputting json
+    const copy = { ...this } as any
+    copy.channelId = copy._channelId
+    delete copy._channelId
+    return JSON.stringify(copy)
+  }
+
+  /**
+   * Does this activity represent an agentic request?
+   * @returns True if agentiic
+   */
+  public isAgenticRequest (): boolean {
+    return this.recipient?.role === RoleTypes.AgenticUser || this.recipient?.role === RoleTypes.AgenticIdentity
+  }
+
+  /**
+   * Gets the agent instance ID from the context if its agentic
+   * @returns agent instance id as string
+   */
+  public getAgenticInstanceId (): string | undefined {
+    if (this.isAgenticRequest()) {
+      return this.recipient?.agenticAppId
+    }
+    return undefined
+  }
+
+  /**
+   * Gets the agentic user (UPN) from the context if it's an agentic request.
+   */
+  public getAgenticUser (): string | undefined {
+    if (this.isAgenticRequest()) {
+      return this.recipient?.agenticUserId
+    }
+    return undefined
   }
 }

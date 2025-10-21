@@ -1,5 +1,5 @@
 import { startServer } from '@microsoft/agents-hosting-express'
-import { AgentApplication, CloudAdapter, MemoryStorage, TurnContext, TurnState } from '@microsoft/agents-hosting'
+import { AgentApplication, ConnectorClient, MemoryStorage, TurnContext, TurnState } from '@microsoft/agents-hosting'
 
 // Only used for testing purposes to verify header propagation.
 let incomingHeaders: Record<string, string> = {}
@@ -19,9 +19,10 @@ echo.onConversationUpdate('membersAdded', async (context: TurnContext) => {
   await context.sendActivity('Welcome to the HeaderPropagation sample, send a message to see the header propagation feature in action.')
 })
 echo.onActivity('message', async (context: TurnContext, state: TurnState) => {
+  const connectorClient = context.turnState.get<ConnectorClient>(context.adapter.ConnectorClientKey)
   const headersReceived = Object.entries(incomingHeaders)
     .map(([key, value]) => `- **${key}**: ${value}`).join('\n  ')
-  const headersSent = Object.entries((context.adapter as CloudAdapter).connectorClient.axiosInstance.defaults.headers)
+  const headersSent = Object.entries(connectorClient.axiosInstance.defaults.headers)
     .filter(([_, e]) => typeof e === 'string')
     .map(([key, value]) => `- **${key}**: ${value}`).join('\n  ')
 

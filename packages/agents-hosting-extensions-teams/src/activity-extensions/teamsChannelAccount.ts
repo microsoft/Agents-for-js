@@ -26,10 +26,6 @@ export interface TeamsChannelAccount extends ChannelAccount {
    */
   userPrincipalName?: string
   /**
-   * Tenant ID of the user.
-   */
-  tenantId?: string
-  /**
    * Role of the user in the team.
    */
   userRole?: string

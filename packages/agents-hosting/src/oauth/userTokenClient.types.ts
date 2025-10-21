@@ -33,6 +33,11 @@ export interface TokenExchangeRequest {
      * The ID associated with the token exchange request.
      */
   id?: string;
+
+  /**
+   * (Optional) The connection name associated with the token exchange request.
+   */
+  connectionName?: string;
 }
 
 /**

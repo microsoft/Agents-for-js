@@ -14,11 +14,11 @@ class OneProvider extends AgentApplication<TurnState> {
       authorization: {
         graph: { text: 'Sign in with Microsoft Graph', title: 'Graph Sign In' },
         github: { text: 'Sign in with GitHub', title: 'GitHub Sign In' },
-      }
+      },
     })
     this.onConversationUpdate('membersAdded', this._status)
     this.authorization.onSignInSuccess(this._singinSuccess)
-    // this.authorization.onSignInFailure(this._singinFailure)
+    this.authorization.onSignInFailure(this._singinFailure)
     this.onMessage('/logout', this._logout)
     this.onMessage('/me', this._profileRequest, ['graph'])
     this.onMessage('/prs', this._pullRequests, ['github'])
@@ -59,49 +59,48 @@ class OneProvider extends AgentApplication<TurnState> {
 
   private _profileRequest = async (context: TurnContext, state: TurnState): Promise<void> => {
     const userTokenResponse = await this.authorization.getToken(context, 'graph')
-    if (userTokenResponse && userTokenResponse?.token) {
-      const userTemplate = (await import('./../_resources/UserProfileCard.json'))
-      const template = new Template(userTemplate)
-      const userInfo = await getUserInfo(userTokenResponse?.token!)
-      const card = template.expand(userInfo)
-      const activity = MessageFactory.attachment(CardFactory.adaptiveCard(card))
-      await context.sendActivity(activity)
-    } else {
-      await context.sendActivity(MessageFactory.text(' token not available. Enter "/login" to sign in.'))
+    if (!userTokenResponse?.token) {
+      await context.sendActivity(MessageFactory.text('Token not available. Please sign in with Microsoft Graph.'))
+      return
     }
+
+    const userTemplate = (await import('./../_resources/UserProfileCard.json'))
+    const template = new Template(userTemplate)
+    const userInfo = await getUserInfo(userTokenResponse?.token!)
+    const card = template.expand(userInfo)
+    const activity = MessageFactory.attachment(CardFactory.adaptiveCard(card))
+    await context.sendActivity(activity)
   }
 
   private _pullRequests = async (context: TurnContext, state: TurnState): Promise<void> => {
     const userTokenResponse = await this.authorization.getToken(context, 'github')
-    if (userTokenResponse && userTokenResponse.token) {
-      const ghProf = await getCurrentProfile(userTokenResponse.token)
-      // console.log('GitHub profile', ghProf)
+    if (!userTokenResponse.token) {
+      await context.sendActivity(MessageFactory.text('Token not available. Please sign in with GitHub.'))
+      return
+    }
 
-      const userTemplate = (await import('./../_resources/UserProfileCard.json'))
-      const template = new Template(userTemplate)
-      const card = template.expand(ghProf)
-      const activity = MessageFactory.attachment(CardFactory.adaptiveCard(card))
-      await context.sendActivity(activity)
+    const ghProf = await getCurrentProfile(userTokenResponse.token)
+    const userTemplate = (await import('./../_resources/UserProfileCard.json'))
+    const template = new Template(userTemplate)
+    const card = template.expand(ghProf)
+    const activity = MessageFactory.attachment(CardFactory.adaptiveCard(card))
+    await context.sendActivity(activity)
 
-      const prs = await getPullRequests('microsoft', 'agents', userTokenResponse.token)
-      for (const pr of prs) {
-        const prCard = (await import('./../_resources/PullRequestCard.json'))
-        const template = new Template(prCard)
-        const toExpand = {
-          $root: {
-            title: pr.title,
-            url: pr.url,
-            id: pr.id,
-          }
+    const prs = await getPullRequests('microsoft', 'agents', userTokenResponse.token)
+    for (const pr of prs) {
+      const prCard = (await import('./../_resources/PullRequestCard.json'))
+      const template = new Template(prCard)
+      const toExpand = {
+        $root: {
+          title: pr.title,
+          url: pr.url,
+          id: pr.id,
         }
-        const card = template.expand(toExpand)
-        await context.sendActivity(MessageFactory.attachment(CardFactory.adaptiveCard(card)))
       }
-    } else {
-      const tokenResponse = await this.authorization.beginOrContinueFlow(context, state, 'github')
-      console.warn(`GitHub token: ${JSON.stringify(tokenResponse)}`)
-      await context.sendActivity(MessageFactory.text('GitHub token length.' + tokenResponse?.token?.length))
+      const card = template.expand(toExpand)
+      await context.sendActivity(MessageFactory.attachment(CardFactory.adaptiveCard(card)))
     }
   }
 }
+
 startServer(new OneProvider())
