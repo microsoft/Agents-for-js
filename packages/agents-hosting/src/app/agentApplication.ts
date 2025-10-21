@@ -505,7 +505,7 @@ export class AgentApplication<TState extends TurnState> {
       return context.activity.type === ActivityTypes.MessageReaction &&
              Array.isArray(context.activity.reactionsAdded) &&
              context.activity.reactionsAdded.length > 0 &&
-             (!isAgenticRoute || context.activity.isAgenticRequest())
+             (!isAgenticRoute || (isAgenticRoute && context.activity.isAgenticRequest()))
     }
 
     this.addRoute(selector, handler, false, rank, [], isAgenticRoute)
@@ -543,7 +543,7 @@ export class AgentApplication<TState extends TurnState> {
       return context.activity.type === ActivityTypes.MessageReaction &&
              Array.isArray(context.activity.reactionsRemoved) &&
              context.activity.reactionsRemoved.length > 0 &&
-             (!isAgenticRoute || context.activity.isAgenticRequest())
+             (!isAgenticRoute || (isAgenticRoute && context.activity.isAgenticRequest()))
     }
 
     this.addRoute(selector, handler, false, rank, undefined, isAgenticRoute)
@@ -945,7 +945,7 @@ export class AgentApplication<TState extends TurnState> {
     } else if (type instanceof RegExp) {
       return (context: TurnContext) => {
         return Promise.resolve(context?.activity?.type
-          ? type.test(context.activity.type) && (!isAgenticRoute || context.activity.isAgenticRequest())
+          ? type.test(context.activity.type) && (!isAgenticRoute || (isAgenticRoute && context.activity.isAgenticRequest()))
           : false)
       }
     } else {
@@ -953,7 +953,7 @@ export class AgentApplication<TState extends TurnState> {
       return (context: TurnContext) => {
         return Promise.resolve(
           context?.activity?.type
-            ? context.activity.type.toLocaleLowerCase() === typeName && (!isAgenticRoute || context.activity.isAgenticRequest())
+            ? context.activity.type.toLocaleLowerCase() === typeName && (!isAgenticRoute || (isAgenticRoute && context.activity.isAgenticRequest()))
             : false
         )
       }
@@ -972,7 +972,7 @@ export class AgentApplication<TState extends TurnState> {
       case 'membersAdded':
         return (context: TurnContext): Promise<boolean> => {
           return Promise.resolve(
-            (!isAgenticRoute || context.activity.isAgenticRequest()) &&
+            (!isAgenticRoute || (isAgenticRoute && context.activity.isAgenticRequest())) &&
             context?.activity?.type === ActivityTypes.ConversationUpdate &&
                           Array.isArray(context?.activity?.membersAdded) &&
                           context.activity.membersAdded.length > 0
@@ -981,7 +981,7 @@ export class AgentApplication<TState extends TurnState> {
       case 'membersRemoved':
         return (context: TurnContext): Promise<boolean> => {
           return Promise.resolve(
-            (!isAgenticRoute || context.activity.isAgenticRequest()) &&
+            (!isAgenticRoute || (isAgenticRoute && context.activity.isAgenticRequest())) &&
             context?.activity?.type === ActivityTypes.ConversationUpdate &&
                           Array.isArray(context?.activity?.membersRemoved) &&
                           context.activity.membersRemoved.length > 0
@@ -990,7 +990,7 @@ export class AgentApplication<TState extends TurnState> {
       default:
         return (context: TurnContext): Promise<boolean> => {
           return Promise.resolve(
-            (!isAgenticRoute || context.activity.isAgenticRequest()) &&
+            (!isAgenticRoute || (isAgenticRoute && context.activity.isAgenticRequest())) &&
             context?.activity?.type === ActivityTypes.ConversationUpdate &&
                           context?.activity?.channelData?.eventType === event
           )
@@ -1012,7 +1012,7 @@ export class AgentApplication<TState extends TurnState> {
       return (context: TurnContext) => {
         if (context?.activity?.type === ActivityTypes.Message &&
           context.activity.text &&
-          (!isAgenticRoute || context.activity.isAgenticRequest())) {
+          (!isAgenticRoute || (isAgenticRoute && context.activity.isAgenticRequest()))) {
           return Promise.resolve(keyword.test(context.activity.text))
         } else {
           return Promise.resolve(false)
@@ -1023,7 +1023,7 @@ export class AgentApplication<TState extends TurnState> {
       return (context: TurnContext) => {
         if (context?.activity?.type === ActivityTypes.Message &&
           context.activity.text &&
-        (!isAgenticRoute || context.activity.isAgenticRequest())) {
+        (!isAgenticRoute || (isAgenticRoute && context.activity.isAgenticRequest()))) {
           return Promise.resolve(context.activity.text.toLocaleLowerCase() === k)
         } else {
           return Promise.resolve(false)

@@ -27,6 +27,8 @@ export enum AuthorizationHandlerStatus {
   REJECTED = 'rejected',
   /** The handler has ignored the request - no action taken */
   IGNORED = 'ignored',
+  /** The handler requires revalidation */
+  REVALIDATE = 'revalidate'
 }
 
 /**

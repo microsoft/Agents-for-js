@@ -113,12 +113,14 @@ export class UserTokenClient {
       baseURL,
       headers: {
         Accept: 'application/json',
+        'Content-Type': 'application/json', // Required by transformRequest
         'User-Agent': getProductInfo(),
       },
       transformRequest: [
         (data, headers) => {
           return JSON.stringify(normalizeOutgoingActivity(data))
-        }]
+        },
+      ],
     })
     const token = await (authProvider as MsalTokenProvider).getAccessToken(scope)
     if (token.length > 1) {

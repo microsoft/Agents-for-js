@@ -109,7 +109,10 @@ export class ConnectorClient {
   ): ConnectorClient {
     const headerPropagation = headers ?? new HeaderPropagation({ 'User-Agent': '' })
     headerPropagation.concat({ 'User-Agent': getProductInfo() })
-    headerPropagation.override({ Accept: 'application/json' })
+    headerPropagation.override({
+      Accept: 'application/json',
+      'Content-Type': 'application/json', // Required by transformRequest
+    })
 
     const axiosInstance = axios.create({
       baseURL,
