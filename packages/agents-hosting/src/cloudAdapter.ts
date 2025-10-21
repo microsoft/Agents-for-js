@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { INVOKE_RESPONSE_KEY } from './activityHandler'
+import { AgentHandler, INVOKE_RESPONSE_KEY } from './activityHandler'
 import { BaseAdapter } from './baseAdapter'
 import { TurnContext } from './turnContext'
 import { Response } from 'express'
@@ -142,7 +142,8 @@ export class CloudAdapter extends BaseAdapter {
           headers
         )
       } else if (activity.recipient?.role === RoleTypes.AgenticUser && activity.getAgenticInstanceId() && activity.getAgenticUser()) {
-        const token = await tokenProvider.getAgenticUserToken(activity.getAgenticInstanceId() ?? '', activity.getAgenticUser() ?? '', [ApxProductionScope])
+        const scope = tokenProvider.connectionSettings?.scope ?? ApxProductionScope
+        const token = await tokenProvider.getAgenticUserToken(activity.getAgenticInstanceId() ?? '', activity.getAgenticUser() ?? '', [scope])
 
         connectorClient = ConnectorClient.createClientWithToken(
           activity.serviceUrl!,
@@ -223,12 +224,13 @@ export class CloudAdapter extends BaseAdapter {
   }
 
   /**
+   * @deprecated This function will not be supported in future versions.  Create TurnContext directly.
    * Creates a TurnContext for the given activity and logic.
    * @param activity - The activity to process.
    * @param logic - The logic to execute.
    * @returns The created TurnContext.
    */
-  createTurnContext (activity: Activity, identity: JwtPayload): TurnContext {
+  createTurnContext (activity: Activity, logic: AgentHandler, identity?: JwtPayload): TurnContext {
     return new TurnContext(this, activity, identity)
   }
 
@@ -325,7 +327,7 @@ export class CloudAdapter extends BaseAdapter {
 
     logger.debug('Received activity: ', activity)
 
-    const context = this.createTurnContext(activity, request.user!)
+    const context = new TurnContext(this, activity, request.user!)
     const scope = request.user?.azp ?? request.user?.appid ?? 'https://api.botframework.com'
     // if Delivery Mode == ExpectReplies, we don't need a connector client.
     if (this.resolveIfConnectorClientIsNeeded(activity)) {
@@ -333,8 +335,10 @@ export class CloudAdapter extends BaseAdapter {
       this.setConnectorClient(context, connectorClient)
     }
 
-    const userTokenClient = await this.createUserTokenClient()
-    this.setUserTokenClient(context, userTokenClient)
+    if (!activity.isAgenticRequest()) {
+      const userTokenClient = await this.createUserTokenClient()
+      this.setUserTokenClient(context, userTokenClient)
+    }
 
     if (
       activity?.type === ActivityTypes.InvokeResponse ||
@@ -440,7 +444,7 @@ export class CloudAdapter extends BaseAdapter {
           : CloudAdapter.createIdentity(botAppId)
 
     const continuationActivity = Activity.getContinuationActivity(reference)
-    const context = this.createTurnContext(Activity.getContinuationActivity(reference), identity)
+    const context = new TurnContext(this, Activity.getContinuationActivity(reference), identity)
     const scope = identity.azp ?? identity.appid ?? 'https://api.botframework.com'
     const connectorClient = await this.createConnectorClientWithIdentity(identity, continuationActivity, scope)
     this.setConnectorClient(context, connectorClient)

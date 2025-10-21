@@ -27,6 +27,20 @@
 			"path": "test-agents/empty-agent"
 		},
 		{
+			"label": "build_agentic",
+			"type": "npm",
+			"script": "build",
+			"group": {
+				"kind": "build",
+				"isDefault": false
+			},
+			"dependsOn": [
+				"build_packages"
+			],
+			"problemMatcher": [],
+			"path": "test-agents/agentic-ai"
+		},
+		{
 			"label": "build_webchat",
 			"type": "npm",
 			"script": "build",

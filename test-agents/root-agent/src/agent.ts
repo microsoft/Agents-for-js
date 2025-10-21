@@ -1,4 +1,4 @@
-import { ActivityHandler, AgentClient, UserState, ConversationState, AgentStatePropertyAccessor, TurnContext } from '@microsoft/agents-hosting'
+import { ActivityHandler, AgentClient, UserState, ConversationState, AgentStatePropertyAccessor, TurnContext, AuthConfiguration } from '@microsoft/agents-hosting'
 import { version as sdkVersion } from '@microsoft/agents-hosting/package.json'
 import { ConversationData, UserProfile } from './state'
 import { ConversationReference } from '@microsoft/agents-activity'
@@ -8,12 +8,14 @@ export class RootHandlerWithBlobStorageMemory extends ActivityHandler {
   userState: UserState
   conversationDataAccessor: AgentStatePropertyAccessor<ConversationData>
   userProfileAccessor: AgentStatePropertyAccessor<UserProfile>
+  private authConfig: AuthConfiguration
 
   constructor (
     conversationState: ConversationState,
     userState: UserState,
     conversationDataAccessor: AgentStatePropertyAccessor<ConversationData>,
-    userProfileAccessor: AgentStatePropertyAccessor<UserProfile>
+    userProfileAccessor: AgentStatePropertyAccessor<UserProfile>,
+    authConfig: AuthConfiguration
   ) {
     super()
 
@@ -21,6 +23,7 @@ export class RootHandlerWithBlobStorageMemory extends ActivityHandler {
     this.userState = userState
     this.conversationDataAccessor = conversationDataAccessor
     this.userProfileAccessor = userProfileAccessor
+    this.authConfig = authConfig
 
     this.onMessage(async (context, next) => {
       const userProfile = await this.userProfileAccessor.get(context, {})
@@ -40,7 +43,7 @@ export class RootHandlerWithBlobStorageMemory extends ActivityHandler {
         console.log('activityStarts', activityStarts)
 
         context.activity.text = `${userProfile.name}: ${context.activity.text}`
-        await agentClient.postActivity(context.activity, {} as any, this.conversationState, context)
+        await agentClient.postActivity(context.activity, this.authConfig, this.conversationState, context)
       }
 
       await next()
