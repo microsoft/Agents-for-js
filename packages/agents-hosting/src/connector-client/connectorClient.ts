@@ -166,14 +166,14 @@ export class ConnectorClient {
    * @returns The conversation resource response.
    */
   public async createConversation (body: ConversationParameters): Promise<ConversationResourceResponse> {
-    // const payload = normalizeOutgoingConvoParams(body)
+    const payload = normalizeOutgoingActivity(body)
     const config: AxiosRequestConfig = {
       method: 'post',
       url: '/v3/conversations',
       headers: {
         'Content-Type': 'application/json'
       },
-      data: body
+      data: payload
     }
     const response: AxiosResponse = await this._axiosInstance(config)
     return response.data
