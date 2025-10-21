@@ -19,7 +19,7 @@ const adapter = new CloudAdapter(authConfig)
 
 const conversationDataAccessor = conversationState.createProperty<ConversationData>('conversationData')
 const userProfileAccessor = userState.createProperty<UserProfile>('userProfile')
-const myAgent = new RootHandlerWithBlobStorageMemory(conversationState, userState, conversationDataAccessor, userProfileAccessor)
+const myAgent = new RootHandlerWithBlobStorageMemory(conversationState, userState, conversationDataAccessor, userProfileAccessor, authConfig)
 
 const app = express()
 
