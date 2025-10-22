@@ -3,7 +3,7 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
 import { AuthConfiguration } from '../auth/authConfiguration'
 import { AuthProvider } from '../auth/authProvider'
 import { debug } from '@microsoft/agents-activity/logger'
-import { Activity, ChannelAccount, ConversationParameters } from '@microsoft/agents-activity'
+import { Activity, ChannelAccount, ConversationParameters, RoleTypes, Channels } from '@microsoft/agents-activity'
 import { ConversationsResult } from './conversationsResult'
 import { ConversationResourceResponse } from './conversationResourceResponse'
 import { ResourceResponse } from './resourceResponse'
@@ -196,7 +196,7 @@ export class ConnectorClient {
       throw new Error('conversationId and activityId are required')
     }
 
-    const trimmedConversationId: string = conversationId.length > 325 ? conversationId.substring(0, 325) : conversationId
+    const trimmedConversationId: string = this.conditionallyTruncateConversationId(conversationId, body);
 
     const config: AxiosRequestConfig = {
       method: 'post',
@@ -209,6 +209,18 @@ export class ConnectorClient {
     const response = await this._axiosInstance(config)
     logger.info('Reply to conversation/activity: ', response.data.id!, activityId)
     return response.data
+  }
+
+  private conditionallyTruncateConversationId(conversationId: string, activity: Activity): string {
+    if (
+      (activity.channelIdChannel == Channels.Msteams || activity.channelIdChannel == Channels.Agents) &&
+      (activity.from?.role == RoleTypes.AgenticIdentity || activity.from?.role == RoleTypes.AgenticUser))
+      {
+        const maxLength = process.env.MAX_CONVERSATION_ID_LENGTH ? parseInt(process.env.MAX_CONVERSATION_ID_LENGTH, 10) : 325
+        return conversationId.length > maxLength ? conversationId.substring(0, maxLength) : conversationId
+      } else {
+        return conversationId;
+      }
   }
 
   /**
@@ -226,7 +238,7 @@ export class ConnectorClient {
       throw new Error('conversationId is required')
     }
 
-    const trimmedConversationId: string = conversationId.length > 325 ? conversationId.substring(0, 325) : conversationId
+    const trimmedConversationId: string = this.conditionallyTruncateConversationId(conversationId, body);
 
     const config: AxiosRequestConfig = {
       method: 'post',
