@@ -196,7 +196,7 @@ export class ConnectorClient {
       throw new Error('conversationId and activityId are required')
     }
 
-    const trimmedConversationId: string = this.conditionallyTruncateConversationId(conversationId, body);
+    const trimmedConversationId: string = this.conditionallyTruncateConversationId(conversationId, body)
 
     const config: AxiosRequestConfig = {
       method: 'post',
@@ -211,16 +211,15 @@ export class ConnectorClient {
     return response.data
   }
 
-  private conditionallyTruncateConversationId(conversationId: string, activity: Activity): string {
+  private conditionallyTruncateConversationId (conversationId: string, activity: Activity): string {
     if (
-      (activity.channelIdChannel == Channels.Msteams || activity.channelIdChannel == Channels.Agents) &&
-      (activity.from?.role == RoleTypes.AgenticIdentity || activity.from?.role == RoleTypes.AgenticUser))
-      {
-        const maxLength = process.env.MAX_CONVERSATION_ID_LENGTH ? parseInt(process.env.MAX_CONVERSATION_ID_LENGTH, 10) : 325
-        return conversationId.length > maxLength ? conversationId.substring(0, maxLength) : conversationId
-      } else {
-        return conversationId;
-      }
+      (activity.channelIdChannel === Channels.Msteams || activity.channelIdChannel === Channels.Agents) &&
+      (activity.from?.role === RoleTypes.AgenticIdentity || activity.from?.role === RoleTypes.AgenticUser)) {
+      const maxLength = process.env.MAX_CONVERSATION_ID_LENGTH ? parseInt(process.env.MAX_CONVERSATION_ID_LENGTH, 10) : 325
+      return conversationId.length > maxLength ? conversationId.substring(0, maxLength) : conversationId
+    } else {
+      return conversationId
+    }
   }
 
   /**
@@ -238,7 +237,7 @@ export class ConnectorClient {
       throw new Error('conversationId is required')
     }
 
-    const trimmedConversationId: string = this.conditionallyTruncateConversationId(conversationId, body);
+    const trimmedConversationId: string = this.conditionallyTruncateConversationId(conversationId, body)
 
     const config: AxiosRequestConfig = {
       method: 'post',
