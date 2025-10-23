@@ -1,7 +1,7 @@
 import assert from 'assert'
 import { describe, it } from 'node:test'
 import { normalizeIncomingActivity, normalizeOutgoingActivity } from '../../src/activityWireCompat'
-import { Activity } from "@microsoft/agents-activity"
+import { Activity } from '@microsoft/agents-activity'
 
 describe('Incoming Activity Wire Compat', () => {
   it('Should translate bot to agent', () => {
@@ -270,8 +270,6 @@ describe('Outgoing Activity Wire Compat', () => {
     assert.deepEqual(normalized, expected)
   })
 
-
-
   it('Should handle channelId and subchannel', () => {
     const payload = {
       type: 'message',
@@ -288,6 +286,4 @@ describe('Outgoing Activity Wire Compat', () => {
     }
     assert.deepEqual(normalized, expected)
   })
-
-
 })
