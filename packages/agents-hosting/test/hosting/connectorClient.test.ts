@@ -152,8 +152,6 @@ describe('ConnectorClient', () => {
       delete process.env.MAX_APX_CONVERSATION_ID_LENGTH
     })
 
-
-
     it('sendToConversation should not truncate if less than max', async () => {
       const conversationId350chars = 'a'.repeat(300) // Make it longer than 325
 
@@ -209,5 +207,5 @@ describe('ConnectorClient', () => {
       })
       delete process.env.MAX_APX_CONVERSATION_ID_LENGTH
     })
-})
+  })
 })
