@@ -215,7 +215,10 @@ export class ConnectorClient {
     if (
       (activity.channelIdChannel === Channels.Msteams || activity.channelIdChannel === Channels.Agents) &&
       (activity.from?.role === RoleTypes.AgenticIdentity || activity.from?.role === RoleTypes.AgenticUser)) {
-      const maxLength = process.env.MAX_APX_CONVERSATION_ID_LENGTH ? parseInt(process.env.MAX_APX_CONVERSATION_ID_LENGTH, 10) : 325
+        let maxLength = 325;
+        if (process.env.MAX_APX_CONVERSATION_ID_LENGTH && !isNaN(parseInt(process.env.MAX_APX_CONVERSATION_ID_LENGTH, 10))) {
+          maxLength = parseInt(process.env.MAX_APX_CONVERSATION_ID_LENGTH, 10)
+        }
       return conversationId.length > maxLength ? conversationId.substring(0, maxLength) : conversationId
     } else {
       return conversationId

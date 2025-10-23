@@ -152,6 +152,8 @@ describe('ConnectorClient', () => {
       delete process.env.MAX_APX_CONVERSATION_ID_LENGTH
     })
 
+
+
     it('sendToConversation should not truncate if less than max', async () => {
       const conversationId350chars = 'a'.repeat(300) // Make it longer than 325
 
@@ -187,5 +189,25 @@ describe('ConnectorClient', () => {
         data: { type: 'message', channelId: Channels.Msteams, from: { role: RoleTypes.User } }
       })
     })
-  })
+    it('sendToConversation should be resistant to bad value', async () => {
+      process.env.MAX_APX_CONVERSATION_ID_LENGTH = 'abcd'
+      const conversationId350chars = 'a'.repeat(450) // Make it longer than 325
+      const expectedTruncatedId = conversationId350chars.substring(0, 325)
+
+      await client.sendToConversation(conversationId350chars, Activity.fromObject({ type: 'message', channelId: Channels.Msteams, from: { role: RoleTypes.AgenticUser } }))
+
+      // Verify that post was called once
+      sinon.assert.calledOnce(mockAxios)
+
+      sinon.assert.calledWith(mockAxios, {
+        method: 'post',
+        url: `v3/conversations/${expectedTruncatedId}/activities`,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        data: { type: 'message', channelId: Channels.Msteams, from: { role: RoleTypes.AgenticUser } }
+      })
+      delete process.env.MAX_APX_CONVERSATION_ID_LENGTH
+    })
+})
 })
