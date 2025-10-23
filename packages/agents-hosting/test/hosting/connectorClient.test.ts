@@ -28,9 +28,9 @@ describe('ConnectorClient', () => {
   })
 
   describe('truncation of conversation id', () => {
-    it('replyToActivity should truncate conversation id that is > 325 by default and use this in the url', async () => {
-      const conversationId350chars = 'a'.repeat(350) // Make it longer than 325
-      const expectedTruncatedId = conversationId350chars.substring(0, 325)
+    it('replyToActivity should truncate conversation id that is > 150 by default and use this in the url', async () => {
+      const conversationId350chars = 'a'.repeat(350) // Make it longer than 150`
+      const expectedTruncatedId = conversationId350chars.substring(0, 150)
 
       await client.replyToActivity(conversationId350chars, 'activityId', Activity.fromObject({ type: 'message', channelId: Channels.Msteams, from: { role: RoleTypes.AgenticUser } }))
 
@@ -49,7 +49,7 @@ describe('ConnectorClient', () => {
 
     it('replyToActivity should allow conversation id max length to be overridden by env', async () => {
       process.env.MAX_APX_CONVERSATION_ID_LENGTH = '100'
-      const conversationId350chars = 'a'.repeat(450) // Make it longer than 325
+      const conversationId350chars = 'a'.repeat(450) // Make it longer than 150
       const expectedTruncatedId = conversationId350chars.substring(0, 100)
 
       await client.replyToActivity(conversationId350chars, 'activityId', Activity.fromObject({ type: 'message', channelId: Channels.Msteams, from: { role: RoleTypes.AgenticUser } }))
@@ -69,7 +69,7 @@ describe('ConnectorClient', () => {
     })
 
     it('replyToActivity should not truncate if less than max', async () => {
-      const conversationId350chars = 'a'.repeat(300) // Make it shorter than 325
+      const conversationId350chars = 'a'.repeat(100) // Make it shorter than 150
 
       await client.replyToActivity(conversationId350chars, 'activityId', Activity.fromObject({ type: 'message', channelId: Channels.Msteams, from: { role: RoleTypes.AgenticUser } }))
 
@@ -87,7 +87,7 @@ describe('ConnectorClient', () => {
     })
 
     it('replyToActivity should not truncate non-agentic', async () => {
-      const conversationId350chars = 'a'.repeat(500) // Make it longer than 325
+      const conversationId350chars = 'a'.repeat(500) // Make it longer than 150
 
       await client.replyToActivity(conversationId350chars, 'activityId', Activity.fromObject({ type: 'message', channelId: Channels.Msteams, from: { role: RoleTypes.User } }))
 
@@ -113,7 +113,7 @@ describe('ConnectorClient', () => {
     /** ************************************************ */
 
     it('sendToConversation should truncate conversation id that is > 150 by default and use this in the url', async () => {
-      const conversationId350chars = 'a'.repeat(350) // Make it longer than 325
+      const conversationId350chars = 'a'.repeat(350) // Make it longer than 150
       const expectedTruncatedId = conversationId350chars.substring(0, 150)
 
       await client.sendToConversation(conversationId350chars, Activity.fromObject({ type: 'message', channelId: Channels.Msteams, from: { role: RoleTypes.AgenticUser } }))
@@ -133,7 +133,7 @@ describe('ConnectorClient', () => {
 
     it('sendToConversation should allow conversation id max length to be overridden by env', async () => {
       process.env.MAX_APX_CONVERSATION_ID_LENGTH = '100'
-      const conversationId350chars = 'a'.repeat(450) // Make it longer than 325
+      const conversationId350chars = 'a'.repeat(450) // Make it longer than 150
       const expectedTruncatedId = conversationId350chars.substring(0, 100)
 
       await client.sendToConversation(conversationId350chars, Activity.fromObject({ type: 'message', channelId: Channels.Msteams, from: { role: RoleTypes.AgenticUser } }))
@@ -171,7 +171,7 @@ describe('ConnectorClient', () => {
     })
 
     it('sendToConversation should not truncate non-agentic', async () => {
-      const conversationId350chars = 'a'.repeat(500) // Make it longer than 325
+      const conversationId350chars = 'a'.repeat(500) // Make it longer than 150
 
       await client.sendToConversation(conversationId350chars, Activity.fromObject({ type: 'message', channelId: Channels.Msteams, from: { role: RoleTypes.User } }))
 
@@ -189,7 +189,7 @@ describe('ConnectorClient', () => {
     })
     it('sendToConversation should be resistant to bad value', async () => {
       process.env.MAX_APX_CONVERSATION_ID_LENGTH = 'abcd'
-      const conversationId350chars = 'a'.repeat(450) // Make it longer than 325
+      const conversationId350chars = 'a'.repeat(450) // Make it longer than 150
       const expectedTruncatedId = conversationId350chars.substring(0, 150)
 
       await client.sendToConversation(conversationId350chars, Activity.fromObject({ type: 'message', channelId: Channels.Msteams, from: { role: RoleTypes.AgenticUser } }))
