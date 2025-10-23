@@ -69,7 +69,7 @@ describe('ConnectorClient', () => {
     })
 
     it('replyToActivity should not truncate if less than max', async () => {
-      const conversationId350chars = 'a'.repeat(300) // Make it longer than 325
+      const conversationId350chars = 'a'.repeat(300) // Make it shorter than 325
 
       await client.replyToActivity(conversationId350chars, 'activityId', Activity.fromObject({ type: 'message', channelId: Channels.Msteams, from: { role: RoleTypes.AgenticUser } }))
 
