@@ -128,6 +128,11 @@ export class AuthorizationManager {
         return { authorized: false }
       }
 
+      if (status === AuthorizationHandlerStatus.REVALIDATE) {
+        await storage.delete()
+        return this.process(context, getHandlerIds)
+      }
+
       if (status !== AuthorizationHandlerStatus.APPROVED) {
         throw new Error(this.prefix(handler.id, `Unexpected registration status: ${status}`))
       }
