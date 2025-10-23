@@ -48,7 +48,7 @@ describe('ConnectorClient', () => {
     })
 
     it('replyToActivity should allow conversation id max length to be overridden by env', async () => {
-      process.env.MAX_CONVERSATION_ID_LENGTH = '100'
+      process.env.MAX_APX_CONVERSATION_ID_LENGTH = '100'
       const conversationId350chars = 'a'.repeat(450) // Make it longer than 325
       const expectedTruncatedId = conversationId350chars.substring(0, 100)
 
@@ -65,7 +65,7 @@ describe('ConnectorClient', () => {
         },
         data: { type: 'message', channelId: Channels.Msteams, from: { role: RoleTypes.AgenticUser } }
       })
-      delete process.env.MAX_CONVERSATION_ID_LENGTH
+      delete process.env.MAX_APX_CONVERSATION_ID_LENGTH
     })
 
     it('replyToActivity should not truncate if less than max', async () => {
@@ -132,7 +132,7 @@ describe('ConnectorClient', () => {
     })
 
     it('sendToConversation should allow conversation id max length to be overridden by env', async () => {
-      process.env.MAX_CONVERSATION_ID_LENGTH = '100'
+      process.env.MAX_APX_CONVERSATION_ID_LENGTH = '100'
       const conversationId350chars = 'a'.repeat(450) // Make it longer than 325
       const expectedTruncatedId = conversationId350chars.substring(0, 100)
 
@@ -149,7 +149,7 @@ describe('ConnectorClient', () => {
         },
         data: { type: 'message', channelId: Channels.Msteams, from: { role: RoleTypes.AgenticUser } }
       })
-      delete process.env.MAX_CONVERSATION_ID_LENGTH
+      delete process.env.MAX_APX_CONVERSATION_ID_LENGTH
     })
 
     it('sendToConversation should not truncate if less than max', async () => {
