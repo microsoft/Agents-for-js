@@ -204,7 +204,7 @@ export class ConnectorClient {
       headers: {
         'Content-Type': 'application/json'
       },
-      data: body
+      data: normalizeOutgoingActivity(body)
     }
     const response = await this._axiosInstance(config)
     logger.info('Reply to conversation/activity: ', response.data.id!, activityId)
@@ -245,7 +245,7 @@ export class ConnectorClient {
       headers: {
         'Content-Type': 'application/json'
       },
-      data: body
+      data: normalizeOutgoingActivity(body)
     }
     const response = await this._axiosInstance(config)
     return response.data
