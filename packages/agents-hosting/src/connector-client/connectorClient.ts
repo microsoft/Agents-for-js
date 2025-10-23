@@ -109,7 +109,10 @@ export class ConnectorClient {
   ): ConnectorClient {
     const headerPropagation = headers ?? new HeaderPropagation({ 'User-Agent': '' })
     headerPropagation.concat({ 'User-Agent': getProductInfo() })
-    headerPropagation.override({ Accept: 'application/json' })
+    headerPropagation.override({
+      Accept: 'application/json',
+      'Content-Type': 'application/json', // Required by transformRequest
+    })
 
     const axiosInstance = axios.create({
       baseURL,
@@ -163,14 +166,14 @@ export class ConnectorClient {
    * @returns The conversation resource response.
    */
   public async createConversation (body: ConversationParameters): Promise<ConversationResourceResponse> {
-    // const payload = normalizeOutgoingConvoParams(body)
+    const payload = normalizeOutgoingActivity(body)
     const config: AxiosRequestConfig = {
       method: 'post',
       url: '/v3/conversations',
       headers: {
         'Content-Type': 'application/json'
       },
-      data: body
+      data: payload
     }
     const response: AxiosResponse = await this._axiosInstance(config)
     return response.data

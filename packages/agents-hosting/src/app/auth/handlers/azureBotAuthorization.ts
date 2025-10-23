@@ -8,15 +8,20 @@ import { AuthorizationHandlerStatus, AuthorizationHandler, ActiveAuthorizationHa
 import { MessageFactory } from '../../../messageFactory'
 import { CardFactory } from '../../../cards'
 import { TurnContext } from '../../../turnContext'
-import { TokenExchangeRequest, TokenResponse, UserTokenClient } from '../../../oauth'
+import { TokenExchangeRequest, TokenExchangeInvokeResponse, TokenResponse, UserTokenClient } from '../../../oauth'
 import jwt, { JwtPayload } from 'jsonwebtoken'
 import { HandlerStorage } from '../handlerStorage'
 import { Activity, ActivityTypes, Channels } from '@microsoft/agents-activity'
-import { InvokeResponse } from '../../../invoke'
+import { InvokeResponse, TokenExchangeInvokeRequest } from '../../../invoke'
 
 const logger = debug('agents:authorization:azurebot')
 
 const DEFAULT_SIGN_IN_ATTEMPTS = 2
+
+enum Category {
+  SIGNIN = 'signin',
+  UNKNOWN = 'unknown',
+}
 
 /**
  * Active handler manager information.
@@ -26,6 +31,10 @@ export interface AzureBotActiveHandler extends ActiveAuthorizationHandler {
    * The number of attempts left for the handler to process in case of failure.
    */
   attemptsLeft: number
+  /**
+   * The current category of the handler.
+   */
+  category?: Category
 }
 
 /**
@@ -137,12 +146,6 @@ interface TokenVerifyState {
 interface SignInFailureValue {
   code: string
   message: string
-}
-
-interface TokenExchangeInvokeResponse {
-  connectionName: string
-  id?: string
-  failureDetail?: string
 }
 
 /**
@@ -276,79 +279,39 @@ export class AzureBotAuthorization implements AuthorizationHandler {
    */
   async signin (context: TurnContext, active?: AzureBotActiveHandler): Promise<AuthorizationHandlerStatus> {
     const { activity } = context
+    const [category] = activity.name?.split('/') ?? [Category.UNKNOWN]
 
     const storage = new HandlerStorage<AzureBotActiveHandler>(this.settings.storage, context)
-    const userTokenClient = await this.getUserTokenClient(context)
 
-    if (active) {
-      logger.debug(this.prefix('Sign-in active session detected'), active.activity)
-    } else {
+    if (!active) {
       return this.setToken(storage, context)
     }
 
+    logger.debug(this.prefix('Sign-in active session detected'), active.activity)
+
     if (active.activity.conversation?.id !== activity.conversation?.id) {
       await this.sendInvokeResponse(context, { status: 400 })
-      logger.debug(this.prefix('Discarding the active session due to the conversation has changed during an active sign-in process'), activity)
+      logger.warn(this.prefix('Discarding the active session due to the conversation has changed during an active sign-in process'), activity)
       return AuthorizationHandlerStatus.IGNORED
     }
 
-    if (activity.name === 'signin/tokenExchange') {
-      const tokenExchangeRequest = activity.value as TokenExchangeRequest
-      if (!tokenExchangeRequest?.token) {
-        const reason = 'The Agent received an InvokeActivity that is missing a TokenExchangeInvokeRequest value. This is required to be sent with the InvokeActivity.'
-        await this.sendInvokeResponse<TokenExchangeInvokeResponse>(context, {
-          status: 400,
-          body: { connectionName: this._options.name!, failureDetail: reason }
-        })
-        logger.error(this.prefix(reason))
-        await this._onFailure?.(context, reason)
-        return AuthorizationHandlerStatus.REJECTED
-      }
-
-      if (tokenExchangeRequest.connectionName !== this._options.name) {
-        const reason = `The Agent received an InvokeActivity with a TokenExchangeInvokeRequest for a different connection name ('${tokenExchangeRequest.connectionName}') than expected ('${this._options.name}').`
-        await this.sendInvokeResponse<TokenExchangeInvokeResponse>(context, {
-          status: 400,
-          body: { id: tokenExchangeRequest.id, connectionName: this._options.name!, failureDetail: reason }
-        })
-        logger.error(this.prefix(reason))
-        await this._onFailure?.(context, reason)
-        return AuthorizationHandlerStatus.REJECTED
-      }
-
-      const { token } = await userTokenClient.exchangeTokenAsync(activity.from?.id!, this._options.name!, activity.channelId!, tokenExchangeRequest)
-      if (!token) {
-        const reason = 'Unable to exchange token. The token provided in the TokenExchangeRequest was rejected by the token service.'
-        await this.sendInvokeResponse<TokenExchangeInvokeResponse>(context, {
-          status: 412,
-          body: { id: tokenExchangeRequest.id, connectionName: this._options.name!, failureDetail: reason }
-        })
-        logger.error(this.prefix(reason))
-        await this._onFailure?.(context, reason)
-        return AuthorizationHandlerStatus.REJECTED
-      }
-
-      await this.sendInvokeResponse<TokenExchangeInvokeResponse>(context, {
-        status: 200,
-        body: { id: tokenExchangeRequest.id, connectionName: this._options.name! }
-      })
-      logger.debug(this.prefix('Successfully exchanged token'))
-      this.setContext(context, { token })
-      await this._onSuccess?.(context)
-      return AuthorizationHandlerStatus.APPROVED
+    if (active.attemptsLeft <= 0) {
+      logger.warn(this.prefix('Maximum sign-in attempts exceeded'), activity)
+      await context.sendActivity(MessageFactory.text(this.messages.maxAttemptsExceeded(this.maxAttempts)))
+      return AuthorizationHandlerStatus.REJECTED
     }
 
-    if (activity.name === 'signin/failure') {
-      await this.sendInvokeResponse(context, { status: 200 })
-      const reason = 'Failed to sign-in'
-      const value = activity.value as SignInFailureValue
-      logger.error(this.prefix(reason), value, activity)
-      if (this._onFailure) {
-        await this._onFailure(context, value.message || reason)
-      } else {
-        await context.sendActivity(MessageFactory.text(`${reason}. Please try again.`))
+    if (category === Category.SIGNIN) {
+      await storage.write({ ...active, category })
+      const status = await this.handleSignInActivities(context)
+      if (status !== AuthorizationHandlerStatus.IGNORED) {
+        return status
       }
-      return AuthorizationHandlerStatus.REJECTED
+    } else if (active.category === Category.SIGNIN) {
+      // This is only for safety in case of unexpected behaviors during the MS Teams sign-in process,
+      // e.g., user interrupts the flow by clicking the Consent Cancel button.
+      logger.warn(this.prefix('The incoming activity will be revalidated due to a change in the sign-in flow'), activity)
+      return AuthorizationHandlerStatus.REVALIDATE
     }
 
     const { status, code } = await this.codeVerification(storage, context, active)
@@ -442,6 +405,83 @@ export class AzureBotAuthorization implements AuthorizationHandler {
   }
 
   /**
+   * Handles sign-in related activities.
+   */
+  private async handleSignInActivities (context: TurnContext): Promise<AuthorizationHandlerStatus> {
+    const { activity } = context
+
+    // Ignore signin/verifyState here (handled in codeVerification).
+    if (activity.name === 'signin/verifyState') {
+      return AuthorizationHandlerStatus.IGNORED
+    }
+
+    const userTokenClient = await this.getUserTokenClient(context)
+
+    if (activity.name === 'signin/tokenExchange') {
+      const tokenExchangeInvokeRequest = activity.value as TokenExchangeInvokeRequest
+      const tokenExchangeRequest: TokenExchangeRequest = { token: tokenExchangeInvokeRequest.token }
+
+      if (!tokenExchangeRequest?.token) {
+        const reason = 'The Agent received an InvokeActivity that is missing a TokenExchangeInvokeRequest value. This is required to be sent with the InvokeActivity.'
+        await this.sendInvokeResponse<TokenExchangeInvokeResponse>(context, {
+          status: 400,
+          body: { connectionName: this._options.name!, failureDetail: reason }
+        })
+        logger.error(this.prefix(reason))
+        await this._onFailure?.(context, reason)
+        return AuthorizationHandlerStatus.REJECTED
+      }
+
+      if (tokenExchangeInvokeRequest.connectionName !== this._options.name) {
+        const reason = `The Agent received an InvokeActivity with a TokenExchangeInvokeRequest for a different connection name ('${tokenExchangeInvokeRequest.connectionName}') than expected ('${this._options.name}').`
+        await this.sendInvokeResponse<TokenExchangeInvokeResponse>(context, {
+          status: 400,
+          body: { id: tokenExchangeInvokeRequest.id, connectionName: this._options.name!, failureDetail: reason }
+        })
+        logger.error(this.prefix(reason))
+        await this._onFailure?.(context, reason)
+        return AuthorizationHandlerStatus.REJECTED
+      }
+
+      const { token } = await userTokenClient.exchangeTokenAsync(activity.from?.id!, this._options.name!, activity.channelId!, tokenExchangeRequest)
+      if (!token) {
+        const reason = 'The MS Teams token service didn\'t send back the exchanged token. Waiting for MS Teams to send another signin/tokenExchange request. After multiple failed attempts, the user will be asked to enter the magic code.'
+        await this.sendInvokeResponse<TokenExchangeInvokeResponse>(context, {
+          status: 412,
+          body: { id: tokenExchangeInvokeRequest.id, connectionName: this._options.name!, failureDetail: reason }
+        })
+        logger.debug(this.prefix(reason))
+        return AuthorizationHandlerStatus.PENDING
+      }
+
+      await this.sendInvokeResponse<TokenExchangeInvokeResponse>(context, {
+        status: 200,
+        body: { id: tokenExchangeInvokeRequest.id, connectionName: this._options.name! }
+      })
+      logger.debug(this.prefix('Successfully exchanged token'))
+      this.setContext(context, { token })
+      await this._onSuccess?.(context)
+      return AuthorizationHandlerStatus.APPROVED
+    }
+
+    if (activity.name === 'signin/failure') {
+      await this.sendInvokeResponse(context, { status: 200 })
+      const reason = 'Failed to sign-in'
+      const value = activity.value as SignInFailureValue
+      logger.error(this.prefix(reason), value, activity)
+      if (this._onFailure) {
+        await this._onFailure(context, value.message || reason)
+      } else {
+        await context.sendActivity(MessageFactory.text(`${reason}. Please try again.`))
+      }
+      return AuthorizationHandlerStatus.REJECTED
+    }
+
+    logger.error(this.prefix(`Unknown sign-in activity name: ${activity.name}`), activity)
+    return AuthorizationHandlerStatus.REJECTED
+  }
+
+  /**
    * Verifies the magic code provided by the user.
    */
   private async codeVerification (storage: HandlerStorage<AzureBotActiveHandler>, context: TurnContext, active?: AzureBotActiveHandler): Promise<{ status: AuthorizationHandlerStatus, code?: string }> {
@@ -452,12 +492,6 @@ export class AzureBotAuthorization implements AuthorizationHandler {
 
     const { activity } = context
     let state: string | undefined = activity.text
-
-    if (active.attemptsLeft <= 0) {
-      logger.warn(this.prefix('Maximum sign-in attempts exceeded'), activity)
-      await context.sendActivity(MessageFactory.text(this.messages.maxAttemptsExceeded(this.maxAttempts)))
-      return { status: AuthorizationHandlerStatus.REJECTED }
-    }
 
     if (activity.name === 'signin/verifyState') {
       logger.debug(this.prefix('Getting code from activity.value'), activity)
@@ -478,6 +512,7 @@ export class AzureBotAuthorization implements AuthorizationHandler {
       return { status: AuthorizationHandlerStatus.PENDING }
     }
 
+    await this.sendInvokeResponse(context, { status: 200 })
     logger.debug(this.prefix('Code verification successful'), activity)
     return { status: AuthorizationHandlerStatus.APPROVED, code: state }
   }
