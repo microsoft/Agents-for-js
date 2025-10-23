@@ -112,9 +112,9 @@ describe('ConnectorClient', () => {
     /** ************************************************ */
     /** ************************************************ */
 
-    it('sendToConversation should truncate conversation id that is > 325 by default and use this in the url', async () => {
+    it('sendToConversation should truncate conversation id that is > 150 by default and use this in the url', async () => {
       const conversationId350chars = 'a'.repeat(350) // Make it longer than 325
-      const expectedTruncatedId = conversationId350chars.substring(0, 325)
+      const expectedTruncatedId = conversationId350chars.substring(0, 150)
 
       await client.sendToConversation(conversationId350chars, Activity.fromObject({ type: 'message', channelId: Channels.Msteams, from: { role: RoleTypes.AgenticUser } }))
 
@@ -153,7 +153,7 @@ describe('ConnectorClient', () => {
     })
 
     it('sendToConversation should not truncate if less than max', async () => {
-      const conversationId350chars = 'a'.repeat(300) // Make it longer than 325
+      const conversationId350chars = 'a'.repeat(100) // Less than default max of 150
 
       await client.sendToConversation(conversationId350chars, Activity.fromObject({ type: 'message', channelId: Channels.Msteams, from: { role: RoleTypes.AgenticUser } }))
 
@@ -190,7 +190,7 @@ describe('ConnectorClient', () => {
     it('sendToConversation should be resistant to bad value', async () => {
       process.env.MAX_APX_CONVERSATION_ID_LENGTH = 'abcd'
       const conversationId350chars = 'a'.repeat(450) // Make it longer than 325
-      const expectedTruncatedId = conversationId350chars.substring(0, 325)
+      const expectedTruncatedId = conversationId350chars.substring(0, 150)
 
       await client.sendToConversation(conversationId350chars, Activity.fromObject({ type: 'message', channelId: Channels.Msteams, from: { role: RoleTypes.AgenticUser } }))
 
