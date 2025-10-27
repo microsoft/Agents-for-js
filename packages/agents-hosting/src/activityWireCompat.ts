@@ -25,6 +25,9 @@ export function normalizeIncomingActivity (payload: any): object {
  * @returns The normalized payload object with `agent` replaced by `bot` in `relatesTo`.
  */
 export function normalizeOutgoingActivity (payload: any): object {
+  if (!payload) {
+    return payload
+  }
   const modifiedPayload = JSON.parse(JSON.stringify(payload))
   if (modifiedPayload && modifiedPayload['relatesTo'] && modifiedPayload['relatesTo']['agent']) {
     const relatesTo = modifiedPayload['relatesTo']
