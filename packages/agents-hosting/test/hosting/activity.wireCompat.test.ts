@@ -1,6 +1,7 @@
 import assert from 'assert'
 import { describe, it } from 'node:test'
 import { normalizeIncomingActivity, normalizeOutgoingActivity } from '../../src/activityWireCompat'
+import { Activity } from '@microsoft/agents-activity'
 
 describe('Incoming Activity Wire Compat', () => {
   it('Should translate bot to agent', () => {
@@ -127,23 +128,39 @@ describe('Outgoing Activity Wire Compat', () => {
   it('Should translate agent to bot', () => {
     const payload = {
       type: 'message',
+      conversation: {
+        id: 'conversation-id'
+      },
+      channelId: 'msteams',
       relatesTo: {
         agent: {
           id: 'agent-id',
           name: 'test',
           role: 'skill'
-        }
+        },
+        conversation: {
+          id: 'conversation-id'
+        },
+        channelId: 'msteams',
       }
     }
-    const normalized = normalizeOutgoingActivity(payload)
+    const normalized = normalizeOutgoingActivity(Activity.fromObject(payload))
     const expected = {
       type: 'message',
+      conversation: {
+        id: 'conversation-id'
+      },
+      channelId: 'msteams',
       relatesTo: {
         bot: {
           id: 'agent-id',
           name: 'test',
           role: 'skill'
-        }
+        },
+        conversation: {
+          id: 'conversation-id'
+        },
+        channelId: 'msteams',
       }
     }
     assert.deepEqual(normalized, expected)
@@ -154,7 +171,7 @@ describe('Outgoing Activity Wire Compat', () => {
       type: 'message',
       foo: 'bar'
     }
-    const normalized = normalizeOutgoingActivity(payload)
+    const normalized = normalizeOutgoingActivity(Activity.fromObject(payload))
     const expected = {
       type: 'message',
       foo: 'bar'
@@ -177,11 +194,17 @@ describe('Outgoing Activity Wire Compat', () => {
           id: 'agent-id',
           name: 'test',
           role: 'skill'
-        }
+        },
+
+        conversation: {
+          id: 'conversation-id'
+        },
+        channelId: 'msteams',
+
       },
       extraField: 'extraValue'
     }
-    const normalized = normalizeOutgoingActivity(payload)
+    const normalized = normalizeOutgoingActivity(Activity.fromObject(payload))
     const expected = {
       type: 'message',
       relatesTo: {
@@ -189,7 +212,11 @@ describe('Outgoing Activity Wire Compat', () => {
           id: 'agent-id',
           name: 'test',
           role: 'skill'
-        }
+        },
+        conversation: {
+          id: 'conversation-id'
+        },
+        channelId: 'msteams',
       },
       extraField: 'extraValue'
     }
@@ -239,6 +266,23 @@ describe('Outgoing Activity Wire Compat', () => {
       relatesTo: {
         bot: true
       }
+    }
+    assert.deepEqual(normalized, expected)
+  })
+
+  it('Should handle channelId and subchannel', () => {
+    const payload = {
+      type: 'message',
+      channelId: 'msteams:subchannel'
+    }
+    const normalized = normalizeOutgoingActivity(Activity.fromObject(payload))
+    const expected = {
+      type: 'message',
+      channelId: 'msteams',
+      entities: [{
+        type: 'ProductInfo',
+        id: 'subchannel'
+      }]
     }
     assert.deepEqual(normalized, expected)
   })
