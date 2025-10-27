@@ -199,13 +199,13 @@ describe('CloudAdapter', function () {
           Activity.fromObject(
             {
               type: 'delay',
-              value: 2000
+              value: 4000
             }
           )
         ])
         .then(resolved)
 
-      sandbox.clock.tick(1000)
+      sandbox.clock.tick(3000)
       sinon.assert.notCalled(resolved)
 
       sandbox.clock.tick(1000)
