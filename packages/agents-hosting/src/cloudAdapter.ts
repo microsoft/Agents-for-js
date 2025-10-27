@@ -25,7 +25,7 @@ import { normalizeIncomingActivity } from './activityWireCompat'
 import { UserTokenClient } from './oauth'
 import { HeaderPropagation, HeaderPropagationCollection, HeaderPropagationDefinition } from './headerPropagation'
 import { JwtPayload } from 'jsonwebtoken'
-
+import { getTokenServiceEndpoint } from './oauth/customUserTokenAPI'
 const logger = debug('agents:cloud-adapter')
 
 /**
@@ -194,7 +194,7 @@ export class CloudAdapter extends BaseAdapter {
    * @protected
    */
   protected async createUserTokenClient (
-    tokenServiceEndpoint: string = 'https://api.botframework.com',
+    tokenServiceEndpoint: string = getTokenServiceEndpoint(),
     scope: string = 'https://api.botframework.com',
     audience: string = 'https://api.botframework.com',
     headers?: HeaderPropagationCollection

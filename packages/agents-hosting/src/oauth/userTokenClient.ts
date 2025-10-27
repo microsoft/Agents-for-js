@@ -9,6 +9,7 @@ import { AadResourceUrls, SignInResource, TokenExchangeRequest, TokenOrSinginRes
 import { getProductInfo } from '../getProductInfo'
 import { AuthProvider, MsalTokenProvider } from '../auth'
 import { HeaderPropagationCollection } from '../headerPropagation'
+import { getTokenServiceEndpoint } from './customUserTokenAPI'
 
 const logger = debug('agents:user-token-client')
 
@@ -31,7 +32,7 @@ export class UserTokenClient {
 
   constructor (param: string | AxiosInstance) {
     if (typeof param === 'string') {
-      const baseURL = 'https://api.botframework.com'
+      const baseURL = getTokenServiceEndpoint()
       this.client = axios.create({
         baseURL,
         headers: {
