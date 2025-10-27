@@ -212,9 +212,9 @@ export class ConnectorClient {
 
   /**
    * Trim the conversationId to a fixed length when creating the URL. This is applied only in specific API calls for agentic calls.
-   * @param conversationId
-   * @param activity
-   * @returns
+   * @param conversationId The ID of the conversation to potentially truncate.
+   * @param activity The activity object used to determine if truncation is necessary.
+   * @returns The original or truncated conversationId, depending on the channel and activity role.
    */
   private conditionallyTruncateConversationId (conversationId: string, activity: Activity): string {
     if (
