@@ -117,10 +117,6 @@ export class ConnectorClient {
     const axiosInstance = axios.create({
       baseURL,
       headers: headerPropagation.outgoing,
-      transformRequest: [
-        (data, headers) => {
-          return JSON.stringify(normalizeOutgoingActivity(data))
-        }]
     })
 
     if (token && token.length > 1) {
@@ -166,7 +162,10 @@ export class ConnectorClient {
    * @returns The conversation resource response.
    */
   public async createConversation (body: ConversationParameters): Promise<ConversationResourceResponse> {
-    const payload = normalizeOutgoingActivity(body)
+    const payload = {
+      ...body,
+      activity: normalizeOutgoingActivity(body.activity)
+    }
     const config: AxiosRequestConfig = {
       method: 'post',
       url: '/v3/conversations',
@@ -211,6 +210,12 @@ export class ConnectorClient {
     return response.data
   }
 
+  /**
+   * Trim the conversationId to a fixed length when creating the URL. This is applied only in specific API calls for agentic calls.
+   * @param conversationId
+   * @param activity
+   * @returns
+   */
   private conditionallyTruncateConversationId (conversationId: string, activity: Activity): string {
     if (
       (activity.channelIdChannel === Channels.Msteams || activity.channelIdChannel === Channels.Agents) &&
@@ -275,7 +280,7 @@ export class ConnectorClient {
       headers: {
         'Content-Type': 'application/json'
       },
-      data: body
+      data: normalizeOutgoingActivity(body)
     }
     const response = await this._axiosInstance(config)
     return response.data
