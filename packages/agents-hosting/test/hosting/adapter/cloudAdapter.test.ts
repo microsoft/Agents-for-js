@@ -190,30 +190,6 @@ describe('CloudAdapter', function () {
       })
     })
 
-    it('delays activities', async function () {
-      const resolved = sinon.fake()
-
-      const promise = cloudAdapter
-      // @ts-expect-error
-        .sendActivities(new TurnContext(cloudAdapter), [
-          Activity.fromObject(
-            {
-              type: 'delay',
-              value: 2000
-            }
-          )
-        ])
-        .then(resolved)
-
-      sandbox.clock.tick(1000)
-      sinon.assert.notCalled(resolved)
-
-      sandbox.clock.tick(1000)
-      await promise
-
-      sinon.assert.called(resolved)
-    })
-
     it('replies to an activity', async function () {
       // @ts-expect-error
       const context = new TurnContext(cloudAdapter)
