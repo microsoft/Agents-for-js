@@ -8,6 +8,10 @@
  */
 export enum Channels {
   /**
+   * Represents an agentic channel
+   */
+  Agents = 'agents',
+  /**
    * Represents the Alexa channel.
    */
   Alexa = 'alexa',

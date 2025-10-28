@@ -258,9 +258,7 @@ export class CloudAdapter extends BaseAdapter {
       delete activity.id
       let response: ResourceResponse = { id: '' }
 
-      if (activity.type === ActivityTypes.Delay) {
-        await setTimeout(() => { }, typeof activity.value === 'number' ? activity.value : 1000)
-      } else if (activity.type === ActivityTypes.InvokeResponse) {
+      if (activity.type === ActivityTypes.InvokeResponse) {
         context.turnState.set(INVOKE_RESPONSE_KEY, activity)
       } else if (activity.type === ActivityTypes.Trace && activity.channelId !== Channels.Emulator) {
         // no-op

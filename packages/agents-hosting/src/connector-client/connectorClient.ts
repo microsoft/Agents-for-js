@@ -3,7 +3,7 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
 import { AuthConfiguration } from '../auth/authConfiguration'
 import { AuthProvider } from '../auth/authProvider'
 import { debug } from '@microsoft/agents-activity/logger'
-import { Activity, ChannelAccount, ConversationParameters } from '@microsoft/agents-activity'
+import { Activity, ChannelAccount, ConversationParameters, RoleTypes, Channels } from '@microsoft/agents-activity'
 import { ConversationsResult } from './conversationsResult'
 import { ConversationResourceResponse } from './conversationResourceResponse'
 import { ResourceResponse } from './resourceResponse'
@@ -117,10 +117,6 @@ export class ConnectorClient {
     const axiosInstance = axios.create({
       baseURL,
       headers: headerPropagation.outgoing,
-      transformRequest: [
-        (data, headers) => {
-          return JSON.stringify(normalizeOutgoingActivity(data))
-        }]
     })
 
     if (token && token.length > 1) {
@@ -166,7 +162,10 @@ export class ConnectorClient {
    * @returns The conversation resource response.
    */
   public async createConversation (body: ConversationParameters): Promise<ConversationResourceResponse> {
-    const payload = normalizeOutgoingActivity(body)
+    const payload = {
+      ...body,
+      activity: normalizeOutgoingActivity(body.activity)
+    }
     const config: AxiosRequestConfig = {
       method: 'post',
       url: '/v3/conversations',
@@ -196,7 +195,7 @@ export class ConnectorClient {
       throw new Error('conversationId and activityId are required')
     }
 
-    const trimmedConversationId: string = conversationId.length > 325 ? conversationId.substring(0, 325) : conversationId
+    const trimmedConversationId: string = this.conditionallyTruncateConversationId(conversationId, body)
 
     const config: AxiosRequestConfig = {
       method: 'post',
@@ -204,11 +203,31 @@ export class ConnectorClient {
       headers: {
         'Content-Type': 'application/json'
       },
-      data: body
+      data: normalizeOutgoingActivity(body)
     }
     const response = await this._axiosInstance(config)
     logger.info('Reply to conversation/activity: ', response.data.id!, activityId)
     return response.data
+  }
+
+  /**
+   * Trim the conversationId to a fixed length when creating the URL. This is applied only in specific API calls for agentic calls.
+   * @param conversationId The ID of the conversation to potentially truncate.
+   * @param activity The activity object used to determine if truncation is necessary.
+   * @returns The original or truncated conversationId, depending on the channel and activity role.
+   */
+  private conditionallyTruncateConversationId (conversationId: string, activity: Activity): string {
+    if (
+      (activity.channelIdChannel === Channels.Msteams || activity.channelIdChannel === Channels.Agents) &&
+      (activity.from?.role === RoleTypes.AgenticIdentity || activity.from?.role === RoleTypes.AgenticUser)) {
+      let maxLength = 150
+      if (process.env.MAX_APX_CONVERSATION_ID_LENGTH && !isNaN(parseInt(process.env.MAX_APX_CONVERSATION_ID_LENGTH, 10))) {
+        maxLength = parseInt(process.env.MAX_APX_CONVERSATION_ID_LENGTH, 10)
+      }
+      return conversationId.length > maxLength ? conversationId.substring(0, maxLength) : conversationId
+    } else {
+      return conversationId
+    }
   }
 
   /**
@@ -226,7 +245,7 @@ export class ConnectorClient {
       throw new Error('conversationId is required')
     }
 
-    const trimmedConversationId: string = conversationId.length > 325 ? conversationId.substring(0, 325) : conversationId
+    const trimmedConversationId: string = this.conditionallyTruncateConversationId(conversationId, body)
 
     const config: AxiosRequestConfig = {
       method: 'post',
@@ -234,7 +253,7 @@ export class ConnectorClient {
       headers: {
         'Content-Type': 'application/json'
       },
-      data: body
+      data: normalizeOutgoingActivity(body)
     }
     const response = await this._axiosInstance(config)
     return response.data
@@ -261,7 +280,7 @@ export class ConnectorClient {
       headers: {
         'Content-Type': 'application/json'
       },
-      data: body
+      data: normalizeOutgoingActivity(body)
     }
     const response = await this._axiosInstance(config)
     return response.data
