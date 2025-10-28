@@ -5,7 +5,7 @@ import { Activity, ActivityTypes, DeliveryModes } from '@microsoft/agents-activi
 import { ConnectorClient } from '../../../src/connector-client/connectorClient'
 import { Response } from 'express'
 
-describe('CloudAdapter', function () {
+describe('userTokenClient', function () {
   let sandbox: SinonSandbox
   let req: Request
   let res: Partial<Response>
@@ -30,9 +30,6 @@ describe('CloudAdapter', function () {
 
   beforeEach(function () {
     sandbox = sinon.createSandbox({ useFakeTimers: true })
-
-    // sinon.stub(cloudAdapter as any, 'createUserTokenClient').returns(mockUserTokenClient)
-
     req = {
       headers: {},
       body: {}
@@ -47,7 +44,6 @@ describe('CloudAdapter', function () {
 
   afterEach(function () {
     if (sandbox) {
-      console.log('RESTORING SANDBOX')
       sandbox.restore()
     }
   })
