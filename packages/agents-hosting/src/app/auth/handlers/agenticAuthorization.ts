@@ -110,7 +110,7 @@ export class AgenticAuthorization implements AuthorizationHandler {
         connection = this.settings.connections.getConnection(this._options.altBlueprintConnectionName)
       } else {
         const audience = this.getAudience(context)
-        connection = this.settings.connections.getTokenProvider(audience, context.activity.serviceUrl ?? '')
+        connection = this.settings.connections.getTokenProvider(context.identity, context.activity.serviceUrl ?? '')
       }
 
       const token = await connection.getAgenticUserToken(
