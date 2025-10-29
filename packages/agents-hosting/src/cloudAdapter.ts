@@ -41,7 +41,7 @@ export class CloudAdapter extends BaseAdapter {
   /**
    * Client for connecting to the Azure Bot Service
    */
-  connectionManager: MsalConnectionManager
+  _connectionManager: MsalConnectionManager
 
   /**
    * Creates an instance of CloudAdapter.
@@ -51,7 +51,15 @@ export class CloudAdapter extends BaseAdapter {
   constructor (authConfig?: AuthConfiguration, authProvider?: AuthProvider, userTokenClient?: UserTokenClient) {
     super()
     authConfig = getAuthConfigWithDefaults(authConfig)
-    this.connectionManager = new MsalConnectionManager(undefined, undefined, authConfig)
+    this._connectionManager = new MsalConnectionManager(undefined, undefined, authConfig)
+  }
+
+  get connectionManager (): MsalConnectionManager {
+    return this._connectionManager
+  }
+
+  set connectionManager (value: MsalConnectionManager) {
+    this._connectionManager = value
   }
 
   /**

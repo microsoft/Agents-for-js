@@ -11,6 +11,7 @@ import { ResourceResponse } from './connector-client/resourceResponse'
 import { AttachmentData } from './connector-client/attachmentData'
 import { AttachmentInfo } from './connector-client/attachmentInfo'
 import { JwtPayload } from 'jsonwebtoken'
+import { MsalConnectionManager } from './auth/msalConnectionManager'
 
 const logger = debug('agents:base-adapter')
 
@@ -30,6 +31,11 @@ const logger = debug('agents:base-adapter')
  * - Context management with revocable proxies for security
  */
 export abstract class BaseAdapter {
+  /**
+   * Client for connecting to the Azure Bot Service
+   */
+  abstract get connectionManager (): MsalConnectionManager
+
   /**
    * The middleware set used to process the pipeline of middleware handlers.
    */
