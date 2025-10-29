@@ -4,7 +4,6 @@
  */
 
 import { Activity, ActivityTypes, ConversationReference } from '@microsoft/agents-activity'
-import { BaseAdapter } from '../baseAdapter'
 import { ResourceResponse } from '../connector-client'
 import { debug } from '@microsoft/agents-activity/logger'
 import { TurnContext } from '../turnContext'
@@ -172,7 +171,7 @@ export class AgentApplication<TState extends TurnState> {
    *
    * @returns The adapter instance.
    */
-  public get adapter (): BaseAdapter {
+  public get adapter (): CloudAdapter {
     return this._adapter!
   }
 
