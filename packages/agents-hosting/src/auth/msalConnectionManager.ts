@@ -92,8 +92,12 @@ export class MsalConnectionManager implements Connections {
    * Connection is: A name in the 'Connections' list.
    */
   getTokenProvider (identity: JwtPayload, serviceUrl: string): MsalTokenProvider {
+    if (!identity) {
+      throw new Error('Identity is required to get the token provider.')
+    }
+
     let audience
-    if (Array.isArray(identity.aud)) {
+    if (Array.isArray(identity?.aud)) {
       audience = identity.aud[0]
     } else {
       audience = identity.aud
