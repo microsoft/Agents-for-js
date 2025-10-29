@@ -109,8 +109,7 @@ export class AgenticAuthorization implements AuthorizationHandler {
       if (this._options.altBlueprintConnectionName?.trim()) {
         connection = this.settings.connections.getConnection(this._options.altBlueprintConnectionName)
       } else {
-        const audience = this.getAudience(context)
-        connection = this.settings.connections.getTokenProvider(audience, context.activity.serviceUrl ?? '')
+        connection = this.settings.connections.getTokenProvider(context.identity, context.activity.serviceUrl ?? '')
       }
 
       const token = await connection.getAgenticUserToken(
@@ -166,17 +165,6 @@ export class AgenticAuthorization implements AuthorizationHandler {
   private getContext (context: TurnContext): TokenResponse {
     const result = context.turnState.get(this._key)
     return result?.() ?? { token: undefined }
-  }
-
-  /**
-   * Gets the audience from the turn context.
-   */
-  private getAudience (context: TurnContext): string {
-    const { aud } = context.identity
-    if (!aud) {
-      throw new Error('No audience (aud) claim found in Activity.identity.')
-    }
-    return Array.isArray(aud) ? aud[0] : aud
   }
 
   /**
