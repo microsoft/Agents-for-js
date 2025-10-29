@@ -4,11 +4,12 @@
 import axios, { AxiosInstance } from 'axios'
 import { Activity, ConversationReference } from '@microsoft/agents-activity'
 import { debug } from '@microsoft/agents-activity/logger'
-import { normalizeOutgoingActivity, normalizeTokenExchangeState } from '../activityWireCompat'
+import { normalizeTokenExchangeState } from '../activityWireCompat'
 import { AadResourceUrls, SignInResource, TokenExchangeRequest, TokenOrSinginResourceResponse, TokenResponse, TokenStatus } from './userTokenClient.types'
 import { getProductInfo } from '../getProductInfo'
 import { AuthProvider, MsalTokenProvider } from '../auth'
 import { HeaderPropagationCollection } from '../headerPropagation'
+import { getTokenServiceEndpoint } from './customUserTokenAPI'
 
 const logger = debug('agents:user-token-client')
 
@@ -31,7 +32,7 @@ export class UserTokenClient {
 
   constructor (param: string | AxiosInstance) {
     if (typeof param === 'string') {
-      const baseURL = 'https://api.botframework.com'
+      const baseURL = getTokenServiceEndpoint()
       this.client = axios.create({
         baseURL,
         headers: {
@@ -116,11 +117,6 @@ export class UserTokenClient {
         'Content-Type': 'application/json', // Required by transformRequest
         'User-Agent': getProductInfo(),
       },
-      transformRequest: [
-        (data, headers) => {
-          return JSON.stringify(normalizeOutgoingActivity(data))
-        },
-      ],
     })
     const token = await (authProvider as MsalTokenProvider).getAccessToken(scope)
     if (token.length > 1) {
