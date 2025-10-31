@@ -425,9 +425,12 @@ export class CloudAdapter extends BaseAdapter {
     logic: (revocableContext: TurnContext) => Promise<void>,
     isResponse: Boolean = false): Promise<void> {
     if (!reference || !reference.serviceUrl || (reference.conversation == null) || !reference.conversation.id) {
-      throw new Error('Invalid conversation reference object')
+      throw new Error('continueConversation: Invalid conversation reference object')
     }
 
+    if (!botAppIdOrIdentity) {
+      throw new Error('continueConversation: botAppIdOrIdentity is required')
+    }
     const botAppId = typeof botAppIdOrIdentity === 'string' ? botAppIdOrIdentity : botAppIdOrIdentity.aud as string
 
     const identity =
