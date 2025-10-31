@@ -12,6 +12,15 @@ import { AuthorizationHandlerTokenOptions } from './types'
 
 const logger = debug('agents:authorization')
 
+export interface iAuthorization {
+  getToken(context: TurnContext, authHandlerId: string): Promise<TokenResponse>
+  exchangeToken(context: TurnContext, scopes: string[], authHandlerId: string): Promise<TokenResponse>
+  exchangeToken(context: TurnContext, authHandlerId: string, options?: AuthorizationHandlerTokenOptions): Promise<TokenResponse>
+  signOut(context: TurnContext, state: TurnState, authHandlerId?: string): Promise<void>
+  onSignInSuccess(handler: (context: TurnContext, state: TurnState, authHandlerId?: string) => Promise<void>): void
+  onSignInFailure(handler: (context: TurnContext, state: TurnState, authHandlerId?: string, errorMessage?: string) => Promise<void>): void
+}
+
 /**
  * Class responsible for managing authorization and OAuth flows.
  * Handles multiple OAuth providers and manages the complete authentication lifecycle.
@@ -29,7 +38,7 @@ const logger = debug('agents:authorization')
  * - Automatic configuration from environment variables
  *
  */
-export class Authorization {
+export class Authorization implements iAuthorization {
   /**
    * Creates a new instance of Authorization.
    * @param manager The AuthorizationManager instance to manage handlers.

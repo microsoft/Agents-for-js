@@ -19,7 +19,7 @@ import { RouteRank } from './routeRank'
 import { RouteList } from './routeList'
 import { TranscriptLoggerMiddleware } from '../transcript'
 import { CloudAdapter } from '../cloudAdapter'
-import { Authorization, AuthorizationManager } from './auth'
+import { iAuthorization, Authorization, AuthorizationManager } from './auth'
 import { JwtPayload } from 'jsonwebtoken'
 
 const logger = debug('agents:app')
@@ -150,7 +150,7 @@ export class AgentApplication<TState extends TurnState> {
    * @returns The authorization instance.
    * @throws Error if no authentication options were configured.
    */
-  public get authorization (): Authorization {
+  public get authorization (): iAuthorization {
     if (!this._authorization) {
       throw new Error('The Application.authorization property is unavailable because no authorization options were configured.')
     }
