@@ -38,7 +38,7 @@ export interface Authorization {
  * - Automatic configuration from environment variables
  *
  */
-export class AuthorizationWrapper implements Authorization {
+export class UserAuthorization implements Authorization {
   /**
    * Creates a new instance of Authorization.
    * @param manager The AuthorizationManager instance to manage handlers.
