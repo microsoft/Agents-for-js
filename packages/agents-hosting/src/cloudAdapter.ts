@@ -428,7 +428,7 @@ export class CloudAdapter extends BaseAdapter {
     }
 
     if (!botAppIdOrIdentity) {
-      throw new Error('continueConversation: botAppIdOrIdentity is required')
+      throw new TypeError('continueConversation: botAppIdOrIdentity is required')
     }
     const botAppId = typeof botAppIdOrIdentity === 'string' ? botAppIdOrIdentity : botAppIdOrIdentity.aud as string
 
