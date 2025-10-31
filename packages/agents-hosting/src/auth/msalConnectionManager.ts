@@ -5,7 +5,6 @@
 
 import { Activity, RoleTypes } from '@microsoft/agents-activity'
 import { AuthConfiguration } from './authConfiguration'
-import { AuthProvider } from './authProvider'
 import { Connections } from './connections'
 import { MsalTokenProvider } from './msalTokenProvider'
 import { JwtPayload } from 'jsonwebtoken'
