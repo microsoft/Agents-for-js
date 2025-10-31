@@ -139,7 +139,7 @@ export class MsalConnectionManager implements Connections {
    * @param activity The activity.
    * @returns The TokenProvider for the connection.
    */
-  getTokenProviderFromActivity (identity: JwtPayload, activity: Activity): AuthProvider {
+  getTokenProviderFromActivity (identity: JwtPayload, activity: Activity): MsalTokenProvider {
     let connection = this.getTokenProvider(identity, activity.serviceUrl || '')
 
     // This is for the case where the Agentic BlueprintId is not the same as the AppId
