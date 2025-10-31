@@ -432,7 +432,7 @@ export class CloudAdapter extends BaseAdapter {
     }
     const botAppId = typeof botAppIdOrIdentity === 'string' ? botAppIdOrIdentity : botAppIdOrIdentity.aud as string
 
-    // Only having the botId will only work against ABS or Agentic.  Proactive to other agents will 
+    // Only having the botId will only work against ABS or Agentic.  Proactive to other agents will
     // not work with just botId.
     const identity =
         typeof botAppIdOrIdentity !== 'string'
