@@ -146,6 +146,8 @@ export class CloudAdapter extends BaseAdapter {
         throw new Error('Could not create connector client for agentic user')
       }
     } else {
+      // ABS tokens will not have an azp/appid so use the botframework scope.
+      // Otherwise use the appId.  This will happen when communicating back to another agent.
       const scope = identity.azp ?? identity.appid ?? 'https://api.botframework.com'
       const token = await tokenProvider.getAccessToken(scope)
       connectorClient = ConnectorClient.createClientWithToken(
@@ -433,7 +435,7 @@ export class CloudAdapter extends BaseAdapter {
     const botAppId = typeof botAppIdOrIdentity === 'string' ? botAppIdOrIdentity : botAppIdOrIdentity.aud as string
 
     // Only having the botId will only work against ABS or Agentic.  Proactive to other agents will
-    // not work with just botId.
+    // not work with just botId.  Use a JwyPayload with property aud (which is botId) and appid populated.
     const identity =
         typeof botAppIdOrIdentity !== 'string'
           ? botAppIdOrIdentity
@@ -443,8 +445,10 @@ export class CloudAdapter extends BaseAdapter {
     const connectorClient = await this.createConnectorClientWithIdentity(identity, context.activity)
     this.setConnectorClient(context, connectorClient)
 
-    const userTokenClient = await this.createUserTokenClient(identity)
-    this.setUserTokenClient(context, userTokenClient)
+    if (!context.activity.isAgenticRequest()) {
+      const userTokenClient = await this.createUserTokenClient(identity)
+      this.setUserTokenClient(context, userTokenClient)
+    }
 
     await this.runMiddleware(context, logic)
   }
