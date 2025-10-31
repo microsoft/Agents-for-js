@@ -12,7 +12,7 @@ import { AuthorizationHandlerTokenOptions } from './types'
 
 const logger = debug('agents:authorization')
 
-export interface iAuthorization {
+export interface Authorization {
   getToken(context: TurnContext, authHandlerId: string): Promise<TokenResponse>
   exchangeToken(context: TurnContext, scopes: string[], authHandlerId: string): Promise<TokenResponse>
   exchangeToken(context: TurnContext, authHandlerId: string, options?: AuthorizationHandlerTokenOptions): Promise<TokenResponse>
@@ -38,7 +38,7 @@ export interface iAuthorization {
  * - Automatic configuration from environment variables
  *
  */
-export class Authorization implements iAuthorization {
+export class AuthorizationHandler implements Authorization {
   /**
    * Creates a new instance of Authorization.
    * @param manager The AuthorizationManager instance to manage handlers.
