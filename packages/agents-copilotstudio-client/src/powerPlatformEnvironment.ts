@@ -23,8 +23,9 @@ export function getCopilotStudioConnectionUrl (
   settings: ConnectionSettings,
   conversationId?: string
 ): string {
-  if (!settings.directConnectUrl && (!settings.environmentId || !settings.schemaName)) {
-    throw new Error('Either directConnectUrl OR both environmentId and schemaName must be provided')
+  const schemaName = settings.schemaName?.trim() || settings.agentIdentifier?.trim()
+  if (!settings.directConnectUrl?.trim() && (!settings.environmentId?.trim() || !schemaName?.trim())) {
+    throw new Error('Either directConnectUrl OR both environmentId and schemaName/agentIdentifier must be provided')
   }
 
   if (settings.directConnectUrl?.trim()) {
@@ -66,11 +67,11 @@ export function getCopilotStudioConnectionUrl (
   const strategy = {
     [AgentType.Published]: () => new PublishedBotStrategy({
       host,
-      schema: settings.schemaName!,
+      schema: schemaName!,
     }),
     [AgentType.Prebuilt]: () => new PrebuiltBotStrategy({
       host,
-      schema: settings.schemaName!,
+      schema: schemaName!,
     }),
   }[agentType]()
 
