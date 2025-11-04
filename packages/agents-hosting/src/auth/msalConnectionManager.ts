@@ -5,9 +5,9 @@
 
 import { Activity, RoleTypes } from '@microsoft/agents-activity'
 import { AuthConfiguration } from './authConfiguration'
-import { AuthProvider } from './authProvider'
 import { Connections } from './connections'
 import { MsalTokenProvider } from './msalTokenProvider'
+import { JwtPayload } from 'jsonwebtoken'
 
 export interface ConnectionMapItem {
   audience?: string
@@ -50,7 +50,7 @@ export class MsalConnectionManager implements Connections {
     if (!conn) {
       throw new Error(`Connection not found: ${connectionName}`)
     }
-    return conn
+    return this.applyConnectionDefaults(conn)
   }
 
   /**
@@ -69,13 +69,15 @@ export class MsalConnectionManager implements Connections {
       }
     }
 
-    return this._connections.values().next().value as MsalTokenProvider
+    const conn = this._connections.values().next().value as MsalTokenProvider
+
+    return this.applyConnectionDefaults(conn)
   }
 
   /**
    * Finds a connection based on a map.
    *
-   * @param audience The audience.
+   * @param identity - The identity.  Usually TurnContext.identity.
    * @param serviceUrl The service URL.
    * @returns The TokenProvider for the connection.
    *
@@ -90,7 +92,18 @@ export class MsalConnectionManager implements Connections {
    * ServiceUrl is:  A regex to match with, or "*" for any serviceUrl value.
    * Connection is: A name in the 'Connections' list.
    */
-  getTokenProvider (audience: string, serviceUrl: string): MsalTokenProvider {
+  getTokenProvider (identity: JwtPayload, serviceUrl: string): MsalTokenProvider {
+    if (!identity) {
+      throw new Error('Identity is required to get the token provider.')
+    }
+
+    let audience
+    if (Array.isArray(identity?.aud)) {
+      audience = identity.aud[0]
+    } else {
+      audience = identity.aud
+    }
+
     if (!audience || !serviceUrl) throw new Error('Audience and Service URL are required to get the token provider.')
 
     if (this._connectionsMap.length === 0) {
@@ -121,12 +134,12 @@ export class MsalConnectionManager implements Connections {
 
   /**
    * Finds a connection based on an activity's blueprint.
-   * @param audience The audience.
+   * @param identity - The identity.  Usually TurnContext.identity.
    * @param activity The activity.
    * @returns The TokenProvider for the connection.
    */
-  getTokenProviderFromActivity (audience: string, activity: Activity): AuthProvider {
-    let connection = this.getTokenProvider(audience, activity.serviceUrl || '')
+  getTokenProviderFromActivity (identity: JwtPayload, activity: Activity): MsalTokenProvider {
+    let connection = this.getTokenProvider(identity, activity.serviceUrl || '')
 
     // This is for the case where the Agentic BlueprintId is not the same as the AppId
     if (connection &&
@@ -146,5 +159,17 @@ export class MsalConnectionManager implements Connections {
    */
   getDefaultConnectionConfiguration (): AuthConfiguration {
     return this._serviceConnectionConfiguration
+  }
+
+  private applyConnectionDefaults (conn: MsalTokenProvider): MsalTokenProvider {
+    if (conn.connectionSettings) {
+      conn.connectionSettings.authority ??= 'https://login.microsoftonline.com'
+      conn.connectionSettings.issuers ??= [
+        'https://api.botframework.com',
+        `https://sts.windows.net/${conn.connectionSettings.tenantId}/`,
+        `${conn.connectionSettings.authority}/${conn.connectionSettings.tenantId}/v2.0`
+      ]
+    }
+    return conn
   }
 }

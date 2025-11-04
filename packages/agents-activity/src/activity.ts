@@ -432,7 +432,7 @@ export class Activity {
     const continuationActivityObj = {
       type: ActivityTypes.Event,
       name: ActivityEventNames.ContinueConversation,
-      id: uuid(),
+      id: reference.activityId ?? uuid(),
       channelId: reference.channelId,
       locale: reference.locale,
       serviceUrl: reference.serviceUrl,

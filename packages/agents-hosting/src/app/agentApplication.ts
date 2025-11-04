@@ -4,7 +4,6 @@
  */
 
 import { Activity, ActivityTypes, ConversationReference } from '@microsoft/agents-activity'
-import { BaseAdapter } from '../baseAdapter'
 import { ResourceResponse } from '../connector-client'
 import { debug } from '@microsoft/agents-activity/logger'
 import { TurnContext } from '../turnContext'
@@ -20,7 +19,7 @@ import { RouteRank } from './routeRank'
 import { RouteList } from './routeList'
 import { TranscriptLoggerMiddleware } from '../transcript'
 import { CloudAdapter } from '../cloudAdapter'
-import { Authorization, AuthorizationManager } from './auth'
+import { Authorization, UserAuthorization, AuthorizationManager } from './auth'
 import { JwtPayload } from 'jsonwebtoken'
 
 const logger = debug('agents:app')
@@ -128,7 +127,7 @@ export class AgentApplication<TState extends TurnState> {
 
     if (this._options.authorization) {
       this._authorizationManager = new AuthorizationManager(this, this._adapter.connectionManager)
-      this._authorization = new Authorization(this._authorizationManager)
+      this._authorization = new UserAuthorization(this._authorizationManager)
     }
 
     if (this._options.longRunningMessages && !this._adapter && !this._options.agentAppId) {
@@ -172,7 +171,7 @@ export class AgentApplication<TState extends TurnState> {
    *
    * @returns The adapter instance.
    */
-  public get adapter (): BaseAdapter {
+  public get adapter (): CloudAdapter {
     return this._adapter!
   }
 

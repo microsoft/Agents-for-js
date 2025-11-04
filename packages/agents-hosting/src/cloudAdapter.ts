@@ -93,11 +93,11 @@ export class CloudAdapter extends BaseAdapter {
   protected async createConnectorClient (
     serviceUrl: string,
     scope: string,
-    audience: string,
+    identity: JwtPayload,
     headers?: HeaderPropagationCollection
   ): Promise<ConnectorClient> {
     // get the correct token provider
-    const tokenProvider = this.connectionManager.getTokenProvider(audience, serviceUrl)
+    const tokenProvider = this.connectionManager.getTokenProvider(identity, serviceUrl)
 
     const token = await tokenProvider.getAccessToken(scope)
     return ConnectorClient.createClientWithToken(
@@ -110,16 +110,8 @@ export class CloudAdapter extends BaseAdapter {
   protected async createConnectorClientWithIdentity (
     identity: JwtPayload,
     activity: Activity,
-    scope: string,
     headers?: HeaderPropagationCollection) {
-    let audience
-    if (Array.isArray(identity.aud)) {
-      audience = identity.aud[0]
-    } else {
-      audience = identity.aud
-    }
-
-    if (!audience) {
+    if (!identity?.aud) {
       // anonymous
       return ConnectorClient.createClientWithToken(
         activity.serviceUrl!,
@@ -129,7 +121,7 @@ export class CloudAdapter extends BaseAdapter {
     }
 
     let connectorClient
-    const tokenProvider = this.connectionManager.getTokenProvider(audience!, activity.serviceUrl ?? '')
+    const tokenProvider = this.connectionManager.getTokenProviderFromActivity(identity, activity)
     if (activity.isAgenticRequest()) {
       logger.debug('Activity is from an agentic source, using special scope', activity.recipient)
 
@@ -154,6 +146,9 @@ export class CloudAdapter extends BaseAdapter {
         throw new Error('Could not create connector client for agentic user')
       }
     } else {
+      // ABS tokens will not have an azp/appid so use the botframework scope.
+      // Otherwise use the appId.  This will happen when communicating back to another agent.
+      const scope = identity.azp ?? identity.appid ?? 'https://api.botframework.com'
       const token = await tokenProvider.getAccessToken(scope)
       connectorClient = ConnectorClient.createClientWithToken(
         activity.serviceUrl!,
@@ -194,13 +189,14 @@ export class CloudAdapter extends BaseAdapter {
    * @protected
    */
   protected async createUserTokenClient (
+    identity: JwtPayload,
     tokenServiceEndpoint: string = getTokenServiceEndpoint(),
     scope: string = 'https://api.botframework.com',
     audience: string = 'https://api.botframework.com',
     headers?: HeaderPropagationCollection
   ): Promise<UserTokenClient> {
     // get the correct token provider
-    const tokenProvider = this.connectionManager.getTokenProvider(audience, tokenServiceEndpoint)
+    const tokenProvider = this.connectionManager.getTokenProvider(identity, tokenServiceEndpoint)
 
     return UserTokenClient.createClientWithScope(
       tokenServiceEndpoint,
@@ -326,15 +322,14 @@ export class CloudAdapter extends BaseAdapter {
     logger.debug('Received activity: ', activity)
 
     const context = new TurnContext(this, activity, request.user!)
-    const scope = request.user?.azp ?? request.user?.appid ?? 'https://api.botframework.com'
     // if Delivery Mode == ExpectReplies, we don't need a connector client.
     if (this.resolveIfConnectorClientIsNeeded(activity)) {
-      const connectorClient = await this.createConnectorClientWithIdentity(request.user!, activity, scope, headers)
+      const connectorClient = await this.createConnectorClientWithIdentity(request.user!, activity, headers)
       this.setConnectorClient(context, connectorClient)
     }
 
     if (!activity.isAgenticRequest()) {
-      const userTokenClient = await this.createUserTokenClient()
+      const userTokenClient = await this.createUserTokenClient(request.user!)
       this.setUserTokenClient(context, userTokenClient)
     }
 
@@ -431,24 +426,29 @@ export class CloudAdapter extends BaseAdapter {
     logic: (revocableContext: TurnContext) => Promise<void>,
     isResponse: Boolean = false): Promise<void> {
     if (!reference || !reference.serviceUrl || (reference.conversation == null) || !reference.conversation.id) {
-      throw new Error('Invalid conversation reference object')
+      throw new Error('continueConversation: Invalid conversation reference object')
     }
 
+    if (!botAppIdOrIdentity) {
+      throw new TypeError('continueConversation: botAppIdOrIdentity is required')
+    }
     const botAppId = typeof botAppIdOrIdentity === 'string' ? botAppIdOrIdentity : botAppIdOrIdentity.aud as string
 
+    // Only having the botId will only work against ABS or Agentic.  Proactive to other agents will
+    // not work with just botId.  Use a JwtPayload with property aud (which is botId) and appid populated.
     const identity =
         typeof botAppIdOrIdentity !== 'string'
           ? botAppIdOrIdentity
           : CloudAdapter.createIdentity(botAppId)
 
-    const continuationActivity = Activity.getContinuationActivity(reference)
     const context = new TurnContext(this, Activity.getContinuationActivity(reference), identity)
-    const scope = identity.azp ?? identity.appid ?? 'https://api.botframework.com'
-    const connectorClient = await this.createConnectorClientWithIdentity(identity, continuationActivity, scope)
+    const connectorClient = await this.createConnectorClientWithIdentity(identity, context.activity)
     this.setConnectorClient(context, connectorClient)
 
-    const userTokenClient = await this.createUserTokenClient()
-    this.setUserTokenClient(context, userTokenClient)
+    if (!context.activity.isAgenticRequest()) {
+      const userTokenClient = await this.createUserTokenClient(identity)
+      this.setUserTokenClient(context, userTokenClient)
+    }
 
     await this.runMiddleware(context, logic)
   }
@@ -542,8 +542,9 @@ export class CloudAdapter extends BaseAdapter {
     if (!conversationParameters) throw new TypeError('`conversationParameters` must be defined')
     if (!logic) throw new TypeError('`logic` must be defined')
 
-    const restClient = await this.createConnectorClient(serviceUrl, audience, audience)
-    const userTokenClient = await this.createUserTokenClient()
+    const identity = CloudAdapter.createIdentity(audience)
+    const restClient = await this.createConnectorClient(serviceUrl, audience, identity)
+    const userTokenClient = await this.createUserTokenClient(identity)
     const createConversationResult = await restClient.createConversation(conversationParameters)
     const createActivity = this.createCreateActivity(
       createConversationResult.id,

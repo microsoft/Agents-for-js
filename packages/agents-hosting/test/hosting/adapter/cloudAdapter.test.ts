@@ -291,7 +291,7 @@ describe('CloudAdapter', function () {
 
       const { logic } = bootstrap()
 
-      const error = new Error('Invalid conversation reference object')
+      const error = new Error('continueConversation: Invalid conversation reference object')
 
       await assert.rejects(
         cloudAdapter.continueConversation(authentication.clientId as string, conversationReference, (context) => {
