@@ -33,6 +33,10 @@ export class CopilotStudioClient {
 
 // @public
 export interface CopilotStudioConnectionSettings {
+    // @deprecated
+    agentIdentifier?: string;
+    // @deprecated
+    authority?: string;
     cloud?: PowerPlatformCloud;
     copilotAgentType?: AgentType;
     customPowerPlatformCloud?: string;
@@ -73,7 +77,7 @@ export function getCopilotStudioConnectionUrl(settings: ConnectionSettings, conv
 export function getTokenAudience(settings?: ConnectionSettings, cloud?: PowerPlatformCloud, cloudBaseAddress?: string, directConnectUrl?: string): string;
 
 // @public
-export const loadCopilotStudioConnectionSettingsFromEnv: () => CopilotStudioConnectionSettings;
+export const loadCopilotStudioConnectionSettingsFromEnv: () => ConnectionSettings;
 
 // @public
 export enum PowerPlatformCloud {

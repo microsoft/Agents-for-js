@@ -5,6 +5,12 @@
 
 import type { Strategy, StrategySettings } from './strategy'
 
+/** @deprecated This interface will not be supported in future versions. Use StrategySettings instead. */
+export interface PrebuiltBotStrategySettings {
+  readonly host: URL;
+  readonly identifier: string;
+}
+
 /**
  * Strategy for constructing PowerPlatform API connection URLs for prebuilt agents.
  */
@@ -12,8 +18,14 @@ export class PrebuiltBotStrategy implements Strategy {
   private readonly API_VERSION = '2022-03-01-preview'
   private baseURL: URL
 
-  constructor (settings: StrategySettings) {
-    const { schema, host } = settings
+  /**
+   * @deprecated This constructor will not be supported in future versions. Use constructor (settings: StrategySettings).
+   */
+  constructor (settings: PrebuiltBotStrategySettings)
+  constructor (settings: StrategySettings)
+  constructor (settings: PrebuiltBotStrategySettings | StrategySettings) {
+    const schema = 'schema' in settings ? settings.schema : settings.identifier
+    const host = settings.host
 
     this.baseURL = new URL(
       `/copilotstudio/prebuilt/authenticated/bots/${schema}`,
