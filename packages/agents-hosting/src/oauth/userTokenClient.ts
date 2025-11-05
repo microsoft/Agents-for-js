@@ -118,9 +118,11 @@ export class UserTokenClient {
         'User-Agent': getProductInfo(),
       },
     })
-    const token = await (authProvider as MsalTokenProvider).getAccessToken(scope)
-    if (token.length > 1) {
-      axiosInstance.defaults.headers.common.Authorization = `Bearer ${token}`
+    if (authProvider) {
+      const token = await (authProvider as MsalTokenProvider).getAccessToken(scope)
+      if (token.length > 1) {
+        axiosInstance.defaults.headers.common.Authorization = `Bearer ${token}`
+      }
     }
     return new UserTokenClient(axiosInstance)
   }
