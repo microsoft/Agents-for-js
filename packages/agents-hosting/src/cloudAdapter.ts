@@ -195,6 +195,16 @@ export class CloudAdapter extends BaseAdapter {
     audience: string = 'https://api.botframework.com',
     headers?: HeaderPropagationCollection
   ): Promise<UserTokenClient> {
+    if (!identity?.aud) {
+      // anonymous
+      return UserTokenClient.createClientWithScope(
+        tokenServiceEndpoint,
+        null!,
+        scope,
+        headers
+      )
+    }
+
     // get the correct token provider
     const tokenProvider = this.connectionManager.getTokenProvider(identity, tokenServiceEndpoint)
 
