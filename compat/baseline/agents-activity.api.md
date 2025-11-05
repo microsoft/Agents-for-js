@@ -1025,6 +1025,11 @@ export interface Entity {
 }
 
 // @public
+export interface ExpectedReplies {
+    activities: Activity[];
+}
+
+// @public
 export interface GeoCoordinates {
     elevation: number;
     latitude: number;
