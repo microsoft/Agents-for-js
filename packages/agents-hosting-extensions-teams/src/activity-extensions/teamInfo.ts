@@ -21,6 +21,11 @@ export interface TeamInfo {
    * The Azure Active Directory group ID of the team.
    */
   aadGroupId?: string
+
+  /**
+   * The tenant ID of the team.
+   */
+  tenantId?: string
 }
 
 /**
@@ -29,5 +34,6 @@ export interface TeamInfo {
 export const teamInfoZodSchema = z.object({
   id: z.string().min(1).optional(),
   name: z.string().min(1).optional(),
-  aadGroupId: z.string().min(1).optional()
+  aadGroupId: z.string().min(1).optional(),
+  tenantId: z.string().min(1).optional()
 })

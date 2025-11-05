@@ -7,6 +7,7 @@ import { TurnContextStateCollection } from './turnContextStateCollection'
 import { AttachmentInfo } from './connector-client/attachmentInfo'
 import { AttachmentData } from './connector-client/attachmentData'
 import { StreamingResponse } from './app/streaming/streamingResponse'
+import { JwtPayload } from 'jsonwebtoken'
 
 /**
  * Defines a handler for processing and sending activities.
@@ -71,20 +72,23 @@ export class TurnContext {
   private readonly _turn = 'turn'
   private readonly _locale = 'locale'
   private readonly _streamingResponse: StreamingResponse
+  private readonly _identity?: JwtPayload
+
   /**
    * Initializes a new instance of the TurnContext class.
    *
    * @param adapterOrContext The adapter that created this context, or another TurnContext to clone
    * @param request The activity for the turn (required when first parameter is an adapter)
    */
-  constructor (adapterOrContext: BaseAdapter, request: Activity)
+  constructor (adapterOrContext: BaseAdapter, request: Activity, identity?: JwtPayload)
   constructor (adapterOrContext: TurnContext)
-  constructor (adapterOrContext: BaseAdapter | TurnContext, request?: Activity) {
+  constructor (adapterOrContext: BaseAdapter | TurnContext, request?: Activity, identity?: JwtPayload) {
     if (adapterOrContext instanceof TurnContext) {
       adapterOrContext.copyTo(this)
     } else {
       this._adapter = adapterOrContext
       this._activity = request as Activity
+      this._identity = identity as JwtPayload
     }
     this._streamingResponse = new StreamingResponse(this)
   }
@@ -246,6 +250,7 @@ export class TurnContext {
   }
 
   /**
+   * @deprecated This function will not be supported in future versions.  Use TurnContext.turnState.get<ConnectorClient>(CloudAdapter.ConnectorClientKey).
    * Uploads an attachment to the conversation.
    *
    * @param conversationId The ID of the conversation
@@ -253,20 +258,22 @@ export class TurnContext {
    * @returns A promise that resolves to the resource response
    */
   async uploadAttachment (conversationId: string, attachmentData: AttachmentData): Promise<ResourceResponse> {
-    return await this.adapter.uploadAttachment(conversationId, attachmentData)
+    return await this.adapter.uploadAttachment(this, conversationId, attachmentData)
   }
 
   /**
+   * @deprecated This function will not be supported in future versions.  Use TurnContext.turnState.get<ConnectorClient>(CloudAdapter.ConnectorClientKey).
    * Gets information about an attachment.
    *
    * @param attachmentId The ID of the attachment
    * @returns A promise that resolves to the attachment information
    */
   async getAttachmentInfo (attachmentId: string): Promise<AttachmentInfo> {
-    return await this.adapter.getAttachmentInfo(attachmentId)
+    return await this.adapter.getAttachmentInfo(this, attachmentId)
   }
 
   /**
+   * @deprecated This function will not be supported in future versions.  Use TurnContext.turnState.get<ConnectorClient>(CloudAdapter.ConnectorClientKey).
    * Gets the content of an attachment.
    *
    * @param attachmentId The ID of the attachment
@@ -274,7 +281,7 @@ export class TurnContext {
    * @returns A promise that resolves to a readable stream of the attachment content
    */
   async getAttachment (attachmentId: string, viewId: string): Promise<NodeJS.ReadableStream> {
-    return await this.adapter.getAttachment(attachmentId, viewId)
+    return await this.adapter.getAttachment(this, attachmentId, viewId)
   }
 
   /**
@@ -346,6 +353,10 @@ export class TurnContext {
    */
   get activity (): Activity {
     return this._activity as Activity
+  }
+
+  get identity (): JwtPayload {
+    return this._identity as JwtPayload
   }
 
   /**

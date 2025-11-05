@@ -43,7 +43,7 @@ class McsAgent extends AgentApplication<TurnState> {
 
   private _message = async (context: TurnContext, state: TurnState): Promise<void> => {
     const cid = state.getValue<string>('conversation.conversationId')
-    const oboToken = await this.authorization.exchangeToken(context, ['https://api.powerplatform.com/.default'], 'mcs')
+    const oboToken = await this.authorization.exchangeToken(context, 'mcs', { scopes: ['https://api.powerplatform.com/.default'] })
     if (!oboToken.token) {
       await this._status(context, state)
       return
@@ -51,14 +51,14 @@ class McsAgent extends AgentApplication<TurnState> {
     const cpsClient = this.createClient(oboToken.token!)
 
     if (cid === undefined || cid === null || cid.length === 0) {
-      const newAct = await cpsClient.startConversationAsync()
-      if (newAct.type === ActivityTypes.Message) {
-        await context.sendActivity(newAct.text!)
-        state.setValue('conversation.conversationId', newAct.conversation!.id)
+      for await (const newAct of cpsClient.startConversationAsync()) {
+        if (newAct.type === ActivityTypes.Message) {
+          await context.sendActivity(newAct)
+          state.setValue('conversation.conversationId', newAct.conversation!.id)
+        }
       }
     } else {
-      const resp = await cpsClient!.askQuestionAsync(context.activity.text!, cid)
-      for await (const activity of resp) {
+      for await (const activity of cpsClient!.askQuestionAsync(context.activity.text!, cid)) {
         console.log('Received activity:', activity.type, activity.text)
         if (activity.type === 'message') {
           await context.sendActivity(activity)

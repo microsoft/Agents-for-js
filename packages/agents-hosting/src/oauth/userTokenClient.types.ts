@@ -20,19 +20,31 @@ export interface TokenResponse {
  */
 export interface TokenExchangeRequest {
   /**
-     * The URI for the token exchange request.
-     */
+   * The URI for the token exchange request.
+   */
   uri?: string;
-
   /**
-     * The token to be exchanged.
-     */
+   * The token to be exchanged.
+   */
   token?: string;
+}
 
+/**
+ * Represents the response for a token exchange invoke operation.
+ */
+export interface TokenExchangeInvokeResponse {
   /**
-     * The ID associated with the token exchange request.
-     */
-  id?: string;
+   * The connection name associated with the token exchange response.
+   */
+  connectionName: string
+  /**
+   * The ID associated with the token exchange response.
+   */
+  id?: string
+  /**
+   * (Optional) Details about any failure that occurred during the token exchange.
+   */
+  failureDetail?: string
 }
 
 /**

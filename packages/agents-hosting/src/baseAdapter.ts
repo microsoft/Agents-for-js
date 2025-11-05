@@ -3,9 +3,6 @@
  * Licensed under the MIT License.
  */
 
-import { AuthConfiguration } from './auth/authConfiguration'
-import { AuthProvider } from './auth/authProvider'
-import { MsalTokenProvider } from './auth/msalTokenProvider'
 import { Middleware, MiddlewareHandler, MiddlewareSet } from './middlewareSet'
 import { TurnContext } from './turnContext'
 import { debug } from '@microsoft/agents-activity/logger'
@@ -13,7 +10,7 @@ import { Activity, ConversationReference } from '@microsoft/agents-activity'
 import { ResourceResponse } from './connector-client/resourceResponse'
 import { AttachmentData } from './connector-client/attachmentData'
 import { AttachmentInfo } from './connector-client/attachmentInfo'
-import { UserTokenClient } from './oauth'
+import { JwtPayload } from 'jsonwebtoken'
 
 const logger = debug('agents:base-adapter')
 
@@ -55,34 +52,14 @@ export abstract class BaseAdapter {
   }
 
   /**
-   * Symbol key used to store agent identity information in the TurnContext.
-   */
-  readonly AgentIdentityKey = Symbol('AgentIdentity')
-
-  /**
    * Symbol key used to store connector client instances in the TurnContext.
    */
   readonly ConnectorClientKey = Symbol('ConnectorClient')
 
   /**
-   * Symbol key used to store OAuth scope information in the TurnContext.
+   * Symbol key used to store User Token Client instances in the TurnContext.
    */
-  readonly OAuthScopeKey = Symbol('OAuthScope')
-
-  /**
-   * The authentication provider used for token management.
-   */
-  authProvider: AuthProvider = new MsalTokenProvider()
-
-  /**
-   * The user token client used for managing user tokens.
-   */
-  userTokenClient: UserTokenClient | null = null
-
-  /**
-   * The authentication configuration for the adapter.
-   */
-  abstract authConfig: AuthConfiguration
+  readonly UserTokenClientKey = Symbol('UserTokenClient')
 
   /**
    * Sends a set of activities to the conversation.
@@ -115,32 +92,36 @@ export abstract class BaseAdapter {
    * @returns A promise representing the completion of the continue operation.
    */
   abstract continueConversation (
+    botAppIdOrIdentity: string | JwtPayload,
     reference: Partial<ConversationReference>,
     logic: (revocableContext: TurnContext) => Promise<void>
   ): Promise<void>
 
   /**
+   * @deprecated This function will not be supported in future versions.  Use TurnContext.turnState.get<ConnectorClient>(CloudAdapter.ConnectorClientKey).
    * Uploads an attachment.
    * @param conversationId - The conversation ID.
    * @param attachmentData - The attachment data.
    * @returns A promise representing the ResourceResponse for the uploaded attachment.
    */
-  abstract uploadAttachment (conversationId: string, attachmentData: AttachmentData): Promise<ResourceResponse>
+  abstract uploadAttachment (context: TurnContext, conversationId: string, attachmentData: AttachmentData): Promise<ResourceResponse>
 
   /**
+   * @deprecated This function will not be supported in future versions.  Use TurnContext.turnState.get<ConnectorClient>(CloudAdapter.ConnectorClientKey).
    * Gets attachment information.
    * @param attachmentId - The attachment ID.
    * @returns A promise representing the AttachmentInfo for the requested attachment.
    */
-  abstract getAttachmentInfo (attachmentId: string): Promise<AttachmentInfo>
+  abstract getAttachmentInfo (context: TurnContext, attachmentId: string): Promise<AttachmentInfo>
 
   /**
+   * @deprecated This function will not be supported in future versions.  Use TurnContext.turnState.get<ConnectorClient>(CloudAdapter.ConnectorClientKey).
    * Gets an attachment.
    * @param attachmentId - The attachment ID.
    * @param viewId - The view ID.
    * @returns A promise representing the NodeJS.ReadableStream for the requested attachment.
    */
-  abstract getAttachment (attachmentId: string, viewId: string): Promise<NodeJS.ReadableStream>
+  abstract getAttachment (context: TurnContext, attachmentId: string, viewId: string): Promise<NodeJS.ReadableStream>
 
   /**
    * Gets the error handler for the adapter.

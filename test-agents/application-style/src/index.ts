@@ -24,9 +24,6 @@ async function loadApp () {
     case 'stateCosmosApp':
       module = (await import('./stateCosmosApp.js')).app
       return module
-    case 'webChatSso':
-      module = (await import('./webChatSso.js')).app
-      return module
     default:
       throw new Error(`Agent with name ${moduleName} is not recognized.`)
   }

@@ -420,7 +420,7 @@ export class TeamsInfo {
 
   private static async getMemberInternal (context: TurnContext, conversationId: string, userId: string): Promise<TeamsChannelAccount> {
     const connectorClient : ConnectorClient = context.turnState.get<ConnectorClient>('connectorClient')
-    return await connectorClient.getConversationMember(conversationId, userId)
+    return await connectorClient.getConversationMember(userId, conversationId)
   }
 
   private static getRestClient (context: TurnContext) : TeamsConnectorClient {
