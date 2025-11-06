@@ -197,7 +197,7 @@ export class AzureBotAuthorization implements AuthorizationHandler {
         connection: settings.obo?.connection ?? process.env[`${this.id}_obo_connection`],
         scopes: settings.obo?.scopes ?? this.loadScopes(process.env[`${this.id}_obo_scopes`]),
       },
-      enableSso: process.env['enableSso'] !== 'false' // default value is true
+      enableSso: process.env[`${this.id}_enableSso`] !== 'false' // default value is true
     }
 
     if (!result.name) {
@@ -400,10 +400,7 @@ export class AzureBotAuthorization implements AuthorizationHandler {
     if (!tokenResponse) {
       logger.debug(this.prefix('Cannot find token. Sending sign-in card'), activity)
 
-      if (!this._options.enableSso) {
-        delete (signInResource as any).tokenExchangeResource
-      }
-      const oCard = CardFactory.oauthCard(this._options.name!, this._options.title!, this._options.text!, signInResource)
+      const oCard = CardFactory.oauthCard(this._options.name!, this._options.title!, this._options.text!, signInResource, this._options.enableSso)
       await context.sendActivity(MessageFactory.attachment(oCard))
       await storage.write({ activity, id: this.id, ...(active ?? {}), attemptsLeft: this.maxAttempts })
       return AuthorizationHandlerStatus.PENDING
