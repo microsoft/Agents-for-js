@@ -218,6 +218,7 @@ function loadConnectionsMapFromEnv () {
   const CONNECTIONS_PREFIX = 'CONNECTIONS__'
   const CONNECTIONS_MAP_PREFIX = 'CONNECTIONSMAP__'
   const authConfigFields = ['clientId', 'tenantId', 'clientSecret', 'certPemFile', 'certKeyFile', 'connectionName', 'FICClientId', 'authorityEndpoint', 'authority', 'scope', 'issuers', 'altBlueprintConnectionName', 'WIDAssertionFile']
+  const authMapFields = ['audience', 'serviceUrl', 'connection']
   for (const [key, value] of Object.entries(envVars)) {
     if (key.startsWith(CONNECTIONS_PREFIX)) {
       // Convert to dot notation
@@ -233,7 +234,14 @@ function loadConnectionsMapFromEnv () {
 
       objectPath.set(connectionsObj, path, value)
     } else if (key.startsWith(CONNECTIONS_MAP_PREFIX)) {
-      const path = key.substring(CONNECTIONS_MAP_PREFIX.length).replace(/__/g, '.')
+      let path = key.substring(CONNECTIONS_MAP_PREFIX.length).replace(/__/g, '.')
+
+      // address use of mixed case in object names
+      authMapFields.forEach((prop) => {
+        const propUpper = prop.toUpperCase()
+        path = path.replace(propUpper, prop)
+      })
+
       objectPath.set(connectionsMap, path, value)
     }
   }
