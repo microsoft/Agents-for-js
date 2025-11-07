@@ -19,18 +19,37 @@ const logger = debug('agents:jwt-middleware')
  * @returns A promise that resolves to the JWT payload.
  */
 const verifyToken = async (raw: string, config: AuthConfiguration): Promise<JwtPayload> => {
+  const payload = jwt.decode(raw) as JwtPayload
+  logger.debug('jwt.decode ', JSON.stringify(payload))
+
+  if (!payload) {
+    throw new Error('invalid token')
+  }
+  const audience = payload.aud
+
+  const matchingEntry = config.connections && config.connections.size > 0
+    ? [...config.connections.entries()].find(([_, configuration]) => configuration.clientId === audience)
+    : undefined
+
+  if (!matchingEntry) {
+    const err = new Error('Audience mismatch')
+    logger.error(err.message, audience)
+    throw err
+  }
+
+  const [key, authConfig] = matchingEntry
+  logger.debug(`Audience found at key: ${key}`)
+
+  const jwksUri = payload.iss === 'https://api.botframework.com'
+    ? 'https://login.botframework.com/v1/.well-known/keys'
+    : `${authConfig.authority}/${authConfig.tenantId}/discovery/v2.0/keys`
+
+  logger.debug(`fetching keys from ${jwksUri}`)
+  const jwksClient: JwksClient = jwksRsa({ jwksUri })
+
   const getKey: GetPublicKeyOrSecret = (header: JwtHeader, callback: SignCallback) => {
-    const payload = jwt.decode(raw) as JwtPayload
-    logger.debug('jwt.decode ', JSON.stringify(payload))
-    const jwksUri: string = payload.iss === 'https://api.botframework.com'
-      ? 'https://login.botframework.com/v1/.well-known/keys'
-      : `${config.authority}/${config.tenantId}/discovery/v2.0/keys`
-
-    logger.debug(`fetching keys from ${jwksUri}`)
-    const jwksClient: JwksClient = jwksRsa({ jwksUri })
-
     jwksClient.getSigningKey(header.kid, (err: Error | null, key: SigningKey | undefined): void => {
-      if (err != null) {
+      if (err) {
         logger.error('jwksClient.getSigningKey ', JSON.stringify(err))
         logger.error(JSON.stringify(err))
         callback(err, undefined)
@@ -41,24 +60,22 @@ const verifyToken = async (raw: string, config: AuthConfiguration): Promise<JwtP
     })
   }
 
-  return await new Promise((resolve, reject) => {
-    const verifyOptions: jwt.VerifyOptions = {
-      issuer: config.issuers as [string, ...string[]],
-      audience: [config.clientId!, 'https://api.botframework.com'],
-      ignoreExpiration: false,
-      algorithms: ['RS256'],
-      clockTolerance: 300
-    }
+  const verifyOptions: jwt.VerifyOptions = {
+    issuer: authConfig.issuers as [string, ...string[]],
+    audience: [authConfig.clientId!, 'https://api.botframework.com'],
+    ignoreExpiration: false,
+    algorithms: ['RS256'],
+    clockTolerance: 300
+  }
 
+  return await new Promise((resolve, reject) => {
     jwt.verify(raw, getKey, verifyOptions, (err, user) => {
-      if (err != null) {
+      if (err) {
         logger.error('jwt.verify ', JSON.stringify(err))
         reject(err)
         return
       }
-      const tokenClaims = user as JwtPayload
-
-      resolve(tokenClaims)
+      resolve(user as JwtPayload)
     })
   })
 }

@@ -3,8 +3,7 @@ import { AgentApplication, loadAuthConfigFromEnv, TurnContext, TurnState, MsalTo
 import { BlobsStorage } from '@microsoft/agents-hosting-storage-blob'
 
 const echo = new AgentApplication<TurnState>({
-  storage: new BlobsStorage('', undefined, undefined,
-    'https://asdktdata.blob.core.windows.net/nodejs-conversations',
+  storage: new BlobsStorage('testing', 'UseDevelopmentStorage=true;', undefined, undefined,
     new MsalTokenCredential(loadAuthConfigFromEnv('blob')))
 })
 echo.onConversationUpdate('membersAdded', async (context: TurnContext) => {

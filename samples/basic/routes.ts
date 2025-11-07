@@ -15,6 +15,7 @@ class EmptyAgent extends AgentApplication<TurnState> {
     this.onActivity('message', this.echo)
     this.onMessage('dupText', this.dupText1, undefined, RouteRank.Last) // Last evaluated route. Shouldn't be reached.
     this.onMessage('dupText', this.dupText2, undefined, RouteRank.First) // First evaluated route. Should be executed first.
+    this.onMessage('agentic', this.agentic, [], undefined, true)
   }
 
   foo = async (ctx: TurnContext) => {
@@ -41,6 +42,11 @@ class EmptyAgent extends AgentApplication<TurnState> {
 
   dupText2 = async (ctx: TurnContext) => {
     await ctx.sendActivity('First ranked dupText')
+  }
+
+  agentic = async (ctx: TurnContext) => {
+    // This handler shouldn't be reached unless an agentic request is sent.
+    await ctx.sendActivity('Hit the Agentic handler')
   }
 }
 

@@ -6,7 +6,7 @@
 import { Storage } from '../storage'
 import { AgentApplication } from './agentApplication'
 import { AgentApplicationOptions } from './agentApplicationOptions'
-import { AuthorizationHandlers } from './authorization'
+import { AuthorizationOptions } from './auth/types'
 import { TurnState } from './turnState'
 
 /**
@@ -59,7 +59,7 @@ export class AgentApplicationBuilder<TState extends TurnState = TurnState> {
    * @param authHandlers The user identity authentication options
    * @returns This builder instance for chaining
    */
-  public withAuthorization (authHandlers: AuthorizationHandlers): this {
+  public withAuthorization (authHandlers: AuthorizationOptions): this {
     this._options.authorization = authHandlers
     return this
   }

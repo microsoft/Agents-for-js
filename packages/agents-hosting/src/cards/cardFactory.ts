@@ -215,9 +215,10 @@ export class CardFactory {
    * @param title The title of the card.
    * @param text The optional text for the card.
    * @param signingResource The signing resource.
+   * @param enableSso The option to enable SSO when authenticating using AAD. Defaults to true.
    * @returns The OAuth card attachment.
    */
-  static oauthCard (connectionName: string, title: string, text: string, signingResource: SignInResource) : Attachment {
+  static oauthCard (connectionName: string, title: string, text: string, signingResource: SignInResource, enableSso: boolean = true) : Attachment {
     const card: Partial<OAuthCard> = {
       buttons: [{
         type: ActionTypes.Signin,
@@ -226,7 +227,7 @@ export class CardFactory {
         channelData: undefined
       }],
       connectionName,
-      tokenExchangeResource: signingResource.tokenExchangeResource,
+      tokenExchangeResource: enableSso ? signingResource.tokenExchangeResource : undefined,
       tokenPostResource: signingResource.tokenPostResource,
     }
     if (text) {

@@ -37,25 +37,25 @@
     "test-agents/*"
   ],
   "devDependencies": {
-    "@microsoft/api-extractor": "^7.52.11",
-    "@microsoft/m365agentsplayground": "^0.2.18",
-    "@microsoft/microsoft-graph-types": "^2.40.0",
+    "@microsoft/api-extractor": "^7.54.0",
+    "@microsoft/m365agentsplayground": "^0.2.20",
+    "@microsoft/microsoft-graph-types": "^2.43.1",
     "@types/debug": "^4.1.12",
-    "@types/express": "^5.0.3",
-    "@types/express-serve-static-core": "^5.0.7",
-    "@types/node": "^24.3.1",
+    "@types/express": "^5.0.5",
+    "@types/express-serve-static-core": "^5.1.0",
+    "@types/node": "^24.10.0",
     "@types/sinon": "^17.0.4",
     "@types/uuid": "^10.0.0",
-    "esbuild": "^0.25.9",
-    "eslint": "^9.35.0",
+    "esbuild": "^0.25.12",
+    "eslint": "^9.39.1",
     "global": "4.4.0",
     "neostandard": "^0.12.2",
-    "nerdbank-gitversioning": "^3.7.115",
+    "nerdbank-gitversioning": "^3.9.50",
     "npm-run-all": "^4.1.5",
     "sinon": "^21.0.0",
-    "tsx": "^4.20.5",
-    "typedoc": "^0.28.12",
-    "typescript": "^5.9.2"
+    "tsx": "^4.20.6",
+    "typedoc": "^0.28.14",
+    "typescript": "^5.9.3"
   },
   "engines": {
     "node": ">=20.0.0"

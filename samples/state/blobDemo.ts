@@ -3,13 +3,11 @@ import { AgentApplication, loadAuthConfigFromEnv, TurnContext, TurnState, MsalTo
 import { BlobsStorage, BlobsTranscriptStore } from '@microsoft/agents-hosting-storage-blob'
 
 const transcriptLogger = new BlobsTranscriptStore(
-  '', '', undefined,
-  'https://asdktdata.blob.core.windows.net/transcripts',
+  'UseDevelopmentStorage=true;', 'testing', undefined, undefined,
   new MsalTokenCredential(loadAuthConfigFromEnv('blob')))
 
 const storage = new BlobsStorage(
-  '', undefined, undefined,
-  'https://asdktdata.blob.core.windows.net/nodejs-conversations',
+  'testing', 'UseDevelopmentStorage=true;', undefined, undefined,
   new MsalTokenCredential(loadAuthConfigFromEnv('blob')))
 
 const adapter = new CloudAdapter(loadAuthConfigFromEnv())
