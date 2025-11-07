@@ -215,15 +215,22 @@ function loadConnectionsMapFromEnv () {
   const envVars = process.env
   const connectionsObj: Record<string, any> = {}
   const connectionsMap: ConnectionMapItem[] = []
-  const CONNECTIONS_PREFIX = 'connections__'
-  const CONNECTIONS_MAP_PREFIX = 'connectionsMap__'
-
+  const CONNECTIONS_PREFIX = 'CONNECTIONS__'
+  const CONNECTIONS_MAP_PREFIX = 'CONNECTIONSMAP__'
+  const authConfigFields = ['clientId', 'tenantId', 'clientSecret', 'certPemFile', 'certKeyFile', 'connectionName', 'FICClientId', 'authorityEndpoint', 'authority', 'scope', 'issuers', 'altBlueprintConnectionName', 'WIDAssertionFile']
   for (const [key, value] of Object.entries(envVars)) {
     if (key.startsWith(CONNECTIONS_PREFIX)) {
       // Convert to dot notation
       let path = key.substring(CONNECTIONS_PREFIX.length).replace(/__/g, '.')
       // Remove ".settings." from the path
-      path = path.replace('.settings.', '.')
+      path = path.replace('.SETTINGS.', '.')
+
+      // address use of mixed case in object names
+      authConfigFields.forEach((prop) => {
+        const propUpper = prop.toUpperCase()
+        path = path.replace(propUpper, prop)
+      })
+
       objectPath.set(connectionsObj, path, value)
     } else if (key.startsWith(CONNECTIONS_MAP_PREFIX)) {
       const path = key.substring(CONNECTIONS_MAP_PREFIX.length).replace(/__/g, '.')
