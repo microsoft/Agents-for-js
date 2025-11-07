@@ -37,7 +37,7 @@ export class FileTranscriptLogger implements TranscriptStore {
    * @param folder - Folder to place the transcript files (Default current directory).
    */
   constructor (folder?: string) {
-    this._folder ??= path.normalize(folder ?? process.cwd())
+    this._folder = path.normalize(folder ?? process.cwd())
   }
 
   /**
