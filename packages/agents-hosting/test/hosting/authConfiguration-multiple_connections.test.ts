@@ -55,6 +55,19 @@ describe('AuthConfiguration', () => {
       assert.strictEqual(config.authority, 'https://foo.microsoftonline.com')
     })
 
+    it('should abide by custom connections map', () => {
+      // specify a connection map that will change the default connection
+      process.env.CONNECTIONSMAP__0__CONNECTION = 'AGENTICCONNECTION'
+      process.env.CONNECTIONSMAP__0__SERVICEURL = '*'
+
+      // load default connection
+      const config: AuthConfiguration = loadAuthConfigFromEnv()
+      assert.strictEqual(config.tenantId, 'agentic-tenant-id')
+      assert.strictEqual(config.clientId, 'agentic-client-id')
+      assert.strictEqual(config.clientSecret, 'agentic-client-secret')
+      assert.strictEqual(config.authority, 'https://foo.microsoftonline.com')
+    })
+
     it('should load have all required fields', () => {
       const config: AuthConfiguration = loadAuthConfigFromEnv('AGENTICCONNECTION')
       assert.strictEqual(config.tenantId, 'agentic-tenant-id')
