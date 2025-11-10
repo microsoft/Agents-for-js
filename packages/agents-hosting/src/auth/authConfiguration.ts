@@ -131,6 +131,7 @@ export const loadAuthConfigFromEnv = (cnxName?: string): AuthConfiguration => {
       if (entry) {
         authConfig = entry
       } else {
+        console.dir(envConnections)
         throw new Error(`Connection "${cnxName}" not found in environment.`)
       }
     } else {
@@ -217,8 +218,8 @@ function loadConnectionsMapFromEnv () {
   const connectionsMap: ConnectionMapItem[] = []
   const CONNECTIONS_PREFIX = 'CONNECTIONS__'
   const CONNECTIONS_MAP_PREFIX = 'CONNECTIONSMAP__'
-  const authConfigFields = ['clientId', 'tenantId', 'clientSecret', 'certPemFile', 'certKeyFile', 'connectionName', 'FICClientId', 'authorityEndpoint', 'authority', 'scope', 'issuers', 'altBlueprintConnectionName', 'WIDAssertionFile']
-  const authMapFields = ['audience', 'serviceUrl', 'connection']
+  const authMapFields = ['audience', 'serviceUrl', 'connection'] // TODO: how can we generate this dynamically? This has to be updated manually if ConnectionMapItem changes
+  const authConfigFields = Object.keys(buildLegacyAuthConfig()) // get a list of auth config fields
   for (const [key, value] of Object.entries(envVars)) {
     if (key.startsWith(CONNECTIONS_PREFIX)) {
       // Convert to dot notation
@@ -228,8 +229,7 @@ function loadConnectionsMapFromEnv () {
 
       // address use of mixed case in object names
       authConfigFields.forEach((prop) => {
-        const propUpper = prop.toUpperCase()
-        path = path.replace(propUpper, prop)
+        path = path.replace(new RegExp(prop, 'i'), prop)
       })
 
       objectPath.set(connectionsObj, path, value)
@@ -238,8 +238,7 @@ function loadConnectionsMapFromEnv () {
 
       // address use of mixed case in object names
       authMapFields.forEach((prop) => {
-        const propUpper = prop.toUpperCase()
-        path = path.replace(propUpper, prop)
+        path = path.replace(new RegExp(prop, 'i'), prop)
       })
 
       objectPath.set(connectionsMap, path, value)
@@ -354,7 +353,7 @@ function buildLegacyAuthConfig (envPrefix: string = '', customConfig?: AuthConfi
     FICClientId: customConfig?.FICClientId ?? process.env[`${prefix}FICClientId`],
     authority,
     scope: customConfig?.scope ?? process.env[`${prefix}scope`],
-    issuers: customConfig?.issuers ?? getDefaultIssuers(tenantId as string, authority),
+    issuers: customConfig?.issuers ?? getDefaultIssuers(tenantId ?? '', authority),
     altBlueprintConnectionName: customConfig?.altBlueprintConnectionName ?? process.env[`${prefix}altBlueprintConnectionName`],
     WIDAssertionFile: customConfig?.WIDAssertionFile ?? process.env[`${prefix}WIDAssertionFile`]
   }
