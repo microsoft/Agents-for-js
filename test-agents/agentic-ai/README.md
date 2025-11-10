@@ -23,9 +23,9 @@ This is a base sample that responds in the Teams demo env for Agentic AI.
    1. Find the `connections` section,  it should appear similar to this:
 
       ```bash
-      connections__serviceConnection__settings__clientId={{clientId}} # this is the Client ID used for the connection.
-      connections__serviceConnection__settings__clientSecret={{clientSecret}} # this is the Client Secret used for the connection.
-      connections__serviceConnection__settings__tenantId={{tenantId}} # this is the tenant ID for the application.
+      CONNECTIONS__SERVICECONNECTION__SETTINGS__CLIENTID={{clientId}} # this is the Client ID used for the connection.
+      CONNECTIONS__SERVICECONNECTION__SETTINGS__CLIENTSECRET={{clientSecret}} # this is the Client Secret used for the connection.
+      CONNECTIONS__SERVICECONNECTION__SETTINGS__TENANTID={{tenantId}} # this is the tenant ID for the application.
       ```
 
 
