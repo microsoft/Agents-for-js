@@ -45,7 +45,7 @@ agent.onActivity('invoke', async (context: TurnContext, state: TurnState) => {
 })
 agent.onActivity('message', async (context: TurnContext, state: TurnState) => {
   let counter: number = state.getValue('conversation.counter') || 0
-  await context.sendActivity(`[${counter++}]You said: ${JSON.stringify(context.activity.value)}`)
+  await context.sendActivity(`[${counter++}]You said: ${JSON.stringify(context.activity.text)}`)
   state.setValue('conversation.counter', counter)
 })
 startServer(agent)

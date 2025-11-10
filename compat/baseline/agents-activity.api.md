@@ -854,13 +854,6 @@ export enum AttachmentLayoutTypes {
 }
 
 // @public
-export const CallerIdConstants: {
-    PublicAzureChannel: string;
-    USGovChannel: string;
-    AgentPrefix: string;
-};
-
-// @public
 export interface CardAction {
     channelData?: unknown;
     displayText?: string;
