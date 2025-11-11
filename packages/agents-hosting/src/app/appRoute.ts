@@ -52,6 +52,14 @@ export interface AppRoute<TState extends TurnState> {
   handler: RouteHandler<TState>;
 
   /**
+   * Indicates whether this route is an agentic-only route.
+   *
+   * @default false
+   *
+   */
+  isAgenticRoute?: boolean;
+
+  /**
    * Indicates whether this route is an invoke route.
    *
    * @default false

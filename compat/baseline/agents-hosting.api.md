@@ -196,7 +196,7 @@ export class AgentApplicationBuilder<TState extends TurnState = TurnState> {
     protected get options(): Partial<AgentApplicationOptions<TState>>;
     // (undocumented)
     protected _options: Partial<AgentApplicationOptions<TState>>;
-    withAuthorization(authHandlers: AuthorizationHandlers): this;
+    withAuthorization(authHandlers: AuthorizationOptions): this;
     withStorage(storage: Storage_2): this;
     withTurnStateFactory(turnStateFactory: () => TState): this;
 }
@@ -206,7 +206,7 @@ export interface AgentApplicationOptions<TState extends TurnState> {
     adapter?: CloudAdapter;
     adaptiveCardsOptions?: AdaptiveCardsOptions;
     agentAppId?: string;
-    authorization?: AuthorizationHandlers;
+    authorization?: AuthorizationOptions;
     fileDownloaders?: InputFileDownloader<TState>[];
     headerPropagation?: HeaderPropagationDefinition;
     longRunningMessages: boolean;
@@ -351,34 +351,6 @@ export interface AuthConfiguration {
     FICClientId?: string;
     issuers: string[];
     tenantId?: string;
-}
-
-// @public
-export interface AuthHandler {
-    // (undocumented)
-    cnxPrefix?: string;
-    flow?: OAuthFlow;
-    name?: string;
-    text?: string;
-    title?: string;
-}
-
-// @public
-export class Authorization {
-    constructor(storage: Storage_2, authHandlers: AuthorizationHandlers, userTokenClient: UserTokenClient);
-    authHandlers: AuthorizationHandlers;
-    beginOrContinueFlow(context: TurnContext, state: TurnState, authHandlerId: string, secRoute?: boolean): Promise<TokenResponse>;
-    exchangeToken(context: TurnContext, scopes: string[], authHandlerId: string): Promise<TokenResponse>;
-    getToken(context: TurnContext, authHandlerId: string): Promise<TokenResponse>;
-    onSignInFailure(handler: (context: TurnContext, state: TurnState, authHandlerId?: string, errorMessage?: string) => Promise<void>): void;
-    onSignInSuccess(handler: (context: TurnContext, state: TurnState, authHandlerId?: string) => Promise<void>): void;
-    _signInFailureHandler: ((context: TurnContext, state: TurnState, authHandlerId?: string, errorMessage?: string) => Promise<void>) | null;
-    _signInSuccessHandler: ((context: TurnContext, state: TurnState, authHandlerId?: string) => Promise<void>) | null;
-    signOut(context: TurnContext, state: TurnState, authHandlerId?: string): Promise<void>;
-}
-
-// @public
-export interface AuthorizationHandlers extends Record<string, AuthHandler> {
 }
 
 // @public
@@ -561,16 +533,6 @@ export class FileStorage implements Storage_2 {
 }
 
 // @public
-export interface FlowState {
-    absOauthConnectionName: string;
-    continuationActivity?: Activity | null;
-    // (undocumented)
-    eTag?: string;
-    flowExpires: number | undefined;
-    flowStarted: boolean | undefined;
-}
-
-// @public
 export const getProductInfo: () => string;
 
 // @public
@@ -750,23 +712,6 @@ export interface OAuthCard {
 }
 
 // @public
-export class OAuthFlow {
-    constructor(storage: Storage_2, absOauthConnectionName: string, tokenClient: UserTokenClient, cardTitle?: string, cardText?: string);
-    absOauthConnectionName: string;
-    beginFlow(context: TurnContext): Promise<TokenResponse | undefined>;
-    cardText: string;
-    cardTitle: string;
-    continueFlow(context: TurnContext): Promise<TokenResponse>;
-    getFlowState(context: TurnContext): Promise<FlowState>;
-    getUserToken(context: TurnContext): Promise<TokenResponse>;
-    setFlowState(context: TurnContext, flowState: FlowState): Promise<void>;
-    signOut(context: TurnContext): Promise<void>;
-    state: FlowState;
-    tokenExchangeId: string | null;
-    userTokenClient: UserTokenClient;
-}
-
-// @public
 export interface PagedResult<T> {
     continuationToken?: string;
     items: T[];
@@ -858,13 +803,6 @@ export interface SignInResource {
     signInLink: string;
     tokenExchangeResource: TokenExchangeResource;
     tokenPostResource: TokenPostResource;
-}
-
-// @public
-export interface SignInState {
-    completed?: boolean;
-    continuationActivity?: Activity;
-    handlerId?: string;
 }
 
 // @public
@@ -972,6 +910,7 @@ export interface TokenExchangeInvokeRequest {
 
 // @public
 export interface TokenExchangeRequest {
+    connectionName?: string;
     id?: string;
     token?: string;
     uri?: string;

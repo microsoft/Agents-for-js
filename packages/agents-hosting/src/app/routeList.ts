@@ -17,17 +17,36 @@ export class RouteList<TState extends TurnState> {
     handler: RouteHandler<TState>,
     isInvokeRoute: boolean = false,
     rank: number = RouteRank.Unspecified,
-    authHandlers: string[] = []
+    authHandlers: string[] = [],
+    isAgenticRoute: boolean = false
   ): this {
-    this._routes.push({ selector, handler, isInvokeRoute, rank, authHandlers })
+    this._routes.push({ selector, handler, isInvokeRoute, rank, authHandlers, isAgenticRoute })
 
-    // Invoke selectors are first, then order by rank ascending
+    // Ordered by:
+    //    Agentic + Invoke
+    //    Invoke
+    //    Agentic
+    //    Other
+    // Then by Rank
     this._routes.sort((a, b) => {
-      if (a.isInvokeRoute !== b.isInvokeRoute) {
-        return a.isInvokeRoute ? -1 : 1
+      const getPriority = (route: AppRoute<TState>) => {
+        if (route.isAgenticRoute && route.isInvokeRoute) return 0
+        if (route.isInvokeRoute) return 1
+        if (route.isAgenticRoute) return 2
+        return 3
       }
+
+      const priorityA = getPriority(a)
+      const priorityB = getPriority(b)
+
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB
+      }
+
+      // If priorities are equal, sort by rank
       return (a.rank ?? 0) - (b.rank ?? 0)
     })
+
     return this
   }
 

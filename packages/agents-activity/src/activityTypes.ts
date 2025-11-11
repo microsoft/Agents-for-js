@@ -98,11 +98,6 @@ export enum ActivityTypes {
    * A result of a command activity.
    */
   CommandResult = 'commandResult',
-
-  /**
-   * A delay activity.
-   */
-  Delay = 'delay'
 }
 
 /**
@@ -127,5 +122,4 @@ export const activityTypesZodSchema = z.enum([
   'handoff',
   'command',
   'commandResult',
-  'delay'
 ])

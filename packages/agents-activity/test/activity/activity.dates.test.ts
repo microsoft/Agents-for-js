@@ -26,7 +26,7 @@ describe('Activity with timestamp', () => {
     const a: Activity = Activity.fromJson(json)
     assert.strictEqual(a.type, 'message')
     assert.strictEqual(a.type, ActivityTypes.Message)
-    const expectedDate = '2024-11-11T06:06:49.004Z'
+    const expectedDate = new Date('2024-11-11T06:06:49.004Z')
     assert.deepEqual(a.timestamp, expectedDate)
   })
 

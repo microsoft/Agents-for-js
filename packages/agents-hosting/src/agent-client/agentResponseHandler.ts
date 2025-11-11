@@ -58,7 +58,10 @@ const handleResponse = (adapter: CloudAdapter, handler: ActivityHandler, convers
 
   logger.debug('received response: ', activity)
 
-  const myTurnContext = new TurnContext(adapter, activity)
+  const connection = adapter.connectionManager.getDefaultConnection()
+  const appId = connection?.connectionSettings?.clientId ?? ''
+
+  const myTurnContext = new TurnContext(adapter, activity, CloudAdapter.createIdentity(appId))
   const conversationDataAccessor = conversationState.createProperty<ConversationReferenceState>(req.params!.conversationId)
   const conversationRefState = await conversationDataAccessor.get(myTurnContext, undefined, { channelId: activity.channelId!, conversationId: req.params!.conversationId })
 
@@ -82,7 +85,7 @@ const handleResponse = (adapter: CloudAdapter, handler: ActivityHandler, convers
     res.status(200).send(response)
   }
 
-  await adapter.continueConversation(conversationRefState.conversationReference, callback, true)
+  await adapter.continueConversation(myTurnContext.identity, conversationRefState.conversationReference, callback)
 }
 
 const applyActivityToTurnContext = (turnContext : TurnContext, activity : Activity) => {
