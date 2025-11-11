@@ -351,7 +351,7 @@ export class CloudAdapter extends BaseAdapter {
       await this.runMiddleware(context, logic)
       const invokeResponse = this.processTurnResults(context)
       logger.debug('Activity Response (invoke/expect replies): ', invokeResponse)
-      return end(invokeResponse?.status ?? StatusCodes.OK, JSON.stringify(invokeResponse?.body), true)
+      return end(invokeResponse?.status ?? StatusCodes.OK, invokeResponse?.body, true)
     }
 
     await this.runMiddleware(context, logic)
