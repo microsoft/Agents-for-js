@@ -52,7 +52,7 @@ We are using `eslint` configured with [neostandard](https://github.com/neostanda
 ## Contributing
 
 #### Note for Microsoft internal developers: 
-- Internal Micrsoft Developers should join the Core identity group [Agents SDK Contrib](https://coreidentity.microsoft.com/manage/Entitlement/entitlement/agentssdkint-upyj)
+- Internal Microsoft Developers should join the Core identity group [Agents SDK Contrib](https://coreidentity.microsoft.com/manage/Entitlement/entitlement/agentssdkint-upyj)
 
 #### Non-Microsoft internal developers:
 
