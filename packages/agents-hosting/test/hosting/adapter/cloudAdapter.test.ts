@@ -141,7 +141,7 @@ describe('CloudAdapter', function () {
 
       sinon.assert.calledOnceWithExactly((res as any).status, 200)
       sinon.assert.calledOnceWithExactly((res as any).setHeader, 'content-type', 'application/json')
-      sinon.assert.calledOnceWithExactly((res as any).send, JSON.stringify({ activities: [activity] }))
+      sinon.assert.calledOnceWithExactly((res as any).send, { activities: [activity] })
       sinon.assert.notCalled(createConnectorClientWithIdentitySpy) // No connector client created for ExpectReplies without serviceUrl
 
       stubfromObject.restore()
