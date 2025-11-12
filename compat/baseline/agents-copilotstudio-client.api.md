@@ -33,13 +33,16 @@ export class CopilotStudioClient {
 
 // @public
 export interface CopilotStudioConnectionSettings {
+    // @deprecated
     agentIdentifier?: string;
+    // @deprecated
     authority?: string;
     cloud?: PowerPlatformCloud;
     copilotAgentType?: AgentType;
     customPowerPlatformCloud?: string;
     directConnectUrl?: string;
     environmentId?: string;
+    schemaName?: string;
     useExperimentalEndpoint?: boolean;
 }
 
