@@ -5,6 +5,7 @@ import { ConfidentialClientApplication, ManagedIdentityApplication } from '@azur
 import { MsalTokenProvider, AuthConfiguration } from '../../src'
 import fs from 'fs'
 import crypto from 'crypto'
+import axios from 'axios'
 
 describe('MsalTokenProvider', () => {
   let msalTokenProvider: MsalTokenProvider
@@ -92,8 +93,146 @@ describe('MsalTokenProvider', () => {
     authConfig.clientSecret = undefined
     authConfig.certPemFile = undefined
     authConfig.certKeyFile = '33'
-    await assert.rejects(msalTokenProvider.getAccessToken(authConfig, 'scope'), '[Error: Invalid authConfig.]'
+    await assert.rejects(msalTokenProvider.getAccessToken(authConfig, 'scope'), '[Error: Invalid authConfig.]')
+  })
 
-    )
+  it('should replace `common` with tenant id', async () => {
+    const tokenProvider = new MsalTokenProvider({
+      clientId: 'client-id',
+      authority: 'https://foo.bar.com/common',
+      tenantId: 'original-tenant-id',
+    })
+
+    // disable the cache
+
+    // Spy on axios.post
+    const axiosPostStub = sinon.stub(axios, 'post').resolves({
+      data: {
+        access_token: 'test-access-token',
+        expires_in: 3600
+      }
+    })
+
+    try {
+      await tokenProvider.getAgenticApplicationToken('agentic-tenant-id', 'agent-app-instance-id')
+
+      // Assert that axios.post was called
+      assert.strictEqual(axiosPostStub.called, true)
+
+      // Check the URL it was called with - should have the tenant-id, not 'common'
+      const callArgs = axiosPostStub.getCall(0).args
+      const url = callArgs[0]
+      assert.ok(url === 'https://foo.bar.com/agentic-tenant-id/oauth2/v2.0/token', `Expected URL to contain 'tenant-id', got: ${url}`)
+      assert.ok(!url.includes('common'), `Expected URL to NOT contain 'common', got: ${url}`)
+    } finally {
+      // stop caching
+      // @ts-ignore
+      tokenProvider._agenticTokenCache.destroy()
+      axiosPostStub.restore()
+    }
+  })
+
+  it('should use login.microsoftonline.com/tenantId if common is not specified in authority', async () => {
+    const tokenProvider = new MsalTokenProvider({
+      clientId: 'client-id',
+      tenantId: 'original-tenant-id',
+    })
+
+    // disable the cache
+
+    // Spy on axios.post
+    const axiosPostStub = sinon.stub(axios, 'post').resolves({
+      data: {
+        access_token: 'test-access-token',
+        expires_in: 3600
+      }
+    })
+
+    try {
+      await tokenProvider.getAgenticApplicationToken('agentic-tenant-id', 'agent-app-instance-id')
+
+      // Assert that axios.post was called
+      assert.strictEqual(axiosPostStub.called, true)
+
+      // Check the URL it was called with - should have the tenant-id, not 'common'
+      const callArgs = axiosPostStub.getCall(0).args
+      const url = callArgs[0]
+      assert.ok(url === 'https://login.microsoftonline.com/agentic-tenant-id/oauth2/v2.0/token', `Expected URL to contain 'tenant-id', got: ${url}`)
+      assert.ok(!url.includes('common'), `Expected URL to NOT contain 'common', got: ${url}`)
+    } finally {
+      // stop caching
+      // @ts-ignore
+      tokenProvider._agenticTokenCache.destroy()
+      axiosPostStub.restore()
+    }
+  })
+
+  it('should use authority from config if no tenant id is passed in', async () => {
+    const tokenProvider = new MsalTokenProvider({
+      clientId: 'client-id',
+      authority: 'http://foo.bar',
+      tenantId: 'original-tenant-id',
+    })
+
+    // disable the cache
+
+    // Spy on axios.post
+    const axiosPostStub = sinon.stub(axios, 'post').resolves({
+      data: {
+        access_token: 'test-access-token',
+        expires_in: 3600
+      }
+    })
+
+    try {
+      await tokenProvider.getAgenticApplicationToken('', 'agent-app-instance-id')
+
+      // Assert that axios.post was called
+      assert.strictEqual(axiosPostStub.called, true)
+
+      // Check the URL it was called with - should have the tenant-id, not 'common'
+      const callArgs = axiosPostStub.getCall(0).args
+      const url = callArgs[0]
+      assert.ok(url === 'http://foo.bar/oauth2/v2.0/token', `Expected URL to contain 'foo.bar', got: ${url}`)
+    } finally {
+      // stop caching
+      // @ts-ignore
+      tokenProvider._agenticTokenCache.destroy()
+      axiosPostStub.restore()
+    }
+  })
+
+  it('should use tenant id from from config if no authority url and no agentic tenant id is passed in', async () => {
+    const tokenProvider = new MsalTokenProvider({
+      clientId: 'client-id',
+      tenantId: 'original-tenant-id',
+    })
+
+    // disable the cache
+
+    // Spy on axios.post
+    const axiosPostStub = sinon.stub(axios, 'post').resolves({
+      data: {
+        access_token: 'test-access-token',
+        expires_in: 3600
+      }
+    })
+
+    try {
+      await tokenProvider.getAgenticApplicationToken('', 'agent-app-instance-id')
+
+      // Assert that axios.post was called
+      assert.strictEqual(axiosPostStub.called, true)
+
+      // Check the URL it was called with - should have the tenant-id, not 'common'
+      const callArgs = axiosPostStub.getCall(0).args
+      const url = callArgs[0]
+      assert.ok(url === 'https://login.microsoftonline.com/original-tenant-id/oauth2/v2.0/token', `Expected URL to contain 'https://login.microsoftonline.com/original-tenant-id/oauth2/v2.0/token', got: ${url}`)
+    } finally {
+      // stop caching
+      // @ts-ignore
+      tokenProvider._agenticTokenCache.destroy()
+      axiosPostStub.restore()
+    }
   })
 })
