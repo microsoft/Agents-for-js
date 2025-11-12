@@ -692,7 +692,18 @@ export class Activity {
    * @returns True if agentiic
    */
   public isAgenticRequest (): boolean {
-    return this.recipient?.role === RoleTypes.AgenticUser || this.recipient?.role === RoleTypes.AgenticIdentity
+    if (!this.recipient || !this.recipient.role) {
+      return false
+    }
+    return this.recipient.role.toLowerCase() === RoleTypes.AgenticUser.toLowerCase() || this.recipient.role.toLowerCase() === RoleTypes.AgenticIdentity.toLowerCase()
+  }
+
+  /**
+   * Retrieves the tenant ID associated with the agentic recipient of the activity, if available; otherwise, returns the tenant ID from the conversation.
+   * @returns The tenant ID of the agentic recipient if present; otherwise, the tenant ID from the conversation. Returns undefined if neither is available.
+   */
+  public getAgenticTenantId (): string | undefined {
+    return this.recipient?.tenantId ?? this.conversation?.tenantId
   }
 
   /**

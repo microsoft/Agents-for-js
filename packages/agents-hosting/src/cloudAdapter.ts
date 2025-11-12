@@ -127,7 +127,7 @@ export class CloudAdapter extends BaseAdapter {
 
       if (activity.recipient?.role === RoleTypes.AgenticIdentity && activity.getAgenticInstanceId()) {
         // get agentic instance token
-        const token = await tokenProvider.getAgenticInstanceToken(activity.getAgenticInstanceId() ?? '')
+        const token = await tokenProvider.getAgenticInstanceToken(activity.getAgenticTenantId() ?? '', activity.getAgenticInstanceId() ?? '')
         connectorClient = ConnectorClient.createClientWithToken(
           activity.serviceUrl!,
           token,
@@ -135,7 +135,7 @@ export class CloudAdapter extends BaseAdapter {
         )
       } else if (activity.recipient?.role === RoleTypes.AgenticUser && activity.getAgenticInstanceId() && activity.getAgenticUser()) {
         const scope = tokenProvider.connectionSettings?.scope ?? ApxProductionScope
-        const token = await tokenProvider.getAgenticUserToken(activity.getAgenticInstanceId() ?? '', activity.getAgenticUser() ?? '', [scope])
+        const token = await tokenProvider.getAgenticUserToken(activity.getAgenticTenantId() ?? '', activity.getAgenticInstanceId() ?? '', activity.getAgenticUser() ?? '', [scope])
 
         connectorClient = ConnectorClient.createClientWithToken(
           activity.serviceUrl!,
