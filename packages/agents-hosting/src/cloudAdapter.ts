@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { INVOKE_RESPONSE_KEY } from './activityHandler'
+import { AgentHandler, INVOKE_RESPONSE_KEY } from './activityHandler'
 import { BaseAdapter } from './baseAdapter'
 import { TurnContext } from './turnContext'
 import { Response } from 'express'
