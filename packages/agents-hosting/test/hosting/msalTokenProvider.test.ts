@@ -103,8 +103,6 @@ describe('MsalTokenProvider', () => {
       tenantId: 'original-tenant-id',
     })
 
-    // disable the cache
-
     // Spy on axios.post
     const axiosPostStub = sinon.stub(axios, 'post').resolves({
       data: {
@@ -137,8 +135,6 @@ describe('MsalTokenProvider', () => {
       clientId: 'client-id',
       tenantId: 'original-tenant-id',
     })
-
-    // disable the cache
 
     // Spy on axios.post
     const axiosPostStub = sinon.stub(axios, 'post').resolves({
@@ -174,8 +170,6 @@ describe('MsalTokenProvider', () => {
       tenantId: 'original-tenant-id',
     })
 
-    // disable the cache
-
     // Spy on axios.post
     const axiosPostStub = sinon.stub(axios, 'post').resolves({
       data: {
@@ -207,8 +201,6 @@ describe('MsalTokenProvider', () => {
       clientId: 'client-id',
       tenantId: 'original-tenant-id',
     })
-
-    // disable the cache
 
     // Spy on axios.post
     const axiosPostStub = sinon.stub(axios, 'post').resolves({
