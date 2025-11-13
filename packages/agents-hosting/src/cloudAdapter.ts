@@ -133,7 +133,7 @@ export class CloudAdapter extends BaseAdapter {
           token,
           headers
         )
-      } else if (activity.recipient?.role.toLowerCase() === RoleTypes.AgenticUser.toLowerCase() && activity.getAgenticInstanceId() && activity.getAgenticUser()) {
+      } else if (activity.recipient?.role?.toLowerCase() === RoleTypes.AgenticUser.toLowerCase() && activity.getAgenticInstanceId() && activity.getAgenticUser()) {
         const scope = tokenProvider.connectionSettings?.scope ?? ApxProductionScope
         const token = await tokenProvider.getAgenticUserToken(activity.getAgenticTenantId() ?? '', activity.getAgenticInstanceId() ?? '', activity.getAgenticUser() ?? '', [scope])
 
