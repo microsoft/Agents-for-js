@@ -162,10 +162,16 @@ export class MsalTokenProvider implements AuthProvider {
    * @returns
    */
   private resolveAuthority (tenantId?: string) : string {
+    // if for some reason the agentic tenant ID is not in the message, fall back to the original configured auth settings
     if (!tenantId) {
-      return this.connectionSettings?.authority ?? `https://login.microsoftonline.com/${this.connectionSettings?.tenantId || 'botframework.com'}`
+      return this.connectionSettings?.authority ? `${this.connectionSettings.authority}/${this.connectionSettings?.tenantId}` : `https://login.microsoftonline.com/${this.connectionSettings?.tenantId || 'botframework.com'}`
     }
-    return this.connectionSettings?.authority ? this.connectionSettings.authority.replace(/\/common(\/|$)/, `/${tenantId}$1`) : `https://login.microsoftonline.com/${tenantId}`
+
+    if (this.connectionSettings?.tenantId === 'common') {
+      return this.connectionSettings?.authority ? `${this.connectionSettings.authority}/${tenantId}` : `https://login.microsoftonline.com/${tenantId}`
+    } else {
+      return this.connectionSettings?.authority ? `${this.connectionSettings.authority}/${this.connectionSettings?.tenantId}` : `https://login.microsoftonline.com/${this.connectionSettings?.tenantId || 'botframework.com'}`
+    }
   }
 
   /**

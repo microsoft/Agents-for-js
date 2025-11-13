@@ -156,7 +156,6 @@ export class CloudAdapter extends BaseAdapter {
         headers
       )
     }
-
     return connectorClient
   }
 
