@@ -125,7 +125,7 @@ export class CloudAdapter extends BaseAdapter {
     if (activity.isAgenticRequest()) {
       logger.debug('Activity is from an agentic source, using special scope', activity.recipient)
 
-      if (activity.recipient?.role === RoleTypes.AgenticIdentity && activity.getAgenticInstanceId()) {
+      if (activity.recipient?.role?.toLowerCase() === RoleTypes.AgenticIdentity.toLowerCase() && activity.getAgenticInstanceId()) {
         // get agentic instance token
         const token = await tokenProvider.getAgenticInstanceToken(activity.getAgenticTenantId() ?? '', activity.getAgenticInstanceId() ?? '')
         connectorClient = ConnectorClient.createClientWithToken(
@@ -133,7 +133,7 @@ export class CloudAdapter extends BaseAdapter {
           token,
           headers
         )
-      } else if (activity.recipient?.role === RoleTypes.AgenticUser && activity.getAgenticInstanceId() && activity.getAgenticUser()) {
+      } else if (activity.recipient?.role.toLowerCase() === RoleTypes.AgenticUser.toLowerCase() && activity.getAgenticInstanceId() && activity.getAgenticUser()) {
         const scope = tokenProvider.connectionSettings?.scope ?? ApxProductionScope
         const token = await tokenProvider.getAgenticUserToken(activity.getAgenticTenantId() ?? '', activity.getAgenticInstanceId() ?? '', activity.getAgenticUser() ?? '', [scope])
 
