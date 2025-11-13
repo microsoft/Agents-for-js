@@ -158,6 +158,7 @@ export class AgentApplication<TState extends TurnState> {
     constructor(options?: Partial<AgentApplicationOptions<TState>>);
     get adapter(): BaseAdapter;
     get adaptiveCards(): AdaptiveCardsActions<TState>;
+    get proactive(): ProactiveActions<TState>;
     addRoute(selector: RouteSelector, handler: RouteHandler<TState>, isInvokeRoute?: boolean, rank?: number, authHandlers?: string[]): this;
     // (undocumented)
     protected readonly _afterTurn: ApplicationEventHandler<TState>[];
@@ -212,12 +213,54 @@ export interface AgentApplicationOptions<TState extends TurnState> {
     headerPropagation?: HeaderPropagationDefinition;
     longRunningMessages: boolean;
     normalizeMentions?: boolean;
+    proactiveOptions?: ProactiveOptions;
     removeRecipientMention?: boolean;
     startTypingTimer: boolean;
     storage?: Storage_2;
     transcriptLogger?: TranscriptLogger;
     turnStateFactory: () => TState;
 }
+
+// @public
+export class ProactiveActions<TState> {
+    constructor(app: AgentApplication<TState>, options?: ProactiveOptions);
+    deleteReference(conversationId: string, channelId: string): Promise<void>;
+    getReference(conversationId: string, channelId: string): Promise<ProactiveReferenceRecord | undefined>;
+    saveReference(conversationId: string, channelId: string, identity: JwtPayload, reference: ConversationReference, ttlOverrideSeconds?: number): Promise<void>;
+    sendActivities(conversationId: string, channelId: string, activities: (Activity | Partial<Activity>)[]): Promise<ProactiveSendResult>;
+    sendToReference(identity: JwtPayload, reference: ConversationReference, activities: (Activity | Partial<Activity>)[]): Promise<ProactiveSendResult>;
+}
+
+// @public
+export interface ProactiveHttpOptions {
+    prefix?: string;
+}
+
+// @public
+export interface ProactiveOptions {
+    autoPersistReferences?: boolean;
+    keyFactory?: (channelId: string, conversationId: string) => string | Promise<string>;
+    referenceTtlSeconds?: number;
+    storage?: Storage_2;
+}
+
+// @public
+export interface ProactiveReferenceRecord extends StoreItem {
+    channelId: string;
+    conversationId: string;
+    expiresUtc?: string;
+    identity: JwtPayload;
+    reference: ConversationReference;
+    updatedUtc: string;
+}
+
+// @public
+export interface ProactiveSendResult {
+    activityIds: string[];
+}
+
+// @public
+export function registerProactiveRoutes<TState>(app: Application, agent: AgentApplication<TState>, options?: ProactiveHttpOptions): void;
 
 // @public
 export const AgentCallbackHandlerKey = "agentCallbackHandler";
