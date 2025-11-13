@@ -6,7 +6,6 @@ import { MsalTokenProvider, ConnectorClient, AuthConfiguration, CloudAdapter } f
 import fs from 'fs'
 import crypto from 'crypto'
 import axios from 'axios'
-import * as Express from 'express'
 import { MemoryCache } from '../../src/auth/MemoryCache'
 
 describe('MsalTokenProvider', () => {
