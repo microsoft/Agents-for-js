@@ -197,7 +197,7 @@ describe('MsalTokenProvider', () => {
     }
   })
 
-  it('should use tenant id from from config if no authority url and no agentic tenant id is passed in', async () => {
+  it('should use tenant id from config if no authority url and no agentic tenant id is passed in', async () => {
     const tokenProvider = new MsalTokenProvider({
       clientId: 'client-id',
       tenantId: 'original-tenant-id',
@@ -347,7 +347,7 @@ describe('MsalTokenProvider', () => {
     ConfidentialClientApplicationStub.restore()
   })
 
-  it('should call the commmon/multi-tenant authority based on incoming message', async () => {
+  it('should call the common/multi-tenant authority based on incoming message', async () => {
     const adapter = new CloudAdapter({
       clientId: 'client-id',
       tenantId: 'common',

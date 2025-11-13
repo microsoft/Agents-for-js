@@ -689,7 +689,7 @@ export class Activity {
 
   /**
    * Does this activity represent an agentic request?
-   * @returns True if agentiic
+   * @returns True if agentic
    */
   public isAgenticRequest (): boolean {
     if (!this.recipient || !this.recipient.role) {
