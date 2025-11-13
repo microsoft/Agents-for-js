@@ -129,17 +129,17 @@ export class MsalTokenProvider implements AuthProvider {
     return token?.accessToken as string
   }
 
-  public async getAgenticInstanceToken (agentAppInstanceId: string): Promise<string> {
+  public async getAgenticInstanceToken (tenantId: string, agentAppInstanceId: string): Promise<string> {
     logger.debug('Getting agentic instance token')
     if (!this.connectionSettings) {
       throw new Error('Connection settings must be provided when calling getAgenticInstanceToken')
     }
-    const appToken = await this.getAgenticApplicationToken(agentAppInstanceId)
+    const appToken = await this.getAgenticApplicationToken(tenantId, agentAppInstanceId)
     const cca = new ConfidentialClientApplication({
       auth: {
         clientId: agentAppInstanceId,
         clientAssertion: appToken,
-        authority: `${this.connectionSettings.authority}/${this.connectionSettings.tenantId || 'botframework.com'}`,
+        authority: this.resolveAuthority(tenantId),
       },
       system: this.sysOptions
     })
@@ -157,16 +157,35 @@ export class MsalTokenProvider implements AuthProvider {
   }
 
   /**
+   * This method can optionally accept a tenant ID that overrides the tenant ID in the connection settings, if the connection settings authority contains "common".
+   * @param tenantId
+   * @returns
+   */
+  private resolveAuthority (tenantId?: string) : string {
+    // if for some reason the agentic tenant ID is not in the message, fall back to the original configured auth settings
+    if (!tenantId) {
+      return this.connectionSettings?.authority ? `${this.connectionSettings.authority}/${this.connectionSettings?.tenantId}` : `https://login.microsoftonline.com/${this.connectionSettings?.tenantId || 'botframework.com'}`
+    }
+
+    if (this.connectionSettings?.tenantId === 'common') {
+      return this.connectionSettings?.authority ? `${this.connectionSettings.authority}/${tenantId}` : `https://login.microsoftonline.com/${tenantId}`
+    } else {
+      return this.connectionSettings?.authority ? `${this.connectionSettings.authority}/${this.connectionSettings?.tenantId}` : `https://login.microsoftonline.com/${this.connectionSettings?.tenantId || 'botframework.com'}`
+    }
+  }
+
+  /**
    * Does a direct HTTP call to acquire a token for agentic scenarios - do not use this directly!
    * This method will be removed once MSAL is updated with the necessary features.
    * (This is required in order to pass additional parameters into the auth call)
+   * @param tenantId
    * @param clientId
    * @param clientAssertion
    * @param scopes
    * @param tokenBodyParameters
    * @returns
    */
-  private async acquireTokenByForAgenticScenarios (clientId: string, clientAssertion: string | undefined, scopes: string[], tokenBodyParameters: { [key: string]: any }): Promise<string | null> {
+  private async acquireTokenByForAgenticScenarios (tenantId: string, clientId: string, clientAssertion: string | undefined, scopes: string[], tokenBodyParameters: { [key: string]: any }): Promise<string | null> {
     if (!this.connectionSettings) {
       throw new Error('Connection settings must be provided when calling getAgenticInstanceToken')
     }
@@ -177,7 +196,7 @@ export class MsalTokenProvider implements AuthProvider {
       return this._agenticTokenCache.get(cacheKey) as string
     }
 
-    const url = `${this.connectionSettings.authority}/${this.connectionSettings.tenantId || 'botframework.com'}/oauth2/v2.0/token`
+    const url = `${this.resolveAuthority(tenantId)}/oauth2/v2.0/token`
 
     const data: { [key: string]: any } = {
       client_id: clientId,
@@ -210,12 +229,12 @@ export class MsalTokenProvider implements AuthProvider {
     return token.data.access_token
   }
 
-  public async getAgenticUserToken (agentAppInstanceId: string, agenticUserId: string, scopes: string[]): Promise<string> {
+  public async getAgenticUserToken (tenantId: string, agentAppInstanceId: string, agenticUserId: string, scopes: string[]): Promise<string> {
     logger.debug('Getting agentic user token')
-    const agentToken = await this.getAgenticApplicationToken(agentAppInstanceId)
-    const instanceToken = await this.getAgenticInstanceToken(agentAppInstanceId)
+    const agentToken = await this.getAgenticApplicationToken(tenantId, agentAppInstanceId)
+    const instanceToken = await this.getAgenticInstanceToken(tenantId, agentAppInstanceId)
 
-    const token = await this.acquireTokenByForAgenticScenarios(agentAppInstanceId, agentToken, scopes, {
+    const token = await this.acquireTokenByForAgenticScenarios(tenantId, agentToken, instanceToken, scopes, {
       user_id: agenticUserId,
       user_federated_identity_credential: instanceToken,
       grant_type: 'user_fic',
@@ -228,12 +247,12 @@ export class MsalTokenProvider implements AuthProvider {
     return token
   }
 
-  public async getAgenticApplicationToken (agentAppInstanceId: string): Promise<string> {
+  public async getAgenticApplicationToken (tenantId: string, agentAppInstanceId: string): Promise<string> {
     if (!this.connectionSettings?.clientId) {
       throw new Error('Connection settings must be provided when calling getAgenticApplicationToken')
     }
     logger.debug('Getting agentic application token')
-    const token = await this.acquireTokenByForAgenticScenarios(this.connectionSettings.clientId, undefined, ['api://AzureAdTokenExchange/.default'], {
+    const token = await this.acquireTokenByForAgenticScenarios(tenantId, this.connectionSettings.clientId, undefined, ['api://AzureAdTokenExchange/.default'], {
       grant_type: 'client_credentials',
       fmi_path: agentAppInstanceId,
     })
