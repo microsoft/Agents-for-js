@@ -6,7 +6,7 @@ import { CosmosDbKeyEscape } from './cosmosDbKeyEscape'
 import { DocumentStoreItem } from './documentStoreItem'
 import { CosmosDbPartitionedStorageOptions } from './cosmosDbPartitionedStorageOptions'
 import { Storage, StoreItems } from '@microsoft/agents-hosting'
-import { ErrorHelper, ExceptionHelper, AgentErrorDefinition } from './errorHelper'
+import { ErrorHelper, ExceptionHelper } from './errorHelper'
 
 /**
  * A utility class to ensure that a specific asynchronous task is executed only once for a given key.
@@ -144,18 +144,19 @@ export class CosmosDbPartitionedStorage implements Storage {
           }
         } catch (err: any) {
           if (err.code === 404) {
+            // Not Found is not an error during read operations, just skip
+          } else if (err.code === 400) {
             throw ExceptionHelper.generateException(
               Error,
-              ErrorHelper.ContainerReadNotFound,
+              ErrorHelper.ContainerReadBadRequest,
               err
             )
-          } else if (err.code === 400) {
-            this.throwInformativeError(
-              ErrorHelper.ContainerReadBadRequest.description,
-              err, ErrorHelper.ContainerReadBadRequest.code
-            )
           } else {
-            this.throwInformativeError(ErrorHelper.ContainerReadError.description, err, ErrorHelper.ContainerReadError.code)
+            throw ExceptionHelper.generateException(
+              Error,
+              ErrorHelper.ContainerReadError,
+              err
+            )
           }
         }
       })
@@ -201,7 +202,11 @@ export class CosmosDbPartitionedStorage implements Storage {
           await this.container.items.upsert(document, accessCondition)
         } catch (err: any) {
           this.checkForNestingError(change, err)
-          this.throwInformativeError(ErrorHelper.DocumentUpsertError.description, err, ErrorHelper.DocumentUpsertError.code)
+          throw ExceptionHelper.generateException(
+            Error,
+            ErrorHelper.DocumentUpsertError,
+            err
+          )
         }
       })
     )
@@ -225,9 +230,13 @@ export class CosmosDbPartitionedStorage implements Storage {
           await this.container.item(escapedKey, this.getPartitionKey(escapedKey)).delete()
         } catch (err: any) {
           if (err.code === 404) {
-            this.throwInformativeError(ErrorHelper.DocumentDeleteNotFound.description, err, ErrorHelper.DocumentDeleteNotFound.code)
+            // Not Found is not an error during delete operations, just skip
           } else {
-            this.throwInformativeError(ErrorHelper.DocumentDeleteError.description, err, ErrorHelper.DocumentDeleteError.code)
+            throw ExceptionHelper.generateException(
+              Error,
+              ErrorHelper.DocumentDeleteError,
+              err
+            )
           }
         }
       })
@@ -307,12 +316,13 @@ export class CosmosDbPartitionedStorage implements Storage {
       }
       return container
     } catch (err: any) {
-      this.throwInformativeError(
-        ErrorHelper.InitializationError.description.replace('{0}', this.cosmosDbStorageOptions.databaseId).replace('{1}', this.cosmosDbStorageOptions.containerId),
+      throw ExceptionHelper.generateException(
+        Error,
+        ErrorHelper.InitializationError,
         err,
-        ErrorHelper.InitializationError.code
+        this.cosmosDbStorageOptions.databaseId,
+        this.cosmosDbStorageOptions.containerId
       )
-      throw err
     }
   }
 
@@ -334,10 +344,17 @@ export class CosmosDbPartitionedStorage implements Storage {
           additionalMessage = ' Please check your data for signs of unintended recursion.'
         }
 
+        // Convert err to Error if needed
+        const errorObj = typeof err === 'string'
+          ? new Error(err)
+          : err instanceof Error
+            ? err
+            : new Error(err.message)
+
         throw ExceptionHelper.generateException(
           Error,
           ErrorHelper.MaxNestingDepthExceeded,
-          err,
+          errorObj,
           maxDepthAllowed.toString(),
           additionalMessage
         )
@@ -349,25 +366,5 @@ export class CosmosDbPartitionedStorage implements Storage {
     }
 
     checkDepth(json, 0, false)
-  }
-
-  private throwInformativeError (prependedMessage: string, err: Error | Record<'message', string> | string, errorCode?: number): void {
-    if (typeof err === 'string') {
-      err = new Error(err)
-    }
-
-    err.message = `[${prependedMessage}] ${err.message}`
-
-    if (errorCode !== undefined) {
-      (err as any).code = errorCode
-      // Find the corresponding error definition to get the help link
-      const errorDefinitions = Object.values(ErrorHelper).filter(val => val instanceof AgentErrorDefinition) as AgentErrorDefinition[]
-      const errorDef = errorDefinitions.find(def => def.code === errorCode)
-      if (errorDef) {
-        (err as any).helpLink = errorDef.helplink
-      }
-    }
-
-    throw err
   }
 }

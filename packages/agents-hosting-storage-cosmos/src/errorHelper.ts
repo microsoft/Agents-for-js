@@ -261,13 +261,17 @@ export class ExceptionHelper {
     }
 
     // Create the exception
-    const exception = innerException
-      ? new ErrorType(message, innerException)
-      : new ErrorType(message);
+    const exception = new ErrorType(message)
 
     // Set error code and help link as custom properties
-    (exception as any).code = errorDefinition.code;
-    (exception as any).helpLink = errorDefinition.helplink
+    const exceptionWithProps = exception as any
+    exceptionWithProps.code = errorDefinition.code
+    exceptionWithProps.helpLink = errorDefinition.helplink
+
+    // Store inner exception as a custom property if provided
+    if (innerException) {
+      exceptionWithProps.innerException = innerException
+    }
 
     return exception
   }
