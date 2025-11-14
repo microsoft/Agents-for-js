@@ -254,7 +254,7 @@ export class ExceptionHelper {
   ): T {
     // Format the message with parameters if provided
     let message = errorDefinition.description
-    if (messageFormat && messageFormat.length > 0) {
+    if (messageFormat.length > 0) {
       messageFormat.forEach((param, index) => {
         message = message.replace(`{${index}}`, param)
       })
