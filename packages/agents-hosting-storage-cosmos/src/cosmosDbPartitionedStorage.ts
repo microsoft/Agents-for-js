@@ -144,8 +144,11 @@ export class CosmosDbPartitionedStorage implements Storage {
           }
         } catch (err: any) {
           if (err.code === 404) {
-            this.throwInformativeError(ErrorHelper.ContainerReadNotFound.description,
-              err, ErrorHelper.ContainerReadNotFound.code)
+            throw ExceptionHelper.generateException(
+              Error,
+              ErrorHelper.ContainerReadNotFound,
+              err
+            )
           } else if (err.code === 400) {
             this.throwInformativeError(
               ErrorHelper.ContainerReadBadRequest.description,
