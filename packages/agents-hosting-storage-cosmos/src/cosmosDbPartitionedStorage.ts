@@ -331,12 +331,12 @@ export class CosmosDbPartitionedStorage implements Storage {
           additionalMessage = ' Please check your data for signs of unintended recursion.'
         }
 
-        this.throwInformativeError(
-          ErrorHelper.MaxNestingDepthExceeded.description
-            .replace('{0}', maxDepthAllowed.toString())
-            .replace('{1}', additionalMessage),
+        throw ExceptionHelper.generateException(
+          Error,
+          ErrorHelper.MaxNestingDepthExceeded,
           err,
-          ErrorHelper.MaxNestingDepthExceeded.code
+          maxDepthAllowed.toString(),
+          additionalMessage
         )
       } else if (obj && typeof obj === 'object') {
         for (const [key, value] of Object.entries(obj)) {
