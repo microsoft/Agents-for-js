@@ -47,6 +47,19 @@ describe('AuthConfiguration', () => {
       assert.strictEqual(config.authority, 'https://login.microsoftonline.com')
     })
 
+    it('should not adjust case of unknown fields', () => {
+      process.env.CONNECTIONS__SERVICECONNECTION__SETTINGS__CLIENTID2 = 'test-client-id2'
+      const config: AuthConfiguration = loadAuthConfigFromEnv()
+      assert.strictEqual(config.tenantId, 'test-tenant-id')
+      assert.strictEqual(config.clientId, 'test-client-id')
+      // @ts-expect-error
+      assert.strictEqual(config.CLIENTID2, 'test-client-id2')
+      assert.strictEqual(config.clientSecret, 'test-client-secret')
+      assert.strictEqual(config.certPemFile, 'test-cert.pem')
+      assert.strictEqual(config.certKeyFile, 'test-cert.key')
+      assert.strictEqual(config.authority, 'https://login.microsoftonline.com')
+    })
+
     it('should load configuration from environment variables', () => {
       const config: AuthConfiguration = loadAuthConfigFromEnv('AGENTICCONNECTION')
       assert.strictEqual(config.tenantId, 'agentic-tenant-id')

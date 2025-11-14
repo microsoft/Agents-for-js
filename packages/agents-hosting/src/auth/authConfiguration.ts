@@ -211,6 +211,25 @@ export const loadPrevAuthConfigFromEnv: () => AuthConfiguration = () => {
   return { ...authConfig, ...envConnections }
 }
 
+/**
+ * Map an ALL_UPPERCASE env var path to the correct mixedCase field names (SERVICEURL -> serviceUrl)
+ * @param path the env var path in dot notation
+ * @param fieldNames a list of the field names in proper mixed case
+ * @returns
+ */
+function normalizeEnvVarPth (path: string, fieldNames: string[]): string {
+  const pathSegments = path.split('.')
+  const normalizedSegments = pathSegments.map(segment => {
+    const matchedField = fieldNames.find(field =>
+      field.toLowerCase() === segment.toLowerCase()
+    )
+    return matchedField || segment
+  })
+  path = normalizedSegments.join('.')
+
+  return path
+}
+
 function loadConnectionsMapFromEnv () {
   const envVars = process.env
   const connectionsObj: Record<string, any> = {}
@@ -225,21 +244,12 @@ function loadConnectionsMapFromEnv () {
       let path = key.substring(CONNECTIONS_PREFIX.length).replace(/__/g, '.')
       // Remove ".settings." from the path
       path = path.replace('.SETTINGS.', '.')
-
-      // address use of mixed case in object names
-      authConfigFields.forEach((prop) => {
-        path = path.replace(new RegExp(prop, 'i'), prop)
-      })
+      path = normalizeEnvVarPth(path, authConfigFields)
 
       objectPath.set(connectionsObj, path, value)
     } else if (key.startsWith(CONNECTIONS_MAP_PREFIX)) {
       let path = key.substring(CONNECTIONS_MAP_PREFIX.length).replace(/__/g, '.')
-
-      // address use of mixed case in object names
-      authMapFields.forEach((prop) => {
-        path = path.replace(new RegExp(prop, 'i'), prop)
-      })
-
+      path = normalizeEnvVarPth(path, authMapFields)
       objectPath.set(connectionsMap, path, value)
     }
   }
@@ -358,7 +368,7 @@ function buildLegacyAuthConfig (envPrefix: string = '', customConfig?: AuthConfi
   }
 }
 
-function getDefaultIssuers (tenantId: string, authority: string) : string[] {
+function getDefaultIssuers (tenantId: string, authority: string): string[] {
   return [
     'https://api.botframework.com',
     `https://sts.windows.net/${tenantId}/`,
