@@ -131,7 +131,6 @@ export const loadAuthConfigFromEnv = (cnxName?: string): AuthConfiguration => {
       if (entry) {
         authConfig = entry
       } else {
-        console.dir(envConnections)
         throw new Error(`Connection "${cnxName}" not found in environment.`)
       }
     } else {
