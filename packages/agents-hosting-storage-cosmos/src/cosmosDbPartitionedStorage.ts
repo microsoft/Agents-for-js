@@ -6,6 +6,7 @@ import { CosmosDbKeyEscape } from './cosmosDbKeyEscape'
 import { DocumentStoreItem } from './documentStoreItem'
 import { CosmosDbPartitionedStorageOptions } from './cosmosDbPartitionedStorageOptions'
 import { Storage, StoreItems } from '@microsoft/agents-hosting'
+import { ErrorHelper, ExceptionHelper, AgentErrorDefinition } from './errorHelper'
 
 /**
  * A utility class to ensure that a specific asynchronous task is executed only once for a given key.
@@ -55,30 +56,51 @@ export class CosmosDbPartitionedStorage implements Storage {
    */
   constructor (private readonly cosmosDbStorageOptions: CosmosDbPartitionedStorageOptions) {
     if (!cosmosDbStorageOptions) {
-      throw new ReferenceError('CosmosDbPartitionedStorageOptions is required.')
+      throw ExceptionHelper.generateException(
+        ReferenceError,
+        ErrorHelper.MissingCosmosDbStorageOptions
+      )
     }
     const { cosmosClientOptions } = cosmosDbStorageOptions
     if (!cosmosClientOptions?.endpoint) {
-      throw new ReferenceError('endpoint in cosmosClientOptions is required.')
+      throw ExceptionHelper.generateException(
+        ReferenceError,
+        ErrorHelper.MissingCosmosEndpoint
+      )
     }
     if (!cosmosClientOptions?.key && !cosmosClientOptions?.tokenProvider) {
-      throw new ReferenceError('key or tokenProvider in cosmosClientOptions is required.')
+      throw ExceptionHelper.generateException(
+        ReferenceError,
+        ErrorHelper.MissingCosmosCredentials
+      )
     }
     if (!cosmosDbStorageOptions.databaseId) {
-      throw new ReferenceError('databaseId is for CosmosDB required.')
+      throw ExceptionHelper.generateException(
+        ReferenceError,
+        ErrorHelper.MissingDatabaseId
+      )
     }
     if (!cosmosDbStorageOptions.containerId) {
-      throw new ReferenceError('containerId for CosmosDB is required.')
+      throw ExceptionHelper.generateException(
+        ReferenceError,
+        ErrorHelper.MissingContainerId
+      )
     }
     cosmosDbStorageOptions.compatibilityMode ??= true
     if (cosmosDbStorageOptions.keySuffix) {
       if (cosmosDbStorageOptions.compatibilityMode) {
-        throw new ReferenceError('compatibilityMode cannot be true while using a keySuffix.')
+        throw ExceptionHelper.generateException(
+          ReferenceError,
+          ErrorHelper.InvalidCompatibilityModeWithKeySuffix
+        )
       }
       const suffixEscaped = CosmosDbKeyEscape.escapeKey(cosmosDbStorageOptions.keySuffix)
       if (cosmosDbStorageOptions.keySuffix !== suffixEscaped) {
-        throw new ReferenceError(
-          `Cannot use invalid Row Key characters: ${cosmosDbStorageOptions.keySuffix} in keySuffix`
+        throw ExceptionHelper.generateException(
+          ReferenceError,
+          ErrorHelper.InvalidKeySuffixCharacters,
+          undefined,
+          cosmosDbStorageOptions.keySuffix
         )
       }
     }
@@ -91,7 +113,10 @@ export class CosmosDbPartitionedStorage implements Storage {
    */
   async read (keys: string[]): Promise<StoreItems> {
     if (!keys) {
-      throw new ReferenceError('Keys are required when reading.')
+      throw ExceptionHelper.generateException(
+        ReferenceError,
+        ErrorHelper.MissingReadKeys
+      )
     } else if (keys.length === 0) {
       return {}
     }
@@ -119,16 +144,15 @@ export class CosmosDbPartitionedStorage implements Storage {
           }
         } catch (err: any) {
           if (err.code === 404) {
-            this.throwInformativeError('Not Found',
-              err)
+            this.throwInformativeError(ErrorHelper.ContainerReadNotFound.description,
+              err, ErrorHelper.ContainerReadNotFound.code)
           } else if (err.code === 400) {
             this.throwInformativeError(
-                            `Error reading from container. You might be attempting to read from a non-partitioned
-                    container or a container that does not use '/id' as the partitionKeyPath`,
-                            err
+              ErrorHelper.ContainerReadBadRequest.description,
+              err, ErrorHelper.ContainerReadBadRequest.code
             )
           } else {
-            this.throwInformativeError('Error reading from container', err)
+            this.throwInformativeError(ErrorHelper.ContainerReadError.description, err, ErrorHelper.ContainerReadError.code)
           }
         }
       })
@@ -143,7 +167,10 @@ export class CosmosDbPartitionedStorage implements Storage {
    */
   async write (changes: StoreItems): Promise<void> {
     if (!changes) {
-      throw new ReferenceError('Changes are required when writing.')
+      throw ExceptionHelper.generateException(
+        ReferenceError,
+        ErrorHelper.MissingWriteChanges
+      )
     } else if (changes.length === 0) {
       return
     }
@@ -171,7 +198,7 @@ export class CosmosDbPartitionedStorage implements Storage {
           await this.container.items.upsert(document, accessCondition)
         } catch (err: any) {
           this.checkForNestingError(change, err)
-          this.throwInformativeError('Error upserting document', err)
+          this.throwInformativeError(ErrorHelper.DocumentUpsertError.description, err, ErrorHelper.DocumentUpsertError.code)
         }
       })
     )
@@ -195,9 +222,9 @@ export class CosmosDbPartitionedStorage implements Storage {
           await this.container.item(escapedKey, this.getPartitionKey(escapedKey)).delete()
         } catch (err: any) {
           if (err.code === 404) {
-            this.throwInformativeError('Not Found', err)
+            this.throwInformativeError(ErrorHelper.DocumentDeleteNotFound.description, err, ErrorHelper.DocumentDeleteNotFound.code)
           } else {
-            this.throwInformativeError('Unable to delete document', err)
+            this.throwInformativeError(ErrorHelper.DocumentDeleteError.description, err, ErrorHelper.DocumentDeleteError.code)
           }
         }
       })
@@ -239,8 +266,12 @@ export class CosmosDbPartitionedStorage implements Storage {
             if (paths.includes('/_partitionKey')) {
               this.compatibilityModePartitionKey = true
             } else if (paths.indexOf(DocumentStoreItem.partitionKeyPath) === -1) {
-              throw new Error(
-                            `Custom Partition Key Paths are not supported. ${this.cosmosDbStorageOptions.containerId} has a custom Partition Key Path of ${paths[0]}.`
+              throw ExceptionHelper.generateException(
+                Error,
+                ErrorHelper.UnsupportedCustomPartitionKeyPath,
+                undefined,
+                this.cosmosDbStorageOptions.containerId,
+                paths[0]
               )
             }
           } else {
@@ -264,13 +295,19 @@ export class CosmosDbPartitionedStorage implements Storage {
       }
 
       if (!container) {
-        throw new Error(`Container ${this.cosmosDbStorageOptions.containerId} not found.`)
+        throw ExceptionHelper.generateException(
+          Error,
+          ErrorHelper.ContainerNotFound,
+          undefined,
+          this.cosmosDbStorageOptions.containerId
+        )
       }
       return container
     } catch (err: any) {
       this.throwInformativeError(
-            `Failed to initialize Cosmos DB database/container: ${this.cosmosDbStorageOptions.databaseId}/${this.cosmosDbStorageOptions.containerId}`,
-            err
+        ErrorHelper.InitializationError.description.replace('{0}', this.cosmosDbStorageOptions.databaseId).replace('{1}', this.cosmosDbStorageOptions.containerId),
+        err,
+        ErrorHelper.InitializationError.code
       )
       throw err
     }
@@ -283,18 +320,24 @@ export class CosmosDbPartitionedStorage implements Storage {
   private checkForNestingError (json: object, err: Error | Record<'message', string> | string): void {
     const checkDepth = (obj: unknown, depth: number, isInDialogState: boolean): void => {
       if (depth > maxDepthAllowed) {
-        let message = `Maximum nesting depth of ${maxDepthAllowed} exceeded.`
+        let additionalMessage = ''
 
         if (isInDialogState) {
-          message +=
+          additionalMessage =
                         ' This is most likely caused by recursive component dialogs. ' +
                         'Try reworking your dialog code to make sure it does not keep dialogs on the stack ' +
                         "that it's not using. For example, consider using replaceDialog instead of beginDialog."
         } else {
-          message += ' Please check your data for signs of unintended recursion.'
+          additionalMessage = ' Please check your data for signs of unintended recursion.'
         }
 
-        this.throwInformativeError(message, err)
+        this.throwInformativeError(
+          ErrorHelper.MaxNestingDepthExceeded.description
+            .replace('{0}', maxDepthAllowed.toString())
+            .replace('{1}', additionalMessage),
+          err,
+          ErrorHelper.MaxNestingDepthExceeded.code
+        )
       } else if (obj && typeof obj === 'object') {
         for (const [key, value] of Object.entries(obj)) {
           checkDepth(value, depth + 1, key === 'dialogStack' || isInDialogState)
@@ -305,12 +348,22 @@ export class CosmosDbPartitionedStorage implements Storage {
     checkDepth(json, 0, false)
   }
 
-  private throwInformativeError (prependedMessage: string, err: Error | Record<'message', string> | string): void {
+  private throwInformativeError (prependedMessage: string, err: Error | Record<'message', string> | string, errorCode?: number): void {
     if (typeof err === 'string') {
       err = new Error(err)
     }
 
     err.message = `[${prependedMessage}] ${err.message}`
+
+    if (errorCode !== undefined) {
+      (err as any).code = errorCode
+      // Find the corresponding error definition to get the help link
+      const errorDefinitions = Object.values(ErrorHelper).filter(val => val instanceof AgentErrorDefinition) as AgentErrorDefinition[]
+      const errorDef = errorDefinitions.find(def => def.code === errorCode)
+      if (errorDef) {
+        (err as any).helpLink = errorDef.helplink
+      }
+    }
 
     throw err
   }
