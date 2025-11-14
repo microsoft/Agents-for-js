@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 import { createHash } from 'crypto'
+import { ErrorHelper, ExceptionHelper } from './errorHelper'
 
 /**
  * Provides methods for escaping keys for Cosmos DB.
@@ -25,7 +26,10 @@ export namespace CosmosDbKeyEscape {
    */
   export function escapeKey (key: string, keySuffix?: string, compatibilityMode?: boolean): string {
     if (!key) {
-      throw new Error("The 'key' parameter is required.")
+      throw ExceptionHelper.generateException(
+        Error,
+        ErrorHelper.MissingKeyParameter
+      )
     }
 
     const keySplitted: string[] = key.split('')

@@ -3,3 +3,4 @@
 
 export { CosmosDbPartitionedStorage } from './cosmosDbPartitionedStorage'
 export * from './cosmosDbPartitionedStorageOptions'
+export * from './errorHelper'
