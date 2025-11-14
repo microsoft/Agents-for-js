@@ -85,7 +85,7 @@ export class ErrorHelper {
    */
   static readonly MissingDatabaseId = new AgentErrorDefinition(
     -100003,
-    'databaseId is for CosmosDB required.',
+    'databaseId for CosmosDB is required.',
     'https://aka.ms/M365AgentsErrorCodes/#-100003'
   )
 
