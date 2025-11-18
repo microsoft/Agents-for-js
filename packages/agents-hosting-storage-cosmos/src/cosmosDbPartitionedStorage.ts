@@ -7,7 +7,7 @@ import { DocumentStoreItem } from './documentStoreItem'
 import { CosmosDbPartitionedStorageOptions } from './cosmosDbPartitionedStorageOptions'
 import { Storage, StoreItems } from '@microsoft/agents-hosting'
 import { ExceptionHelper } from '@microsoft/agents-activity'
-import { ErrorHelper } from './errorHelper'
+import { Errors } from './errorHelper'
 
 /**
  * A utility class to ensure that a specific asynchronous task is executed only once for a given key.
@@ -59,32 +59,32 @@ export class CosmosDbPartitionedStorage implements Storage {
     if (!cosmosDbStorageOptions) {
       throw ExceptionHelper.generateException(
         ReferenceError,
-        ErrorHelper.MissingCosmosDbStorageOptions
+        Errors.MissingCosmosDbStorageOptions
       )
     }
     const { cosmosClientOptions } = cosmosDbStorageOptions
     if (!cosmosClientOptions?.endpoint) {
       throw ExceptionHelper.generateException(
         ReferenceError,
-        ErrorHelper.MissingCosmosEndpoint
+        Errors.MissingCosmosEndpoint
       )
     }
     if (!cosmosClientOptions?.key && !cosmosClientOptions?.tokenProvider) {
       throw ExceptionHelper.generateException(
         ReferenceError,
-        ErrorHelper.MissingCosmosCredentials
+        Errors.MissingCosmosCredentials
       )
     }
     if (!cosmosDbStorageOptions.databaseId) {
       throw ExceptionHelper.generateException(
         ReferenceError,
-        ErrorHelper.MissingDatabaseId
+        Errors.MissingDatabaseId
       )
     }
     if (!cosmosDbStorageOptions.containerId) {
       throw ExceptionHelper.generateException(
         ReferenceError,
-        ErrorHelper.MissingContainerId
+        Errors.MissingContainerId
       )
     }
     cosmosDbStorageOptions.compatibilityMode ??= true
@@ -92,14 +92,14 @@ export class CosmosDbPartitionedStorage implements Storage {
       if (cosmosDbStorageOptions.compatibilityMode) {
         throw ExceptionHelper.generateException(
           ReferenceError,
-          ErrorHelper.InvalidCompatibilityModeWithKeySuffix
+          Errors.InvalidCompatibilityModeWithKeySuffix
         )
       }
       const suffixEscaped = CosmosDbKeyEscape.escapeKey(cosmosDbStorageOptions.keySuffix)
       if (cosmosDbStorageOptions.keySuffix !== suffixEscaped) {
         throw ExceptionHelper.generateException(
           ReferenceError,
-          ErrorHelper.InvalidKeySuffixCharacters,
+          Errors.InvalidKeySuffixCharacters,
           undefined,
           cosmosDbStorageOptions.keySuffix
         )
@@ -116,7 +116,7 @@ export class CosmosDbPartitionedStorage implements Storage {
     if (!keys) {
       throw ExceptionHelper.generateException(
         ReferenceError,
-        ErrorHelper.MissingReadKeys
+        Errors.MissingReadKeys
       )
     } else if (keys.length === 0) {
       return {}
@@ -149,13 +149,13 @@ export class CosmosDbPartitionedStorage implements Storage {
           } else if (err.code === 400) {
             throw ExceptionHelper.generateException(
               Error,
-              ErrorHelper.ContainerReadBadRequest,
+              Errors.ContainerReadBadRequest,
               err
             )
           } else {
             throw ExceptionHelper.generateException(
               Error,
-              ErrorHelper.ContainerReadError,
+              Errors.ContainerReadError,
               err
             )
           }
@@ -174,7 +174,7 @@ export class CosmosDbPartitionedStorage implements Storage {
     if (!changes) {
       throw ExceptionHelper.generateException(
         ReferenceError,
-        ErrorHelper.MissingWriteChanges
+        Errors.MissingWriteChanges
       )
     } else if (changes.length === 0) {
       return
@@ -205,7 +205,7 @@ export class CosmosDbPartitionedStorage implements Storage {
           this.checkForNestingError(change, err)
           throw ExceptionHelper.generateException(
             Error,
-            ErrorHelper.DocumentUpsertError,
+            Errors.DocumentUpsertError,
             err
           )
         }
@@ -235,7 +235,7 @@ export class CosmosDbPartitionedStorage implements Storage {
           } else {
             throw ExceptionHelper.generateException(
               Error,
-              ErrorHelper.DocumentDeleteError,
+              Errors.DocumentDeleteError,
               err
             )
           }
@@ -281,7 +281,7 @@ export class CosmosDbPartitionedStorage implements Storage {
             } else if (paths.indexOf(DocumentStoreItem.partitionKeyPath) === -1) {
               throw ExceptionHelper.generateException(
                 Error,
-                ErrorHelper.UnsupportedCustomPartitionKeyPath,
+                Errors.UnsupportedCustomPartitionKeyPath,
                 undefined,
                 this.cosmosDbStorageOptions.containerId,
                 paths[0]
@@ -310,7 +310,7 @@ export class CosmosDbPartitionedStorage implements Storage {
       if (!container) {
         throw ExceptionHelper.generateException(
           Error,
-          ErrorHelper.ContainerNotFound,
+          Errors.ContainerNotFound,
           undefined,
           this.cosmosDbStorageOptions.containerId
         )
@@ -319,7 +319,7 @@ export class CosmosDbPartitionedStorage implements Storage {
     } catch (err: any) {
       throw ExceptionHelper.generateException(
         Error,
-        ErrorHelper.InitializationError,
+        Errors.InitializationError,
         err,
         this.cosmosDbStorageOptions.databaseId,
         this.cosmosDbStorageOptions.containerId
@@ -354,7 +354,7 @@ export class CosmosDbPartitionedStorage implements Storage {
 
         throw ExceptionHelper.generateException(
           Error,
-          ErrorHelper.MaxNestingDepthExceeded,
+          Errors.MaxNestingDepthExceeded,
           errorObj,
           maxDepthAllowed.toString(),
           additionalMessage

@@ -1,11 +1,11 @@
 import assert from 'assert'
 import { describe, it } from 'node:test'
 import { AgentErrorDefinition } from '@microsoft/agents-activity'
-import { ErrorHelper } from '../src/errorHelper'
+import { Errors } from '../src/errorHelper'
 
-describe('ErrorHelper tests', () => {
+describe('Errors tests', () => {
   it('should have MissingCosmosDbStorageOptions error definition', () => {
-    const error = ErrorHelper.MissingCosmosDbStorageOptions
+    const error = Errors.MissingCosmosDbStorageOptions
 
     assert.strictEqual(error.code, -100000)
     assert.strictEqual(error.description, 'CosmosDbPartitionedStorageOptions is required.')
@@ -13,7 +13,7 @@ describe('ErrorHelper tests', () => {
   })
 
   it('should have MissingCosmosEndpoint error definition', () => {
-    const error = ErrorHelper.MissingCosmosEndpoint
+    const error = Errors.MissingCosmosEndpoint
 
     assert.strictEqual(error.code, -100001)
     assert.strictEqual(error.description, 'endpoint in cosmosClientOptions is required.')
@@ -21,7 +21,7 @@ describe('ErrorHelper tests', () => {
   })
 
   it('should have MissingCosmosCredentials error definition', () => {
-    const error = ErrorHelper.MissingCosmosCredentials
+    const error = Errors.MissingCosmosCredentials
 
     assert.strictEqual(error.code, -100002)
     assert.strictEqual(error.description, 'key or tokenProvider in cosmosClientOptions is required.')
@@ -29,7 +29,7 @@ describe('ErrorHelper tests', () => {
   })
 
   it('should have all error codes in the correct range', () => {
-    const errorDefinitions = Object.values(ErrorHelper).filter(
+    const errorDefinitions = Object.values(Errors).filter(
       val => val && typeof val === 'object' && 'code' in val && 'description' in val && 'helplink' in val
     ) as AgentErrorDefinition[]
 
@@ -42,7 +42,7 @@ describe('ErrorHelper tests', () => {
   })
 
   it('should have unique error codes', () => {
-    const errorDefinitions = Object.values(ErrorHelper).filter(
+    const errorDefinitions = Object.values(Errors).filter(
       val => val && typeof val === 'object' && 'code' in val && 'description' in val && 'helplink' in val
     ) as AgentErrorDefinition[]
 
@@ -53,7 +53,7 @@ describe('ErrorHelper tests', () => {
   })
 
   it('should have help links with correct format', () => {
-    const errorDefinitions = Object.values(ErrorHelper).filter(
+    const errorDefinitions = Object.values(Errors).filter(
       val => val && typeof val === 'object' && 'code' in val && 'description' in val && 'helplink' in val
     ) as AgentErrorDefinition[]
 
@@ -70,7 +70,7 @@ describe('ErrorHelper tests', () => {
   })
 
   it('should have non-empty descriptions', () => {
-    const errorDefinitions = Object.values(ErrorHelper).filter(
+    const errorDefinitions = Object.values(Errors).filter(
       val => val && typeof val === 'object' && 'code' in val && 'description' in val && 'helplink' in val
     ) as AgentErrorDefinition[]
 

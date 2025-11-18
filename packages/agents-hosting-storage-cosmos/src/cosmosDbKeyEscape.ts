@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 import { createHash } from 'crypto'
 import { ExceptionHelper } from '@microsoft/agents-activity'
-import { ErrorHelper } from './errorHelper'
+import { Errors } from './errorHelper'
 
 /**
  * Provides methods for escaping keys for Cosmos DB.
@@ -29,7 +29,7 @@ export namespace CosmosDbKeyEscape {
     if (!key) {
       throw ExceptionHelper.generateException(
         Error,
-        ErrorHelper.MissingKeyParameter
+        Errors.MissingKeyParameter
       )
     }
 
