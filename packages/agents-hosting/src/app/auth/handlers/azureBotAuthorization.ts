@@ -229,7 +229,11 @@ export class AzureBotAuthorization implements AuthorizationHandler {
    * @param callback The callback function to be invoked on sign-in failure.
    */
   onFailure (callback: (context: TurnContext, reason?: string) => Promise<void> | void): void {
-    this._onFailure = callback
+    this._onFailure = async (context, reason) => {
+      // Clear any token exchange state on failure.
+      await this.deleteTokenExchange(context)
+      return callback(context, reason)
+    }
   }
 
   /**
@@ -274,6 +278,7 @@ export class AzureBotAuthorization implements AuthorizationHandler {
     logger.debug(this.prefix(`Signing out User '${user}' from => Channel: '${channel}', Connection: '${connection}'`), context.activity)
     const userTokenClient = await this.getUserTokenClient(context)
     await userTokenClient.signOut(user, connection, channel)
+    await this.deleteTokenExchange(context)
     return true
   }
 
@@ -403,6 +408,8 @@ export class AzureBotAuthorization implements AuthorizationHandler {
       const oCard = CardFactory.oauthCard(this._options.name!, this._options.title!, this._options.text!, signInResource, this._options.enableSso)
       await context.sendActivity(MessageFactory.attachment(oCard))
       await storage.write({ activity, id: this.id, ...(active ?? {}), attemptsLeft: this.maxAttempts })
+      // Clear any previous token exchange state when starting a new sign-in process.
+      await this.deleteTokenExchange(context)
       return AuthorizationHandlerStatus.PENDING
     }
 
@@ -461,6 +468,16 @@ export class AzureBotAuthorization implements AuthorizationHandler {
         return AuthorizationHandlerStatus.PENDING
       }
 
+      // Duplication check is done after successful token exchange to allow MS Teams show the consent prompt per platform (e.g., web, mobile) in case of failing the token exchange.
+      // If the duplication check is done before, only one platform will show the consent prompt.
+      // Note: in case this check needs to be done before token exchange, consider adding the isSsoUserConsentFlow === undefined flag,
+      // to allow multiple token exchanges when the flag is set (indicating user consent flow), duplicated across platforms will still apply (showing one consent prompt).
+      if (await this.isTokenExchangeDuplicated(context)) {
+        logger.debug('Skipping duplicated signin/tokenExchange invoke activity.')
+        // Using PENDING state to avoid deleting the active session, as the deletion will be done by the first token exchange activity.
+        return AuthorizationHandlerStatus.PENDING
+      }
+
       await this.sendInvokeResponse<TokenExchangeInvokeResponse>(context, {
         status: 200,
         body: { id: tokenExchangeInvokeRequest.id, connectionName: this._options.name! }
@@ -491,12 +508,7 @@ export class AzureBotAuthorization implements AuthorizationHandler {
   /**
    * Verifies the magic code provided by the user.
    */
-  private async codeVerification (storage: HandlerStorage<AzureBotActiveHandler>, context: TurnContext, active?: AzureBotActiveHandler): Promise<{ status: AuthorizationHandlerStatus, code?: string }> {
-    if (!active) {
-      logger.debug(this.prefix('No active session found. Skipping code verification.'), context.activity)
-      return { status: AuthorizationHandlerStatus.IGNORED }
-    }
-
+  private async codeVerification (storage: HandlerStorage<AzureBotActiveHandler>, context: TurnContext, active: AzureBotActiveHandler): Promise<{ status: AuthorizationHandlerStatus, code?: string }> {
     const { activity } = context
     let state: string | undefined = activity.text
 
@@ -602,5 +614,55 @@ export class AzureBotAuthorization implements AuthorizationHandler {
       }
       return acc
     }, []) ?? []
+  }
+
+  /**
+   * Generates a storage key for persisting token exchange state.
+   * @param context The turn context containing activity information.
+   * @returns The storage key string in format: `auth/azurebot/exchange/{channelId}/{userId}`.
+   * @throws Will throw an error if required activity properties are missing.
+   */
+  private getTokenExchangeKey (context: TurnContext): string {
+    const channelId = context.activity.channelId
+    const userId = context.activity.from?.id
+    if (!channelId || !userId) {
+      throw new Error('Both \'activity.channelId\' and \'activity.from.id\' are required to generate the Token Exchange Storage key.')
+    }
+    return `auth/azurebot/exchange/${channelId}/${userId}`
+  }
+
+  /**
+   * Checks if a token exchange request is duplicated.
+   * This is used to prevent duplicating responses when receiving multiple identical token exchange requests
+   * from the same user across different platforms (e.g., web and mobile).
+   * @param context The turn context.
+   * @returns True if the token exchange request is duplicated, false otherwise.
+   */
+  private async isTokenExchangeDuplicated (context: TurnContext) {
+    const key = this.getTokenExchangeKey(context)
+    try {
+      await this.settings.storage.write({ [key]: { exchanged: true, timestamp: Date.now() } }, { ifNotExists: true })
+      return false
+    } catch (error) {
+      return true
+    }
+  }
+
+  /**
+   * Deletes the token exchange state from storage.
+   * @param context The turn context.
+   * @returns A promise that resolves when the state is deleted.
+   */
+  private async deleteTokenExchange (context: TurnContext) {
+    try {
+      await this.settings.storage.delete([this.getTokenExchangeKey(context)])
+    } catch (error) {
+      if ((error as Error).message?.toLowerCase().includes('not found')) {
+        logger.debug(this.prefix('Token exchange state not found for deletion.'))
+        return
+      }
+
+      throw error
+    }
   }
 }
