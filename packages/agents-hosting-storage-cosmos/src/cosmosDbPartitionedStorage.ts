@@ -6,7 +6,8 @@ import { CosmosDbKeyEscape } from './cosmosDbKeyEscape'
 import { DocumentStoreItem } from './documentStoreItem'
 import { CosmosDbPartitionedStorageOptions } from './cosmosDbPartitionedStorageOptions'
 import { Storage, StoreItems } from '@microsoft/agents-hosting'
-import { ErrorHelper, ExceptionHelper } from './errorHelper'
+import { ExceptionHelper } from '@microsoft/agents-activity'
+import { ErrorHelper } from './errorHelper'
 
 /**
  * A utility class to ensure that a specific asynchronous task is executed only once for a given key.

@@ -1,7 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 import { createHash } from 'crypto'
-import { ErrorHelper, ExceptionHelper } from './errorHelper'
+import { ExceptionHelper } from '@microsoft/agents-activity'
+import { ErrorHelper } from './errorHelper'
 
 /**
  * Provides methods for escaping keys for Cosmos DB.

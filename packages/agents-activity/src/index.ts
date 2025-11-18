@@ -48,3 +48,5 @@ export { TextFormatTypes } from './textFormatTypes'
 export { TextHighlight } from './textHighlight'
 export { ActivityTreatments } from './activityTreatments'
 export { debug, Logger } from './logger'
+
+export { AgentErrorDefinition, ExceptionHelper } from './exceptionHelper'
