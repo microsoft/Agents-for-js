@@ -31,20 +31,20 @@ export class ExceptionHelper {
    * @param ErrorType The constructor of the error type to create
    * @param errorDefinition The error definition containing code, description, and help link
    * @param innerException Optional inner exception
-   * @param messageFormat Optional format parameters for the error message
+   * @param params Optional parameters object for message formatting with key-value pairs
    * @returns A new exception instance with error code and help link
    */
   static generateException<T extends Error> (
     ErrorType: new (message: string, innerException?: Error) => T,
     errorDefinition: AgentErrorDefinition,
     innerException?: Error,
-    ...messageFormat: string[]
+    params?: { [key: string]: string }
   ): T {
     // Format the message with parameters if provided
     let message = errorDefinition.description
-    if (messageFormat.length > 0) {
-      messageFormat.forEach((param, index) => {
-        message = message.replace(`{${index}}`, param)
+    if (params) {
+      Object.keys(params).forEach((key) => {
+        message = message.replace(`{${key}}`, params[key])
       })
     }
 

@@ -78,7 +78,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   InvalidKeySuffixCharacters: {
     code: -100006,
-    description: 'Cannot use invalid Row Key characters: {0} in keySuffix',
+    description: 'Cannot use invalid Row Key characters: {keySuffix} in keySuffix',
     helplink: 'https://aka.ms/M365AgentsErrorCodes/#-100006'
   },
 
@@ -105,7 +105,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   UnsupportedCustomPartitionKeyPath: {
     code: -100009,
-    description: 'Custom Partition Key Paths are not supported. {0} has a custom Partition Key Path of {1}.',
+    description: 'Custom Partition Key Paths are not supported. {containerId} has a custom Partition Key Path of {partitionKeyPath}.',
     helplink: 'https://aka.ms/M365AgentsErrorCodes/#-100009'
   },
 
@@ -114,7 +114,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   ContainerNotFound: {
     code: -100010,
-    description: 'Container {0} not found.',
+    description: 'Container {containerId} not found.',
     helplink: 'https://aka.ms/M365AgentsErrorCodes/#-100010'
   },
 
@@ -186,7 +186,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   InitializationError: {
     code: -100018,
-    description: 'Failed to initialize Cosmos DB database/container: {0}/{1}',
+    description: 'Failed to initialize Cosmos DB database/container: {databaseId}/{containerId}',
     helplink: 'https://aka.ms/M365AgentsErrorCodes/#-100018'
   },
 
@@ -195,7 +195,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   MaxNestingDepthExceeded: {
     code: -100019,
-    description: 'Maximum nesting depth of {0} exceeded. {1}',
+    description: 'Maximum nesting depth of {maxDepth} exceeded. {additionalMessage}',
     helplink: 'https://aka.ms/M365AgentsErrorCodes/#-100019'
   }
 }

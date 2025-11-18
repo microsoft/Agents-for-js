@@ -101,7 +101,7 @@ export class CosmosDbPartitionedStorage implements Storage {
           ReferenceError,
           Errors.InvalidKeySuffixCharacters,
           undefined,
-          cosmosDbStorageOptions.keySuffix
+          { keySuffix: cosmosDbStorageOptions.keySuffix }
         )
       }
     }
@@ -283,8 +283,10 @@ export class CosmosDbPartitionedStorage implements Storage {
                 Error,
                 Errors.UnsupportedCustomPartitionKeyPath,
                 undefined,
-                this.cosmosDbStorageOptions.containerId,
-                paths[0]
+                {
+                  containerId: this.cosmosDbStorageOptions.containerId,
+                  partitionKeyPath: paths[0]
+                }
               )
             }
           } else {
@@ -312,7 +314,7 @@ export class CosmosDbPartitionedStorage implements Storage {
           Error,
           Errors.ContainerNotFound,
           undefined,
-          this.cosmosDbStorageOptions.containerId
+          { containerId: this.cosmosDbStorageOptions.containerId }
         )
       }
       return container
@@ -321,8 +323,10 @@ export class CosmosDbPartitionedStorage implements Storage {
         Error,
         Errors.InitializationError,
         err,
-        this.cosmosDbStorageOptions.databaseId,
-        this.cosmosDbStorageOptions.containerId
+        {
+          databaseId: this.cosmosDbStorageOptions.databaseId,
+          containerId: this.cosmosDbStorageOptions.containerId
+        }
       )
     }
   }
@@ -356,8 +360,10 @@ export class CosmosDbPartitionedStorage implements Storage {
           Error,
           Errors.MaxNestingDepthExceeded,
           errorObj,
-          maxDepthAllowed.toString(),
-          additionalMessage
+          {
+            maxDepth: maxDepthAllowed.toString(),
+            additionalMessage: additionalMessage
+          }
         )
       } else if (obj && typeof obj === 'object') {
         for (const [key, value] of Object.entries(obj)) {

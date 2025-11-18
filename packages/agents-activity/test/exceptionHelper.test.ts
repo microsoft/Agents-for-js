@@ -76,11 +76,11 @@ describe('ExceptionHelper tests', () => {
   it('should format message with single parameter', () => {
     const errorDef: AgentErrorDefinition = {
       code: -100006,
-      description: 'Cannot use invalid Row Key characters: {0} in keySuffix',
+      description: 'Cannot use invalid Row Key characters: {keySuffix} in keySuffix',
       helplink: 'https://aka.ms/test'
     }
 
-    const exception = ExceptionHelper.generateException(Error, errorDef, undefined, 'test*suffix')
+    const exception = ExceptionHelper.generateException(Error, errorDef, undefined, { keySuffix: 'test*suffix' })
 
     assert.strictEqual(
       exception.message,
@@ -91,7 +91,7 @@ describe('ExceptionHelper tests', () => {
   it('should format message with multiple parameters', () => {
     const errorDef: AgentErrorDefinition = {
       code: -100009,
-      description: 'Custom Partition Key Paths are not supported. {0} has a custom Partition Key Path of {1}.',
+      description: 'Custom Partition Key Paths are not supported. {containerId} has a custom Partition Key Path of {partitionKeyPath}.',
       helplink: 'https://aka.ms/test'
     }
 
@@ -99,8 +99,10 @@ describe('ExceptionHelper tests', () => {
       Error,
       errorDef,
       undefined,
-      'myContainer',
-      '/customPath'
+      {
+        containerId: 'myContainer',
+        partitionKeyPath: '/customPath'
+      }
     )
 
     assert.strictEqual(
