@@ -64,7 +64,7 @@ export class TeamsAttachmentDownloader<TState extends TurnState = TurnState> imp
   private async downloadFile (attachment: Attachment): Promise<InputFile | undefined> {
     let inputFile: InputFile | undefined
 
-    if (attachment.contentUrl && (attachment.contentUrl.startsWith('https://') || attachment.contentUrl.startsWith('http://localhost'))) {
+    if (attachment.contentUrl && attachment.contentUrl.startsWith('https://')) {
       try {
         const contentSchema = z.object({ downloadUrl: z.string().url() })
         const parsed = contentSchema.safeParse(attachment.content)
