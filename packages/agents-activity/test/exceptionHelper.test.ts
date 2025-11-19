@@ -138,7 +138,9 @@ describe('ExceptionHelper tests', () => {
         return (
           err instanceof ReferenceError &&
           err.message === 'Test error' &&
+          // @ts-expect-error
           err.code === -100000 &&
+          // @ts-expect-error
           err.helpLink === 'https://aka.ms/test'
         )
       }
