@@ -38,7 +38,7 @@ describe('ExceptionHelper tests', () => {
 
     const exception = ExceptionHelper.generateException(Error, errorDef)
 
-    assert.strictEqual(exception.message, 'Test error')
+    assert.strictEqual(exception.message, '[-100000] - Test error - https://aka.ms/test')
     assert.strictEqual(exception.code, -100000)
     assert.strictEqual(exception.helpLink, 'https://aka.ms/test')
   })
@@ -53,7 +53,7 @@ describe('ExceptionHelper tests', () => {
     const exception = ExceptionHelper.generateException(ReferenceError, errorDef)
 
     assert.ok(exception instanceof ReferenceError)
-    assert.strictEqual(exception.message, 'Reference error test')
+    assert.strictEqual(exception.message, '[-100000] - Reference error test - https://aka.ms/test')
     assert.strictEqual(exception.code, -100000)
     assert.strictEqual(exception.helpLink, 'https://aka.ms/test')
   })
@@ -68,7 +68,7 @@ describe('ExceptionHelper tests', () => {
 
     const exception = ExceptionHelper.generateException(Error, errorDef, innerError)
 
-    assert.strictEqual(exception.message, 'Test error')
+    assert.strictEqual(exception.message, '[-100000] - Test error - https://aka.ms/test')
     assert.strictEqual(exception.code, -100000)
     assert.strictEqual(exception.innerException, innerError)
   })
@@ -84,7 +84,7 @@ describe('ExceptionHelper tests', () => {
 
     assert.strictEqual(
       exception.message,
-      'Cannot use invalid Row Key characters: test*suffix in keySuffix'
+      '[-100006] - Cannot use invalid Row Key characters: test*suffix in keySuffix - https://aka.ms/test'
     )
   })
 
@@ -107,7 +107,7 @@ describe('ExceptionHelper tests', () => {
 
     assert.strictEqual(
       exception.message,
-      'Custom Partition Key Paths are not supported. myContainer has a custom Partition Key Path of /customPath.'
+      '[-100009] - Custom Partition Key Paths are not supported. myContainer has a custom Partition Key Path of /customPath. - https://aka.ms/test'
     )
   })
 
@@ -120,7 +120,7 @@ describe('ExceptionHelper tests', () => {
 
     const exception = ExceptionHelper.generateException(Error, errorDef)
 
-    assert.strictEqual(exception.message, 'Simple error message')
+    assert.strictEqual(exception.message, '[-100000] - Simple error message - https://aka.ms/test')
   })
 
   it('should throw and catch exception correctly', () => {
@@ -137,7 +137,7 @@ describe('ExceptionHelper tests', () => {
       (err: ReferenceError & AgentError) => {
         return (
           err instanceof ReferenceError &&
-          err.message === 'Test error' &&
+          err.message === '[-100000] - Test error - https://aka.ms/test' &&
           err.code === -100000 &&
           err.helpLink === 'https://aka.ms/test'
         )

@@ -49,6 +49,7 @@ export interface AgentError extends Error {
 export class ExceptionHelper {
   /**
    * Generates a typed exception with error code and help link.
+   * The message format is: [CODE] - [message] - [helplink]
    * @param ErrorType The constructor of the error type to create
    * @param errorDefinition The error definition containing code, description, and help link
    * @param innerException Optional inner exception
@@ -62,12 +63,15 @@ export class ExceptionHelper {
     params?: { [key: string]: string }
   ): T & AgentError {
     // Format the message with parameters if provided
-    let message = errorDefinition.description
+    let description = errorDefinition.description
     if (params) {
       Object.keys(params).forEach((key) => {
-        message = message.replace(`{${key}}`, params[key])
+        description = description.replace(`{${key}}`, params[key])
       })
     }
+
+    // Format the full message as: [CODE] - [message] - [helplink]
+    const message = `[${errorDefinition.code}] - ${description} - ${errorDefinition.helplink}`
 
     // Create the exception
     const exception = new ErrorType(message) as T & AgentError
