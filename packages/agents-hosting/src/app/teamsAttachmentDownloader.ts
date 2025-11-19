@@ -72,10 +72,7 @@ export class TeamsAttachmentDownloader<TState extends TurnState = TurnState> imp
         const response = await this._httpClient.get(downloadUrl, { responseType: 'arraybuffer' })
 
         const content = Buffer.from(response.data, 'binary')
-        let contentType = response.headers['content-type'] || 'application/octet-stream'
-        if (contentType.startsWith('image/')) {
-          contentType = 'image/png'
-        }
+        const contentType = response.headers['content-type'] || 'application/octet-stream'
         inputFile = { content, contentType, contentUrl: attachment.contentUrl }
       } catch (error) {
         logger.error(`Failed to download Teams attachment: ${error}`)
