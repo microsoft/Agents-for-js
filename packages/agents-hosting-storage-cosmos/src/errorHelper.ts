@@ -25,7 +25,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   MissingCosmosDbStorageOptions: {
     code: -100000,
     description: 'CosmosDbPartitionedStorageOptions is required.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#-100000'
+    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
   },
 
   /**
@@ -34,7 +34,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   MissingCosmosEndpoint: {
     code: -100001,
     description: 'endpoint in cosmosClientOptions is required.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#-100001'
+    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
   },
 
   /**
@@ -43,7 +43,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   MissingCosmosCredentials: {
     code: -100002,
     description: 'key or tokenProvider in cosmosClientOptions is required.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#-100002'
+    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
   },
 
   /**
@@ -52,7 +52,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   MissingDatabaseId: {
     code: -100003,
     description: 'databaseId for CosmosDB is required.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#-100003'
+    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
   },
 
   /**
@@ -61,7 +61,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   MissingContainerId: {
     code: -100004,
     description: 'containerId for CosmosDB is required.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#-100004'
+    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
   },
 
   /**
@@ -70,7 +70,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   InvalidCompatibilityModeWithKeySuffix: {
     code: -100005,
     description: 'compatibilityMode cannot be true while using a keySuffix.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#-100005'
+    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
   },
 
   /**
@@ -79,7 +79,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   InvalidKeySuffixCharacters: {
     code: -100006,
     description: 'Cannot use invalid Row Key characters: {keySuffix} in keySuffix',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#-100006'
+    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
   },
 
   /**
@@ -88,7 +88,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   MissingReadKeys: {
     code: -100007,
     description: 'Keys are required when reading.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#-100007'
+    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
   },
 
   /**
@@ -97,7 +97,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   MissingWriteChanges: {
     code: -100008,
     description: 'Changes are required when writing.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#-100008'
+    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
   },
 
   /**
@@ -106,7 +106,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   UnsupportedCustomPartitionKeyPath: {
     code: -100009,
     description: 'Custom Partition Key Paths are not supported. {containerId} has a custom Partition Key Path of {partitionKeyPath}.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#-100009'
+    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
   },
 
   /**
@@ -115,7 +115,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   ContainerNotFound: {
     code: -100010,
     description: 'Container {containerId} not found.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#-100010'
+    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
   },
 
   /**
@@ -124,7 +124,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   MissingKeyParameter: {
     code: -100011,
     description: "The 'key' parameter is required.",
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#-100011'
+    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
   },
 
   /**
@@ -133,7 +133,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   ContainerReadNotFound: {
     code: -100012,
     description: 'Not Found',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#-100012'
+    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
   },
 
   /**
@@ -142,7 +142,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   ContainerReadBadRequest: {
     code: -100013,
     description: 'Error reading from container. You might be attempting to read from a non-partitioned container or a container that does not use \'/id\' as the partitionKeyPath',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#-100013'
+    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
   },
 
   /**
@@ -151,7 +151,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   ContainerReadError: {
     code: -100014,
     description: 'Error reading from container',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#-100014'
+    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
   },
 
   /**
@@ -160,7 +160,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   DocumentUpsertError: {
     code: -100015,
     description: 'Error upserting document',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#-100015'
+    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
   },
 
   /**
@@ -169,7 +169,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   DocumentDeleteNotFound: {
     code: -100016,
     description: 'Not Found',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#-100016'
+    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
   },
 
   /**
@@ -178,7 +178,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   DocumentDeleteError: {
     code: -100017,
     description: 'Unable to delete document',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#-100017'
+    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
   },
 
   /**
@@ -187,7 +187,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   InitializationError: {
     code: -100018,
     description: 'Failed to initialize Cosmos DB database/container: {databaseId}/{containerId}',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#-100018'
+    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
   },
 
   /**
@@ -196,6 +196,6 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   MaxNestingDepthExceeded: {
     code: -100019,
     description: 'Maximum nesting depth of {maxDepth} exceeded. {additionalMessage}',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#-100019'
+    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
   }
 }

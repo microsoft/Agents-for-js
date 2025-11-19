@@ -144,4 +144,32 @@ describe('ExceptionHelper tests', () => {
       }
     )
   })
+
+  it('should replace {errorCode} token in helplink', () => {
+    const errorDef: AgentErrorDefinition = {
+      code: -100000,
+      description: 'Test error with tokenized helplink',
+      helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
+    }
+
+    const exception = ExceptionHelper.generateException(Error, errorDef)
+
+    assert.strictEqual(exception.message, '[-100000] - Test error with tokenized helplink - https://aka.ms/M365AgentsErrorCodes/#-100000')
+    assert.strictEqual(exception.code, -100000)
+    assert.strictEqual(exception.helpLink, 'https://aka.ms/M365AgentsErrorCodes/#-100000')
+  })
+
+  it('should not modify helplink if {errorCode} token is not present', () => {
+    const errorDef: AgentErrorDefinition = {
+      code: -100000,
+      description: 'Test error without token',
+      helplink: 'https://aka.ms/custom-link'
+    }
+
+    const exception = ExceptionHelper.generateException(Error, errorDef)
+
+    assert.strictEqual(exception.message, '[-100000] - Test error without token - https://aka.ms/custom-link')
+    assert.strictEqual(exception.code, -100000)
+    assert.strictEqual(exception.helpLink, 'https://aka.ms/custom-link')
+  })
 })

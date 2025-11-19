@@ -70,15 +70,18 @@ export class ExceptionHelper {
       })
     }
 
+    // Replace {errorCode} token in helplink with the actual error code
+    const helplink = errorDefinition.helplink.replace('{errorCode}', errorDefinition.code.toString())
+
     // Format the full message as: [CODE] - [message] - [helplink]
-    const message = `[${errorDefinition.code}] - ${description} - ${errorDefinition.helplink}`
+    const message = `[${errorDefinition.code}] - ${description} - ${helplink}`
 
     // Create the exception
     const exception = new ErrorType(message) as T & AgentError
 
     // Set error code and help link as custom properties
     exception.code = errorDefinition.code
-    exception.helpLink = errorDefinition.helplink
+    exception.helpLink = helplink
 
     // Store inner exception as a custom property if provided
     if (innerException) {

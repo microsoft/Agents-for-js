@@ -9,7 +9,7 @@ describe('Errors tests', () => {
 
     assert.strictEqual(error.code, -100000)
     assert.strictEqual(error.description, 'CosmosDbPartitionedStorageOptions is required.')
-    assert.strictEqual(error.helplink, 'https://aka.ms/M365AgentsErrorCodes/#-100000')
+    assert.strictEqual(error.helplink, 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}')
   })
 
   it('should have MissingCosmosEndpoint error definition', () => {
@@ -17,7 +17,7 @@ describe('Errors tests', () => {
 
     assert.strictEqual(error.code, -100001)
     assert.strictEqual(error.description, 'endpoint in cosmosClientOptions is required.')
-    assert.strictEqual(error.helplink, 'https://aka.ms/M365AgentsErrorCodes/#-100001')
+    assert.strictEqual(error.helplink, 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}')
   })
 
   it('should have MissingCosmosCredentials error definition', () => {
@@ -25,7 +25,7 @@ describe('Errors tests', () => {
 
     assert.strictEqual(error.code, -100002)
     assert.strictEqual(error.description, 'key or tokenProvider in cosmosClientOptions is required.')
-    assert.strictEqual(error.helplink, 'https://aka.ms/M365AgentsErrorCodes/#-100002')
+    assert.strictEqual(error.helplink, 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}')
   })
 
   it('should have all error codes in the correct range', () => {
@@ -52,19 +52,19 @@ describe('Errors tests', () => {
     assert.strictEqual(codes.length, uniqueCodes.size, 'All error codes should be unique')
   })
 
-  it('should have help links with correct format', () => {
+  it('should have help links with tokenized format', () => {
     const errorDefinitions = Object.values(Errors).filter(
       val => val && typeof val === 'object' && 'code' in val && 'description' in val && 'helplink' in val
     ) as AgentErrorDefinition[]
 
     errorDefinitions.forEach(errorDef => {
       assert.ok(
-        errorDef.helplink.startsWith('https://aka.ms/M365AgentsErrorCodes/#'),
-        `Help link should start with correct URL: ${errorDef.helplink}`
+        errorDef.helplink.includes('{errorCode}'),
+        `Help link should contain {errorCode} token: ${errorDef.helplink}`
       )
       assert.ok(
-        errorDef.helplink.endsWith(errorDef.code.toString()),
-        `Help link should end with error code: ${errorDef.helplink}`
+        errorDef.helplink.startsWith('https://aka.ms/M365AgentsErrorCodes/#'),
+        `Help link should start with correct URL: ${errorDef.helplink}`
       )
     })
   })
