@@ -23,6 +23,27 @@ export interface AgentErrorDefinition {
 }
 
 /**
+ * Enhanced error type with additional properties for error code, help link, and inner exception.
+ * This interface extends the standard Error type with custom properties added by ExceptionHelper.
+ */
+export interface AgentError extends Error {
+  /**
+   * Error code for the exception
+   */
+  code: number
+
+  /**
+   * Help URL link for the error
+   */
+  helpLink: string
+
+  /**
+   * Optional inner exception
+   */
+  innerException?: Error
+}
+
+/**
  * Helper class for generating exceptions with error codes.
  */
 export class ExceptionHelper {
@@ -32,14 +53,14 @@ export class ExceptionHelper {
    * @param errorDefinition The error definition containing code, description, and help link
    * @param innerException Optional inner exception
    * @param params Optional parameters object for message formatting with key-value pairs
-   * @returns A new exception instance with error code and help link
+   * @returns A new exception instance with error code and help link, typed as AgentError
    */
   static generateException<T extends Error> (
     ErrorType: new (message: string, innerException?: Error) => T,
     errorDefinition: AgentErrorDefinition,
     innerException?: Error,
     params?: { [key: string]: string }
-  ): T {
+  ): T & AgentError {
     // Format the message with parameters if provided
     let message = errorDefinition.description
     if (params) {
@@ -49,16 +70,15 @@ export class ExceptionHelper {
     }
 
     // Create the exception
-    const exception = new ErrorType(message)
+    const exception = new ErrorType(message) as T & AgentError
 
     // Set error code and help link as custom properties
-    const exceptionWithProps = exception as any
-    exceptionWithProps.code = errorDefinition.code
-    exceptionWithProps.helpLink = errorDefinition.helplink
+    exception.code = errorDefinition.code
+    exception.helpLink = errorDefinition.helplink
 
     // Store inner exception as a custom property if provided
     if (innerException) {
-      exceptionWithProps.innerException = innerException
+      exception.innerException = innerException
     }
 
     return exception

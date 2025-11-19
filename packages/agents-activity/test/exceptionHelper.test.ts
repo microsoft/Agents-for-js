@@ -1,6 +1,6 @@
 import assert from 'assert'
 import { describe, it } from 'node:test'
-import { AgentErrorDefinition, ExceptionHelper } from '../src/exceptionHelper'
+import { AgentErrorDefinition, AgentError, ExceptionHelper } from '../src/exceptionHelper'
 
 describe('AgentErrorDefinition tests', () => {
   it('should create an error definition with all properties', () => {
@@ -39,8 +39,8 @@ describe('ExceptionHelper tests', () => {
     const exception = ExceptionHelper.generateException(Error, errorDef)
 
     assert.strictEqual(exception.message, 'Test error')
-    assert.strictEqual((exception as any).code, -100000)
-    assert.strictEqual((exception as any).helpLink, 'https://aka.ms/test')
+    assert.strictEqual(exception.code, -100000)
+    assert.strictEqual(exception.helpLink, 'https://aka.ms/test')
   })
 
   it('should generate ReferenceError exception', () => {
@@ -54,8 +54,8 @@ describe('ExceptionHelper tests', () => {
 
     assert.ok(exception instanceof ReferenceError)
     assert.strictEqual(exception.message, 'Reference error test')
-    assert.strictEqual((exception as any).code, -100000)
-    assert.strictEqual((exception as any).helpLink, 'https://aka.ms/test')
+    assert.strictEqual(exception.code, -100000)
+    assert.strictEqual(exception.helpLink, 'https://aka.ms/test')
   })
 
   it('should generate exception with inner exception', () => {
@@ -69,8 +69,8 @@ describe('ExceptionHelper tests', () => {
     const exception = ExceptionHelper.generateException(Error, errorDef, innerError)
 
     assert.strictEqual(exception.message, 'Test error')
-    assert.strictEqual((exception as any).code, -100000)
-    assert.strictEqual((exception as any).innerException, innerError)
+    assert.strictEqual(exception.code, -100000)
+    assert.strictEqual(exception.innerException, innerError)
   })
 
   it('should format message with single parameter', () => {
@@ -134,13 +134,11 @@ describe('ExceptionHelper tests', () => {
       () => {
         throw ExceptionHelper.generateException(ReferenceError, errorDef)
       },
-      (err: any) => {
+      (err: ReferenceError & AgentError) => {
         return (
           err instanceof ReferenceError &&
           err.message === 'Test error' &&
-          // @ts-expect-error
           err.code === -100000 &&
-          // @ts-expect-error
           err.helpLink === 'https://aka.ms/test'
         )
       }
