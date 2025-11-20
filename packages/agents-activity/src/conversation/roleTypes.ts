@@ -25,6 +25,11 @@ export enum RoleTypes {
   Skill = 'skill',
 
   /**
+   * Indicates the ChannelAccount is via the Power Platform Connector.
+   */
+  ConnectorUser = 'connectoruser',
+
+  /**
    * Agentic AI - AAI role
    */
   AgenticIdentity = 'agenticAppInstance',

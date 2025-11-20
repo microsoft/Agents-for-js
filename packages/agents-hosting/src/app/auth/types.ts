@@ -6,14 +6,14 @@
 import { Activity } from '@microsoft/agents-activity'
 import { Storage, StoreItem } from '../../storage'
 import { TurnContext } from '../../turnContext'
-import { AgenticAuthorizationOptions, AzureBotAuthorizationOptions } from './handlers'
+import { AgenticAuthorizationOptions, AzureBotAuthorizationOptions, ConnectorUserAuthorizationOptions } from './handlers'
 import { TokenResponse } from '../../oauth'
 import { Connections } from '../../auth/connections'
 
 /**
  * Authorization configuration options.
  */
-export type AuthorizationOptions = Record<string, AzureBotAuthorizationOptions | AgenticAuthorizationOptions>
+export type AuthorizationOptions = Record<string, AzureBotAuthorizationOptions | AgenticAuthorizationOptions | ConnectorUserAuthorizationOptions>
 
 /**
  * Represents the status of a handler registration attempt.
