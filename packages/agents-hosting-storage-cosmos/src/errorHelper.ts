@@ -142,7 +142,6 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   ContainerReadBadRequest: {
     code: -100013,
     description: 'Bad request error while reading from the Cosmos DB container. This usually indicates a configuration mismatch: the container may be non-partitioned or uses a partition key path other than "/id". Verify your container\'s partition key configuration matches the storage implementation requirements.',
-    description: 'Error reading from container. You might be attempting to read from a non-partitioned container or a container that does not use \'/id\' as the partitionKeyPath',
     helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
   },
 
