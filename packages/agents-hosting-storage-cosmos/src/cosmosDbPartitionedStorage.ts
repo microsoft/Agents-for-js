@@ -6,6 +6,8 @@ import { CosmosDbKeyEscape } from './cosmosDbKeyEscape'
 import { DocumentStoreItem } from './documentStoreItem'
 import { CosmosDbPartitionedStorageOptions } from './cosmosDbPartitionedStorageOptions'
 import { Storage, StoreItems } from '@microsoft/agents-hosting'
+import { ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from './errorHelper'
 
 /**
  * A utility class to ensure that a specific asynchronous task is executed only once for a given key.
@@ -55,30 +57,51 @@ export class CosmosDbPartitionedStorage implements Storage {
    */
   constructor (private readonly cosmosDbStorageOptions: CosmosDbPartitionedStorageOptions) {
     if (!cosmosDbStorageOptions) {
-      throw new ReferenceError('CosmosDbPartitionedStorageOptions is required.')
+      throw ExceptionHelper.generateException(
+        ReferenceError,
+        Errors.MissingCosmosDbStorageOptions
+      )
     }
     const { cosmosClientOptions } = cosmosDbStorageOptions
     if (!cosmosClientOptions?.endpoint) {
-      throw new ReferenceError('endpoint in cosmosClientOptions is required.')
+      throw ExceptionHelper.generateException(
+        ReferenceError,
+        Errors.MissingCosmosEndpoint
+      )
     }
     if (!cosmosClientOptions?.key && !cosmosClientOptions?.tokenProvider) {
-      throw new ReferenceError('key or tokenProvider in cosmosClientOptions is required.')
+      throw ExceptionHelper.generateException(
+        ReferenceError,
+        Errors.MissingCosmosCredentials
+      )
     }
     if (!cosmosDbStorageOptions.databaseId) {
-      throw new ReferenceError('databaseId is for CosmosDB required.')
+      throw ExceptionHelper.generateException(
+        ReferenceError,
+        Errors.MissingDatabaseId
+      )
     }
     if (!cosmosDbStorageOptions.containerId) {
-      throw new ReferenceError('containerId for CosmosDB is required.')
+      throw ExceptionHelper.generateException(
+        ReferenceError,
+        Errors.MissingContainerId
+      )
     }
     cosmosDbStorageOptions.compatibilityMode ??= true
     if (cosmosDbStorageOptions.keySuffix) {
       if (cosmosDbStorageOptions.compatibilityMode) {
-        throw new ReferenceError('compatibilityMode cannot be true while using a keySuffix.')
+        throw ExceptionHelper.generateException(
+          ReferenceError,
+          Errors.InvalidCompatibilityModeWithKeySuffix
+        )
       }
       const suffixEscaped = CosmosDbKeyEscape.escapeKey(cosmosDbStorageOptions.keySuffix)
       if (cosmosDbStorageOptions.keySuffix !== suffixEscaped) {
-        throw new ReferenceError(
-          `Cannot use invalid Row Key characters: ${cosmosDbStorageOptions.keySuffix} in keySuffix`
+        throw ExceptionHelper.generateException(
+          ReferenceError,
+          Errors.InvalidKeySuffixCharacters,
+          undefined,
+          { keySuffix: cosmosDbStorageOptions.keySuffix }
         )
       }
     }
@@ -91,7 +114,10 @@ export class CosmosDbPartitionedStorage implements Storage {
    */
   async read (keys: string[]): Promise<StoreItems> {
     if (!keys) {
-      throw new ReferenceError('Keys are required when reading.')
+      throw ExceptionHelper.generateException(
+        ReferenceError,
+        Errors.MissingReadKeys
+      )
     } else if (keys.length === 0) {
       return {}
     }
@@ -119,16 +145,19 @@ export class CosmosDbPartitionedStorage implements Storage {
           }
         } catch (err: any) {
           if (err.code === 404) {
-            this.throwInformativeError('Not Found',
-              err)
+            // Not Found is not an error during read operations, just skip
           } else if (err.code === 400) {
-            this.throwInformativeError(
-                            `Error reading from container. You might be attempting to read from a non-partitioned
-                    container or a container that does not use '/id' as the partitionKeyPath`,
-                            err
+            throw ExceptionHelper.generateException(
+              Error,
+              Errors.ContainerReadBadRequest,
+              err
             )
           } else {
-            this.throwInformativeError('Error reading from container', err)
+            throw ExceptionHelper.generateException(
+              Error,
+              Errors.ContainerReadError,
+              err
+            )
           }
         }
       })
@@ -143,7 +172,10 @@ export class CosmosDbPartitionedStorage implements Storage {
    */
   async write (changes: StoreItems): Promise<void> {
     if (!changes) {
-      throw new ReferenceError('Changes are required when writing.')
+      throw ExceptionHelper.generateException(
+        ReferenceError,
+        Errors.MissingWriteChanges
+      )
     } else if (changes.length === 0) {
       return
     }
@@ -171,7 +203,11 @@ export class CosmosDbPartitionedStorage implements Storage {
           await this.container.items.upsert(document, accessCondition)
         } catch (err: any) {
           this.checkForNestingError(change, err)
-          this.throwInformativeError('Error upserting document', err)
+          throw ExceptionHelper.generateException(
+            Error,
+            Errors.DocumentUpsertError,
+            err
+          )
         }
       })
     )
@@ -195,9 +231,13 @@ export class CosmosDbPartitionedStorage implements Storage {
           await this.container.item(escapedKey, this.getPartitionKey(escapedKey)).delete()
         } catch (err: any) {
           if (err.code === 404) {
-            this.throwInformativeError('Not Found', err)
+            // Not Found is not an error during delete operations, just skip
           } else {
-            this.throwInformativeError('Unable to delete document', err)
+            throw ExceptionHelper.generateException(
+              Error,
+              Errors.DocumentDeleteError,
+              err
+            )
           }
         }
       })
@@ -239,8 +279,14 @@ export class CosmosDbPartitionedStorage implements Storage {
             if (paths.includes('/_partitionKey')) {
               this.compatibilityModePartitionKey = true
             } else if (paths.indexOf(DocumentStoreItem.partitionKeyPath) === -1) {
-              throw new Error(
-                            `Custom Partition Key Paths are not supported. ${this.cosmosDbStorageOptions.containerId} has a custom Partition Key Path of ${paths[0]}.`
+              throw ExceptionHelper.generateException(
+                Error,
+                Errors.UnsupportedCustomPartitionKeyPath,
+                undefined,
+                {
+                  containerId: this.cosmosDbStorageOptions.containerId,
+                  partitionKeyPath: paths[0]
+                }
               )
             }
           } else {
@@ -264,15 +310,24 @@ export class CosmosDbPartitionedStorage implements Storage {
       }
 
       if (!container) {
-        throw new Error(`Container ${this.cosmosDbStorageOptions.containerId} not found.`)
+        throw ExceptionHelper.generateException(
+          Error,
+          Errors.ContainerNotFound,
+          undefined,
+          { containerId: this.cosmosDbStorageOptions.containerId }
+        )
       }
       return container
     } catch (err: any) {
-      this.throwInformativeError(
-            `Failed to initialize Cosmos DB database/container: ${this.cosmosDbStorageOptions.databaseId}/${this.cosmosDbStorageOptions.containerId}`,
-            err
+      throw ExceptionHelper.generateException(
+        Error,
+        Errors.InitializationError,
+        err,
+        {
+          databaseId: this.cosmosDbStorageOptions.databaseId,
+          containerId: this.cosmosDbStorageOptions.containerId
+        }
       )
-      throw err
     }
   }
 
@@ -283,18 +338,33 @@ export class CosmosDbPartitionedStorage implements Storage {
   private checkForNestingError (json: object, err: Error | Record<'message', string> | string): void {
     const checkDepth = (obj: unknown, depth: number, isInDialogState: boolean): void => {
       if (depth > maxDepthAllowed) {
-        let message = `Maximum nesting depth of ${maxDepthAllowed} exceeded.`
+        let additionalMessage = ''
 
         if (isInDialogState) {
-          message +=
+          additionalMessage =
                         ' This is most likely caused by recursive component dialogs. ' +
                         'Try reworking your dialog code to make sure it does not keep dialogs on the stack ' +
                         "that it's not using. For example, consider using replaceDialog instead of beginDialog."
         } else {
-          message += ' Please check your data for signs of unintended recursion.'
+          additionalMessage = ' Please check your data for signs of unintended recursion.'
         }
 
-        this.throwInformativeError(message, err)
+        // Convert err to Error if needed
+        const errorObj = typeof err === 'string'
+          ? new Error(err)
+          : err instanceof Error
+            ? err
+            : new Error(err.message)
+
+        throw ExceptionHelper.generateException(
+          Error,
+          Errors.MaxNestingDepthExceeded,
+          errorObj,
+          {
+            maxDepth: maxDepthAllowed.toString(),
+            additionalMessage: additionalMessage
+          }
+        )
       } else if (obj && typeof obj === 'object') {
         for (const [key, value] of Object.entries(obj)) {
           checkDepth(value, depth + 1, key === 'dialogStack' || isInDialogState)
@@ -303,15 +373,5 @@ export class CosmosDbPartitionedStorage implements Storage {
     }
 
     checkDepth(json, 0, false)
-  }
-
-  private throwInformativeError (prependedMessage: string, err: Error | Record<'message', string> | string): void {
-    if (typeof err === 'string') {
-      err = new Error(err)
-    }
-
-    err.message = `[${prependedMessage}] ${err.message}`
-
-    throw err
   }
 }
