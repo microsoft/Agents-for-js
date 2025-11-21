@@ -17,7 +17,10 @@ describe('AgentApplication', () => {
         authorization: {}
       })
       assert.equal(app.options.authorization, undefined)
-    }, { message: 'Storage is required for Authorization. Ensure that a storage provider is configured in the AgentApplication options.' })
+    }, (err: Error) => {
+      assert.ok(err.message.includes('Storage is required for Authorization. Ensure that a storage provider is configured in the AgentApplication options.'))
+      return true
+    })
   })
 
   it('should not allow empty handlers', () => {
@@ -27,7 +30,10 @@ describe('AgentApplication', () => {
         authorization: {}
       })
       assert.equal(app.options.authorization, undefined)
-    }, { message: 'The AgentApplication.authorization does not have any auth handlers' })
+    }, (err: Error) => {
+      assert.ok(err.message.includes('The AgentApplication.authorization does not have any auth handlers'))
+      return true
+    })
   })
 
   it('should initialize successfully with valid auth configuration', () => {
@@ -46,14 +52,20 @@ describe('AgentApplication', () => {
     assert.throws(() => {
       const auth = app.authorization
       assert.equal(auth, undefined)
-    }, { message: 'The Application.authorization property is unavailable because no authorization options were configured.' })
+    }, (err: Error) => {
+      assert.ok(err.message.includes('The Application.authorization property is unavailable because no authorization options were configured.'))
+      return true
+    })
   })
 
   it('should throw when registering onSignInSuccess without authorization', () => {
     const app = new AgentApplication()
     assert.throws(() => {
       app.onSignInSuccess(async () => {})
-    }, { message: 'The Application.authorization property is unavailable because no authorization options were configured.' })
+    }, (err: Error) => {
+      assert.ok(err.message.includes('The Application.authorization property is unavailable because no authorization options were configured.'))
+      return true
+    })
   })
 
   it('should support multiple auth handlers', () => {
@@ -104,15 +116,18 @@ describe('AgentApplication', () => {
     }
   })
 
-  it('should throw when using a non-existent auth handler id', () => {
+  it('should throw when using a non-existent auth handler id', async () => {
     const app = new AgentApplication({
       storage: new MemoryStorage(),
       authorization: {
         testAuth: { name: 'test' }
       }
     })
-    assert.rejects(async () => {
+    await assert.rejects(async () => {
       await app.authorization.getToken({} as any, 'nonExistinghandler')
-    }, { message: "Cannot find auth handler with ID 'nonExistinghandler'. Ensure it is configured in the agent application options." })
+    }, (err: Error) => {
+      assert.ok(err.message.includes("Cannot find auth handler with ID 'nonExistinghandler'. Ensure it is configured in the agent application options."))
+      return true
+    })
   })
 })
