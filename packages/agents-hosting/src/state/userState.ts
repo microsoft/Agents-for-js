@@ -6,7 +6,8 @@
 import { AgentState } from './agentState'
 import { Storage } from '../storage/storage'
 import { TurnContext } from '../turnContext'
-import { Activity } from '@microsoft/agents-activity'
+import { Activity, ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from '../errorHelper'
 
 /**
  * Manages the state of a user.
@@ -31,11 +32,11 @@ export class UserState extends AgentState {
     const userId = activity && (activity.from != null) && activity.from.id ? activity.from.id : undefined
 
     if (!channelId) {
-      throw new Error('missing activity.channelId')
+      throw ExceptionHelper.generateException(Error, Errors.MissingActivityChannelId)
     }
 
     if (!userId) {
-      throw new Error('missing activity.from.id')
+      throw ExceptionHelper.generateException(Error, Errors.MissingActivityFromId)
     }
 
     return `${channelId}/users/${userId}/${this.namespace}`

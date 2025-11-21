@@ -13,9 +13,8 @@ describe('MemoryStorage', () => {
     it('should throw an error if keys are empty', async () => {
       await assert.rejects(
         async () => await memoryStorage.read([]),
-        {
-          name: 'ReferenceError',
-          message: 'Keys are required when reading.'
+        (err: Error) => {
+          return err.name === 'ReferenceError' && err.message.includes('Keys are required when reading.')
         }
       )
     })
@@ -24,9 +23,8 @@ describe('MemoryStorage', () => {
       await assert.rejects(
         // @ts-expect-error
         async () => await memoryStorage.read(null),
-        {
-          name: 'ReferenceError',
-          message: 'Keys are required when reading.'
+        (err: Error) => {
+          return err.name === 'ReferenceError' && err.message.includes('Keys are required when reading.')
         }
       )
     })
@@ -47,9 +45,8 @@ describe('MemoryStorage', () => {
     it('should throw an error if changes are not empty array', async () => {
       await assert.rejects(
         async () => await memoryStorage.write([]),
-        {
-          name: 'ReferenceError',
-          message: 'Changes are required when writing.'
+        (err: Error) => {
+          return err.name === 'ReferenceError' && err.message.includes('Changes are required when writing.')
         }
       )
     })
@@ -58,9 +55,8 @@ describe('MemoryStorage', () => {
       await assert.rejects(
         // @ts-expect-error
         async () => await memoryStorage.write(null),
-        {
-          name: 'ReferenceError',
-          message: 'Changes are required when writing.'
+        (err: Error) => {
+          return err.name === 'ReferenceError' && err.message.includes('Changes are required when writing.')
         }
       )
     })
@@ -84,9 +80,8 @@ describe('MemoryStorage', () => {
       await assert.rejects(
         async () =>
           await memoryStorage.write({ key1: { value: 'conflict', eTag: 'invalid' } }),
-        {
-          name: 'Error',
-          message: 'Storage: error writing "key1" due to eTag conflict.'
+        (err: Error) => {
+          return err.name === 'Error' && err.message.includes('Storage: error writing "key1" due to eTag conflict.')
         }
       )
     })

@@ -3,6 +3,9 @@
  * Licensed under the MIT License.
  */
 
+import { ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from './errorHelper'
+
 /**
  * A class that implements the HeaderPropagationCollection interface.
  * It filters the incoming request headers based on the definition provided and loads them into the outgoing headers collection.
@@ -23,7 +26,7 @@ export class HeaderPropagation implements HeaderPropagationCollection {
 
   constructor (headers: Record<string, string | string[] | undefined>) {
     if (!headers) {
-      throw new Error('Headers must be provided.')
+      throw ExceptionHelper.generateException(Error, Errors.HeadersRequired)
     }
 
     this._incomingRequests = this.normalizeHeaders(headers)
