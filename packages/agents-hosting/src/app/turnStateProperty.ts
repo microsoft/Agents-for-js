@@ -29,12 +29,12 @@ export class TurnStateProperty<T = any> implements StatePropertyAccessor<T> {
 
     const scope = state.getScope(scopeName)
     if (!scope) {
-      throw ExceptionHelper.generateException(Error, Errors.TurnStateMissingScope, undefined, { scope })
+      throw ExceptionHelper.generateException(Error, Errors.TurnStateMissingScope, undefined, { scope: scopeName })
     }
 
     this._state = scope
     if (!this._state) {
-      throw ExceptionHelper.generateException(Error, Errors.TurnStateMissingScope, undefined, { scope })
+      throw ExceptionHelper.generateException(Error, Errors.TurnStateMissingScope, undefined, { scope: scopeName })
     }
   }
 

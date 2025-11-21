@@ -85,7 +85,7 @@ export class AuthorizationManager {
     // Validate supported types, agentic, and default (Azure Bot - undefined)
     const supportedTypes = ['agentic', undefined]
     if (!supportedTypes.includes(result.type)) {
-      throw ExceptionHelper.generateException(Error, Errors.UnsupportedAuthorizationHandlerType, undefined, { handlerType: result.type, handlerId: id, supportedTypes: supportedTypes.filter(Boolean).join(', ') })
+      throw ExceptionHelper.generateException(Error, Errors.UnsupportedAuthorizationHandlerType, undefined, { handlerType: result.type || 'undefined', handlerId: id, supportedTypes: supportedTypes.filter(Boolean).join(', ') })
     }
 
     return result
@@ -185,7 +185,7 @@ export class AuthorizationManager {
       return await handler.signin(context, active)
     } catch (cause) {
       await storage.delete()
-      throw ExceptionHelper.generateException(Error, Errors.FailedToSignIn, cause)
+      throw ExceptionHelper.generateException(Error, Errors.FailedToSignIn, cause instanceof Error ? cause : undefined)
     }
   }
 

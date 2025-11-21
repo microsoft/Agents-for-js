@@ -4,7 +4,7 @@
  */
 
 import { ExceptionHelper } from '@microsoft/agents-activity'
-import { Errors } from '../errorHelper'
+import { Errors } from '../../errorHelper'
 import { Activity, addAIToActivity, Attachment, Entity, ClientCitation, SensitivityUsageInfo } from '@microsoft/agents-activity'
 import { TurnContext } from '../../turnContext'
 import { Citation } from './citation'

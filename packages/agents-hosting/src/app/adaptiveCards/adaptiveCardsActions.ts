@@ -119,7 +119,7 @@ export class AdaptiveCardsActions<TState extends TurnState> {
                         a?.name !== ACTION_INVOKE_NAME ||
                         (invokeAction?.action.type !== ACTION_EXECUTE_TYPE)
           ) {
-            throw ExceptionHelper.generateException(Error, Errors.UnexpectedActionExecute, undefined, { activityType: invokeAction?.action.type }
+            throw ExceptionHelper.generateException(Error, Errors.UnexpectedActionExecute, undefined, { activityType: invokeAction?.action.type || 'unknown' }
             )
           }
 

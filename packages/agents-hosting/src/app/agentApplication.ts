@@ -328,7 +328,9 @@ export class AgentApplication<TState extends TurnState> {
     isAgenticRoute: boolean = false
   ): this {
     if (typeof handler !== 'function') {
-      throw ExceptionHelper.generateException(Error, Errors.AuthorizationPropertyUnavailable)
+      throw new Error(
+                `ConversationUpdate 'handler' for ${event} is ${typeof handler}. Type of 'handler' must be a function.`
+      )
     }
 
     const selector = this.createConversationUpdateSelector(event, isAgenticRoute)
@@ -350,7 +352,9 @@ export class AgentApplication<TState extends TurnState> {
     logic: (context: TurnContext) => Promise<void>
   ): Promise<void> {
     if (!this._adapter) {
-      throw ExceptionHelper.generateException(Error, Errors.AuthorizationPropertyUnavailable)
+      throw new Error(
+        "You must configure the Application with an 'adapter' before calling Application.continueConversationAsync()"
+      )
     }
 
     if (!this.options.agentAppId) {
