@@ -8,6 +8,8 @@ import { AuthConfiguration } from './authConfiguration'
 import { Connections } from './connections'
 import { MsalTokenProvider } from './msalTokenProvider'
 import { JwtPayload } from 'jsonwebtoken'
+import { ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from '../errorHelper'
 
 export interface ConnectionMapItem {
   audience?: string
@@ -48,7 +50,7 @@ export class MsalConnectionManager implements Connections {
   getConnection (connectionName: string): MsalTokenProvider {
     const conn = this._connections.get(connectionName)
     if (!conn) {
-      throw new Error(`Connection not found: ${connectionName}`)
+      throw ExceptionHelper.generateException(Error, Errors.ConnectionNotFound, undefined, { connectionName })
     }
     return this.applyConnectionDefaults(conn)
   }
@@ -59,7 +61,7 @@ export class MsalConnectionManager implements Connections {
    */
   getDefaultConnection (): MsalTokenProvider {
     if (this._connections.size === 0) {
-      throw new Error('No connections found for this Agent in the Connections Configuration.')
+      throw ExceptionHelper.generateException(Error, Errors.NoConnectionsFound)
     }
 
     // Return the wildcard map item instance.
@@ -94,7 +96,7 @@ export class MsalConnectionManager implements Connections {
    */
   getTokenProvider (identity: JwtPayload, serviceUrl: string): MsalTokenProvider {
     if (!identity) {
-      throw new Error('Identity is required to get the token provider.')
+      throw ExceptionHelper.generateException(Error, Errors.IdentityRequiredForTokenProvider)
     }
 
     let audience
@@ -129,7 +131,7 @@ export class MsalConnectionManager implements Connections {
         }
       }
     }
-    throw new Error(`No connection found for audience: ${audience} and serviceUrl: ${serviceUrl}`)
+    throw ExceptionHelper.generateException(Error, Errors.NoConnectionForAudienceAndServiceUrl, undefined, { audience, serviceUrl })
   }
 
   /**

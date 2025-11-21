@@ -9,6 +9,8 @@ import { Request } from './request'
 import jwksRsa, { JwksClient, SigningKey } from 'jwks-rsa'
 import jwt, { JwtHeader, JwtPayload, SignCallback, GetPublicKeyOrSecret } from 'jsonwebtoken'
 import { debug } from '@microsoft/agents-activity/logger'
+import { ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from '../errorHelper'
 
 const logger = debug('agents:jwt-middleware')
 
@@ -23,7 +25,7 @@ const verifyToken = async (raw: string, config: AuthConfiguration): Promise<JwtP
   logger.debug('jwt.decode ', JSON.stringify(payload))
 
   if (!payload) {
-    throw new Error('invalid token')
+    throw ExceptionHelper.generateException(Error, Errors.InvalidToken)
   }
   const audience = payload.aud
 

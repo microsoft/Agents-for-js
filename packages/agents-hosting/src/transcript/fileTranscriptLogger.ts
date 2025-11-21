@@ -10,6 +10,8 @@ import * as fs from 'fs/promises'
 import * as path from 'path'
 import { EOL } from 'os'
 import { Activity, ActivityTypes } from '@microsoft/agents-activity'
+import { ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from '../errorHelper'
 
 const logger = debug('agents:file-transcript-logger')
 
@@ -47,7 +49,7 @@ export class FileTranscriptLogger implements TranscriptStore {
    */
   async logActivity (activity: Activity): Promise<void> {
     if (!activity) {
-      throw new Error('activity is required.')
+      throw ExceptionHelper.generateException(Error, Errors.ActivityRequired)
     }
 
     const transcriptFile = this.getTranscriptFile(activity.channelId!, activity.conversation?.id!)
@@ -328,11 +330,11 @@ export class FileTranscriptLogger implements TranscriptStore {
    */
   private getTranscriptFile (channelId: string, conversationId: string): string {
     if (!channelId?.trim()) {
-      throw new Error('channelId is required.')
+      throw ExceptionHelper.generateException(Error, Errors.TranscriptChannelIdRequired)
     }
 
     if (!conversationId?.trim()) {
-      throw new Error('conversationId is required.')
+      throw ExceptionHelper.generateException(Error, Errors.TranscriptConversationIdRequired)
     }
 
     // Get invalid filename characters (cross-platform)
@@ -353,7 +355,7 @@ export class FileTranscriptLogger implements TranscriptStore {
    */
   private getChannelFolder (channelId: string): string {
     if (!channelId?.trim()) {
-      throw new Error('channelId is required.')
+      throw ExceptionHelper.generateException(Error, Errors.TranscriptChannelIdRequired)
     }
 
     const invalidChars = this.getInvalidPathChars()

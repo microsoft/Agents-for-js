@@ -3,6 +3,8 @@
  * Licensed under the MIT License.
  */
 
+import { ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from '../errorHelper'
 import { TurnContext } from '../turnContext'
 import { StatePropertyAccessor } from '../state'
 import { TurnStateEntry } from './turnStateEntry'
@@ -27,12 +29,12 @@ export class TurnStateProperty<T = any> implements StatePropertyAccessor<T> {
 
     const scope = state.getScope(scopeName)
     if (!scope) {
-      throw new Error(`TurnStateProperty: TurnState missing state scope named "${scope}".`)
+      throw ExceptionHelper.generateException(Error, Errors.TurnStateMissingScope, undefined, { scope })
     }
 
     this._state = scope
     if (!this._state) {
-      throw new Error(`TurnStateProperty: TurnState missing state scope named "${scope}".`)
+      throw ExceptionHelper.generateException(Error, Errors.TurnStateMissingScope, undefined, { scope })
     }
   }
 
