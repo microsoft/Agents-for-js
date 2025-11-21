@@ -27,3 +27,5 @@ export * from './storage/storage'
 export * from './headerPropagation'
 
 export * from './agent-client'
+
+export { Errors } from './errorHelper'

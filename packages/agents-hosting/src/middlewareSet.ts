@@ -1,6 +1,8 @@
 /** * Copyright (c) Microsoft Corporation. All rights reserved. * Licensed under the MIT License. */
 import { TurnContext } from './turnContext'
 import { debug } from '@microsoft/agents-activity/logger'
+import { ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from './errorHelper'
 
 const logger = debug('agents:middleware')
 
@@ -52,7 +54,7 @@ export class MiddlewareSet implements Middleware {
           typeof plugin === 'function' ? plugin : async (context, next) => await plugin.onTurn(context, next)
         )
       } else {
-        throw new Error('MiddlewareSet.use(): invalid plugin type being added.')
+        throw ExceptionHelper.generateException(Error, Errors.InvalidMiddlewarePlugin)
       }
     })
     return this

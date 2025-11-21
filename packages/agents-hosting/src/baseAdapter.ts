@@ -6,11 +6,12 @@
 import { Middleware, MiddlewareHandler, MiddlewareSet } from './middlewareSet'
 import { TurnContext } from './turnContext'
 import { debug } from '@microsoft/agents-activity/logger'
-import { Activity, ConversationReference } from '@microsoft/agents-activity'
+import { Activity, ConversationReference, ExceptionHelper } from '@microsoft/agents-activity'
 import { ResourceResponse } from './connector-client/resourceResponse'
 import { AttachmentData } from './connector-client/attachmentData'
 import { AttachmentInfo } from './connector-client/attachmentInfo'
 import { JwtPayload } from 'jsonwebtoken'
+import { Errors } from './errorHelper'
 
 const logger = debug('agents:base-adapter')
 
@@ -202,7 +203,7 @@ export abstract class BaseAdapter {
         if (err instanceof Error) {
           await this.onTurnError(pContext.proxy, err)
         } else {
-          throw new Error('Unknown error type: ' + err.message)
+          throw ExceptionHelper.generateException(Error, Errors.UnknownErrorType, undefined, { message: err.message })
         }
       } else {
         throw err

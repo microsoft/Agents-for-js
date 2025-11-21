@@ -5,6 +5,8 @@
 
 import { Storage, StoreItem } from './storage'
 import { debug } from '@microsoft/agents-activity/logger'
+import { ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from '../errorHelper'
 
 const logger = debug('agents:memory-storage')
 
@@ -62,7 +64,7 @@ export class MemoryStorage implements Storage {
    */
   async read (keys: string[]): Promise<StoreItem> {
     if (!keys || keys.length === 0) {
-      throw new ReferenceError('Keys are required when reading.')
+      throw ExceptionHelper.generateException(ReferenceError, Errors.KeysRequiredForReading)
     }
 
     const data: StoreItem = {}
@@ -92,7 +94,7 @@ export class MemoryStorage implements Storage {
    */
   async write (changes: StoreItem): Promise<void> {
     if (!changes || changes.length === 0) {
-      throw new ReferenceError('Changes are required when writing.')
+      throw ExceptionHelper.generateException(ReferenceError, Errors.ChangesRequiredForWriting)
     }
 
     for (const [key, newItem] of Object.entries(changes)) {
@@ -105,7 +107,7 @@ export class MemoryStorage implements Storage {
         if (newItem.eTag === oldItem.eTag) {
           this.saveItem(key, newItem)
         } else {
-          throw new Error(`Storage: error writing "${key}" due to eTag conflict.`)
+          throw ExceptionHelper.generateException(Error, Errors.StorageEtagConflict, undefined, { key })
         }
       }
     }

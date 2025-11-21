@@ -1,13 +1,14 @@
 /** * Copyright (c) Microsoft Corporation. All rights reserved. * Licensed under the MIT License. */
 import { INVOKE_RESPONSE_KEY } from './activityHandler'
 import { BaseAdapter } from './baseAdapter'
-import { Activity, ActivityTypes, ConversationReference, DeliveryModes, InputHints } from '@microsoft/agents-activity'
+import { Activity, ActivityTypes, ConversationReference, DeliveryModes, InputHints, ExceptionHelper } from '@microsoft/agents-activity'
 import { ResourceResponse } from './connector-client/resourceResponse'
 import { TurnContextStateCollection } from './turnContextStateCollection'
 import { AttachmentInfo } from './connector-client/attachmentInfo'
 import { AttachmentData } from './connector-client/attachmentData'
 import { StreamingResponse } from './app/streaming/streamingResponse'
 import { JwtPayload } from 'jsonwebtoken'
+import { Errors } from './errorHelper'
 
 /**
  * Defines a handler for processing and sending activities.
@@ -372,7 +373,7 @@ export class TurnContext {
 
   set responded (value: boolean) {
     if (!value) {
-      throw new Error("TurnContext: cannot set 'responded' to a value of 'false'.")
+      throw ExceptionHelper.generateException(Error, Errors.CannotSetRespondedToFalse)
     }
     this._respondedRef.responded = true
   }

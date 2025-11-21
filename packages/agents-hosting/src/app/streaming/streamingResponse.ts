@@ -3,7 +3,8 @@
  * Licensed under the MIT License.
  */
 
-import { Activity, addAIToActivity, Attachment, Entity, ClientCitation, SensitivityUsageInfo } from '@microsoft/agents-activity'
+import { ExceptionHelper, Activity, addAIToActivity, Attachment, Entity, ClientCitation, SensitivityUsageInfo } from '@microsoft/agents-activity'
+import { Errors } from '../../errorHelper'
 import { TurnContext } from '../../turnContext'
 import { Citation } from './citation'
 import { CitationUtil } from './citationUtil'
@@ -95,7 +96,7 @@ export class StreamingResponse {
      */
   public queueInformativeUpdate (text: string): void {
     if (this._ended) {
-      throw new Error('The stream has already ended.')
+      throw ExceptionHelper.generateException(Error, Errors.StreamAlreadyEnded)
     }
 
     // Queue a typing activity
@@ -123,7 +124,7 @@ export class StreamingResponse {
      */
   public queueTextChunk (text: string, citations?: Citation[]): void {
     if (this._ended) {
-      throw new Error('The stream has already ended.')
+      throw ExceptionHelper.generateException(Error, Errors.StreamAlreadyEnded)
     }
 
     // Update full message text
@@ -143,7 +144,7 @@ export class StreamingResponse {
      */
   public endStream (): Promise<void> {
     if (this._ended) {
-      throw new Error('The stream has already ended.')
+      throw ExceptionHelper.generateException(Error, Errors.StreamAlreadyEnded)
     }
 
     // Queue final message

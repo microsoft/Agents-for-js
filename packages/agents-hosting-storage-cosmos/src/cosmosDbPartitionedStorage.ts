@@ -362,7 +362,7 @@ export class CosmosDbPartitionedStorage implements Storage {
           errorObj,
           {
             maxDepth: maxDepthAllowed.toString(),
-            additionalMessage: additionalMessage
+            additionalMessage
           }
         )
       } else if (obj && typeof obj === 'object') {
