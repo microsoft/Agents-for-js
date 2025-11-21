@@ -1,5 +1,6 @@
-import { Activity } from '@microsoft/agents-activity'
+import { Activity, ExceptionHelper } from '@microsoft/agents-activity'
 import { TranscriptLogger } from './transcriptLogger'
+import { Errors } from '../errorHelper'
 
 /**
  * A transcript logger that logs activities to the console.
@@ -12,7 +13,7 @@ export class ConsoleTranscriptLogger implements TranscriptLogger {
    */
   logActivity (activity: Activity): void | Promise<void> {
     if (!activity) {
-      throw new Error('Activity is required.')
+      throw ExceptionHelper.generateException(Error, Errors.ActivityRequired)
     }
 
     console.log('Activity Log:', activity)

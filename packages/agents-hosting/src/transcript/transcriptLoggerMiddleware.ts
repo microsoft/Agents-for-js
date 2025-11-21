@@ -2,8 +2,9 @@ import { TurnContext } from '../turnContext'
 import { ResourceResponse } from '../connector-client'
 import { Middleware } from '../middlewareSet'
 import { TranscriptLogger } from './transcriptLogger'
-import { Activity, ActivityEventNames, ActivityTypes, ConversationReference, RoleTypes } from '@microsoft/agents-activity'
+import { Activity, ActivityEventNames, ActivityTypes, ConversationReference, RoleTypes, ExceptionHelper } from '@microsoft/agents-activity'
 import { debug } from '@microsoft/agents-activity/logger'
+import { Errors } from '../errorHelper'
 
 const appLogger = debug('agents:rest-client')
 
@@ -20,7 +21,7 @@ export class TranscriptLoggerMiddleware implements Middleware {
    */
   constructor (logger: TranscriptLogger) {
     if (!logger) {
-      throw new Error('TranscriptLoggerMiddleware requires a TranscriptLogger instance.')
+      throw ExceptionHelper.generateException(Error, Errors.TranscriptLoggerRequired)
     }
 
     this.logger = logger

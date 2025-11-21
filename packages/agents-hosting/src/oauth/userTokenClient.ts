@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 import axios, { AxiosInstance } from 'axios'
-import { Activity, ConversationReference } from '@microsoft/agents-activity'
+import { Activity, ConversationReference, ExceptionHelper } from '@microsoft/agents-activity'
 import { debug } from '@microsoft/agents-activity/logger'
 import { normalizeTokenExchangeState } from '../activityWireCompat'
 import { AadResourceUrls, SignInResource, TokenExchangeRequest, TokenOrSinginResourceResponse, TokenResponse, TokenStatus } from './userTokenClient.types'
@@ -10,6 +10,7 @@ import { getProductInfo } from '../getProductInfo'
 import { AuthProvider, MsalTokenProvider } from '../auth'
 import { HeaderPropagationCollection } from '../headerPropagation'
 import { getTokenServiceEndpoint } from './customUserTokenAPI'
+import { Errors } from '../errorHelper'
 
 const logger = debug('agents:user-token-client')
 
@@ -157,7 +158,7 @@ export class UserTokenClient {
     const params = { userId, connectionName, channelId }
     const response = await this.client.delete('/api/usertoken/SignOut', { params })
     if (response.status !== 200) {
-      throw new Error('Failed to sign out')
+      throw ExceptionHelper.generateException(Error, Errors.FailedToSignOut)
     }
   }
 
