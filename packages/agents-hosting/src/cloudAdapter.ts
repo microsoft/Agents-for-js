@@ -551,8 +551,12 @@ export class CloudAdapter extends BaseAdapter {
     if (typeof serviceUrl !== 'string' || !serviceUrl) {
       throw ExceptionHelper.generateException(TypeError, Errors.ServiceUrlRequired)
     }
-    if (!conversationParameters) throw ExceptionHelper.generateException(TypeError, Errors.ConversationParametersRequired)
-    if (!logic) throw ExceptionHelper.generateException(TypeError, Errors.LogicRequired)
+    if (!conversationParameters) {
+      throw ExceptionHelper.generateException(TypeError, Errors.ConversationParametersRequired)
+    }
+    if (!logic) {
+      throw ExceptionHelper.generateException(TypeError, Errors.LogicRequired)
+    }
 
     const identity = CloudAdapter.createIdentity(audience)
     const restClient = await this.createConnectorClient(serviceUrl, audience, identity)
