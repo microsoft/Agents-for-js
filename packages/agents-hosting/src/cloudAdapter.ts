@@ -13,7 +13,7 @@ import { AuthConfiguration, getAuthConfigWithDefaults } from './auth/authConfigu
 import { AuthProvider } from './auth/authProvider'
 import { ApxProductionScope } from './auth/authConstants'
 import { MsalConnectionManager } from './auth/msalConnectionManager'
-import { Activity, ActivityEventNames, ActivityTypes, Channels, ConversationReference, DeliveryModes, ConversationParameters, RoleTypes } from '@microsoft/agents-activity'
+import { Activity, ActivityEventNames, ActivityTypes, Channels, ConversationReference, DeliveryModes, ConversationParameters, RoleTypes, ExceptionHelper } from '@microsoft/agents-activity'
 import { ResourceResponse } from './connector-client/resourceResponse'
 import * as uuid from 'uuid'
 import { debug } from '@microsoft/agents-activity/logger'
@@ -23,6 +23,7 @@ import { AttachmentInfo } from './connector-client/attachmentInfo'
 import { AttachmentData } from './connector-client/attachmentData'
 import { normalizeIncomingActivity } from './activityWireCompat'
 import { UserTokenClient } from './oauth'
+import { Errors } from './errorHelper'
 import { HeaderPropagation, HeaderPropagationCollection, HeaderPropagationDefinition } from './headerPropagation'
 import { JwtPayload } from 'jsonwebtoken'
 import { getTokenServiceEndpoint } from './oauth/customUserTokenAPI'
@@ -65,7 +66,7 @@ export class CloudAdapter extends BaseAdapter {
    */
   protected resolveIfConnectorClientIsNeeded (activity: Activity): boolean {
     if (!activity) {
-      throw new TypeError('`activity` parameter required')
+      throw ExceptionHelper.generateException(TypeError, Errors.ActivityParameterRequired)
     }
 
     switch (activity.deliveryMode) {
@@ -145,7 +146,7 @@ export class CloudAdapter extends BaseAdapter {
           headers
         )
       } else {
-        throw new Error('Could not create connector client for agentic user')
+        throw ExceptionHelper.generateException(Error, Errors.CouldNotCreateConnectorClient)
       }
     } else {
       // ABS tokens will not have an azp/appid so use the botframework scope.
@@ -249,15 +250,15 @@ export class CloudAdapter extends BaseAdapter {
    */
   async sendActivities (context: TurnContext, activities: Activity[]): Promise<ResourceResponse[]> {
     if (!context) {
-      throw new TypeError('`context` parameter required')
+      throw ExceptionHelper.generateException(TypeError, Errors.ContextParameterRequired)
     }
 
     if (!activities) {
-      throw new TypeError('`activities` parameter required')
+      throw ExceptionHelper.generateException(TypeError, Errors.ActivitiesParameterRequired)
     }
 
     if (activities.length === 0) {
-      throw new Error('Expecting one or more activities, but the array was empty.')
+      throw ExceptionHelper.generateException(Error, Errors.EmptyActivitiesArray)
     }
 
     const responses: ResourceResponse[] = []
@@ -271,7 +272,7 @@ export class CloudAdapter extends BaseAdapter {
         // no-op
       } else {
         if (!activity.serviceUrl || (activity.conversation == null) || !activity.conversation.id) {
-          throw new Error('Invalid activity object')
+          throw ExceptionHelper.generateException(Error, Errors.InvalidActivityObject)
         }
 
         if (activity.replyToId) {
@@ -320,7 +321,7 @@ export class CloudAdapter extends BaseAdapter {
       res.end()
     }
     if (!request.body) {
-      throw new TypeError('`request.body` parameter required, make sure express.json() is used as middleware')
+      throw ExceptionHelper.generateException(TypeError, Errors.RequestBodyRequired)
     }
     const incoming = normalizeIncomingActivity(request.body!)
     const activity = Activity.fromObject(incoming)
@@ -387,15 +388,15 @@ export class CloudAdapter extends BaseAdapter {
    */
   async updateActivity (context: TurnContext, activity: Activity): Promise<ResourceResponse | void> {
     if (!context) {
-      throw new TypeError('`context` parameter required')
+      throw ExceptionHelper.generateException(TypeError, Errors.ContextParameterRequired)
     }
 
     if (!activity) {
-      throw new TypeError('`activity` parameter required')
+      throw ExceptionHelper.generateException(TypeError, Errors.ActivityParameterRequired)
     }
 
     if (!activity.serviceUrl || (activity.conversation == null) || !activity.conversation.id || !activity.id) {
-      throw new Error('Invalid activity object')
+      throw ExceptionHelper.generateException(Error, Errors.InvalidActivityObject)
     }
 
     const response = await context.turnState.get(this.ConnectorClientKey).updateActivity(
@@ -415,11 +416,11 @@ export class CloudAdapter extends BaseAdapter {
    */
   async deleteActivity (context: TurnContext, reference: Partial<ConversationReference>): Promise<void> {
     if (!context) {
-      throw new TypeError('`context` parameter required')
+      throw ExceptionHelper.generateException(TypeError, Errors.ContextParameterRequired)
     }
 
     if (!reference || !reference.serviceUrl || (reference.conversation == null) || !reference.conversation.id || !reference.activityId) {
-      throw new Error('Invalid conversation reference object')
+      throw ExceptionHelper.generateException(Error, Errors.InvalidConversationReference)
     }
 
     await context.turnState.get(this.ConnectorClientKey).deleteActivity(reference.conversation.id, reference.activityId)
@@ -437,11 +438,11 @@ export class CloudAdapter extends BaseAdapter {
     logic: (revocableContext: TurnContext) => Promise<void>,
     isResponse: Boolean = false): Promise<void> {
     if (!reference || !reference.serviceUrl || (reference.conversation == null) || !reference.conversation.id) {
-      throw new Error('continueConversation: Invalid conversation reference object')
+      throw ExceptionHelper.generateException(Error, Errors.ContinueConversationInvalidReference)
     }
 
     if (!botAppIdOrIdentity) {
-      throw new TypeError('continueConversation: botAppIdOrIdentity is required')
+      throw ExceptionHelper.generateException(TypeError, Errors.ContinueConversationBotAppIdRequired)
     }
     const botAppId = typeof botAppIdOrIdentity === 'string' ? botAppIdOrIdentity : botAppIdOrIdentity.aud as string
 
@@ -548,10 +549,10 @@ export class CloudAdapter extends BaseAdapter {
     logic: (context: TurnContext) => Promise<void>
   ): Promise<void> {
     if (typeof serviceUrl !== 'string' || !serviceUrl) {
-      throw new TypeError('`serviceUrl` must be a non-empty string')
+      throw ExceptionHelper.generateException(TypeError, Errors.ServiceUrlRequired)
     }
-    if (!conversationParameters) throw new TypeError('`conversationParameters` must be defined')
-    if (!logic) throw new TypeError('`logic` must be defined')
+    if (!conversationParameters) throw ExceptionHelper.generateException(TypeError, Errors.ConversationParametersRequired)
+    if (!logic) throw ExceptionHelper.generateException(TypeError, Errors.LogicRequired)
 
     const identity = CloudAdapter.createIdentity(audience)
     const restClient = await this.createConnectorClient(serviceUrl, audience, identity)
@@ -578,15 +579,15 @@ export class CloudAdapter extends BaseAdapter {
    */
   async uploadAttachment (context: TurnContext, conversationId: string, attachmentData: AttachmentData): Promise<ResourceResponse> {
     if (context === undefined) {
-      throw new Error('context is required')
+      throw ExceptionHelper.generateException(Error, Errors.ContextRequired)
     }
 
     if (conversationId === undefined) {
-      throw new Error('conversationId is required')
+      throw ExceptionHelper.generateException(Error, Errors.ConversationIdRequired)
     }
 
     if (attachmentData === undefined) {
-      throw new Error('attachmentData is required')
+      throw ExceptionHelper.generateException(Error, Errors.AttachmentDataRequired)
     }
 
     return await context.turnState.get<ConnectorClient>(this.ConnectorClientKey).uploadAttachment(conversationId, attachmentData)
@@ -600,11 +601,11 @@ export class CloudAdapter extends BaseAdapter {
    */
   async getAttachmentInfo (context: TurnContext, attachmentId: string): Promise<AttachmentInfo> {
     if (context === undefined) {
-      throw new Error('context is required')
+      throw ExceptionHelper.generateException(Error, Errors.ContextRequired)
     }
 
     if (attachmentId === undefined) {
-      throw new Error('attachmentId is required')
+      throw ExceptionHelper.generateException(Error, Errors.AttachmentIdRequired)
     }
 
     return await context.turnState.get<ConnectorClient>(this.ConnectorClientKey).getAttachmentInfo(attachmentId)
@@ -619,15 +620,15 @@ export class CloudAdapter extends BaseAdapter {
    */
   async getAttachment (context: TurnContext, attachmentId: string, viewId: string): Promise<NodeJS.ReadableStream> {
     if (context === undefined) {
-      throw new Error('context is required')
+      throw ExceptionHelper.generateException(Error, Errors.ContextRequired)
     }
 
     if (attachmentId === undefined) {
-      throw new Error('attachmentId is required')
+      throw ExceptionHelper.generateException(Error, Errors.AttachmentIdRequired)
     }
 
     if (viewId === undefined) {
-      throw new Error('viewId is required')
+      throw ExceptionHelper.generateException(Error, Errors.ViewIdRequired)
     }
 
     return await context.turnState.get<ConnectorClient>(this.ConnectorClientKey).getAttachment(attachmentId, viewId)

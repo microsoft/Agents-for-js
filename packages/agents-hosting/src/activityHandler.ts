@@ -4,7 +4,7 @@
  */
 import { debug } from '@microsoft/agents-activity/logger'
 import { TurnContext } from './turnContext'
-import { Activity, ActivityTypes, Channels } from '@microsoft/agents-activity'
+import { Activity, ActivityTypes, Channels, ExceptionHelper } from '@microsoft/agents-activity'
 import { StatusCodes } from './statusCodes'
 import { InvokeResponse } from './invoke/invokeResponse'
 import { InvokeException } from './invoke/invokeException'
@@ -13,6 +13,7 @@ import { SearchInvokeValue } from './invoke/searchInvokeValue'
 import { SearchInvokeResponse } from './invoke/searchInvokeResponse'
 import { AdaptiveCardInvokeResponse } from './invoke/adaptiveCardInvokeResponse'
 import { tokenResponseEventName } from './tokenResponseEventName'
+import { Errors } from './errorHelper'
 
 /** Symbol key for invoke response */
 export const INVOKE_RESPONSE_KEY = Symbol('invokeResponse')
@@ -254,9 +255,9 @@ export class ActivityHandler {
    * @throws Error if context is missing, activity is missing, or activity type is missing
    */
   async run (context: TurnContext): Promise<void> {
-    if (!context) throw new Error('Missing TurnContext parameter')
-    if (!context.activity) throw new Error('TurnContext does not include an activity')
-    if (!context.activity.type) throw new Error('Activity is missing its type')
+    if (!context) throw ExceptionHelper.generateException(Error, Errors.MissingTurnContext)
+    if (!context.activity) throw ExceptionHelper.generateException(Error, Errors.TurnContextMissingActivity)
+    if (!context.activity.type) throw ExceptionHelper.generateException(Error, Errors.ActivityMissingType)
 
     await this.onTurnActivity(context)
   }
