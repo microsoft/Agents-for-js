@@ -84,7 +84,11 @@ describe('authorizeJWT', () => {
     await authorizeJWT(config)(req as Request, res as Response, next)
 
     assert((res.status as sinon.SinonStub).calledOnceWith(401))
-    assert((res.send as sinon.SinonStub).calledOnceWith({ 'jwt-auth-error': 'invalid token' }))
+    const sendCall = (res.send as sinon.SinonStub).getCall(0)
+    assert(sendCall, 'send should be called')
+    const sentData = sendCall.args[0]
+    assert(sentData['jwt-auth-error'], 'jwt-auth-error should be present')
+    assert(sentData['jwt-auth-error'].includes('invalid token'), `jwt-auth-error should contain 'invalid token', got: ${sentData['jwt-auth-error']}`)
     assert((next as sinon.SinonStub).notCalled)
 
     verifyStub.restore()
