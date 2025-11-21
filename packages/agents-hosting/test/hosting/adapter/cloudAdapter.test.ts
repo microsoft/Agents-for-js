@@ -172,21 +172,24 @@ describe('CloudAdapter', function () {
   describe('sendActivities', function () {
     it('throws for bad args', async function () {
       // @ts-expect-error
-      await assert.rejects(cloudAdapter.sendActivities(undefined, []), {
-        name: 'TypeError',
-        message: '`context` parameter required'
+      await assert.rejects(cloudAdapter.sendActivities(undefined, []), (err: Error) => {
+        assert.ok(err.name === 'TypeError')
+        assert.ok(err.message.includes('`context` parameter required'))
+        return true
       })
 
       // @ts-expect-error
-      await assert.rejects(cloudAdapter.sendActivities(new TurnContext(cloudAdapter), undefined), {
-        name: 'TypeError',
-        message: '`activities` parameter required'
+      await assert.rejects(cloudAdapter.sendActivities(new TurnContext(cloudAdapter), undefined), (err: Error) => {
+        assert.ok(err.name === 'TypeError')
+        assert.ok(err.message.includes('`activities` parameter required'))
+        return true
       })
 
       // @ts-expect-error
-      await assert.rejects(cloudAdapter.sendActivities(new TurnContext(cloudAdapter), []), {
-        name: 'Error',
-        message: 'Expecting one or more activities, but the array was empty.'
+      await assert.rejects(cloudAdapter.sendActivities(new TurnContext(cloudAdapter), []), (err: Error) => {
+        assert.ok(err.name === 'Error')
+        assert.ok(err.message.includes('Expecting one or more activities, but the array was empty.'))
+        return true
       })
     })
 
@@ -291,15 +294,14 @@ describe('CloudAdapter', function () {
 
       const { logic } = bootstrap()
 
-      const error = new Error('continueConversation: Invalid conversation reference object')
-
       await assert.rejects(
         cloudAdapter.continueConversation(authentication.clientId as string, conversationReference, (context) => {
           logic(context)
-
-          throw error
         }),
-        error
+        (err: Error) => {
+          assert.ok(err.message.includes('continueConversation: Invalid conversation reference object'))
+          return true
+        }
       )
     })
   })
