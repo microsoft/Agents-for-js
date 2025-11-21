@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { Activity, ActivityTypes, ConversationReference } from '@microsoft/agents-activity'
+import { Activity, ActivityTypes, ConversationReference, ExceptionHelper } from '@microsoft/agents-activity'
 import { ResourceResponse } from '../connector-client'
 import { debug } from '@microsoft/agents-activity/logger'
 import { TurnContext } from '../turnContext'
@@ -11,7 +11,6 @@ import { AdaptiveCardsActions } from './adaptiveCards'
 import { AgentApplicationOptions } from './agentApplicationOptions'
 import { ConversationUpdateEvents } from './conversationUpdateEvents'
 import { AgentExtension } from './extensions'
-import { ExceptionHelper } from '@microsoft/agents-activity'
 import { Errors } from '../errorHelper'
 import { RouteHandler } from './routeHandler'
 import { RouteSelector } from './routeSelector'

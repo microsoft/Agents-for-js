@@ -3,10 +3,9 @@
  * Licensed under the MIT License.
  */
 
-import { ExceptionHelper } from '@microsoft/agents-activity'
+import { ExceptionHelper, activityZodSchema, AdaptiveCardInvokeAction, adaptiveCardInvokeActionZodSchema } from '@microsoft/agents-activity'
 import { Errors } from '../../errorHelper'
 import { z } from 'zod'
-import { activityZodSchema, AdaptiveCardInvokeAction, adaptiveCardInvokeActionZodSchema } from '@microsoft/agents-activity'
 // import { MessagingExtensionQuery, messagingExtensionQueryZodSchema } from '../messageExtension/messagingExtensionQuery'
 import { adaptiveCardsSearchParamsZodSchema } from './adaptiveCardsSearchParams'
 

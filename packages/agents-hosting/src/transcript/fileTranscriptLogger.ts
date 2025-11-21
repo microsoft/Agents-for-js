@@ -4,13 +4,12 @@
  */
 
 import { debug } from '@microsoft/agents-activity/logger'
+import { Activity, ActivityTypes, ExceptionHelper } from '@microsoft/agents-activity'
 import { PagedResult, TranscriptInfo } from './transcriptLogger'
 import { TranscriptStore } from './transcriptStore'
 import * as fs from 'fs/promises'
 import * as path from 'path'
 import { EOL } from 'os'
-import { Activity, ActivityTypes } from '@microsoft/agents-activity'
-import { ExceptionHelper } from '@microsoft/agents-activity'
 import { Errors } from '../errorHelper'
 
 const logger = debug('agents:file-transcript-logger')

@@ -3,10 +3,9 @@
  * Licensed under the MIT License.
  */
 
-import { debug } from '@microsoft/agents-activity'
+import { debug, ExceptionHelper } from '@microsoft/agents-activity'
 import { TurnContext } from '../../../turnContext'
 import { AuthorizationHandler, AuthorizationHandlerSettings, AuthorizationHandlerStatus, AuthorizationHandlerTokenOptions } from '../types'
-import { ExceptionHelper } from '@microsoft/agents-activity'
 import { Errors } from '../../../errorHelper'
 import { TokenResponse } from '../../../oauth'
 import { AuthProvider } from '../../../auth'

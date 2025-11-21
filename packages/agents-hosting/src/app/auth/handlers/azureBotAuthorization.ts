@@ -4,16 +4,15 @@
  */
 
 import { debug } from '@microsoft/agents-activity/logger'
+import { Activity, ActivityTypes, Channels, ExceptionHelper } from '@microsoft/agents-activity'
 import { AuthorizationHandlerStatus, AuthorizationHandler, ActiveAuthorizationHandler, AuthorizationHandlerSettings, AuthorizationHandlerTokenOptions } from '../types'
 import { MessageFactory } from '../../../messageFactory'
 import { CardFactory } from '../../../cards'
 import { TurnContext } from '../../../turnContext'
 import { TokenExchangeRequest, TokenExchangeInvokeResponse, TokenResponse, UserTokenClient } from '../../../oauth'
 import jwt, { JwtPayload } from 'jsonwebtoken'
-import { ExceptionHelper } from '@microsoft/agents-activity'
 import { Errors } from '../../../errorHelper'
 import { HandlerStorage } from '../handlerStorage'
-import { Activity, ActivityTypes, Channels } from '@microsoft/agents-activity'
 import { InvokeResponse, TokenExchangeInvokeRequest } from '../../../invoke'
 
 const logger = debug('agents:authorization:azurebot')

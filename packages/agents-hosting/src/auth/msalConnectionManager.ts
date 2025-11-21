@@ -3,12 +3,11 @@
  * Licensed under the MIT License.
  */
 
-import { Activity, RoleTypes } from '@microsoft/agents-activity'
+import { Activity, RoleTypes, ExceptionHelper } from '@microsoft/agents-activity'
 import { AuthConfiguration } from './authConfiguration'
 import { Connections } from './connections'
 import { MsalTokenProvider } from './msalTokenProvider'
 import { JwtPayload } from 'jsonwebtoken'
-import { ExceptionHelper } from '@microsoft/agents-activity'
 import { Errors } from '../errorHelper'
 
 export interface ConnectionMapItem {
