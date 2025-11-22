@@ -211,22 +211,45 @@ export const loadPrevAuthConfigFromEnv: () => AuthConfiguration = () => {
   return { ...authConfig, ...envConnections }
 }
 
+/**
+ * Map an ALL_UPPERCASE env var path to the correct mixedCase field names (SERVICEURL -> serviceUrl)
+ * @param path the env var path in dot notation
+ * @param fieldNames a list of the field names in proper mixed case
+ * @returns
+ */
+function normalizeEnvVarPth (path: string, fieldNames: string[]): string {
+  const pathSegments = path.split('.')
+  const normalizedSegments = pathSegments.map(segment => {
+    const matchedField = fieldNames.find(field =>
+      field.toLowerCase() === segment.toLowerCase()
+    )
+    return matchedField || segment
+  })
+  path = normalizedSegments.join('.')
+
+  return path
+}
+
 function loadConnectionsMapFromEnv () {
   const envVars = process.env
   const connectionsObj: Record<string, any> = {}
   const connectionsMap: ConnectionMapItem[] = []
-  const CONNECTIONS_PREFIX = 'connections__'
-  const CONNECTIONS_MAP_PREFIX = 'connectionsMap__'
-
+  const CONNECTIONS_PREFIX = 'CONNECTIONS__'
+  const CONNECTIONS_MAP_PREFIX = 'CONNECTIONSMAP__'
+  const authMapFields = ['audience', 'serviceUrl', 'connection'] // TODO: how can we generate this dynamically? This has to be updated manually if ConnectionMapItem changes
+  const authConfigFields = Object.keys(buildLegacyAuthConfig()) // get a list of auth config fields
   for (const [key, value] of Object.entries(envVars)) {
     if (key.startsWith(CONNECTIONS_PREFIX)) {
       // Convert to dot notation
       let path = key.substring(CONNECTIONS_PREFIX.length).replace(/__/g, '.')
       // Remove ".settings." from the path
-      path = path.replace('.settings.', '.')
+      path = path.replace('.SETTINGS.', '.')
+      path = normalizeEnvVarPth(path, authConfigFields)
+
       objectPath.set(connectionsObj, path, value)
     } else if (key.startsWith(CONNECTIONS_MAP_PREFIX)) {
-      const path = key.substring(CONNECTIONS_MAP_PREFIX.length).replace(/__/g, '.')
+      let path = key.substring(CONNECTIONS_MAP_PREFIX.length).replace(/__/g, '.')
+      path = normalizeEnvVarPth(path, authMapFields)
       objectPath.set(connectionsMap, path, value)
     }
   }
@@ -339,13 +362,13 @@ function buildLegacyAuthConfig (envPrefix: string = '', customConfig?: AuthConfi
     FICClientId: customConfig?.FICClientId ?? process.env[`${prefix}FICClientId`],
     authority,
     scope: customConfig?.scope ?? process.env[`${prefix}scope`],
-    issuers: customConfig?.issuers ?? getDefaultIssuers(tenantId as string, authority),
+    issuers: customConfig?.issuers ?? getDefaultIssuers(tenantId ?? '', authority),
     altBlueprintConnectionName: customConfig?.altBlueprintConnectionName ?? process.env[`${prefix}altBlueprintConnectionName`],
     WIDAssertionFile: customConfig?.WIDAssertionFile ?? process.env[`${prefix}WIDAssertionFile`]
   }
 }
 
-function getDefaultIssuers (tenantId: string, authority: string) : string[] {
+function getDefaultIssuers (tenantId: string, authority: string): string[] {
   return [
     'https://api.botframework.com',
     `https://sts.windows.net/${tenantId}/`,
