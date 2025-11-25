@@ -5,7 +5,7 @@
 
 import { Activity, debug } from '@microsoft/agents-activity'
 import { AgentApplication } from '../agentApplication'
-import { AgenticAuthorization, AzureBotAuthorization } from './handlers'
+import { AgenticAuthorization, AzureBotAuthorization, AzureBotAuthorizationOptions, ConnectorUserAuthorization } from './handlers'
 import { TurnContext } from '../../turnContext'
 import { HandlerStorage } from './handlerStorage'
 import { ActiveAuthorizationHandler, AuthorizationHandlerStatus, AuthorizationHandler, AuthorizationHandlerSettings, AuthorizationOptions } from './types'
@@ -63,10 +63,16 @@ export class AuthorizationManager {
     const settings: AuthorizationHandlerSettings = { storage: app.options.storage, connections }
     for (const [id, handler] of Object.entries(app.options.authorization)) {
       const options = this.loadOptions(id, handler)
-      if (options.type === 'agentic') {
-        this._handlers[id] = new AgenticAuthorization(id, options, settings)
-      } else {
-        this._handlers[id] = new AzureBotAuthorization(id, options, settings)
+      switch (options.type) {
+        case 'agentic':
+          this._handlers[id] = new AgenticAuthorization(id, options, settings)
+          break
+        case 'connectoruserauthorization':
+          this._handlers[id] = new ConnectorUserAuthorization(id, options, settings)
+          break
+        default:
+          this._handlers[id] = new AzureBotAuthorization(id, options as AzureBotAuthorizationOptions, settings)
+          break
       }
     }
   }
@@ -80,8 +86,8 @@ export class AuthorizationManager {
       type: (options.type ?? process.env[`${id}_type`])?.toLowerCase() as typeof options.type,
     }
 
-    // Validate supported types, agentic, and default (Azure Bot - undefined)
-    const supportedTypes = ['agentic', undefined]
+    // Validate supported types, agentic, connectoruserauthorization, and default (Azure Bot - undefined)
+    const supportedTypes = ['agentic', 'connectoruserauthorization', undefined]
     if (!supportedTypes.includes(result.type)) {
       throw new Error(`Unsupported authorization handler type: '${result.type}' for auth handler: '${id}'. Supported types are: '${supportedTypes.filter(Boolean).join('\', \'')}'.`)
     }

@@ -1,0 +1,21 @@
+{
+  "name": "copilotstudio-agent-connector",
+  "version": "1.0.0",
+  "private": true,
+  "author": "Microsoft",
+  "license": "MIT",
+  "main": "./dist/agent.js",
+  "scripts": {
+    "build": "tsc --build",
+    "prestart": "npm run build",
+    "start": "node --env-file .env ./dist/agent.js",
+    "prebundle": "npm run build",
+    "bundle": "esbuild dist/agent.js --bundle --platform=node --metafile=dist/meta.json --outfile=dist/bundle.js --tree-shaking=true --keep-names",
+    "predocker": "npm run bundle",
+    "docker": "docker build -t \"$npm_package_name:$npm_package_version\" ."
+  },
+  "dependencies": {
+    "@microsoft/agents-hosting-express": "file:../../packages/agents-hosting-express",
+    "axios": "^1.13.2"
+  }
+}

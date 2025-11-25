@@ -164,8 +164,8 @@ export class AzureBotAuthorization implements AuthorizationHandler {
   /**
    * Creates an instance of the AzureBotAuthorization.
    * @param id The unique identifier for the handler.
-   * @param options The settings for the handler.
-   * @param app The agent application instance.
+   * @param options The options for the handler.
+   * @param settings The settings for the authorization handler.
    */
   constructor (public readonly id: string, options: AzureBotAuthorizationOptions, private settings: AzureBotAuthorizationSettings) {
     if (!this.settings.storage) {
