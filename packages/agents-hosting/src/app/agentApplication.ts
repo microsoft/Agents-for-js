@@ -8,6 +8,7 @@ import { ResourceResponse } from '../connector-client'
 import { debug } from '@microsoft/agents-activity/logger'
 import { TurnContext } from '../turnContext'
 import { AdaptiveCardsActions } from './adaptiveCards'
+import { ProactiveActions } from './proactive'
 import { AgentApplicationOptions } from './agentApplicationOptions'
 import { ConversationUpdateEvents } from './conversationUpdateEvents'
 import { AgentExtension } from './extensions'
@@ -79,6 +80,7 @@ export class AgentApplication<TState extends TurnState> {
   private _typingTimer: NodeJS.Timeout | undefined
   protected readonly _extensions: AgentExtension<TState>[] = []
   private readonly _adaptiveCards: AdaptiveCardsActions<TState>
+  private readonly _proactive: ProactiveActions<TState>
 
   /**
    * Creates a new instance of AgentApplication.
@@ -118,6 +120,7 @@ export class AgentApplication<TState extends TurnState> {
     }
 
     this._adaptiveCards = new AdaptiveCardsActions<TState>(this)
+    this._proactive = new ProactiveActions<TState>(this, this._options.proactiveOptions)
 
     if (this._options.adapter) {
       this._adapter = this._options.adapter
@@ -193,6 +196,15 @@ export class AgentApplication<TState extends TurnState> {
    */
   public get adaptiveCards (): AdaptiveCardsActions<TState> {
     return this._adaptiveCards
+  }
+
+  /**
+   * Gets the proactive messaging helper for the application.
+   *
+   * @returns The proactive actions instance.
+   */
+  public get proactive (): ProactiveActions<TState> {
+    return this._proactive
   }
 
   /**
