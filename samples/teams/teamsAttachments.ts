@@ -1,6 +1,5 @@
 import { startServer } from '@microsoft/agents-hosting-express'
-import { AgentApplication } from '@microsoft/agents-hosting'
-import { TeamsAttachmentDownloader } from '@microsoft/agents-hosting-extensions-teams'
+import { AgentApplication, TeamsAttachmentDownloader } from '@microsoft/agents-hosting'
 
 const storedFilesKey = 'storedFiles' as const
 
@@ -9,7 +8,7 @@ const agent = new AgentApplication({
 })
 
 agent.onConversationUpdate('membersAdded', async (context) => {
-  await context.sendActivity('Welcome to the Attachment sample, send a message with an attachment to see the echo feature in action.')
+  await context.sendActivity('Welcome to the Attachment sample, send a message with an attachment to see the feature in action.')
 })
 
 agent.onActivity('message', async (context, state) => {
