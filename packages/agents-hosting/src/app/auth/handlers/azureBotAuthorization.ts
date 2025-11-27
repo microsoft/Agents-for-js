@@ -8,10 +8,10 @@ import { AuthorizationHandlerStatus, AuthorizationHandler, ActiveAuthorizationHa
 import { MessageFactory } from '../../../messageFactory'
 import { CardFactory } from '../../../cards'
 import { TurnContext } from '../../../turnContext'
-import { TokenExchangeRequest, TokenExchangeInvokeResponse, TokenResponse, UserTokenClient } from '../../../oauth'
+import { TokenExchangeRequest, TokenExchangeInvokeResponse, TokenResponse, UserTokenClient, SignInResource } from '../../../oauth'
 import jwt, { JwtPayload } from 'jsonwebtoken'
 import { HandlerStorage } from '../handlerStorage'
-import { Activity, ActivityTypes, Channels } from '@microsoft/agents-activity'
+import { Activity, ActivityTypes, Attachment, Channels } from '@microsoft/agents-activity'
 import { InvokeResponse, TokenExchangeInvokeRequest } from '../../../invoke'
 
 const logger = debug('agents:authorization:azurebot')
@@ -400,7 +400,7 @@ export class AzureBotAuthorization implements AuthorizationHandler {
     if (!tokenResponse) {
       logger.debug(this.prefix('Cannot find token. Sending sign-in card'), activity)
 
-      const oCard = CardFactory.oauthCard(this._options.name!, this._options.title!, this._options.text!, signInResource, this._options.enableSso)
+      const oCard = this.getOAuthCard(activity.channelId!, signInResource)
       await context.sendActivity(MessageFactory.attachment(oCard))
       await storage.write({ activity, id: this.id, ...(active ?? {}), attemptsLeft: this.maxAttempts })
       return AuthorizationHandlerStatus.PENDING
@@ -602,5 +602,25 @@ export class AzureBotAuthorization implements AuthorizationHandler {
       }
       return acc
     }, []) ?? []
+  }
+
+  /**
+   * Creates an oAuth card or AdaptiveCard based on the channel.
+   */
+  private getOAuthCard (channelId:string, resource: SignInResource) : Attachment {
+    const [channel, subChannel] = Activity.parseChannelId(channelId)
+
+    if (channel === Channels.Msteams && subChannel?.toLowerCase() === 'copilot') {
+      logger.debug(this.prefix('Using Adaptive Card for M365 Copilot Chat as OAuthCard is not yet supported. Note: Token exchange won\'t be available.'))
+      return CardFactory.adaptiveCard({
+        $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
+        type: 'AdaptiveCard',
+        version: '1.4',
+        body: [{ type: 'TextBlock', text: this._options.text! }],
+        actions: [{ type: 'Action.OpenUrl', title: this._options.title!, url: resource.signInLink }]
+      })
+    }
+
+    return CardFactory.oauthCard(this._options.name!, this._options.title!, this._options.text!, resource, this._options.enableSso)
   }
 }
