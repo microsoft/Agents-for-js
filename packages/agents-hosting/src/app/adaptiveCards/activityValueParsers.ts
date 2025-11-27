@@ -3,8 +3,9 @@
  * Licensed under the MIT License.
  */
 
+import { ExceptionHelper, activityZodSchema, AdaptiveCardInvokeAction, adaptiveCardInvokeActionZodSchema } from '@microsoft/agents-activity'
+import { Errors } from '../../errorHelper'
 import { z } from 'zod'
-import { activityZodSchema, AdaptiveCardInvokeAction, adaptiveCardInvokeActionZodSchema } from '@microsoft/agents-activity'
 // import { MessagingExtensionQuery, messagingExtensionQueryZodSchema } from '../messageExtension/messagingExtensionQuery'
 import { adaptiveCardsSearchParamsZodSchema } from './adaptiveCardsSearchParams'
 
@@ -76,7 +77,7 @@ export function parseValueActionExecuteSelector (value: unknown): ValueAction | 
   })
   const safeParsedValue = actionValueExecuteSelector.passthrough().safeParse(value)
   if (!safeParsedValue.success) {
-    throw new Error(`Invalid action value: ${safeParsedValue.error}`)
+    throw ExceptionHelper.generateException(Error, Errors.InvalidActionValue, undefined, { error: JSON.stringify(safeParsedValue.error) })
   }
   const parsedValue = safeParsedValue.data
   return {

@@ -3,6 +3,8 @@
  * Licensed under the MIT License.
  */
 
+import { ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from '../errorHelper'
 import { debug } from '@microsoft/agents-activity/logger'
 import { ConnectionMapItem } from './msalConnectionManager'
 import objectPath from 'object-path'
@@ -131,13 +133,13 @@ export const loadAuthConfigFromEnv = (cnxName?: string): AuthConfiguration => {
       if (entry) {
         authConfig = entry
       } else {
-        throw new Error(`Connection "${cnxName}" not found in environment.`)
+        throw ExceptionHelper.generateException(Error, Errors.ConnectionNotFoundInEnvironment, undefined, { cnxName })
       }
     } else {
       const defaultItem = envConnections.connectionsMap.find((item) => item.serviceUrl === '*')
       const defaultConn = defaultItem ? envConnections.connections.get(defaultItem.connection) : undefined
       if (!defaultConn) {
-        throw new Error('No default connection found in environment connections.')
+        throw ExceptionHelper.generateException(Error, Errors.NoDefaultConnection)
       }
       authConfig = defaultConn
     }
@@ -173,7 +175,7 @@ export const loadPrevAuthConfigFromEnv: () => AuthConfiguration = () => {
   if (envConnections.connectionsMap.length === 0) {
     // No connections provided, we need to populate the connection map with the old config settings
     if (process.env.MicrosoftAppId === undefined && process.env.NODE_ENV === 'production') {
-      throw new Error('ClientId required in production')
+      throw ExceptionHelper.generateException(Error, Errors.ClientIdRequiredInProduction)
     }
     const authority = process.env.authorityEndpoint ?? 'https://login.microsoftonline.com'
     authConfig = {
@@ -200,7 +202,7 @@ export const loadPrevAuthConfigFromEnv: () => AuthConfiguration = () => {
     const defaultItem = envConnections.connectionsMap.find((item) => item.serviceUrl === '*')
     const defaultConn = defaultItem ? envConnections.connections.get(defaultItem.connection) : undefined
     if (!defaultConn) {
-      throw new Error('No default connection found in environment connections.')
+      throw ExceptionHelper.generateException(Error, Errors.NoDefaultConnection)
     }
     authConfig = defaultConn
   }
@@ -303,7 +305,7 @@ export function getAuthConfigWithDefaults (config?: AuthConfiguration): AuthConf
     const defaultItem = connections.connectionsMap?.find((item) => item.serviceUrl === '*')
     const defaultConn = defaultItem ? connections.connections?.get(defaultItem.connection) : undefined
     if (!defaultConn) {
-      throw new Error('No default connection found in environment connections.')
+      throw ExceptionHelper.generateException(Error, Errors.NoDefaultConnection)
     }
     mergedConfig = buildLegacyAuthConfig(undefined, defaultConn)
   }
@@ -321,10 +323,10 @@ function buildLegacyAuthConfig (envPrefix: string = '', customConfig?: AuthConfi
   const clientId = customConfig?.clientId ?? process.env[`${prefix}clientId`]
 
   if (!clientId && !envPrefix && process.env.NODE_ENV === 'production') {
-    throw new Error('ClientId required in production')
+    throw ExceptionHelper.generateException(Error, Errors.ClientIdRequiredInProduction)
   }
   if (!clientId && envPrefix) {
-    throw new Error(`ClientId not found for connection: ${envPrefix}`)
+    throw ExceptionHelper.generateException(Error, Errors.ClientIdNotFoundForConnection, undefined, { envPrefix })
   }
 
   const tenantId = customConfig?.tenantId ?? process.env[`${prefix}tenantId`]

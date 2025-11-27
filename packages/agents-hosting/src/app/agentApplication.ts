@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { Activity, ActivityTypes, ConversationReference } from '@microsoft/agents-activity'
+import { Activity, ActivityTypes, ConversationReference, ExceptionHelper } from '@microsoft/agents-activity'
 import { ResourceResponse } from '../connector-client'
 import { debug } from '@microsoft/agents-activity/logger'
 import { TurnContext } from '../turnContext'
@@ -11,6 +11,7 @@ import { AdaptiveCardsActions } from './adaptiveCards'
 import { AgentApplicationOptions } from './agentApplicationOptions'
 import { ConversationUpdateEvents } from './conversationUpdateEvents'
 import { AgentExtension } from './extensions'
+import { Errors } from '../errorHelper'
 import { RouteHandler } from './routeHandler'
 import { RouteSelector } from './routeSelector'
 import { TurnEvents } from './turnEvents'
@@ -131,12 +132,12 @@ export class AgentApplication<TState extends TurnState> {
     }
 
     if (this._options.longRunningMessages && !this._adapter && !this._options.agentAppId) {
-      throw new Error('The Application.longRunningMessages property is unavailable because no adapter was configured in the app.')
+      throw ExceptionHelper.generateException(Error, Errors.LongRunningMessagesPropertyUnavailable)
     }
 
     if (this._options.transcriptLogger) {
       if (!this._options.adapter) {
-        throw new Error('The Application.transcriptLogger property is unavailable because no adapter was configured in the app.')
+        throw ExceptionHelper.generateException(Error, Errors.TranscriptLoggerPropertyUnavailable)
       } else {
         this._adapter?.use(new TranscriptLoggerMiddleware(this._options.transcriptLogger))
       }
@@ -152,7 +153,7 @@ export class AgentApplication<TState extends TurnState> {
    */
   public get authorization (): Authorization {
     if (!this._authorization) {
-      throw new Error('The Application.authorization property is unavailable because no authorization options were configured.')
+      throw ExceptionHelper.generateException(Error, Errors.AuthorizationPropertyUnavailable)
     }
     return this._authorization
   }
@@ -436,9 +437,7 @@ export class AgentApplication<TState extends TurnState> {
     if (this.options.authorization) {
       this.authorization.onSignInSuccess(handler)
     } else {
-      throw new Error(
-        'The Application.authorization property is unavailable because no authorization options were configured.'
-      )
+      throw ExceptionHelper.generateException(Error, Errors.AuthorizationPropertyUnavailable)
     }
     return this
   }
@@ -466,9 +465,7 @@ export class AgentApplication<TState extends TurnState> {
     if (this.options.authorization) {
       this.authorization.onSignInFailure(handler)
     } else {
-      throw new Error(
-        'The Application.authorization property is unavailable because no authorization options were configured.'
-      )
+      throw ExceptionHelper.generateException(Error, Errors.AuthorizationPropertyUnavailable)
     }
     return this
   }
@@ -804,7 +801,7 @@ export class AgentApplication<TState extends TurnState> {
    */
   public registerExtension<T extends AgentExtension<TState>> (extension: T, regcb : (ext:T) => void): void {
     if (this._extensions.includes(extension)) {
-      throw new Error('Extension already registered')
+      throw ExceptionHelper.generateException(Error, Errors.ExtensionAlreadyRegistered)
     }
     this._extensions.push(extension)
     regcb(extension)

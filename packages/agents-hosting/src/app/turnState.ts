@@ -6,6 +6,8 @@
 import { Storage, StoreItems } from '../storage'
 import { AppMemory } from './appMemory'
 import { TurnStateEntry } from './turnStateEntry'
+import { ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from '../errorHelper'
 import { TurnContext } from '../turnContext'
 import { debug } from '@microsoft/agents-activity/logger'
 
@@ -87,7 +89,7 @@ export class TurnState<
   public get conversation (): TConversationState {
     const scope = this.getScope(CONVERSATION_SCOPE)
     if (!scope) {
-      throw new Error(this._stateNotLoadedString)
+      throw ExceptionHelper.generateException(Error, Errors.TurnStateNotLoaded)
     }
     return scope.value as TConversationState
   }
@@ -101,7 +103,7 @@ export class TurnState<
   public set conversation (value: TConversationState) {
     const scope = this.getScope(CONVERSATION_SCOPE)
     if (!scope) {
-      throw new Error(this._stateNotLoadedString)
+      throw ExceptionHelper.generateException(Error, Errors.TurnStateNotLoaded)
     }
     scope.replace(value as Record<string, unknown>)
   }
@@ -127,7 +129,7 @@ export class TurnState<
   public get user (): TUserState {
     const scope = this.getScope(USER_SCOPE)
     if (!scope) {
-      throw new Error(this._stateNotLoadedString)
+      throw ExceptionHelper.generateException(Error, Errors.TurnStateNotLoaded)
     }
     return scope.value as TUserState
   }
@@ -141,7 +143,7 @@ export class TurnState<
   public set user (value: TUserState) {
     const scope = this.getScope(USER_SCOPE)
     if (!scope) {
-      throw new Error(this._stateNotLoadedString)
+      throw ExceptionHelper.generateException(Error, Errors.TurnStateNotLoaded)
     }
     scope.replace(value as Record<string, unknown>)
   }
@@ -157,7 +159,7 @@ export class TurnState<
   public deleteConversationState (): void {
     const scope = this.getScope(CONVERSATION_SCOPE)
     if (!scope) {
-      throw new Error(this._stateNotLoadedString)
+      throw ExceptionHelper.generateException(Error, Errors.TurnStateNotLoaded)
     }
     scope.delete()
   }
@@ -173,7 +175,7 @@ export class TurnState<
   public deleteUserState (): void {
     const scope = this.getScope(USER_SCOPE)
     if (!scope) {
-      throw new Error(this._stateNotLoadedString)
+      throw ExceptionHelper.generateException(Error, Errors.TurnStateNotLoaded)
     }
     scope.delete()
   }
@@ -316,7 +318,7 @@ export class TurnState<
     }
 
     if (!this._isLoaded) {
-      throw new Error(this._stateNotLoadedString)
+      throw ExceptionHelper.generateException(Error, Errors.TurnStateNotLoaded)
     }
 
     let changes: StoreItems | undefined
@@ -378,19 +380,19 @@ export class TurnState<
     const userId = activity?.from?.id
 
     if (!channelId) {
-      throw new Error('missing context.activity.channelId')
+      throw ExceptionHelper.generateException(Error, Errors.MissingContextActivityChannelId)
     }
 
     if (!agentId) {
-      throw new Error('missing context.activity.recipient.id')
+      throw ExceptionHelper.generateException(Error, Errors.MissingContextActivityRecipientId)
     }
 
     if (!conversationId) {
-      throw new Error('missing context.activity.conversation.id')
+      throw ExceptionHelper.generateException(Error, Errors.MissingContextActivityConversationId)
     }
 
     if (!userId) {
-      throw new Error('missing context.activity.from.id')
+      throw ExceptionHelper.generateException(Error, Errors.MissingContextActivityFromId)
     }
 
     const keys: Record<string, string> = {}
@@ -413,14 +415,14 @@ export class TurnState<
   private getScopeAndName (path: string): { scope: TurnStateEntry; name: string } {
     const parts = path.split('.')
     if (parts.length > 2) {
-      throw new Error(`Invalid state path: ${path}`)
+      throw ExceptionHelper.generateException(Error, Errors.InvalidStatePath, undefined, { path })
     } else if (parts.length === 1) {
       parts.unshift(TEMP_SCOPE)
     }
 
     const scope = this.getScope(parts[0])
     if (scope === undefined) {
-      throw new Error(`Invalid state scope: ${parts[0]}`)
+      throw ExceptionHelper.generateException(Error, Errors.InvalidStateScope, undefined, { scope: parts[0] })
     }
     return { scope, name: parts[1] }
   }
