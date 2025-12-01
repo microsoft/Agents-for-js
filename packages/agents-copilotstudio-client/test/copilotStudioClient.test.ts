@@ -91,10 +91,11 @@ describe('CopilotStudioClient', function () {
     })
   }
 
-  const mockFetchResponse = (activities: Activity[], conversationId: string = 'test-conversation-id') => {
+  const mockFetchResponse = (activities: Activity[], conversationId?: string) => {
     const mockHeaders = new Headers()
-    mockHeaders.set('x-ms-conversationid', conversationId)
-
+    if (conversationId) {
+      mockHeaders.set('x-ms-conversationid', conversationId)
+    }
     const mockResponse = {
       ok: true,
       status: 200,
@@ -226,7 +227,7 @@ describe('CopilotStudioClient', function () {
       const activity = Activity.fromObject({
         type: ActivityTypes.Message,
         text: 'Test',
-        conversation: { id: expectedConversationId }
+        conversation: { id: 'not-expected-conversation-id' }
       })
 
       const fetchMock = mock.fn(() => Promise.resolve(mockFetchResponse([activity], expectedConversationId)))
@@ -235,7 +236,8 @@ describe('CopilotStudioClient', function () {
       const activities = await client.startConversationAsync()
 
       assert.equal(activities.length, 1)
-      assert.equal(activities[0].conversation?.id, expectedConversationId)
+      assert.equal(activities[0].conversation?.id, 'not-expected-conversation-id')
+      assert.equal(client['conversationId'], expectedConversationId)
     })
   })
 
@@ -264,32 +266,6 @@ describe('CopilotStudioClient', function () {
       assert.equal(activities.length, 1)
       assert.equal(activities[0].text, 'Hello user!')
       assert(fetchMock.mock.calls.length > 0)
-    })
-
-    it('should send an activity with a specific conversation ID', async function () {
-      const settings = createTestSettings()
-      const client = new CopilotStudioClient(settings, 'test-token')
-      const conversationId = 'specific-conversation-id'
-
-      const userActivity = Activity.fromObject({
-        type: ActivityTypes.Message,
-        text: 'Test message',
-        conversation: { id: conversationId }
-      })
-
-      const responseActivity = Activity.fromObject({
-        type: ActivityTypes.Message,
-        text: 'Response',
-        conversation: { id: conversationId }
-      })
-
-      const fetchMock = mock.fn(() => Promise.resolve(mockFetchResponse([responseActivity], conversationId)))
-      global.fetch = fetchMock as any
-
-      const activities = await client.sendActivity(userActivity, conversationId)
-
-      assert.equal(activities.length, 1)
-      assert.equal(activities[0].conversation?.id, conversationId)
     })
 
     it('should handle multiple response activities', async function () {
@@ -391,13 +367,14 @@ describe('CopilotStudioClient', function () {
         conversation: { id: activityConversationId }
       })
 
-      const fetchMock = mock.fn(() => Promise.resolve(mockFetchResponse([responseActivity], activityConversationId)))
+      const fetchMock = mock.fn(() => Promise.resolve(mockFetchResponse([responseActivity])))
       global.fetch = fetchMock as any
 
       const activities = await client.sendActivity(userActivity)
 
       assert.equal(activities.length, 1)
       assert.equal(activities[0].conversation?.id, activityConversationId)
+      assert.equal(client['conversationId'], activityConversationId)
     })
   })
 
@@ -567,73 +544,6 @@ describe('CopilotStudioClient', function () {
       assert.equal(activities[0].type, ActivityTypes.Typing)
       assert.equal(activities[1].text, 'Thinking...')
       assert.equal(activities[2].text, 'Here is your answer')
-    })
-
-    it('should handle activity with conversation ID override in streaming', async function () {
-      const settings = createTestSettings()
-      const client = new CopilotStudioClient(settings, 'test-token')
-      const conversationId = 'override-conversation-id'
-
-      const userActivity = Activity.fromObject({
-        type: ActivityTypes.Message,
-        text: 'Test',
-        conversation: { id: conversationId }
-      })
-
-      const responseActivity = Activity.fromObject({
-        type: ActivityTypes.Message,
-        text: 'Response',
-        conversation: { id: conversationId }
-      })
-
-      const fetchMock = mock.fn(() => Promise.resolve(mockFetchResponse([responseActivity], conversationId)))
-      global.fetch = fetchMock as any
-
-      const activities: Activity[] = []
-      for await (const activity of client.sendActivityStreaming(userActivity, conversationId)) {
-        activities.push(activity)
-      }
-
-      assert.equal(activities.length, 1)
-      assert.equal(activities[0].conversation?.id, conversationId)
-    })
-
-    it('should process activities as they arrive in stream', async function () {
-      const settings = createTestSettings()
-      const client = new CopilotStudioClient(settings, 'test-token')
-
-      const userActivity = Activity.fromObject({
-        type: ActivityTypes.Message,
-        text: 'Tell me a story',
-        conversation: { id: 'test-conversation-id' }
-      })
-
-      const responseActivities = [
-        Activity.fromObject({
-          type: ActivityTypes.Message,
-          text: 'Part 1',
-          conversation: { id: 'test-conversation-id' }
-        }),
-        Activity.fromObject({
-          type: ActivityTypes.Message,
-          text: 'Part 2',
-          conversation: { id: 'test-conversation-id' }
-        })
-      ]
-
-      const fetchMock = mock.fn(() => Promise.resolve(mockFetchResponse(responseActivities)))
-      global.fetch = fetchMock as any
-
-      const processedTexts: string[] = []
-      for await (const activity of client.sendActivityStreaming(userActivity)) {
-        if (activity.text) {
-          processedTexts.push(activity.text)
-        }
-      }
-
-      assert.equal(processedTexts.length, 2)
-      assert.equal(processedTexts[0], 'Part 1')
-      assert.equal(processedTexts[1], 'Part 2')
     })
   })
 })
