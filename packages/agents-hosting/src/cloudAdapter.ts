@@ -8,7 +8,7 @@ import { BaseAdapter } from './baseAdapter'
 import { TurnContext } from './turnContext'
 import { Response } from 'express'
 import { Request } from './auth/request'
-import { ConnectorClient } from './connector-client/connectorClient'
+import { ConnectorClient, ConnectorClientBase } from './connector-client/connectorClient'
 import { AuthConfiguration, getAuthConfigWithDefaults } from './auth/authConfiguration'
 import { AuthProvider } from './auth/authProvider'
 import { ApxProductionScope } from './auth/authConstants'
@@ -26,6 +26,7 @@ import { UserTokenClient } from './oauth'
 import { HeaderPropagation, HeaderPropagationCollection, HeaderPropagationDefinition } from './headerPropagation'
 import { JwtPayload } from 'jsonwebtoken'
 import { getTokenServiceEndpoint } from './oauth/customUserTokenAPI'
+import { MCSConnectorClient } from './connector-client/mcsConnectorClient'
 const logger = debug('agents:cloud-adapter')
 
 /**
@@ -107,6 +108,28 @@ export class CloudAdapter extends BaseAdapter {
     )
   }
 
+  /**
+   * Creates a connector client base, choosing between MCSConnectorClient and standard ConnectorClient.
+   *
+   * @param identity - The JWT payload containing authentication information
+   * @param activity - The activity being processed
+   * @param headers - Optional headers to propagate in the request
+   * @returns A promise that resolves to a ConnectorClientBase instance (MCSConnectorClient for ConnectorUser role, otherwise standard ConnectorClient)
+   * @protected
+   */
+  protected async createConnectorClientBase (
+    identity: JwtPayload,
+    activity: Activity,
+    headers?: HeaderPropagationCollection): Promise<ConnectorClientBase> {
+    if (activity.recipient?.role && activity.recipient.role.toLowerCase() === RoleTypes.ConnectorUser) {
+      if (!activity.serviceUrl) {
+        throw new Error('ServiceUrl is required for creating MCSConnectorClient')
+      }
+      return MCSConnectorClient.createClient(activity.serviceUrl, headers)
+    }
+    return this.createConnectorClientWithIdentity(identity, activity, headers)
+  }
+
   protected async createConnectorClientWithIdentity (
     identity: JwtPayload,
     activity: Activity,
@@ -175,7 +198,7 @@ export class CloudAdapter extends BaseAdapter {
    */
   protected setConnectorClient (
     context: TurnContext,
-    connectorClient?: ConnectorClient
+    connectorClient?: ConnectorClientBase
   ) {
     context.turnState.set(this.ConnectorClientKey, connectorClient)
   }
@@ -335,7 +358,7 @@ export class CloudAdapter extends BaseAdapter {
     const context = new TurnContext(this, activity, request.user!)
     // if Delivery Mode == ExpectReplies, we don't need a connector client.
     if (this.resolveIfConnectorClientIsNeeded(activity)) {
-      const connectorClient = await this.createConnectorClientWithIdentity(request.user!, activity, headers)
+      const connectorClient = await this.createConnectorClientBase(request.user!, activity, headers)
       this.setConnectorClient(context, connectorClient)
     }
 
@@ -453,7 +476,7 @@ export class CloudAdapter extends BaseAdapter {
           : CloudAdapter.createIdentity(botAppId)
 
     const context = new TurnContext(this, Activity.getContinuationActivity(reference), identity)
-    const connectorClient = await this.createConnectorClientWithIdentity(identity, context.activity)
+    const connectorClient = await this.createConnectorClientBase(identity, context.activity)
     this.setConnectorClient(context, connectorClient)
 
     if (!context.activity.isAgenticRequest()) {

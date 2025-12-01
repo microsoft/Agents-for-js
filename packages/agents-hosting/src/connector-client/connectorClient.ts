@@ -16,10 +16,33 @@ const logger = debug('agents:connector-client')
 
 export { getProductInfo }
 
+export interface ConnectorClientBase {
+  readonly axiosInstance: AxiosInstance
+
+  getConversations(continuationToken?: string): Promise<ConversationsResult>
+
+  getConversationMember(userId: string, conversationId: string): Promise<ChannelAccount>
+
+  createConversation(body: ConversationParameters): Promise<ConversationResourceResponse>
+
+  replyToActivity(conversationId: string, activityId: string, body: Activity): Promise<ResourceResponse>
+
+  sendToConversation(conversationId: string, body: Activity): Promise<ResourceResponse>
+
+  getAttachmentInfo(attachmentId: string): Promise<AttachmentInfo>
+
+  getAttachment(attachmentId: string, viewId: string): Promise<NodeJS.ReadableStream>
+
+  updateActivity(conversationId: string, activityId: string, body: Activity): Promise<ResourceResponse>
+
+  deleteActivity(conversationId: string, activityId: string): Promise<void>
+
+  uploadAttachment(conversationId: string, body: AttachmentData): Promise<ResourceResponse>
+}
 /**
  * ConnectorClient is a client for interacting with the Microsoft Connector API.
  */
-export class ConnectorClient {
+export class ConnectorClient implements ConnectorClientBase {
   protected readonly _axiosInstance: AxiosInstance
 
   /**
