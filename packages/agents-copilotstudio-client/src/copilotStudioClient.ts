@@ -84,6 +84,7 @@ export class CopilotStudioClient {
             switch (activity.type) {
               case ActivityTypes.Message:
                 if (!this.conversationId.trim()) { // Did not get it from the header.
+                  console.log('SETTING CONVERSATION ID FROM ACTIVITY', activity.conversation?.id ?? '')
                   this.conversationId = activity.conversation?.id ?? ''
                   logger.debug(`Conversation ID: ${this.conversationId}`)
                 }
@@ -223,7 +224,21 @@ export class CopilotStudioClient {
    * @param conversationId The ID of the conversation. Defaults to the current conversation ID.
    * @returns A promise yielding an array of activities.
    */
+<<<<<<< HEAD
   public async askQuestionsAsync (question: string, conversationId: string = this.conversationId) : Promise<Activity[]> {
+=======
+  public async askQuestionAsync (question: string, conversationId: string = this.conversationId) : Promise<Activity[]> {
+    const conversationAccount: ConversationAccount = {
+      id: conversationId
+    }
+    const activityObj = {
+      type: 'message',
+      text: question,
+      conversation: conversationAccount
+    }
+    const activity = Activity.fromObject(activityObj)
+
+>>>>>>> 7afb93b (correct method name)
     const result: Activity[] = []
     for await (const value of this.askQuestionsStreaming(question, conversationId)) {
       result.push(value)
