@@ -170,26 +170,6 @@ export class CopilotStudioClient {
   }
 
   /**
-   * Sends a question to the Copilot Studio service and retrieves the response activities.
-   * @param question The question to ask.
-   * @param conversationId The ID of the conversation. Defaults to the current conversation ID.
-   * @returns An async generator yielding the Agent's Activities.
-   */
-  public async * askQuestionsStreaming (question: string, conversationId: string = this.conversationId) : AsyncGenerator<Activity> {
-    const conversationAccount: ConversationAccount = {
-      id: conversationId
-    }
-    const activityObj = {
-      type: 'message',
-      text: question,
-      conversation: conversationAccount
-    }
-    const activity = Activity.fromObject(activityObj)
-
-    yield * this.sendActivityStreaming(activity)
-  }
-
-  /**
    * Sends an activity to the Copilot Studio service and retrieves the response activities.
    * @param activity The activity to send.
    * @param conversationId The ID of the conversation. Defaults to the current conversation ID.
@@ -208,6 +188,7 @@ export class CopilotStudioClient {
    * Starts a new conversation with the Copilot Studio service.
    * @param emitStartConversationEvent Whether to emit a start conversation event. Defaults to true.
    * @returns A promise yielding an array of activities.
+   * @deprecated Use startConversationStreaming instead.
    */
   public async startConversationAsync (emitStartConversationEvent: boolean = true): Promise<Activity[]> {
     const result: Activity[] = []
@@ -222,10 +203,21 @@ export class CopilotStudioClient {
    * @param question The question to ask.
    * @param conversationId The ID of the conversation. Defaults to the current conversation ID.
    * @returns A promise yielding an array of activities.
+   * @deprecated Use sendActivityStreaming instead.
    */
   public async askQuestionsAsync (question: string, conversationId: string = this.conversationId) : Promise<Activity[]> {
+    const conversationAccount: ConversationAccount = {
+      id: conversationId
+    }
+    const activityObj = {
+      type: 'message',
+      text: question,
+      conversation: conversationAccount
+    }
+    const activity = Activity.fromObject(activityObj)
+
     const result: Activity[] = []
-    for await (const value of this.askQuestionsStreaming(question, conversationId)) {
+    for await (const value of this.sendActivityStreaming(activity, conversationId)) {
       result.push(value)
     }
     return result
@@ -236,6 +228,7 @@ export class CopilotStudioClient {
    * @param activity The activity to send.
    * @param conversationId The ID of the conversation. Defaults to the current conversation ID.
    * @returns A promise yielding an array of activities.
+   * @deprecated Use sendActivityStreaming instead.
    */
   public async sendActivity (activity: Activity, conversationId: string = this.conversationId) : Promise<Activity[]> {
     const result: Activity[] = []
