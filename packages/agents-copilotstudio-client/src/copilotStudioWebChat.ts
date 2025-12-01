@@ -219,7 +219,7 @@ export class CopilotStudioWebChat {
       logger.debug('--> Connection established.')
       notifyTyping()
 
-      for await (const activity of client.startConversationAsync()) {
+      for await (const activity of client.startConversationStreaming()) {
         delete activity.replyToId
         conversation = activity.conversation
         notifyActivity(activity)
@@ -281,7 +281,7 @@ export class CopilotStudioWebChat {
             subscriber.next(newActivity.id!)
 
             // Stream the agent's response, but don't block the UI
-            for await (const responseActivity of client.sendActivity(newActivity)) {
+            for await (const responseActivity of client.sendActivityStreaming(newActivity)) {
               notifyActivity(responseActivity)
               logger.info('<-- Activity received correctly from Copilot Studio.')
             }
