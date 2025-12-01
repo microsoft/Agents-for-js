@@ -8,7 +8,7 @@ describe('Errors tests', () => {
     const error = Errors.MissingCosmosDbStorageOptions
 
     assert.strictEqual(error.code, -100000)
-    assert.strictEqual(error.description, 'CosmosDbPartitionedStorageOptions is required.')
+    assert.strictEqual(error.description, 'CosmosDbPartitionedStorageOptions is required. Provide a valid configuration object with cosmosClientOptions, databaseId, and containerId properties when initializing CosmosDbPartitionedStorage.')
     assert.strictEqual(error.helplink, 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}')
   })
 
@@ -16,7 +16,7 @@ describe('Errors tests', () => {
     const error = Errors.MissingCosmosEndpoint
 
     assert.strictEqual(error.code, -100001)
-    assert.strictEqual(error.description, 'endpoint in cosmosClientOptions is required.')
+    assert.strictEqual(error.description, 'The endpoint property in cosmosClientOptions is required. Provide your Cosmos DB account endpoint URL (e.g., https://your-account.documents.azure.com:443/).')
     assert.strictEqual(error.helplink, 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}')
   })
 
@@ -24,7 +24,7 @@ describe('Errors tests', () => {
     const error = Errors.MissingCosmosCredentials
 
     assert.strictEqual(error.code, -100002)
-    assert.strictEqual(error.description, 'key or tokenProvider in cosmosClientOptions is required.')
+    assert.strictEqual(error.description, 'Authentication credentials are required in cosmosClientOptions. Provide either a key (connection key) or tokenProvider (for token-based authentication).')
     assert.strictEqual(error.helplink, 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}')
   })
 
