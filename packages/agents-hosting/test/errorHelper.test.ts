@@ -1,3 +1,4 @@
+import { describe, it } from 'node:test'
 import assert from 'assert'
 import { ExceptionHelper } from '@microsoft/agents-activity'
 import { Errors } from '../src/errorHelper'
@@ -6,17 +7,17 @@ describe('HostingErrors', () => {
   it('should have correct error codes in expected ranges', () => {
     // TurnContext and Activity Errors
     assert.strictEqual(Errors.MissingTurnContext.code, -120000)
-    assert.strictEqual(Errors.TurnContextMissingActivity.code, -120001)
-    assert.strictEqual(Errors.ActivityMissingType.code, -120002)
+    assert.strictEqual(Errors.TurnContextMissingActivity.code, -120010)
+    assert.strictEqual(Errors.ActivityMissingType.code, -120020)
 
     // Channel and Conversation Errors
-    assert.strictEqual(Errors.ChannelIdRequired.code, -120010)
-    assert.strictEqual(Errors.ConversationIdRequired.code, -120011)
+    assert.strictEqual(Errors.ChannelIdRequired.code, -120100)
+    assert.strictEqual(Errors.ConversationIdRequired.code, -120110)
 
     // Attachment Errors
-    assert.strictEqual(Errors.AttachmentDataRequired.code, -120025)
-    assert.strictEqual(Errors.AttachmentIdRequired.code, -120026)
-    assert.strictEqual(Errors.ViewIdRequired.code, -120027)
+    assert.strictEqual(Errors.AttachmentDataRequired.code, -120250)
+    assert.strictEqual(Errors.AttachmentIdRequired.code, -120260)
+    assert.strictEqual(Errors.ViewIdRequired.code, -120270)
   })
 
   it('should contain error message in description', () => {
@@ -27,7 +28,7 @@ describe('HostingErrors', () => {
   })
 
   it('should support parameter substitution in error messages', () => {
-    const error = ExceptionHelper.generateException(Error, Errors.ConnectionNotFound, { connectionName: 'test-conn' })
+    const error = ExceptionHelper.generateException(Error, Errors.ConnectionNotFound, undefined, { connectionName: 'test-conn' })
     assert.ok(error.message.includes('test-conn'))
   })
 
