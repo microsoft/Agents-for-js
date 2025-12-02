@@ -58,7 +58,7 @@ class McsAgent extends AgentApplication<TurnState> {
         }
       }
     } else {
-      for await (const activity of cpsClient!.sendActivityStreaming(Activity.fromObject({ text: context.activity.text!, conversation: { id: cid } }))) {
+      for await (const activity of cpsClient!.sendActivityStreaming(Activity.fromObject({ type: 'message', text: context.activity.text!, conversation: { id: cid } }))) {
         console.log('Received activity:', activity.type, activity.text)
         if (activity.type === 'message') {
           await context.sendActivity(activity)
