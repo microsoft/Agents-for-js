@@ -1,5 +1,7 @@
 /** * Copyright (c) Microsoft Corporation. All rights reserved. * Licensed under the MIT License. */
 import { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
+import { ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from '../errorHelper'
 import { Activity, ChannelAccount } from '@microsoft/agents-activity'
 import { TeamsChannelAccount } from '../activity-extensions/teamsChannelAccount'
 import { MeetingInfo } from '../meeting/meetingInfo'
@@ -48,7 +50,7 @@ export class TeamsConnectorClient {
    */
   private static getTeamId (activity: any): string {
     if (!activity) {
-      throw new Error('Missing activity parameter')
+      throw ExceptionHelper.generateException(Error, Errors.MissingActivityParameter)
     }
     const channelData = activity.channelData as TeamsChannelData
     const team = channelData && (channelData.team != null) ? channelData.team : undefined
@@ -67,10 +69,10 @@ export class TeamsConnectorClient {
   static async getTeamMember (activity: any, teamId?: string, userId?: string) {
     const t = teamId || this.getTeamId(activity)
     if (!t) {
-      throw new Error('This method is only valid within the scope of a MS Teams Team.')
+      throw ExceptionHelper.generateException(Error, Errors.OnlyValidInTeamsScope)
     }
     if (!userId) {
-      throw new Error('userId is required')
+      throw ExceptionHelper.generateException(Error, Errors.UserIdRequired)
     }
     return await this.getMemberInternal(activity, t, userId)
   }
@@ -107,11 +109,11 @@ export class TeamsConnectorClient {
     userId: string
   ): Promise<ChannelAccount> {
     if (!conversationId) {
-      throw new Error('conversationId is required')
+      throw ExceptionHelper.generateException(Error, Errors.ConversationIdRequired)
     }
     const client : ConnectorClient = activity.turnState?.get(activity.adapter.ConnectorClientKey)
     if (!client) {
-      throw new Error('Client is not available in the context.')
+      throw ExceptionHelper.generateException(Error, Errors.ClientNotAvailable)
     }
     const teamMember: ChannelAccount = await client.getConversationMember(conversationId, userId)
     return teamMember

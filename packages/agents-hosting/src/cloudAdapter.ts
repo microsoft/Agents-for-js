@@ -13,7 +13,8 @@ import { AuthConfiguration, getAuthConfigWithDefaults } from './auth/authConfigu
 import { AuthProvider } from './auth/authProvider'
 import { ApxProductionScope } from './auth/authConstants'
 import { MsalConnectionManager } from './auth/msalConnectionManager'
-import { Activity, ActivityEventNames, ActivityTypes, Channels, ConversationReference, DeliveryModes, ConversationParameters, RoleTypes } from '@microsoft/agents-activity'
+import { Activity, ActivityEventNames, ActivityTypes, Channels, ConversationReference, DeliveryModes, ConversationParameters, RoleTypes, ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from './errorHelper'
 import { ResourceResponse } from './connector-client/resourceResponse'
 import * as uuid from 'uuid'
 import { debug } from '@microsoft/agents-activity/logger'
@@ -249,15 +250,15 @@ export class CloudAdapter extends BaseAdapter {
    */
   async sendActivities (context: TurnContext, activities: Activity[]): Promise<ResourceResponse[]> {
     if (!context) {
-      throw new TypeError('`context` parameter required')
+      throw ExceptionHelper.generateException(TypeError, Errors.ContextParameterRequired)
     }
 
     if (!activities) {
-      throw new TypeError('`activities` parameter required')
+      throw ExceptionHelper.generateException(TypeError, Errors.ActivitiesParameterRequired)
     }
 
     if (activities.length === 0) {
-      throw new Error('Expecting one or more activities, but the array was empty.')
+      throw ExceptionHelper.generateException(Error, Errors.EmptyActivitiesArray)
     }
 
     const responses: ResourceResponse[] = []
@@ -271,7 +272,7 @@ export class CloudAdapter extends BaseAdapter {
         // no-op
       } else {
         if (!activity.serviceUrl || (activity.conversation == null) || !activity.conversation.id) {
-          throw new Error('Invalid activity object')
+          throw ExceptionHelper.generateException(Error, Errors.InvalidActivityObject)
         }
 
         if (activity.replyToId) {
@@ -395,7 +396,7 @@ export class CloudAdapter extends BaseAdapter {
     }
 
     if (!activity.serviceUrl || (activity.conversation == null) || !activity.conversation.id || !activity.id) {
-      throw new Error('Invalid activity object')
+      throw ExceptionHelper.generateException(Error, Errors.InvalidActivityObject)
     }
 
     const response = await context.turnState.get(this.ConnectorClientKey).updateActivity(
@@ -419,7 +420,7 @@ export class CloudAdapter extends BaseAdapter {
     }
 
     if (!reference || !reference.serviceUrl || (reference.conversation == null) || !reference.conversation.id || !reference.activityId) {
-      throw new Error('Invalid conversation reference object')
+      throw ExceptionHelper.generateException(Error, Errors.InvalidConversationReference)
     }
 
     await context.turnState.get(this.ConnectorClientKey).deleteActivity(reference.conversation.id, reference.activityId)
@@ -437,7 +438,7 @@ export class CloudAdapter extends BaseAdapter {
     logic: (revocableContext: TurnContext) => Promise<void>,
     isResponse: Boolean = false): Promise<void> {
     if (!reference || !reference.serviceUrl || (reference.conversation == null) || !reference.conversation.id) {
-      throw new Error('continueConversation: Invalid conversation reference object')
+      throw ExceptionHelper.generateException(Error, Errors.ContinueConversationInvalidReference)
     }
 
     if (!botAppIdOrIdentity) {
@@ -578,15 +579,15 @@ export class CloudAdapter extends BaseAdapter {
    */
   async uploadAttachment (context: TurnContext, conversationId: string, attachmentData: AttachmentData): Promise<ResourceResponse> {
     if (context === undefined) {
-      throw new Error('context is required')
+      throw ExceptionHelper.generateException(Error, Errors.ContextRequired)
     }
 
     if (conversationId === undefined) {
-      throw new Error('conversationId is required')
+      throw ExceptionHelper.generateException(Error, Errors.ConversationIdRequired)
     }
 
     if (attachmentData === undefined) {
-      throw new Error('attachmentData is required')
+      throw ExceptionHelper.generateException(Error, Errors.AttachmentDataRequired)
     }
 
     return await context.turnState.get<ConnectorClient>(this.ConnectorClientKey).uploadAttachment(conversationId, attachmentData)
@@ -598,13 +599,13 @@ export class CloudAdapter extends BaseAdapter {
    * @param attachmentId - The attachment ID.
    * @returns A promise representing the AttachmentInfo for the requested attachment.
    */
-  async getAttachmentInfo (context: TurnContext, attachmentId: string): Promise<AttachmentInfo> {
+  async getActivityAttachment (context: TurnContext, attachmentId: string): Promise<Readable> {
     if (context === undefined) {
-      throw new Error('context is required')
+      throw ExceptionHelper.generateException(Error, Errors.ContextRequired)
     }
 
     if (attachmentId === undefined) {
-      throw new Error('attachmentId is required')
+      throw ExceptionHelper.generateException(Error, Errors.AttachmentIdRequired)
     }
 
     return await context.turnState.get<ConnectorClient>(this.ConnectorClientKey).getAttachmentInfo(attachmentId)
@@ -617,17 +618,17 @@ export class CloudAdapter extends BaseAdapter {
    * @param viewId - The view ID.
    * @returns A promise representing the NodeJS.ReadableStream for the requested attachment.
    */
-  async getAttachment (context: TurnContext, attachmentId: string, viewId: string): Promise<NodeJS.ReadableStream> {
+  async getActivityAttachmentView (context: TurnContext, attachmentId: string, viewId: string): Promise<Readable> {
     if (context === undefined) {
-      throw new Error('context is required')
+      throw ExceptionHelper.generateException(Error, Errors.ContextRequired)
     }
 
     if (attachmentId === undefined) {
-      throw new Error('attachmentId is required')
+      throw ExceptionHelper.generateException(Error, Errors.AttachmentIdRequired)
     }
 
     if (viewId === undefined) {
-      throw new Error('viewId is required')
+      throw ExceptionHelper.generateException(Error, Errors.ViewIdRequired)
     }
 
     return await context.turnState.get<ConnectorClient>(this.ConnectorClientKey).getAttachment(attachmentId, viewId)
