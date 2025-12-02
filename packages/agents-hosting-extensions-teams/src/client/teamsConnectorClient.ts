@@ -1,8 +1,7 @@
 /** * Copyright (c) Microsoft Corporation. All rights reserved. * Licensed under the MIT License. */
 import { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
-import { ExceptionHelper } from '@microsoft/agents-activity'
+import { Activity, ChannelAccount, ExceptionHelper } from '@microsoft/agents-activity'
 import { Errors } from '../errorHelper'
-import { Activity, ChannelAccount } from '@microsoft/agents-activity'
 import { TeamsChannelAccount } from '../activity-extensions/teamsChannelAccount'
 import { MeetingInfo } from '../meeting/meetingInfo'
 import { MeetingNotification } from '../meeting/meetingNotification'

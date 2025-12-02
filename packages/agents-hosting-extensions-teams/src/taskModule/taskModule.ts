@@ -77,11 +77,12 @@ export class TaskModule<TState extends TurnState> {
       const selector = createTaskSelector(v, filterField, SUBMIT_INVOKE_NAME)
       this._app.addRoute(
         selector,
-          async (context, state) => {
+        async (context, state) => {
           if (context?.activity?.channelId === Channels.Msteams) {
             if (context?.activity?.type !== ActivityTypes.Invoke || context?.activity?.name !== SUBMIT_INVOKE_NAME) {
               throw ExceptionHelper.generateException(Error, Errors.UnexpectedTaskModuleSubmit, { activityType: context?.activity?.type })
-            }            const result = await handler(context, state, (context.activity.value as any).data ?? {})
+            }
+            const result = await handler(context, state, (context.activity.value as any).data ?? {})
 
             if (!result) {
               await context.sendActivity(Activity.fromObject({
