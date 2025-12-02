@@ -84,7 +84,6 @@ export class CopilotStudioClient {
             switch (activity.type) {
               case ActivityTypes.Message:
                 if (!this.conversationId.trim()) { // Did not get it from the header.
-                  console.log('SETTING CONVERSATION ID FROM ACTIVITY', activity.conversation?.id ?? '')
                   this.conversationId = activity.conversation?.id ?? ''
                   logger.debug(`Conversation ID: ${this.conversationId}`)
                 }
