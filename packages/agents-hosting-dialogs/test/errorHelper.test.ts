@@ -5,7 +5,7 @@
 
 import { ExceptionHelper } from '@microsoft/agents-activity'
 import { Errors } from '../src/errorHelper'
-import { describe, it } from 'mocha'
+import { describe, it } from 'node:test'
 import * as assert from 'assert'
 
 describe('Dialog ErrorHelper', () => {

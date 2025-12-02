@@ -21,6 +21,7 @@ import { debug } from '@microsoft/agents-activity/logger'
 import { StatusCodes } from './statusCodes'
 import { InvokeResponse } from './invoke/invokeResponse'
 import { AttachmentData } from './connector-client/attachmentData'
+import { AttachmentInfo } from './connector-client/attachmentInfo'
 import { normalizeIncomingActivity } from './activityWireCompat'
 import { UserTokenClient } from './oauth'
 import { HeaderPropagation, HeaderPropagationCollection, HeaderPropagationDefinition } from './headerPropagation'
@@ -598,7 +599,7 @@ export class CloudAdapter extends BaseAdapter {
    * @param attachmentId - The attachment ID.
    * @returns A promise representing the AttachmentInfo for the requested attachment.
    */
-  async getActivityAttachment (context: TurnContext, attachmentId: string): Promise<Readable> {
+  async getAttachmentInfo (context: TurnContext, attachmentId: string): Promise<AttachmentInfo> {
     if (context === undefined) {
       throw ExceptionHelper.generateException(Error, Errors.ContextRequired)
     }
@@ -617,7 +618,7 @@ export class CloudAdapter extends BaseAdapter {
    * @param viewId - The view ID.
    * @returns A promise representing the NodeJS.ReadableStream for the requested attachment.
    */
-  async getActivityAttachmentView (context: TurnContext, attachmentId: string, viewId: string): Promise<Readable> {
+  async getAttachment (context: TurnContext, attachmentId: string, viewId: string): Promise<NodeJS.ReadableStream> {
     if (context === undefined) {
       throw ExceptionHelper.generateException(Error, Errors.ContextRequired)
     }
