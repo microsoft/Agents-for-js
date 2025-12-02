@@ -13,8 +13,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   MissingTurnContext: {
     code: -120000,
-    description: 'Missing TurnContext parameter',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120000',
+    description: 'Missing TurnContext parameter'
   },
 
   /**
@@ -22,8 +21,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   TurnContextMissingActivity: {
     code: -120010,
-    description: 'TurnContext does not include an activity',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120010',
+    description: 'TurnContext does not include an activity'
   },
 
   /**
@@ -31,8 +29,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   ActivityMissingType: {
     code: -120020,
-    description: 'Activity is missing its type',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120020',
+    description: 'Activity is missing its type'
   },
 
   /**
@@ -40,8 +37,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   InvalidActivityObject: {
     code: -120030,
-    description: 'Invalid activity object',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120030',
+    description: 'Invalid activity object'
   },
 
   /**
@@ -49,8 +45,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   ActivityRequired: {
     code: -120040,
-    description: 'Activity is required.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120040',
+    description: 'Activity is required.'
   },
 
   /**
@@ -58,8 +53,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   ActivityParameterRequired: {
     code: -120050,
-    description: 'activity parameter required',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120050',
+    description: 'activity parameter required'
   },
 
   /**
@@ -67,8 +61,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   EmptyActivitiesArray: {
     code: -120060,
-    description: 'Expecting one or more activities, but the array was empty.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120060',
+    description: 'Expecting one or more activities, but the array was empty.'
   },
 
   /**
@@ -76,8 +69,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   ActivitiesParameterRequired: {
     code: -120070,
-    description: 'activities parameter required',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120070',
+    description: 'activities parameter required'
   },
 
   /**
@@ -86,7 +78,6 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   CannotSetRespondedToFalse: {
     code: -120080,
     description: "TurnContext: cannot set 'responded' to a value of 'false'.",
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120080',
   },
 
   /**
@@ -94,8 +85,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   ContextParameterRequired: {
     code: -120090,
-    description: 'context parameter required',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120090',
+    description: 'context parameter required'
   },
 
   // ============================================================================
@@ -107,8 +97,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   ChannelIdRequired: {
     code: -120100,
-    description: 'channelId is required.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120100',
+    description: 'channelId is required.'
   },
 
   /**
@@ -116,8 +105,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   ConversationIdRequired: {
     code: -120110,
-    description: 'conversationId is required.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120110',
+    description: 'conversationId is required.'
   },
 
   /**
@@ -125,8 +113,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   InvalidConversationReference: {
     code: -120120,
-    description: 'Invalid conversation reference object',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120120',
+    description: 'Invalid conversation reference object'
   },
 
   /**
@@ -134,8 +121,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   ContinueConversationInvalidReference: {
     code: -120130,
-    description: 'continueConversation: Invalid conversation reference object',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120130',
+    description: 'continueConversation: Invalid conversation reference object'
   },
 
   /**
@@ -143,8 +129,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   ContextRequired: {
     code: -120140,
-    description: 'context is required',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120140',
+    description: 'context is required'
   },
 
   /**
@@ -152,8 +137,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   UserIdAndConversationIdRequired: {
     code: -120150,
-    description: 'userId and conversationId are required',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120150',
+    description: 'userId and conversationId are required'
   },
 
   /**
@@ -161,8 +145,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   ConversationIdAndActivityIdRequired: {
     code: -120160,
-    description: 'conversationId and activityId are required',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120160',
+    description: 'conversationId and activityId are required'
   },
 
   /**
@@ -170,8 +153,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   ServiceUrlRequired: {
     code: -120170,
-    description: 'serviceUrl must be a non-empty string',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120170',
+    description: 'serviceUrl must be a non-empty string'
   },
 
   /**
@@ -179,8 +161,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   ConversationParametersRequired: {
     code: -120180,
-    description: 'conversationParameters must be defined',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120180',
+    description: 'conversationParameters must be defined'
   },
 
   /**
@@ -188,8 +169,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   MissingActivityChannelId: {
     code: -120190,
-    description: 'missing activity.channelId',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120190',
+    description: 'missing activity.channelId'
   },
 
   /**
@@ -197,8 +177,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   MissingActivityFromId: {
     code: -120200,
-    description: 'missing activity.from.id',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120200',
+    description: 'missing activity.from.id'
   },
 
   /**
@@ -206,8 +185,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   MissingActivityConversationId: {
     code: -120210,
-    description: 'missing activity.conversation.id',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120210',
+    description: 'missing activity.conversation.id'
   },
 
   /**
@@ -215,8 +193,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   MissingContextActivityChannelId: {
     code: -120220,
-    description: 'missing context.activity.channelId',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120220',
+    description: 'missing context.activity.channelId'
   },
 
   /**
@@ -225,7 +202,6 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   ChannelIdAndFromIdRequired: {
     code: -120230,
     description: "Both 'activity.channelId' and 'activity.from.id' are required for this operation.",
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120230',
   },
 
   /**
@@ -234,7 +210,6 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   ChannelIdAndFromIdRequiredForSignout: {
     code: -120240,
     description: "Both 'activity.channelId' and 'activity.from.id' are required to perform signout.",
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120240',
   },
 
   // ============================================================================
@@ -246,8 +221,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   AttachmentDataRequired: {
     code: -120250,
-    description: 'attachmentData is required',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120250',
+    description: 'attachmentData is required'
   },
 
   /**
@@ -255,8 +229,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   AttachmentIdRequired: {
     code: -120260,
-    description: 'attachmentId is required',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120260',
+    description: 'attachmentId is required'
   },
 
   /**
@@ -264,8 +237,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   ViewIdRequired: {
     code: -120270,
-    description: 'viewId is required',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120270',
+    description: 'viewId is required'
   },
 
   /**
@@ -273,8 +245,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   HeadersRequired: {
     code: -120280,
-    description: 'Headers must be provided.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120280',
+    description: 'Headers must be provided.'
   },
 
   /**
@@ -282,8 +253,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   RequestBodyParameterRequired: {
     code: -120290,
-    description: 'request.body parameter required',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120290',
+    description: 'request.body parameter required'
   },
 
   // ============================================================================
@@ -295,8 +265,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   ConnectionNotFoundInEnvironment: {
     code: -120300,
-    description: 'Connection "{connectionName}" not found in environment.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120300',
+    description: 'Connection "{connectionName}" not found in environment.'
   },
 
   /**
@@ -304,8 +273,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   NoDefaultConnectionFound: {
     code: -120310,
-    description: 'No default connection found in environment connections.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120310',
+    description: 'No default connection found in environment connections.'
   },
 
   /**
@@ -313,8 +281,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   ClientIdRequiredInProduction: {
     code: -120320,
-    description: 'ClientId required in production',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120320',
+    description: 'ClientId required in production'
   },
 
   /**
@@ -322,8 +289,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   ClientIdNotFoundForConnection: {
     code: -120330,
-    description: 'ClientId not found for connection: {connectionName}',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120330',
+    description: 'ClientId not found for connection: {connectionName}'
   },
 
   /**
@@ -331,8 +297,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   CannotCreateConnectorClientForAgenticUser: {
     code: -120340,
-    description: 'Could not create connector client for agentic user',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120340',
+    description: 'Could not create connector client for agentic user'
   },
 
   /**
@@ -340,8 +305,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   ConnectionNotFound: {
     code: -120350,
-    description: 'Connection not found: {connectionName}',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120350',
+    description: 'Connection not found: {connectionName}'
   },
 
   /**
@@ -349,8 +313,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   NoConnectionsFoundInConfiguration: {
     code: -120360,
-    description: 'No connections found for this Agent in the Connections Configuration.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120360',
+    description: 'No connections found for this Agent in the Connections Configuration.'
   },
 
   /**
@@ -359,7 +322,6 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   ConnectionsOptionNotAvailable: {
     code: -120370,
     description: "The 'connections' option is not available in the app options. Ensure that the app is properly configured.",
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120370',
   },
 
   /**
@@ -367,8 +329,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   ConnectionSettingsRequired: {
     code: -120380,
-    description: 'Connection settings must be provided for this operation.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120380',
+    description: 'Connection settings must be provided for this operation.'
   },
 
   /**
@@ -376,8 +337,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   IdentityRequiredForTokenProvider: {
     code: -120390,
-    description: 'Identity is required to get the token provider.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120390',
+    description: 'Identity is required to get the token provider.'
   },
 
   /**
@@ -385,8 +345,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   AudienceAndServiceUrlRequiredForTokenProvider: {
     code: -120400,
-    description: 'Audience and Service URL are required to get the token provider.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120400',
+    description: 'Audience and Service URL are required to get the token provider.'
   },
 
   /**
@@ -394,8 +353,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   NoConnectionForAudienceAndServiceUrl: {
     code: -120410,
-    description: 'No connection found for audience: {audience} and serviceUrl: {serviceUrl}',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120410',
+    description: 'No connection found for audience: {audience} and serviceUrl: {serviceUrl}'
   },
 
   /**
@@ -403,8 +361,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   InvalidToken: {
     code: -120420,
-    description: 'invalid token',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120420',
+    description: 'invalid token'
   },
 
   /**
@@ -412,8 +369,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   InvalidExchangeTokenParameters: {
     code: -120430,
-    description: 'Invalid parameters for exchangeToken method.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120430',
+    description: 'Invalid parameters for exchangeToken method.'
   },
 
   /**
@@ -421,8 +377,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   InvalidAuthConfig: {
     code: -120440,
-    description: 'Invalid authConfig.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120440',
+    description: 'Invalid authConfig.'
   },
 
   /**
@@ -430,8 +385,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   FailedToAcquireToken: {
     code: -120450,
-    description: 'Failed to acquire token',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120450',
+    description: 'Failed to acquire token'
   },
 
   /**
@@ -439,8 +393,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   FailedToAcquireInstanceToken: {
     code: -120460,
-    description: 'Failed to acquire instance token',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120460',
+    description: 'Failed to acquire instance token'
   },
 
   /**
@@ -449,7 +402,6 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   UserTokenClientNotAvailable: {
     code: -120470,
     description: "The 'userTokenClient' is not available in the adapter. Ensure that the adapter supports user token operations.",
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120470',
   },
 
   /**
@@ -458,7 +410,6 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   TokenNotExchangeableForOBO: {
     code: -120480,
     description: "The current token is not exchangeable for an on-behalf-of flow. Ensure the token audience starts with 'api://'.",
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120480',
   },
 
   /**
@@ -467,7 +418,6 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   ConnectionNameOrEnvVariableRequired: {
     code: -120490,
     description: "The 'name' property or '{handlerId}_connectionName' env variable is required to initialize the handler.",
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120490',
   },
 
   /**
@@ -475,8 +425,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   FailedToSignOut: {
     code: -120500,
-    description: 'Failed to sign out',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120500',
+    description: 'Failed to sign out'
   },
 
   /**
@@ -484,8 +433,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   FailedToSignIn: {
     code: -120510,
-    description: 'Failed to sign in',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120510',
+    description: 'Failed to sign in'
   },
 
   /**
@@ -493,8 +441,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   AtLeastOneScopeRequired: {
     code: -120520,
-    description: 'At least one scope must be specified for the Agentic authorization handler.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120520',
+    description: 'At least one scope must be specified for the Agentic authorization handler.'
   },
 
   /**
@@ -502,8 +449,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   AuthorizationOptionNotAvailable: {
     code: -120530,
-    description: 'The Application.authorization property is unavailable because no authorization options were configured.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120530',
+    description: 'The Application.authorization property is unavailable because no authorization options were configured.'
   },
 
   /**
@@ -512,7 +458,6 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   AuthHandlerNotFound: {
     code: -120540,
     description: "Cannot find auth handler with ID '{handlerId}'. Ensure it is configured in the agent application options.",
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120540',
   },
 
   /**
@@ -520,8 +465,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   AuthHandlersNotFound: {
     code: -120550,
-    description: 'Cannot find auth handlers with ID(s): {handlerIds}',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120550',
+    description: 'Cannot find auth handlers with ID(s): {handlerIds}'
   },
 
   /**
@@ -529,8 +473,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   NoAuthHandlersConfigured: {
     code: -120560,
-    description: 'The AgentApplication.authorization does not have any auth handlers',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120560',
+    description: 'The AgentApplication.authorization does not have any auth handlers'
   },
 
   /**
@@ -538,8 +481,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   UnsupportedAuthHandlerType: {
     code: -120570,
-    description: 'Unsupported authorization handler type: {handlerType}',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120570',
+    description: 'Unsupported authorization handler type: {handlerType}'
   },
 
   /**
@@ -547,8 +489,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   UnexpectedRegistrationStatus: {
     code: -120580,
-    description: 'Unexpected registration status: {status}',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120580',
+    description: 'Unexpected registration status: {status}'
   },
 
   /**
@@ -556,8 +497,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   StorageRequiredForAuthorization: {
     code: -120590,
-    description: 'Storage is required for Authorization. Ensure that a storage provider is configured in the app options.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120590',
+    description: 'Storage is required for Authorization. Ensure that a storage provider is configured in the app options.'
   },
 
   // ============================================================================
@@ -569,8 +509,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   MissingAgentClientConfig: {
     code: -120600,
-    description: 'Missing agent client config for agent {agentName}',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120600',
+    description: 'Missing agent client config for agent {agentName}'
   },
 
   /**
@@ -578,8 +517,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   AgentNameRequired: {
     code: -120610,
-    description: 'Agent name is required',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120610',
+    description: 'Agent name is required'
   },
 
   /**
@@ -587,8 +525,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   FailedToPostActivityToAgent: {
     code: -120620,
-    description: 'Failed to post activity to agent: {statusText}',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120620',
+    description: 'Failed to post activity to agent: {statusText}'
   },
 
   /**
@@ -596,8 +533,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   LogicParameterRequired: {
     code: -120630,
-    description: 'logic must be defined',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120630',
+    description: 'logic must be defined'
   },
 
   // ============================================================================
@@ -609,8 +545,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   StorageETagConflict: {
     code: -120700,
-    description: 'Storage: error writing "{key}" due to eTag conflict.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120700',
+    description: 'Storage: error writing "{key}" due to eTag conflict.'
   },
 
   /**
@@ -619,7 +554,6 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   StorageOptionNotAvailable: {
     code: -120710,
     description: "The 'storage' option is not available in the app options. Ensure that the app is properly configured.",
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120710',
   },
 
   /**
@@ -627,8 +561,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   StateNotLoaded: {
     code: -120720,
-    description: 'State not loaded. Call load() before accessing state properties.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120720',
+    description: 'State not loaded. Call load() before accessing state properties.'
   },
 
   /**
@@ -636,8 +569,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   InvalidStateScope: {
     code: -120730,
-    description: 'Invalid state scope: {scope}',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120730',
+    description: 'Invalid state scope: {scope}'
   },
 
   // ============================================================================
@@ -649,8 +581,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   LongRunningMessagesPropertyUnavailable: {
     code: -120850,
-    description: 'The Application.longRunningMessages property is unavailable because no adapter was configured in the app.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120850',
+    description: 'The Application.longRunningMessages property is unavailable because no adapter was configured in the app.'
   },
 
   /**
@@ -658,8 +589,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   TranscriptLoggerPropertyUnavailable: {
     code: -120860,
-    description: 'The Application.transcriptLogger property is unavailable because no adapter was configured in the app.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120860',
+    description: 'The Application.transcriptLogger property is unavailable because no adapter was configured in the app.'
   },
 
   /**
@@ -667,8 +597,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   TranscriptLoggerInstanceRequired: {
     code: -120870,
-    description: 'TranscriptLoggerMiddleware requires a TranscriptLogger instance.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120870',
+    description: 'TranscriptLoggerMiddleware requires a TranscriptLogger instance.'
   },
 
   /**
@@ -676,8 +605,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   ExtensionAlreadyRegistered: {
     code: -120880,
-    description: 'Extension already registered',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120880',
+    description: 'Extension already registered'
   },
 
   /**
@@ -685,8 +613,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   InvalidMiddlewarePluginType: {
     code: -120890,
-    description: 'MiddlewareSet.use(): invalid plugin type being added.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120890',
+    description: 'MiddlewareSet.use(): invalid plugin type being added.'
   },
 
   /**
@@ -694,8 +621,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   StreamAlreadyEnded: {
     code: -120900,
-    description: 'The stream has already ended.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120900',
+    description: 'The stream has already ended.'
   },
 
   // ============================================================================
@@ -707,8 +633,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   UnexpectedActionExecute: {
     code: -120950,
-    description: 'Unexpected AdaptiveCards.actionExecute() triggered for activity type: {activityType}',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120950',
+    description: 'Unexpected AdaptiveCards.actionExecute() triggered for activity type: {activityType}'
   },
 
   /**
@@ -716,8 +641,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   UnexpectedActionSubmit: {
     code: -120960,
-    description: 'Unexpected AdaptiveCards.actionSubmit() triggered for activity type: {activityType}',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120960',
+    description: 'Unexpected AdaptiveCards.actionSubmit() triggered for activity type: {activityType}'
   },
 
   /**
@@ -725,8 +649,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   UnexpectedSearchAction: {
     code: -120970,
-    description: 'Unexpected AdaptiveCards.search() triggered for activity type: {activityType}',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120970',
+    description: 'Unexpected AdaptiveCards.search() triggered for activity type: {activityType}'
   },
 
   /**
@@ -734,8 +657,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   InvalidActionValue: {
     code: -120980,
-    description: 'Invalid action value: {error}',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120980',
+    description: 'Invalid action value: {error}'
   },
 
   // ============================================================================
@@ -747,7 +669,6 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   UnknownErrorType: {
     code: -120990,
-    description: 'Unknown error type: {errorMessage}',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#-120990',
+    description: 'Unknown error type: {errorMessage}'
   },
 }

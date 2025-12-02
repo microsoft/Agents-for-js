@@ -172,4 +172,44 @@ describe('ExceptionHelper tests', () => {
     assert.strictEqual(exception.code, -100000)
     assert.strictEqual(exception.helpLink, 'https://aka.ms/custom-link')
   })
+
+  it('should use default helplink when helplink is not provided', () => {
+    const errorDef: AgentErrorDefinition = {
+      code: -100000,
+      description: 'Test error with default helplink'
+    }
+
+    const exception = ExceptionHelper.generateException(Error, errorDef)
+
+    assert.strictEqual(exception.message, '[-100000] - Test error with default helplink - https://aka.ms/M365AgentsErrorCodesJS/#-100000')
+    assert.strictEqual(exception.code, -100000)
+    assert.strictEqual(exception.helpLink, 'https://aka.ms/M365AgentsErrorCodesJS/#-100000')
+  })
+
+  it('should allow override of default helplink', () => {
+    const errorDef: AgentErrorDefinition = {
+      code: -100000,
+      description: 'Test error with custom helplink',
+      helplink: 'https://custom.link/error/{errorCode}'
+    }
+
+    const exception = ExceptionHelper.generateException(Error, errorDef)
+
+    assert.strictEqual(exception.message, '[-100000] - Test error with custom helplink - https://custom.link/error/-100000')
+    assert.strictEqual(exception.code, -100000)
+    assert.strictEqual(exception.helpLink, 'https://custom.link/error/-100000')
+  })
+
+  it('should use default helplink with different error code', () => {
+    const errorDef: AgentErrorDefinition = {
+      code: -999999,
+      description: 'Test error with large error code'
+    }
+
+    const exception = ExceptionHelper.generateException(Error, errorDef)
+
+    assert.strictEqual(exception.message, '[-999999] - Test error with large error code - https://aka.ms/M365AgentsErrorCodesJS/#-999999')
+    assert.strictEqual(exception.code, -999999)
+    assert.strictEqual(exception.helpLink, 'https://aka.ms/M365AgentsErrorCodesJS/#-999999')
+  })
 })
