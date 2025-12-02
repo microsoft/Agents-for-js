@@ -17,8 +17,8 @@ describe('BlobStorageErrors', () => {
   })
 
   it('should support parameter substitution in error messages', () => {
-    const error = ExceptionHelper.generateException(Error, Errors.InvalidTimestamp, undefined, { timestamp: 'test-timestamp' })
-    assert.ok(error.message.includes('test-timestamp'))
+    const error = ExceptionHelper.generateException(Error, Errors.ETagConflict, undefined, { key: 'test-key' })
+    assert.ok(error.message.includes('test-key'))
   })
 
   it('should have all required properties', () => {
