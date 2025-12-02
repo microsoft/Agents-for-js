@@ -153,7 +153,7 @@ export class BlobsStorage implements Storage {
           })
         } catch (err: any) {
           if (err.statusCode === 412) {
-            throw ExceptionHelper.generateException(Error, Errors.ETagConflict, { key })
+            throw ExceptionHelper.generateException(Error, Errors.ETagConflict)
           } else {
             throw err
           }

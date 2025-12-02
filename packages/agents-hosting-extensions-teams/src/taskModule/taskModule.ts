@@ -80,7 +80,7 @@ export class TaskModule<TState extends TurnState> {
         async (context, state) => {
           if (context?.activity?.channelId === Channels.Msteams) {
             if (context?.activity?.type !== ActivityTypes.Invoke || context?.activity?.name !== SUBMIT_INVOKE_NAME) {
-              throw ExceptionHelper.generateException(Error, Errors.UnexpectedTaskModuleSubmit, { activityType: context?.activity?.type })
+              throw ExceptionHelper.generateException(Error, Errors.UnexpectedTaskModuleSubmit, undefined, { activityType: context?.activity?.type })
             }
             const result = await handler(context, state, (context.activity.value as any).data ?? {})
 

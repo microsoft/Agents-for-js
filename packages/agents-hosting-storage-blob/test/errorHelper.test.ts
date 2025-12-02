@@ -1,3 +1,4 @@
+import { describe, it } from 'node:test'
 import assert from 'assert'
 import { ExceptionHelper } from '@microsoft/agents-activity'
 import { Errors } from '../src/errorHelper'
@@ -16,8 +17,8 @@ describe('BlobStorageErrors', () => {
   })
 
   it('should support parameter substitution in error messages', () => {
-    const error = ExceptionHelper.generateException(Error, Errors.ETagConflict, { key: 'test-key' })
-    assert.ok(error.message.includes('test-key'))
+    const error = ExceptionHelper.generateException(Error, Errors.InvalidTimestamp, undefined, { timestamp: 'test-timestamp' })
+    assert.ok(error.message.includes('test-timestamp'))
   })
 
   it('should have all required properties', () => {

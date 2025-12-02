@@ -1,3 +1,4 @@
+import { describe, it } from 'node:test'
 import assert from 'assert'
 import { ExceptionHelper } from '@microsoft/agents-activity'
 import { Errors } from '../src/errorHelper'
@@ -34,7 +35,7 @@ describe('TeamsExtensionErrors', () => {
   })
 
   it('should support parameter substitution in error messages', () => {
-    const error = ExceptionHelper.generateException(Error, Errors.UnexpectedTaskModuleSubmit, { activityType: 'testType' })
+    const error = ExceptionHelper.generateException(Error, Errors.UnexpectedTaskModuleSubmit, undefined, { activityType: 'testType' })
     assert.ok(error.message.includes('testType'))
   })
 
