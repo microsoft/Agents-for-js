@@ -8,12 +8,12 @@ describe('HostingErrors', () => {
     assert.strictEqual(Errors.MissingTurnContext.code, -120000)
     assert.strictEqual(Errors.TurnContextMissingActivity.code, -120001)
     assert.strictEqual(Errors.ActivityMissingType.code, -120002)
-    
+
     // Channel and Conversation Errors
     assert.strictEqual(Errors.ChannelIdRequired.code, -120010)
     assert.strictEqual(Errors.ConversationIdRequired.code, -120011)
-    
-    // Attachment Errors  
+
+    // Attachment Errors
     assert.strictEqual(Errors.AttachmentDataRequired.code, -120025)
     assert.strictEqual(Errors.AttachmentIdRequired.code, -120026)
     assert.strictEqual(Errors.ViewIdRequired.code, -120027)
