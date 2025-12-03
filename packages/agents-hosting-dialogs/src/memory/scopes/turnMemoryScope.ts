@@ -3,6 +3,8 @@
  * Licensed under the MIT License.
  */
 import { MemoryScope } from './memoryScope'
+import { ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from '../../errorHelper'
 import { ScopePath } from '../scopePath'
 import { DialogContext } from '../../dialogContext'
 
@@ -47,7 +49,12 @@ export class TurnMemoryScope extends MemoryScope {
    */
   setMemory (dialogContext: DialogContext, memory: object): void {
     if (memory === undefined) {
-      throw new Error('TurnMemoryScope.setMemory: undefined memory object passed in.')
+      throw ExceptionHelper.generateException(
+        Error,
+        Errors.UndefinedMemoryObject,
+        undefined,
+        { scopeName: 'TurnMemoryScope' }
+      )
     }
 
     dialogContext.context.turnState.set(TURN_STATE, memory)

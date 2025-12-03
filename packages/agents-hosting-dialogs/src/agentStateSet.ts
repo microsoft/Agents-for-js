@@ -3,6 +3,8 @@
  * Licensed under the MIT License.
  */
 import { AgentState, TurnContext } from '@microsoft/agents-hosting'
+import { ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from './errorHelper'
 
 /**
  * A collection of `AgentState` plugins that should be loaded or saved in parallel as a single unit.
@@ -36,7 +38,10 @@ export class AgentStateSet {
       if (typeof agentstate.load === 'function' && typeof agentstate.saveChanges === 'function') {
         this.agentStates.push(agentstate)
       } else {
-        throw new Error("AgentStateSet: a object was added that isn't an instance of AgentStateSet.")
+        throw ExceptionHelper.generateException(
+          Error,
+          Errors.InvalidAgentStateObject
+        )
       }
     })
 

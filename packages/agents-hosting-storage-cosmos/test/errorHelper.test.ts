@@ -9,7 +9,7 @@ describe('Errors tests', () => {
 
     assert.strictEqual(error.code, -100000)
     assert.strictEqual(error.description, 'CosmosDbPartitionedStorageOptions is required.')
-    assert.strictEqual(error.helplink, 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}')
+    assert.strictEqual(error.helplink, 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}')
   })
 
   it('should have MissingCosmosEndpoint error definition', () => {
@@ -17,7 +17,7 @@ describe('Errors tests', () => {
 
     assert.strictEqual(error.code, -100001)
     assert.strictEqual(error.description, 'endpoint in cosmosClientOptions is required.')
-    assert.strictEqual(error.helplink, 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}')
+    assert.strictEqual(error.helplink, 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}')
   })
 
   it('should have MissingCosmosCredentials error definition', () => {
@@ -25,7 +25,7 @@ describe('Errors tests', () => {
 
     assert.strictEqual(error.code, -100002)
     assert.strictEqual(error.description, 'key or tokenProvider in cosmosClientOptions is required.')
-    assert.strictEqual(error.helplink, 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}')
+    assert.strictEqual(error.helplink, 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}')
   })
 
   it('should have all error codes in the correct range', () => {
@@ -63,7 +63,7 @@ describe('Errors tests', () => {
         `Help link should contain {errorCode} token: ${errorDef.helplink}`
       )
       assert.ok(
-        errorDef.helplink.startsWith('https://aka.ms/M365AgentsErrorCodes/#'),
+        errorDef.helplink.startsWith('https://aka.ms/M365AgentsErrorCodesJS/#'),
         `Help link should start with correct URL: ${errorDef.helplink}`
       )
     })
