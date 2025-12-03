@@ -27,6 +27,7 @@ import { UserTokenClient } from './oauth'
 import { HeaderPropagation, HeaderPropagationCollection, HeaderPropagationDefinition } from './headerPropagation'
 import { JwtPayload } from 'jsonwebtoken'
 import { getTokenServiceEndpoint } from './oauth/customUserTokenAPI'
+import { Connections } from './auth/connections'
 const logger = debug('agents:cloud-adapter')
 
 /**
@@ -42,7 +43,7 @@ export class CloudAdapter extends BaseAdapter {
   /**
    * Client for connecting to the Azure Bot Service
    */
-  connectionManager: MsalConnectionManager
+  connectionManager: Connections
 
   /**
    * Creates an instance of CloudAdapter.

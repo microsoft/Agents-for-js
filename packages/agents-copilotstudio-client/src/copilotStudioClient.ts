@@ -160,7 +160,7 @@ export class CopilotStudioClient {
    * @param emitStartConversationEvent Whether to emit a start conversation event. Defaults to true.
    * @returns An async generator yielding the Agent's Activities.
    */
-  public async * startConversationAsync (emitStartConversationEvent: boolean = true): AsyncGenerator<Activity> {
+  public async * startConversationStreaming (emitStartConversationEvent: boolean = true): AsyncGenerator<Activity> {
     const uriStart: string = getCopilotStudioConnectionUrl(this.settings)
     const body = { emitStartConversationEvent }
 
@@ -170,14 +170,45 @@ export class CopilotStudioClient {
   }
 
   /**
-   * Sends a question to the Copilot Studio service and retrieves the response activities.
-   * @param question The question to ask.
+   * Sends an activity to the Copilot Studio service and retrieves the response activities.
+   * @param activity The activity to send.
    * @param conversationId The ID of the conversation. Defaults to the current conversation ID.
    * @returns An async generator yielding the Agent's Activities.
    */
-  public async * askQuestionAsync (question: string, conversationId: string = this.conversationId) : AsyncGenerator<Activity> {
+  public async * sendActivityStreaming (activity: Activity, conversationId: string = this.conversationId) : AsyncGenerator<Activity> {
+    const localConversationId = activity.conversation?.id ?? conversationId
+    const uriExecute = getCopilotStudioConnectionUrl(this.settings, localConversationId)
+    const qbody: ExecuteTurnRequest = new ExecuteTurnRequest(activity)
+
+    logger.info('Sending activity...', activity)
+    yield * this.postRequestAsync(uriExecute, qbody, 'POST')
+  }
+
+  /**
+   * Starts a new conversation with the Copilot Studio service.
+   * @param emitStartConversationEvent Whether to emit a start conversation event. Defaults to true.
+   * @returns A promise yielding an array of activities.
+   * @deprecated Use startConversationStreaming instead.
+   */
+  public async startConversationAsync (emitStartConversationEvent: boolean = true): Promise<Activity[]> {
+    const result: Activity[] = []
+    for await (const value of this.startConversationStreaming(emitStartConversationEvent)) {
+      result.push(value)
+    }
+    return result
+  }
+
+  /**
+   * Sends a question to the Copilot Studio service and retrieves the response activities.
+   * @param question The question to ask.
+   * @param conversationId The ID of the conversation. Defaults to the current conversation ID.
+   * @returns A promise yielding an array of activities.
+   * @deprecated Use sendActivityStreaming instead.
+   */
+  public async askQuestionAsync (question: string, conversationId?: string) : Promise<Activity[]> {
+    const localConversationId = conversationId?.trim() ? conversationId : this.conversationId
     const conversationAccount: ConversationAccount = {
-      id: conversationId
+      id: localConversationId
     }
     const activityObj = {
       type: 'message',
@@ -186,21 +217,25 @@ export class CopilotStudioClient {
     }
     const activity = Activity.fromObject(activityObj)
 
-    yield * this.sendActivity(activity)
+    const result: Activity[] = []
+    for await (const value of this.sendActivityStreaming(activity, conversationId)) {
+      result.push(value)
+    }
+    return result
   }
 
   /**
    * Sends an activity to the Copilot Studio service and retrieves the response activities.
    * @param activity The activity to send.
    * @param conversationId The ID of the conversation. Defaults to the current conversation ID.
-   * @returns An async generator yielding the Agent's Activities.
+   * @returns A promise yielding an array of activities.
+   * @deprecated Use sendActivityStreaming instead.
    */
-  public async * sendActivity (activity: Activity, conversationId: string = this.conversationId) : AsyncGenerator<Activity> {
-    const localConversationId = activity.conversation?.id ?? conversationId
-    const uriExecute = getCopilotStudioConnectionUrl(this.settings, localConversationId)
-    const qbody: ExecuteTurnRequest = new ExecuteTurnRequest(activity)
-
-    logger.info('Sending activity...', activity)
-    yield * this.postRequestAsync(uriExecute, qbody, 'POST')
+  public async sendActivity (activity: Activity, conversationId: string = this.conversationId) : Promise<Activity[]> {
+    const result: Activity[] = []
+    for await (const value of this.sendActivityStreaming(activity, conversationId)) {
+      result.push(value)
+    }
+    return result
   }
 }
