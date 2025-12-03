@@ -8,6 +8,8 @@ import {
   StorageSharedKeyCredential,
 } from '@azure/storage-blob'
 import { Storage, StoreItems } from '@microsoft/agents-hosting'
+import { ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from './errorHelper'
 import { sanitizeBlobKey } from './blobsTranscriptStore'
 import { ignoreError, isStatusCodeError } from './ignoreError'
 import { debug } from '@microsoft/agents-activity/logger'
@@ -151,7 +153,7 @@ export class BlobsStorage implements Storage {
           })
         } catch (err: any) {
           if (err.statusCode === 412) {
-            throw new Error(`Storage: error writing "${key}" due to eTag conflict.`)
+            throw ExceptionHelper.generateException(Error, Errors.ETagConflict)
           } else {
             throw err
           }
