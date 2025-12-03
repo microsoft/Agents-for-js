@@ -4,6 +4,8 @@
  */
 import * as z from 'zod'
 import { ActivityHandler, InvokeResponse, TurnContext } from '@microsoft/agents-hosting'
+import { ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from '../errorHelper'
 import { AppBasedLinkQuery, MessagingExtensionAction, MessagingExtensionActionResponse, MessagingExtensionQuery, MessagingExtensionResponse, parseValueMessagingExtensionQuery } from '../messageExtension'
 import { TaskModuleRequest, TaskModuleResponse } from '../taskModule'
 import { FileConsentCardResponse } from '../file'
@@ -161,7 +163,7 @@ export class TeamsActivityHandler extends ActivityHandler {
    * @returns {Promise<InvokeResponse>} The invoke response.
    */
   protected async handleTeamsCardActionInvoke (_context: TurnContext): Promise<InvokeResponse> {
-    throw new Error('NotImplemented')
+    throw ExceptionHelper.generateException(Error, Errors.NotImplemented)
   }
 
   /**
@@ -171,7 +173,7 @@ export class TeamsActivityHandler extends ActivityHandler {
    * @returns {Promise<ConfigResponse>} The config response.
    */
   protected async handleTeamsConfigFetch (_context: TurnContext, _configData: any): Promise<any> { // TODO ConfigResponse
-    throw new Error('NotImplemented')
+    throw ExceptionHelper.generateException(Error, Errors.NotImplemented)
   }
 
   /**
@@ -181,7 +183,7 @@ export class TeamsActivityHandler extends ActivityHandler {
    * @returns {Promise<ConfigResponse>} The config response.
    */
   protected async handleTeamsConfigSubmit (_context: TurnContext, _configData: any): Promise<any> { // TODO ConfigResponse
-    throw new Error('NotImplemented')
+    throw ExceptionHelper.generateException(Error, Errors.NotImplemented)
   }
 
   /**
@@ -200,7 +202,7 @@ export class TeamsActivityHandler extends ActivityHandler {
       case 'decline':
         return await this.handleTeamsFileConsentDecline(context, fileConsentCardResponse)
       default:
-        throw new Error('BadRequest')
+        throw ExceptionHelper.generateException(Error, Errors.BadRequest)
     }
   }
 
@@ -214,7 +216,7 @@ export class TeamsActivityHandler extends ActivityHandler {
     _context: TurnContext,
     _fileConsentCardResponse: FileConsentCardResponse
   ): Promise<void> {
-    throw new Error('NotImplemented')
+    throw ExceptionHelper.generateException(Error, Errors.NotImplemented)
   }
 
   /**
@@ -227,7 +229,7 @@ export class TeamsActivityHandler extends ActivityHandler {
     _context: TurnContext,
     _fileConsentCardResponse: FileConsentCardResponse
   ): Promise<void> {
-    throw new Error('NotImplemented')
+    throw ExceptionHelper.generateException(Error, Errors.NotImplemented)
   }
 
   // TODO: Uncomment when O365ConnectorCardActionQuery is available
@@ -282,7 +284,7 @@ export class TeamsActivityHandler extends ActivityHandler {
     _context: TurnContext,
     _cardData: any
   ): Promise<void> {
-    throw new Error('NotImplemented')
+    throw ExceptionHelper.generateException(Error, Errors.NotImplemented)
   }
 
   /**
@@ -295,7 +297,7 @@ export class TeamsActivityHandler extends ActivityHandler {
     _context: TurnContext,
     _taskModuleRequest: TaskModuleRequest
   ): Promise<TaskModuleResponse> {
-    throw new Error('NotImplemented')
+    throw ExceptionHelper.generateException(Error, Errors.NotImplemented)
   }
 
   /**
@@ -308,7 +310,7 @@ export class TeamsActivityHandler extends ActivityHandler {
     _context: TurnContext,
     _taskModuleRequest: TaskModuleRequest
   ): Promise<TaskModuleResponse> {
-    throw new Error('NotImplemented')
+    throw ExceptionHelper.generateException(Error, Errors.NotImplemented)
   }
 
   // TODO: Uncomment when TabRequest is available
@@ -343,7 +345,7 @@ export class TeamsActivityHandler extends ActivityHandler {
     _context: TurnContext,
     _query: AppBasedLinkQuery
   ): Promise<MessagingExtensionResponse> {
-    throw new Error('NotImplemented')
+    throw ExceptionHelper.generateException(Error, Errors.NotImplemented)
   }
 
   /**
@@ -356,7 +358,7 @@ export class TeamsActivityHandler extends ActivityHandler {
     _context: TurnContext,
     _query: AppBasedLinkQuery
   ): Promise<MessagingExtensionResponse> {
-    throw new Error('NotImplemented')
+    throw ExceptionHelper.generateException(Error, Errors.NotImplemented)
   }
 
   /**
@@ -369,7 +371,7 @@ export class TeamsActivityHandler extends ActivityHandler {
     _context: TurnContext,
     _query: MessagingExtensionQuery
   ): Promise<MessagingExtensionResponse> {
-    throw new Error('NotImplemented')
+    throw ExceptionHelper.generateException(Error, Errors.NotImplemented)
   }
 
   /**
@@ -382,7 +384,7 @@ export class TeamsActivityHandler extends ActivityHandler {
     _context: TurnContext,
     _query: any
   ): Promise<MessagingExtensionResponse> {
-    throw new Error('NotImplemented')
+    throw ExceptionHelper.generateException(Error, Errors.NotImplemented)
   }
 
   /**
@@ -402,7 +404,7 @@ export class TeamsActivityHandler extends ActivityHandler {
         case 'send':
           return await this.handleTeamsMessagingExtensionMessagePreviewSend(context, action)
         default:
-          throw new Error('BadRequest')
+          throw ExceptionHelper.generateException(Error, Errors.BadRequest)
       }
     } else {
       return await this.handleTeamsMessagingExtensionSubmitAction(context, action)
@@ -419,7 +421,7 @@ export class TeamsActivityHandler extends ActivityHandler {
     _context: TurnContext,
     _action: MessagingExtensionAction
   ): Promise<MessagingExtensionActionResponse> {
-    throw new Error('NotImplemented')
+    throw ExceptionHelper.generateException(Error, Errors.NotImplemented)
   }
 
   /**
@@ -432,7 +434,7 @@ export class TeamsActivityHandler extends ActivityHandler {
     _context: TurnContext,
     _action: MessagingExtensionAction
   ): Promise<MessagingExtensionActionResponse> {
-    throw new Error('NotImplemented')
+    throw ExceptionHelper.generateException(Error, Errors.NotImplemented)
   }
 
   /**
@@ -445,7 +447,7 @@ export class TeamsActivityHandler extends ActivityHandler {
     _context: TurnContext,
     _action: MessagingExtensionAction
   ): Promise<MessagingExtensionActionResponse> {
-    throw new Error('NotImplemented')
+    throw ExceptionHelper.generateException(Error, Errors.NotImplemented)
   }
 
   /**
@@ -458,7 +460,7 @@ export class TeamsActivityHandler extends ActivityHandler {
     _context: TurnContext,
     _action: MessagingExtensionAction
   ): Promise<MessagingExtensionActionResponse> {
-    throw new Error('NotImplemented')
+    throw ExceptionHelper.generateException(Error, Errors.NotImplemented)
   }
 
   /**
@@ -471,7 +473,7 @@ export class TeamsActivityHandler extends ActivityHandler {
     _context: TurnContext,
     _query: MessagingExtensionQuery
   ): Promise<MessagingExtensionResponse> {
-    throw new Error('NotImplemented')
+    throw ExceptionHelper.generateException(Error, Errors.NotImplemented)
   }
 
   /**
@@ -481,7 +483,7 @@ export class TeamsActivityHandler extends ActivityHandler {
    * @returns {Promise<void>}
    */
   protected async handleTeamsMessagingExtensionConfigurationSetting (_context: TurnContext, _settings: any): Promise<void> {
-    throw new Error('NotImplemented')
+    throw ExceptionHelper.generateException(Error, Errors.NotImplemented)
   }
 
   /**

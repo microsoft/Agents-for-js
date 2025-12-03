@@ -1,6 +1,7 @@
 export * from './activity-extensions'
 export * from './client'
 export * from './compat/teamsActivityHandler'
+export { Errors as TeamsExtensionErrors } from './errorHelper'
 export * from './feedbackLoopData'
 export * from './meeting'
 export * from './meeting/meeting'

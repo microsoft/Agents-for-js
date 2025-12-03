@@ -3,6 +3,8 @@
  * Licensed under the MIT License.
  */
 import { IntentScore } from './intentScore'
+import { ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from './errorHelper'
 
 /**
  * Value returned from a recognizer.
@@ -64,7 +66,10 @@ export interface RecognizerResult {
  */
 export const getTopScoringIntent = (result: RecognizerResult): { intent: string; score: number } => {
   if (!result || !result.intents) {
-    throw new Error('result is empty')
+    throw ExceptionHelper.generateException(
+      Error,
+      Errors.EmptyRecognizerResult
+    )
   }
 
   let topIntent = ''

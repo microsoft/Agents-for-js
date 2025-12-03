@@ -6,6 +6,8 @@ import {
   AgentStatePropertyAccessor,
   TurnContext
 } from '@microsoft/agents-hosting'
+import { ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from './errorHelper'
 
 import { Dialog } from './dialog'
 import { DialogContext, DialogState } from './dialogContext'
@@ -127,7 +129,10 @@ export class DialogSet {
      */
   add<T extends Dialog>(dialog: T): this {
     if (!(dialog instanceof Dialog)) {
-      throw new Error('DialogSet.add(): Invalid dialog being added.')
+      throw ExceptionHelper.generateException(
+        Error,
+        Errors.InvalidDialogBeingAdded
+      )
     }
 
     // Ensure new version hash is computed
@@ -177,8 +182,9 @@ export class DialogSet {
      */
   async createContext (context: TurnContext): Promise<DialogContext> {
     if (!this.dialogState) {
-      throw new Error(
-        'DialogSet.createContext(): the dialog set was not bound to a stateProperty when constructed.'
+      throw ExceptionHelper.generateException(
+        Error,
+        Errors.DialogSetNotBound
       )
     }
     const state: DialogState = await this.dialogState.get(context, { dialogStack: [] } as DialogState)
