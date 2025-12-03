@@ -224,12 +224,10 @@ export class CopilotStudioClient {
    * @param conversationId The ID of the conversation. Defaults to the current conversation ID.
    * @returns A promise yielding an array of activities.
    */
-<<<<<<< HEAD
-  public async askQuestionsAsync (question: string, conversationId: string = this.conversationId) : Promise<Activity[]> {
-=======
-  public async askQuestionAsync (question: string, conversationId: string = this.conversationId) : Promise<Activity[]> {
+  public async askQuestionAsync (question: string, conversationId?: string) : Promise<Activity[]> {
+    const localConversationId = conversationId?.trim() ? conversationId : this.conversationId
     const conversationAccount: ConversationAccount = {
-      id: conversationId
+      id: localConversationId
     }
     const activityObj = {
       type: 'message',
