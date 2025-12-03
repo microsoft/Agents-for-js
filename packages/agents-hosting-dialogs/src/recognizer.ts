@@ -2,7 +2,8 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
-import { Activity } from '@microsoft/agents-activity'
+import { Activity, ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from './errorHelper'
 import { Configurable } from './configurable'
 import { DialogContext } from './dialogContext'
 import omit from 'lodash/omit'
@@ -58,7 +59,10 @@ export class Recognizer extends Configurable implements RecognizerConfiguration 
     _telemetryProperties?: Record<string, string>,
     _telemetryMetrics?: Record<string, number>
   ): Promise<RecognizerResult> {
-    throw new Error('Please implement recognize function.')
+    throw ExceptionHelper.generateException(
+      Error,
+      Errors.RecognizeFunctionNotImplemented
+    )
   }
 
   /**
