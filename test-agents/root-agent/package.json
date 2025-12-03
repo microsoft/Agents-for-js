@@ -16,6 +16,6 @@
   },
   "dependencies": {
     "@microsoft/agents-hosting": "file:../../packages/agents-hosting",
-    "express": "^5.1.0"
+    "express": "^5.2.0"
   }
 }
