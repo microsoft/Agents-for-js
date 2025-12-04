@@ -401,6 +401,7 @@ export abstract class Prompt<T> extends Dialog {
      * @param choices List of choices to append.
      * @param style Configured style for the list of choices.
      * @param options (Optional) options to configure the underlying ChoiceFactory call.
+     * @param conversationType (Optional) the type of the conversation.
      * @returns The composed activity ready to send to the user.
      */
   protected appendChoices (
@@ -408,7 +409,8 @@ export abstract class Prompt<T> extends Dialog {
     channelId: string,
     choices: (string | Choice)[],
     style: ListStyle,
-    options?: ChoiceFactoryOptions
+    options?: ChoiceFactoryOptions,
+    conversationType?: string
   ): Activity {
     // Get base prompt text (if any)
     let text = ''
@@ -429,12 +431,20 @@ export abstract class Prompt<T> extends Dialog {
         msg = ChoiceFactory.list(choices, text, undefined, options)
         break
 
+      case ListStyle.suggestedAction:
+        msg = ChoiceFactory.suggestedActions(choices, text)
+        break
+
+      case ListStyle.heroCard:
+        msg = ChoiceFactory.heroCard(choices, text)
+        break
+
       case ListStyle.none:
         msg = MessageFactory.text(text)
         break
 
       default:
-        msg = ChoiceFactory.forChannel(channelId, choices, text, undefined, options)
+        msg = ChoiceFactory.forChannel(channelId, choices, text, undefined, options, conversationType)
         break
     }
 

@@ -3,6 +3,8 @@
  * Licensed under the MIT License.
  */
 import { DialogContext } from '../../dialogContext'
+import { ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from '../../errorHelper'
 
 /**
  * Abstract base class for all memory scopes.
@@ -38,7 +40,12 @@ export abstract class MemoryScope {
      * @param _memory memory to assign
      */
   setMemory (_dialogContext: DialogContext, _memory: object): void {
-    throw new Error(`MemoryScope.setMemory: The '${this.name}' memory scope is read-only.`)
+    throw ExceptionHelper.generateException(
+      Error,
+      Errors.MemoryScopeOperationNotSupported,
+      undefined,
+      { scopeName: this.name, operation: 'setMemory' }
+    )
   }
 
   /**
@@ -65,6 +72,11 @@ export abstract class MemoryScope {
      * @param _dialogContext Current dialog context.
      */
   async delete (_dialogContext: DialogContext): Promise<void> {
-    throw new Error(`MemoryScope.delete: The '${this.name}' memory scope can't be deleted.`)
+    throw ExceptionHelper.generateException(
+      Error,
+      Errors.MemoryScopeOperationNotSupported,
+      undefined,
+      { scopeName: this.name, operation: 'delete' }
+    )
   }
 }
