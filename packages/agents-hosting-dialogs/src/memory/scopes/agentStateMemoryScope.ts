@@ -3,6 +3,8 @@
  * Licensed under the MIT License.
  */
 import { AgentState } from '@microsoft/agents-hosting'
+import { ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from '../../errorHelper'
 import { MemoryScope } from './memoryScope'
 import { DialogContext } from '../../dialogContext'
 
@@ -45,9 +47,17 @@ export class AgentStateMemoryScope extends MemoryScope {
   setMemory (dialogContext: DialogContext, _memory: object): void {
     const agentState = dialogContext.context.turnState.get(this.stateKey)
     if (!agentState) {
-      throw new Error(`${this.stateKey} is not available.`)
+      throw ExceptionHelper.generateException(
+        Error,
+        Errors.StateKeyNotAvailable,
+        undefined,
+        { stateKey: this.stateKey }
+      )
     }
-    throw new Error('You cannot replace the root AgentState object.')
+    throw ExceptionHelper.generateException(
+      Error,
+      Errors.CannotReplaceRootAgentState
+    )
   }
 
   /**

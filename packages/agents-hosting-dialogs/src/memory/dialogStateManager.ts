@@ -6,6 +6,8 @@
 import { ComponentMemoryScopes, isComponentMemoryScopes } from './componentMemoryScopes'
 import { ComponentPathResolvers, isComponentPathResolvers } from './componentPathResolvers'
 import { ComponentRegistration } from '../componentRegistration'
+import { ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from '../errorHelper'
 import { DialogContext } from '../dialogContext'
 import { DialogPath } from './dialogPath'
 import { DialogsComponentRegistration } from '../dialogsComponentRegistration'
@@ -176,7 +178,10 @@ export class DialogStateManager {
     const tpath = this.transformPath(pathExpression)
     const segments = this.parsePath(tpath)
     if (segments.length < 1) {
-      throw new Error("DialogStateManager.setValue: path wasn't specified.")
+      throw ExceptionHelper.generateException(
+        Error,
+        Errors.PathNotSpecified
+      )
     }
 
     // Track changes
@@ -185,7 +190,12 @@ export class DialogStateManager {
     // Get memory scope to update
     const scope = this.getMemoryScope(segments[0].toString())
     if (scope === undefined) {
-      throw new Error(`DialogStateManager.setValue: a scope of '${segments[0]}' wasn't found.`)
+      throw ExceptionHelper.generateException(
+        Error,
+        Errors.ScopeNotFound,
+        undefined,
+        { scope: segments[0].toString() }
+      )
     }
 
     // Update memory
@@ -203,8 +213,11 @@ export class DialogStateManager {
       if (typeof key === 'number' && Array.isArray(memory)) {
         // Only allow positive indexes
         if (key < 0) {
-          throw new Error(
-                        `DialogStateManager.setValue: unable to update value for '${pathExpression}'. Negative indexes aren't allowed.`
+          throw ExceptionHelper.generateException(
+            Error,
+            Errors.NegativeIndexNotAllowed,
+            undefined,
+            { path: pathExpression }
           )
         }
 
@@ -224,7 +237,12 @@ export class DialogStateManager {
         key = this.findObjectKey(memory, key) || key
         memory[key] = value
       } else {
-        throw new Error(`DialogStateManager.setValue: unable to update value for '${pathExpression}'.`)
+        throw ExceptionHelper.generateException(
+          Error,
+          Errors.UnableToUpdateValue,
+          undefined,
+          { path: pathExpression }
+        )
       }
     } else {
       // Just update memory scope
@@ -242,7 +260,12 @@ export class DialogStateManager {
     const tpath = this.transformPath(pathExpression)
     const segments = this.parsePath(tpath)
     if (segments.length < 2) {
-      throw new Error(`DialogStateManager.deleteValue: invalid path of '${pathExpression}'.`)
+      throw ExceptionHelper.generateException(
+        Error,
+        Errors.InvalidDeletePath,
+        undefined,
+        { path: pathExpression }
+      )
     }
 
     // Track change
@@ -251,7 +274,12 @@ export class DialogStateManager {
     // Get memory scope to update
     const scope = this.getMemoryScope(segments[0].toString())
     if (scope === undefined) {
-      throw new Error(`DialogStateManager.deleteValue: a scope of '${segments[0]}' wasn't found.`)
+      throw ExceptionHelper.generateException(
+        Error,
+        Errors.ScopeNotFoundForDelete,
+        undefined,
+        { scope: segments[0].toString() }
+      )
     }
 
     // Find value up to last key
@@ -422,8 +450,11 @@ export class DialogStateManager {
             } else if (isValidPathChar(c)) {
               segment += c
             } else {
-              throw new Error(
-                                `DialogStateManager.normalizePath: Invalid path detected - ${pathExpression}`
+              throw ExceptionHelper.generateException(
+                Error,
+                Errors.InvalidPathCharacters,
+                undefined,
+                { path: pathExpression }
               )
             }
             break
@@ -431,7 +462,12 @@ export class DialogStateManager {
       }
     }
     if (depth > 0) {
-      throw new Error(`DialogStateManager.normalizePath: Invalid path detected - ${pathExpression}`)
+      throw ExceptionHelper.generateException(
+        Error,
+        Errors.InvalidPathCharacters,
+        undefined,
+        { path: pathExpression }
+      )
     } else if (segment.length > 0) {
       output.push(segment)
     }

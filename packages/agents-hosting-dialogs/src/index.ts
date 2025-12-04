@@ -32,6 +32,7 @@ export { Configuration } from './configuration'
 export * from './intentScore'
 
 export { runDialog } from './dialogHelper'
+export { Errors as DialogErrors } from './errorHelper'
 
 // Type-only re-export to avoid TypeDoc issues
 export type { TurnContext } from '@microsoft/agents-hosting'

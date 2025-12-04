@@ -10,6 +10,8 @@ import {
   UserState,
   TurnContextStateCollection,
 } from '@microsoft/agents-hosting'
+import { ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from './errorHelper'
 import { AgentStateSet } from './agentStateSet'
 import { Configurable } from './configurable'
 import { DialogContainer } from './dialogContainer'
@@ -157,7 +159,10 @@ export class DialogManager extends Configurable {
   async onTurn (context: TurnContext): Promise<DialogManagerResult> {
     // Ensure properly configured
     if (!this._rootDialogId) {
-      throw new Error("DialogManager.onTurn: the agent's 'rootDialog' has not been configured.")
+      throw ExceptionHelper.generateException(
+        Error,
+        Errors.RootDialogNotConfigured
+      )
     }
 
     // Copy initial turn state to context
@@ -174,7 +179,10 @@ export class DialogManager extends Configurable {
     }
 
     if (!this.conversationState) {
-      throw new Error("DialogManager.onTurn: the agent's 'conversationState' has not been configured.")
+      throw ExceptionHelper.generateException(
+        Error,
+        Errors.ConversationStateNotConfigured
+      )
     }
     agentStateSet.add(this.conversationState)
 
