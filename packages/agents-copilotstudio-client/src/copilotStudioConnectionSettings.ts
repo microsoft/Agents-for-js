@@ -10,8 +10,13 @@ import { PowerPlatformCloud } from './powerPlatformCloud'
  * Represents the settings required to establish a direct connection to the engine.
  */
 export interface CopilotStudioConnectionSettings {
-  /** The identifier of the agent. */
+  /**
+   * The identifier of the agent.
+   * @deprecated This property will not be supported in future versions. Use schemaName instead.
+   **/
   agentIdentifier?: string
+  /** The schema name of the agent. */
+  schemaName?: string
 
   /** The custom Power Platform cloud URL. */
   customPowerPlatformCloud?: string
@@ -28,9 +33,12 @@ export interface CopilotStudioConnectionSettings {
   /** URL provided to connect directly to Copilot Studio endpoint. When provided all other settings are ignored. */
   directConnectUrl?: string
 
-  /** Directs Copilot Studio Client to use the experimental endpoint if available. */
-  useExperimentalEndpoint?: boolean,
+  /** Directs Copilot Studio Client to use the experimental endpoint if available. Default value is false. */
+  useExperimentalEndpoint?: boolean
 
-  /** The login authority to use for the connection. */
+  /**
+   * The login authority to use for the connection.
+   * @deprecated This property will not be supported in future versions. Handle the auth properties in the agent.
+   **/
   authority?: string
 }

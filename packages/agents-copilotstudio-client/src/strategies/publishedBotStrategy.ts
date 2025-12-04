@@ -3,18 +3,23 @@
  * Licensed under the MIT License.
  */
 
-import { Strategy } from './strategy'
+import type { Strategy, StrategySettings } from './strategy'
 
+/** @deprecated This interface will not be supported in future versions. Use StrategySettings instead. */
 export interface PublishedBotStrategySettings {
   readonly host: URL;
   readonly schema: string;
 }
 
+/**
+ * Strategy for constructing PowerPlatform API connection URLs for published agents.
+ */
 export class PublishedBotStrategy implements Strategy {
   private readonly API_VERSION = '2022-03-01-preview'
   private baseURL: URL
 
-  constructor (settings: PublishedBotStrategySettings) {
+  constructor (settings: PublishedBotStrategySettings)
+  constructor (settings: StrategySettings) {
     const { schema, host } = settings
 
     this.baseURL = new URL(

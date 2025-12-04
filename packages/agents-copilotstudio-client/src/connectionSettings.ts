@@ -11,16 +11,29 @@ import { PowerPlatformCloud } from './powerPlatformCloud'
  * Configuration options for establishing a connection to Copilot Studio.
  */
 abstract class ConnectionOptions implements Omit<CopilotStudioConnectionSettings, 'cloud' | 'copilotAgentType'> {
-  /** The client ID of the application. */
-  public appClientId: string = ''
-  /** The tenant ID of the application. */
-  public tenantId: string = ''
-  /** The login authority to use for the connection */
-  public authority?: string = ''
+  /**
+   * The client ID of the application.
+   * @deprecated This property will not be supported in future versions. Handle the auth properties in the agent.
+   **/
+  public appClientId?: string
+  /**
+   * The tenant ID of the application.
+   *@deprecated This property will not be supported in future versions. Handle the auth properties in the agent.
+   **/
+  public tenantId?: string
+  /**
+   * The login authority to use for the connection.
+   * @deprecated This property will not be supported in future versions. Handle the auth properties in the agent.
+   **/
+  public authority?: string
   /** The environment ID of the application. */
-  public environmentId: string = ''
+  public environmentId?: string
+  /** The identifier of the agent.
+   * @deprecated This property will not be supported in future versions. Use schemaName instead.
+   **/
+  public agentIdentifier?: string
   /** The identifier of the agent. */
-  public agentIdentifier: string = ''
+  public schemaName?: string
   /** The cloud environment of the application. */
   public cloud?: PowerPlatformCloud | keyof typeof PowerPlatformCloud
   /** The custom Power Platform cloud URL, if any. */
@@ -63,11 +76,9 @@ export class ConnectionSettings extends ConnectionOptions {
       return
     }
 
-    const cloud = options.cloud ?? PowerPlatformCloud.Prod
-    const copilotAgentType = options.copilotAgentType ?? AgentType.Published
-    const authority = options.authority && options.authority.trim() !== ''
-      ? options.authority
-      : 'https://login.microsoftonline.com'
+    const cloud = options.cloud?.trim() || PowerPlatformCloud.Prod
+    const copilotAgentType = options.copilotAgentType?.trim() || AgentType.Published
+    const authority = options.authority?.trim() || 'https://login.microsoftonline.com'
 
     if (!Object.values(PowerPlatformCloud).includes(cloud as PowerPlatformCloud)) {
       throw new Error(`Invalid PowerPlatformCloud: '${cloud}'. Supported values: ${Object.values(PowerPlatformCloud).join(', ')}`)
@@ -92,6 +103,7 @@ export const loadCopilotStudioConnectionSettingsFromEnv: () => ConnectionSetting
     authority: process.env.authorityEndpoint ?? 'https://login.microsoftonline.com',
     environmentId: process.env.environmentId ?? '',
     agentIdentifier: process.env.agentIdentifier ?? '',
+    schemaName: process.env.schemaName ?? '',
     cloud: process.env.cloud as PowerPlatformCloud,
     customPowerPlatformCloud: process.env.customPowerPlatformCloud,
     copilotAgentType: process.env.copilotAgentType as AgentType,
