@@ -5,7 +5,7 @@
 
 import * as msal from '@azure/msal-node'
 import { Activity, ActivityTypes, CardAction } from '@microsoft/agents-activity'
-import { ConnectionSettings, CopilotStudioClient, loadCopilotStudioConnectionSettingsFromEnv } from '@microsoft/agents-copilotstudio-client'
+import { ConnectionSettings, CopilotStudioClient } from '@microsoft/agents-copilotstudio-client'
 import pkg from '@microsoft/agents-copilotstudio-client/package.json' with { type: 'json' }
 import readline from 'readline'
 import open from 'open'
@@ -13,6 +13,7 @@ import os from 'os'
 import path from 'path'
 
 import { MsalCachePlugin } from './msalCachePlugin.js'
+import { SampleConnectionSettings } from './sampleConnectionSettings.js'
 
 interface S2SConnectionSettings extends ConnectionSettings {
   appClientSecret?: string
@@ -66,7 +67,7 @@ async function acquireToken (baseConfig: msal.Configuration, settings: Connectio
   }
 }
 
-function getToken (settings: ConnectionSettings) : Promise<string> {
+function getToken (settings: SampleConnectionSettings) : Promise<string> {
   const msalConfig: msal.Configuration = {
     auth: {
       clientId: settings.appClientId!,
@@ -86,15 +87,15 @@ function getToken (settings: ConnectionSettings) : Promise<string> {
     }
   }
 
-  if (process.env.useS2SConnection === 'true') {
-    return acquireS2SToken(msalConfig, { ...settings, appClientSecret: process.env.appClientSecret })
+  if (settings.useS2SConnection) {
+    return acquireS2SToken(msalConfig, settings)
   }
 
   return acquireToken(msalConfig, settings)
 }
 
 const createClient = async (): Promise<CopilotStudioClient> => {
-  const settings = loadCopilotStudioConnectionSettingsFromEnv()
+  const settings = new SampleConnectionSettings()
   const token = await getToken(settings)
   const copilotClient = new CopilotStudioClient(settings, token)
   console.log(`Copilot Studio Client Version: ${pkg.version}, running with settings: ${JSON.stringify(settings, null, 2)}`)
