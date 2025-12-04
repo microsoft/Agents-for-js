@@ -23,6 +23,11 @@ export function getCopilotStudioConnectionUrl (
   settings: ConnectionSettings,
   conversationId?: string
 ): string {
+  const schemaName = settings.schemaName?.trim() || settings.agentIdentifier?.trim()
+  if (!settings.directConnectUrl?.trim() && (!settings.environmentId?.trim() || !schemaName?.trim())) {
+    throw new Error('Either directConnectUrl OR both environmentId and schemaName/agentIdentifier must be provided')
+  }
+
   if (settings.directConnectUrl?.trim()) {
     logger.debug(`Using direct connection: ${settings.directConnectUrl}`)
     if (!isValidUri(settings.directConnectUrl)) {
@@ -31,7 +36,7 @@ export function getCopilotStudioConnectionUrl (
 
     // FIX for Missing Tenant ID
     if (settings.directConnectUrl.toLowerCase().includes('tenants/00000000-0000-0000-0000-000000000000')) {
-      logger.debug(`Direct connection cannot be used, forcing default settings flow. Tenant ID is missing in the URL: ${settings.directConnectUrl}`)
+      logger.warn(`Direct connection cannot be used, forcing default settings flow. Tenant ID is missing in the URL: ${settings.directConnectUrl}`)
       // Direct connection cannot be used, ejecting and forcing the normal settings flow:
       return getCopilotStudioConnectionUrl({ ...settings, directConnectUrl: '' }, conversationId)
     }
@@ -45,14 +50,6 @@ export function getCopilotStudioConnectionUrl (
   logger.debug(`Using cloud setting: ${cloudSetting}`)
   logger.debug(`Using agent type: ${agentType}`)
 
-  if (!settings.environmentId?.trim()) {
-    throw new Error('EnvironmentId must be provided')
-  }
-
-  if (!settings.agentIdentifier?.trim()) {
-    throw new Error('AgentIdentifier must be provided')
-  }
-
   if (cloudSetting === PowerPlatformCloud.Other) {
     if (!settings.customPowerPlatformCloud?.trim()) {
       throw new Error('customPowerPlatformCloud must be provided when PowerPlatformCloud is Other')
@@ -65,16 +62,16 @@ export function getCopilotStudioConnectionUrl (
     }
   }
 
-  const host = getEnvironmentEndpoint(cloudSetting, settings.environmentId, settings.customPowerPlatformCloud)
+  const host = getEnvironmentEndpoint(cloudSetting, settings.environmentId!, settings.customPowerPlatformCloud)
 
   const strategy = {
     [AgentType.Published]: () => new PublishedBotStrategy({
       host,
-      schema: settings.agentIdentifier!,
+      schema: schemaName!,
     }),
     [AgentType.Prebuilt]: () => new PrebuiltBotStrategy({
       host,
-      identifier: settings.agentIdentifier!,
+      schema: schemaName!,
     }),
   }[agentType]()
 
