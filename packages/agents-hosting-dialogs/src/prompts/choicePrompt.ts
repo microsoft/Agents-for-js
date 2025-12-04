@@ -134,10 +134,11 @@ export class ChoicePrompt extends Prompt<FoundChoice> {
     const channelId = context.activity.channelId
     const choiceOptions = this.choiceOptions || this.choiceDefaults[locale]
     const choiceStyle: ListStyle = options.style === 0 ? 0 : options.style || this.style
+    const conversationType = context.activity.conversation?.conversationType
     if (isRetry && options.retryPrompt) {
-      prompt = this.appendChoices(options.retryPrompt, channelId, choices, choiceStyle, choiceOptions)
+      prompt = this.appendChoices(options.retryPrompt, channelId, choices, choiceStyle, choiceOptions, conversationType)
     } else {
-      prompt = this.appendChoices(options.prompt, channelId, choices, choiceStyle, choiceOptions)
+      prompt = this.appendChoices(options.prompt, channelId, choices, choiceStyle, choiceOptions, conversationType)
     }
 
     // Send prompt
