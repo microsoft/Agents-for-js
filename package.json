@@ -46,7 +46,7 @@
     "@types/node": "^24.10.1",
     "@types/sinon": "^21.0.0",
     "@types/uuid": "^10.0.0",
-    "esbuild": "^0.27.0",
+    "esbuild": "^0.27.1",
     "eslint": "^9.39.1",
     "global": "4.4.0",
     "neostandard": "^0.12.2",
