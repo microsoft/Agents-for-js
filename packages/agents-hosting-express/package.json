@@ -20,7 +20,7 @@
   "types": "dist/src/index.d.ts",
   "dependencies": {
     "@microsoft/agents-hosting": "file:../agents-hosting",
-    "express": "^5.1.0"
+    "express": "^5.2.1"
   },
   "license": "MIT",
   "files": [

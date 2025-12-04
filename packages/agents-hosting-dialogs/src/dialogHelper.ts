@@ -7,6 +7,8 @@ import {
   AgentStatePropertyAccessor,
   TurnContext
 } from '@microsoft/agents-hosting'
+import { Activity, ActivityTypes, ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from './errorHelper'
 import { Dialog } from './dialog'
 import { DialogContext, DialogState } from './dialogContext'
 import { DialogEvents } from './dialogEvents'
@@ -14,7 +16,6 @@ import { DialogSet } from './dialogSet'
 import { DialogStateManager, DialogStateManagerConfiguration } from './memory'
 import { DialogTurnResult } from './dialogTurnResult'
 import { DialogTurnStatus } from './dialogTurnStatus'
-import { Activity, ActivityTypes } from '@microsoft/agents-activity'
 
 /**
  * Runs a dialog from a given context and accessor.
@@ -29,19 +30,31 @@ export async function runDialog (
   accessor: AgentStatePropertyAccessor<DialogState>
 ): Promise<void> {
   if (!dialog) {
-    throw new Error('runDialog(): missing dialog')
+    throw ExceptionHelper.generateException(
+      Error,
+      Errors.MissingDialog
+    )
   }
 
   if (!context) {
-    throw new Error('runDialog(): missing context')
+    throw ExceptionHelper.generateException(
+      Error,
+      Errors.MissingContext
+    )
   }
 
   if (!context.activity) {
-    throw new Error('runDialog(): missing context.activity')
+    throw ExceptionHelper.generateException(
+      Error,
+      Errors.MissingContextActivity
+    )
   }
 
   if (!accessor) {
-    throw new Error('runDialog(): missing accessor')
+    throw ExceptionHelper.generateException(
+      Error,
+      Errors.MissingAccessor
+    )
   }
 
   const dialogSet = new DialogSet(accessor)

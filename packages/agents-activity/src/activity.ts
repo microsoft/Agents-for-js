@@ -26,6 +26,8 @@ import { MessageReaction, messageReactionZodSchema } from './messageReaction'
 import { TextFormatTypes, textFormatTypesZodSchema } from './textFormatTypes'
 import { TextHighlight, textHighlightZodSchema } from './textHighlight'
 import { RoleTypes } from './conversation/roleTypes'
+import { ExceptionHelper } from './exceptionHelper'
+import { Errors } from './errorHelper'
 
 /**
  * Zod schema for validating an Activity object.
@@ -316,13 +318,22 @@ export class Activity {
    */
   constructor (t: ActivityTypes | string) {
     if (t === undefined) {
-      throw new Error('Invalid ActivityType: undefined')
+      throw ExceptionHelper.generateException(
+        Error,
+        Errors.InvalidActivityTypeUndefined
+      )
     }
     if (t === null) {
-      throw new Error('Invalid ActivityType: null')
+      throw ExceptionHelper.generateException(
+        Error,
+        Errors.InvalidActivityTypeNull
+      )
     }
     if ((typeof t === 'string') && (t.length === 0)) {
-      throw new Error('Invalid ActivityType: empty string')
+      throw ExceptionHelper.generateException(
+        Error,
+        Errors.InvalidActivityTypeEmptyString
+      )
     }
 
     this.type = t
@@ -382,7 +393,12 @@ export class Activity {
 
     // if they passed in a value but the channel is blank, this is invalid
     if (value && !channel) {
-      throw new Error(`Invalid channelId ${value}. Found subChannel but no main channel.`)
+      throw ExceptionHelper.generateException(
+        Error,
+        Errors.InvalidChannelIdFormat,
+        undefined,
+        { channelId: value }
+      )
     }
     this._channelId = channel
     if (subChannel) {
@@ -418,7 +434,10 @@ export class Activity {
    */
   set channelIdSubChannel (value) {
     if (!this._channelId) {
-      throw new Error('Primary channel must be set before setting subChannel')
+      throw ExceptionHelper.generateException(
+        Error,
+        Errors.PrimaryChannelNotSet
+      )
     }
     this.channelId = `${this._channelId}${value ? `:${value}` : ''}`
   }
@@ -467,13 +486,22 @@ export class Activity {
    */
   public getConversationReference (): ConversationReference {
     if (this.recipient === null || this.recipient === undefined) {
-      throw new Error('Activity Recipient undefined')
+      throw ExceptionHelper.generateException(
+        Error,
+        Errors.ActivityRecipientUndefined
+      )
     }
     if (this.conversation === null || this.conversation === undefined) {
-      throw new Error('Activity Conversation undefined')
+      throw ExceptionHelper.generateException(
+        Error,
+        Errors.ActivityConversationUndefined
+      )
     }
     if (this.channelId === null || this.channelId === undefined) {
-      throw new Error('Activity ChannelId undefined')
+      throw ExceptionHelper.generateException(
+        Error,
+        Errors.ActivityChannelIdUndefined
+      )
     }
 
     return {
@@ -689,10 +717,21 @@ export class Activity {
 
   /**
    * Does this activity represent an agentic request?
-   * @returns True if agentiic
+   * @returns True if agentic
    */
   public isAgenticRequest (): boolean {
-    return this.recipient?.role === RoleTypes.AgenticUser || this.recipient?.role === RoleTypes.AgenticIdentity
+    if (!this.recipient || !this.recipient.role) {
+      return false
+    }
+    return this.recipient.role.toLowerCase() === RoleTypes.AgenticUser.toLowerCase() || this.recipient.role.toLowerCase() === RoleTypes.AgenticIdentity.toLowerCase()
+  }
+
+  /**
+   * Retrieves the tenant ID associated with the agentic recipient of the activity, if available; otherwise, returns the tenant ID from the conversation.
+   * @returns The tenant ID of the agentic recipient if present; otherwise, the tenant ID from the conversation. Returns undefined if neither is available.
+   */
+  public getAgenticTenantId (): string | undefined {
+    return this.recipient?.tenantId ?? this.conversation?.tenantId
   }
 
   /**

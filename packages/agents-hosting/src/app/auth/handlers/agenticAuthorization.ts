@@ -113,6 +113,7 @@ export class AgenticAuthorization implements AuthorizationHandler {
       }
 
       const token = await connection.getAgenticUserToken(
+        context.activity.getAgenticTenantId() ?? '',
         context.activity.getAgenticInstanceId() ?? '',
         context.activity.getAgenticUser() ?? '',
         options?.scopes || this._options.scopes!
