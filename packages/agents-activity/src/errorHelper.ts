@@ -24,8 +24,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   InvalidActivityTypeUndefined: {
     code: -110000,
-    description: 'Invalid ActivityType: undefined',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'Invalid ActivityType: undefined'
   },
 
   /**
@@ -33,8 +32,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   InvalidActivityTypeNull: {
     code: -110001,
-    description: 'Invalid ActivityType: null',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'Invalid ActivityType: null'
   },
 
   /**
@@ -42,8 +40,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   InvalidActivityTypeEmptyString: {
     code: -110002,
-    description: 'Invalid ActivityType: empty string',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'Invalid ActivityType: empty string'
   },
 
   /**
@@ -51,8 +48,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   InvalidChannelIdFormat: {
     code: -110003,
-    description: 'Invalid channelId {channelId}. Found subChannel but no main channel.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'Invalid channelId {channelId}. Found subChannel but no main channel.'
   },
 
   /**
@@ -60,8 +56,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   PrimaryChannelNotSet: {
     code: -110004,
-    description: 'Primary channel must be set before setting subChannel',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'Primary channel must be set before setting subChannel'
   },
 
   /**
@@ -69,8 +64,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   ActivityRecipientUndefined: {
     code: -110005,
-    description: 'Activity Recipient undefined',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'Activity Recipient undefined'
   },
 
   /**
@@ -78,8 +72,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   ActivityConversationUndefined: {
     code: -110006,
-    description: 'Activity Conversation undefined',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'Activity Conversation undefined'
   },
 
   /**
@@ -87,7 +80,6 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   ActivityChannelIdUndefined: {
     code: -110007,
-    description: 'Activity ChannelId undefined',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'Activity ChannelId undefined'
   }
 }

@@ -25,8 +25,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   ContextRequired: {
     code: -150000,
-    description: 'context is required.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'context is required.'
   },
 
   /**
@@ -34,8 +33,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   MeetingIdRequired: {
     code: -150001,
-    description: 'meetingId is required.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'meetingId is required.'
   },
 
   /**
@@ -43,8 +41,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   ParticipantIdRequired: {
     code: -150002,
-    description: 'participantId is required.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'participantId is required.'
   },
 
   /**
@@ -52,8 +49,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   TeamIdRequired: {
     code: -150003,
-    description: 'teamId is required.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'teamId is required.'
   },
 
   /**
@@ -61,8 +57,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   TurnContextCannotBeNull: {
     code: -150004,
-    description: 'TurnContext cannot be null',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'TurnContext cannot be null'
   },
 
   /**
@@ -70,8 +65,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   ActivityCannotBeNull: {
     code: -150005,
-    description: 'Activity cannot be null',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'Activity cannot be null'
   },
 
   /**
@@ -79,8 +73,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   TeamsChannelIdRequired: {
     code: -150006,
-    description: 'The teamsChannelId cannot be null or empty',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'The teamsChannelId cannot be null or empty'
   },
 
   /**
@@ -88,8 +81,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   ActivityRequired: {
     code: -150007,
-    description: 'activity is required.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'activity is required.'
   },
 
   /**
@@ -97,8 +89,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   TenantIdRequired: {
     code: -150008,
-    description: 'tenantId is required.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'tenantId is required.'
   },
 
   /**
@@ -106,8 +97,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   MembersListRequired: {
     code: -150009,
-    description: 'members list is required.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'members list is required.'
   },
 
   /**
@@ -115,8 +105,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   OperationIdRequired: {
     code: -150010,
-    description: 'operationId is required.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'operationId is required.'
   },
 
   // TeamsConnectorClient Errors (-150011 to -150014)
@@ -125,8 +114,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   MissingActivityParameter: {
     code: -150011,
-    description: 'Missing activity parameter',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'Missing activity parameter'
   },
 
   /**
@@ -134,8 +122,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   OnlyValidInTeamsScope: {
     code: -150012,
-    description: 'This method is only valid within the scope of a MS Teams Team.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'This method is only valid within the scope of a MS Teams Team.'
   },
 
   /**
@@ -143,8 +130,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   UserIdRequired: {
     code: -150013,
-    description: 'userId is required',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'userId is required'
   },
 
   /**
@@ -152,8 +138,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   ConversationIdRequired: {
     code: -150014,
-    description: 'conversationId is required',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'conversationId is required'
   },
 
   /**
@@ -161,8 +146,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   ClientNotAvailable: {
     code: -150015,
-    description: 'Client is not available in the context.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'Client is not available in the context.'
   },
 
   // TaskModule Errors (-150016)
@@ -171,8 +155,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   UnexpectedTaskModuleSubmit: {
     code: -150016,
-    description: 'Unexpected TaskModules.submit() triggered for activity type: {activityType}',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'Unexpected TaskModules.submit() triggered for activity type: {activityType}'
   },
 
   // TeamsActivityHandler Errors (-150017 to -150018)
@@ -181,8 +164,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   NotImplemented: {
     code: -150017,
-    description: 'NotImplemented',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'NotImplemented'
   },
 
   /**
@@ -190,7 +172,6 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   BadRequest: {
     code: -150018,
-    description: 'BadRequest',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'BadRequest'
   }
 }

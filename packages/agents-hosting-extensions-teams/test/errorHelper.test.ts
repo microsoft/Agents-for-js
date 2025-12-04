@@ -43,7 +43,7 @@ describe('TeamsExtensionErrors', () => {
     Object.values(Errors).forEach((error) => {
       assert.ok(error.code, 'Error should have a code')
       assert.ok(error.description, 'Error should have a description')
-      assert.ok(error.helplink, 'Error should have a helplink')
+      // helplink is optional and will use the default from ExceptionHelper when not provided
     })
   })
 

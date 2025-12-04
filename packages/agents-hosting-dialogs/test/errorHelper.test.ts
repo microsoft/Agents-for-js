@@ -47,7 +47,7 @@ describe('Dialog ErrorHelper', () => {
       const errorDef = Errors[key]
       assert.ok(errorDef.code, `${key} should have a code`)
       assert.ok(errorDef.description, `${key} should have a description`)
-      assert.ok(errorDef.helplink, `${key} should have a helplink`)
+      // helplink is optional and will use the default from ExceptionHelper when not provided
       assert.ok(errorDef.code < -130000 || errorDef.code > -139999, `${key} code should be in valid range`)
     })
   })

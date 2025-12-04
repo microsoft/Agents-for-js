@@ -25,8 +25,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   MissingDialog: {
     code: -130000,
-    description: 'runDialog(): missing dialog',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'runDialog(): missing dialog'
   },
 
   /**
@@ -34,8 +33,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   MissingContext: {
     code: -130001,
-    description: 'runDialog(): missing context',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'runDialog(): missing context'
   },
 
   /**
@@ -43,8 +41,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   MissingContextActivity: {
     code: -130002,
-    description: 'runDialog(): missing context.activity',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'runDialog(): missing context.activity'
   },
 
   /**
@@ -52,8 +49,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   MissingAccessor: {
     code: -130003,
-    description: 'runDialog(): missing accessor',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'runDialog(): missing accessor'
   },
 
   // Dialog Manager Errors (-130004 to -130005)
@@ -63,7 +59,6 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   RootDialogNotConfigured: {
     code: -130004,
     description: "DialogManager.onTurn: the agent's 'rootDialog' has not been configured.",
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
   },
 
   /**
@@ -72,7 +67,6 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   ConversationStateNotConfigured: {
     code: -130005,
     description: "DialogManager.onTurn: the agent's 'conversationState' has not been configured.",
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
   },
 
   // Recognizer Errors (-130006 to -130007)
@@ -81,8 +75,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   EmptyRecognizerResult: {
     code: -130006,
-    description: 'result is empty',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'result is empty'
   },
 
   /**
@@ -90,8 +83,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   RecognizeFunctionNotImplemented: {
     code: -130007,
-    description: 'Please implement recognize function.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'Please implement recognize function.'
   },
 
   // Dialog State Manager Errors (-130008 to -130013)
@@ -101,7 +93,6 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   PathNotSpecified: {
     code: -130008,
     description: "DialogStateManager.setValue: path wasn't specified.",
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
   },
 
   /**
@@ -110,7 +101,6 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   ScopeNotFound: {
     code: -130009,
     description: "DialogStateManager.setValue: a scope of '{scope}' wasn't found.",
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
   },
 
   /**
@@ -119,7 +109,6 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   NegativeIndexNotAllowed: {
     code: -130010,
     description: "DialogStateManager.setValue: unable to update value for '{path}'. Negative indexes aren't allowed.",
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
   },
 
   /**
@@ -128,7 +117,6 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   UnableToUpdateValue: {
     code: -130011,
     description: "DialogStateManager.setValue: unable to update value for '{path}'.",
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
   },
 
   /**
@@ -137,7 +125,6 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   InvalidDeletePath: {
     code: -130012,
     description: "DialogStateManager.deleteValue: invalid path of '{path}'.",
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
   },
 
   /**
@@ -146,7 +133,6 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   ScopeNotFoundForDelete: {
     code: -130013,
     description: "DialogStateManager.deleteValue: a scope of '{scope}' wasn't found.",
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
   },
 
   /**
@@ -155,7 +141,6 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   InvalidPathCharacters: {
     code: -130014,
     description: "DialogStateManager: path '{path}' contains invalid characters.",
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
   },
 
   /**
@@ -164,7 +149,6 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   PathResolutionFailed: {
     code: -130015,
     description: "DialogStateManager: unable to resolve path '{path}'.",
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
   },
 
   // Dialog Set Errors (-130016 to -130017)
@@ -173,8 +157,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   InvalidDialogBeingAdded: {
     code: -130016,
-    description: 'DialogSet.add(): Invalid dialog being added.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'DialogSet.add(): Invalid dialog being added.'
   },
 
   /**
@@ -182,8 +165,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   DialogSetNotBound: {
     code: -130017,
-    description: 'DialogSet.createContext(): the dialog set was not bound to a stateProperty when constructed.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'DialogSet.createContext(): the dialog set was not bound to a stateProperty when constructed.'
   },
 
   // Dialog Context Error Errors (-130018 to -130019)
@@ -192,8 +174,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   InvalidErrorArgument: {
     code: -130018,
-    description: '`error` argument must be an Error or a string',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: '`error` argument must be an Error or a string'
   },
 
   /**
@@ -201,8 +182,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   InvalidDialogContextArgument: {
     code: -130019,
-    description: '`dialogContext` argument must be of type DialogContext',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: '`dialogContext` argument must be of type DialogContext'
   },
 
   // Dialog Errors (-130020)
@@ -211,8 +191,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   OnComputeIdNotImplemented: {
     code: -130020,
-    description: 'Dialog.onComputeId(): not implemented.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'Dialog.onComputeId(): not implemented.'
   },
 
   // Agent State Set Errors (-130021)
@@ -222,7 +201,6 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   InvalidAgentStateObject: {
     code: -130021,
     description: "AgentStateSet: a object was added that isn't an instance of AgentStateSet.",
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
   },
 
   // Memory Scope Errors (-130022 to -130029)
@@ -231,8 +209,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   StateKeyNotAvailable: {
     code: -130022,
-    description: '{stateKey} is not available.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: '{stateKey} is not available.'
   },
 
   /**
@@ -240,8 +217,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   CannotReplaceRootAgentState: {
     code: -130023,
-    description: 'You cannot replace the root AgentState object.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'You cannot replace the root AgentState object.'
   },
 
   /**
@@ -249,8 +225,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   UndefinedMemoryObject: {
     code: -130024,
-    description: '{scopeName}.setMemory: undefined memory object passed in.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: '{scopeName}.setMemory: undefined memory object passed in.'
   },
 
   /**
@@ -258,8 +233,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   ActiveDialogUndefined: {
     code: -130025,
-    description: 'DialogMemoryScope: activeDialog is undefined.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'DialogMemoryScope: activeDialog is undefined.'
   },
 
   /**
@@ -267,8 +241,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   MemoryScopeOperationNotSupported: {
     code: -130026,
-    description: '{scopeName}: {operation} is not supported.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: '{scopeName}: {operation} is not supported.'
   },
 
   /**
@@ -276,8 +249,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   UnsupportedMemoryScopeOperation: {
     code: -130027,
-    description: 'MemoryScope.{operation}(): operation not supported for this scope.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'MemoryScope.{operation}(): operation not supported for this scope.'
   },
 
   // Waterfall Dialog Errors (-130028)
@@ -286,7 +258,6 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   WaterfallStepError: {
     code: -130028,
-    description: 'WaterfallDialog: error in step {stepIndex}.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'WaterfallDialog: error in step {stepIndex}.'
   }
 }

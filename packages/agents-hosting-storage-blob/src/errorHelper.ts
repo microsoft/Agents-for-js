@@ -24,8 +24,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   InvalidTimestamp: {
     code: -160000,
-    description: 'Invalid timestamp: must be an instance of Date',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'Invalid timestamp: must be an instance of Date'
   },
 
   /**
@@ -33,8 +32,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   EmptyKeyProvided: {
     code: -160001,
-    description: 'Please provide a non-empty key',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'Please provide a non-empty key'
   },
 
   /**
@@ -42,7 +40,6 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   ETagConflict: {
     code: -160002,
-    description: 'Storage: error writing "{key}" due to eTag conflict.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+    description: 'Storage: error writing "{key}" due to eTag conflict.'
   }
 }
