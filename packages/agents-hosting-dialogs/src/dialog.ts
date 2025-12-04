@@ -3,6 +3,8 @@
  * Licensed under the MIT License.
  */
 import { TurnContext } from '@microsoft/agents-hosting'
+import { ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from './errorHelper'
 import { DialogContext } from './dialogContext'
 import { Configurable } from './configurable'
 import { DialogTurnResult } from './dialogTurnResult'
@@ -244,6 +246,9 @@ export abstract class Dialog<O extends object = {}> extends Configurable {
      * ID's is `<dialog type>(this.hashedLabel('<dialog args>'))`.
      */
   protected onComputeId (): string {
-    throw new Error('Dialog.onComputeId(): not implemented.')
+    throw ExceptionHelper.generateException(
+      Error,
+      Errors.OnComputeIdNotImplemented
+    )
   }
 }

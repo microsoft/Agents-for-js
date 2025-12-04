@@ -174,19 +174,19 @@ describe('CloudAdapter', function () {
       // @ts-expect-error
       await assert.rejects(cloudAdapter.sendActivities(undefined, []), {
         name: 'TypeError',
-        message: '`context` parameter required'
+        message: '[-120090] - context parameter required - https://aka.ms/M365AgentsErrorCodesJS/#-120090'
       })
 
       // @ts-expect-error
       await assert.rejects(cloudAdapter.sendActivities(new TurnContext(cloudAdapter), undefined), {
         name: 'TypeError',
-        message: '`activities` parameter required'
+        message: '[-120070] - activities parameter required - https://aka.ms/M365AgentsErrorCodesJS/#-120070'
       })
 
       // @ts-expect-error
       await assert.rejects(cloudAdapter.sendActivities(new TurnContext(cloudAdapter), []), {
         name: 'Error',
-        message: 'Expecting one or more activities, but the array was empty.'
+        message: '[-120060] - Expecting one or more activities, but the array was empty. - https://aka.ms/M365AgentsErrorCodesJS/#-120060'
       })
     })
 
@@ -291,7 +291,7 @@ describe('CloudAdapter', function () {
 
       const { logic } = bootstrap()
 
-      const error = new Error('continueConversation: Invalid conversation reference object')
+      const error = new Error('[-120130] - continueConversation: Invalid conversation reference object - https://aka.ms/M365AgentsErrorCodesJS/#-120130')
 
       await assert.rejects(
         cloudAdapter.continueConversation(authentication.clientId as string, conversationReference, (context) => {

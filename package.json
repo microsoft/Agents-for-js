@@ -37,11 +37,11 @@
     "test-agents/*"
   ],
   "devDependencies": {
-    "@microsoft/api-extractor": "^7.55.0",
+    "@microsoft/api-extractor": "^7.55.1",
     "@microsoft/m365agentsplayground": "^0.2.20",
     "@microsoft/microsoft-graph-types": "^2.43.1",
     "@types/debug": "^4.1.12",
-    "@types/express": "^5.0.5",
+    "@types/express": "^5.0.6",
     "@types/express-serve-static-core": "^5.1.0",
     "@types/node": "^24.10.1",
     "@types/sinon": "^21.0.0",
@@ -53,7 +53,7 @@
     "nerdbank-gitversioning": "^3.9.50",
     "npm-run-all": "^4.1.5",
     "sinon": "^21.0.0",
-    "tsx": "^4.20.6",
+    "tsx": "^4.21.0",
     "typedoc": "^0.28.14",
     "typescript": "^5.9.3"
   },

@@ -1,6 +1,7 @@
 import * as z from 'zod'
 import StreamConsumers from 'stream/consumers'
-import { Activity } from '@microsoft/agents-activity'
+import { Activity, ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from './errorHelper'
 import { TokenCredential } from '@azure/core-auth'
 import {
   AnonymousCredential,
@@ -45,7 +46,7 @@ function getConversationPrefix (channelId: string, conversationId: string): stri
 
 function getBlobKey (activity: Activity, options?: BlobsTranscriptStoreOptions): string {
   if (!(activity.timestamp instanceof Date)) {
-    throw new Error('Invalid timestamp: must be an instance of Date')
+    throw ExceptionHelper.generateException(Error, Errors.InvalidTimestamp)
   }
 
   const { timestamp } = z
@@ -93,7 +94,7 @@ function getBlobKey (activity: Activity, options?: BlobsTranscriptStoreOptions):
  */
 export function sanitizeBlobKey (key: string, options?: BlobsTranscriptStoreOptions): string {
   if (!key || key.length === 0) {
-    throw new Error('Please provide a non-empty key')
+    throw ExceptionHelper.generateException(Error, Errors.EmptyKeyProvided)
   }
 
   const sanitized = key.split('/').reduce((acc, part, idx) => {
