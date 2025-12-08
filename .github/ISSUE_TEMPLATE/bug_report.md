@@ -30,7 +30,7 @@ If applicable, add screenshots to help explain your problem.
  - Are you deploying: [e.g. AppServices, Containers(type?)]
  - Are you using Azure Bot Services:
  - What Client are you using: [e.g. MSTeams, WebChat, other]
- - What .net version is your build in:
+ - What Node version are you using:
 
 **Additional context**
 Add any other context about the problem here.
