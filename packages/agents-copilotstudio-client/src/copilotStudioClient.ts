@@ -59,6 +59,8 @@ export class CopilotStudioClient {
   private async * postRequestAsync (url: string, body?: any, method: string = 'POST'): AsyncGenerator<Activity> {
     logger.debug(`>>> SEND TO ${url}`)
 
+    const StreamMap = new Map<string, { text: string, sequence: number }[]>()
+
     const eventSource: EventSourceClient = createEventSource({
       url,
       headers: {
@@ -81,6 +83,7 @@ export class CopilotStudioClient {
         if (data && event === 'activity') {
           try {
             const activity = Activity.fromJson(data)
+            const streamingEntity = activity.entities?.find(e => e.type === 'streaminfo' && e.streamType === 'streaming')
             switch (activity.type) {
               case ActivityTypes.Message:
                 if (!this.conversationId.trim()) { // Did not get it from the header.
@@ -91,6 +94,20 @@ export class CopilotStudioClient {
                 break
               default:
                 logger.debug(`Activity type: ${activity.type}`)
+                // Accumulate the text as it comes in from the stream.
+                if (streamingEntity || activity.channelData?.streamType === 'streaming') {
+                  const text: string = activity.text as string
+                  const id: string = (streamingEntity?.streamId ?? activity.channelData.streamId) as string
+                  const sequence: number = (streamingEntity?.streamSequence ?? activity.channelData.streamSequence) as number
+                  if (StreamMap.has(id)) {
+                    const existing = StreamMap.get(id) ?? []
+                    existing.push({ text, sequence })
+                    StreamMap.set(id, existing)
+                  } else {
+                    StreamMap.set(id, [{ text, sequence }])
+                  }
+                  activity.text = StreamMap.get(id)?.sort((a, b) => a.sequence - b.sequence).map(item => item.text).join('') || ''
+                }
                 yield activity
                 break
             }
