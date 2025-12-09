@@ -146,34 +146,34 @@ export const adaptiveCardsSearchParamsZodSchema: z.ZodObject<{
     queryText: z.ZodString;
     dataset: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    queryText: string;
     dataset: string;
+    queryText: string;
 }, {
-    queryText: string;
     dataset: string;
+    queryText: string;
 }>;
 
 // @public
 export class AgentApplication<TState extends TurnState> {
     constructor(options?: Partial<AgentApplicationOptions<TState>>);
-    get adapter(): BaseAdapter;
+    get adapter(): CloudAdapter;
     get adaptiveCards(): AdaptiveCardsActions<TState>;
-    addRoute(selector: RouteSelector, handler: RouteHandler<TState>, isInvokeRoute?: boolean, rank?: number, authHandlers?: string[]): this;
+    addRoute(selector: RouteSelector, handler: RouteHandler<TState>, isInvokeRoute?: boolean, rank?: number, authHandlers?: string[], isAgenticRoute?: boolean): this;
     // (undocumented)
     protected readonly _afterTurn: ApplicationEventHandler<TState>[];
     get authorization(): Authorization;
     // (undocumented)
     protected readonly _beforeTurn: ApplicationEventHandler<TState>[];
     protected callEventHandlers(context: TurnContext, state: TState, handlers: ApplicationEventHandler<TState>[]): Promise<boolean>;
-    protected continueConversationAsync(conversationReferenceOrContext: ConversationReference | TurnContext, logic: (context: TurnContext) => Promise<void>): Promise<void>;
+    protected continueConversationAsync(botAppIdOrIdentity: string | JwtPayload, conversationReferenceOrContext: ConversationReference | TurnContext, logic: (context: TurnContext) => Promise<void>): Promise<void>;
     // (undocumented)
     protected readonly _extensions: AgentExtension<TState>[];
-    onActivity(type: string | RegExp | RouteSelector | (string | RegExp | RouteSelector)[], handler: (context: TurnContext, state: TState) => Promise<void>, authHandlers?: string[], rank?: RouteRank): this;
-    onConversationUpdate(event: ConversationUpdateEvents, handler: (context: TurnContext, state: TState) => Promise<void>, authHandlers?: string[], rank?: RouteRank): this;
+    onActivity(type: string | RegExp | RouteSelector | (string | RegExp | RouteSelector)[], handler: (context: TurnContext, state: TState) => Promise<void>, authHandlers?: string[], rank?: RouteRank, isAgenticRoute?: boolean): this;
+    onConversationUpdate(event: ConversationUpdateEvents, handler: (context: TurnContext, state: TState) => Promise<void>, authHandlers?: string[], rank?: RouteRank, isAgenticRoute?: boolean): this;
     onError(handler: (context: TurnContext, error: Error) => Promise<void>): this;
-    onMessage(keyword: string | RegExp | RouteSelector | (string | RegExp | RouteSelector)[], handler: (context: TurnContext, state: TState) => Promise<void>, authHandlers?: string[], rank?: RouteRank): this;
-    onMessageReactionAdded(handler: (context: TurnContext, state: TState) => Promise<void>, rank?: RouteRank): this;
-    onMessageReactionRemoved(handler: (context: TurnContext, state: TState) => Promise<void>, rank?: RouteRank): this;
+    onMessage(keyword: string | RegExp | RouteSelector | (string | RegExp | RouteSelector)[], handler: (context: TurnContext, state: TState) => Promise<void>, authHandlers?: string[], rank?: RouteRank, isAgenticRoute?: boolean): this;
+    onMessageReactionAdded(handler: (context: TurnContext, state: TState) => Promise<void>, rank?: RouteRank, isAgenticRoute?: boolean): this;
+    onMessageReactionRemoved(handler: (context: TurnContext, state: TState) => Promise<void>, rank?: RouteRank, isAgenticRoute?: boolean): this;
     onSignInFailure(handler: (context: TurnContext, state: TurnState, id?: string) => Promise<void>): this;
     onSignInSuccess(handler: (context: TurnContext, state: TurnState, id?: string) => Promise<void>): this;
     onTurn(event: TurnEvents | TurnEvents[], handler: (context: TurnContext, state: TState) => Promise<boolean>): this;
@@ -184,8 +184,7 @@ export class AgentApplication<TState extends TurnState> {
     // (undocumented)
     protected readonly _routes: RouteList<TState>;
     run(turnContext: TurnContext): Promise<void>;
-    runInternal(turnContext: TurnContext): Promise<boolean>;
-    sendProactiveActivity(context: TurnContext | ConversationReference, activityOrText: string | Activity, speak?: string, inputHint?: string): Promise<ResourceResponse | undefined>;
+    sendProactiveActivity(botAppIdOrIdentity: string | JwtPayload, context: TurnContext | ConversationReference, activityOrText: string | Activity, speak?: string, inputHint?: string): Promise<ResourceResponse | undefined>;
     protected startLongRunningCall(context: TurnContext, handler: (context: TurnContext) => Promise<boolean>): Promise<boolean>;
     startTypingTimer(context: TurnContext): void;
     stopTypingTimer(): void;
@@ -208,6 +207,7 @@ export interface AgentApplicationOptions<TState extends TurnState> {
     adaptiveCardsOptions?: AdaptiveCardsOptions;
     agentAppId?: string;
     authorization?: AuthorizationOptions;
+    connections?: Connections;
     fileDownloaders?: InputFileDownloader<TState>[];
     headerPropagation?: HeaderPropagationDefinition;
     longRunningMessages: boolean;
@@ -218,9 +218,6 @@ export interface AgentApplicationOptions<TState extends TurnState> {
     transcriptLogger?: TranscriptLogger;
     turnStateFactory: () => TState;
 }
-
-// @public
-export const AgentCallbackHandlerKey = "agentCallbackHandler";
 
 // @public
 export class AgentClient {
@@ -300,14 +297,26 @@ export interface AppMemory {
     setValue(path: string, value: unknown): void;
 }
 
+// @public (undocumented)
+export const ApxDevScope = "0d94caae-b412-4943-8a68-83135ad6d35f/.default";
+
+// @public (undocumented)
+export const ApxDoDScope = "0a069c81-8c7c-4712-886b-9c542d673ffb/.default";
+
+// @public (undocumented)
+export const ApxGallatinScope = "bd004c8e-5acf-4c48-8570-4e7d46b2f63b/.default";
+
+// @public (undocumented)
+export const ApxGCCHScope = "6f669b9e-7701-4e2b-b624-82c9207fde26/.default";
+
+// @public (undocumented)
+export const ApxGCCScope = "c9475445-9789-4fef-9ec5-cde4a9bcd446/.default";
+
 // @public
-export interface AppRoute<TState extends TurnState> {
-    authHandlers?: string[];
-    handler: RouteHandler<TState>;
-    isInvokeRoute?: boolean;
-    rank?: number;
-    selector: RouteSelector;
-}
+export const ApxLocalScope = "c16e153d-5d2b-4c21-b7f4-b05ee5d516f1/.default";
+
+// @public (undocumented)
+export const ApxProductionScope = "5a807f24-c9de-44ee-a3a7-329e88a00ffc/.default";
 
 // @public
 export interface AttachmentData {
@@ -355,15 +364,37 @@ export interface AudioCard {
 
 // @public
 export interface AuthConfiguration {
+    altBlueprintConnectionName?: string;
     authority?: string;
     certKeyFile?: string;
     certPemFile?: string;
-    clientId: string;
+    clientId?: string;
     clientSecret?: string;
     connectionName?: string;
+    connections?: Map<string, AuthConfiguration>;
+    connectionsMap?: ConnectionMapItem[];
     FICClientId?: string;
-    issuers: string[];
+    issuers?: string[];
+    // (undocumented)
+    scope?: string;
     tenantId?: string;
+    WIDAssertionFile?: string;
+}
+
+// @public (undocumented)
+export interface Authorization {
+    // (undocumented)
+    exchangeToken(context: TurnContext, scopes: string[], authHandlerId: string): Promise<TokenResponse>;
+    // (undocumented)
+    exchangeToken(context: TurnContext, authHandlerId: string, options?: AuthorizationHandlerTokenOptions): Promise<TokenResponse>;
+    // (undocumented)
+    getToken(context: TurnContext, authHandlerId: string): Promise<TokenResponse>;
+    // (undocumented)
+    onSignInFailure(handler: (context: TurnContext, state: TurnState, authHandlerId?: string, errorMessage?: string) => Promise<void>): void;
+    // (undocumented)
+    onSignInSuccess(handler: (context: TurnContext, state: TurnState, authHandlerId?: string) => Promise<void>): void;
+    // (undocumented)
+    signOut(context: TurnContext, state: TurnState, authHandlerId?: string): Promise<void>;
 }
 
 // @public
@@ -371,37 +402,37 @@ export const authorizeJWT: (authConfig: AuthConfiguration) => (req: Request_2, r
 
 // @public
 export interface AuthProvider {
+    // (undocumented)
+    acquireTokenOnBehalfOf(scopes: string[], oboAssertion: string): Promise<string>;
+    // (undocumented)
+    acquireTokenOnBehalfOf(authConfig: AuthConfiguration, scopes: string[], oboAssertion: string): Promise<string>;
+    // (undocumented)
+    acquireTokenOnBehalfOf(authConfigOrScopes: AuthConfiguration | string[], scopesOrOboAssertion?: string[] | string, oboAssertion?: string): Promise<string>;
     getAccessToken: (authConfig: AuthConfiguration, scope: string) => Promise<string>;
+    getAgenticApplicationToken: (agentAppInstanceId: string) => Promise<string>;
+    getAgenticInstanceToken: (agentAppInstanceId: string) => Promise<string>;
+    getAgenticUserToken: (agentAppInstanceId: string, upn: string, scopes: string[]) => Promise<string>;
 }
 
 // @public
 export abstract class BaseAdapter {
-    readonly AgentIdentityKey: symbol;
-    abstract authConfig: AuthConfiguration;
-    authProvider: AuthProvider;
     readonly ConnectorClientKey: symbol;
-    abstract continueConversation(reference: Partial<ConversationReference>, logic: (revocableContext: TurnContext) => Promise<void>): Promise<void>;
+    abstract continueConversation(botAppIdOrIdentity: string | JwtPayload, reference: Partial<ConversationReference>, logic: (revocableContext: TurnContext) => Promise<void>): Promise<void>;
     abstract deleteActivity(context: TurnContext, reference: Partial<ConversationReference>): Promise<void>;
-    abstract getAttachment(attachmentId: string, viewId: string): Promise<NodeJS.ReadableStream>;
-    abstract getAttachmentInfo(attachmentId: string): Promise<AttachmentInfo>;
+    // @deprecated (undocumented)
+    abstract getAttachment(context: TurnContext, attachmentId: string, viewId: string): Promise<NodeJS.ReadableStream>;
+    // @deprecated (undocumented)
+    abstract getAttachmentInfo(context: TurnContext, attachmentId: string): Promise<AttachmentInfo>;
     protected middleware: MiddlewareSet;
-    readonly OAuthScopeKey: symbol;
     get onTurnError(): (context: TurnContext, error: Error) => Promise<void>;
     set onTurnError(value: (context: TurnContext, error: Error) => Promise<void>);
     protected runMiddleware(context: TurnContext, next: (revocableContext: TurnContext) => Promise<void>): Promise<void>;
     abstract sendActivities(context: TurnContext, activities: Activity[]): Promise<ResourceResponse[]>;
     abstract updateActivity(context: TurnContext, activity: Activity): Promise<ResourceResponse | void>;
-    abstract uploadAttachment(conversationId: string, attachmentData: AttachmentData): Promise<ResourceResponse>;
+    // @deprecated (undocumented)
+    abstract uploadAttachment(context: TurnContext, conversationId: string, attachmentData: AttachmentData): Promise<ResourceResponse>;
     use(...middlewares: Array<MiddlewareHandler | Middleware>): this;
-    userTokenClient: UserTokenClient | null;
-}
-
-// @public
-export interface CachedAgentState {
-    hash: string;
-    state: {
-        [id: string]: any;
-    };
+    readonly UserTokenClientKey: symbol;
 }
 
 // @public
@@ -415,7 +446,7 @@ export class CardFactory {
     static images(images: (CardImage | string)[] | undefined): CardImage[];
     static media(links: (MediaUrl | string)[] | undefined): MediaUrl[];
     static o365ConnectorCard(card: O365ConnectorCard): Attachment;
-    static oauthCard(connectionName: string, title: string, text: string, signingResource: SignInResource): Attachment;
+    static oauthCard(connectionName: string, title: string, text: string, signingResource: SignInResource, enableSso?: boolean): Attachment;
     static receiptCard(card: ReceiptCard): Attachment;
     static signinCard(title: string, url: string, text?: string): Attachment;
     static thumbnailCard(title: string, text?: any, images?: any, buttons?: any, other?: Partial<ThumbnailCard>): Attachment;
@@ -438,50 +469,48 @@ export interface Citation {
 }
 
 // @public
-export interface Claim {
-    // (undocumented)
-    readonly type: string;
-    // (undocumented)
-    readonly value: string;
-}
-
-// @public
-export class ClaimsIdentity {
-    constructor(claims: Claim[], authenticationType?: string | boolean | undefined);
-    // (undocumented)
-    readonly claims: Claim[];
-    getClaimValue(claimType: string): string | null;
-    get isAuthenticated(): boolean;
-}
-
-// @public
 export class CloudAdapter extends BaseAdapter {
     constructor(authConfig?: AuthConfiguration, authProvider?: AuthProvider, userTokenClient?: UserTokenClient);
+    connectionManager: MsalConnectionManager;
+    continueConversation(botAppIdOrIdentity: string | JwtPayload, reference: ConversationReference, logic: (revocableContext: TurnContext) => Promise<void>, isResponse?: Boolean): Promise<void>;
+    protected createConnectorClient(serviceUrl: string, scope: string, identity: JwtPayload, headers?: HeaderPropagationCollection): Promise<ConnectorClient>;
     // (undocumented)
-    authConfig: AuthConfiguration;
-    connectorClient: ConnectorClient;
-    continueConversation(reference: ConversationReference, logic: (revocableContext: TurnContext) => Promise<void>, isResponse?: Boolean): Promise<void>;
-    protected createConnectorClient(serviceUrl: string, scope: string, headers?: HeaderPropagationCollection): Promise<ConnectorClient>;
+    protected createConnectorClientWithIdentity(identity: JwtPayload, activity: Activity, headers?: HeaderPropagationCollection): Promise<ConnectorClient>;
     createConversationAsync(agentAppId: string, channelId: string, serviceUrl: string, audience: string, conversationParameters: ConversationParameters, logic: (context: TurnContext) => Promise<void>): Promise<void>;
     protected createCreateActivity(createdConversationId: string | undefined, channelId: string, serviceUrl: string, conversationParameters: ConversationParameters): Activity;
-    createTurnContext(activity: Activity, logic: AgentHandler): TurnContext;
     // (undocumented)
-    createTurnContextWithScope(activity: Activity, logic: AgentHandler, scope: string): Promise<TurnContext>;
+    static createIdentity(appId: string): JwtPayload;
+    // @deprecated (undocumented)
+    createTurnContext(activity: Activity, logic: AgentHandler, identity?: JwtPayload): TurnContext;
+    protected createUserTokenClient(identity: JwtPayload, tokenServiceEndpoint?: string, scope?: string, audience?: string, headers?: HeaderPropagationCollection): Promise<UserTokenClient>;
     deleteActivity(context: TurnContext, reference: Partial<ConversationReference>): Promise<void>;
-    getAttachment(attachmentId: string, viewId: string): Promise<NodeJS.ReadableStream>;
-    getAttachmentInfo(attachmentId: string): Promise<AttachmentInfo>;
+    // @deprecated (undocumented)
+    getAttachment(context: TurnContext, attachmentId: string, viewId: string): Promise<NodeJS.ReadableStream>;
+    // @deprecated (undocumented)
+    getAttachmentInfo(context: TurnContext, attachmentId: string): Promise<AttachmentInfo>;
     process(request: Request_2, res: Response_2, logic: (context: TurnContext) => Promise<void>, headerPropagation?: HeaderPropagationDefinition): Promise<void>;
     protected processTurnResults(context: TurnContext): InvokeResponse | undefined;
-    replyToActivity(activity: Activity): Promise<ResourceResponse>;
     protected resolveIfConnectorClientIsNeeded(activity: Activity): boolean;
     sendActivities(context: TurnContext, activities: Activity[]): Promise<ResourceResponse[]>;
-    protected setConnectorClient(context: TurnContext): void;
+    protected setConnectorClient(context: TurnContext, connectorClient?: ConnectorClient): void;
+    protected setUserTokenClient(context: TurnContext, userTokenClient?: UserTokenClient): void;
     updateActivity(context: TurnContext, activity: Activity): Promise<ResourceResponse | void>;
-    uploadAttachment(conversationId: string, attachmentData: AttachmentData): Promise<ResourceResponse>;
+    // @deprecated (undocumented)
+    uploadAttachment(context: TurnContext, conversationId: string, attachmentData: AttachmentData): Promise<ResourceResponse>;
 }
 
 // @public
 export const configureResponseController: (app: Application, adapter: CloudAdapter, agent: ActivityHandler, conversationState: ConversationState) => void;
+
+// @public (undocumented)
+export interface ConnectionMapItem {
+    // (undocumented)
+    audience?: string;
+    // (undocumented)
+    connection: string;
+    // (undocumented)
+    serviceUrl: string;
+}
 
 // @public
 export class ConnectorClient {
@@ -491,6 +520,7 @@ export class ConnectorClient {
     // (undocumented)
     protected readonly _axiosInstance: AxiosInstance;
     static createClientWithAuth(baseURL: string, authConfig: AuthConfiguration, authProvider: AuthProvider, scope: string, headers?: HeaderPropagationCollection): Promise<ConnectorClient>;
+    static createClientWithToken(baseURL: string, token: string, headers?: HeaderPropagationCollection): ConnectorClient;
     createConversation(body: ConversationParameters): Promise<ConversationResourceResponse>;
     deleteActivity(conversationId: string, activityId: string): Promise<void>;
     getAttachment(attachmentId: string, viewId: string): Promise<NodeJS.ReadableStream>;
@@ -574,24 +604,10 @@ export class FileStorage implements Storage_2 {
 }
 
 // @public
-export const getProductInfo: () => string;
+export function getAuthConfigWithDefaults(config?: AuthConfiguration): AuthConfiguration;
 
 // @public
-export class HeaderPropagation implements HeaderPropagationCollection {
-    constructor(headers: Record<string, string | string[] | undefined>);
-    // (undocumented)
-    add(headers: Record<string, string>): void;
-    // (undocumented)
-    concat(headers: Record<string, string>): void;
-    // (undocumented)
-    get incoming(): Record<string, string>;
-    // (undocumented)
-    get outgoing(): Record<string, string>;
-    // (undocumented)
-    override(headers: Record<string, string>): void;
-    // (undocumented)
-    propagate(headers: string[]): void;
-}
+export const getProductInfo: () => string;
 
 // @public
 export interface HeaderPropagationCollection {
@@ -697,6 +713,16 @@ export class MiddlewareSet implements Middleware {
     use(...middlewares: Array<MiddlewareHandler | Middleware>): this;
 }
 
+// @public (undocumented)
+export class MsalConnectionManager implements Connections {
+    constructor(connectionsConfigurations?: Map<string, AuthConfiguration>, connectionsMap?: ConnectionMapItem[], configuration?: AuthConfiguration);
+    getConnection(connectionName: string): MsalTokenProvider;
+    getDefaultConnection(): MsalTokenProvider;
+    getDefaultConnectionConfiguration(): AuthConfiguration;
+    getTokenProvider(identity: JwtPayload, serviceUrl: string): MsalTokenProvider;
+    getTokenProviderFromActivity(identity: JwtPayload, activity: Activity): MsalTokenProvider;
+}
+
 // @public
 export class MsalTokenCredential implements TokenCredential {
     constructor(authConfig: AuthConfiguration);
@@ -708,9 +734,21 @@ export class MsalTokenCredential implements TokenCredential {
 
 // @public
 export class MsalTokenProvider implements AuthProvider {
+    constructor(connectionSettings?: AuthConfiguration);
+    // (undocumented)
+    acquireTokenOnBehalfOf(scopes: string[], oboAssertion: string): Promise<string>;
     // (undocumented)
     acquireTokenOnBehalfOf(authConfig: AuthConfiguration, scopes: string[], oboAssertion: string): Promise<string>;
+    // (undocumented)
+    readonly connectionSettings?: AuthConfiguration;
+    getAccessToken(scope: string): Promise<string>;
     getAccessToken(authConfig: AuthConfiguration, scope: string): Promise<string>;
+    // (undocumented)
+    getAgenticApplicationToken(agentAppInstanceId: string): Promise<string>;
+    // (undocumented)
+    getAgenticInstanceToken(agentAppInstanceId: string): Promise<string>;
+    // (undocumented)
+    getAgenticUserToken(agentAppInstanceId: string, agenticUserId: string, scopes: string[]): Promise<string>;
 }
 
 // @public
@@ -821,14 +859,6 @@ export interface ResourceResponse {
 
 // @public
 export type RouteHandler<TState extends TurnState> = (context: TurnContext, state: TState) => Promise<void>;
-
-// @public (undocumented)
-export class RouteList<TState extends TurnState> {
-    // (undocumented)
-    [Symbol.iterator](): Iterator<AppRoute<TState>>;
-    // (undocumented)
-    addRoute(selector: RouteSelector, handler: RouteHandler<TState>, isInvokeRoute?: boolean, rank?: number, authHandlers?: string[]): this;
-}
 
 // @public
 export enum RouteRank {
@@ -975,9 +1005,14 @@ export interface TokenExchangeInvokeRequest {
 }
 
 // @public
-export interface TokenExchangeRequest {
-    connectionName?: string;
+export interface TokenExchangeInvokeResponse {
+    connectionName: string;
+    failureDetail?: string;
     id?: string;
+}
+
+// @public
+export interface TokenExchangeRequest {
     token?: string;
     uri?: string;
 }
@@ -1026,12 +1061,6 @@ export interface TranscriptLogger {
 }
 
 // @public
-export class TranscriptLoggerMiddleware implements Middleware {
-    constructor(logger: TranscriptLogger);
-    onTurn(context: TurnContext, next: () => Promise<void>): Promise<void>;
-}
-
-// @public
 export interface TranscriptStore extends TranscriptLogger {
     deleteTranscript(channelId: string, conversationId: string): Promise<void>;
     getTranscriptActivities(channelId: string, conversationId: string, continuationToken?: string, startDate?: Date): Promise<PagedResult<Activity>>;
@@ -1040,15 +1069,19 @@ export interface TranscriptStore extends TranscriptLogger {
 
 // @public
 export class TurnContext {
-    constructor(adapterOrContext: BaseAdapter, request: Activity);
+    constructor(adapterOrContext: BaseAdapter, request: Activity, identity?: JwtPayload);
     constructor(adapterOrContext: TurnContext);
     get activity(): Activity;
     get adapter(): BaseAdapter;
     readonly bufferedReplyActivities: Activity[];
     protected copyTo(context: TurnContext): void;
     deleteActivity(idOrReference: string | ConversationReference): Promise<void>;
+    // @deprecated (undocumented)
     getAttachment(attachmentId: string, viewId: string): Promise<NodeJS.ReadableStream>;
+    // @deprecated (undocumented)
     getAttachmentInfo(attachmentId: string): Promise<AttachmentInfo>;
+    // (undocumented)
+    get identity(): JwtPayload;
     get locale(): string | undefined;
     set locale(value: string | undefined);
     onDeleteActivity(handler: DeleteActivityHandler): this;
@@ -1063,6 +1096,7 @@ export class TurnContext {
     get streamingResponse(): StreamingResponse;
     get turnState(): TurnContextStateCollection;
     updateActivity(activity: Activity): Promise<void>;
+    // @deprecated (undocumented)
     uploadAttachment(conversationId: string, attachmentData: AttachmentData): Promise<ResourceResponse>;
 }
 
@@ -1118,15 +1152,17 @@ export class UserState extends AgentState {
 // @public
 export class UserTokenClient {
     constructor(msAppId: string);
+    constructor(axiosInstance: AxiosInstance);
     // (undocumented)
     client: AxiosInstance;
-    exchangeTokenAsync(userId: string, connectionName: string, channelId: string, tokenExchangeRequest: TokenExchangeRequest): Promise<TokenResponse>;
-    getAadTokens(userId: string, connectionName: string, channelId: string, resourceUrls: AadResourceUrls): Promise<Record<string, TokenResponse>>;
+    static createClientWithScope(baseURL: string, authProvider: AuthProvider, scope: string, headers?: HeaderPropagationCollection): Promise<UserTokenClient>;
+    exchangeTokenAsync(userId: string, connectionName: string, channelIdComposite: string, tokenExchangeRequest: TokenExchangeRequest): Promise<TokenResponse>;
+    getAadTokens(userId: string, connectionName: string, channelIdComposite: string, resourceUrls: AadResourceUrls): Promise<Record<string, TokenResponse>>;
     getSignInResource(msAppId: string, connectionName: string, conversation: ConversationReference, relatesTo?: ConversationReference): Promise<SignInResource>;
-    getTokenOrSignInResource(userId: string, connectionName: string, channelId: string, conversation: ConversationReference, relatesTo: ConversationReference, code: string, finalRedirect?: string, fwdUrl?: string): Promise<TokenOrSinginResourceResponse>;
-    getTokenStatus(userId: string, channelId: string, include?: string): Promise<TokenStatus[]>;
-    getUserToken(connectionName: string, channelId: string, userId: string, code?: string): Promise<TokenResponse>;
-    signOut(userId: string, connectionName: string, channelId: string): Promise<void>;
+    getTokenOrSignInResource(userId: string, connectionName: string, channelIdComposite: string, conversation: ConversationReference, relatesTo: ConversationReference, code: string, finalRedirect?: string, fwdUrl?: string): Promise<TokenOrSinginResourceResponse>;
+    getTokenStatus(userId: string, channelIdComposite: string, include?: string): Promise<TokenStatus[]>;
+    getUserToken(connectionName: string, channelIdComposite: string, userId: string, code?: string): Promise<TokenResponse>;
+    signOut(userId: string, connectionName: string, channelIdComposite: string): Promise<void>;
     // (undocumented)
     updateAuthToken(token: string): void;
 }
