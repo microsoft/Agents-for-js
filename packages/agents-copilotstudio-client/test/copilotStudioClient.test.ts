@@ -546,4 +546,661 @@ describe('CopilotStudioClient', function () {
       assert.equal(activities[2].text, 'Here is your answer')
     })
   })
+
+  describe('text accumulation with streaminfo entity', function () {
+    it('should accumulate text chunks with streaminfo entity', async function () {
+      const settings = createTestSettings()
+      const client = new CopilotStudioClient(settings, 'test-token')
+
+      const userActivity = Activity.fromObject({
+        type: ActivityTypes.Message,
+        text: 'Tell me a story',
+        conversation: { id: 'test-conversation-id' }
+      })
+
+      const streamId = 'stream-1'
+      const responseActivities = [
+        Activity.fromObject({
+          type: ActivityTypes.Typing,
+          text: 'Once',
+          conversation: { id: 'test-conversation-id' },
+          entities: [{
+            type: 'streaminfo',
+            streamType: 'streaming',
+            streamId,
+            streamSequence: 1
+          }]
+        }),
+        Activity.fromObject({
+          type: ActivityTypes.Typing,
+          text: ' upon',
+          conversation: { id: 'test-conversation-id' },
+          entities: [{
+            type: 'streaminfo',
+            streamType: 'streaming',
+            streamId,
+            streamSequence: 2
+          }]
+        }),
+        Activity.fromObject({
+          type: ActivityTypes.Typing,
+          text: ' a time',
+          conversation: { id: 'test-conversation-id' },
+          entities: [{
+            type: 'streaminfo',
+            streamType: 'streaming',
+            streamId,
+            streamSequence: 3
+          }]
+        })
+      ]
+
+      const fetchMock = mock.fn(() => Promise.resolve(mockFetchResponse(responseActivities)))
+      global.fetch = fetchMock as any
+
+      const activities: Activity[] = []
+      for await (const activity of client.sendActivityStreaming(userActivity)) {
+        activities.push(activity)
+      }
+
+      assert.equal(activities.length, 3)
+      assert.equal(activities[0].text, 'Once')
+      assert.equal(activities[1].text, 'Once upon')
+      assert.equal(activities[2].text, 'Once upon a time')
+    })
+
+    it('should handle out-of-order sequence numbers', async function () {
+      const settings = createTestSettings()
+      const client = new CopilotStudioClient(settings, 'test-token')
+
+      const userActivity = Activity.fromObject({
+        type: ActivityTypes.Message,
+        text: 'Question',
+        conversation: { id: 'test-conversation-id' }
+      })
+
+      const streamId = 'stream-1'
+      const responseActivities = [
+        Activity.fromObject({
+          type: ActivityTypes.Typing,
+          text: 'First',
+          conversation: { id: 'test-conversation-id' },
+          entities: [{
+            type: 'streaminfo',
+            streamType: 'streaming',
+            streamId,
+            streamSequence: 1
+          }]
+        }),
+        Activity.fromObject({
+          type: ActivityTypes.Typing,
+          text: 'Third',
+          conversation: { id: 'test-conversation-id' },
+          entities: [{
+            type: 'streaminfo',
+            streamType: 'streaming',
+            streamId,
+            streamSequence: 3
+          }]
+        }),
+        Activity.fromObject({
+          type: ActivityTypes.Typing,
+          text: 'Second',
+          conversation: { id: 'test-conversation-id' },
+          entities: [{
+            type: 'streaminfo',
+            streamType: 'streaming',
+            streamId,
+            streamSequence: 2
+          }]
+        })
+      ]
+
+      const fetchMock = mock.fn(() => Promise.resolve(mockFetchResponse(responseActivities)))
+      global.fetch = fetchMock as any
+
+      const activities: Activity[] = []
+      for await (const activity of client.sendActivityStreaming(userActivity)) {
+        activities.push(activity)
+      }
+
+      assert.equal(activities.length, 3)
+      assert.equal(activities[0].text, 'First')
+      assert.equal(activities[1].text, 'FirstThird')
+      assert.equal(activities[2].text, 'FirstSecondThird')
+    })
+
+    it('should handle multiple streams independently', async function () {
+      const settings = createTestSettings()
+      const client = new CopilotStudioClient(settings, 'test-token')
+
+      const userActivity = Activity.fromObject({
+        type: ActivityTypes.Message,
+        text: 'Question',
+        conversation: { id: 'test-conversation-id' }
+      })
+
+      const streamId1 = 'stream-1'
+      const streamId2 = 'stream-2'
+      const responseActivities = [
+        Activity.fromObject({
+          type: ActivityTypes.Typing,
+          text: 'Hello',
+          conversation: { id: 'test-conversation-id' },
+          entities: [{
+            type: 'streaminfo',
+            streamType: 'streaming',
+            streamId: streamId1,
+            streamSequence: 1
+          }]
+        }),
+        Activity.fromObject({
+          type: ActivityTypes.Typing,
+          text: 'World',
+          conversation: { id: 'test-conversation-id' },
+          entities: [{
+            type: 'streaminfo',
+            streamType: 'streaming',
+            streamId: streamId2,
+            streamSequence: 1
+          }]
+        }),
+        Activity.fromObject({
+          type: ActivityTypes.Typing,
+          text: ' there',
+          conversation: { id: 'test-conversation-id' },
+          entities: [{
+            type: 'streaminfo',
+            streamType: 'streaming',
+            streamId: streamId1,
+            streamSequence: 2
+          }]
+        }),
+        Activity.fromObject({
+          type: ActivityTypes.Typing,
+          text: '!',
+          conversation: { id: 'test-conversation-id' },
+          entities: [{
+            type: 'streaminfo',
+            streamType: 'streaming',
+            streamId: streamId2,
+            streamSequence: 2
+          }]
+        })
+      ]
+
+      const fetchMock = mock.fn(() => Promise.resolve(mockFetchResponse(responseActivities)))
+      global.fetch = fetchMock as any
+
+      const activities: Activity[] = []
+      for await (const activity of client.sendActivityStreaming(userActivity)) {
+        activities.push(activity)
+      }
+
+      assert.equal(activities.length, 4)
+      assert.equal(activities[0].text, 'Hello')
+      assert.equal(activities[1].text, 'World')
+      assert.equal(activities[2].text, 'Hello there')
+      assert.equal(activities[3].text, 'World!')
+    })
+
+    it('should not accumulate text for non-streaming activities', async function () {
+      const settings = createTestSettings()
+      const client = new CopilotStudioClient(settings, 'test-token')
+
+      const userActivity = Activity.fromObject({
+        type: ActivityTypes.Message,
+        text: 'Question',
+        conversation: { id: 'test-conversation-id' }
+      })
+
+      const responseActivities = [
+        Activity.fromObject({
+          type: ActivityTypes.Typing,
+          text: 'First',
+          conversation: { id: 'test-conversation-id' }
+        }),
+        Activity.fromObject({
+          type: ActivityTypes.Typing,
+          text: 'Second',
+          conversation: { id: 'test-conversation-id' }
+        })
+      ]
+
+      const fetchMock = mock.fn(() => Promise.resolve(mockFetchResponse(responseActivities)))
+      global.fetch = fetchMock as any
+
+      const activities: Activity[] = []
+      for await (const activity of client.sendActivityStreaming(userActivity)) {
+        activities.push(activity)
+      }
+
+      assert.equal(activities.length, 2)
+      assert.equal(activities[0].text, 'First')
+      assert.equal(activities[1].text, 'Second')
+    })
+  })
+
+  describe('text accumulation with channelData', function () {
+    it('should accumulate text chunks with channelData.streamType', async function () {
+      const settings = createTestSettings()
+      const client = new CopilotStudioClient(settings, 'test-token')
+
+      const userActivity = Activity.fromObject({
+        type: ActivityTypes.Message,
+        text: 'Tell me a joke',
+        conversation: { id: 'test-conversation-id' }
+      })
+
+      const streamId = 'stream-1'
+      const responseActivities = [
+        Activity.fromObject({
+          type: ActivityTypes.Typing,
+          text: 'Why',
+          conversation: { id: 'test-conversation-id' },
+          channelData: {
+            streamType: 'streaming',
+            streamId,
+            streamSequence: 1
+          }
+        }),
+        Activity.fromObject({
+          type: ActivityTypes.Typing,
+          text: ' did',
+          conversation: { id: 'test-conversation-id' },
+          channelData: {
+            streamType: 'streaming',
+            streamId,
+            streamSequence: 2
+          }
+        }),
+        Activity.fromObject({
+          type: ActivityTypes.Typing,
+          text: ' the chicken',
+          conversation: { id: 'test-conversation-id' },
+          channelData: {
+            streamType: 'streaming',
+            streamId,
+            streamSequence: 3
+          }
+        })
+      ]
+
+      const fetchMock = mock.fn(() => Promise.resolve(mockFetchResponse(responseActivities)))
+      global.fetch = fetchMock as any
+
+      const activities: Activity[] = []
+      for await (const activity of client.sendActivityStreaming(userActivity)) {
+        activities.push(activity)
+      }
+
+      assert.equal(activities.length, 3)
+      assert.equal(activities[0].text, 'Why')
+      assert.equal(activities[1].text, 'Why did')
+      assert.equal(activities[2].text, 'Why did the chicken')
+    })
+
+    it('should handle channelData out-of-order sequence', async function () {
+      const settings = createTestSettings()
+      const client = new CopilotStudioClient(settings, 'test-token')
+
+      const userActivity = Activity.fromObject({
+        type: ActivityTypes.Message,
+        text: 'Question',
+        conversation: { id: 'test-conversation-id' }
+      })
+
+      const streamId = 'stream-1'
+      const responseActivities = [
+        Activity.fromObject({
+          type: ActivityTypes.Typing,
+          text: 'A',
+          conversation: { id: 'test-conversation-id' },
+          channelData: {
+            streamType: 'streaming',
+            streamId,
+            streamSequence: 1
+          }
+        }),
+        Activity.fromObject({
+          type: ActivityTypes.Typing,
+          text: 'C',
+          conversation: { id: 'test-conversation-id' },
+          channelData: {
+            streamType: 'streaming',
+            streamId,
+            streamSequence: 3
+          }
+        }),
+        Activity.fromObject({
+          type: ActivityTypes.Typing,
+          text: 'B',
+          conversation: { id: 'test-conversation-id' },
+          channelData: {
+            streamType: 'streaming',
+            streamId,
+            streamSequence: 2
+          }
+        })
+      ]
+
+      const fetchMock = mock.fn(() => Promise.resolve(mockFetchResponse(responseActivities)))
+      global.fetch = fetchMock as any
+
+      const activities: Activity[] = []
+      for await (const activity of client.sendActivityStreaming(userActivity)) {
+        activities.push(activity)
+      }
+
+      assert.equal(activities.length, 3)
+      assert.equal(activities[0].text, 'A')
+      assert.equal(activities[1].text, 'AC')
+      assert.equal(activities[2].text, 'ABC')
+    })
+
+    it('should handle mixed channelData and streaminfo entity', async function () {
+      const settings = createTestSettings()
+      const client = new CopilotStudioClient(settings, 'test-token')
+
+      const userActivity = Activity.fromObject({
+        type: ActivityTypes.Message,
+        text: 'Question',
+        conversation: { id: 'test-conversation-id' }
+      })
+
+      const streamId1 = 'stream-1'
+      const streamId2 = 'stream-2'
+      const responseActivities = [
+        Activity.fromObject({
+          type: ActivityTypes.Typing,
+          text: 'Entity',
+          conversation: { id: 'test-conversation-id' },
+          entities: [{
+            type: 'streaminfo',
+            streamType: 'streaming',
+            streamId: streamId1,
+            streamSequence: 1
+          }]
+        }),
+        Activity.fromObject({
+          type: ActivityTypes.Typing,
+          text: 'Channel',
+          conversation: { id: 'test-conversation-id' },
+          channelData: {
+            streamType: 'streaming',
+            streamId: streamId2,
+            streamSequence: 1
+          }
+        }),
+        Activity.fromObject({
+          type: ActivityTypes.Typing,
+          text: ' stream',
+          conversation: { id: 'test-conversation-id' },
+          entities: [{
+            type: 'streaminfo',
+            streamType: 'streaming',
+            streamId: streamId1,
+            streamSequence: 2
+          }]
+        }),
+        Activity.fromObject({
+          type: ActivityTypes.Typing,
+          text: ' data',
+          conversation: { id: 'test-conversation-id' },
+          channelData: {
+            streamType: 'streaming',
+            streamId: streamId2,
+            streamSequence: 2
+          }
+        })
+      ]
+
+      const fetchMock = mock.fn(() => Promise.resolve(mockFetchResponse(responseActivities)))
+      global.fetch = fetchMock as any
+
+      const activities: Activity[] = []
+      for await (const activity of client.sendActivityStreaming(userActivity)) {
+        activities.push(activity)
+      }
+
+      assert.equal(activities.length, 4)
+      assert.equal(activities[0].text, 'Entity')
+      assert.equal(activities[1].text, 'Channel')
+      assert.equal(activities[2].text, 'Entity stream')
+      assert.equal(activities[3].text, 'Channel data')
+    })
+
+    it('should prefer entity streaminfo over channelData when both present', async function () {
+      const settings = createTestSettings()
+      const client = new CopilotStudioClient(settings, 'test-token')
+
+      const userActivity = Activity.fromObject({
+        type: ActivityTypes.Message,
+        text: 'Question',
+        conversation: { id: 'test-conversation-id' }
+      })
+
+      const entityStreamId = 'entity-stream'
+      const channelStreamId = 'channel-stream'
+      const responseActivities = [
+        Activity.fromObject({
+          type: ActivityTypes.Typing,
+          text: 'First',
+          conversation: { id: 'test-conversation-id' },
+          entities: [{
+            type: 'streaminfo',
+            streamType: 'streaming',
+            streamId: entityStreamId,
+            streamSequence: 1
+          }],
+          channelData: {
+            streamType: 'streaming',
+            streamId: channelStreamId,
+            streamSequence: 20
+          }
+        }),
+        Activity.fromObject({
+          type: ActivityTypes.Typing,
+          text: 'Second',
+          conversation: { id: 'test-conversation-id' },
+          entities: [{
+            type: 'streaminfo',
+            streamType: 'streaming',
+            streamId: entityStreamId,
+            streamSequence: 2
+          }],
+          channelData: {
+            streamType: 'streaming',
+            streamId: channelStreamId,
+            streamSequence: 10
+          }
+        })
+      ]
+
+      const fetchMock = mock.fn(() => Promise.resolve(mockFetchResponse(responseActivities)))
+      global.fetch = fetchMock as any
+
+      const activities: Activity[] = []
+      for await (const activity of client.sendActivityStreaming(userActivity)) {
+        activities.push(activity)
+      }
+
+      // Should use entity streaminfo, not channelData
+      assert.equal(activities.length, 2)
+      assert.equal(activities[0].text, 'First')
+      assert.equal(activities[1].text, 'FirstSecond') // Accumulated using entity stream
+    })
+  })
+
+  describe('text accumulation edge cases', function () {
+    it('should handle empty text in streaming chunks', async function () {
+      const settings = createTestSettings()
+      const client = new CopilotStudioClient(settings, 'test-token')
+
+      const userActivity = Activity.fromObject({
+        type: ActivityTypes.Message,
+        text: 'Question',
+        conversation: { id: 'test-conversation-id' }
+      })
+
+      const streamId = 'stream-1'
+      const responseActivities = [
+        Activity.fromObject({
+          type: ActivityTypes.Typing,
+          text: 'Hello',
+          conversation: { id: 'test-conversation-id' },
+          entities: [{
+            type: 'streaminfo',
+            streamType: 'streaming',
+            streamId,
+            streamSequence: 1
+          }]
+        }),
+        Activity.fromObject({
+          type: ActivityTypes.Typing,
+          text: '',
+          conversation: { id: 'test-conversation-id' },
+          entities: [{
+            type: 'streaminfo',
+            streamType: 'streaming',
+            streamId,
+            streamSequence: 2
+          }]
+        }),
+        Activity.fromObject({
+          type: ActivityTypes.Typing,
+          text: ' world',
+          conversation: { id: 'test-conversation-id' },
+          entities: [{
+            type: 'streaminfo',
+            streamType: 'streaming',
+            streamId,
+            streamSequence: 3
+          }]
+        })
+      ]
+
+      const fetchMock = mock.fn(() => Promise.resolve(mockFetchResponse(responseActivities)))
+      global.fetch = fetchMock as any
+
+      const activities: Activity[] = []
+      for await (const activity of client.sendActivityStreaming(userActivity)) {
+        activities.push(activity)
+      }
+
+      // Empty text is not accumulated (due to 'if (text && id && sequence)' check)
+      assert.equal(activities.length, 3)
+      assert.equal(activities[0].text, 'Hello')
+      assert.equal(activities[1].text, 'Hello') // Empty text is not accumulated, so activity.text remains the same as before
+      assert.equal(activities[2].text, 'Hello world') // Only accumulated from seq 1 and 3
+    })
+
+    it('should handle missing streamId or streamSequence', async function () {
+      const settings = createTestSettings()
+      const client = new CopilotStudioClient(settings, 'test-token')
+
+      const userActivity = Activity.fromObject({
+        type: ActivityTypes.Message,
+        text: 'Question',
+        conversation: { id: 'test-conversation-id' }
+      })
+
+      const responseActivities = [
+        Activity.fromObject({
+          type: ActivityTypes.Typing,
+          text: 'Valid',
+          conversation: { id: 'test-conversation-id' },
+          entities: [{
+            type: 'streaminfo',
+            streamType: 'streaming',
+            streamId: 'stream-1',
+            streamSequence: 1
+          }]
+        }),
+        Activity.fromObject({
+          type: ActivityTypes.Typing,
+          text: 'Missing sequence',
+          conversation: { id: 'test-conversation-id' },
+          entities: [{
+            type: 'streaminfo',
+            streamType: 'streaming',
+            streamId: 'stream-1'
+          }]
+        }),
+        Activity.fromObject({
+          type: ActivityTypes.Typing,
+          text: 'Missing streamId',
+          conversation: { id: 'test-conversation-id' },
+          entities: [{
+            type: 'streaminfo',
+            streamType: 'streaming',
+            streamSequence: 2
+          }]
+        })
+      ]
+
+      const fetchMock = mock.fn(() => Promise.resolve(mockFetchResponse(responseActivities)))
+      global.fetch = fetchMock as any
+
+      const activities: Activity[] = []
+      for await (const activity of client.sendActivityStreaming(userActivity)) {
+        activities.push(activity)
+      }
+      // Activities with missing streamId or streamSequence are not accumulated
+      // (due to 'if (text && id && sequence)' check)
+      assert.equal(activities.length, 3)
+      assert.equal(activities[0].text, 'Valid')
+      assert.equal(activities[1].text, 'Missing sequence') // Not accumulated
+      assert.equal(activities[2].text, 'Missing streamId') // Not accumulated
+    })
+
+    it('should not accumulate for Message type activities', async function () {
+      const settings = createTestSettings()
+      const client = new CopilotStudioClient(settings, 'test-token')
+
+      const userActivity = Activity.fromObject({
+        type: ActivityTypes.Message,
+        text: 'Question',
+        conversation: { id: 'test-conversation-id' }
+      })
+
+      const streamId = 'stream-1'
+      const responseActivities = [
+        Activity.fromObject({
+          type: ActivityTypes.Message,
+          text: 'First',
+          conversation: { id: 'test-conversation-id' },
+          entities: [{
+            type: 'streaminfo',
+            streamType: 'streaming',
+            streamId,
+            streamSequence: 1
+          }]
+        }),
+        Activity.fromObject({
+          type: ActivityTypes.Message,
+          text: 'Second',
+          conversation: { id: 'test-conversation-id' },
+          entities: [{
+            type: 'streaminfo',
+            streamType: 'streaming',
+            streamId,
+            streamSequence: 2
+          }]
+        })
+      ]
+
+      const fetchMock = mock.fn(() => Promise.resolve(mockFetchResponse(responseActivities)))
+      global.fetch = fetchMock as any
+
+      const activities: Activity[] = []
+      for await (const activity of client.sendActivityStreaming(userActivity)) {
+        activities.push(activity)
+      }
+
+      assert.equal(activities.length, 2)
+      assert.equal(activities[0].text, 'First')
+      assert.equal(activities[1].text, 'Second')
+    })
+  })
 })
