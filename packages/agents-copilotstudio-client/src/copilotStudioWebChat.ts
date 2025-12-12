@@ -201,7 +201,7 @@ export class CopilotStudioWebChat {
   static createConnection (
     client: CopilotStudioClient,
     settings?: CopilotStudioWebChatSettings
-  ):CopilotStudioWebChatConnection {
+  ): CopilotStudioWebChatConnection {
     logger.info('--> Creating connection between Copilot Studio and WebChat ...')
     let sequence = 0
     let activitySubscriber: Subscriber<Partial<Activity>> | undefined
@@ -211,18 +211,24 @@ export class CopilotStudioWebChat {
     const activity$ = createObservable<Partial<Activity>>(async (subscriber) => {
       activitySubscriber = subscriber
 
-      if (connectionStatus$.value < 2) {
+      const handleAcknowledgementOnce = async (): Promise<void> => {
         connectionStatus$.next(2)
-        return
+        await 0
       }
 
       logger.debug('--> Connection established.')
       notifyTyping()
 
-      for await (const activity of client.startConversationStreaming()) {
-        delete activity.replyToId
-        conversation = activity.conversation
-        notifyActivity(activity)
+      if (connectionStatus$.value < 2) {
+        for await (const activity of client.startConversationStreaming()) {
+          delete activity.replyToId
+          if (!conversation && activity.conversation) {
+            await handleAcknowledgementOnce()
+            conversation = activity.conversation
+          }
+
+          notifyActivity(activity)
+        }
       }
     })
 
