@@ -213,7 +213,7 @@ export class CopilotStudioWebChat {
 
       const handleAcknowledgementOnce = async (): Promise<void> => {
         connectionStatus$.next(2)
-        await 0
+        await 0 // Webchat requires an extra tick to process the connection status change
       }
 
       logger.debug('--> Connection established.')
@@ -223,8 +223,8 @@ export class CopilotStudioWebChat {
         for await (const activity of client.startConversationStreaming()) {
           delete activity.replyToId
           if (!conversation && activity.conversation) {
-            await handleAcknowledgementOnce()
             conversation = activity.conversation
+            await handleAcknowledgementOnce()
           }
 
           notifyActivity(activity)
