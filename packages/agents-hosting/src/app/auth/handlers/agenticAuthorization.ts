@@ -162,7 +162,7 @@ export class AgenticAuthorization implements AuthorizationHandler {
    * @param data The token response to store in the turn state.
    */
   private setContext (context: TurnContext, scopes: string[], data: TokenResponse) {
-    return context.turnState.set(this._key, () => data)
+    return context.turnState.set(`${this._key}:${scopes.join(';')}`, () => data)
   }
 
   /**
@@ -170,7 +170,7 @@ export class AgenticAuthorization implements AuthorizationHandler {
    * @param scopes The OAuth scopes for which the context is being retrieved.
    */
   private getContext (context: TurnContext, scopes: string[]): TokenResponse {
-    const result = context.turnState.get(this._key)
+    const result = context.turnState.get(`${this._key}:${scopes.join(';')}`)
     return result?.() ?? { token: undefined }
   }
 
