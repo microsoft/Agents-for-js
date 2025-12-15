@@ -157,6 +157,9 @@ export class AgenticAuthorization implements AuthorizationHandler {
 
   /**
    * Sets the authorization context in the turn state.
+   * @param context The turn context in which to set the authorization data.
+   * @param scopes The OAuth scopes associated with the authorization context.
+   * @param data The token response to store in the turn state.
    */
   private setContext (context: TurnContext, scopes: string[], data: TokenResponse) {
     return context.turnState.set(`${this._key}:${scopes.join(';')}`, () => data)
@@ -164,6 +167,7 @@ export class AgenticAuthorization implements AuthorizationHandler {
 
   /**
    * Gets the authorization context from the turn state.
+   * @param scopes The OAuth scopes for which the context is being retrieved.
    */
   private getContext (context: TurnContext, scopes: string[]): TokenResponse {
     const result = context.turnState.get(`${this._key}:${scopes.join(';')}`)
