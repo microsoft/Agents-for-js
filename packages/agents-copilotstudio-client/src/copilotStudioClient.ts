@@ -59,6 +59,8 @@ export class CopilotStudioClient {
   private async * postRequestAsync (url: string, body?: any, method: string = 'POST'): AsyncGenerator<Activity> {
     logger.debug(`>>> SEND TO ${url}`)
 
+    const streamMap = new Map<string, { text: string, sequence: number }[]>()
+
     const eventSource: EventSourceClient = createEventSource({
       url,
       headers: {
@@ -81,11 +83,36 @@ export class CopilotStudioClient {
         if (data && event === 'activity') {
           try {
             const activity = Activity.fromJson(data)
+
+            // check to see if this activity is part of the streamed response, in which case we need to accumulate the text
+            const streamingEntity = activity.entities?.find(e => e.type === 'streaminfo' && e.streamType === 'streaming')
             switch (activity.type) {
               case ActivityTypes.Message:
                 if (!this.conversationId.trim()) { // Did not get it from the header.
                   this.conversationId = activity.conversation?.id ?? ''
                   logger.debug(`Conversation ID: ${this.conversationId}`)
+                }
+                yield activity
+                break
+              case ActivityTypes.Typing:
+                logger.debug(`Activity type: ${activity.type}`)
+                // Accumulate the text as it comes in from the stream.
+                // This also accounts for the "old style" of streaming where the stream info is in channelData.
+                if (streamingEntity || activity.channelData?.streamType === 'streaming') {
+                  const text = activity.text ?? ''
+                  const id = (streamingEntity?.streamId ?? activity.channelData?.streamId)
+                  const sequence = (streamingEntity?.streamSequence ?? activity.channelData?.streamSequence)
+                  // Accumulate the text chunks based on stream ID and sequence number.
+                  if (id && sequence) {
+                    if (streamMap.has(id)) {
+                      const existing = streamMap.get(id)!
+                      existing.push({ text, sequence })
+                      streamMap.set(id, existing)
+                    } else {
+                      streamMap.set(id, [{ text, sequence }])
+                    }
+                    activity.text = streamMap.get(id)?.sort((a, b) => a.sequence - b.sequence).map(item => item.text).join('') || ''
+                  }
                 }
                 yield activity
                 break
