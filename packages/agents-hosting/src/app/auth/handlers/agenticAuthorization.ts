@@ -167,6 +167,7 @@ export class AgenticAuthorization implements AuthorizationHandler {
 
   /**
    * Gets the authorization context from the turn state.
+   * @param scopes The OAuth scopes for which the context is being retrieved.
    */
   private getContext (context: TurnContext, scopes: string[]): TokenResponse {
     const result = context.turnState.get(this._key)
