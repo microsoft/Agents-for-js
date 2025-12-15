@@ -98,7 +98,9 @@ export class AgenticAuthorization implements AuthorizationHandler {
    */
   async token (context: TurnContext, options?: AuthorizationHandlerTokenOptions): Promise<TokenResponse> {
     try {
-      const tokenResponse = this.getContext(context)
+      const scopes = options?.scopes || this._options.scopes!
+
+      const tokenResponse = this.getContext(context, scopes)
       if (tokenResponse.token) {
         logger.debug(this.prefix('Using cached Agentic user token'))
         return tokenResponse
@@ -116,10 +118,10 @@ export class AgenticAuthorization implements AuthorizationHandler {
         context.activity.getAgenticTenantId() ?? '',
         context.activity.getAgenticInstanceId() ?? '',
         context.activity.getAgenticUser() ?? '',
-        options?.scopes || this._options.scopes!
+        scopes
       )
 
-      this.setContext(context, { token })
+      this.setContext(context, scopes, { token })
       this._onSuccess?.(context)
       return { token }
     } catch (error) {
@@ -156,14 +158,14 @@ export class AgenticAuthorization implements AuthorizationHandler {
   /**
    * Sets the authorization context in the turn state.
    */
-  private setContext (context: TurnContext, data: TokenResponse) {
+  private setContext (context: TurnContext, scopes: string[], data: TokenResponse) {
     return context.turnState.set(this._key, () => data)
   }
 
   /**
    * Gets the authorization context from the turn state.
    */
-  private getContext (context: TurnContext): TokenResponse {
+  private getContext (context: TurnContext, scopes: string[]): TokenResponse {
     const result = context.turnState.get(this._key)
     return result?.() ?? { token: undefined }
   }
