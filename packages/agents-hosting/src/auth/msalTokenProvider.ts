@@ -10,6 +10,7 @@ import { AuthProvider } from './authProvider'
 import { debug } from '@microsoft/agents-activity/logger'
 import { v4 } from 'uuid'
 import { MemoryCache } from './MemoryCache'
+import jwt from 'jsonwebtoken'
 
 import fs from 'fs'
 import crypto from 'crypto'
@@ -254,9 +255,16 @@ export class MsalTokenProvider implements AuthProvider {
     logger.debug('Getting agentic application token')
 
     let clientAssertion
-    if (this.connectionSettings.FICClientId) {
+
+    if (this.connectionSettings.WIDAssertionFile !== undefined) {
+      clientAssertion = fs.readFileSync(this.connectionSettings.WIDAssertionFile as string, 'utf8')
+    } else if (this.connectionSettings.FICClientId !== undefined) {
       clientAssertion = await this.fetchExternalToken(this.connectionSettings.FICClientId as string)
+    } else if (this.connectionSettings.certPemFile !== undefined &&
+      this.connectionSettings.certKeyFile !== undefined) {
+      clientAssertion = this.getAssertionFromCert(this.connectionSettings)
     }
+
     const token = await this.acquireTokenByForAgenticScenarios(tenantId, this.connectionSettings.clientId, clientAssertion, ['api://AzureAdTokenExchange/.default'], {
       grant_type: 'client_credentials',
       fmi_path: agentAppInstanceId,
@@ -294,6 +302,48 @@ export class MsalTokenProvider implements AuthProvider {
       },
       piiLoggingEnabled: false
     }
+  }
+
+  /**
+   * Generates the client assertion using the provided certificate.
+   * @param authConfig The authentication configuration.
+   * @returns The client assertion.
+   */
+  private getAssertionFromCert (authConfig: AuthConfiguration): string {
+    const base64url = (buf: Buffer) =>
+      buf.toString('base64').replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')
+
+    const privateKeyPem = fs.readFileSync(authConfig.certKeyFile as string)
+
+    const pubKeyObject = new crypto.X509Certificate(fs.readFileSync(authConfig.certPemFile as string))
+
+    const der = pubKeyObject.raw
+    const x5tS256 = base64url(crypto.createHash('sha256').update(der).digest())
+
+    let x5c
+    if (authConfig.sendX5C) {
+      x5c = Buffer.from(authConfig.certPemFile as string, 'base64').toString()
+    }
+
+    const now = Math.floor(Date.now() / 1000)
+    const payload = {
+      aud: `${this.resolveAuthority(authConfig.tenantId)}/oauth2/v2.0/token`,
+      iss: authConfig.clientId,
+      sub: authConfig.clientId,
+      jti: v4(),
+      nbf: now,
+      iat: now,
+      exp: now + 600, // 10 minutes
+    }
+
+    return jwt.sign(
+      payload,
+      privateKeyPem,
+      {
+        algorithm: 'PS256',
+        header: { alg: 'PS256', typ: 'JWT', 'x5t#S256': x5tS256, x5c }
+      }
+    )
   }
 
   /**
