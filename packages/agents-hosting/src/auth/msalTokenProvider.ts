@@ -186,7 +186,7 @@ export class MsalTokenProvider implements AuthProvider {
    * @param tokenBodyParameters
    * @returns
    */
-  private async acquireTokenByForAgenticScenarios (tenantId: string, clientId: string, clientAssertion: string | undefined, scopes: string[], tokenBodyParameters: { [key: string]: any }): Promise<string | null> {
+  private async acquireTokenForAgenticScenarios (tenantId: string, clientId: string, clientAssertion: string | undefined, scopes: string[], tokenBodyParameters: { [key: string]: any }): Promise<string | null> {
     if (!this.connectionSettings) {
       throw new Error('Connection settings must be provided when calling getAgenticInstanceToken')
     }
@@ -235,7 +235,7 @@ export class MsalTokenProvider implements AuthProvider {
     const agentToken = await this.getAgenticApplicationToken(tenantId, agentAppInstanceId)
     const instanceToken = await this.getAgenticInstanceToken(tenantId, agentAppInstanceId)
 
-    const token = await this.acquireTokenByForAgenticScenarios(tenantId, agentAppInstanceId, agentToken, scopes, {
+    const token = await this.acquireTokenForAgenticScenarios(tenantId, agentAppInstanceId, agentToken, scopes, {
       user_id: agenticUserId,
       user_federated_identity_credential: instanceToken,
       grant_type: 'user_fic',
@@ -265,7 +265,7 @@ export class MsalTokenProvider implements AuthProvider {
       clientAssertion = this.getAssertionFromCert(this.connectionSettings)
     }
 
-    const token = await this.acquireTokenByForAgenticScenarios(tenantId, this.connectionSettings.clientId, clientAssertion, ['api://AzureAdTokenExchange/.default'], {
+    const token = await this.acquireTokenForAgenticScenarios(tenantId, this.connectionSettings.clientId, clientAssertion, ['api://AzureAdTokenExchange/.default'], {
       grant_type: 'client_credentials',
       fmi_path: agentAppInstanceId,
     })
