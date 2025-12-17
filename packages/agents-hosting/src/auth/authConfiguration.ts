@@ -40,6 +40,11 @@ export interface AuthConfiguration {
   certKeyFile?: string
 
   /**
+   * Indicates whether to send the X5C param or not (for SNI authentication).
+   */
+  sendX5C?: boolean
+
+  /**
    * A list of valid issuers for the authentication configuration.
    */
   issuers?: string[]
@@ -104,6 +109,7 @@ export interface AuthConfiguration {
  *
  * certPemFile=your-cert-pem-file
  * certKeyFile=your-cert-key-file
+ * sendX5C=false
  *
  * FICClientId=your-FIC-client-id
  *
@@ -182,6 +188,7 @@ export const loadPrevAuthConfigFromEnv: () => AuthConfiguration = () => {
       clientSecret: process.env.MicrosoftAppPassword,
       certPemFile: process.env.certPemFile,
       certKeyFile: process.env.certKeyFile,
+      sendX5C: process.env.sendX5C === 'true',
       connectionName: process.env.connectionName,
       FICClientId: process.env.MicrosoftAppClientId,
       authority,
@@ -218,16 +225,23 @@ function loadConnectionsMapFromEnv () {
   const CONNECTIONS_PREFIX = 'connections__'
   const CONNECTIONS_MAP_PREFIX = 'connectionsMap__'
 
-  for (const [key, value] of Object.entries(envVars)) {
+  for (const [key, rawValue] of Object.entries(envVars)) {
     if (key.startsWith(CONNECTIONS_PREFIX)) {
       // Convert to dot notation
       let path = key.substring(CONNECTIONS_PREFIX.length).replace(/__/g, '.')
       // Remove ".settings." from the path
       path = path.replace('.settings.', '.')
+      // Convert "true"/"false" strings into boolean values
+      let value
+      if (rawValue === 'true' || rawValue === 'false') {
+        value = rawValue === 'true'
+      } else {
+        value = rawValue
+      }
       objectPath.set(connectionsObj, path, value)
     } else if (key.startsWith(CONNECTIONS_MAP_PREFIX)) {
       const path = key.substring(CONNECTIONS_MAP_PREFIX.length).replace(/__/g, '.')
-      objectPath.set(connectionsMap, path, value)
+      objectPath.set(connectionsMap, path, rawValue)
     }
   }
 
@@ -274,6 +288,7 @@ function loadConnectionsMapFromEnv () {
  *
  * certPemFile=your-cert-pem-file
  * certKeyFile=your-cert-key-file
+ * sendX5C=false
  *
  * FICClientId=your-FIC-client-id
  *
@@ -335,6 +350,7 @@ function buildLegacyAuthConfig (envPrefix: string = '', customConfig?: AuthConfi
     clientSecret: customConfig?.clientSecret ?? process.env[`${prefix}clientSecret`],
     certPemFile: customConfig?.certPemFile ?? process.env[`${prefix}certPemFile`],
     certKeyFile: customConfig?.certKeyFile ?? process.env[`${prefix}certKeyFile`],
+    sendX5C: customConfig?.sendX5C ?? (process.env[`${prefix}sendX5C`] === 'true'),
     connectionName: customConfig?.connectionName ?? process.env[`${prefix}connectionName`],
     FICClientId: customConfig?.FICClientId ?? process.env[`${prefix}FICClientId`],
     authority,
