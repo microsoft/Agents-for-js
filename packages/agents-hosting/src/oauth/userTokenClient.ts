@@ -7,7 +7,7 @@ import { debug } from '@microsoft/agents-activity/logger'
 import { normalizeTokenExchangeState } from '../activityWireCompat'
 import { AadResourceUrls, SignInResource, TokenExchangeRequest, TokenOrSinginResourceResponse, TokenResponse, TokenStatus } from './userTokenClient.types'
 import { getProductInfo } from '../getProductInfo'
-import { AuthProvider, MsalTokenProvider } from '../auth'
+import { AuthProvider } from '../auth'
 import { HeaderPropagationCollection } from '../headerPropagation'
 import { getTokenServiceEndpoint } from './customUserTokenAPI'
 import { Errors } from '../errorHelper'
@@ -120,7 +120,7 @@ export class UserTokenClient {
       },
     })
     if (authProvider) {
-      const token = await (authProvider as MsalTokenProvider).getAccessToken(scope)
+      const token = await authProvider.getAccessToken(scope)
       if (token.length > 1) {
         axiosInstance.defaults.headers.common.Authorization = `Bearer ${token}`
       }

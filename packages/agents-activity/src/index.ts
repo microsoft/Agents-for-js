@@ -50,4 +50,4 @@ export { ActivityTreatments } from './activityTreatments'
 export { debug, Logger } from './logger'
 
 export { AgentErrorDefinition, AgentError, ExceptionHelper } from './exceptionHelper'
-export { Errors } from './errorHelper'
+export { Errors as ActivityErrors } from './errorHelper'

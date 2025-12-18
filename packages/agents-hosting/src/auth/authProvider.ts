@@ -10,12 +10,19 @@ import { AuthConfiguration } from './authConfiguration'
  */
 export interface AuthProvider {
   /**
+   * The AuthConfiguration used for token acquisition.
+   */
+  connectionSettings?: AuthConfiguration
+
+  /**
    * Gets an access token for the specified authentication configuration and scope.
    * @param authConfig - The authentication configuration.
    * @param scope - The scope for which the access token is requested.
    * @returns A promise that resolves to the access token.
    */
-  getAccessToken: (authConfig: AuthConfiguration, scope: string) => Promise<string>
+  getAccessToken (authConfig: AuthConfiguration, scope: string): Promise<string>
+  getAccessToken (scope: string): Promise<string>
+  getAccessToken (authConfigOrScope: AuthConfiguration | string, scope?: string): Promise<string>
 
   /**
    * Get an access token for the agentic application

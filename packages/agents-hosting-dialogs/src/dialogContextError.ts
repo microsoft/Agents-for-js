@@ -3,6 +3,8 @@
  * Licensed under the MIT License.
  */
 import { DialogContext } from './dialogContext'
+import { ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from './errorHelper'
 import { DialogInstance } from './dialogInstance'
 
 /**
@@ -31,11 +33,17 @@ export class DialogContextError extends Error {
     super()
 
     if (!(error instanceof Error) && typeof error !== 'string') {
-      throw new Error('`error` argument must be an Error or a string')
+      throw ExceptionHelper.generateException(
+        Error,
+        Errors.InvalidErrorArgument
+      )
     }
 
     if (!(dialogContext instanceof DialogContext)) {
-      throw new Error('`dialogContext` argument must be of type DialogContext')
+      throw ExceptionHelper.generateException(
+        Error,
+        Errors.InvalidDialogContextArgument
+      )
     }
 
     this.name = 'DialogContextError'

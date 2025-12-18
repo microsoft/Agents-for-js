@@ -1,81 +1,48 @@
-import assert from 'assert'
 import { describe, it } from 'node:test'
-import { AgentErrorDefinition } from '@microsoft/agents-activity'
+import assert from 'assert'
+import { ExceptionHelper } from '@microsoft/agents-activity'
 import { Errors } from '../src/errorHelper'
 
-describe('Hosting Errors tests', () => {
-  it('should have MissingTurnContext error definition', () => {
-    const error = Errors.MissingTurnContext
+describe('HostingErrors', () => {
+  it('should have correct error codes in expected ranges', () => {
+    // TurnContext and Activity Errors
+    assert.strictEqual(Errors.MissingTurnContext.code, -120000)
+    assert.strictEqual(Errors.TurnContextMissingActivity.code, -120010)
+    assert.strictEqual(Errors.ActivityMissingType.code, -120020)
 
-    assert.strictEqual(error.code, -120000)
-    assert.strictEqual(error.description, 'Missing TurnContext parameter')
-    assert.strictEqual(error.helplink, 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}')
+    // Channel and Conversation Errors
+    assert.strictEqual(Errors.ChannelIdRequired.code, -120100)
+    assert.strictEqual(Errors.ConversationIdRequired.code, -120110)
+
+    // Attachment Errors
+    assert.strictEqual(Errors.AttachmentDataRequired.code, -120250)
+    assert.strictEqual(Errors.AttachmentIdRequired.code, -120260)
+    assert.strictEqual(Errors.ViewIdRequired.code, -120270)
   })
 
-  it('should have KeysRequiredForReading error definition', () => {
-    const error = Errors.KeysRequiredForReading
-
-    assert.strictEqual(error.code, -120040)
-    assert.strictEqual(error.description, 'Keys are required when reading.')
-    assert.strictEqual(error.helplink, 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}')
+  it('should contain error message in description', () => {
+    assert.ok(Errors.MissingTurnContext.description.includes('TurnContext'))
+    assert.ok(Errors.ConversationIdRequired.description.includes('conversationId'))
+    assert.ok(Errors.AttachmentIdRequired.description.includes('attachmentId'))
+    assert.ok(Errors.EmptyActivitiesArray.description.includes('activities'))
   })
 
-  it('should have ChangesRequiredForWriting error definition', () => {
-    const error = Errors.ChangesRequiredForWriting
-
-    assert.strictEqual(error.code, -120041)
-    assert.strictEqual(error.description, 'Changes are required when writing.')
-    assert.strictEqual(error.helplink, 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}')
+  it('should support parameter substitution in error messages', () => {
+    const error = ExceptionHelper.generateException(Error, Errors.ConnectionNotFound, undefined, { connectionName: 'test-conn' })
+    assert.ok(error.message.includes('test-conn'))
   })
 
-  it('should have all error codes in the correct range', () => {
-    const errorDefinitions = Object.values(Errors).filter(
-      val => val && typeof val === 'object' && 'code' in val && 'description' in val && 'helplink' in val
-    ) as AgentErrorDefinition[]
-
-    // All error codes should be negative and in the range -120000 to -120299
-    errorDefinitions.forEach(errorDef => {
-      assert.ok(errorDef.code < 0, `Error code ${errorDef.code} should be negative`)
-      assert.ok(errorDef.code >= -120299, `Error code ${errorDef.code} should be >= -120299`)
-      assert.ok(errorDef.code <= -120000, `Error code ${errorDef.code} should be <= -120000`)
+  it('should have all required properties', () => {
+    Object.values(Errors).forEach((error) => {
+      assert.ok(error.code, 'Error should have a code')
+      assert.ok(error.description, 'Error should have a description')
+      // helplink is optional and will use the default from ExceptionHelper when not provided
     })
   })
 
   it('should have unique error codes', () => {
-    const errorDefinitions = Object.values(Errors).filter(
-      val => val && typeof val === 'object' && 'code' in val && 'description' in val && 'helplink' in val
-    ) as AgentErrorDefinition[]
-
-    const codes = errorDefinitions.map(e => e.code)
+    const codes = Object.values(Errors).map((error) => error.code)
     const uniqueCodes = new Set(codes)
-
     assert.strictEqual(codes.length, uniqueCodes.size, 'All error codes should be unique')
-  })
-
-  it('should have help links with tokenized format', () => {
-    const errorDefinitions = Object.values(Errors).filter(
-      val => val && typeof val === 'object' && 'code' in val && 'description' in val && 'helplink' in val
-    ) as AgentErrorDefinition[]
-
-    errorDefinitions.forEach(errorDef => {
-      assert.ok(
-        errorDef.helplink.includes('{errorCode}'),
-        `Help link should contain {errorCode} token: ${errorDef.helplink}`
-      )
-      assert.ok(
-        errorDef.helplink.startsWith('https://aka.ms/M365AgentsErrorCodes/#'),
-        `Help link should start with correct URL: ${errorDef.helplink}`
-      )
-    })
-  })
-
-  it('should have non-empty descriptions', () => {
-    const errorDefinitions = Object.values(Errors).filter(
-      val => val && typeof val === 'object' && 'code' in val && 'description' in val && 'helplink' in val
-    ) as AgentErrorDefinition[]
-
-    errorDefinitions.forEach(errorDef => {
-      assert.ok(errorDef.description.length > 0, 'Description should not be empty')
-    })
   })
 })

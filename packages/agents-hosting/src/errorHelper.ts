@@ -3,877 +3,672 @@
 
 import { AgentErrorDefinition } from '@microsoft/agents-activity'
 
-/**
- * Error definitions for the Hosting system.
- * This contains localized error codes for the Hosting subsystem of the AgentSDK.
- *
- * Each error definition includes an error code (starting from -120000), a description, and a help link
- * pointing to an AKA link to get help for the given error.
- *
- * Usage example:
- * ```
- * throw ExceptionHelper.generateException(
- *   Error,
- *   Errors.MissingTurnContext
- * );
- * ```
- */
 export const Errors: { [key: string]: AgentErrorDefinition } = {
-  // Activity Handler Errors (-120000 to -120019)
+  // ============================================================================
+  // TurnContext and Activity Errors (-120000 to -120090)
+  // ============================================================================
+
   /**
-   * Error thrown when TurnContext parameter is missing.
-   */
+     * Error thrown when TurnContext parameter is missing.
+     */
   MissingTurnContext: {
     code: -120000,
-    description: 'Missing TurnContext parameter',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
+    description: 'Missing TurnContext parameter'
   },
 
   /**
-   * Error thrown when TurnContext does not include an activity.
-   */
+     * Error thrown when TurnContext does not include an activity.
+     */
   TurnContextMissingActivity: {
-    code: -120001,
-    description: 'TurnContext does not include an activity',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
+    code: -120010,
+    description: 'TurnContext does not include an activity'
   },
 
   /**
-   * Error thrown when Activity is missing its type.
-   */
+     * Error thrown when activity is missing its type property.
+     */
   ActivityMissingType: {
-    code: -120002,
-    description: 'Activity is missing its type',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when activity object is invalid.
-   */
-  InvalidActivityObject: {
-    code: -120003,
-    description: 'Invalid activity object',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when Activity is required.
-   */
-  ActivityRequired: {
-    code: -120004,
-    description: 'Activity is required.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  // Cloud Adapter Errors (-120020 to -120039)
-  /**
-   * Error thrown when activity parameter is required.
-   */
-  ActivityParameterRequired: {
     code: -120020,
-    description: '`activity` parameter required',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
+    description: 'Activity is missing its type'
   },
 
   /**
-   * Error thrown when context parameter is required.
-   */
-  ContextParameterRequired: {
-    code: -120021,
-    description: '`context` parameter required',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when activities parameter is required.
-   */
-  ActivitiesParameterRequired: {
-    code: -120022,
-    description: '`activities` parameter required',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when expecting one or more activities, but the array was empty.
-   */
-  EmptyActivitiesArray: {
-    code: -120023,
-    description: 'Expecting one or more activities, but the array was empty.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when request.body parameter is required.
-   */
-  RequestBodyRequired: {
-    code: -120024,
-    description: '`request.body` parameter required, make sure express.json() is used as middleware',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when conversation reference object is invalid.
-   */
-  InvalidConversationReference: {
-    code: -120025,
-    description: 'Invalid conversation reference object',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when continueConversation has invalid conversation reference object.
-   */
-  ContinueConversationInvalidReference: {
-    code: -120026,
-    description: 'continueConversation: Invalid conversation reference object',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when continueConversation requires botAppIdOrIdentity.
-   */
-  ContinueConversationBotAppIdRequired: {
-    code: -120027,
-    description: 'continueConversation: botAppIdOrIdentity is required',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when serviceUrl must be a non-empty string.
-   */
-  ServiceUrlRequired: {
-    code: -120028,
-    description: '`serviceUrl` must be a non-empty string',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when conversationParameters must be defined.
-   */
-  ConversationParametersRequired: {
-    code: -120029,
-    description: '`conversationParameters` must be defined',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when logic must be defined.
-   */
-  LogicRequired: {
+     * Error thrown when activity parameter is invalid.
+     */
+  InvalidActivityObject: {
     code: -120030,
-    description: '`logic` must be defined',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
+    description: 'Invalid activity object'
   },
 
   /**
-   * Error thrown when context is required.
-   */
-  ContextRequired: {
-    code: -120031,
-    description: 'context is required',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when conversationId is required.
-   */
-  ConversationIdRequired: {
-    code: -120032,
-    description: 'conversationId is required',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when attachmentData is required.
-   */
-  AttachmentDataRequired: {
-    code: -120033,
-    description: 'attachmentData is required',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when attachmentId is required.
-   */
-  AttachmentIdRequired: {
-    code: -120034,
-    description: 'attachmentId is required',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when viewId is required.
-   */
-  ViewIdRequired: {
-    code: -120035,
-    description: 'viewId is required',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when could not create connector client for agentic user.
-   */
-  CouldNotCreateConnectorClient: {
-    code: -120036,
-    description: 'Could not create connector client for agentic user',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  // Storage Errors (-120040 to -120049)
-  /**
-   * Error thrown when Keys are required when reading.
-   */
-  KeysRequiredForReading: {
+     * Error thrown when activity is required but not provided.
+     */
+  ActivityRequired: {
     code: -120040,
-    description: 'Keys are required when reading.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
+    description: 'Activity is required.'
   },
 
   /**
-   * Error thrown when Changes are required when writing.
-   */
-  ChangesRequiredForWriting: {
-    code: -120041,
-    description: 'Changes are required when writing.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when there is an eTag conflict during storage write.
-   */
-  StorageEtagConflict: {
-    code: -120042,
-    description: 'Storage: error writing "{key}" due to eTag conflict.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  // State Errors (-120050 to -120059)
-  /**
-   * Error thrown when activity.channelId is missing.
-   */
-  MissingActivityChannelId: {
+     * Error thrown when activity parameter is required but missing.
+     */
+  ActivityParameterRequired: {
     code: -120050,
-    description: 'missing activity.channelId',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
+    description: 'activity parameter required'
   },
 
   /**
-   * Error thrown when activity.conversation.id is missing.
-   */
-  MissingActivityConversationId: {
-    code: -120051,
-    description: 'missing activity.conversation.id',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when activity.from.id is missing.
-   */
-  MissingActivityFromId: {
-    code: -120052,
-    description: 'missing activity.from.id',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when context.activity.channelId is missing.
-   */
-  MissingContextActivityChannelId: {
-    code: -120053,
-    description: 'missing context.activity.channelId',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when context.activity.conversation.id is missing.
-   */
-  MissingContextActivityConversationId: {
-    code: -120054,
-    description: 'missing context.activity.conversation.id',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when context.activity.from.id is missing.
-   */
-  MissingContextActivityFromId: {
-    code: -120055,
-    description: 'missing context.activity.from.id',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when context.activity.recipient.id is missing.
-   */
-  MissingContextActivityRecipientId: {
-    code: -120056,
-    description: 'missing context.activity.recipient.id',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  // Turn Context Errors (-120060 to -120069)
-  /**
-   * Error thrown when attempting to set responded to false.
-   */
-  CannotSetRespondedToFalse: {
+     * Error thrown when activity array is empty.
+     */
+  EmptyActivitiesArray: {
     code: -120060,
-    description: "TurnContext: cannot set 'responded' to a value of 'false'.",
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
+    description: 'Expecting one or more activities, but the array was empty.'
   },
 
-  // Header Propagation Errors (-120070 to -120079)
   /**
-   * Error thrown when Headers must be provided.
-   */
-  HeadersRequired: {
+     * Error thrown when activities parameter is required but missing.
+     */
+  ActivitiesParameterRequired: {
     code: -120070,
-    description: 'Headers must be provided.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
+    description: 'activities parameter required'
   },
 
-  // Middleware Errors (-120080 to -120089)
   /**
-   * Error thrown when invalid plugin type being added to MiddlewareSet.
-   */
-  InvalidMiddlewarePlugin: {
+     * Error thrown when attempting to set TurnContext.responded to false.
+     */
+  CannotSetRespondedToFalse: {
     code: -120080,
-    description: 'MiddlewareSet.use(): invalid plugin type being added.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
+    description: "TurnContext: cannot set 'responded' to a value of 'false'.",
   },
 
-  // Transcript Logger Errors (-120090 to -120099)
   /**
-   * Error thrown when TranscriptLoggerMiddleware requires a TranscriptLogger instance.
-   */
-  TranscriptLoggerRequired: {
+     * Error thrown when context parameter is required but missing.
+     */
+  ContextParameterRequired: {
     code: -120090,
-    description: 'TranscriptLoggerMiddleware requires a TranscriptLogger instance.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
+    description: 'context parameter required'
   },
 
-  /**
-   * Error thrown when channelId is required for transcript operations.
-   */
-  TranscriptChannelIdRequired: {
-    code: -120091,
-    description: 'channelId is required.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
+  // ============================================================================
+  // Channel and Conversation Errors (-120100 to -120240)
+  // ============================================================================
 
   /**
-   * Error thrown when conversationId is required for transcript operations.
-   */
-  TranscriptConversationIdRequired: {
-    code: -120092,
-    description: 'conversationId is required.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  // Connector Client Errors (-120100 to -120109)
-  /**
-   * Error thrown when userId and conversationId are required.
-   */
-  UserIdAndConversationIdRequired: {
+     * Error thrown when channelId is required but missing.
+     */
+  ChannelIdRequired: {
     code: -120100,
-    description: 'userId and conversationId are required',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
+    description: 'channelId is required.'
   },
 
   /**
-   * Error thrown when conversationId and activityId are required.
-   */
-  ConversationIdAndActivityIdRequired: {
-    code: -120101,
-    description: 'conversationId and activityId are required',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  // Agent Client Errors (-120110 to -120119)
-  /**
-   * Error thrown when failed to post activity to agent.
-   */
-  FailedToPostActivityToAgent: {
+     * Error thrown when conversationId is required but missing.
+     */
+  ConversationIdRequired: {
     code: -120110,
-    description: 'Failed to post activity to agent: {statusText}',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
+    description: 'conversationId is required.'
   },
 
   /**
-   * Error thrown when missing agent client config for agent.
-   */
-  MissingAgentClientConfig: {
-    code: -120111,
-    description: 'Missing agent client config for agent {agentName}',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when Agent name is required.
-   */
-  AgentNameRequired: {
-    code: -120112,
-    description: 'Agent name is required',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  // OAuth Errors (-120120 to -120129)
-  /**
-   * Error thrown when failed to sign out.
-   */
-  FailedToSignOut: {
+     * Error thrown when conversation reference object is invalid.
+     */
+  InvalidConversationReference: {
     code: -120120,
-    description: 'Failed to sign out',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
+    description: 'Invalid conversation reference object'
   },
 
-  // Auth Configuration Errors (-120130 to -120159)
   /**
-   * Error thrown when Connection not found in environment.
-   */
-  ConnectionNotFoundInEnvironment: {
+     * Error thrown when continueConversation receives invalid conversation reference.
+     */
+  ContinueConversationInvalidReference: {
     code: -120130,
-    description: 'Connection "{cnxName}" not found in environment.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
+    description: 'continueConversation: Invalid conversation reference object'
   },
 
   /**
-   * Error thrown when No default connection found in environment connections.
-   */
-  NoDefaultConnection: {
-    code: -120131,
-    description: 'No default connection found in environment connections.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
+     * Error thrown when context is required but missing.
+     */
+  ContextRequired: {
+    code: -120140,
+    description: 'context is required'
   },
 
   /**
-   * Error thrown when ClientId required in production.
-   */
-  ClientIdRequiredInProduction: {
-    code: -120132,
-    description: 'ClientId required in production',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
+     * Error thrown when both userId and conversationId are required.
+     */
+  UserIdAndConversationIdRequired: {
+    code: -120150,
+    description: 'userId and conversationId are required'
   },
 
   /**
-   * Error thrown when ClientId not found for connection.
-   */
-  ClientIdNotFoundForConnection: {
-    code: -120133,
-    description: 'ClientId not found for connection: {envPrefix}',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  // MSAL Connection Manager Errors (-120160 to -120169)
-  /**
-   * Error thrown when Connection not found.
-   */
-  ConnectionNotFound: {
+     * Error thrown when both conversationId and activityId are required.
+     */
+  ConversationIdAndActivityIdRequired: {
     code: -120160,
-    description: 'Connection not found: {connectionName}',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
+    description: 'conversationId and activityId are required'
   },
 
   /**
-   * Error thrown when No connections found for this Agent in the Connections Configuration.
-   */
-  NoConnectionsFound: {
-    code: -120161,
-    description: 'No connections found for this Agent in the Connections Configuration.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when Identity is required to get the token provider.
-   */
-  IdentityRequiredForTokenProvider: {
-    code: -120162,
-    description: 'Identity is required to get the token provider.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when Audience and Service URL are required to get the token provider.
-   */
-  AudienceAndServiceUrlRequired: {
-    code: -120163,
-    description: 'Audience and Service URL are required to get the token provider.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when No connection found for audience and serviceUrl.
-   */
-  NoConnectionForAudienceAndServiceUrl: {
-    code: -120164,
-    description: 'No connection found for audience: {audience} and serviceUrl: {serviceUrl}',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  // MSAL Token Provider Errors (-120170 to -120189)
-  /**
-   * Error thrown when Connection settings must be provided to constructor when calling getAccessToken.
-   */
-  ConnectionSettingsRequiredForGetAccessToken: {
+     * Error thrown when serviceUrl must be a non-empty string.
+     */
+  ServiceUrlRequired: {
     code: -120170,
-    description: 'Connection settings must be provided to constructor when calling getAccessToken(scope)',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
+    description: 'serviceUrl must be a non-empty string'
   },
 
   /**
-   * Error thrown when Invalid authConfig.
-   */
-  InvalidAuthConfig: {
-    code: -120171,
-    description: 'Invalid authConfig. ',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
+     * Error thrown when conversationParameters must be defined.
+     */
+  ConversationParametersRequired: {
+    code: -120180,
+    description: 'conversationParameters must be defined'
   },
 
   /**
-   * Error thrown when Failed to acquire token.
-   */
-  FailedToAcquireToken: {
-    code: -120172,
-    description: 'Failed to acquire token',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when Connection settings must be provided to constructor when calling acquireTokenOnBehalfOf.
-   */
-  ConnectionSettingsRequiredForAcquireTokenOnBehalfOf: {
-    code: -120173,
-    description: 'Connection settings must be provided to constructor when calling acquireTokenOnBehalfOf(scopes, oboAssertion)',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when Connection settings must be provided when calling getAgenticInstanceToken.
-   */
-  ConnectionSettingsRequiredForGetAgenticInstanceToken: {
-    code: -120174,
-    description: 'Connection settings must be provided when calling getAgenticInstanceToken',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when Failed to acquire instance token for agent instance.
-   */
-  FailedToAcquireInstanceToken: {
-    code: -120175,
-    description: 'Failed to acquire instance token for agent instance: {agentAppInstanceId}',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when Failed to acquire instance token for user token.
-   */
-  FailedToAcquireInstanceTokenForUserToken: {
-    code: -120176,
-    description: 'Failed to acquire instance token for user token: {agentAppInstanceId}',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when Connection settings must be provided when calling getAgenticApplicationToken.
-   */
-  ConnectionSettingsRequiredForGetAgenticApplicationToken: {
-    code: -120177,
-    description: 'Connection settings must be provided when calling getAgenticApplicationToken',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when Failed to acquire token for agent instance.
-   */
-  FailedToAcquireTokenForAgentInstance: {
-    code: -120178,
-    description: 'Failed to acquire token for agent instance: {agentAppInstanceId}',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  // JWT Middleware Errors (-120190 to -120199)
-  /**
-   * Error thrown when token is invalid.
-   */
-  InvalidToken: {
+     * Error thrown when activity.channelId is missing.
+     */
+  MissingActivityChannelId: {
     code: -120190,
-    description: 'invalid token',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
+    description: 'missing activity.channelId'
   },
 
-  // Base Adapter Errors (-120200 to -120209)
   /**
-   * Error thrown when unknown error type.
-   */
-  UnknownErrorType: {
+     * Error thrown when activity.from.id is missing.
+     */
+  MissingActivityFromId: {
     code: -120200,
-    description: 'Unknown error type: {message}',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
+    description: 'missing activity.from.id'
   },
 
-  // App Authorization Errors (-120210 to -120249)
   /**
-   * Error thrown when The AgentApplication.authorization does not have any auth handlers.
-   */
-  NoAuthHandlersConfigured: {
+     * Error thrown when activity.conversation.id is missing.
+     */
+  MissingActivityConversationId: {
     code: -120210,
-    description: 'The AgentApplication.authorization does not have any auth handlers',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
+    description: 'missing activity.conversation.id'
   },
 
   /**
-   * Error thrown when Unsupported authorization handler type.
-   */
-  UnsupportedAuthorizationHandlerType: {
-    code: -120211,
-    description: "Unsupported authorization handler type: '{handlerType}' for auth handler: '{handlerId}'. Supported types are: '{supportedTypes}'.",
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when Unexpected registration status.
-   */
-  UnexpectedRegistrationStatus: {
-    code: -120212,
-    description: 'Unexpected registration status: {status}',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when Failed to sign in.
-   */
-  FailedToSignIn: {
-    code: -120213,
-    description: 'Failed to sign in',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when Cannot find auth handlers with IDs.
-   */
-  CannotFindAuthHandlers: {
-    code: -120214,
-    description: 'Cannot find auth handlers with ID(s): {unknownHandlers}',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when Storage option is not available in the app options.
-   */
-  StorageOptionNotAvailable: {
-    code: -120215,
-    description: "The 'storage' option is not available in the app options. Ensure that the app is properly configured.",
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when Connections option is not available in the app options.
-   */
-  ConnectionsOptionNotAvailable: {
-    code: -120216,
-    description: "The 'connections' option is not available in the app options. Ensure that the app is properly configured.",
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when The name property or connectionName env variable is required.
-   */
-  ConnectionNameRequired: {
-    code: -120217,
-    description: "The 'name' property or '{handlerId}_connectionName' env variable is required to initialize the handler.",
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when Both activity.channelId and activity.from.id are required to perform signout.
-   */
-  ChannelIdAndFromIdRequiredForSignout: {
-    code: -120218,
-    description: "Both 'activity.channelId' and 'activity.from.id' are required to perform signout.",
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when The current token is not exchangeable for an on-behalf-of flow.
-   */
-  TokenNotExchangeable: {
-    code: -120219,
-    description: "The current token is not exchangeable for an on-behalf-of flow. Ensure the token audience starts with 'api://'.",
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when The userTokenClient is not available in the adapter.
-   */
-  UserTokenClientNotAvailable: {
+     * Error thrown when context.activity.channelId is missing.
+     */
+  MissingContextActivityChannelId: {
     code: -120220,
-    description: "The 'userTokenClient' is not available in the adapter. Ensure that the adapter supports user token operations.",
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
+    description: 'missing context.activity.channelId'
   },
 
   /**
-   * Error thrown when At least one scope must be specified for the Agentic authorization handler.
-   */
-  ScopeRequired: {
-    code: -120221,
-    description: 'At least one scope must be specified for the Agentic authorization handler.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
+     * Error thrown when both channelId and from.id are required for operation.
+     */
+  ChannelIdAndFromIdRequired: {
+    code: -120230,
+    description: "Both 'activity.channelId' and 'activity.from.id' are required for this operation.",
   },
 
   /**
-   * Error thrown when Invalid parameters for exchangeToken method.
-   */
-  InvalidExchangeTokenParameters: {
-    code: -120222,
-    description: 'Invalid parameters for exchangeToken method.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
+     * Error thrown when both channelId and from.id are required for signout.
+     */
+  ChannelIdAndFromIdRequiredForSignout: {
+    code: -120240,
+    description: "Both 'activity.channelId' and 'activity.from.id' are required to perform signout.",
   },
 
-  /**
-   * Error thrown when Cannot find auth handler with ID.
-   */
-  CannotFindAuthHandler: {
-    code: -120223,
-    description: "Cannot find auth handler with ID '{id}'. Ensure it is configured in the agent application options.",
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
+  // ============================================================================
+  // Attachment Errors (-120250 to -120290)
+  // ============================================================================
 
   /**
-   * Error thrown when Both activity.channelId and activity.from.id are required to generate the HandlerStorage key.
-   */
-  ChannelIdAndFromIdRequiredForHandlerStorage: {
-    code: -120224,
-    description: "Both 'activity.channelId' and 'activity.from.id' are required to generate the HandlerStorage key.",
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  // App Application Errors (-120250 to -120269)
-  /**
-   * Error thrown when Storage is required for Authorization.
-   */
-  StorageRequiredForAuthorization: {
+     * Error thrown when attachmentData is required but missing.
+     */
+  AttachmentDataRequired: {
     code: -120250,
-    description: 'Storage is required for Authorization. Ensure that a storage provider is configured in the AgentApplication options.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
+    description: 'attachmentData is required'
   },
 
   /**
-   * Error thrown when The Application.authorization property is unavailable.
-   */
-  AuthorizationPropertyUnavailable: {
-    code: -120251,
-    description: 'The Application.authorization property is unavailable because no authorization options were configured.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
+     * Error thrown when attachmentId is required but missing.
+     */
+  AttachmentIdRequired: {
+    code: -120260,
+    description: 'attachmentId is required'
   },
 
   /**
-   * Error thrown when The Application.longRunningMessages property is unavailable.
-   */
-  LongRunningMessagesPropertyUnavailable: {
-    code: -120252,
-    description: 'The Application.longRunningMessages property is unavailable because no adapter was configured in the app.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when The Application.transcriptLogger property is unavailable.
-   */
-  TranscriptLoggerPropertyUnavailable: {
-    code: -120253,
-    description: 'The Application.transcriptLogger property is unavailable because no adapter was configured in the app.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when Extension already registered.
-   */
-  ExtensionAlreadyRegistered: {
-    code: -120254,
-    description: 'Extension already registered',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  // App Turn State Errors (-120270 to -120279)
-  /**
-   * Error thrown when TurnState hasn't been loaded.
-   */
-  TurnStateNotLoaded: {
+     * Error thrown when viewId is required but missing.
+     */
+  ViewIdRequired: {
     code: -120270,
-    description: "TurnState hasn't been loaded. Call load() first.",
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
+    description: 'viewId is required'
   },
 
   /**
-   * Error thrown when TurnState missing state scope.
-   */
-  TurnStateMissingScope: {
-    code: -120271,
-    description: 'TurnStateProperty: TurnState missing state scope named "{scope}".',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when Invalid state scope.
-   */
-  InvalidStateScope: {
-    code: -120272,
-    description: 'Invalid state scope: {scope}',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when Invalid state path.
-   */
-  InvalidStatePath: {
-    code: -120273,
-    description: 'Invalid state path: {path}',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  // App Adaptive Cards Errors (-120280 to -120289)
-  /**
-   * Error thrown when Invalid action value.
-   */
-  InvalidActionValue: {
+     * Error thrown when headers must be provided.
+     */
+  HeadersRequired: {
     code: -120280,
-    description: 'Invalid action value: {error}',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
+    description: 'Headers must be provided.'
   },
 
   /**
-   * Error thrown when Unexpected AdaptiveCards.actionExecute() triggered for activity type.
-   */
-  UnexpectedActionExecute: {
-    code: -120281,
-    description: 'Unexpected AdaptiveCards.actionExecute() triggered for activity type: {activityType}',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when Unexpected AdaptiveCards.actionSubmit() triggered for activity type.
-   */
-  UnexpectedActionSubmit: {
-    code: -120282,
-    description: 'Unexpected AdaptiveCards.actionSubmit() triggered for activity type: {activityType}',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  /**
-   * Error thrown when Unexpected AdaptiveCards.search() triggered for activity type.
-   */
-  UnexpectedSearch: {
-    code: -120283,
-    description: 'Unexpected AdaptiveCards.search() triggered for activity type: {activityType}',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  },
-
-  // App Streaming Errors (-120290 to -120299)
-  /**
-   * Error thrown when The stream has already ended.
-   */
-  StreamAlreadyEnded: {
+     * Error thrown when request.body parameter is required.
+     */
+  RequestBodyParameterRequired: {
     code: -120290,
-    description: 'The stream has already ended.',
-    helplink: 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}'
-  }
+    description: 'request.body parameter required'
+  },
+
+  // ============================================================================
+  // Connection and Authentication Errors (-120300 to -120590)
+  // ============================================================================
+
+  /**
+     * Error thrown when a connection is not found in environment.
+     */
+  ConnectionNotFoundInEnvironment: {
+    code: -120300,
+    description: 'Connection "{connectionName}" not found in environment.'
+  },
+
+  /**
+     * Error thrown when no default connection is found in environment.
+     */
+  NoDefaultConnectionFound: {
+    code: -120310,
+    description: 'No default connection found in environment connections.'
+  },
+
+  /**
+     * Error thrown when ClientId is required in production.
+     */
+  ClientIdRequiredInProduction: {
+    code: -120320,
+    description: 'ClientId required in production'
+  },
+
+  /**
+     * Error thrown when ClientId is not found for connection.
+     */
+  ClientIdNotFoundForConnection: {
+    code: -120330,
+    description: 'ClientId not found for connection: {connectionName}'
+  },
+
+  /**
+     * Error thrown when connector client cannot be created for agentic user.
+     */
+  CannotCreateConnectorClientForAgenticUser: {
+    code: -120340,
+    description: 'Could not create connector client for agentic user'
+  },
+
+  /**
+     * Error thrown when connection is not found by name.
+     */
+  ConnectionNotFound: {
+    code: -120350,
+    description: 'Connection not found: {connectionName}'
+  },
+
+  /**
+     * Error thrown when no connections are found in configuration.
+     */
+  NoConnectionsFoundInConfiguration: {
+    code: -120360,
+    description: 'No connections found for this Agent in the Connections Configuration.'
+  },
+
+  /**
+     * Error thrown when connections option is not available in app options.
+     */
+  ConnectionsOptionNotAvailable: {
+    code: -120370,
+    description: "The 'connections' option is not available in the app options. Ensure that the app is properly configured.",
+  },
+
+  /**
+     * Error thrown when connection settings must be provided.
+     */
+  ConnectionSettingsRequired: {
+    code: -120380,
+    description: 'Connection settings must be provided for this operation.'
+  },
+
+  /**
+     * Error thrown when identity is required to get token provider.
+     */
+  IdentityRequiredForTokenProvider: {
+    code: -120390,
+    description: 'Identity is required to get the token provider.'
+  },
+
+  /**
+     * Error thrown when audience and service URL are required for token provider.
+     */
+  AudienceAndServiceUrlRequiredForTokenProvider: {
+    code: -120400,
+    description: 'Audience and Service URL are required to get the token provider.'
+  },
+
+  /**
+     * Error thrown when no connection found for audience and service URL.
+     */
+  NoConnectionForAudienceAndServiceUrl: {
+    code: -120410,
+    description: 'No connection found for audience: {audience} and serviceUrl: {serviceUrl}'
+  },
+
+  /**
+     * Error thrown when invalid token is provided.
+     */
+  InvalidToken: {
+    code: -120420,
+    description: 'invalid token'
+  },
+
+  /**
+     * Error thrown when invalid parameters for exchangeToken method.
+     */
+  InvalidExchangeTokenParameters: {
+    code: -120430,
+    description: 'Invalid parameters for exchangeToken method.'
+  },
+
+  /**
+     * Error thrown when invalid authConfig is provided.
+     */
+  InvalidAuthConfig: {
+    code: -120440,
+    description: 'Invalid authConfig.'
+  },
+
+  /**
+     * Error thrown when failed to acquire token.
+     */
+  FailedToAcquireToken: {
+    code: -120450,
+    description: 'Failed to acquire token'
+  },
+
+  /**
+     * Error thrown when failed to acquire instance token.
+     */
+  FailedToAcquireInstanceToken: {
+    code: -120460,
+    description: 'Failed to acquire instance token'
+  },
+
+  /**
+     * Error thrown when userTokenClient is not available in adapter.
+     */
+  UserTokenClientNotAvailable: {
+    code: -120470,
+    description: "The 'userTokenClient' is not available in the adapter. Ensure that the adapter supports user token operations.",
+  },
+
+  /**
+     * Error thrown when current token is not exchangeable for OBO flow.
+     */
+  TokenNotExchangeableForOBO: {
+    code: -120480,
+    description: "The current token is not exchangeable for an on-behalf-of flow. Ensure the token audience starts with 'api://'.",
+  },
+
+  /**
+     * Error thrown when name property or connection name env variable is required.
+     */
+  ConnectionNameOrEnvVariableRequired: {
+    code: -120490,
+    description: "The 'name' property or '{handlerId}_connectionName' env variable is required to initialize the handler.",
+  },
+
+  /**
+     * Error thrown when failed to sign out.
+     */
+  FailedToSignOut: {
+    code: -120500,
+    description: 'Failed to sign out'
+  },
+
+  /**
+     * Error thrown when failed to sign in.
+     */
+  FailedToSignIn: {
+    code: -120510,
+    description: 'Failed to sign in'
+  },
+
+  /**
+     * Error thrown when at least one scope must be specified for agentic auth handler.
+     */
+  AtLeastOneScopeRequired: {
+    code: -120520,
+    description: 'At least one scope must be specified for the Agentic authorization handler.'
+  },
+
+  /**
+     * Error thrown when authorization option is not available in app options.
+     */
+  AuthorizationOptionNotAvailable: {
+    code: -120530,
+    description: 'The Application.authorization property is unavailable because no authorization options were configured.'
+  },
+
+  /**
+     * Error thrown when auth handler with specified ID cannot be found.
+     */
+  AuthHandlerNotFound: {
+    code: -120540,
+    description: "Cannot find auth handler with ID '{handlerId}'. Ensure it is configured in the agent application options.",
+  },
+
+  /**
+     * Error thrown when auth handlers with specified IDs cannot be found.
+     */
+  AuthHandlersNotFound: {
+    code: -120550,
+    description: 'Cannot find auth handlers with ID(s): {handlerIds}'
+  },
+
+  /**
+     * Error thrown when AgentApplication.authorization does not have any auth handlers.
+     */
+  NoAuthHandlersConfigured: {
+    code: -120560,
+    description: 'The AgentApplication.authorization does not have any auth handlers'
+  },
+
+  /**
+     * Error thrown when unsupported authorization handler type is encountered.
+     */
+  UnsupportedAuthHandlerType: {
+    code: -120570,
+    description: 'Unsupported authorization handler type: {handlerType}'
+  },
+
+  /**
+     * Error thrown when unexpected registration status is encountered.
+     */
+  UnexpectedRegistrationStatus: {
+    code: -120580,
+    description: 'Unexpected registration status: {status}'
+  },
+
+  /**
+     * Error thrown when storage is required for authorization.
+     */
+  StorageRequiredForAuthorization: {
+    code: -120590,
+    description: 'Storage is required for Authorization. Ensure that a storage provider is configured in the app options.'
+  },
+
+  // ============================================================================
+  // Agent and Client Errors (-120600 to -120630)
+  // ============================================================================
+
+  /**
+     * Error thrown when missing agent client config for specified agent.
+     */
+  MissingAgentClientConfig: {
+    code: -120600,
+    description: 'Missing agent client config for agent {agentName}'
+  },
+
+  /**
+     * Error thrown when agent name is required.
+     */
+  AgentNameRequired: {
+    code: -120610,
+    description: 'Agent name is required'
+  },
+
+  /**
+     * Error thrown when failed to post activity to agent.
+     */
+  FailedToPostActivityToAgent: {
+    code: -120620,
+    description: 'Failed to post activity to agent: {statusText}'
+  },
+
+  /**
+     * Error thrown when logic parameter must be defined.
+     */
+  LogicParameterRequired: {
+    code: -120630,
+    description: 'logic must be defined'
+  },
+
+  // ============================================================================
+  // Storage and State Errors (-120700 to -120730)
+  // ============================================================================
+
+  /**
+     * Error thrown when storage write operation fails due to eTag conflict.
+     */
+  StorageETagConflict: {
+    code: -120700,
+    description: 'Storage: error writing "{key}" due to eTag conflict.'
+  },
+
+  /**
+     * Error thrown when storage option is not available in app options.
+     */
+  StorageOptionNotAvailable: {
+    code: -120710,
+    description: "The 'storage' option is not available in the app options. Ensure that the app is properly configured.",
+  },
+
+  /**
+     * Error thrown when state is not loaded.
+     */
+  StateNotLoaded: {
+    code: -120720,
+    description: 'State not loaded. Call load() before accessing state properties.'
+  },
+
+  /**
+     * Error thrown when invalid state scope is provided.
+     */
+  InvalidStateScope: {
+    code: -120730,
+    description: 'Invalid state scope: {scope}'
+  },
+
+  // ============================================================================
+  // Application Configuration Errors (-120850 to -120900)
+  // ============================================================================
+
+  /**
+     * Error thrown when longRunningMessages property is unavailable.
+     */
+  LongRunningMessagesPropertyUnavailable: {
+    code: -120850,
+    description: 'The Application.longRunningMessages property is unavailable because no adapter was configured in the app.'
+  },
+
+  /**
+     * Error thrown when transcriptLogger property is unavailable.
+     */
+  TranscriptLoggerPropertyUnavailable: {
+    code: -120860,
+    description: 'The Application.transcriptLogger property is unavailable because no adapter was configured in the app.'
+  },
+
+  /**
+     * Error thrown when TranscriptLoggerMiddleware requires a TranscriptLogger instance.
+     */
+  TranscriptLoggerInstanceRequired: {
+    code: -120870,
+    description: 'TranscriptLoggerMiddleware requires a TranscriptLogger instance.'
+  },
+
+  /**
+     * Error thrown when extension is already registered.
+     */
+  ExtensionAlreadyRegistered: {
+    code: -120880,
+    description: 'Extension already registered'
+  },
+
+  /**
+     * Error thrown when invalid plugin type is added to MiddlewareSet.
+     */
+  InvalidMiddlewarePluginType: {
+    code: -120890,
+    description: 'MiddlewareSet.use(): invalid plugin type being added.'
+  },
+
+  /**
+     * Error thrown when the stream has already ended.
+     */
+  StreamAlreadyEnded: {
+    code: -120900,
+    description: 'The stream has already ended.'
+  },
+
+  // ============================================================================
+  // Adaptive Cards Errors (-120950 to -120980)
+  // ============================================================================
+
+  /**
+     * Error thrown when unexpected AdaptiveCards.actionExecute() is triggered.
+     */
+  UnexpectedActionExecute: {
+    code: -120950,
+    description: 'Unexpected AdaptiveCards.actionExecute() triggered for activity type: {activityType}'
+  },
+
+  /**
+     * Error thrown when unexpected AdaptiveCards.actionSubmit() is triggered.
+     */
+  UnexpectedActionSubmit: {
+    code: -120960,
+    description: 'Unexpected AdaptiveCards.actionSubmit() triggered for activity type: {activityType}'
+  },
+
+  /**
+     * Error thrown when unexpected AdaptiveCards.search() is triggered.
+     */
+  UnexpectedSearchAction: {
+    code: -120970,
+    description: 'Unexpected AdaptiveCards.search() triggered for activity type: {activityType}'
+  },
+
+  /**
+     * Error thrown when invalid action value is provided.
+     */
+  InvalidActionValue: {
+    code: -120980,
+    description: 'Invalid action value: {error}'
+  },
+
+  // ============================================================================
+  // General Errors (-120990)
+  // ============================================================================
+
+  /**
+     * Error thrown when unknown error type is encountered.
+     */
+  UnknownErrorType: {
+    code: -120990,
+    description: 'Unknown error type: {errorMessage}'
+  },
 }

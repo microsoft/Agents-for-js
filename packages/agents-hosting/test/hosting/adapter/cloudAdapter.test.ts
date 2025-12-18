@@ -172,24 +172,21 @@ describe('CloudAdapter', function () {
   describe('sendActivities', function () {
     it('throws for bad args', async function () {
       // @ts-expect-error
-      await assert.rejects(cloudAdapter.sendActivities(undefined, []), (err: Error) => {
-        assert.ok(err.name === 'TypeError')
-        assert.ok(err.message.includes('`context` parameter required'))
-        return true
+      await assert.rejects(cloudAdapter.sendActivities(undefined, []), {
+        name: 'TypeError',
+        message: '[-120090] - context parameter required - https://aka.ms/M365AgentsErrorCodesJS/#-120090'
       })
 
       // @ts-expect-error
-      await assert.rejects(cloudAdapter.sendActivities(new TurnContext(cloudAdapter), undefined), (err: Error) => {
-        assert.ok(err.name === 'TypeError')
-        assert.ok(err.message.includes('`activities` parameter required'))
-        return true
+      await assert.rejects(cloudAdapter.sendActivities(new TurnContext(cloudAdapter), undefined), {
+        name: 'TypeError',
+        message: '[-120070] - activities parameter required - https://aka.ms/M365AgentsErrorCodesJS/#-120070'
       })
 
       // @ts-expect-error
-      await assert.rejects(cloudAdapter.sendActivities(new TurnContext(cloudAdapter), []), (err: Error) => {
-        assert.ok(err.name === 'Error')
-        assert.ok(err.message.includes('Expecting one or more activities, but the array was empty.'))
-        return true
+      await assert.rejects(cloudAdapter.sendActivities(new TurnContext(cloudAdapter), []), {
+        name: 'Error',
+        message: '[-120060] - Expecting one or more activities, but the array was empty. - https://aka.ms/M365AgentsErrorCodesJS/#-120060'
       })
     })
 
@@ -293,6 +290,8 @@ describe('CloudAdapter', function () {
       }
 
       const { logic } = bootstrap()
+
+      const error = new Error('[-120130] - continueConversation: Invalid conversation reference object - https://aka.ms/M365AgentsErrorCodesJS/#-120130')
 
       await assert.rejects(
         cloudAdapter.continueConversation(authentication.clientId as string, conversationReference, (context) => {

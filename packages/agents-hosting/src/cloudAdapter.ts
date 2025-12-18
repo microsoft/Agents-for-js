@@ -19,14 +19,15 @@ import * as uuid from 'uuid'
 import { debug } from '@microsoft/agents-activity/logger'
 import { StatusCodes } from './statusCodes'
 import { InvokeResponse } from './invoke/invokeResponse'
-import { AttachmentInfo } from './connector-client/attachmentInfo'
 import { AttachmentData } from './connector-client/attachmentData'
+import { AttachmentInfo } from './connector-client/attachmentInfo'
 import { normalizeIncomingActivity } from './activityWireCompat'
 import { UserTokenClient } from './oauth'
 import { Errors } from './errorHelper'
 import { HeaderPropagation, HeaderPropagationCollection, HeaderPropagationDefinition } from './headerPropagation'
 import { JwtPayload } from 'jsonwebtoken'
 import { getTokenServiceEndpoint } from './oauth/customUserTokenAPI'
+import { Connections } from './auth/connections'
 const logger = debug('agents:cloud-adapter')
 
 /**
@@ -42,7 +43,7 @@ export class CloudAdapter extends BaseAdapter {
   /**
    * Client for connecting to the Azure Bot Service
    */
-  connectionManager: MsalConnectionManager
+  connectionManager: Connections
 
   /**
    * Creates an instance of CloudAdapter.
