@@ -3,7 +3,8 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
 import { AuthConfiguration } from '../auth/authConfiguration'
 import { AuthProvider } from '../auth/authProvider'
 import { debug } from '@microsoft/agents-activity/logger'
-import { Activity, ChannelAccount, ConversationParameters, RoleTypes, Channels } from '@microsoft/agents-activity'
+import { Activity, ChannelAccount, ConversationParameters, RoleTypes, Channels, ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from '../errorHelper'
 import { ConversationsResult } from './conversationsResult'
 import { ConversationResourceResponse } from './conversationResourceResponse'
 import { ResourceResponse } from './resourceResponse'
@@ -143,7 +144,7 @@ export class ConnectorClient {
 
   public async getConversationMember (userId: string, conversationId: string): Promise<ChannelAccount> {
     if (!userId || !conversationId) {
-      throw new Error('userId and conversationId are required')
+      throw ExceptionHelper.generateException(Error, Errors.UserIdAndConversationIdRequired)
     }
     const config: AxiosRequestConfig = {
       method: 'get',
@@ -192,7 +193,7 @@ export class ConnectorClient {
   ): Promise<ResourceResponse> {
     logger.debug(`Replying to activity: ${activityId} in conversation: ${conversationId}`)
     if (!conversationId || !activityId) {
-      throw new Error('conversationId and activityId are required')
+      throw ExceptionHelper.generateException(Error, Errors.ConversationIdAndActivityIdRequired)
     }
 
     const trimmedConversationId: string = this.conditionallyTruncateConversationId(conversationId, body)
@@ -242,7 +243,7 @@ export class ConnectorClient {
   ): Promise<ResourceResponse> {
     logger.debug(`Send to conversation: ${conversationId} activity: ${body.id}`)
     if (!conversationId) {
-      throw new Error('conversationId is required')
+      throw ExceptionHelper.generateException(Error, Errors.ConversationIdRequired)
     }
 
     const trimmedConversationId: string = this.conditionallyTruncateConversationId(conversationId, body)
@@ -272,7 +273,7 @@ export class ConnectorClient {
     body: Activity
   ): Promise<ResourceResponse> {
     if (!conversationId || !activityId) {
-      throw new Error('conversationId and activityId are required')
+      throw ExceptionHelper.generateException(Error, Errors.ConversationIdAndActivityIdRequired)
     }
     const config: AxiosRequestConfig = {
       method: 'put',
@@ -297,7 +298,7 @@ export class ConnectorClient {
     activityId: string
   ): Promise<void> {
     if (!conversationId || !activityId) {
-      throw new Error('conversationId and activityId are required')
+      throw ExceptionHelper.generateException(Error, Errors.ConversationIdAndActivityIdRequired)
     }
     const config: AxiosRequestConfig = {
       method: 'delete',
@@ -321,7 +322,7 @@ export class ConnectorClient {
     body: AttachmentData
   ): Promise<ResourceResponse> {
     if (conversationId === undefined) {
-      throw new Error('conversationId is required')
+      throw ExceptionHelper.generateException(Error, Errors.ConversationIdRequired)
     }
     const config: AxiosRequestConfig = {
       method: 'post',
@@ -344,7 +345,7 @@ export class ConnectorClient {
     attachmentId: string
   ): Promise<AttachmentInfo> {
     if (attachmentId === undefined) {
-      throw new Error('attachmentId is required')
+      throw ExceptionHelper.generateException(Error, Errors.AttachmentIdRequired)
     }
     const config: AxiosRequestConfig = {
       method: 'get',
@@ -368,10 +369,10 @@ export class ConnectorClient {
     viewId: string
   ): Promise<NodeJS.ReadableStream> {
     if (attachmentId === undefined) {
-      throw new Error('attachmentId is required')
+      throw ExceptionHelper.generateException(Error, Errors.AttachmentIdRequired)
     }
     if (viewId === undefined) {
-      throw new Error('viewId is required')
+      throw ExceptionHelper.generateException(Error, Errors.ViewIdRequired)
     }
     const config: AxiosRequestConfig = {
       method: 'get',

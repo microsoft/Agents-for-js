@@ -16,6 +16,6 @@
     },
     "dependencies": {
         "@microsoft/agents-hosting-dialogs": "file:../../packages/agents-hosting-dialogs",
-        "express": "^5.1.0"
+        "express": "^5.2.1"
     }
 }

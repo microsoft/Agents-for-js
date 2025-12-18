@@ -9,7 +9,6 @@ describe('Errors tests', () => {
 
     assert.strictEqual(error.code, -100000)
     assert.strictEqual(error.description, 'CosmosDbPartitionedStorageOptions is required. Provide a valid configuration object with cosmosClientOptions, databaseId, and containerId properties when initializing CosmosDbPartitionedStorage.')
-    assert.strictEqual(error.helplink, 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}')
   })
 
   it('should have MissingCosmosEndpoint error definition', () => {
@@ -17,7 +16,6 @@ describe('Errors tests', () => {
 
     assert.strictEqual(error.code, -100001)
     assert.strictEqual(error.description, 'The endpoint property in cosmosClientOptions is required. Provide your Cosmos DB account endpoint URL (e.g., https://your-account.documents.azure.com:443/).')
-    assert.strictEqual(error.helplink, 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}')
   })
 
   it('should have MissingCosmosCredentials error definition', () => {
@@ -25,12 +23,12 @@ describe('Errors tests', () => {
 
     assert.strictEqual(error.code, -100002)
     assert.strictEqual(error.description, 'Authentication credentials are required in cosmosClientOptions. Provide either a key (connection key) or tokenProvider (for token-based authentication).')
-    assert.strictEqual(error.helplink, 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}')
+    assert.strictEqual(error.helplink, undefined)
   })
 
   it('should have all error codes in the correct range', () => {
     const errorDefinitions = Object.values(Errors).filter(
-      val => val && typeof val === 'object' && 'code' in val && 'description' in val && 'helplink' in val
+      val => val && typeof val === 'object' && 'code' in val && 'description' in val
     ) as AgentErrorDefinition[]
 
     // All error codes should be negative and in the range -100000 to -100019
@@ -43,7 +41,7 @@ describe('Errors tests', () => {
 
   it('should have unique error codes', () => {
     const errorDefinitions = Object.values(Errors).filter(
-      val => val && typeof val === 'object' && 'code' in val && 'description' in val && 'helplink' in val
+      val => val && typeof val === 'object' && 'code' in val && 'description' in val
     ) as AgentErrorDefinition[]
 
     const codes = errorDefinitions.map(e => e.code)
@@ -52,26 +50,20 @@ describe('Errors tests', () => {
     assert.strictEqual(codes.length, uniqueCodes.size, 'All error codes should be unique')
   })
 
-  it('should have help links with tokenized format', () => {
+  it('should not have helplink defined (using default)', () => {
     const errorDefinitions = Object.values(Errors).filter(
-      val => val && typeof val === 'object' && 'code' in val && 'description' in val && 'helplink' in val
+      val => val && typeof val === 'object' && 'code' in val && 'description' in val
     ) as AgentErrorDefinition[]
 
+    // All errors should not have a helplink property (they will use the default from ExceptionHelper)
     errorDefinitions.forEach(errorDef => {
-      assert.ok(
-        errorDef.helplink.includes('{errorCode}'),
-        `Help link should contain {errorCode} token: ${errorDef.helplink}`
-      )
-      assert.ok(
-        errorDef.helplink.startsWith('https://aka.ms/M365AgentsErrorCodes/#'),
-        `Help link should start with correct URL: ${errorDef.helplink}`
-      )
+      assert.strictEqual(errorDef.helplink, undefined, 'Helplink should be undefined to use default')
     })
   })
 
   it('should have non-empty descriptions', () => {
     const errorDefinitions = Object.values(Errors).filter(
-      val => val && typeof val === 'object' && 'code' in val && 'description' in val && 'helplink' in val
+      val => val && typeof val === 'object' && 'code' in val && 'description' in val
     ) as AgentErrorDefinition[]
 
     errorDefinitions.forEach(errorDef => {

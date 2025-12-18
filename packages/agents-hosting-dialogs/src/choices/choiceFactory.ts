@@ -2,9 +2,10 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
-import { ActionTypes, Activity, InputHints } from '@microsoft/agents-activity'
+import { ActionTypes, Activity, CardAction, Channels, InputHints } from '@microsoft/agents-activity'
 import {
 
+  CardFactory,
   MessageFactory,
   TurnContext,
 } from '@microsoft/agents-hosting'
@@ -57,6 +58,7 @@ export class ChoiceFactory {
      * @param text (Optional) text of the message.
      * @param speak (Optional) SSML to speak for the message.
      * @param options (Optional) formatting options to use when rendering as a list.
+     * @param conversationType (Optional) the type of the conversation.
      * @returns The created message activity.
      */
   static forChannel (
@@ -64,8 +66,12 @@ export class ChoiceFactory {
     choices: (string | Choice)[],
     text?: string,
     speak?: string,
-    options?: ChoiceFactoryOptions
+    options?: ChoiceFactoryOptions,
+    conversationType?: string
   ): Activity {
+    const channelId: string =
+            typeof channelOrContext === 'string' ? channelOrContext : this.getChannelId(channelOrContext)
+
     const list: Choice[] = ChoiceFactory.toChoices(choices)
 
     let maxTitleLength = 0
@@ -76,13 +82,30 @@ export class ChoiceFactory {
       }
     })
 
+    // Determine list style
+    const supportsSuggestedActions: boolean = this.supportsSuggestedActions(channelId, choices.length, conversationType)
+    const supportsCardActions = this.supportsCardActions(channelId, choices.length)
     const longTitles: boolean = maxTitleLength > this.MAX_ACTION_TITLE_LENGTH
+
+    if (!longTitles && !supportsSuggestedActions && supportsCardActions) {
+      // SuggestedActions is the preferred approach, but for channels that don't
+      // support them (e.g. Teams) we should use a HeroCard with CardActions
+      return ChoiceFactory.heroCard(list, text, speak)
+    }
+
+    if (!longTitles && supportsSuggestedActions) {
+      // We always prefer showing choices using suggested actions. If the titles are too long, however,
+      // we'll have to show them as a text list.
+      return ChoiceFactory.suggestedActions(list, text, speak)
+    }
+
     if (!longTitles && choices.length <= 3) {
       // If the titles are short and there are 3 or less choices we'll use an inline list.
       return ChoiceFactory.inline(list, text, speak, options)
-    } else {
-      return ChoiceFactory.list(list, text, speak, options)
     }
+
+    // Show a numbered list.
+    return ChoiceFactory.list(list, text, speak, options)
   }
 
   /**
@@ -160,6 +183,62 @@ export class ChoiceFactory {
   }
 
   /**
+     * Returns a 'message' activity containing a list of choices that has been formatted as suggested actions.
+     *
+     * @param choices List of choices to render.
+     * @param text (Optional) Text of the message.
+     * @param speak (Optional) SSML to speak for the message.
+     * @returns The created message activity.
+     */
+  static suggestedActions (
+    choices: (string | Choice)[],
+    text?: string,
+    speak?: string
+  ): Activity {
+    // Map choices to actions
+    const actions: CardAction[] = ChoiceFactory.toChoices(choices).map<CardAction>((choice: Choice) => {
+      if (choice.action) {
+        return choice.action
+      } else {
+        return { type: ActionTypes.ImBack, value: choice.value, title: choice.value, channelData: undefined }
+      }
+    })
+
+    // Return activity with choices as suggested actions
+    return MessageFactory.suggestedActions(actions, text, speak, InputHints.ExpectingInput)
+  }
+
+  /**
+     * Returns a 'message' activity that includes a list of choices that have been added as `HeroCard`'s.
+     *
+     * @param choices List of choices to render.
+     * @param text (Optional) Text of the message.
+     * @param speak (Optional) SSML to speak for the message.
+     * @returns The created message activity with choices as a HeroCard with buttons.
+     */
+  static heroCard (
+    choices: (string | Choice)[],
+    text?: string,
+    speak?: string
+  ): Activity {
+    const buttons: CardAction[] = ChoiceFactory.toChoices(choices).map<CardAction>((choice: Choice) => {
+      if (choice.action) {
+        return choice.action
+      } else {
+        return {
+          title: choice.value,
+          type: ActionTypes.ImBack,
+          value: choice.value,
+        }
+      }
+    })
+
+    const attachment = CardFactory.heroCard(undefined, text, undefined, buttons)
+
+    return MessageFactory.attachment(attachment, undefined, speak, InputHints.ExpectingInput) as Activity
+  }
+
+  /**
      * Takes a mixed list of `string` and `Choice` based choices and returns them as a `Choice[]`.
      *
      * @param choices List of choices to add.
@@ -183,5 +262,73 @@ export class ChoiceFactory {
         return choice
       })
       .filter((choice: Choice) => choice)
+  }
+
+  /**
+   * @private
+   * Determines if a number of Suggested Actions are supported by a Channel.
+   * @param channelId The Channel to check if Suggested Actions are supported in.
+   * @param buttonCnt Optional. The number of Suggested Actions to check for the Channel.
+   * @param conversationType Optional.The type of the conversation.
+   * @returns true if the Channel supports the buttonCnt total Suggested Actions, false if the Channel does not support that number of Suggested Actions.
+   */
+  private static supportsSuggestedActions (channelId: string, buttonCnt = 100, conversationType: string = ''): boolean {
+    switch (channelId) {
+      case Channels.Facebook:
+      case Channels.Skype:
+        return buttonCnt <= 10
+      case Channels.Line:
+        return buttonCnt <= 13
+      case Channels.Telegram:
+      case Channels.Emulator:
+      case Channels.Directline:
+      case Channels.Webchat:
+      case Channels.DirectlineSpeech:
+        return buttonCnt <= 100
+      case Channels.Msteams:
+        if (conversationType === 'personal') {
+          return buttonCnt <= 3
+        }
+        return false
+      default:
+        return false
+    }
+  }
+
+  /**
+   * @private
+   * Determines if a number of Card Actions are supported by a Channel.
+   * @param channelId The Channel to check if the Card Actions are supported in.
+   * @param buttonCnt Optional. The number of Card Actions to check for the Channel.
+   * @returns true if the Channel supports the buttonCnt total Card Actions, false if the Channel does not support that number of Card Actions.
+   */
+  private static supportsCardActions (channelId: string, buttonCnt = 100): boolean {
+    switch (channelId) {
+      case Channels.Facebook:
+      case Channels.Skype:
+        return buttonCnt <= 3
+      // any "msteams" channel regardless of subchannel since the switch is on channelId.Channel
+      case Channels.Msteams:
+        return buttonCnt <= 50
+      case Channels.Line:
+        return buttonCnt <= 99
+      case Channels.Slack:
+      case Channels.Telegram:
+      case Channels.Emulator:
+      case Channels.Directline:
+      case Channels.DirectlineSpeech:
+      case Channels.Webchat:
+        return buttonCnt <= 100
+      default:
+        return false
+    }
+  }
+
+  /**
+ * @private
+ * @param context a TurnContext object representing an incoming message.
+ */
+  private static getChannelId (context: TurnContext): string {
+    return context.activity.channelId || ''
   }
 }

@@ -3,6 +3,8 @@
  * Licensed under the MIT License.
  */
 import { MemoryScope } from './memoryScope'
+import { ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from '../../errorHelper'
 import { ScopePath } from '../scopePath'
 import { DialogContext } from '../../dialogContext'
 import { DialogContainer } from '../../dialogContainer'
@@ -47,7 +49,12 @@ export class DialogMemoryScope extends MemoryScope {
    */
   setMemory (dialogContext: DialogContext, memory: object): void {
     if (memory === undefined) {
-      throw new Error('DialogMemoryScope.setMemory: undefined memory object passed in.')
+      throw ExceptionHelper.generateException(
+        Error,
+        Errors.UndefinedMemoryObject,
+        undefined,
+        { scopeName: 'DialogMemoryScope' }
+      )
     }
 
     // If active dialog is a container dialog then "dialog" binds to it.
@@ -60,7 +67,10 @@ export class DialogMemoryScope extends MemoryScope {
 
     // If there's no active dialog then throw an error.
     if (!parent.activeDialog) {
-      throw new Error('DialogMemoryScope.setMemory: no active dialog found.')
+      throw ExceptionHelper.generateException(
+        Error,
+        Errors.ActiveDialogUndefined
+      )
     }
 
     parent.activeDialog.state = memory
