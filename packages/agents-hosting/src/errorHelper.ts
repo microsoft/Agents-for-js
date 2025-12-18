@@ -572,6 +572,22 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
     description: 'Invalid state scope: {scope}'
   },
 
+  /**
+   * Error thrown when Keys are required when reading.
+   */
+  KeysRequiredForReading: {
+    code: -120740,
+    description: 'Keys are required when reading.'
+  },
+
+  /**
+   * Error thrown when Changes are required when writing.
+   */
+  ChangesRequiredForWriting: {
+    code: -120750,
+    description: 'Changes are required when writing.'
+  },
+
   // ============================================================================
   // Application Configuration Errors (-120850 to -120900)
   // ============================================================================

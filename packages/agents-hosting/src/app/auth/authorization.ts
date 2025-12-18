@@ -256,7 +256,7 @@ export class UserAuthorization implements Authorization {
    */
   private getHandler (id: string) {
     if (!Object.prototype.hasOwnProperty.call(this.manager.handlers, id)) {
-      throw ExceptionHelper.generateException(Error, Errors.CannotFindAuthHandler, undefined, { id })
+      throw ExceptionHelper.generateException(Error, Errors.AuthHandlerNotFound, undefined, { handlerId: id })
     }
     return this.manager.handlers[id]
   }

@@ -107,7 +107,7 @@ export class MemoryStorage implements Storage {
         if (newItem.eTag === oldItem.eTag) {
           this.saveItem(key, newItem)
         } else {
-          throw ExceptionHelper.generateException(Error, Errors.StorageEtagConflict, undefined, { key })
+          throw ExceptionHelper.generateException(Error, Errors.StorageETagConflict, undefined, { key })
         }
       }
     }

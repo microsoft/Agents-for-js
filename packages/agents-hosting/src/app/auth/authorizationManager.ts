@@ -200,7 +200,7 @@ export class AuthorizationManager {
       return this._handlers[id]
     })
     if (unknownHandlers) {
-      throw ExceptionHelper.generateException(Error, Errors.CannotFindAuthHandlers, undefined, { unknownHandlers })
+      throw ExceptionHelper.generateException(Error, Errors.AuthHandlerNotFound, undefined, { handlerId: unknownHandlers })
     }
     return handlers
   }

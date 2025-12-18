@@ -9,7 +9,6 @@ describe('Activity Errors tests', () => {
 
     assert.strictEqual(error.code, -110000)
     assert.strictEqual(error.description, 'Invalid ActivityType: undefined')
-    assert.strictEqual(error.helplink, 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}')
   })
 
   it('should have InvalidActivityTypeNull error definition', () => {
@@ -17,7 +16,6 @@ describe('Activity Errors tests', () => {
 
     assert.strictEqual(error.code, -110001)
     assert.strictEqual(error.description, 'Invalid ActivityType: null')
-    assert.strictEqual(error.helplink, 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}')
   })
 
   it('should have InvalidActivityTypeEmptyString error definition', () => {
@@ -25,7 +23,6 @@ describe('Activity Errors tests', () => {
 
     assert.strictEqual(error.code, -110002)
     assert.strictEqual(error.description, 'Invalid ActivityType: empty string')
-    assert.strictEqual(error.helplink, 'https://aka.ms/M365AgentsErrorCodes/#{errorCode}')
   })
 
   it('should have all error codes in the correct range', () => {
@@ -59,11 +56,11 @@ describe('Activity Errors tests', () => {
 
     errorDefinitions.forEach(errorDef => {
       assert.ok(
-        errorDef.helplink.includes('{errorCode}'),
+        errorDef.helplink?.includes('{errorCode}'),
         `Help link should contain {errorCode} token: ${errorDef.helplink}`
       )
       assert.ok(
-        errorDef.helplink.startsWith('https://aka.ms/M365AgentsErrorCodes/#'),
+        errorDef.helplink?.startsWith('https://aka.ms/M365AgentsErrorCodes/#'),
         `Help link should start with correct URL: ${errorDef.helplink}`
       )
     })

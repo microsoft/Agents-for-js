@@ -133,7 +133,7 @@ export const loadAuthConfigFromEnv = (cnxName?: string): AuthConfiguration => {
       if (entry) {
         authConfig = entry
       } else {
-        throw ExceptionHelper.generateException(Error, Errors.ConnectionNotFoundInEnvironment, undefined, { cnxName })
+        throw ExceptionHelper.generateException(Error, Errors.ConnectionNotFoundInEnvironment, undefined, { connectionName: cnxName })
       }
     } else {
       const defaultItem = envConnections.connectionsMap.find((item) => item.serviceUrl === '*')
@@ -326,7 +326,7 @@ function buildLegacyAuthConfig (envPrefix: string = '', customConfig?: AuthConfi
     throw ExceptionHelper.generateException(Error, Errors.ClientIdRequiredInProduction)
   }
   if (!clientId && envPrefix) {
-    throw ExceptionHelper.generateException(Error, Errors.ClientIdNotFoundForConnection, undefined, { envPrefix })
+    throw ExceptionHelper.generateException(Error, Errors.ClientIdNotFoundForConnection, undefined, { connectionName: envPrefix })
   }
 
   const tenantId = customConfig?.tenantId ?? process.env[`${prefix}tenantId`]

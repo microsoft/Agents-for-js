@@ -153,7 +153,7 @@ export class AgentApplication<TState extends TurnState> {
    */
   public get authorization (): Authorization {
     if (!this._authorization) {
-      throw ExceptionHelper.generateException(Error, Errors.AuthorizationPropertyUnavailable)
+      throw ExceptionHelper.generateException(Error, Errors.AuthorizationOptionNotAvailable)
     }
     return this._authorization
   }
@@ -437,7 +437,7 @@ export class AgentApplication<TState extends TurnState> {
     if (this.options.authorization) {
       this.authorization.onSignInSuccess(handler)
     } else {
-      throw ExceptionHelper.generateException(Error, Errors.AuthorizationPropertyUnavailable)
+      throw ExceptionHelper.generateException(Error, Errors.AuthorizationOptionNotAvailable)
     }
     return this
   }
@@ -465,7 +465,7 @@ export class AgentApplication<TState extends TurnState> {
     if (this.options.authorization) {
       this.authorization.onSignInFailure(handler)
     } else {
-      throw ExceptionHelper.generateException(Error, Errors.AuthorizationPropertyUnavailable)
+      throw ExceptionHelper.generateException(Error, Errors.AuthorizationOptionNotAvailable)
     }
     return this
   }

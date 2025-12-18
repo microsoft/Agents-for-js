@@ -18,7 +18,7 @@ describe('AgentApplication', () => {
       })
       assert.equal(app.options.authorization, undefined)
     }, (err: Error) => {
-      assert.ok(err.message.includes('Storage is required for Authorization. Ensure that a storage provider is configured in the AgentApplication options.'))
+      assert.ok(err.message.includes('Storage is required for Authorization. Ensure that a storage provider is configured in the app options.'))
       return true
     })
   })

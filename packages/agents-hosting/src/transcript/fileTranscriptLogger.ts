@@ -329,11 +329,11 @@ export class FileTranscriptLogger implements TranscriptStore {
    */
   private getTranscriptFile (channelId: string, conversationId: string): string {
     if (!channelId?.trim()) {
-      throw ExceptionHelper.generateException(Error, Errors.TranscriptChannelIdRequired)
+      throw ExceptionHelper.generateException(Error, Errors.ChannelIdRequired)
     }
 
     if (!conversationId?.trim()) {
-      throw ExceptionHelper.generateException(Error, Errors.TranscriptConversationIdRequired)
+      throw ExceptionHelper.generateException(Error, Errors.ConversationIdRequired)
     }
 
     // Get invalid filename characters (cross-platform)
@@ -354,7 +354,7 @@ export class FileTranscriptLogger implements TranscriptStore {
    */
   private getChannelFolder (channelId: string): string {
     if (!channelId?.trim()) {
-      throw ExceptionHelper.generateException(Error, Errors.TranscriptChannelIdRequired)
+      throw ExceptionHelper.generateException(Error, Errors.ChannelIdRequired)
     }
 
     const invalidChars = this.getInvalidPathChars()
