@@ -116,8 +116,9 @@ describe('TurnContext', { timeout: 5000 }, function () {
   it('should throw if you set responded to false.', function () {
     const context = new TurnContext(new SimpleAdapter(), testMessage)
     context.responded = true
-    assert.throws(() => (context.responded = false), {
-      message: "TurnContext: cannot set 'responded' to a value of 'false'."
+    assert.throws(() => (context.responded = false), (err: Error) => {
+      assert.ok(err.message.includes("TurnContext: cannot set 'responded' to a value of 'false'."))
+      return true
     })
   })
 

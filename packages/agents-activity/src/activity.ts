@@ -26,8 +26,8 @@ import { MessageReaction, messageReactionZodSchema } from './messageReaction'
 import { TextFormatTypes, textFormatTypesZodSchema } from './textFormatTypes'
 import { TextHighlight, textHighlightZodSchema } from './textHighlight'
 import { RoleTypes } from './conversation/roleTypes'
-import { ExceptionHelper } from './exceptionHelper'
 import { Errors } from './errorHelper'
+import { ExceptionHelper } from './exceptionHelper'
 
 /**
  * Zod schema for validating an Activity object.
@@ -318,22 +318,13 @@ export class Activity {
    */
   constructor (t: ActivityTypes | string) {
     if (t === undefined) {
-      throw ExceptionHelper.generateException(
-        Error,
-        Errors.InvalidActivityTypeUndefined
-      )
+      throw ExceptionHelper.generateException(Error, Errors.InvalidActivityTypeUndefined)
     }
     if (t === null) {
-      throw ExceptionHelper.generateException(
-        Error,
-        Errors.InvalidActivityTypeNull
-      )
+      throw ExceptionHelper.generateException(Error, Errors.InvalidActivityTypeNull)
     }
     if ((typeof t === 'string') && (t.length === 0)) {
-      throw ExceptionHelper.generateException(
-        Error,
-        Errors.InvalidActivityTypeEmptyString
-      )
+      throw ExceptionHelper.generateException(Error, Errors.InvalidActivityTypeEmptyString)
     }
 
     this.type = t
@@ -393,12 +384,7 @@ export class Activity {
 
     // if they passed in a value but the channel is blank, this is invalid
     if (value && !channel) {
-      throw ExceptionHelper.generateException(
-        Error,
-        Errors.InvalidChannelIdFormat,
-        undefined,
-        { channelId: value }
-      )
+      throw ExceptionHelper.generateException(Error, Errors.InvalidChannelIdFormat, undefined, { channelId: value })
     }
     this._channelId = channel
     if (subChannel) {
@@ -434,10 +420,7 @@ export class Activity {
    */
   set channelIdSubChannel (value) {
     if (!this._channelId) {
-      throw ExceptionHelper.generateException(
-        Error,
-        Errors.PrimaryChannelNotSet
-      )
+      throw ExceptionHelper.generateException(Error, Errors.PrimaryChannelNotSet)
     }
     this.channelId = `${this._channelId}${value ? `:${value}` : ''}`
   }
@@ -486,22 +469,13 @@ export class Activity {
    */
   public getConversationReference (): ConversationReference {
     if (this.recipient === null || this.recipient === undefined) {
-      throw ExceptionHelper.generateException(
-        Error,
-        Errors.ActivityRecipientUndefined
-      )
+      throw ExceptionHelper.generateException(Error, Errors.ActivityRecipientUndefined)
     }
     if (this.conversation === null || this.conversation === undefined) {
-      throw ExceptionHelper.generateException(
-        Error,
-        Errors.ActivityConversationUndefined
-      )
+      throw ExceptionHelper.generateException(Error, Errors.ActivityConversationUndefined)
     }
     if (this.channelId === null || this.channelId === undefined) {
-      throw ExceptionHelper.generateException(
-        Error,
-        Errors.ActivityChannelIdUndefined
-      )
+      throw ExceptionHelper.generateException(Error, Errors.ActivityChannelIdUndefined)
     }
 
     return {

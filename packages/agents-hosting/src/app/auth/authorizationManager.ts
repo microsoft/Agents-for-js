@@ -3,9 +3,10 @@
  * Licensed under the MIT License.
  */
 
-import { Activity, debug } from '@microsoft/agents-activity'
+import { Activity, debug, ExceptionHelper } from '@microsoft/agents-activity'
 import { AgentApplication } from '../agentApplication'
 import { AgenticAuthorization, AzureBotAuthorization } from './handlers'
+import { Errors } from '../../errorHelper'
 import { TurnContext } from '../../turnContext'
 import { HandlerStorage } from './handlerStorage'
 import { ActiveAuthorizationHandler, AuthorizationHandlerStatus, AuthorizationHandler, AuthorizationHandlerSettings, AuthorizationOptions } from './types'
@@ -53,11 +54,11 @@ export class AuthorizationManager {
    */
   constructor (private app: AgentApplication<any>, connections: Connections) {
     if (!app.options.storage) {
-      throw new Error('Storage is required for Authorization. Ensure that a storage provider is configured in the AgentApplication options.')
+      throw ExceptionHelper.generateException(Error, Errors.StorageRequiredForAuthorization)
     }
 
     if (app.options.authorization === undefined || Object.keys(app.options.authorization).length === 0) {
-      throw new Error('The AgentApplication.authorization does not have any auth handlers')
+      throw ExceptionHelper.generateException(Error, Errors.NoAuthHandlersConfigured)
     }
 
     const settings: AuthorizationHandlerSettings = { storage: app.options.storage, connections }
@@ -83,7 +84,7 @@ export class AuthorizationManager {
     // Validate supported types, agentic, and default (Azure Bot - undefined)
     const supportedTypes = ['agentic', undefined]
     if (!supportedTypes.includes(result.type)) {
-      throw new Error(`Unsupported authorization handler type: '${result.type}' for auth handler: '${id}'. Supported types are: '${supportedTypes.filter(Boolean).join('\', \'')}'.`)
+      throw ExceptionHelper.generateException(Error, Errors.UnsupportedAuthHandlerType, undefined, { handlerType: result.type || 'undefined' })
     }
 
     return result
@@ -134,7 +135,7 @@ export class AuthorizationManager {
       }
 
       if (status !== AuthorizationHandlerStatus.APPROVED) {
-        throw new Error(this.prefix(handler.id, `Unexpected registration status: ${status}`))
+        throw ExceptionHelper.generateException(Error, Errors.UnexpectedRegistrationStatus, undefined, { status })
       }
 
       await storage.delete()
@@ -183,7 +184,7 @@ export class AuthorizationManager {
       return await handler.signin(context, active)
     } catch (cause) {
       await storage.delete()
-      throw new Error(this.prefix(handler.id, 'Failed to sign in'), { cause })
+      throw ExceptionHelper.generateException(Error, Errors.FailedToSignIn, cause instanceof Error ? cause : undefined)
     }
   }
 
@@ -199,7 +200,7 @@ export class AuthorizationManager {
       return this._handlers[id]
     })
     if (unknownHandlers) {
-      throw new Error(`Cannot find auth handlers with ID(s): ${unknownHandlers}`)
+      throw ExceptionHelper.generateException(Error, Errors.AuthHandlerNotFound, undefined, { handlerId: unknownHandlers })
     }
     return handlers
   }
