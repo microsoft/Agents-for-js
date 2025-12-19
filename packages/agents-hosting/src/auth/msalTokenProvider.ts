@@ -52,7 +52,7 @@ export class MsalTokenProvider implements AuthProvider {
     if (typeof authConfigOrScope === 'string') {
     // Called as getAccessToken(scope)
       if (!this.connectionSettings) {
-        throw ExceptionHelper.generateException(Error, Errors.ConnectionSettingsRequiredForGetAccessToken)
+        throw ExceptionHelper.generateException(Error, Errors.ConnectionSettingsRequired)
       }
       authConfig = this.connectionSettings
       actualScope = authConfigOrScope
@@ -104,7 +104,7 @@ export class MsalTokenProvider implements AuthProvider {
     if (Array.isArray(authConfigOrScopes)) {
     // Called as acquireTokenOnBehalfOf(scopes, oboAssertion)
       if (!this.connectionSettings) {
-        throw ExceptionHelper.generateException(Error, Errors.ConnectionSettingsRequiredForAcquireTokenOnBehalfOf)
+        throw ExceptionHelper.generateException(Error, Errors.ConnectionSettingsRequired)
       }
       authConfig = this.connectionSettings
       actualScopes = authConfigOrScopes
@@ -134,7 +134,7 @@ export class MsalTokenProvider implements AuthProvider {
   public async getAgenticInstanceToken (tenantId: string, agentAppInstanceId: string): Promise<string> {
     logger.debug('Getting agentic instance token')
     if (!this.connectionSettings) {
-      throw ExceptionHelper.generateException(Error, Errors.ConnectionSettingsRequiredForGetAgenticInstanceToken)
+      throw ExceptionHelper.generateException(Error, Errors.ConnectionSettingsRequired)
     }
     const appToken = await this.getAgenticApplicationToken(tenantId, agentAppInstanceId)
     const cca = new ConfidentialClientApplication({
@@ -189,7 +189,7 @@ export class MsalTokenProvider implements AuthProvider {
    */
   private async acquireTokenByForAgenticScenarios (tenantId: string, clientId: string, clientAssertion: string | undefined, scopes: string[], tokenBodyParameters: { [key: string]: any }): Promise<string | null> {
     if (!this.connectionSettings) {
-      throw ExceptionHelper.generateException(Error, Errors.ConnectionSettingsRequiredForGetAgenticInstanceToken)
+      throw ExceptionHelper.generateException(Error, Errors.ConnectionSettingsRequired)
     }
 
     // Check cache first
@@ -243,7 +243,7 @@ export class MsalTokenProvider implements AuthProvider {
     })
 
     if (!token) {
-      throw ExceptionHelper.generateException(Error, Errors.FailedToAcquireInstanceTokenForUserToken, undefined, { agentAppInstanceId })
+      throw ExceptionHelper.generateException(Error, Errors.FailedToAcquireInstanceToken, undefined, { agentAppInstanceId })
     }
 
     return token
@@ -251,7 +251,7 @@ export class MsalTokenProvider implements AuthProvider {
 
   public async getAgenticApplicationToken (tenantId: string, agentAppInstanceId: string): Promise<string> {
     if (!this.connectionSettings?.clientId) {
-      throw ExceptionHelper.generateException(Error, Errors.ConnectionSettingsRequiredForGetAgenticApplicationToken)
+      throw ExceptionHelper.generateException(Error, Errors.ConnectionSettingsRequired)
     }
     logger.debug('Getting agentic application token')
     const token = await this.acquireTokenByForAgenticScenarios(tenantId, this.connectionSettings.clientId, undefined, ['api://AzureAdTokenExchange/.default'], {
@@ -260,7 +260,7 @@ export class MsalTokenProvider implements AuthProvider {
     })
 
     if (!token) {
-      throw ExceptionHelper.generateException(Error, Errors.FailedToAcquireTokenForAgentInstance, undefined, { agentAppInstanceId })
+      throw ExceptionHelper.generateException(Error, Errors.FailedToAcquireToken, undefined, { agentAppInstanceId })
     }
 
     return token

@@ -21,7 +21,7 @@ export class TranscriptLoggerMiddleware implements Middleware {
    */
   constructor (logger: TranscriptLogger) {
     if (!logger) {
-      throw ExceptionHelper.generateException(Error, Errors.TranscriptLoggerRequired)
+      throw ExceptionHelper.generateException(Error, Errors.TranscriptLoggerInstanceRequired)
     }
 
     this.logger = logger

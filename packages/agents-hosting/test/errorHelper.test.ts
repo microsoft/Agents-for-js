@@ -28,7 +28,7 @@ describe('HostingErrors', () => {
   })
 
   it('should support parameter substitution in error messages', () => {
-    const error = ExceptionHelper.generateException(Error, Errors.ConnectionNotFound, undefined, { connectionName: 'test-conn' })
+    const error = ExceptionHelper.generateException(Error, Errors.ConnectionNotFoundInEnvironment, undefined, { connectionName: 'test-conn' })
     assert.ok(error.message.includes('test-conn'))
   })
 

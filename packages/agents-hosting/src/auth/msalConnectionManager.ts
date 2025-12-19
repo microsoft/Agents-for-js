@@ -49,7 +49,7 @@ export class MsalConnectionManager implements Connections {
   getConnection (connectionName: string): MsalTokenProvider {
     const conn = this._connections.get(connectionName)
     if (!conn) {
-      throw ExceptionHelper.generateException(Error, Errors.ConnectionNotFound, undefined, { connectionName })
+      throw ExceptionHelper.generateException(Error, Errors.ConnectionNotFoundInEnvironment, undefined, { connectionName })
     }
     return this.applyConnectionDefaults(conn)
   }

@@ -89,7 +89,7 @@ export class TurnState<
   public get conversation (): TConversationState {
     const scope = this.getScope(CONVERSATION_SCOPE)
     if (!scope) {
-      throw ExceptionHelper.generateException(Error, Errors.TurnStateNotLoaded)
+      throw ExceptionHelper.generateException(Error, Errors.StateNotLoaded)
     }
     return scope.value as TConversationState
   }
@@ -103,7 +103,7 @@ export class TurnState<
   public set conversation (value: TConversationState) {
     const scope = this.getScope(CONVERSATION_SCOPE)
     if (!scope) {
-      throw ExceptionHelper.generateException(Error, Errors.TurnStateNotLoaded)
+      throw ExceptionHelper.generateException(Error, Errors.StateNotLoaded)
     }
     scope.replace(value as Record<string, unknown>)
   }
@@ -129,7 +129,7 @@ export class TurnState<
   public get user (): TUserState {
     const scope = this.getScope(USER_SCOPE)
     if (!scope) {
-      throw ExceptionHelper.generateException(Error, Errors.TurnStateNotLoaded)
+      throw ExceptionHelper.generateException(Error, Errors.StateNotLoaded)
     }
     return scope.value as TUserState
   }
@@ -143,7 +143,7 @@ export class TurnState<
   public set user (value: TUserState) {
     const scope = this.getScope(USER_SCOPE)
     if (!scope) {
-      throw ExceptionHelper.generateException(Error, Errors.TurnStateNotLoaded)
+      throw ExceptionHelper.generateException(Error, Errors.StateNotLoaded)
     }
     scope.replace(value as Record<string, unknown>)
   }
@@ -159,7 +159,7 @@ export class TurnState<
   public deleteConversationState (): void {
     const scope = this.getScope(CONVERSATION_SCOPE)
     if (!scope) {
-      throw ExceptionHelper.generateException(Error, Errors.TurnStateNotLoaded)
+      throw ExceptionHelper.generateException(Error, Errors.StateNotLoaded)
     }
     scope.delete()
   }
@@ -175,7 +175,7 @@ export class TurnState<
   public deleteUserState (): void {
     const scope = this.getScope(USER_SCOPE)
     if (!scope) {
-      throw ExceptionHelper.generateException(Error, Errors.TurnStateNotLoaded)
+      throw ExceptionHelper.generateException(Error, Errors.StateNotLoaded)
     }
     scope.delete()
   }
@@ -318,7 +318,7 @@ export class TurnState<
     }
 
     if (!this._isLoaded) {
-      throw ExceptionHelper.generateException(Error, Errors.TurnStateNotLoaded)
+      throw ExceptionHelper.generateException(Error, Errors.StateNotLoaded)
     }
 
     let changes: StoreItems | undefined

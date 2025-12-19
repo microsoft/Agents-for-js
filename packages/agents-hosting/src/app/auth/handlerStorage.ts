@@ -27,7 +27,7 @@ export class HandlerStorage<TActiveHandler extends ActiveAuthorizationHandler = 
     const channelId = this.context.activity.channelId?.trim()
     const userId = this.context.activity.from?.id?.trim()
     if (!channelId || !userId) {
-      throw ExceptionHelper.generateException(Error, Errors.ChannelIdAndFromIdRequiredForHandlerStorage)
+      throw ExceptionHelper.generateException(Error, Errors.ChannelIdAndFromIdRequired)
     }
     return `auth/${channelId}/${userId}`
   }

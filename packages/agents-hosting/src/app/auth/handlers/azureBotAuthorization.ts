@@ -202,7 +202,7 @@ export class AzureBotAuthorization implements AuthorizationHandler {
     }
 
     if (!result.name) {
-      throw ExceptionHelper.generateException(Error, Errors.ConnectionNameRequired, undefined, { handlerId: this.id })
+      throw ExceptionHelper.generateException(Error, Errors.ConnectionNameOrEnvVariableRequired, undefined, { handlerId: this.id })
     }
 
     return result
@@ -357,7 +357,7 @@ export class AzureBotAuthorization implements AuthorizationHandler {
     }
 
     if (!this.isExchangeable(token)) {
-      throw ExceptionHelper.generateException(Error, Errors.TokenNotExchangeable)
+      throw ExceptionHelper.generateException(Error, Errors.TokenNotExchangeableForOBO)
     }
 
     try {

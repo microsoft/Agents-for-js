@@ -125,6 +125,14 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   },
 
   /**
+   * Error thrown when continueConversation requires botAppIdOrIdentity.
+   */
+  ContinueConversationBotAppIdRequired: {
+    code: -120131,
+    description: 'continueConversation: botAppIdOrIdentity is required'
+  },
+
+  /**
      * Error thrown when context is required but missing.
      */
   ContextRequired: {
@@ -194,6 +202,30 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   MissingContextActivityChannelId: {
     code: -120220,
     description: 'missing context.activity.channelId'
+  },
+
+  /**
+   * Error thrown when context.activity.conversation.id is missing.
+   */
+  MissingContextActivityConversationId: {
+    code: -120221,
+    description: 'missing context.activity.conversation.id'
+  },
+
+  /**
+   * Error thrown when context.activity.from.id is missing.
+   */
+  MissingContextActivityFromId: {
+    code: -120222,
+    description: 'missing context.activity.from.id'
+  },
+
+  /**
+   * Error thrown when context.activity.recipient.id is missing.
+   */
+  MissingContextActivityRecipientId: {
+    code: -120223,
+    description: 'missing context.activity.recipient.id'
   },
 
   /**
@@ -565,18 +597,34 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   },
 
   /**
+   * Error thrown when missing state scope.
+   */
+  MissingStateScope: {
+    code: -120730,
+    description: 'TurnStateProperty: TurnState missing state scope named "{scope}".'
+  },
+
+  /**
      * Error thrown when invalid state scope is provided.
      */
   InvalidStateScope: {
-    code: -120730,
+    code: -120740,
     description: 'Invalid state scope: {scope}'
+  },
+
+  /**
+   * Error thrown when Invalid state path.
+   */
+  InvalidStatePath: {
+    code: -120750,
+    description: 'Invalid state path: {path}'
   },
 
   /**
    * Error thrown when Keys are required when reading.
    */
   KeysRequiredForReading: {
-    code: -120740,
+    code: -120760,
     description: 'Keys are required when reading.'
   },
 
@@ -584,7 +632,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    * Error thrown when Changes are required when writing.
    */
   ChangesRequiredForWriting: {
-    code: -120750,
+    code: -120770,
     description: 'Changes are required when writing.'
   },
 

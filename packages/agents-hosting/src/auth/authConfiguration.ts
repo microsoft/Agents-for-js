@@ -139,7 +139,7 @@ export const loadAuthConfigFromEnv = (cnxName?: string): AuthConfiguration => {
       const defaultItem = envConnections.connectionsMap.find((item) => item.serviceUrl === '*')
       const defaultConn = defaultItem ? envConnections.connections.get(defaultItem.connection) : undefined
       if (!defaultConn) {
-        throw ExceptionHelper.generateException(Error, Errors.NoDefaultConnection)
+        throw ExceptionHelper.generateException(Error, Errors.NoDefaultConnectionFound)
       }
       authConfig = defaultConn
     }
@@ -202,7 +202,7 @@ export const loadPrevAuthConfigFromEnv: () => AuthConfiguration = () => {
     const defaultItem = envConnections.connectionsMap.find((item) => item.serviceUrl === '*')
     const defaultConn = defaultItem ? envConnections.connections.get(defaultItem.connection) : undefined
     if (!defaultConn) {
-      throw ExceptionHelper.generateException(Error, Errors.NoDefaultConnection)
+      throw ExceptionHelper.generateException(Error, Errors.NoDefaultConnectionFound)
     }
     authConfig = defaultConn
   }
@@ -305,7 +305,7 @@ export function getAuthConfigWithDefaults (config?: AuthConfiguration): AuthConf
     const defaultItem = connections.connectionsMap?.find((item) => item.serviceUrl === '*')
     const defaultConn = defaultItem ? connections.connections?.get(defaultItem.connection) : undefined
     if (!defaultConn) {
-      throw ExceptionHelper.generateException(Error, Errors.NoDefaultConnection)
+      throw ExceptionHelper.generateException(Error, Errors.NoDefaultConnectionFound)
     }
     mergedConfig = buildLegacyAuthConfig(undefined, defaultConn)
   }

@@ -203,7 +203,7 @@ export abstract class BaseAdapter {
         if (err instanceof Error) {
           await this.onTurnError(pContext.proxy, err)
         } else {
-          throw ExceptionHelper.generateException(Error, Errors.UnknownErrorType, undefined, { message: err.message })
+          throw ExceptionHelper.generateException(Error, Errors.UnknownErrorType, undefined, { errorMessage: err.message })
         }
       } else {
         throw err

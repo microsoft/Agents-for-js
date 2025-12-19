@@ -384,7 +384,7 @@ export class Activity {
 
     // if they passed in a value but the channel is blank, this is invalid
     if (value && !channel) {
-      throw ExceptionHelper.generateException(Error, Errors.InvalidChannelIdSubChannelOnly, undefined, { channelId: value })
+      throw ExceptionHelper.generateException(Error, Errors.InvalidChannelIdFormat, undefined, { channelId: value })
     }
     this._channelId = channel
     if (subChannel) {

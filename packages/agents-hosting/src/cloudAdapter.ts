@@ -147,7 +147,7 @@ export class CloudAdapter extends BaseAdapter {
           headers
         )
       } else {
-        throw ExceptionHelper.generateException(Error, Errors.CouldNotCreateConnectorClient)
+        throw ExceptionHelper.generateException(Error, Errors.CannotCreateConnectorClientForAgenticUser)
       }
     } else {
       // ABS tokens will not have an azp/appid so use the botframework scope.
@@ -322,7 +322,7 @@ export class CloudAdapter extends BaseAdapter {
       res.end()
     }
     if (!request.body) {
-      throw ExceptionHelper.generateException(TypeError, Errors.RequestBodyRequired)
+      throw ExceptionHelper.generateException(TypeError, Errors.RequestBodyParameterRequired)
     }
     const incoming = normalizeIncomingActivity(request.body!)
     const activity = Activity.fromObject(incoming)
@@ -556,7 +556,7 @@ export class CloudAdapter extends BaseAdapter {
       throw ExceptionHelper.generateException(TypeError, Errors.ConversationParametersRequired)
     }
     if (!logic) {
-      throw ExceptionHelper.generateException(TypeError, Errors.LogicRequired)
+      throw ExceptionHelper.generateException(TypeError, Errors.LogicParameterRequired)
     }
 
     const identity = CloudAdapter.createIdentity(audience)
