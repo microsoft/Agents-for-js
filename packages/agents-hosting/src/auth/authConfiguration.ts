@@ -232,12 +232,7 @@ function loadConnectionsMapFromEnv () {
       // Remove ".settings." from the path
       path = path.replace('.settings.', '.')
       // Convert "true"/"false" strings into boolean values
-      let value
-      if (rawValue === 'true' || rawValue === 'false') {
-        value = rawValue === 'true'
-      } else {
-        value = rawValue
-      }
+      const value = rawValue === 'true' ? true : rawValue === 'false' ? false : rawValue
       objectPath.set(connectionsObj, path, value)
     } else if (key.startsWith(CONNECTIONS_MAP_PREFIX)) {
       const path = key.substring(CONNECTIONS_MAP_PREFIX.length).replace(/__/g, '.')
