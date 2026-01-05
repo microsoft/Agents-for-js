@@ -212,6 +212,10 @@ export class MsalTokenProvider implements AuthProvider {
       data.client_secret = this.connectionSettings.clientSecret
     }
 
+    if (data.grant_type !== 'user_fic') {
+      data.client_info = '2'
+    }
+
     const token = await axios.post(
       url,
       data,
