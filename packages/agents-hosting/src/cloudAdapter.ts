@@ -47,8 +47,9 @@ export class CloudAdapter extends BaseAdapter {
 
   /**
    * Creates an instance of CloudAdapter.
-   * @param authConfig - The authentication configuration for securing communications
-   * @param authProvider - No longer used
+   * @param authConfig - The authentication configuration for securing communications.
+   * @param authProvider - No longer used.
+   * @param userTokenClient - No longer used.
    */
   constructor (authConfig?: AuthConfiguration, authProvider?: AuthProvider, userTokenClient?: UserTokenClient) {
     super()
@@ -86,10 +87,11 @@ export class CloudAdapter extends BaseAdapter {
   /**
    * Creates a connector client for a specific service URL and scope.
    *
-   * @param serviceUrl - The URL of the service to connect to
-   * @param scope - The authentication scope to use
-   * @param headers - Optional headers to propagate in the request
-   * @returns A promise that resolves to a ConnectorClient instance
+   * @param serviceUrl - The URL of the service to connect to.
+   * @param scope - The authentication scope to use.
+   * @param identity - The identity used to select the token provider.
+   * @param headers - Optional headers to propagate in the request.
+   * @returns A promise that resolves to a ConnectorClient instance.
    * @protected
    */
   protected async createConnectorClient (
@@ -109,6 +111,15 @@ export class CloudAdapter extends BaseAdapter {
     )
   }
 
+  /**
+   * Creates a connector client for a specific identity and activity.
+   *
+   * @param identity - The identity used to select the token provider.
+   * @param activity - The activity used to select the token provider.
+   * @param headers - Optional headers to propagate in the request.
+   * @returns A promise that resolves to a ConnectorClient instance.
+   * @protected
+   */
   protected async createConnectorClientWithIdentity (
     identity: JwtPayload,
     activity: Activity,
@@ -163,6 +174,11 @@ export class CloudAdapter extends BaseAdapter {
     return connectorClient
   }
 
+  /**
+   * Creates the JwtPayload object with the provided appId.
+   * @param appId The bot's appId.
+   * @returns The JwtPayload object containing the appId as aud.
+   */
   static createIdentity (appId: string) : JwtPayload {
     return {
       aud: appId
@@ -172,7 +188,7 @@ export class CloudAdapter extends BaseAdapter {
   /**
    * Sets the connector client on the turn context.
    *
-   * @param context - The current turn context
+   * @param context - The current turn context.
    * @protected
    */
   protected setConnectorClient (
@@ -185,10 +201,12 @@ export class CloudAdapter extends BaseAdapter {
   /**
    * Creates a user token client for a specific service URL and scope.
    *
-   * @param serviceUrl - The URL of the service to connect to
-   * @param scope - The authentication scope to use
+   * @param identity - The identity used to select the token provider.
+   * @param tokenServiceEndpoint - The endpoint to connect to.
+   * @param scope - The authentication scope to use.
+   * @param audience - No longer used.
    * @param headers - Optional headers to propagate in the request
-   * @returns A promise that resolves to a ConnectorClient instance
+   * @returns A promise that resolves to a UserTokenClient instance.
    * @protected
    */
   protected async createUserTokenClient (
@@ -222,7 +240,7 @@ export class CloudAdapter extends BaseAdapter {
   /**
    * Sets the user token client on the turn context.
    *
-   * @param context - The current turn context
+   * @param context - The current turn context.
    * @protected
    */
   protected setUserTokenClient (
@@ -237,6 +255,7 @@ export class CloudAdapter extends BaseAdapter {
    * Creates a TurnContext for the given activity and logic.
    * @param activity - The activity to process.
    * @param logic - The logic to execute.
+   * @param identity - The identity used for the new context.
    * @returns The created TurnContext.
    */
   createTurnContext (activity: Activity, logic: AgentHandler, identity?: JwtPayload): TurnContext {
@@ -429,8 +448,11 @@ export class CloudAdapter extends BaseAdapter {
 
   /**
    * Continues a conversation.
+   * @param botAppIdOrIdentity - The bot identity to use when continuing the conversation. This can be either:
+   * a string containing the bot's App ID (botId) or a JwtPayload object containing identity claims (must include aud).
    * @param reference - The conversation reference to continue.
    * @param logic - The logic to execute.
+   * @param isResponse - No longer used.
    * @returns A promise representing the completion of the continue operation.
    */
   async continueConversation (
@@ -574,6 +596,7 @@ export class CloudAdapter extends BaseAdapter {
   /**
    * @deprecated This function will not be supported in future versions.  Use TurnContext.turnState.get<ConnectorClient>(CloudAdapter.ConnectorClientKey).
    * Uploads an attachment.
+   * @param context - The context for the turn.
    * @param conversationId - The conversation ID.
    * @param attachmentData - The attachment data.
    * @returns A promise representing the ResourceResponse for the uploaded attachment.
@@ -597,6 +620,7 @@ export class CloudAdapter extends BaseAdapter {
   /**
    * @deprecated This function will not be supported in future versions.  Use TurnContext.turnState.get<ConnectorClient>(CloudAdapter.ConnectorClientKey).
    * Gets attachment information.
+   * @param context - The context for the turn.
    * @param attachmentId - The attachment ID.
    * @returns A promise representing the AttachmentInfo for the requested attachment.
    */
@@ -615,6 +639,7 @@ export class CloudAdapter extends BaseAdapter {
   /**
    * @deprecated This function will not be supported in future versions.  Use TurnContext.turnState.get<ConnectorClient>(CloudAdapter.ConnectorClientKey).
    * Gets an attachment.
+   * @param context - The context for the turn.
    * @param attachmentId - The attachment ID.
    * @param viewId - The view ID.
    * @returns A promise representing the NodeJS.ReadableStream for the requested attachment.
