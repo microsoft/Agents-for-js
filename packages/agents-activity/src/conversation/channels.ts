@@ -62,6 +62,12 @@ export enum Channels {
   Msteams = 'msteams',
 
   /**
+   * M365 Copilot Teams Subchannel.
+   */
+  M365CopilotSubChannel = 'COPILOT',
+  M365Copilot = `${Msteams}:${M365CopilotSubChannel}`,
+
+  /**
    * Represents the Omnichannel.
    */
   Omni = 'omnichannel',

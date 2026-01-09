@@ -3,7 +3,8 @@
  * Licensed under the MIT License.
  */
 import { v4 as uuidv4 } from 'uuid'
-import { ActivityTypes } from '@microsoft/agents-activity'
+import { ActivityTypes, ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from './errorHelper'
 import { Dialog } from './dialog'
 import { DialogContext } from './dialogContext'
 import { WaterfallStepContext } from './waterfallStepContext'
@@ -172,8 +173,11 @@ export class WaterfallDialog<O extends object = {}> extends Dialog<O> {
         values: state.values,
         onNext: async (stepResult?: any): Promise<DialogTurnResult<any>> => {
           if (nextCalled) {
-            throw new Error(
-                            `WaterfallStepContext.next(): method already called for dialog and step '${this.id}[${index}]'.`
+            throw ExceptionHelper.generateException(
+              Error,
+              Errors.WaterfallStepError,
+              undefined,
+              { stepIndex: index.toString() }
             )
           }
           nextCalled = true

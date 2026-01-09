@@ -3,7 +3,8 @@
 
 /**
  * Represents an error definition for the Agents SDK.
- * Each error definition includes an error code, description, and help link.
+ * Each error definition includes an error code, description, and an optional help link.
+ * If helplink is not provided, a default help link will be used.
  */
 export interface AgentErrorDefinition {
   /**
@@ -17,9 +18,10 @@ export interface AgentErrorDefinition {
   description: string
 
   /**
-   * Help URL link for the error
+   * Optional help URL link for the error.
+   * If not provided, the default help link will be used.
    */
-  helplink: string
+  helplink?: string
 }
 
 /**
@@ -48,10 +50,16 @@ export interface AgentError extends Error {
  */
 export class ExceptionHelper {
   /**
+   * Default help link template for error codes.
+   * The {errorCode} token will be replaced with the actual error code.
+   */
+  static readonly DEFAULT_HELPLINK = 'https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}'
+
+  /**
    * Generates a typed exception with error code and help link.
    * The message format is: [CODE] - [message] - [helplink]
    * @param ErrorType The constructor of the error type to create
-   * @param errorDefinition The error definition containing code, description, and help link
+   * @param errorDefinition The error definition containing code, description, and optional help link
    * @param innerException Optional inner exception
    * @param params Optional parameters object for message formatting with key-value pairs
    * @returns A new exception instance with error code and help link, typed as AgentError
@@ -70,8 +78,11 @@ export class ExceptionHelper {
       })
     }
 
+    // Use provided helplink or default if not provided
+    const helplinkTemplate = errorDefinition.helplink ?? ExceptionHelper.DEFAULT_HELPLINK
+
     // Replace {errorCode} token in helplink with the actual error code
-    const helplink = errorDefinition.helplink.replace('{errorCode}', errorDefinition.code.toString())
+    const helplink = helplinkTemplate.replace('{errorCode}', errorDefinition.code.toString())
 
     // Format the full message as: [CODE] - [message] - [helplink]
     const message = `[${errorDefinition.code}] - ${description} - ${helplink}`

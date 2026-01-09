@@ -3,6 +3,8 @@
  * Licensed under the MIT License.
  */
 import { MemoryScope } from './memoryScope'
+import { ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from '../../errorHelper'
 import { ScopePath } from '../scopePath'
 import { DialogContext } from '../../dialogContext'
 
@@ -32,11 +34,19 @@ export class ThisMemoryScope extends MemoryScope {
      */
   setMemory (dialogContext: DialogContext, memory: object): void {
     if (memory === undefined) {
-      throw new Error('ThisMemoryScope.setMemory: undefined memory object passed in.')
+      throw ExceptionHelper.generateException(
+        Error,
+        Errors.UndefinedMemoryObject,
+        undefined,
+        { scopeName: 'ThisMemoryScope' }
+      )
     }
 
     if (!dialogContext.activeDialog) {
-      throw new Error('ThisMemoryScope.setMemory: no active dialog found.')
+      throw ExceptionHelper.generateException(
+        Error,
+        Errors.ActiveDialogUndefined
+      )
     }
 
     dialogContext.activeDialog.state = memory

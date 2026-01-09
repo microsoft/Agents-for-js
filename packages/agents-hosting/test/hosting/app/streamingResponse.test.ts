@@ -1,4 +1,4 @@
-import { StreamingResponse } from '../../../src/app/streaming/streamingResponse'
+import { StreamingResponse, StreamingResponseResult } from '../../../src/app/streaming/streamingResponse'
 import { TurnContext } from '../../../src/turnContext'
 import { Activity, Attachment, SensitivityUsageInfo } from '@microsoft/agents-activity'
 import { Citation } from '../../../src/app/streaming/citation'
@@ -6,6 +6,17 @@ import { CitationUtil } from '../../../src/app/streaming/citationUtil'
 import * as sinon from 'sinon'
 import { strict as assert } from 'assert'
 import { describe, it, beforeEach, afterEach } from 'node:test'
+import { Channels } from '../../../../agents-activity/src'
+
+function createContext (activity: Partial<Activity>) {
+  const mockContext = sinon.createStubInstance(TurnContext)
+  Object.defineProperty(mockContext, 'activity', {
+    value: Activity.fromObject({ type: 'message', ...activity }),
+    configurable: true
+  })
+  mockContext.sendActivity.resolves({ id: 'test-stream-id' })
+  return mockContext
+}
 
 describe('StreamingResponse', () => {
   let mockContext: sinon.SinonStubbedInstance<TurnContext>
@@ -13,8 +24,7 @@ describe('StreamingResponse', () => {
   let clock: sinon.SinonFakeTimers
 
   beforeEach(() => {
-    mockContext = sinon.createStubInstance(TurnContext)
-    mockContext.sendActivity.resolves({ id: 'test-stream-id' })
+    mockContext = createContext({ channelId: Channels.Webchat })
     streamingResponse = new StreamingResponse(mockContext)
     clock = sinon.useFakeTimers()
   })
@@ -27,7 +37,7 @@ describe('StreamingResponse', () => {
   it('should initialize with correct default values', () => {
     assert.equal(streamingResponse.streamId, undefined)
     assert.equal(streamingResponse.updatesSent, 0)
-    assert.equal(streamingResponse.delayInMs, 1500)
+    assert.equal(streamingResponse.delayInMs, 500)
     assert.equal(streamingResponse.getMessage(), '')
   })
 
@@ -126,12 +136,10 @@ describe('StreamingResponse', () => {
     assert.equal(activity.text, 'end of stream response')
   })
 
-  it('should throw error when called twice', () => {
+  it('should throw error when called twice', async () => {
     streamingResponse.endStream()
-
-    assert.throws(() => {
-      streamingResponse.endStream()
-    }, /The stream has already ended/)
+    const result = await streamingResponse.endStream()
+    assert.equal(result, StreamingResponseResult.AlreadyEnded)
   })
 
   it('should include attachments in final message', () => {
@@ -294,5 +302,29 @@ describe('StreamingResponse', () => {
     assert.doesNotThrow(() => {
       streamingResponse.queueTextChunk('more text')
     })
+  })
+
+  it('should send one activity for non-streaming channels', async () => {
+    mockContext = createContext({ channelId: Channels.Facebook })
+    streamingResponse = new StreamingResponse(mockContext)
+    streamingResponse.queueInformativeUpdate('test1')
+    streamingResponse.queueTextChunk('test2')
+
+    clock.restore() // Disable fake timers for this test
+    await streamingResponse.endStream()
+
+    assert.equal(streamingResponse.updatesSent, 1)
+  })
+
+  it('should send one activity for expect replies delivery mode', async () => {
+    mockContext = createContext({ deliveryMode: 'expectReplies' })
+    streamingResponse = new StreamingResponse(mockContext)
+    streamingResponse.queueInformativeUpdate('test1')
+    streamingResponse.queueTextChunk('test2')
+
+    clock.restore() // Disable fake timers for this test
+    await streamingResponse.endStream()
+
+    assert.equal(streamingResponse.updatesSent, 1)
   })
 })

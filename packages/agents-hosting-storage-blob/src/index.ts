@@ -4,3 +4,4 @@
 export * from './blobsStorage'
 export { BlobsTranscriptStore } from './blobsTranscriptStore'
 export { BlobsTranscriptStoreOptions } from './blobsTranscriptStore'
+export { Errors as BlobStorageErrors } from './errorHelper'

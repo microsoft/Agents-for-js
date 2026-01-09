@@ -4,7 +4,8 @@
  */
 import { debug } from '@microsoft/agents-activity/logger'
 import { TurnContext } from './turnContext'
-import { Activity, ActivityTypes, Channels } from '@microsoft/agents-activity'
+import { Activity, ActivityTypes, Channels, ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from './errorHelper'
 import { StatusCodes } from './statusCodes'
 import { InvokeResponse } from './invoke/invokeResponse'
 import { InvokeException } from './invoke/invokeException'
@@ -254,11 +255,13 @@ export class ActivityHandler {
    * @throws Error if context is missing, activity is missing, or activity type is missing
    */
   async run (context: TurnContext): Promise<void> {
-    if (!context) throw new Error('Missing TurnContext parameter')
-    if (!context.activity) throw new Error('TurnContext does not include an activity')
-    if (!context.activity.type) throw new Error('Activity is missing its type')
+    if (!context) throw ExceptionHelper.generateException(Error, Errors.MissingTurnContext)
+    if (!context.activity) throw ExceptionHelper.generateException(Error, Errors.TurnContextMissingActivity)
+    if (!context.activity.type) throw ExceptionHelper.generateException(Error, Errors.ActivityMissingType)
 
-    await this.onTurnActivity(context)
+    await this.handle(context, 'Turn', async () => {
+      await this.onTurnActivity(context)
+    })
   }
 
   /**
