@@ -8,7 +8,7 @@ import { normalizeTokenExchangeState } from '../activityWireCompat'
 import { AadResourceUrls, SignInResource, TokenExchangeRequest, TokenOrSinginResourceResponse, TokenResponse, TokenStatus } from './userTokenClient.types'
 import { getProductInfo } from '../getProductInfo'
 import { AuthProvider } from '../auth'
-import { HeaderPropagationCollection } from '../headerPropagation'
+import { HeaderPropagation, HeaderPropagationCollection } from '../headerPropagation'
 import { getTokenServiceEndpoint } from './customUserTokenAPI'
 
 const logger = debug('agents:user-token-client')
@@ -109,21 +109,29 @@ export class UserTokenClient {
     scope: string,
     headers?: HeaderPropagationCollection
   ): Promise<UserTokenClient> {
-    // TODO: add header propagation logic
+    const headerPropagation = headers ?? new HeaderPropagation({})
+    const userAgent = headerPropagation.outgoing['user-agent']
+    const productInfo = getProductInfo()
+    if (!userAgent) {
+      headerPropagation.add({ 'User-Agent': productInfo })
+    } else if (!userAgent.includes(productInfo)) {
+      headerPropagation.concat({ 'User-Agent': productInfo })
+    }
+    headerPropagation.override({
+      Accept: 'application/json',
+      'Content-Type': 'application/json', // Required by transformRequest
+    })
+
     const axiosInstance = axios.create({
       baseURL,
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json', // Required by transformRequest
-        'User-Agent': getProductInfo(),
-      },
+      headers: headerPropagation.outgoing,
     })
-    if (authProvider) {
-      const token = await authProvider.getAccessToken(scope)
-      if (token.length > 1) {
-        axiosInstance.defaults.headers.common.Authorization = `Bearer ${token}`
-      }
+
+    const token = await authProvider?.getAccessToken(scope)
+    if (token && token.length > 1) {
+      axiosInstance.defaults.headers.common.Authorization = `Bearer ${token}`
     }
+
     return new UserTokenClient(axiosInstance)
   }
 
