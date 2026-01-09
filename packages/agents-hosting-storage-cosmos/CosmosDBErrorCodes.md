@@ -2,7 +2,7 @@
 
 This document provides detailed information about error codes in the Microsoft 365 Agents SDK for JavaScript CosmosDB storage package. Each error includes a description, context, and likely fixes.
 
-## Storage - CosmosDB Errors (-100000 to -100019)
+## Storage - CosmosDB Errors (-100000 to -100021)
 
 ### -100000
 #### Missing CosmosDB Storage Options
@@ -472,3 +472,55 @@ const state = {
 ```
 
 4. **Check for accidental object references** that create circular dependencies in your state data.
+
+### -100020
+#### ETag Conflict
+
+Unable to write '{key}' due to eTag conflict.
+
+**Description & Context:** This error occurs during write operations when an eTag conflict is detected. An eTag (entity tag) is a version identifier used for optimistic concurrency control in Cosmos DB. When you read a document, it includes an eTag value. If you then attempt to write that document back with a specific eTag (rather than using the wildcard '*' for last-write-wins), Cosmos DB checks if the eTag still matches the current version of the document. If another process has modified the document since you read it, the eTag will no longer match, and the write operation fails with a conflict. This error indicates that the state document was modified by another concurrent operation between the time you read it and when you attempted to write your changes.
+
+**Likely Fix:** Choose one of two approaches:
+
+1. **Use last-write-wins** (simplest): Set eTag to `'*'` to overwrite regardless of current version:
+```typescript
+const changes: StoreItems = {
+  'conversation-id': {
+    userState: { /* your state */ },
+    eTag: '*'
+  }
+};
+await storage.write(changes);
+```
+
+2. **Retry with re-read**: Read the latest version and retry with its current eTag:
+```typescript
+const items = await storage.read(['conversation-id']);
+const item = items['conversation-id'];
+const changes: StoreItems = {
+  'conversation-id': {
+    userState: { /* your state */ },
+    eTag: item?.eTag || '*'
+  }
+};
+await storage.write(changes);
+```
+
+### -100021
+#### Item Already Exists
+
+Unable to write '{key}' because it already exists.
+
+**Description & Context:** This error occurs during write operations when attempting to create a new item in storage using a key that already exists in Cosmos DB. This error is typically thrown when using conditional write operations that enforce a "create-only" semantic (only allowing new documents to be created, not updates to existing ones). This can happen when the storage implementation has specific logic to prevent accidental overwrites of existing state, or when using Cosmos DB's conditional request logic with preconditions. The error indicates that the document you're trying to create with the given key is already present in the container.
+
+**Likely Fix:** This error is expected when using `StorageWriteOptions.ifNotExists`. To avoid it, don't use the `ifNotExists` parameter:
+
+```typescript
+// Instead of:
+// await storage.write(changes, { ifNotExists: true });
+
+// Use:
+await storage.write(changes);
+```
+
+This performs an upsert operation that handles both create and update scenarios.

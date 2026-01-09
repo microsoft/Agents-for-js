@@ -1,11 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { Container, CosmosClient } from '@azure/cosmos'
+import { Container, CosmosClient, ItemDefinition, ItemResponse, RequestOptions } from '@azure/cosmos'
 import { CosmosDbKeyEscape } from './cosmosDbKeyEscape'
 import { DocumentStoreItem } from './documentStoreItem'
 import { CosmosDbPartitionedStorageOptions } from './cosmosDbPartitionedStorageOptions'
-import { Storage, StoreItems } from '@microsoft/agents-hosting'
+import { Storage, StorageWriteOptions, StoreItems } from '@microsoft/agents-hosting'
 import { ExceptionHelper } from '@microsoft/agents-activity'
 import { Errors } from './errorHelper'
 
@@ -170,47 +170,61 @@ export class CosmosDbPartitionedStorage implements Storage {
    * Writes items to storage.
    * @param changes The items to write.
    */
-  async write (changes: StoreItems): Promise<void> {
+  async write (changes: StoreItems, options?: StorageWriteOptions): Promise<StoreItems> {
     if (!changes) {
       throw ExceptionHelper.generateException(
         ReferenceError,
         Errors.MissingWriteChanges
       )
-    } else if (changes.length === 0) {
-      return
+    } else if (Object.keys(changes).length === 0) {
+      return {}
     }
 
     await this.initialize()
 
-    await Promise.all(
-      Object.entries(changes).map(async ([key, { eTag, ...change }]): Promise<void> => {
-        const document = new DocumentStoreItem({
-          id: CosmosDbKeyEscape.escapeKey(
-            key,
-            this.cosmosDbStorageOptions.keySuffix,
-            this.cosmosDbStorageOptions.compatibilityMode
-          ),
-          realId: key,
-          document: change,
-        })
+    const writePromises = Object.entries(changes).map(async ([key, value]) => {
+      const { eTag, ...change } = value
+      const requestOptions: RequestOptions = {}
 
-        const accessCondition =
-                    eTag !== '*' && eTag != null && eTag.length > 0
-                      ? { accessCondition: { type: 'IfMatch', condition: eTag } }
-                      : undefined
+      if (eTag !== '*' && eTag != null && eTag.length > 0) {
+        requestOptions.accessCondition = { type: 'IfMatch', condition: eTag }
+      }
 
-        try {
-          await this.container.items.upsert(document, accessCondition)
-        } catch (err: any) {
-          this.checkForNestingError(change, err)
-          throw ExceptionHelper.generateException(
-            Error,
-            Errors.DocumentUpsertError,
-            err
-          )
-        }
+      const document = new DocumentStoreItem({
+        id: CosmosDbKeyEscape.escapeKey(
+          key,
+          this.cosmosDbStorageOptions.keySuffix,
+          this.cosmosDbStorageOptions.compatibilityMode
+        ),
+        realId: key,
+        document: change,
       })
-    )
+
+      try {
+        let item: ItemResponse<ItemDefinition>
+        if (options?.ifNotExists) {
+          requestOptions.accessCondition = { type: 'IfNoneMatch', condition: '*' }
+          item = await this.container.items.create(document, requestOptions)
+        } else {
+          item = await this.container.items.upsert(document, requestOptions)
+        }
+        return { key, eTag: item.etag }
+      } catch (cause: any) {
+        if (cause.code === 409) {
+          throw ExceptionHelper.generateException(Error, Errors.ItemAlreadyExists, cause, { key })
+        }
+
+        if (cause.code === 412) {
+          throw ExceptionHelper.generateException(Error, Errors.ETagConflict, cause, { key })
+        }
+
+        this.checkForNestingError(change, cause)
+        throw ExceptionHelper.generateException(Error, Errors.DocumentUpsertError, cause)
+      }
+    })
+
+    const results = await Promise.all(writePromises)
+    return results.reduce((acc, { key, eTag }) => ({ ...acc, [key]: { eTag } }), {})
   }
 
   /**

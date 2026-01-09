@@ -36,10 +36,18 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   },
 
   /**
-   * Error thrown when there is an eTag conflict during storage write.
+   * Error thrown when there is an eTag conflict during a storage operation.
    */
   ETagConflict: {
     code: -160002,
-    description: 'Storage: error writing "{key}" due to eTag conflict.'
+    description: 'Unable to write \'{key}\' due to eTag conflict.'
+  },
+
+  /**
+   * Error thrown when attempting to create an item that already exists in storage.
+   */
+  ItemAlreadyExists: {
+    code: -160003,
+    description: 'Unable to write \'{key}\' because it already exists.'
   }
 }
