@@ -384,12 +384,7 @@ export class StreamingResponse {
     this._queue.push(factory)
 
     // If there's no sync in progress, start one
-    if (!this._queueSync) {
-      this._queueSync = this.drainQueue().catch((err) => {
-        logger.error(`Error occurred when sending activity while streaming: "${JSON.stringify(err)}".`)
-        // throw err
-      })
-    }
+    this._queueSync ??= this.drainQueue()
   }
 
   /**
@@ -399,23 +394,18 @@ export class StreamingResponse {
    * @private
    */
   private async drainQueue (): Promise<void> {
-    // eslint-disable-next-line no-async-promise-executor
-    return new Promise<void>(async (resolve, reject) => {
-      try {
-        logger.debug(`Draining queue with ${this._queue.length} activities.`)
-        while (this._queue.length > 0) {
-          const factory = this._queue.shift()!
-          const activity = factory()
-          await this.sendActivity(activity)
-        }
-
-        resolve()
-      } catch (err) {
-        reject(err)
-      } finally {
-        this._queueSync = undefined
+    try {
+      logger.debug(`Draining queue with ${this._queue.length} activities.`)
+      while (this._queue.length > 0) {
+        const factory = this._queue.shift()!
+        const activity = factory()
+        await this.sendActivity(activity)
       }
-    })
+    } catch (err) {
+      logger.error(`Error occurred when draining activity queue: "${JSON.stringify(err)}".`)
+    } finally {
+      this._queueSync = undefined
+    }
   }
 
   /**
