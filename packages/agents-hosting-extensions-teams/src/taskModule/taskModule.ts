@@ -1,5 +1,6 @@
-import { Activity, ActivityTypes, Channels } from '@microsoft/agents-activity'
+import { Activity, ActivityTypes, Channels, ExceptionHelper } from '@microsoft/agents-activity'
 import { AgentApplication, INVOKE_RESPONSE_KEY, InvokeResponse, RouteHandler, RouteSelector, TurnContext, TurnState } from '@microsoft/agents-hosting'
+import { Errors } from '../errorHelper'
 import { TaskModuleTaskInfo } from './taskModuleTaskInfo'
 import { TaskModuleResponse } from './taskModuleResponse'
 
@@ -79,10 +80,8 @@ export class TaskModule<TState extends TurnState> {
         async (context, state) => {
           if (context?.activity?.channelId === Channels.Msteams) {
             if (context?.activity?.type !== ActivityTypes.Invoke || context?.activity?.name !== SUBMIT_INVOKE_NAME) {
-              throw new Error(`Unexpected TaskModules.submit() triggered for activity type: ${context?.activity?.type}`
-              )
+              throw ExceptionHelper.generateException(Error, Errors.UnexpectedTaskModuleSubmit, undefined, { activityType: context?.activity?.type })
             }
-
             const result = await handler(context, state, (context.activity.value as any).data ?? {})
 
             if (!result) {

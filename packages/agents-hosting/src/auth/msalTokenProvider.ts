@@ -211,6 +211,10 @@ export class MsalTokenProvider implements AuthProvider {
       data.client_secret = this.connectionSettings.clientSecret
     }
 
+    if (data.grant_type !== 'user_fic') {
+      data.client_info = '2'
+    }
+
     const token = await axios.post(
       url,
       data,
@@ -234,7 +238,7 @@ export class MsalTokenProvider implements AuthProvider {
     const agentToken = await this.getAgenticApplicationToken(tenantId, agentAppInstanceId)
     const instanceToken = await this.getAgenticInstanceToken(tenantId, agentAppInstanceId)
 
-    const token = await this.acquireTokenByForAgenticScenarios(tenantId, agentToken, instanceToken, scopes, {
+    const token = await this.acquireTokenByForAgenticScenarios(tenantId, agentAppInstanceId, agentToken, scopes, {
       user_id: agenticUserId,
       user_federated_identity_credential: instanceToken,
       grant_type: 'user_fic',

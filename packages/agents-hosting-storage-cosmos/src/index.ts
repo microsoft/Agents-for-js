@@ -3,3 +3,5 @@
 
 export { CosmosDbPartitionedStorage } from './cosmosDbPartitionedStorage'
 export * from './cosmosDbPartitionedStorageOptions'
+export { Errors } from './errorHelper'
+export { AgentErrorDefinition, AgentError, ExceptionHelper } from '@microsoft/agents-activity'

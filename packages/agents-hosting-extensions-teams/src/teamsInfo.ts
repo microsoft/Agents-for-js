@@ -3,12 +3,13 @@
  * Licensed under the MIT License.
  */
 
+import { Activity, Channels, ConversationParameters, ConversationReference, ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from './errorHelper'
 import { TeamsChannelAccount } from './activity-extensions/teamsChannelAccount'
 import { TeamsMeetingParticipant } from './meeting/teamsMeetingParticipant'
 import { MeetingInfo } from './meeting/meetingInfo'
 import { MeetingNotification } from './meeting/meetingNotification'
 import { MeetingNotificationResponse } from './meeting/meetingNotificationResponse'
-import { Activity, Channels, ConversationReference, ConversationParameters } from '@microsoft/agents-activity'
 import { TeamsConnectorClient } from './client/teamsConnectorClient'
 import { parseTeamsChannelData } from './activity-extensions/teamsChannelDataParser'
 import { CloudAdapter, ConnectorClient, TurnContext, TurnState } from '@microsoft/agents-hosting'
@@ -37,7 +38,7 @@ export class TeamsInfo {
     tenantId?: string
   ): Promise<TeamsMeetingParticipant<TurnState>> {
     if (!context) {
-      throw new Error('context is required.')
+      throw ExceptionHelper.generateException(Error, Errors.ContextRequired)
     }
 
     const activity = context.activity
@@ -48,7 +49,7 @@ export class TeamsInfo {
     }
 
     if (!meetingId) {
-      throw new Error('meetingId is required.')
+      throw ExceptionHelper.generateException(Error, Errors.MeetingIdRequired)
     }
 
     if (participantId == null) {
@@ -57,7 +58,7 @@ export class TeamsInfo {
     }
 
     if (!participantId) {
-      throw new Error('participantId is required.')
+      throw ExceptionHelper.generateException(Error, Errors.ParticipantIdRequired)
     }
 
     if (tenantId === undefined) {
@@ -99,7 +100,7 @@ export class TeamsInfo {
       teamId = teamsChannelData.team?.id
     }
     if (!teamId) {
-      throw new Error('teamId is required.')
+      throw ExceptionHelper.generateException(Error, Errors.TeamIdRequired)
     }
     const res = await this.getRestClient(context).fetchTeamDetails(teamId!)
     return res as TeamDetails
@@ -116,15 +117,15 @@ export class TeamsInfo {
    */
   static async sendMessageToTeamsChannel (context: TurnContext, activity: Activity, teamsChannelId: string, appId?: string): Promise<[ConversationReference, string]> {
     if (!context) {
-      throw new Error('TurnContext cannot be null')
+      throw ExceptionHelper.generateException(Error, Errors.TurnContextCannotBeNull)
     }
 
     if (!activity) {
-      throw new Error('Activity cannot be null')
+      throw ExceptionHelper.generateException(Error, Errors.ActivityCannotBeNull)
     }
 
     if (!teamsChannelId) {
-      throw new Error('The teamsChannelId cannot be null or empty')
+      throw ExceptionHelper.generateException(Error, Errors.TeamsChannelIdRequired)
     }
     const convoParams = {
       isGroup: true,
@@ -179,7 +180,7 @@ export class TeamsInfo {
       teamId = teamsChannelData.team?.id
     }
     if (!teamId) {
-      throw new Error('teamId is required.')
+      throw ExceptionHelper.generateException(Error, Errors.TeamIdRequired)
     }
     return await this.getRestClient(context).fetchChannelList(teamId!)
   }
@@ -237,7 +238,7 @@ export class TeamsInfo {
       teamId = teamsChannelData.team?.id
     }
     if (!teamId) {
-      throw new Error('teamId is required.')
+      throw ExceptionHelper.generateException(Error, Errors.TeamIdRequired)
     }
     const pagedResults = await this.getRestClient(context).getConversationPagedMember(teamId, pageSize!, continuationToken!)
     do {
@@ -281,7 +282,7 @@ export class TeamsInfo {
     }
 
     if (!meetingId) {
-      throw new Error('meetingId is required.')
+      throw ExceptionHelper.generateException(Error, Errors.MeetingIdRequired)
     }
 
     return await this.getRestClient(context).sendMeetingNotification(meetingId, notification)
@@ -298,13 +299,13 @@ export class TeamsInfo {
    */
   static async sendMessageToListOfUsers (context: TurnContext, activity: Activity, tenantId: string, members: TeamsMember[]): Promise<BatchOperationResponse> {
     if (!activity) {
-      throw new Error('activity is required.')
+      throw ExceptionHelper.generateException(Error, Errors.ActivityRequired)
     }
     if (!tenantId) {
-      throw new Error('tenantId is required.')
+      throw ExceptionHelper.generateException(Error, Errors.TenantIdRequired)
     }
     if (!members || members.length === 0) {
-      throw new Error('members list is required.')
+      throw ExceptionHelper.generateException(Error, Errors.MembersListRequired)
     }
 
     return await this.getRestClient(context).sendMessageToListOfUsers(activity, tenantId, members)
@@ -320,10 +321,10 @@ export class TeamsInfo {
    */
   static async sendMessageToAllUsersInTenant (context: TurnContext, activity: Activity, tenantId: string): Promise<BatchOperationResponse> {
     if (!activity) {
-      throw new Error('activity is required.')
+      throw ExceptionHelper.generateException(Error, Errors.ActivityRequired)
     }
     if (!tenantId) {
-      throw new Error('tenantId is required.')
+      throw ExceptionHelper.generateException(Error, Errors.TenantIdRequired)
     }
 
     return await this.getRestClient(context).sendMessageToAllUsersInTenant(activity, tenantId)
@@ -340,13 +341,13 @@ export class TeamsInfo {
    */
   static async sendMessageToAllUsersInTeam (context: TurnContext, activity: Activity, tenantId: string, teamId: string): Promise<BatchOperationResponse> {
     if (!activity) {
-      throw new Error('activity is required.')
+      throw ExceptionHelper.generateException(Error, Errors.ActivityRequired)
     }
     if (!tenantId) {
-      throw new Error('tenantId is required.')
+      throw ExceptionHelper.generateException(Error, Errors.TenantIdRequired)
     }
     if (!teamId) {
-      throw new Error('teamId is required.')
+      throw ExceptionHelper.generateException(Error, Errors.TeamIdRequired)
     }
     return await this.getRestClient(context).sendMessageToAllUsersInTeam(activity, tenantId, teamId)
   }
@@ -362,13 +363,13 @@ export class TeamsInfo {
    */
   static async sendMessageToListOfChannels (context: TurnContext, activity: Activity, tenantId: string, members: TeamsMember[]): Promise<BatchOperationResponse> {
     if (!activity) {
-      throw new Error('activity is required.')
+      throw ExceptionHelper.generateException(Error, Errors.ActivityRequired)
     }
     if (!tenantId) {
-      throw new Error('tenantId is required.')
+      throw ExceptionHelper.generateException(Error, Errors.TenantIdRequired)
     }
     if (!members || members.length === 0) {
-      throw new Error('members list is required.')
+      throw ExceptionHelper.generateException(Error, Errors.MembersListRequired)
     }
     return this.getRestClient(context).sendMessageToListOfChannels(activity, tenantId, members)
   }
@@ -382,7 +383,7 @@ export class TeamsInfo {
    */
   static async getOperationState (context: TurnContext, operationId: string): Promise<BatchOperationStateResponse> {
     if (!operationId) {
-      throw new Error('operationId is required.')
+      throw ExceptionHelper.generateException(Error, Errors.OperationIdRequired)
     }
 
     return await this.getRestClient(context).getOperationState(operationId)
@@ -397,7 +398,7 @@ export class TeamsInfo {
    */
   static async getFailedEntries (context: TurnContext, operationId: string): Promise<BatchFailedEntriesResponse> {
     if (!operationId) {
-      throw new Error('operationId is required.')
+      throw ExceptionHelper.generateException(Error, Errors.OperationIdRequired)
     }
 
     return await this.getRestClient(context).getFailedEntries(operationId)
@@ -412,7 +413,7 @@ export class TeamsInfo {
    */
   static async cancelOperation (context: TurnContext, operationId: string): Promise<CancelOperationResponse> {
     if (!operationId) {
-      throw new Error('operationId is required.')
+      throw ExceptionHelper.generateException(Error, Errors.OperationIdRequired)
     }
 
     return await this.getRestClient(context).cancelOperation(operationId)

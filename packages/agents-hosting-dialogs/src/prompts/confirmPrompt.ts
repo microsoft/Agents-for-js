@@ -167,10 +167,11 @@ export class ConfirmPrompt extends Prompt<boolean> {
     const culture = this.determineCulture(context.activity)
     const choiceOptions = this.choiceOptions || this.choiceDefaults[culture].options
     const choices = this.confirmChoices || this.choiceDefaults[culture].choices
+    const conversationType = context.activity.conversation?.conversationType
     if (isRetry && options.retryPrompt) {
-      prompt = this.appendChoices(options.retryPrompt, channelId, choices, this.style, choiceOptions)
+      prompt = this.appendChoices(options.retryPrompt, channelId, choices, this.style, choiceOptions, conversationType)
     } else {
-      prompt = this.appendChoices(options.prompt, channelId, choices, this.style, choiceOptions)
+      prompt = this.appendChoices(options.prompt, channelId, choices, this.style, choiceOptions, conversationType)
     }
 
     // Send prompt
