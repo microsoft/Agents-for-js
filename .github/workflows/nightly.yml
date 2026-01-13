@@ -53,7 +53,7 @@ jobs:
           ${{ vars.AZDEVOPS_URL }}/_apis/pipelines/${{ env.AzDevOpsPipelineId }}/runs?api-version=7.1)
         echo $BRANCH_NAME
         echo $response
-        echo "::set-output name=run_id::$(echo $response | jq -r .id)"
+        echo "run_id=$(echo $response | jq -r .id)" >> "$GITHUB_OUTPUT"
       env:
         BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
 #          -d '{"resources": {"repositories": {"self": {"refName": "refs/heads/main"}}}}' \ 
