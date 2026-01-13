@@ -2,7 +2,7 @@ name: Nightly Build when something has changed in the last 24 hrs.
 
 on:
   schedule:
-    - cron: 0 10 * * * # runs at 2am PST (10am UTC) every day
+    - cron: "0 10 * * *" # runs at 2am PST (10am UTC) every day
   workflow_dispatch:
 
 env:
