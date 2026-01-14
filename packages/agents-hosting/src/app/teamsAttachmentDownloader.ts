@@ -12,12 +12,12 @@ import { TurnState } from './turnState'
 import axios, { AxiosInstance } from 'axios'
 import { z } from 'zod'
 
-const logger = debug('agents:teamsAttachmentDownloader')
+const logger = debug('agents:M365AttachmentDownloader')
 
 /**
  * Downloads attachments from Teams using the bots access token.
  */
-export class TeamsAttachmentDownloader<TState extends TurnState = TurnState> implements InputFileDownloader<TState> {
+export class M365AttachmentDownloader<TState extends TurnState = TurnState> implements InputFileDownloader<TState> {
   private _httpClient: AxiosInstance
   private _stateKey: string
 
@@ -108,3 +108,8 @@ export class TeamsAttachmentDownloader<TState extends TurnState = TurnState> imp
     state.setValue(this._stateKey, files)
   }
 }
+
+/**
+* @deprecated Use {@link M365AttachmentDownloader} from @microsoft/agents-hosting instead.
+ */
+export class TeamsAttachmentDownloader extends M365AttachmentDownloader {}
