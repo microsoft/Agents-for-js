@@ -110,6 +110,6 @@ export class M365AttachmentDownloader<TState extends TurnState = TurnState> impl
 }
 
 /**
-* @deprecated Use {@link M365AttachmentDownloader} from @microsoft/agents-hosting instead.
+ * @deprecated Use {@link M365AttachmentDownloader} from @microsoft/agents-hosting instead.
  */
 export class TeamsAttachmentDownloader extends M365AttachmentDownloader {}
