@@ -1,5 +1,5 @@
 import { startServer } from '@microsoft/agents-hosting-express'
-import { AgentApplication, ConnectorClient, MemoryStorage, TurnContext, TurnState } from '@microsoft/agents-hosting'
+import { AgentApplication, ConnectorClient, MemoryStorage, TurnContext, TurnState, UserTokenClient } from '@microsoft/agents-hosting'
 
 // Only used for testing purposes to verify header propagation.
 let incomingHeaders: Record<string, string> = {}
@@ -20,19 +20,27 @@ echo.onConversationUpdate('membersAdded', async (context: TurnContext) => {
 })
 echo.onActivity('message', async (context: TurnContext, state: TurnState) => {
   const connectorClient = context.turnState.get<ConnectorClient>(context.adapter.ConnectorClientKey)
-  const headersReceived = Object.entries(incomingHeaders)
-    .map(([key, value]) => `- **${key}**: ${value}`).join('\n  ')
-  const headersSent = Object.entries(connectorClient.axiosInstance.defaults.headers)
-    .filter(([_, e]) => typeof e === 'string')
-    .map(([key, value]) => `- **${key}**: ${value}`).join('\n  ')
+  const userTokenClient = context.turnState.get<UserTokenClient>(context.adapter.UserTokenClientKey)
 
   await context.sendActivity(`
-Headers received from the request:
-  ${headersReceived}
+**📨 Incoming Request Headers:**
+${formatHeaders(incomingHeaders)}
 
-Headers sent to outgoing request:
-  ${headersSent}
+**📤 Outgoing Request Headers:**
+
+*ConnectorClient:*
+${formatHeaders(connectorClient.axiosInstance.defaults.headers)}
+
+*UserTokenClient:*
+${formatHeaders(userTokenClient.client.defaults.headers)}
   `)
 })
+
+function formatHeaders (headers: Record<string, any>) {
+  return Object.entries(headers)
+    .filter(([_, e]) => typeof e === 'string')
+    .map(([key, value]) => `- \`${key}\`: ${value}`)
+    .join('\n\n')
+}
 
 startServer(echo)
