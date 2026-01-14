@@ -15,7 +15,7 @@ import { z } from 'zod'
 const logger = debug('agents:M365AttachmentDownloader')
 
 /**
- * Downloads attachments from Teams using the bots access token.
+ * Downloads attachments from Teams and M365 using the bots access token.
  */
 export class M365AttachmentDownloader<TState extends TurnState = TurnState> implements InputFileDownloader<TState> {
   private _httpClient: AxiosInstance
