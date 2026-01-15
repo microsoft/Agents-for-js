@@ -361,7 +361,7 @@ export class CloudAdapter extends BaseAdapter {
     }
 
     if (!activity.isAgenticRequest()) {
-      const userTokenClient = await this.createUserTokenClient(request.user!)
+      const userTokenClient = await this.createUserTokenClient(request.user!, undefined, undefined, undefined, headers)
       this.setUserTokenClient(context, userTokenClient)
     }
 

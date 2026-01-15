@@ -3,11 +3,11 @@
  * Licensed under the MIT License.
  */
 
-import { TeamsAttachmentDownloader as AppTeamsAttachmentDownloader } from '@microsoft/agents-hosting'
+import { M365AttachmentDownloader } from '@microsoft/agents-hosting'
 
 /**
- * @deprecated Use {@link TeamsAttachmentDownloader} from @microsoft/agents-hosting instead.
+ * @deprecated Use {@link M365AttachmentDownloader} from @microsoft/agents-hosting instead.
  * Downloads attachments from Teams using the bots access token.
  */
-export class TeamsAttachmentDownloader extends AppTeamsAttachmentDownloader {
+export class TeamsAttachmentDownloader extends M365AttachmentDownloader {
 }
