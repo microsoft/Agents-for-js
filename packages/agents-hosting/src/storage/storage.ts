@@ -63,6 +63,23 @@ export interface StoreItems {
 export type StorageKeyFactory = (context: TurnContext) => string | Promise<string>
 
 /**
+ * Options for storage write operations.
+ */
+export interface StorageWriteOptions {
+  /**
+   * If true, the write operation will only succeed if the item does not already exist in storage.
+   *
+   * @remarks
+   * This is useful for scenarios where you want to ensure that you are creating a new item
+   * and do not want to overwrite any existing data. If the item already exists, the write
+   * operation will fail with an error.
+   *
+   * The default value is false, meaning that the write operation will overwrite existing items.
+   */
+  ifNotExists?: boolean;
+}
+
+/**
  * Defines the interface for storage operations in the Agents platform.
  *
  * @remarks
@@ -82,16 +99,17 @@ export interface Storage {
    * @returns A promise that resolves to the store items. Items that don't exist in storage will not be included in the result.
    * @throws If the keys array is empty or undefined
    */
-  read: (keys: string[]) => Promise<StoreItem>;
+  read: (keys: string[]) => Promise<StoreItems>;
 
   /**
    * Writes store items to storage.
    *
    * @param changes The items to write to storage, indexed by key
-   * @returns A promise that resolves when the write operation is complete
+   * @param options Optional settings for the write operation
+   * @returns A promise that resolves to the written store items
    * @throws If the changes object is empty or undefined, or if an eTag conflict occurs and optimistic concurrency is enabled
    */
-  write: (changes: StoreItem) => Promise<void>;
+  write: (changes: StoreItems, options?: StorageWriteOptions) => Promise<StoreItems>;
 
   /**
    * Deletes store items from storage.

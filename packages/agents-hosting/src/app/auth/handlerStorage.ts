@@ -41,14 +41,14 @@ export class HandlerStorage<TActiveHandler extends ActiveAuthorizationHandler = 
   /**
    * Writes handler state to storage.
    */
-  public write (data: TActiveHandler) : Promise<void> {
+  public write (data: TActiveHandler) {
     return this.storage.write({ [this.key]: data })
   }
 
   /**
    * Deletes handler state from storage.
    */
-  public async delete (): Promise<void> {
+  public async delete () {
     try {
       await this.storage.delete([this.key])
     } catch (error) {

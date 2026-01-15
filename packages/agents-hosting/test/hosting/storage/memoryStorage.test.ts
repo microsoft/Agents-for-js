@@ -86,7 +86,7 @@ describe('MemoryStorage', () => {
           await memoryStorage.write({ key1: { value: 'conflict', eTag: 'invalid' } }),
         {
           name: 'Error',
-          message: 'Storage: error writing "key1" due to eTag conflict.'
+          message: 'Unable to write \'key1\' due to eTag conflict.'
         }
       )
     })

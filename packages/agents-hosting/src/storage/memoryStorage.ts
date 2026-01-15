@@ -3,7 +3,9 @@
  * Licensed under the MIT License.
  */
 
-import { Storage, StoreItem } from './storage'
+import { ETagConflictError } from './eTagConflictError'
+import { ItemAlreadyExistsError } from './itemAlreadyExistsError'
+import { Storage, StorageWriteOptions, StoreItem, StoreItems } from './storage'
 import { debug } from '@microsoft/agents-activity/logger'
 
 const logger = debug('agents:memory-storage')
@@ -90,25 +92,35 @@ export class MemoryStorage implements Storage {
    * has the same eTag. If an item has an eTag of '*' or no eTag, it will
    * always be written regardless of the current state.
    */
-  async write (changes: StoreItem): Promise<void> {
-    if (!changes || changes.length === 0) {
+  async write (changes: StoreItems, options?: StorageWriteOptions): Promise<StoreItems> {
+    if (!changes || Object.keys(changes).length === 0) {
       throw new ReferenceError('Changes are required when writing.')
     }
 
+    const result: StoreItems = {}
     for (const [key, newItem] of Object.entries(changes)) {
+      if (options?.ifNotExists && key in this.memory) {
+        throw new ItemAlreadyExistsError(`The key '${key}' already exists in storage.`)
+      }
+
       logger.debug(`Writing key: ${key}`)
       const oldItemStr = this.memory[key]
+      let savedItem: StoreItem
       if (!oldItemStr || newItem.eTag === '*' || !newItem.eTag) {
-        this.saveItem(key, newItem)
+        savedItem = this.saveItem(key, newItem)
       } else {
         const oldItem = JSON.parse(oldItemStr)
         if (newItem.eTag === oldItem.eTag) {
-          this.saveItem(key, newItem)
+          savedItem = this.saveItem(key, newItem)
         } else {
-          throw new Error(`Storage: error writing "${key}" due to eTag conflict.`)
+          throw new ETagConflictError(`Unable to write '${key}' due to eTag conflict.`, { cause: { oldItem, newItem } })
         }
       }
+
+      result[key] = { eTag: savedItem.eTag }
     }
+
+    return result
   }
 
   /**
@@ -138,8 +150,9 @@ export class MemoryStorage implements Storage {
    *
    * @private
    */
-  private saveItem (key: string, item: unknown): void {
+  private saveItem (key: string, item: unknown): StoreItem {
     const clone = Object.assign({}, item, { eTag: (this.etag++).toString() })
     this.memory[key] = JSON.stringify(clone)
+    return clone
   }
 }

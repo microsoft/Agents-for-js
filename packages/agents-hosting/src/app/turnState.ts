@@ -344,7 +344,7 @@ export class TurnState<
     }
 
     if (storage) {
-      const promises: Promise<void>[] = []
+      const promises: Promise<any>[] = []
       if (changes) {
         promises.push(storage.write(changes))
       }

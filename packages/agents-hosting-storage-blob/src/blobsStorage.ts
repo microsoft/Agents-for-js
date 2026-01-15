@@ -3,11 +3,12 @@ import StreamConsumers from 'stream/consumers'
 import { isTokenCredential, TokenCredential } from '@azure/core-auth'
 import {
   AnonymousCredential,
+  BlobRequestConditions,
   ContainerClient,
   StoragePipelineOptions,
   StorageSharedKeyCredential,
 } from '@azure/storage-blob'
-import { Storage, StoreItems } from '@microsoft/agents-hosting'
+import { Storage, StorageWriteOptions, StoreItems } from '@microsoft/agents-hosting'
 import { ExceptionHelper } from '@microsoft/agents-activity'
 import { Errors } from './errorHelper'
 import { sanitizeBlobKey } from './blobsTranscriptStore'
@@ -136,30 +137,50 @@ export class BlobsStorage implements Storage {
    * @returns A promise that resolves when the write operation is complete
    * @throws Will throw if there's a validation error, eTag conflict, or other storage error
    */
-  async write (changes: StoreItems): Promise<void> {
+  async write (changes: StoreItems, options?: StorageWriteOptions): Promise<StoreItems> {
     z.record(z.unknown()).parse(changes)
 
     await this._initialize()
 
-    await Promise.all(
-      Object.entries(changes).map(async ([key, { eTag = '', ...change }]) => {
+    const entries = Object.entries(changes)
+    const results = await Promise.all(
+      entries.map(async ([key, value]) => {
+        const { eTag = '', ...change } = value
+        const conditions: BlobRequestConditions = {}
+
+        if (options?.ifNotExists) {
+          logger.debug(`ifNoneMatch=* condition applied for key: ${key}`)
+          conditions.ifNoneMatch = '*'
+        } else if (typeof eTag === 'string' && eTag !== '*') {
+          logger.debug(`ifMatch=${eTag} condition applied for key: ${key}`)
+          conditions.ifMatch = eTag
+        }
+
         try {
           const blob = this._containerClient.getBlockBlobClient(sanitizeBlobKey(key))
           const serialized = JSON.stringify(change)
           logger.debug(`Writing blob: ${key}, eTag: ${eTag}, size: ${serialized.length}`)
-          return await blob.upload(serialized, serialized.length, {
-            conditions: typeof eTag === 'string' && eTag !== '*' ? { ifMatch: eTag } : {},
+          const item = await blob.upload(serialized, serialized.length, {
+            conditions,
             blobHTTPHeaders: { blobContentType: 'application/json' },
           })
-        } catch (err: any) {
-          if (err.statusCode === 412) {
-            throw ExceptionHelper.generateException(Error, Errors.ETagConflict)
-          } else {
-            throw err
+
+          return { key, eTag: item.etag }
+        } catch (cause: any) {
+          if (cause.statusCode === 409) {
+            throw ExceptionHelper.generateException(Error, Errors.ItemAlreadyExists, cause, { key })
           }
+
+          if (cause.statusCode === 412) {
+            throw ExceptionHelper.generateException(Error, Errors.ETagConflict, cause, { key })
+          }
+
+          throw cause
         }
       })
     )
+
+    return results.reduce((acc, { key, eTag }) => ({ ...acc, [key]: { eTag } }), {})
   }
 
   /**

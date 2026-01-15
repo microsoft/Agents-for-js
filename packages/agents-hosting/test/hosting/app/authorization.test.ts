@@ -1,9 +1,13 @@
 import { strict as assert } from 'assert'
 import { describe, it } from 'node:test'
+import { createStubInstance } from 'sinon'
 
 import { AgentApplication } from './../../../src/app'
 import { MemoryStorage } from '../../../src/storage'
-import { AzureBotAuthorizationOptions } from '../../../src/app/auth/handlers'
+import { CloudAdapter, MsalConnectionManager, TurnContext, UserTokenClient } from '../../../src'
+import { Activity, ActivityTypes } from '@microsoft/agents-activity'
+import { AzureBotActiveHandler, AzureBotAuthorization, AzureBotAuthorizationOptions } from '../../../src/app/auth/handlers'
+import { AuthorizationHandlerStatus } from '../../../src/app/auth/types'
 
 describe('AgentApplication', () => {
   it('should intitalize with underfined authorization', () => {
@@ -114,5 +118,35 @@ describe('AgentApplication', () => {
     assert.rejects(async () => {
       await app.authorization.getToken({} as any, 'nonExistinghandler')
     }, { message: "Cannot find auth handler with ID 'nonExistinghandler'. Ensure it is configured in the agent application options." })
+  })
+
+  it('should handle duplicate token exchange requests', async () => {
+    const adapter = new CloudAdapter()
+    const storage = new MemoryStorage()
+    const connections = new MsalConnectionManager()
+    const exchangeActivity = Activity.fromObject({
+      type: ActivityTypes.Invoke,
+      channelId: 'msteams',
+      from: { id: 'user1' },
+      recipient: { id: 'bot' },
+      conversation: { id: 'convo1' },
+      name: 'signin/tokenExchange',
+      value: { id: 'testId', token: 'incoming-token', connectionName: 'connectionName' }
+    })
+    const context = new TurnContext(adapter, exchangeActivity)
+    const auth = new AzureBotAuthorization('handlerId', { name: 'connectionName' }, { connections, storage })
+
+    const userTokenClient = createStubInstance(UserTokenClient)
+    userTokenClient.exchangeTokenAsync.resolves({ token: 'exchanged-token' })
+    context.turnState.set(context.adapter.UserTokenClientKey, userTokenClient)
+
+    // Provide an active session to hit the token exchange path
+    const active: AzureBotActiveHandler = { id: auth.id, activity: exchangeActivity, attemptsLeft: 2 }
+    const first = await auth.signin(context, active)
+    const second = await auth.signin(context, active)
+
+    assert.equal(first, AuthorizationHandlerStatus.APPROVED)
+    // Second request should be pending to discard the duplicated exchange.
+    assert.equal(second, AuthorizationHandlerStatus.PENDING)
   })
 })

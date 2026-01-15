@@ -33,10 +33,10 @@ describe('Errors tests', () => {
       val => val && typeof val === 'object' && 'code' in val && 'description' in val
     ) as AgentErrorDefinition[]
 
-    // All error codes should be negative and in the range -100000 to -100019
+    // All error codes should be negative and in the range -100000 to -100021
     errorDefinitions.forEach(errorDef => {
       assert.ok(errorDef.code < 0, `Error code ${errorDef.code} should be negative`)
-      assert.ok(errorDef.code >= -100019, `Error code ${errorDef.code} should be >= -100019`)
+      assert.ok(errorDef.code >= -100021, `Error code ${errorDef.code} should be >= -100021`)
       assert.ok(errorDef.code <= -100000, `Error code ${errorDef.code} should be <= -100000`)
     })
   })

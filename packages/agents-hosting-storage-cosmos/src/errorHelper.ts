@@ -177,5 +177,21 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   MaxNestingDepthExceeded: {
     code: -100019,
     description: 'Maximum nesting depth of {maxDepth} exceeded. {additionalMessage}'
+  },
+
+  /**
+   * Error thrown when there is an eTag conflict during a storage operation.
+   */
+  ETagConflict: {
+    code: -100020,
+    description: 'Unable to write \'{key}\' due to eTag conflict.'
+  },
+
+  /**
+   * Error thrown when attempting to create an item that already exists in storage.
+   */
+  ItemAlreadyExists: {
+    code: -100021,
+    description: 'Unable to write \'{key}\' because it already exists.'
   }
 }
