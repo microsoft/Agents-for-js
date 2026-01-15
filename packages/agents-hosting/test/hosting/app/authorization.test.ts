@@ -67,10 +67,10 @@ describe('AgentApplication', () => {
 
     const authHandlers = (app.authorization as any).manager._handlers
     assert.equal(Object.keys(authHandlers).length, 2)
-    const one = authHandlers['authOne']._options
-    const two = authHandlers['authTwo']._options
-    assert.equal(one.name, 'FirstConnection')
-    assert.equal(two.name, 'SecondConnection')
+    const one = authHandlers['authOne'].options
+    const two = authHandlers['authTwo'].options
+    assert.equal(one.azureBotOAuthConnectionName, 'FirstConnection')
+    assert.equal(two.azureBotOAuthConnectionName, 'SecondConnection')
   })
 
   it('should use connection parameters from environment when not explicitly provided', () => {
@@ -94,8 +94,8 @@ describe('AgentApplication', () => {
         }
       })
 
-      const authHandler: AzureBotAuthorizationOptions = (app.authorization as any).manager._handlers['testAuth']._options
-      assert.equal(authHandler.name, 'EnvConnection')
+      const authHandler: AzureBotAuthorizationOptions = (app.authorization as any).manager._handlers['testAuth'].options
+      assert.equal(authHandler.azureBotOAuthConnectionName, 'EnvConnection')
       assert.equal(authHandler.title, 'Env Title')
       assert.equal(authHandler.text, 'Env Text')
     } finally {

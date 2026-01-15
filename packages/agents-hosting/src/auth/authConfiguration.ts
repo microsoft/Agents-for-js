@@ -363,3 +363,45 @@ function getDefaultIssuers (tenantId: string, authority: string) : string[] {
     `${authority}/${tenantId}/v2.0`
   ]
 }
+
+/**
+ * Loads configuration values from environment variables.
+ * @param config An object defining the configuration keys to load.
+ * @remarks
+ * The keys of the input object represent 'labels', and the 'values' are objects
+ * where each 'key' is a property name and the corresponding value is the name
+ * of the environment variable to load.
+ *
+ * The output object will have the same structure, but the 'values' will be the
+ * values loaded from the environment variables, or `undefined` if the variable
+ * is not set.
+ * @returns An object with the loaded configuration values.
+ */
+export function env<Label extends string, Prop extends string> (config: Record<Label, Record<Prop, string>>): Record<Label, Record<Prop, string> | undefined> {
+  const result = {} as Record<Label, Record<Prop, string>>
+  const list = new Map<string, { assign: (value: string | undefined) => void }>()
+
+  for (const [labelKey, labelValue] of Object.entries(config) as ([Label, Record<Prop, string>][])) {
+    for (const [propKey, propValue] of Object.entries(labelValue) as ([Prop, string][])) {
+      const id = propValue.toUpperCase()
+      const previous = list.get(id)
+      list.set(id, {
+        assign (value) {
+          if (!value) {
+            return
+          }
+
+          result[labelKey] ??= {} as Record<Prop, string> // Initialize if undefined
+          previous?.assign(value)
+          result[labelKey][propKey] = value
+        }
+      })
+    }
+  }
+
+  for (const [envKey, envValue] of Object.entries(process.env)) {
+    list.get(envKey.toUpperCase())?.assign(envValue)
+  }
+
+  return result
+}
