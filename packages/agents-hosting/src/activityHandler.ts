@@ -259,7 +259,9 @@ export class ActivityHandler {
     if (!context.activity) throw ExceptionHelper.generateException(Error, Errors.TurnContextMissingActivity)
     if (!context.activity.type) throw ExceptionHelper.generateException(Error, Errors.ActivityMissingType)
 
-    await this.onTurnActivity(context)
+    await this.handle(context, 'Turn', async () => {
+      await this.onTurnActivity(context)
+    })
   }
 
   /**
