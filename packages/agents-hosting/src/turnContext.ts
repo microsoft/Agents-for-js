@@ -175,7 +175,7 @@ export class TurnContext {
         result.type = ActivityTypes.Message
       }
       if (result.type === ActivityTypes.InvokeResponse) {
-        this.turnState.set(INVOKE_RESPONSE_KEY, newActivity)
+        this.turnState.set(INVOKE_RESPONSE_KEY, result)
       }
       if (result.type !== ActivityTypes.Trace) {
         sentNonTraceActivity = true
