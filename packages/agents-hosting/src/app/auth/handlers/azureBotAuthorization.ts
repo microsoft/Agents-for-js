@@ -295,12 +295,6 @@ export class AzureBotAuthorization implements AuthorizationHandler {
 
     logger.debug(this.prefix('Sign-in active session detected'), active.activity)
 
-    if (active.activity.conversation?.id !== activity.conversation?.id) {
-      await this.sendInvokeResponse(context, { status: 400 })
-      logger.warn(this.prefix('Discarding the active session due to the conversation has changed during an active sign-in process'), activity)
-      return AuthorizationHandlerStatus.IGNORED
-    }
-
     if (active.attemptsLeft <= 0) {
       logger.warn(this.prefix('Maximum sign-in attempts exceeded'), activity)
       await context.sendActivity(MessageFactory.text(this.messages.maxAttemptsExceeded(this.maxAttempts)))
@@ -426,7 +420,7 @@ export class AzureBotAuthorization implements AuthorizationHandler {
 
     if (activity.name === 'signin/tokenExchange') {
       const tokenExchangeInvokeRequest = activity.value as TokenExchangeInvokeRequest
-      const tokenExchangeRequest: TokenExchangeRequest = { token: tokenExchangeInvokeRequest.token }
+      const tokenExchangeRequest: TokenExchangeRequest = { token: tokenExchangeInvokeRequest?.token }
 
       if (!tokenExchangeRequest?.token) {
         const reason = 'The Agent received an InvokeActivity that is missing a TokenExchangeInvokeRequest value. This is required to be sent with the InvokeActivity.'
