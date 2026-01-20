@@ -8,7 +8,7 @@ import { AgentApplication } from '../agentApplication'
 import { AgenticAuthorization, AzureBotAuthorization } from './handlers'
 import { TurnContext } from '../../turnContext'
 import { HandlerStorage } from './handlerStorage'
-import { ActiveAuthorizationHandler, AuthorizationHandlerStatus, AuthorizationHandler, AuthorizationHandlerSettings, AuthorizationOptions } from './types'
+import { ActiveAuthorizationHandler, AuthorizationHandlerStatus, AuthorizationHandler, AuthorizationHandlerSettings, UserAuthorizationOptions, AuthorizationHandlerOptions } from './types'
 import { Connections } from '../../auth/connections'
 
 const logger = debug('agents:authorization:manager')
@@ -46,6 +46,7 @@ export type GetHandlerIds = (activity: Activity) => string[] | Promise<string[]>
  */
 export class AuthorizationManager {
   private _handlers: Record<string, AuthorizationHandler> = {}
+  private _userAuthorizationOptions: UserAuthorizationOptions
 
   /**
    * Creates an instance of the AuthorizationManager.
@@ -56,13 +57,15 @@ export class AuthorizationManager {
       throw new Error('Storage is required for Authorization. Ensure that a storage provider is configured in the AgentApplication options.')
     }
 
-    if (app.options.authorization === undefined || Object.keys(app.options.authorization).length === 0) {
-      throw new Error('The AgentApplication.authorization does not have any auth handlers')
+    this._userAuthorizationOptions = this.normalizeOptions()
+
+    if (Object.keys(this._userAuthorizationOptions.handlers).length === 0) {
+      throw new Error('No authorization handlers configured. Provide handlers via \'AgentApplication.userAuthorization.handlers\' property.')
     }
 
     const settings: AuthorizationHandlerSettings = { storage: app.options.storage, connections }
-    for (const [id, handler] of Object.entries(app.options.authorization)) {
-      const options = this.loadOptions(id, handler)
+    for (const [id, handlerConfig] of Object.entries(this._userAuthorizationOptions.handlers ?? {})) {
+      const options = this.loadOptions(id, handlerConfig.settings)
       if (options.type === 'agentic') {
         this._handlers[id] = new AgenticAuthorization(id, options, settings)
       } else {
@@ -72,17 +75,50 @@ export class AuthorizationManager {
   }
 
   /**
+   * Normalizes authorization options from either legacy or new format.
+   * Shows a deprecation warning if legacy format is used.
+   */
+  private normalizeOptions (): UserAuthorizationOptions {
+    const { authorization, userAuthorization } = this.app.options
+
+    // Prefer new format if provided
+    if (userAuthorization) {
+      return {
+        handlers: userAuthorization.handlers,
+        defaultHandlerName: userAuthorization.defaultHandlerName ?? process.env['AGENTAPPLICATION__USERAUTHORIZATION__DEFAULTHANDLERNAME'],
+        autoSignIn: userAuthorization.autoSignIn ?? (() => process.env['AGENTAPPLICATION__USERAUTHORIZATION__AUTOSIGNIN'] !== 'false'),
+      }
+    }
+
+    // Fall back to legacy format with deprecation warning
+    if (authorization) {
+      logger.warn('The \'AgentApplication.authorization\' option is deprecated. Please use \'AgentApplication.userAuthorization\' with the new format instead.')
+
+      // Convert legacy format to new format
+      const handlers: UserAuthorizationOptions['handlers'] = {}
+      for (const [id, options] of Object.entries(authorization)) {
+        handlers[id] = { settings: options }
+      }
+
+      return { handlers }
+    }
+
+    // No authorization configured
+    return { handlers: {} }
+  }
+
+  /**
    * Loads and validates the authorization handler options.
    */
-  private loadOptions (id: string, options: AuthorizationOptions[string]) {
-    const result: AuthorizationOptions[string] = {
+  private loadOptions (id: string, options: AuthorizationHandlerOptions) {
+    const result: AuthorizationHandlerOptions = {
       ...options,
       type: (options.type ?? process.env[`${id}_type`])?.toLowerCase() as typeof options.type,
     }
 
-    // Validate supported types, agentic, and default (Azure Bot - undefined)
+    // Validate supported types: agentic, and default (Azure Bot - undefined)
     const supportedTypes = ['agentic', undefined]
-    if (!supportedTypes.includes(result.type)) {
+    if (result.type && !supportedTypes.includes(result.type)) {
       throw new Error(`Unsupported authorization handler type: '${result.type}' for auth handler: '${id}'. Supported types are: '${supportedTypes.filter(Boolean).join('\', \'')}'.`)
     }
 
@@ -109,6 +145,17 @@ export class AuthorizationManager {
     let active = await this.active(storage, getHandlerIds)
 
     const handlers = active?.handlers ?? this.mapHandlers(await getHandlerIds(context.activity) ?? []) ?? []
+
+    // AutoSignIn feature: performs automatic sign-in using the provided default or first available handler.
+    const shouldAutoSignIn = await this._userAuthorizationOptions.autoSignIn?.(context)
+    if (shouldAutoSignIn && handlers.length === 0) {
+      const firstHandler = Object.values(this._handlers)[0]
+      const defaultHandler = this._handlers[this._userAuthorizationOptions.defaultHandlerName ?? '']
+      if (!defaultHandler && this._userAuthorizationOptions.defaultHandlerName) {
+        logger.warn(`AutoSignIn is enabled but default handler '${this._userAuthorizationOptions.defaultHandlerName}' is not found. Falling back to the first available handler (${firstHandler?.id}).`)
+      }
+      handlers.push(defaultHandler ?? firstHandler)
+    }
 
     for (const handler of handlers) {
       const status = await this.signin(storage, handler, context, active?.data)

@@ -27,7 +27,7 @@ describe('AgentApplication', () => {
         authorization: {}
       })
       assert.equal(app.options.authorization, undefined)
-    }, { message: 'The AgentApplication.authorization does not have any auth handlers' })
+    }, { message: 'No authorization handlers configured. Provide handlers via \'AgentApplication.userAuthorization.handlers\' property.' })
   })
 
   it('should initialize successfully with valid auth configuration', () => {

@@ -125,7 +125,7 @@ export class AgentApplication<TState extends TurnState> {
       this._adapter = new CloudAdapter()
     }
 
-    if (this._options.authorization) {
+    if (this._options.userAuthorization || this._options.authorization) {
       this._authorizationManager = new AuthorizationManager(this, this._adapter.connectionManager)
       this._authorization = new UserAuthorization(this._authorizationManager)
     }
@@ -433,7 +433,7 @@ export class AgentApplication<TState extends TurnState> {
    *
    */
   public onSignInSuccess (handler: (context: TurnContext, state: TurnState, id?: string) => Promise<void>): this {
-    if (this.options.authorization) {
+    if (this.options.userAuthorization || this.options.authorization) {
       this.authorization.onSignInSuccess(handler)
     } else {
       throw new Error(
@@ -463,7 +463,7 @@ export class AgentApplication<TState extends TurnState> {
    *
    */
   public onSignInFailure (handler: (context: TurnContext, state: TurnState, id?: string) => Promise<void>): this {
-    if (this.options.authorization) {
+    if (this.options.userAuthorization || this.options.authorization) {
       this.authorization.onSignInFailure(handler)
     } else {
       throw new Error(

@@ -10,7 +10,7 @@ import { AdaptiveCardsOptions } from './adaptiveCards'
 import { InputFileDownloader } from './inputFileDownloader'
 import { TurnState } from './turnState'
 import { HeaderPropagationDefinition } from '../headerPropagation'
-import { AuthorizationOptions } from './auth/types'
+import { AuthorizationOptions, UserAuthorizationOptions } from './auth/types'
 import { Connections } from '../auth/connections'
 
 /**
@@ -90,6 +90,8 @@ export interface AgentApplicationOptions<TState extends TurnState> {
   fileDownloaders?: InputFileDownloader<TState>[];
 
   /**
+   * @deprecated Use `userAuthorization` instead.
+   *
    * Handlers for managing user authentication and authorization within the agent.
    * This includes OAuth flows, token management, and permission validation.
    * Use this to implement secure access to protected resources or user-specific data.
@@ -97,6 +99,28 @@ export interface AgentApplicationOptions<TState extends TurnState> {
    * @default undefined (no authorization required)
    */
   authorization?: AuthorizationOptions;
+
+  /**
+   * Configuration for user authentication and authorization within the agent.
+   * This includes OAuth flows, token management, and permission validation.
+   * Use this to implement secure access to protected resources or user-specific data.
+   *
+   * @example
+   * ```typescript
+   * userAuthorization: {
+   *   defaultHandlerName: 'graph',
+   *   autoSignIn: () => true,
+   *   handlers: {
+   *     graph: {
+   *       settings: { text: 'Sign in', title: 'Graph Sign In' }
+   *     },
+   *   }
+   * }
+   * ```
+   *
+   * @default undefined (no authorization required)
+   */
+  userAuthorization?: UserAuthorizationOptions;
 
   /**
    * Configuration options for handling Adaptive Card actions and interactions.

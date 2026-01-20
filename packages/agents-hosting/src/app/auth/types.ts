@@ -11,9 +11,106 @@ import { TokenResponse } from '../../oauth'
 import { Connections } from '../../auth/connections'
 
 /**
- * Authorization configuration options.
+ * Handler options type for authorization handlers.
  */
-export type AuthorizationOptions = Record<string, AzureBotAuthorizationOptions | AgenticAuthorizationOptions>
+export type AuthorizationHandlerOptions = AzureBotAuthorizationOptions | AgenticAuthorizationOptions
+
+/**
+ * Configuration for an individual authorization handler.
+ */
+export interface AuthorizationHandlerConfig {
+  /**
+   * The settings for the authorization handler.
+   */
+  settings: AuthorizationHandlerOptions
+}
+
+/**
+ * A record of authorization handler configurations keyed by their unique identifiers.
+ */
+export type AuthorizationHandlers = Record<string, AuthorizationHandlerConfig>
+
+/**
+ * Function type for selecting whether to auto sign-in.
+ */
+export type AutoSignInSelector = (context: TurnContext) => Promise<boolean> | boolean
+
+/**
+ * User authorization configuration options.
+ *
+ * @remarks
+ * Properties can be configured via environment variables.
+ * Use the format:
+ * `AgentApplication__UserAuthorization__{propertyName}`
+ *
+ * @example
+ * ```env
+ * # For all handlers
+ *
+ * AGENTAPPLICATION__USERAUTHORIZATION__DEFAULTHANDLERNAME=graph
+ * AGENTAPPLICATION__USERAUTHORIZATION__AUTOSIGNIN=true
+ * ```
+ *
+ * @example
+ * ```typescript
+ * userAuthorization: {
+ *   defaultHandlerName: 'graph',
+ *   autoSignIn: () => true,
+ *   handlers: {
+ *     graph: {
+ *       settings: { text: 'Sign in with Microsoft Graph', title: 'Graph Sign In' }
+ *     },
+ *     github: {
+ *       settings: { text: 'Sign in with GitHub', title: 'GitHub Sign In' }
+ *     },
+ *   }
+ * }
+ * ```
+ */
+export interface UserAuthorizationOptions {
+  /**
+   * The name of the default authorization handler to use when no specific handler is specified.
+   * @remarks If not provided, the first handler in the list will be used as the default.
+   */
+  defaultHandlerName?: string
+  /**
+   * Indicates whether to automatically sign in users when they interact with the application.
+   * @remarks Auto sign-in is enabled by default and remains enabled unless explicitly disabled (for example, by setting the corresponding configuration or environment variable to 'false').
+   */
+  autoSignIn?: AutoSignInSelector
+  /**
+   * A record of authorization handlers keyed by their unique identifiers.
+   */
+  handlers: AuthorizationHandlers
+}
+
+/**
+ * Authorization configuration options.
+ * @deprecated Use {@link UserAuthorizationOptions} with the `userAuthorization` property instead.
+ * This flat structure will be removed in a future version.
+ *
+ * @example
+ * ```typescript
+ * // Deprecated:
+ * authorization: {
+ *   graph: { text: '...', title: '...' },
+ *   github: { text: '...', title: '...' },
+ * }
+ *
+ * // Use instead:
+ * userAuthorization: {
+ *   handlers: {
+ *     graph: {
+ *       settings: { text: '...', title: '...' }
+ *     },
+ *     github: {
+ *       settings: { text: '...', title: '...' }
+ *     },
+ *   }
+ * }
+ * ```
+ */
+export type AuthorizationOptions = Record<string, AuthorizationHandlerOptions>
 
 /**
  * Represents the status of a handler registration attempt.

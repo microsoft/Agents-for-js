@@ -6,7 +6,7 @@
 import { Storage } from '../storage'
 import { AgentApplication } from './agentApplication'
 import { AgentApplicationOptions } from './agentApplicationOptions'
-import { AuthorizationOptions } from './auth/types'
+import { AuthorizationOptions, UserAuthorizationOptions } from './auth/types'
 import { TurnState } from './turnState'
 
 /**
@@ -55,12 +55,29 @@ export class AgentApplicationBuilder<TState extends TurnState = TurnState> {
   // }
 
   /**
+   * Sets user authorization options for the AgentApplication.
+   * @param options The user authorization configuration
+   * @returns This builder instance for chaining
+   */
+  public withAuthorization (options: UserAuthorizationOptions): this
+  /**
+   * @deprecated Use `withAuthorization(UserAuthorizationOptions)` instead.
+   *
    * Sets authentication options for the AgentApplication.
    * @param authHandlers The user identity authentication options
    * @returns This builder instance for chaining
    */
-  public withAuthorization (authHandlers: AuthorizationOptions): this {
-    this._options.authorization = authHandlers
+  public withAuthorization (authHandlers: AuthorizationOptions): this
+  public withAuthorization (options: UserAuthorizationOptions | AuthorizationOptions): this {
+    if (
+      'handlers' in options &&
+      typeof options.handlers === 'object' &&
+      Object.values(options.handlers).some(handler => typeof handler === 'object' && 'settings' in handler)
+    ) {
+      this._options.userAuthorization = options as UserAuthorizationOptions
+    } else {
+      this._options.authorization = options as AuthorizationOptions
+    }
     return this
   }
 
