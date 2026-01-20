@@ -62,14 +62,14 @@ const handleResponse = (adapter: CloudAdapter, handler: ActivityHandler, convers
   const appId = connection?.connectionSettings?.clientId ?? ''
 
   const myTurnContext = new TurnContext(adapter, activity, CloudAdapter.createIdentity(appId))
-  const conversationDataAccessor = conversationState.createProperty<ConversationReferenceState>(req.params!.conversationId)
-  const conversationRefState = await conversationDataAccessor.get(myTurnContext, undefined, { channelId: activity.channelId!, conversationId: req.params!.conversationId })
+  const conversationDataAccessor = conversationState.createProperty<ConversationReferenceState>(req.params!.conversationId as string)
+  const conversationRefState = await conversationDataAccessor.get(myTurnContext, undefined, { channelId: activity.channelId!, conversationId: req.params!.conversationId as string })
 
   const conversationRef = JSON.stringify(conversationRefState.conversationReference)
   console.log('conversationRef', conversationRef)
   const callback = async (turnContext: TurnContext) => {
     activity.applyConversationReference(conversationRefState.conversationReference)
-    turnContext.activity.id = req.params!.activityId
+    turnContext.activity.id = req.params!.activityId as string
 
     let response
     if (activity.type === ActivityTypes.EndOfConversation) {
