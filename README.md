@@ -35,7 +35,12 @@ Additionally we provide a Copilot Studio Client, to interact with Agents created
 |--------------|-------------|-------------|
 | `@microsoft/agents-copilotstudio-client` | [![npm](https://img.shields.io/npm/v/@microsoft/agents-copilotstudio-client)](https://www.npmjs.com/package/@microsoft/agents-copilotstudio-client) | Direct to Engine client to interact with Agents created in CopilotStudio
 
-### Environment requirements
+### Nightly Builds
+
+Each package also has a nightly build, available via the `@latest` tag on NPM.
+The nightly build contains the code from our `main` branch and may contain features that are still in development.
+
+### Environment Requirements
 
 The packages should target node18 or greater, and can be used from JavaScript using CommonJS or ES6 modules, or from TypeScript.
 
