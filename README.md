@@ -37,7 +37,7 @@ Additionally we provide a Copilot Studio Client, to interact with Agents created
 
 ### Nightly Builds
 
-Each package also has a nightly build, available via the `@latest` tag on NPM.
+Each package also has a nightly build, available via the `@next` tag on NPM.
 The nightly build contains the code from our `main` branch and may contain features that are still in development.
 
 ### Environment Requirements
