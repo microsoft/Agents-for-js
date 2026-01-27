@@ -156,7 +156,7 @@ export class TeamsInfo {
       // const connectorClient = context.adapter.createConnectorClient(
       //   context.activity.serviceUrl
       // )
-      const connectorClient : ConnectorClient = context.turnState.get<ConnectorClient>('connectorClient')
+      const connectorClient : ConnectorClient = context.turnState.get<ConnectorClient>(context.adapter.ConnectorClientKey)
       const conversationResourceResponse = await connectorClient.createConversation(convoParams)
       conversationReference = context.activity.getConversationReference()
       conversationReference.conversation!.id = conversationResourceResponse.id
@@ -420,12 +420,12 @@ export class TeamsInfo {
   }
 
   private static async getMemberInternal (context: TurnContext, conversationId: string, userId: string): Promise<TeamsChannelAccount> {
-    const connectorClient : ConnectorClient = context.turnState.get<ConnectorClient>('connectorClient')
+    const connectorClient : ConnectorClient = context.turnState.get<ConnectorClient>(context.adapter.ConnectorClientKey)
     return await connectorClient.getConversationMember(userId, conversationId)
   }
 
   private static getRestClient (context: TurnContext) : TeamsConnectorClient {
-    const connectorClient : ConnectorClient = context.turnState.get<ConnectorClient>('connectorClient')
+    const connectorClient : ConnectorClient = context.turnState.get<ConnectorClient>(context.adapter.ConnectorClientKey)
     return new TeamsConnectorClient(connectorClient)
   }
 }
