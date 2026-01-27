@@ -88,6 +88,27 @@ export interface CopilotStudioWebChatConnection {
 }
 
 /**
+ * Creates a wrapper that invokes `fn` at most once.
+ * On the first call the wrapper invokes `fn(value)` and returns whatever `fn` returns.
+ * Subsequent calls do nothing and return `undefined`.
+ *
+ * @template T - Type of the single argument passed to the wrapped function.
+ * @param fn Function to be invoked once.
+ * @returns A wrapper function that calls `fn` at most once.
+ */
+function once<T = void> (fn: (value: T) => Promise<void>): (value: T) => Promise<void> | void {
+  let called = false
+
+  return value => {
+    if (!called) {
+      called = true
+
+      return fn(value)
+    }
+  }
+}
+
+/**
  * A utility class that provides WebChat integration capabilities for Copilot Studio services.
  *
  * @remarks
@@ -211,10 +232,10 @@ export class CopilotStudioWebChat {
     const activity$ = createObservable<Partial<Activity>>(async (subscriber) => {
       activitySubscriber = subscriber
 
-      const handleAcknowledgementOnce = async (): Promise<void> => {
+      const handleAcknowledgementOnce = once(async (): Promise<void> => {
         connectionStatus$.next(2)
-        await 0 // Webchat requires an extra tick to process the connection status change
-      }
+        await Promise.resolve() // Webchat requires an extra tick to process the connection status change
+      })
 
       logger.debug('--> Connection established.')
       notifyTyping()
@@ -229,6 +250,8 @@ export class CopilotStudioWebChat {
 
           notifyActivity(activity)
         }
+        // If no activities received from bot, we should still acknowledge.
+        await handleAcknowledgementOnce()
       }
     })
 

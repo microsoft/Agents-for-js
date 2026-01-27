@@ -1,10 +1,10 @@
 import { startServer } from '@microsoft/agents-hosting-express'
-import { AgentApplication, TeamsAttachmentDownloader } from '@microsoft/agents-hosting'
+import { AgentApplication, M365AttachmentDownloader } from '@microsoft/agents-hosting'
 
 const storedFilesKey = 'storedFiles' as const
 
 const agent = new AgentApplication({
-  fileDownloaders: [new TeamsAttachmentDownloader(storedFilesKey)]
+  fileDownloaders: [new M365AttachmentDownloader(storedFilesKey)]
 })
 
 agent.onConversationUpdate('membersAdded', async (context) => {
