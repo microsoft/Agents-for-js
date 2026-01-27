@@ -7,6 +7,7 @@ import { CloudAdapter } from '../cloudAdapter'
 import { Storage } from '../storage'
 import { TranscriptLogger } from '../transcript'
 import { AdaptiveCardsOptions } from './adaptiveCards'
+import { ProactiveOptions } from './proactive'
 import { InputFileDownloader } from './inputFileDownloader'
 import { TurnState } from './turnState'
 import { HeaderPropagationDefinition } from '../headerPropagation'
@@ -106,6 +107,13 @@ export interface AgentApplicationOptions<TState extends TurnState> {
    * @default undefined (default Adaptive Card handling)
    */
   adaptiveCardsOptions?: AdaptiveCardsOptions;
+
+  /**
+   * Configuration for proactive messaging support.
+   *
+   * @default undefined (no proactive helper configured)
+   */
+  proactiveOptions?: ProactiveOptions;
 
   /**
    * Whether to automatically remove mentions of the bot's name from incoming messages.

@@ -71,3 +71,40 @@ app.post('/api/messages', async (req: Request, res: Response) => {
 })
 
 ```
+
+## Proactive messaging
+
+`AgentApplication.proactive` simplifies persisting conversation references and sending activities outside the normal turn flow.
+
+```ts
+import { Activity, AgentApplication, MemoryStorage } from '@microsoft/agents-hosting'
+
+const app = new AgentApplication({
+  storage: new MemoryStorage(),
+  proactiveOptions: { autoPersistReferences: true }
+})
+
+app.onMessage(async (context) => {
+  await context.sendActivity('Thanks, I will keep you posted!')
+})
+
+await app.proactive.sendActivities(
+  'conversation-id',
+  'msteams',
+  [Activity.fromObject({ type: 'message', text: 'Here is a proactive update.' })]
+)
+```
+
+To integrate with external schedulers or services, register the optional HTTP endpoints:
+
+```ts
+import express from 'express'
+import { registerProactiveRoutes } from '@microsoft/agents-hosting'
+
+const server = express()
+server.use(express.json())
+
+registerProactiveRoutes(server, app)
+```
+
+The extension adds `/api/sendactivity` and `/api/sendtoreference` endpoints that call the proactive helper internally.
