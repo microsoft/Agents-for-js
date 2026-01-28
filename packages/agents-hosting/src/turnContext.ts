@@ -115,15 +115,14 @@ export class TurnContext {
    * channels that support them, like the Bot Framework Emulator.
    */
   async sendTraceActivity (name: string, value?: any, valueType?: string, label?: string): Promise<ResourceResponse | undefined> {
-    const traceActivityObj = {
+    const traceActivity = {
       type: ActivityTypes.Trace,
       timestamp: new Date().toISOString(),
       name,
       value,
       valueType,
       label
-    }
-    const traceActivity = Activity.fromObject(traceActivityObj)
+    } as Activity
     return await this.sendActivity(traceActivity)
   }
 
@@ -141,16 +140,15 @@ export class TurnContext {
    * information from the incoming activity.
    */
   async sendActivity (activityOrText: string | Activity, speak?: string, inputHint?: string): Promise<ResourceResponse | undefined> {
-    let activityObject: {}
+    let activity: Activity
     if (typeof activityOrText === 'string') {
-      activityObject = { type: ActivityTypes.Message, text: activityOrText, inputHint: inputHint || InputHints.AcceptingInput }
+      activity = { type: ActivityTypes.Message, text: activityOrText, inputHint: inputHint || InputHints.AcceptingInput } as Activity
       if (speak) {
-        activityObject = { ...activityObject, speak }
+        activity.speak = speak
       }
     } else {
-      activityObject = activityOrText
+      activity = activityOrText
     }
-    const activity = Activity.fromObject(activityObject)
 
     const responses = (await this.sendActivities([activity])) || []
     return responses[0]
@@ -171,12 +169,13 @@ export class TurnContext {
     let sentNonTraceActivity = false
     const ref = this.activity.getConversationReference()
     const output = activities.map((activity) => {
-      const result = activity.applyConversationReference(ref)
+      const newActivity = Activity.fromObject(activity)
+      const result = newActivity.applyConversationReference(ref)
       if (!result.type) {
         result.type = ActivityTypes.Message
       }
       if (result.type === ActivityTypes.InvokeResponse) {
-        this.turnState.set(INVOKE_RESPONSE_KEY, activity)
+        this.turnState.set(INVOKE_RESPONSE_KEY, result)
       }
       if (result.type !== ActivityTypes.Trace) {
         sentNonTraceActivity = true
@@ -225,8 +224,9 @@ export class TurnContext {
    * update the content of an adaptive card or change a message.
    */
   async updateActivity (activity: Activity): Promise<void> {
-    const ref: ConversationReference = this.activity.getConversationReference()
-    const a: Activity = activity.applyConversationReference(ref)
+    const newActivity = Activity.fromObject(activity)
+    const ref = this.activity.getConversationReference()
+    const a = newActivity.applyConversationReference(ref)
     return await this.emit(this._onUpdateActivity, a, async () =>
       await this.adapter.updateActivity(this, a).then(() => {})
     )
