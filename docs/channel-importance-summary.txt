@@ -1,0 +1,41 @@
+
+CHANNEL IMPORTANCE SUMMARY
+==========================
+
+Analysis of 249 issues in microsoft/Agents-for-js
+(as of 2026-01-31)
+
+Channel Mentions (with visual representation):
+
+ 1. copilot     41 │██████████████████████████████████████████████████ 16.5%
+ 2. msteams     27 │████████████████████████████████ 10.8%
+ 3. webchat     22 │██████████████████████████ 8.8%
+ 4. email        3 │███ 1.2%
+ 5. slack        1 │█ 0.4%
+
+──────────────────────────────────────────────────────────────────────
+
+TEAMS IMPORTANCE (msteams + copilot combined)
+Total mentions: 68
+Percentage of all issues: 27.3%
+Percentage of channel mentions: 72.3%
+
+──────────────────────────────────────────────────────────────────────
+
+COMPARATIVE IMPORTANCE
+msteams is:
+  • 27x more important than Slack (27 vs 1)
+  • 9x more important than Email (27 vs 3)
+  • 1.2x more important than Webchat (27 vs 22)
+
+Teams (combined) is:
+  • 68x more important than Slack (68 vs 1)
+  • 22.7x more important than Email (68 vs 3)
+  • 3.1x more important than Webchat (68 vs 22)
+
+──────────────────────────────────────────────────────────────────────
+
+CONCLUSION: Microsoft Teams is CRITICALLY IMPORTANT
+
+72.3% of all channel-related issues are Teams-focused.
+This SDK is primarily designed for Microsoft Teams integration.

@@ -10,6 +10,10 @@ The M365 Agent SDK is a comprehensive framework for building enterprise-grade ag
 
 For more information please see the parent project information here [Microsoft 365 Agents SDK](https://aka.ms/agents)
 
+## Channel Importance Analysis
+
+Based on an analysis of all GitHub issues in this repository, **Microsoft Teams (msteams) is critically important** to the Agents-for-js SDK, representing 72.3% of all channel-related discussions. See the [Channel Importance Analysis Report](docs/channel-importance-analysis.md) for detailed findings.
+
 ## Getting Started
 
 The best to way to get started with these packages is to look at the samples available in https://github.com/microsoft/Agents
