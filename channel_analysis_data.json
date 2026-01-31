@@ -1,0 +1,601 @@
+{
+  "total_issues": 249,
+  "microsoft_issues": 184,
+  "issues_with_channels": 42,
+  "microsoft_issues_with_channels": 18,
+  "channel_mentions": {
+    "webchat": 22,
+    "msteams": 18,
+    "email": 3,
+    "directline": 3,
+    "emulator": 2,
+    "slack": 1
+  },
+  "microsoft_channel_mentions": {
+    "msteams": 8,
+    "email": 2,
+    "webchat": 9,
+    "emulator": 2,
+    "slack": 1
+  },
+  "issues_by_state": {
+    "open": 49,
+    "closed": 200
+  },
+  "microsoft_issues_by_state": {
+    "open": 35,
+    "closed": 149
+  },
+  "issues_by_channel": {
+    "webchat": [
+      {
+        "number": 881,
+        "title": "[Bug] &#34;Analyzing data...&#34; (Typing activity) persists and does not disappear when using AI Builder topics",
+        "state": "open",
+        "author": "seulki-kt",
+        "is_microsoft": false,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/881"
+      },
+      {
+        "number": 832,
+        "title": "When using nodejs/copilotstudio-webclient to connect to Copilot Studio, the prompt \u201cDo you allow AI suggestions to use your data?\u201d appears, but the options cannot be clicked. How can this issue be resolved?",
+        "state": "open",
+        "author": "02hao09",
+        "is_microsoft": false,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/832"
+      },
+      {
+        "number": 602,
+        "title": "Message and file upload failures and Inconsistent responses",
+        "state": "open",
+        "author": "deepakc97",
+        "is_microsoft": false,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/602"
+      },
+      {
+        "number": 856,
+        "title": "Connection failure and streaming issues fixed in different versions \u2013 which version supports both?",
+        "state": "closed",
+        "author": "seulki-kt",
+        "is_microsoft": false,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/856"
+      },
+      {
+        "number": 830,
+        "title": "Bug: CopilotStudioWebChat signals ready state before conversation ID is received",
+        "state": "closed",
+        "author": "benbrown",
+        "is_microsoft": true,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/830"
+      },
+      {
+        "number": 820,
+        "title": "Copilot Studio WebChat Intergration is not handling MCS Streaming well.",
+        "state": "closed",
+        "author": "MattB-msft",
+        "is_microsoft": true,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/820"
+      },
+      {
+        "number": 664,
+        "title": "Proactive sample is not working on MS Teams",
+        "state": "closed",
+        "author": "ceciliaavila",
+        "is_microsoft": true,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/664"
+      },
+      {
+        "number": 638,
+        "title": "Option to disable SSO in OAuth config",
+        "state": "closed",
+        "author": "tracyboehrer",
+        "is_microsoft": true,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/638"
+      },
+      {
+        "number": 612,
+        "title": "OBO Authentication example not working",
+        "state": "closed",
+        "author": "lmyslinski",
+        "is_microsoft": false,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/612"
+      },
+      {
+        "number": 598,
+        "title": "Messages remain in &#34;sending&#34; state until full response is received with Entra-authenticated Copilot chat",
+        "state": "closed",
+        "author": "Jaswanthmicrosoft",
+        "is_microsoft": true,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/598"
+      },
+      {
+        "number": 592,
+        "title": "File Attachment upload not working when using CopilotStudio Client as the connector for WebChat.",
+        "state": "closed",
+        "author": "MattB-msft",
+        "is_microsoft": true,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/592"
+      },
+      {
+        "number": 562,
+        "title": "Not able to pass global variables to copilot studio using Copilot Studio Client",
+        "state": "closed",
+        "author": "PJ-GitHub-DC",
+        "is_microsoft": false,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/562"
+      },
+      {
+        "number": 550,
+        "title": "Adaptive Card connector consent (Action.Submit) not processed from custom host via @microsoft/agents-copilotstudio-client \u2014 Copilot remains \u201cWaiting for user\u201d",
+        "state": "closed",
+        "author": "atarek-akn",
+        "is_microsoft": false,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/550"
+      },
+      {
+        "number": 502,
+        "title": "Error &#39;Activity text cannot be empty&#39; when clicked Allow in the user consent adaptive card",
+        "state": "closed",
+        "author": "stephenzeng",
+        "is_microsoft": false,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/502"
+      },
+      {
+        "number": 499,
+        "title": "File browser.mjs does not exist",
+        "state": "closed",
+        "author": "stephenzeng",
+        "is_microsoft": false,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/499"
+      },
+      {
+        "number": 485,
+        "title": "Uncaught Error: Invalid cluster category value",
+        "state": "closed",
+        "author": "qyq1114",
+        "is_microsoft": false,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/485"
+      },
+      {
+        "number": 482,
+        "title": "Manual Authentication failing on test-agents/copilotstudio-webchat",
+        "state": "closed",
+        "author": "hkhorshed",
+        "is_microsoft": false,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/482"
+      },
+      {
+        "number": 462,
+        "title": "Authentication error when using BF-Emulator",
+        "state": "closed",
+        "author": "ceciliaavila",
+        "is_microsoft": true,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/462"
+      },
+      {
+        "number": 450,
+        "title": "Consent of Office 365 User is not working from test-agents/copilotstudio-webchat",
+        "state": "closed",
+        "author": "MatthewInch",
+        "is_microsoft": false,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/450"
+      },
+      {
+        "number": 434,
+        "title": "CopilotStudio Client WebChat sample failure when `cloud` is not set",
+        "state": "closed",
+        "author": "rido-min",
+        "is_microsoft": true,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/434"
+      },
+      {
+        "number": 397,
+        "title": "[Feature] Add WebChat support for Copilot Studio Client",
+        "state": "closed",
+        "author": "sw-joelmut",
+        "is_microsoft": false,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/397"
+      },
+      {
+        "number": 183,
+        "title": "Consolidate OAuth flows",
+        "state": "closed",
+        "author": "rido-min",
+        "is_microsoft": true,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/183"
+      }
+    ],
+    "msteams": [
+      {
+        "number": 805,
+        "title": "Link Unfurling Not Working in Outlook with Agent SDK (Python &amp; Node.js)",
+        "state": "open",
+        "author": "Mohammed-MSFT",
+        "is_microsoft": true,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/805"
+      },
+      {
+        "number": 584,
+        "title": "MS Teams deduplication on multiple clients",
+        "state": "open",
+        "author": "sw-joelmut",
+        "is_microsoft": false,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/584"
+      },
+      {
+        "number": 488,
+        "title": "Support for bots and agents in shared channels",
+        "state": "open",
+        "author": "MattB-msft",
+        "is_microsoft": true,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/488"
+      },
+      {
+        "number": 829,
+        "title": "Bug: SSO/Consent fails in M365 Copilot within Teams only",
+        "state": "closed",
+        "author": "ericsche",
+        "is_microsoft": false,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/829"
+      },
+      {
+        "number": 770,
+        "title": "Agentic Requests + teams Channel do not support streaming responses at this time.",
+        "state": "closed",
+        "author": "MattB-msft",
+        "is_microsoft": true,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/770"
+      },
+      {
+        "number": 760,
+        "title": "Messaging Extension Link Unfurling card not displayed in Teams when using Agents SDK (@microsoft/agents-hosting-extensions-teams)",
+        "state": "closed",
+        "author": "Mohammed-MSFT",
+        "is_microsoft": true,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/760"
+      },
+      {
+        "number": 740,
+        "title": "Message Extensions/Compose Extensions not working with @microsoft/agents-hosting SDK - invoke response not sent to Teams",
+        "state": "closed",
+        "author": "Mohammed-MSFT",
+        "is_microsoft": true,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/740"
+      },
+      {
+        "number": 738,
+        "title": "Migrating from Bot Framework to Agents SDK issue with onInvokeActivity/createFetchResponse",
+        "state": "closed",
+        "author": "StevieBleeds",
+        "is_microsoft": false,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/738"
+      },
+      {
+        "number": 664,
+        "title": "Proactive sample is not working on MS Teams",
+        "state": "closed",
+        "author": "ceciliaavila",
+        "is_microsoft": true,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/664"
+      },
+      {
+        "number": 612,
+        "title": "OBO Authentication example not working",
+        "state": "closed",
+        "author": "lmyslinski",
+        "is_microsoft": false,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/612"
+      },
+      {
+        "number": 582,
+        "title": "GitHub OAuth connection didn&#39;t work in M365 Copilot Chat",
+        "state": "closed",
+        "author": "frankchen76",
+        "is_microsoft": false,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/582"
+      },
+      {
+        "number": 590,
+        "title": "Inconsistent SSO and authentication behaviors between MS Teams and M365 Copilot",
+        "state": "closed",
+        "author": "frankchen76",
+        "is_microsoft": false,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/590"
+      },
+      {
+        "number": 537,
+        "title": "Streaming Issue in Bot Responses in MS Teams",
+        "state": "closed",
+        "author": "vishalst-optimus",
+        "is_microsoft": false,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/537"
+      },
+      {
+        "number": 517,
+        "title": "Add test cases for Authentication flows",
+        "state": "closed",
+        "author": "sw-joelmut",
+        "is_microsoft": false,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/517"
+      },
+      {
+        "number": 481,
+        "title": "Error trying to send a proactive message programatically",
+        "state": "closed",
+        "author": "jorge-d",
+        "is_microsoft": false,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/481"
+      },
+      {
+        "number": 464,
+        "title": "Etag conflict saving state during OAuth Flow",
+        "state": "closed",
+        "author": "rido-min",
+        "is_microsoft": true,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/464"
+      },
+      {
+        "number": 414,
+        "title": "[Bug] onTurnError: Activity Recipient undefined when relaying Line messages to Teams",
+        "state": "closed",
+        "author": "neko0xff",
+        "is_microsoft": false,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/414"
+      },
+      {
+        "number": 222,
+        "title": "Add support for Targeted messages in a group setting",
+        "state": "closed",
+        "author": "MattB-msft",
+        "is_microsoft": true,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/222"
+      }
+    ],
+    "email": [
+      {
+        "number": 805,
+        "title": "Link Unfurling Not Working in Outlook with Agent SDK (Python &amp; Node.js)",
+        "state": "open",
+        "author": "Mohammed-MSFT",
+        "is_microsoft": true,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/805"
+      },
+      {
+        "number": 488,
+        "title": "Support for bots and agents in shared channels",
+        "state": "open",
+        "author": "MattB-msft",
+        "is_microsoft": true,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/488"
+      },
+      {
+        "number": 500,
+        "title": "Support of agents-hosting-extensions-teams package",
+        "state": "closed",
+        "author": "lilianmisser",
+        "is_microsoft": false,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/500"
+      }
+    ],
+    "directline": [
+      {
+        "number": 856,
+        "title": "Connection failure and streaming issues fixed in different versions \u2013 which version supports both?",
+        "state": "closed",
+        "author": "seulki-kt",
+        "is_microsoft": false,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/856"
+      },
+      {
+        "number": 496,
+        "title": "S2S Authentication with no client Authentication method doesnt work with Nodejs",
+        "state": "closed",
+        "author": "gokseloral",
+        "is_microsoft": false,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/496"
+      },
+      {
+        "number": 397,
+        "title": "[Feature] Add WebChat support for Copilot Studio Client",
+        "state": "closed",
+        "author": "sw-joelmut",
+        "is_microsoft": false,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/397"
+      }
+    ],
+    "emulator": [
+      {
+        "number": 462,
+        "title": "Authentication error when using BF-Emulator",
+        "state": "closed",
+        "author": "ceciliaavila",
+        "is_microsoft": true,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/462"
+      },
+      {
+        "number": 155,
+        "title": "Zod error when`relatesTo.bot` is null",
+        "state": "closed",
+        "author": "rido-min",
+        "is_microsoft": true,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/155"
+      }
+    ],
+    "slack": [
+      {
+        "number": 193,
+        "title": "Support the extension pattern",
+        "state": "closed",
+        "author": "rido-min",
+        "is_microsoft": true,
+        "url": "https://github.com/microsoft/Agents-for-js/issues/193"
+      }
+    ]
+  },
+  "microsoft_issues_by_channel": {
+    "msteams": [
+      {
+        "number": 805,
+        "title": "Link Unfurling Not Working in Outlook with Agent SDK (Python &amp; Node.js)",
+        "state": "open",
+        "author": "Mohammed-MSFT",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/805"
+      },
+      {
+        "number": 488,
+        "title": "Support for bots and agents in shared channels",
+        "state": "open",
+        "author": "MattB-msft",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/488"
+      },
+      {
+        "number": 770,
+        "title": "Agentic Requests + teams Channel do not support streaming responses at this time.",
+        "state": "closed",
+        "author": "MattB-msft",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/770"
+      },
+      {
+        "number": 760,
+        "title": "Messaging Extension Link Unfurling card not displayed in Teams when using Agents SDK (@microsoft/agents-hosting-extensions-teams)",
+        "state": "closed",
+        "author": "Mohammed-MSFT",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/760"
+      },
+      {
+        "number": 740,
+        "title": "Message Extensions/Compose Extensions not working with @microsoft/agents-hosting SDK - invoke response not sent to Teams",
+        "state": "closed",
+        "author": "Mohammed-MSFT",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/740"
+      },
+      {
+        "number": 664,
+        "title": "Proactive sample is not working on MS Teams",
+        "state": "closed",
+        "author": "ceciliaavila",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/664"
+      },
+      {
+        "number": 464,
+        "title": "Etag conflict saving state during OAuth Flow",
+        "state": "closed",
+        "author": "rido-min",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/464"
+      },
+      {
+        "number": 222,
+        "title": "Add support for Targeted messages in a group setting",
+        "state": "closed",
+        "author": "MattB-msft",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/222"
+      }
+    ],
+    "email": [
+      {
+        "number": 805,
+        "title": "Link Unfurling Not Working in Outlook with Agent SDK (Python &amp; Node.js)",
+        "state": "open",
+        "author": "Mohammed-MSFT",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/805"
+      },
+      {
+        "number": 488,
+        "title": "Support for bots and agents in shared channels",
+        "state": "open",
+        "author": "MattB-msft",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/488"
+      }
+    ],
+    "webchat": [
+      {
+        "number": 830,
+        "title": "Bug: CopilotStudioWebChat signals ready state before conversation ID is received",
+        "state": "closed",
+        "author": "benbrown",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/830"
+      },
+      {
+        "number": 820,
+        "title": "Copilot Studio WebChat Intergration is not handling MCS Streaming well.",
+        "state": "closed",
+        "author": "MattB-msft",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/820"
+      },
+      {
+        "number": 664,
+        "title": "Proactive sample is not working on MS Teams",
+        "state": "closed",
+        "author": "ceciliaavila",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/664"
+      },
+      {
+        "number": 638,
+        "title": "Option to disable SSO in OAuth config",
+        "state": "closed",
+        "author": "tracyboehrer",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/638"
+      },
+      {
+        "number": 598,
+        "title": "Messages remain in &#34;sending&#34; state until full response is received with Entra-authenticated Copilot chat",
+        "state": "closed",
+        "author": "Jaswanthmicrosoft",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/598"
+      },
+      {
+        "number": 592,
+        "title": "File Attachment upload not working when using CopilotStudio Client as the connector for WebChat.",
+        "state": "closed",
+        "author": "MattB-msft",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/592"
+      },
+      {
+        "number": 462,
+        "title": "Authentication error when using BF-Emulator",
+        "state": "closed",
+        "author": "ceciliaavila",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/462"
+      },
+      {
+        "number": 434,
+        "title": "CopilotStudio Client WebChat sample failure when `cloud` is not set",
+        "state": "closed",
+        "author": "rido-min",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/434"
+      },
+      {
+        "number": 183,
+        "title": "Consolidate OAuth flows",
+        "state": "closed",
+        "author": "rido-min",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/183"
+      }
+    ],
+    "emulator": [
+      {
+        "number": 462,
+        "title": "Authentication error when using BF-Emulator",
+        "state": "closed",
+        "author": "ceciliaavila",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/462"
+      },
+      {
+        "number": 155,
+        "title": "Zod error when`relatesTo.bot` is null",
+        "state": "closed",
+        "author": "rido-min",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/155"
+      }
+    ],
+    "slack": [
+      {
+        "number": 193,
+        "title": "Support the extension pattern",
+        "state": "closed",
+        "author": "rido-min",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/193"
+      }
+    ]
+  }
+}
