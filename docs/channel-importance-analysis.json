@@ -1,0 +1,601 @@
+{
+  "summary": {
+    "totalIssues": 249,
+    "openIssues": 49,
+    "closedIssues": 200,
+    "channelMentions": {
+      "msteams": 27,
+      "slack": 1,
+      "telegram": 0,
+      "facebook": 0,
+      "discord": 0,
+      "webchat": 22,
+      "alexa": 0,
+      "email": 3,
+      "sms": 0,
+      "copilot": 41
+    },
+    "analysisDate": "2026-01-31"
+  },
+  "issuesByChannel": {
+    "msteams": [
+      {
+        "number": 892,
+        "title": "[BUG] TeamsInfo cannot find ConnectorClient",
+        "state": "OPEN",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/892"
+      },
+      {
+        "number": 890,
+        "title": "TeamsInfo.getTeamChannels(context, teamId) doesn&#39;t return the channel details",
+        "state": "OPEN",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/890"
+      },
+      {
+        "number": 805,
+        "title": "Link Unfurling Not Working in Outlook with Agent SDK (Python &amp; Node.js)",
+        "state": "OPEN",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/805"
+      },
+      {
+        "number": 584,
+        "title": "MS Teams deduplication on multiple clients",
+        "state": "OPEN",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/584"
+      },
+      {
+        "number": 538,
+        "title": "Attachments Error in Sample Basic Bot from Microsoft 365 Agents Toolkit VS Code extension",
+        "state": "OPEN",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/538"
+      },
+      {
+        "number": 488,
+        "title": "Support for bots and agents in shared channels",
+        "state": "OPEN",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/488"
+      },
+      {
+        "number": 829,
+        "title": "Bug: SSO/Consent fails in M365 Copilot within Teams only",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/829"
+      },
+      {
+        "number": 770,
+        "title": "Agentic Requests + teams Channel do not support streaming responses at this time.",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/770"
+      },
+      {
+        "number": 760,
+        "title": "Messaging Extension Link Unfurling card not displayed in Teams when using Agents SDK (@microsoft/agents-hosting-extensions-teams)",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/760"
+      },
+      {
+        "number": 756,
+        "title": "TeamsInfo.getMember throws an error code 400",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/756"
+      },
+      {
+        "number": 740,
+        "title": "Message Extensions/Compose Extensions not working with @microsoft/agents-hosting SDK - invoke response not sent to Teams",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/740"
+      },
+      {
+        "number": 738,
+        "title": "Migrating from Bot Framework to Agents SDK issue with onInvokeActivity/createFetchResponse",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/738"
+      },
+      {
+        "number": 664,
+        "title": "Proactive sample is not working on MS Teams",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/664"
+      },
+      {
+        "number": 612,
+        "title": "OBO Authentication example not working",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/612"
+      },
+      {
+        "number": 582,
+        "title": "GitHub OAuth connection didn&#39;t work in M365 Copilot Chat",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/582"
+      },
+      {
+        "number": 590,
+        "title": "Inconsistent SSO and authentication behaviors between MS Teams and M365 Copilot",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/590"
+      },
+      {
+        "number": 542,
+        "title": "How to identify user roles within Teams organization using agentSDK",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/542"
+      },
+      {
+        "number": 537,
+        "title": "Streaming Issue in Bot Responses in MS Teams",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/537"
+      },
+      {
+        "number": 517,
+        "title": "Add test cases for Authentication flows",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/517"
+      },
+      {
+        "number": 507,
+        "title": "@microsoft/agents-hosting-extensions-teams TeamsInfo.getTeamChannels wrongly typed",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/507"
+      },
+      {
+        "number": 500,
+        "title": "Support of agents-hosting-extensions-teams package",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/500"
+      },
+      {
+        "number": 497,
+        "title": "Migration from Bot Framework SDK to Agent SDK: Missing Equivalent Methods and Feature Gaps",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/497"
+      },
+      {
+        "number": 481,
+        "title": "Error trying to send a proactive message programatically",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/481"
+      },
+      {
+        "number": 464,
+        "title": "Etag conflict saving state during OAuth Flow",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/464"
+      },
+      {
+        "number": 414,
+        "title": "[Bug] onTurnError: Activity Recipient undefined when relaying Line messages to Teams",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/414"
+      },
+      {
+        "number": 327,
+        "title": "BUG: TeamsInfo error when using CloudAdapter",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/327"
+      },
+      {
+        "number": 222,
+        "title": "Add support for Targeted messages in a group setting",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/222"
+      }
+    ],
+    "slack": [
+      {
+        "number": 193,
+        "title": "Support the extension pattern",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/193"
+      }
+    ],
+    "telegram": [],
+    "facebook": [],
+    "discord": [],
+    "webchat": [
+      {
+        "number": 881,
+        "title": "[Bug] &#34;Analyzing data...&#34; (Typing activity) persists and does not disappear when using AI Builder topics",
+        "state": "OPEN",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/881"
+      },
+      {
+        "number": 832,
+        "title": "When using nodejs/copilotstudio-webclient to connect to Copilot Studio, the prompt “Do you allow AI suggestions to use your data?” appears, but the options cannot be clicked. How can this issue be resolved?",
+        "state": "OPEN",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/832"
+      },
+      {
+        "number": 602,
+        "title": "Message and file upload failures and Inconsistent responses",
+        "state": "OPEN",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/602"
+      },
+      {
+        "number": 856,
+        "title": "Connection failure and streaming issues fixed in different versions – which version supports both?",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/856"
+      },
+      {
+        "number": 830,
+        "title": "Bug: CopilotStudioWebChat signals ready state before conversation ID is received",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/830"
+      },
+      {
+        "number": 820,
+        "title": "Copilot Studio WebChat Intergration is not handling MCS Streaming well.",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/820"
+      },
+      {
+        "number": 664,
+        "title": "Proactive sample is not working on MS Teams",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/664"
+      },
+      {
+        "number": 638,
+        "title": "Option to disable SSO in OAuth config",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/638"
+      },
+      {
+        "number": 612,
+        "title": "OBO Authentication example not working",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/612"
+      },
+      {
+        "number": 598,
+        "title": "Messages remain in &#34;sending&#34; state until full response is received with Entra-authenticated Copilot chat",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/598"
+      },
+      {
+        "number": 592,
+        "title": "File Attachment upload not working when using CopilotStudio Client as the connector for WebChat.",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/592"
+      },
+      {
+        "number": 562,
+        "title": "Not able to pass global variables to copilot studio using Copilot Studio Client",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/562"
+      },
+      {
+        "number": 550,
+        "title": "Adaptive Card connector consent (Action.Submit) not processed from custom host via @microsoft/agents-copilotstudio-client — Copilot remains “Waiting for user”",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/550"
+      },
+      {
+        "number": 502,
+        "title": "Error &#39;Activity text cannot be empty&#39; when clicked Allow in the user consent adaptive card",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/502"
+      },
+      {
+        "number": 499,
+        "title": "File browser.mjs does not exist",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/499"
+      },
+      {
+        "number": 485,
+        "title": "Uncaught Error: Invalid cluster category value",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/485"
+      },
+      {
+        "number": 482,
+        "title": "Manual Authentication failing on test-agents/copilotstudio-webchat",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/482"
+      },
+      {
+        "number": 462,
+        "title": "Authentication error when using BF-Emulator",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/462"
+      },
+      {
+        "number": 450,
+        "title": "Consent of Office 365 User is not working from test-agents/copilotstudio-webchat",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/450"
+      },
+      {
+        "number": 434,
+        "title": "CopilotStudio Client WebChat sample failure when `cloud` is not set",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/434"
+      },
+      {
+        "number": 397,
+        "title": "[Feature] Add WebChat support for Copilot Studio Client",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/397"
+      },
+      {
+        "number": 183,
+        "title": "Consolidate OAuth flows",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/183"
+      }
+    ],
+    "alexa": [],
+    "email": [
+      {
+        "number": 805,
+        "title": "Link Unfurling Not Working in Outlook with Agent SDK (Python &amp; Node.js)",
+        "state": "OPEN",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/805"
+      },
+      {
+        "number": 488,
+        "title": "Support for bots and agents in shared channels",
+        "state": "OPEN",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/488"
+      },
+      {
+        "number": 500,
+        "title": "Support of agents-hosting-extensions-teams package",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/500"
+      }
+    ],
+    "sms": [],
+    "copilot": [
+      {
+        "number": 897,
+        "title": "[Bug] 403 &#34;BotDisabledByAdmin&#34; on context.sendActivity for Custom Engine Agent (Copilot) despite full admin consent",
+        "state": "OPEN",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/897"
+      },
+      {
+        "number": 881,
+        "title": "[Bug] &#34;Analyzing data...&#34; (Typing activity) persists and does not disappear when using AI Builder topics",
+        "state": "OPEN",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/881"
+      },
+      {
+        "number": 832,
+        "title": "When using nodejs/copilotstudio-webclient to connect to Copilot Studio, the prompt “Do you allow AI suggestions to use your data?” appears, but the options cannot be clicked. How can this issue be resolved?",
+        "state": "OPEN",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/832"
+      },
+      {
+        "number": 785,
+        "title": "Feature request: activity type or API to end Copilot loading state without rendering content",
+        "state": "OPEN",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/785"
+      },
+      {
+        "number": 784,
+        "title": "Adaptive Card submit to Hosted Agent returns action: &#34;waiting&#34; and never resumes conversation (works in Copilot Studio UI)",
+        "state": "OPEN",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/784"
+      },
+      {
+        "number": 753,
+        "title": "Add Support for CopilotStudio Agent-to-Agent Connector for AgentsSDK to populate UserAuthorization",
+        "state": "OPEN",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/753"
+      },
+      {
+        "number": 609,
+        "title": "How do you send inline actions?",
+        "state": "OPEN",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/609"
+      },
+      {
+        "number": 602,
+        "title": "Message and file upload failures and Inconsistent responses",
+        "state": "OPEN",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/602"
+      },
+      {
+        "number": 492,
+        "title": "CopilotStudioClient does not support sending attachments (sendActivityAsync missing)",
+        "state": "OPEN",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/492"
+      },
+      {
+        "number": 856,
+        "title": "Connection failure and streaming issues fixed in different versions – which version supports both?",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/856"
+      },
+      {
+        "number": 830,
+        "title": "Bug: CopilotStudioWebChat signals ready state before conversation ID is received",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/830"
+      },
+      {
+        "number": 829,
+        "title": "Bug: SSO/Consent fails in M365 Copilot within Teams only",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/829"
+      },
+      {
+        "number": 820,
+        "title": "Copilot Studio WebChat Intergration is not handling MCS Streaming well.",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/820"
+      },
+      {
+        "number": 739,
+        "title": "thinking message of streamingResponse not working in copilot agent but works in teams app",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/739"
+      },
+      {
+        "number": 716,
+        "title": "NPM package @microsoft/agents-copilotstudio-client (v1.0.15) does not include merged PR #614",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/716"
+      },
+      {
+        "number": 676,
+        "title": "Follow up on the preview version of the fix Event-Source Send in CopilotStudioClient",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/676"
+      },
+      {
+        "number": 675,
+        "title": "[agents-copilotstudio-client] RedirectUri is not supported in this scenario",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/675"
+      },
+      {
+        "number": 613,
+        "title": "Unable to reach app. Please try again - after successful signin",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/613"
+      },
+      {
+        "number": 611,
+        "title": "CopilotStudioClient.startConversationAsync fails when emitStartConversationEvent is false",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/611"
+      },
+      {
+        "number": 598,
+        "title": "Messages remain in &#34;sending&#34; state until full response is received with Entra-authenticated Copilot chat",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/598"
+      },
+      {
+        "number": 595,
+        "title": "startConversationAsync only returns the first Activity object, additional Activity objects are ignored",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/595"
+      },
+      {
+        "number": 592,
+        "title": "File Attachment upload not working when using CopilotStudio Client as the connector for WebChat.",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/592"
+      },
+      {
+        "number": 582,
+        "title": "GitHub OAuth connection didn&#39;t work in M365 Copilot Chat",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/582"
+      },
+      {
+        "number": 590,
+        "title": "Inconsistent SSO and authentication behaviors between MS Teams and M365 Copilot",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/590"
+      },
+      {
+        "number": 562,
+        "title": "Not able to pass global variables to copilot studio using Copilot Studio Client",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/562"
+      },
+      {
+        "number": 550,
+        "title": "Adaptive Card connector consent (Action.Submit) not processed from custom host via @microsoft/agents-copilotstudio-client — Copilot remains “Waiting for user”",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/550"
+      },
+      {
+        "number": 527,
+        "title": "Service Principal Authentication Fails: &#34;EnableS2SAuthFeature not enabled&#34; Error",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/527"
+      },
+      {
+        "number": 502,
+        "title": "Error &#39;Activity text cannot be empty&#39; when clicked Allow in the user consent adaptive card",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/502"
+      },
+      {
+        "number": 499,
+        "title": "File browser.mjs does not exist",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/499"
+      },
+      {
+        "number": 496,
+        "title": "S2S Authentication with no client Authentication method doesnt work with Nodejs",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/496"
+      },
+      {
+        "number": 485,
+        "title": "Uncaught Error: Invalid cluster category value",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/485"
+      },
+      {
+        "number": 482,
+        "title": "Manual Authentication failing on test-agents/copilotstudio-webchat",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/482"
+      },
+      {
+        "number": 450,
+        "title": "Consent of Office 365 User is not working from test-agents/copilotstudio-webchat",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/450"
+      },
+      {
+        "number": 434,
+        "title": "CopilotStudio Client WebChat sample failure when `cloud` is not set",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/434"
+      },
+      {
+        "number": 397,
+        "title": "[Feature] Add WebChat support for Copilot Studio Client",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/397"
+      },
+      {
+        "number": 364,
+        "title": "Implement Logging in CopilotStudio Client",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/364"
+      },
+      {
+        "number": 345,
+        "title": "[Feature Request] Add support for Adaptive Card invoke activity in @microsoft/agents-copilotstudio-client SDK",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/345"
+      },
+      {
+        "number": 325,
+        "title": "ZodError: &#34;String must contain at least 1 character(s)&#34; when calling askQuestionAsync in CopilotStudioClient SDK",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/325"
+      },
+      {
+        "number": 301,
+        "title": "Support for Proactive Messaging from Skill to Copilot Studio via TurnContext Protocol",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/301"
+      },
+      {
+        "number": 287,
+        "title": "`loadAuthConfigFromEnv()` in **@microsoft/agents-hosting@0.2.14** does not read the `ALLOWED_CALLERS` environment variable.",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/287"
+      },
+      {
+        "number": 224,
+        "title": "Update Copilot Studio Client and sample to support S2S and DirectURL Connection",
+        "state": "CLOSED",
+        "url": "https://github.com/microsoft/Agents-for-js/issues/224"
+      }
+    ]
+  }
+}
