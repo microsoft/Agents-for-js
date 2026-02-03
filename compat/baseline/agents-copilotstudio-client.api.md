@@ -65,18 +65,6 @@ export interface CopilotStudioWebChatSettings {
 }
 
 // @public
-export class ExecuteTurnRequest {
-    constructor(activity?: Activity);
-    activity?: Activity;
-}
-
-// @public
-export function getCopilotStudioConnectionUrl(settings: ConnectionSettings, conversationId?: string): string;
-
-// @public
-export function getTokenAudience(settings?: ConnectionSettings, cloud?: PowerPlatformCloud, cloudBaseAddress?: string, directConnectUrl?: string): string;
-
-// @public
 export const loadCopilotStudioConnectionSettingsFromEnv: () => ConnectionSettings;
 
 // @public
