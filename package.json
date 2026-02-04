@@ -37,7 +37,7 @@
     "test-agents/*"
   ],
   "devDependencies": {
-    "@microsoft/api-extractor": "^7.55.2",
+    "@microsoft/api-extractor": "^7.56.1",
     "@microsoft/m365agentsplayground": "^0.2.22",
     "@microsoft/microsoft-graph-types": "^2.43.1",
     "@types/debug": "^4.1.12",
