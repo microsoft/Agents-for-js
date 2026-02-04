@@ -168,11 +168,23 @@ export class MsalTokenProvider implements AuthProvider {
       return this.connectionSettings?.authority ? `${this.connectionSettings.authority}/${this.connectionSettings?.tenantId}` : `https://login.microsoftonline.com/${this.connectionSettings?.tenantId || 'botframework.com'}`
     }
 
-    if (this.connectionSettings?.tenantId === 'common') {
-      return this.connectionSettings?.authority ? `${this.connectionSettings.authority}/${tenantId}` : `https://login.microsoftonline.com/${tenantId}`
-    } else {
-      return this.connectionSettings?.authority ? `${this.connectionSettings.authority}/${this.connectionSettings?.tenantId}` : `https://login.microsoftonline.com/${this.connectionSettings?.tenantId || 'botframework.com'}`
+    var workingAuthority = this.connectionSettings?.authority || `https://login.microsoftonline.com/`
+    // if authority is defined and it does not contain "common" or a guid, use it as is create the authority and append the tenantId
+    // supporting backwards compatibility for authorities that do not contain "common" or a guid
+    if (this.connectionSettings?.authority &&
+      !this.connectionSettings.authority.endsWith('/common') &&
+      !this.connectionSettings.authority.match(/\/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/)) {
+      workingAuthority = `${this.connectionSettings.authority}/${this.connectionSettings.tenantId}`
     }
+
+    var resultAuthority = workingAuthority && workingAuthority.length > 0
+    ? workingAuthority.replace(
+        /\/(?:common|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})(?=\/|$)/,
+        `/${tenantId}`
+      ) // update to use tenantId if "common" but retain original host for regionalization purposes
+    : `https://login.microsoftonline.com/${tenantId}`;
+
+    return resultAuthority as string;
   }
 
   /**
