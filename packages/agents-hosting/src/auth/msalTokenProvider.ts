@@ -168,23 +168,32 @@ export class MsalTokenProvider implements AuthProvider {
       return this.connectionSettings?.authority ? `${this.connectionSettings.authority}/${this.connectionSettings?.tenantId}` : `https://login.microsoftonline.com/${this.connectionSettings?.tenantId || 'botframework.com'}`
     }
 
-    let workingAuthority = this.connectionSettings?.authority || 'https://login.microsoftonline.com/'
-    // if authority is defined and it does not contain "common" or a guid, use it as is create the authority and append the tenantId
-    // supporting backwards compatibility for authorities that do not contain "common" or a guid
-    if (this.connectionSettings?.authority &&
-      !this.connectionSettings.authority.endsWith('/common') &&
-      !this.connectionSettings.authority.match(/\/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/)) {
-      workingAuthority = `${this.connectionSettings.authority}/${this.connectionSettings.tenantId}`
+    const configuredAuth = this.connectionSettings?.authority
+    const configuredTenantId = this.connectionSettings?.tenantId
+
+    // Prefer configured tenant unless it is 'common' or falsy, in which case use the tenantId parameter
+    const isConfiguredValid = configuredTenantId && configuredTenantId !== 'common'
+    const finalTenant = isConfiguredValid ? configuredTenantId : tenantId
+
+    // Use default Microsoft login endpoint when no custom authority is configured
+    if (!configuredAuth) {
+      return `https://login.microsoftonline.com/${finalTenant}`
     }
 
-    const resultAuthority = workingAuthority && workingAuthority.length > 0
-      ? workingAuthority.replace(
+    // Check if authority already contains a tenant identifier
+    const endsWithCommon = configuredAuth.endsWith('/common')
+    const guidPattern = /\/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
+    const hasTenantGuid = guidPattern.test(configuredAuth)
+
+    if (endsWithCommon || hasTenantGuid) {
+      return configuredAuth.replace(
         /\/(?:common|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})(?=\/|$)/,
         `/${tenantId}`
-      ) // update to use tenantId if "common" but retain original host for regionalization purposes
-      : `https://login.microsoftonline.com/${tenantId}`
+      )
+    }
 
-    return resultAuthority as string
+    // Authority has no tenant segment - append the final selected tenant
+    return `${configuredAuth}/${finalTenant}`
   }
 
   /**
