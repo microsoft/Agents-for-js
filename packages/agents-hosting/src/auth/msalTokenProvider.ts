@@ -171,11 +171,13 @@ export class MsalTokenProvider implements AuthProvider {
     const configuredAuth = this.connectionSettings?.authority
     const configuredTenantId = this.connectionSettings?.tenantId
     
+    // Determine which tenant to use: prefer configured unless it's 'common' or missing
+    const isConfiguredValid = configuredTenantId && configuredTenantId !== 'common'
+    const finalTenant = isConfiguredValid ? configuredTenantId : tenantId
+    
     // No custom authority endpoint configured
     if (!configuredAuth) {
-      const shouldUseConfigured = configuredTenantId && configuredTenantId !== 'common'
-      const selectedTenant = shouldUseConfigured ? configuredTenantId : tenantId
-      return `https://login.microsoftonline.com/${selectedTenant}`
+      return `https://login.microsoftonline.com/${finalTenant}`
     }
 
     // Check if authority already contains a tenant identifier
@@ -190,10 +192,8 @@ export class MsalTokenProvider implements AuthProvider {
       )
     }
     
-    // Authority has no tenant segment - select appropriate tenant to append
-    const shouldUseConfigured = configuredTenantId && configuredTenantId !== 'common'
-    const selectedTenant = shouldUseConfigured ? configuredTenantId : tenantId
-    return `${configuredAuth}/${selectedTenant}`
+    // Authority has no tenant segment - append the final selected tenant
+    return `${configuredAuth}/${finalTenant}`
   }
 
   /**
