@@ -168,23 +168,32 @@ export class MsalTokenProvider implements AuthProvider {
       return this.connectionSettings?.authority ? `${this.connectionSettings.authority}/${this.connectionSettings?.tenantId}` : `https://login.microsoftonline.com/${this.connectionSettings?.tenantId || 'botframework.com'}`
     }
 
-    let workingAuthority = this.connectionSettings?.authority || 'https://login.microsoftonline.com/'
-    // if authority is defined and it does not contain "common" or a guid, use it as is create the authority and append the tenantId
-    // supporting backwards compatibility for authorities that do not contain "common" or a guid
-    if (this.connectionSettings?.authority &&
-      !this.connectionSettings.authority.endsWith('/common') &&
-      !this.connectionSettings.authority.match(/\/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/)) {
-      workingAuthority = `${this.connectionSettings.authority}/${this.connectionSettings.tenantId}`
+    // Check if a custom authority endpoint was provided in configuration
+    const configuredAuth = this.connectionSettings?.authority
+    if (!configuredAuth) {
+      // No custom authority configured, build default Microsoft login URL with provided tenant
+      return `https://login.microsoftonline.com/${tenantId}`
     }
 
-    const resultAuthority = workingAuthority && workingAuthority.length > 0
-      ? workingAuthority.replace(
+    // Custom authority exists - determine if it already includes a tenant segment
+    const endsWithCommon = configuredAuth.endsWith('/common')
+    const guidPattern = /\/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
+    const hasTenantGuid = guidPattern.test(configuredAuth)
+    
+    if (endsWithCommon || hasTenantGuid) {
+      // Authority includes tenant placeholder or existing GUID - swap it with the new tenant
+      return configuredAuth.replace(
         /\/(?:common|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})(?=\/|$)/,
         `/${tenantId}`
-      ) // update to use tenantId if "common" but retain original host for regionalization purposes
-      : `https://login.microsoftonline.com/${tenantId}`
-
-    return resultAuthority as string
+      )
+    }
+    
+    // Authority doesn't have tenant segment yet - append configured tenant then replace with new one
+    const authWithTenant = `${configuredAuth}/${this.connectionSettings.tenantId}`
+    return authWithTenant.replace(
+      /\/(?:common|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})(?=\/|$)/,
+      `/${tenantId}`
+    )
   }
 
   /**
