@@ -171,11 +171,11 @@ export class MsalTokenProvider implements AuthProvider {
     const configuredAuth = this.connectionSettings?.authority
     const configuredTenantId = this.connectionSettings?.tenantId
     
-    // Determine which tenant to use: prefer configured unless it's 'common' or missing
+    // Prefer configured tenant unless it is 'common' or falsy, in which case use the tenantId parameter
     const isConfiguredValid = configuredTenantId && configuredTenantId !== 'common'
     const finalTenant = isConfiguredValid ? configuredTenantId : tenantId
     
-    // No custom authority endpoint configured
+    // Use default Microsoft login endpoint when no custom authority is configured
     if (!configuredAuth) {
       return `https://login.microsoftonline.com/${finalTenant}`
     }
