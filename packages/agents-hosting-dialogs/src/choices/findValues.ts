@@ -139,9 +139,6 @@ export interface SortedValue {
  * Higher level functions like `findChoices()` and `recognizeChoices()` are layered above this function.  In most
  * cases its easier to just call one of the higher level functions instead but this function contains
  * the fuzzy search algorithm that drives choice recognition.
- *
- * @internal
-
  */
 export function findValues (
   utterance: string,
