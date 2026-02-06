@@ -33,6 +33,26 @@ describe('properly handle subchannel entities', () => {
     assert.strictEqual(object.entities[0].id, 'bar')
   })
 
+  it('should serialize passing custom replacer and space', () => {
+    const activity = new Activity('message')
+    activity.channelId = 'foo:bar'
+    activity.callerId = 'original-caller'
+    const space = 2
+
+    const jsonString = activity.toJsonString((key, value) => (key === 'callerId' ? 'custom-id' : value), space)
+    const object = JSON.parse(jsonString)
+
+    // This regex looks for: newline, then one or more spaces, then a quote.
+    const match = jsonString.match(/\n( +)"/)
+    assert.ok(match, 'Expected pretty-printed JSON with indented lines')
+    const indentWidth = match![1].length
+
+    assert.strictEqual(object.channelId, 'foo')
+    assert.strictEqual(object.entities[0].id, 'bar')
+    assert.strictEqual(object.callerId, 'custom-id')
+    assert.strictEqual(indentWidth, space)
+  })
+
   it('should allow super fancy subfield set', () => {
     const activity = new Activity('message')
     activity.channelIdChannel = 'foo'

@@ -707,12 +707,18 @@ export class Activity {
     return reference
   }
 
-  public toJsonString (): string {
+  /**
+   * Converts the activity to a JSON string.
+   * @param replacer A function that transforms the results.
+   * @param space Adds indentation, white space, and line break characters to the return-value JSON text.
+   * @returns The JSON string representation of the activity.
+   */
+  public toJsonString (replacer?: (this: any, key: string, value: any) => any, space?: string | number): string {
     // Use channelId instead of _channelId when outputting json
     const copy = { ...this } as any
     copy.channelId = copy._channelId
     delete copy._channelId
-    return JSON.stringify(copy)
+    return JSON.stringify(copy, replacer, space)
   }
 
   /**

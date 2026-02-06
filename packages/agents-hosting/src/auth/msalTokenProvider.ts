@@ -168,11 +168,32 @@ export class MsalTokenProvider implements AuthProvider {
       return this.connectionSettings?.authority ? `${this.connectionSettings.authority}/${this.connectionSettings?.tenantId}` : `https://login.microsoftonline.com/${this.connectionSettings?.tenantId || 'botframework.com'}`
     }
 
-    if (this.connectionSettings?.tenantId === 'common') {
-      return this.connectionSettings?.authority ? `${this.connectionSettings.authority}/${tenantId}` : `https://login.microsoftonline.com/${tenantId}`
-    } else {
-      return this.connectionSettings?.authority ? `${this.connectionSettings.authority}/${this.connectionSettings?.tenantId}` : `https://login.microsoftonline.com/${this.connectionSettings?.tenantId || 'botframework.com'}`
+    const configuredAuth = this.connectionSettings?.authority
+    const configuredTenantId = this.connectionSettings?.tenantId
+
+    // Prefer configured tenant unless it is 'common' or falsy, in which case use the tenantId parameter
+    const isConfiguredValid = configuredTenantId && configuredTenantId !== 'common'
+    const finalTenant = isConfiguredValid ? configuredTenantId : tenantId
+
+    // Use default Microsoft login endpoint when no custom authority is configured
+    if (!configuredAuth) {
+      return `https://login.microsoftonline.com/${finalTenant}`
     }
+
+    // Check if authority already contains a tenant identifier
+    const endsWithCommon = configuredAuth.endsWith('/common')
+    const guidPattern = /\/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
+    const hasTenantGuid = guidPattern.test(configuredAuth)
+
+    if (endsWithCommon || hasTenantGuid) {
+      return configuredAuth.replace(
+        /\/(?:common|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})(?=\/|$)/,
+        `/${tenantId}`
+      )
+    }
+
+    // Authority has no tenant segment - append the final selected tenant
+    return `${configuredAuth}/${finalTenant}`
   }
 
   /**
