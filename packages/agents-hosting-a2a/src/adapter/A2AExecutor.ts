@@ -8,7 +8,6 @@
  */
 
 import { TurnContext, } from '@microsoft/agents-hosting'
-import { Activity, RoleTypes } from '@microsoft/agents-activity'
 import { v4 as uuidv4 } from 'uuid'
 import { JwtPayload } from 'jsonwebtoken'
 import { debug } from '@microsoft/agents-activity/logger'
@@ -18,6 +17,7 @@ import type { ExecutionEventBus, RequestContext, User } from '@a2a-js/sdk/server
 import type { Task, TaskStatusUpdateEvent } from '@a2a-js/sdk' with { 'resolution-mode': 'require' }
 
 import { A2AAdapter } from './A2AAdapter'
+import { a2aMessageToActivity } from './A2AActivity'
 const logger = debug('agents:a2a-adapter:executor')
 
 export type AgentsA2AUser = User & {
@@ -54,25 +54,15 @@ export class A2AExecutor {
     }
 
     // Create an activity and turn context
-    let identity // get this from the UserBuilder somehow??
+    let identity
+
+    // this gets the results of our "UserBuilder" that plucks the jwt identity off the request
     if (requestContext.context?.user?.isAuthenticated) {
-      // somehow construct a jwt payload for this user
       const user = requestContext.context.user as AgentsA2AUser
       identity = user.identity
     }
-    const activity = Activity.fromObject({
-      type: 'message',
-      id: uuidv4(),
-      channelId: 'A2A',
-      conversation: { id: taskId },
-      recipient: { role: RoleTypes.User, id: 'user' },
-      from: { role: RoleTypes.Agent, id: 'agent' },
-      text: userMessage.parts.map((part: any) => part.text).join('\n'),
-      channelData: {
-        taskId, contextId
-      }
-    })
 
+    const activity = a2aMessageToActivity(requestContext)
     const turnContext = new TurnContext(this.adapter, activity, identity)
     turnContext.turnState.set('A2AExecutionEventBus', eventBus)
 

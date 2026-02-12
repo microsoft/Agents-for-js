@@ -11,16 +11,16 @@ import { BaseAdapter, TurnContext, Storage, AttachmentData, AttachmentInfo, Requ
 import { Activity, ConversationReference } from '@microsoft/agents-activity'
 import { Response, RequestHandler, NextFunction } from 'express'
 import { debug } from '@microsoft/agents-activity/logger'
-import { v4 as uuidv4 } from 'uuid'
 import { JwtPayload } from 'jsonwebtoken'
 
 // Import types only with resolution-mode for CommonJS
 import type { A2ARequestHandler, ExecutionEventBus } from '@a2a-js/sdk/server' with { 'resolution-mode': 'require' }
 import type { UserBuilder } from '@a2a-js/sdk/server/express' with { 'resolution-mode': 'require' }
-import type { AgentCard, TaskStatusUpdateEvent, TaskArtifactUpdateEvent } from '@a2a-js/sdk' with { 'resolution-mode': 'require' }
+import type { AgentCard, Message, TaskStatusUpdateEvent, TaskArtifactUpdateEvent } from '@a2a-js/sdk' with { 'resolution-mode': 'require' }
 
 import { A2AExecutor, AgentsA2AUser } from './A2AExecutor'
 import { A2ATaskStore } from './A2ATaskStore'
+import { activityToA2AMessage } from './A2AActivity'
 
 const { DefaultRequestHandler } = require('@a2a-js/sdk/server')
 const { restHandler, jsonRpcHandler } = require('@a2a-js/sdk/server/express')
@@ -112,53 +112,18 @@ export class A2AAdapter extends BaseAdapter {
     const eventBus = context.turnState.get<ExecutionEventBus>('A2AExecutionEventBus')
     if (eventBus) {
       for (const activity of activities) {
-        const hasStreamingEntity = activity.entities?.some((entity) => entity.type === 'streaminfo')
-        if (activity.type === 'message') {
-          // TODO:
-          // the message version below works nicely with the a2a inspector
-          // however does not work with MCS
-          // const message: Message = {
-          //   kind: 'message',
-          //   messageId: activity.id || uuidv4(),
-          //   role: 'agent',
-          //   parts: [{ kind: 'text', text: activity.text || '' }],
-          //   contextId: context.activity.channelData?.contextId || uuidv4(),
-          //   taskId: context.activity.conversation?.id,
-          // }
+        try {
+          // convert activity object to a2a format
+          const message = activityToA2AMessage(context, activity)
 
-          // this version works with MCS but not the a2a inspector
-          const message: TaskStatusUpdateEvent = {
-            kind: 'status-update',
-            taskId: context.activity.conversation?.id!,
-            contextId: context.activity.channelData?.contextId || uuidv4(),
-            final: false,
-            status: {
-              state: 'input-required',
-              message: {
-                role: 'agent',
-                parts: [{ kind: 'text', text: activity.text || '' }],
-                messageId: activity.id || uuidv4(),
-                contextId: context.activity.channelData?.contextId || uuidv4(),
-                taskId: context.activity.conversation?.id,
-                kind: 'message',
-              }
-            }
-          }
           logger.debug('OUTBOUND A2A MESSAGE:', JSON.stringify(message, null, 2))
           eventBus.publish(message)
-        } else if (activity.type === 'typing' && hasStreamingEntity) {
-          const typingIndicator: TaskArtifactUpdateEvent = {
-            kind: 'artifact-update',
-            contextId: context.activity.channelData?.contextId,
-            taskId: context.activity.conversation?.id!,
-            artifact: {
-              artifactId: context.activity.channelData?.contextId,
-              parts: [{ kind: 'text', text: activity.text || 'typing...' }],
-            },
+        } catch (err) {
+          // TODO: this currently silently ignores problems with A2A translation
+          // so if you try to send something that is not a typing or a message, it will just be dropped with a warning
+          if (err instanceof Error) {
+            logger.warn(err.message)
           }
-          eventBus.publish(typingIndicator)
-        } else {
-          logger.warn('UNHANDLED ACTIVITY', activity)
         }
       }
     } else {
