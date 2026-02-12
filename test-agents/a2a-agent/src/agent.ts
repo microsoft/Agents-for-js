@@ -3,7 +3,7 @@
 
 import { startServer } from '@microsoft/agents-hosting-express'
 import { AgentApplication, MemoryStorage, TurnContext, TurnState } from '@microsoft/agents-hosting'
-import { A2AAdapter } from '@microsoft/agents-hosting-a2a-adapter'
+import { A2AAdapter } from '@microsoft/agents-hosting-a2a'
 import { version } from '@microsoft/agents-hosting/package.json'
 import type { AgentCard } from '@a2a-js/sdk' with { 'resolution-mode': 'require' }
 

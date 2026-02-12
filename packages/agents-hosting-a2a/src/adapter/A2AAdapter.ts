@@ -8,152 +8,30 @@
  */
 
 import { BaseAdapter, TurnContext, Storage, AttachmentData, AttachmentInfo, Request, ResourceResponse } from '@microsoft/agents-hosting'
-import { Activity, ConversationReference, RoleTypes } from '@microsoft/agents-activity'
-import { Response, RequestHandler, Request as ExpressRequest, NextFunction } from 'express'
+import { Activity, ConversationReference } from '@microsoft/agents-activity'
+import { Response, RequestHandler, NextFunction } from 'express'
 import { debug } from '@microsoft/agents-activity/logger'
 import { v4 as uuidv4 } from 'uuid'
 import { JwtPayload } from 'jsonwebtoken'
 
 // Import types only with resolution-mode for CommonJS
-import type { A2ARequestHandler, TaskStore, ExecutionEventBus, RequestContext, User } from '@a2a-js/sdk/server' with { 'resolution-mode': 'require' }
+import type { A2ARequestHandler, ExecutionEventBus } from '@a2a-js/sdk/server' with { 'resolution-mode': 'require' }
 import type { UserBuilder } from '@a2a-js/sdk/server/express' with { 'resolution-mode': 'require' }
-import type { AgentCard, Message, Extensions, Task, TaskStatusUpdateEvent, TaskArtifactUpdateEvent } from '@a2a-js/sdk' with { 'resolution-mode': 'require' }
+import type { AgentCard, TaskStatusUpdateEvent, TaskArtifactUpdateEvent } from '@a2a-js/sdk' with { 'resolution-mode': 'require' }
+
+import { A2AExecutor, AgentsA2AUser } from './A2AExecutor'
+import { A2ATaskStore } from './A2ATaskStore'
 
 const { DefaultRequestHandler } = require('@a2a-js/sdk/server')
 const { restHandler, jsonRpcHandler } = require('@a2a-js/sdk/server/express')
 
 const logger = debug('agents:a2a-adapter')
 
-class A2AExecutor {
-  private runningTask: Set<string> = new Set()
-  private lastContextId: string | null = null
-
-  constructor (private adapter: A2AAdapter) {
-
-  }
-
-  async execute (requestContext: RequestContext, eventBus: ExecutionEventBus) {
-    const { taskId, contextId, userMessage, task } = requestContext
-    console.log('[Executor] Executing task:', taskId, 'in context:', contextId)
-    this.lastContextId = contextId
-    this.runningTask.add(taskId)
-
-    // // 1. Create and publish the initial task object if it doesn't exist.
-    if (!task) {
-      const initialTask: Task = {
-        kind: 'task',
-        id: taskId,
-        contextId,
-        status: {
-          state: 'submitted',
-          timestamp: new Date().toISOString(),
-        },
-        history: [userMessage],
-      }
-      eventBus.publish(initialTask)
-    }
-
-    // Create an activity and turn context
-    let identity // get this from the UserBuilder somehow??
-    if (requestContext.context?.user?.isAuthenticated) {
-      // somehow construct a jwt payload for this user
-      const user = requestContext.context.user as AgentsA2AUser
-      identity = user.identity
-    }
-    const activity = Activity.fromObject({
-      type: 'message',
-      id: uuidv4(),
-      channelId: 'A2A',
-      conversation: { id: taskId },
-      recipient: { role: RoleTypes.User, id: 'user' },
-      from: { role: RoleTypes.Agent, id: 'agent' },
-      text: userMessage.parts.map((part: any) => part.text).join('\n'),
-      channelData: {
-        taskId, contextId
-      }
-    })
-
-    const turnContext = new TurnContext(this.adapter, activity, identity)
-    turnContext.turnState.set('A2AExecutionEventBus', eventBus)
-
-    // Run the adapter logic
-    await this.adapter.logic(turnContext)
-
-    if (!this.runningTask.has(taskId)) {
-      logger.info(
-        `[SUTAgentExecutor] Task ${taskId} was cancelled before processing could complete.`
-      )
-      return
-    }
-
-    // 3. Publish the final status and mark the event as 'final'.
-    const finalUpdate: TaskStatusUpdateEvent = {
-      kind: 'status-update',
-      taskId,
-      contextId,
-      status: { state: 'completed', timestamp: new Date().toISOString() },
-      final: true,
-    }
-    eventBus.publish(finalUpdate)
-    eventBus.finished()
-  }
-
-  public cancelTask = async (taskId: string, eventBus: ExecutionEventBus): Promise<void> => {
-    this.runningTask.delete(taskId)
-    const cancelledUpdate: TaskStatusUpdateEvent = {
-      kind: 'status-update',
-      taskId,
-      contextId: this.lastContextId ?? uuidv4(),
-      status: {
-        state: 'canceled',
-        timestamp: new Date().toISOString(),
-      },
-      final: true, // Cancellation is a final state
-    }
-    eventBus.publish(cancelledUpdate)
-  }
-}
-
-/* TaskStore implementation that uses the Agents Hosting Storage interface for persistence.
- * Wraps the Agents SDK storage class with the A2A get/set
-*/
-export class AgentsTaskStore implements TaskStore {
-  constructor (private storage: Storage) {
-
-  }
-
-  makeKeyFromTaskId (taskId: string): string {
-    return `task-${taskId}`
-  }
-
-  async load (taskId: string): Promise<Task | undefined> {
-    const key = this.makeKeyFromTaskId(taskId)
-    const entry = await this.storage.read([key])
-    if (entry[key]) {
-      return entry[key] as Task
-    }
-    return undefined
-  }
-
-  async save (task: Task): Promise<void> {
-    const key = this.makeKeyFromTaskId(task.id)
-    // Store copies to prevent internal mutation if caller reuses objects
-    const update = {
-      [key]: JSON.parse(JSON.stringify(task))
-    }
-    await this.storage.write(update)
-  }
-}
-
-export type AgentsA2AUser = User & {
-  identity: JwtPayload | undefined
-}
-
 /**
  * Adapter for handling agent interactions with various channels thgh cloud-based services.
  *
  * @remarks
- * CloudAdapter processes incoming HTTP requests from A2A clients, validates and
+ * A2AAdapter processes incoming HTTP requests from A2A clients, validates and
  * authenticates them, and generates outgoing responses. It manages the communication
  * flow between agents and users across different channels, handling activities, attachments,
  * and conversation continuations.
@@ -165,28 +43,26 @@ export class A2AAdapter extends BaseAdapter {
   private _logic: (context: TurnContext) => Promise<void>
   constructor (agentCard: AgentCard, logic: (context: TurnContext) => Promise<void>, storage: Storage) {
     super()
-    // todo : implement
     logger.debug('A2A Adapter initialized')
 
+    // Store the logic function, which gets called to process incoming turns
     this._logic = logic
 
+    // Create an A2A request handler that will be used to service incoming requets.
+    // This takes the agent card, provided by the user...
+    // A task store, which we create inside the Storage provider...
+    // And an executor, which is effectively the turn handler. This gets a reference to the adapter, so it can call the logic.
     this._requestHandler = new DefaultRequestHandler(
       agentCard,
-      new AgentsTaskStore(storage),
+      new A2ATaskStore(storage),
       new A2AExecutor(this)
     )
 
+    // TODO: this currently supports no auth OR auth, leaving the developer to reject unauthorized requests if so desired
+    // In the future, we may want to make this configurable - IE if auth is required, reject the request if not authenticated
     const userBuilder: UserBuilder = async (request: Request): Promise<AgentsA2AUser> => {
+      // Assuming that jwtMiddleware has already processed the token and attached the user info to the request object
       if (request.user) {
-        console.log('GETTING TOKEN FROM REQUEST INSIDE USERBUILDER!', request.user)
-        // if (request.headers['authorization']) {
-        // In a real implementation, you would validate the token and extract user info here
-        // const jwtString = request.headers['authorization'].split(' ')[1] // Assuming "Bearer <token>"
-        // logger.debug('Received JWT token:', jwtString)
-        // const payload = jwt.decode(jwtString) as JwtPayload
-
-        // todo: validate the signature and claims of the JWT token to ensure it's from a trusted source and not expired
-
         return {
           isAuthenticated: true,
           identity: request.user,
@@ -268,7 +144,7 @@ export class A2AAdapter extends BaseAdapter {
               }
             }
           }
-          console.log('OUTBOUND A2A MESSAGE:', JSON.stringify(message, null, 2))
+          logger.debug('OUTBOUND A2A MESSAGE:', JSON.stringify(message, null, 2))
           eventBus.publish(message)
         } else if (activity.type === 'typing' && hasStreamingEntity) {
           const typingIndicator: TaskArtifactUpdateEvent = {
@@ -282,7 +158,7 @@ export class A2AAdapter extends BaseAdapter {
           }
           eventBus.publish(typingIndicator)
         } else {
-          console.log('UNHANDLED ACTIVITY', activity)
+          logger.warn('UNHANDLED ACTIVITY', activity)
         }
       }
     } else {
@@ -331,38 +207,10 @@ export class A2AAdapter extends BaseAdapter {
     res: Response,
     next: NextFunction,
     logic: (context: TurnContext) => Promise<void>): Promise<void> {
-    // todo : implement
-
-    logger.debug('Processing A2A request...')
-    logger.debug('REQUEST BODY', request.body)
-
-    this._jsonHandler(request as ExpressRequest, res, next)
-
-    // const handler = new JsonRpcTransportHandler(this._requestHandler)
-    // const context = new ServerCallContext(
-    //   Extensions.parseServiceParameter(request.headers[HTTP_EXTENSION_HEADER] as string),
-    //   { isAuthenticated: false, userName: '' }
-    // )
-    // const rpcResponseOrStream = handler.handle(request.body, context)
-
-    // res.status(200).json(rpcResponseOrStream)
-  }
-
-  public async processRest (
-    request: Request,
-    res: Response,
-    next: NextFunction,
-    logic: (context: TurnContext) => Promise<void>): Promise<void> {
-    // todo : implement
-
-    logger.debug('Processing A2A REST request...')
-    logger.debug('REQUEST BODY', request.body)
-
-    this._restHandler(request as ExpressRequest, res, next)
+    throw new Error('Method not implemented. Pass logic to constructor instead.')
   }
 
   public async handleCardRequest (req: Request, res: Response): Promise<void> {
-    // logger.debug(this._requestHandler.getAgentCard())
     res.json(await this._requestHandler.getAgentCard())
   }
 }
