@@ -146,7 +146,7 @@ describe('MsalTokenProvider', () => {
     })
 
     try {
-      await tokenProvider.getAgenticApplicationToken('agentic-tenant-id', 'agent-app-instance-id')
+      await tokenProvider.getAgenticApplicationToken('A0000009-0000-0000-0000-0000000000AF', 'agent-app-instance-id')
 
       // Assert that axios.post was called
       assert.strictEqual(axiosPostStub.called, true)
@@ -154,7 +154,7 @@ describe('MsalTokenProvider', () => {
       // Check the URL it was called with - should have the tenant-id, not 'common'
       const callArgs = axiosPostStub.getCall(0).args
       const url = callArgs[0]
-      assert.ok(url === 'https://login.microsoftonline.com/agentic-tenant-id/oauth2/v2.0/token', `Expected URL to contain 'tenant-id', got: ${url}`)
+      assert.ok(url === 'https://login.microsoftonline.com/A0000009-0000-0000-0000-0000000000AF/oauth2/v2.0/token', `Expected URL to contain 'A0000009-0000-0000-0000-0000000000AF', got: ${url}`)
       assert.ok(!url.includes('common'), `Expected URL to NOT contain 'common', got: ${url}`)
     } finally {
       // stop caching
