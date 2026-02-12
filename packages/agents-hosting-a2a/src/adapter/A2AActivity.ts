@@ -1,10 +1,13 @@
+/**
+ * Copyright (c) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License.
+ */
+
 import { Activity, RoleTypes } from '@microsoft/agents-activity'
 import { TurnContext } from '@microsoft/agents-hosting'
 import type { Message, TaskStatusUpdateEvent, TaskArtifactUpdateEvent } from '@a2a-js/sdk' with { 'resolution-mode': 'require' }
 import type { RequestContext } from '@a2a-js/sdk/server' with { 'resolution-mode': 'require' }
 import { v4 as uuidv4 } from 'uuid'
-import { debug } from '@microsoft/agents-activity/logger'
-const logger = debug('agents:a2a-adapter:a2a-to-activity')
 
 /**
  * Tools for translating between A2A protocol and Activity protocol

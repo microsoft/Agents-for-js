@@ -1,8 +1,4 @@
 /**
- * Agents SDK adapter for adding A2A protocol support
- */
-
-/**
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */

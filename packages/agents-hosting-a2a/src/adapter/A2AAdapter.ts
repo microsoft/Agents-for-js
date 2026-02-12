@@ -16,7 +16,7 @@ import { JwtPayload } from 'jsonwebtoken'
 // Import types only with resolution-mode for CommonJS
 import type { A2ARequestHandler, ExecutionEventBus } from '@a2a-js/sdk/server' with { 'resolution-mode': 'require' }
 import type { UserBuilder } from '@a2a-js/sdk/server/express' with { 'resolution-mode': 'require' }
-import type { AgentCard, Message, TaskStatusUpdateEvent, TaskArtifactUpdateEvent } from '@a2a-js/sdk' with { 'resolution-mode': 'require' }
+import type { AgentCard } from '@a2a-js/sdk' with { 'resolution-mode': 'require' }
 
 import { A2AExecutor, AgentsA2AUser } from './A2AExecutor'
 import { A2ATaskStore } from './A2ATaskStore'
