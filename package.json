@@ -41,7 +41,6 @@
     "@microsoft/m365agentsplayground": "^0.2.20",
     "@microsoft/microsoft-graph-types": "^2.43.1",
     "@types/debug": "^4.1.12",
-    "@types/express": "^5.0.6",
     "@types/express-serve-static-core": "^5.1.1",
     "@types/node": "^25.0.10",
     "@types/sinon": "^21.0.0",
