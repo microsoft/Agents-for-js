@@ -4,7 +4,7 @@
  */
 
 import { Activity } from '@microsoft/agents-activity'
-import { MessageActionsPayload } from '../message-actions-payload/messageActionsPayload'
+import { MessageActionsPayload } from '../message-actions-payload'
 import { TaskModuleRequest } from '../taskModule'
 
 /**

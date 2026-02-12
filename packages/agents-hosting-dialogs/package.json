@@ -17,13 +17,15 @@
   "types": "dist/src/index.d.ts",
   "dependencies": {
     "@microsoft/agents-hosting": "file:../agents-hosting",
+    "@microsoft/agents-activity": "file:../../packages/agents-activity",
     "@types/lodash": "^4.17.23",
     "dependency-graph": "^1.0.0",
     "@microsoft/recognizers-text-suite": "^1.3.1",
     "@microsoft/recognizers-text-number": "^1.3.1",
     "@microsoft/recognizers-text-date-time": "^1.3.2",
     "@microsoft/recognizers-text-choice": "^1.3.1",
-    "globalize": "^1.7.1"
+    "globalize": "^1.7.1",
+    "zod": "^3.25.75"
   },
   "license": "MIT",
   "files": [

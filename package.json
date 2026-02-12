@@ -18,18 +18,20 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "play": "agentsplayground",
     "lint": "eslint",
+    "lint:deps": "knip --treat-config-hints-as-errors",
+    "lint:deps:ci": "knip --treat-config-hints-as-errors --reporter github-actions",
+    "compat": "node compat.mjs",
+    "test": "node --test  --test-reporter=spec  --import tsx  --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=test-report.xml './packages/*/test/**/*.test.ts'",
+    "docs": "typedoc --skipErrorChecking",
     "clean:dist": "rm -rfv packages/*/dist",
     "clean": "git clean -xdf",
     "build:samples": "tsc --build --verbose tsconfig.samples.json",
     "build:browser": "npm run build:browser --workspaces --if-present",
     "build": "tsc --build --verbose tsconfig.build.json",
     "build:clean": "npm run clean:dist && npm run build",
-    "postbuild": "npm run build:browser",
-    "test": "node --test  --test-reporter=spec  --import tsx  --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=test-report.xml './packages/*/test/**/*.test.ts'",
-    "docs": "typedoc --skipErrorChecking",
-    "compat": "node compat.mjs",
-    "play": "agentsplayground"
+    "postbuild": "npm run build:browser"
   },
   "license": "MIT",
   "workspaces": [
@@ -42,13 +44,12 @@
     "@microsoft/microsoft-graph-types": "^2.43.1",
     "@types/debug": "^4.1.12",
     "@types/express": "^5.0.6",
-    "@types/express-serve-static-core": "^5.1.1",
     "@types/node": "^25.0.10",
     "@types/sinon": "^21.0.0",
     "@types/uuid": "^10.0.0",
     "esbuild": "^0.27.2",
     "eslint": "^9.39.2",
-    "global": "4.4.0",
+    "knip": "^5.83.0",
     "neostandard": "^0.12.2",
     "nerdbank-gitversioning": "^3.9.50",
     "npm-run-all": "^4.1.5",
@@ -56,6 +57,9 @@
     "tsx": "^4.21.0",
     "typedoc": "^0.28.16",
     "typescript": "^5.9.3"
+  },
+  "peerDependencies": {
+    "@rushstack/terminal": "*"
   },
   "engines": {
     "node": ">=20.0.0"

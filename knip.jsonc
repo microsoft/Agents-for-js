@@ -1,0 +1,48 @@
+{
+  "$schema": "https://unpkg.com/knip@latest/schema.json",
+  // Exclude unused enum member checks - SDK enums intentionally include all possible values
+  "exclude": ["enumMembers"],
+  "workspaces": {
+    // Root
+    ".": {
+      "project": ["*.{js,mjs,ts}"],
+      "ignore": ["**/dist/**"]
+    },
+
+    // Packages
+    "packages/*": {
+      "project": ["src/**/*.ts"],
+      "ignore": ["dist/**", "vendor/**"]
+    },
+    "packages/agents-copilotstudio-client": {
+      "project": ["src/**/*.ts"],
+      "ignore": [
+         // Ignore fake os module used in browser builds by esbuild.
+        "src/browser/os.ts"
+      ]
+    },
+    "packages/*/test": {
+      "entry": ["**/*.test.ts"],
+      "project": ["**/*.ts"]
+    },
+
+    // Samples & test agents
+    "samples/**": {
+      "entry": ["*.ts"],
+      "project": ["**/*.ts"]
+    },
+    "test-agents/*": {
+      "entry": ["src/**/*.ts"],
+      "project": ["**/*.ts"],
+      "ignore": ["dist/**"]
+    },
+    "test-agents/state-agent": {
+      "entry": ["src/**/*.ts"],
+      "project": ["**/*.ts"],
+      "ignoreDependencies": [
+        // Ignore sample as it has the cosmos dependency commented out to switch with blobs.
+        "@microsoft/agents-hosting-storage-cosmos"
+      ]
+    }
+  }
+}

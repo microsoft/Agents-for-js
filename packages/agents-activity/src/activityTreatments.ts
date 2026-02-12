@@ -3,8 +3,6 @@
  * Licensed under the MIT License.
  */
 
-import { z } from 'zod'
-
 /**
  * Enum representing treatment types for the activity.
  */
@@ -15,8 +13,3 @@ export enum ActivityTreatments {
    */
   Targeted = 'targeted',
 }
-
-/**
- * Zod schema for validating an ActivityTreatments enum.
- */
-export const activityTreatments = z.nativeEnum(ActivityTreatments)

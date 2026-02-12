@@ -6,7 +6,7 @@
 import { Activity } from '../activity'
 import { Entity } from './entity'
 
-export interface ProductInfo extends Entity {
+interface ProductInfo extends Entity {
   type: 'ProductInfo';
   id: string;
 }

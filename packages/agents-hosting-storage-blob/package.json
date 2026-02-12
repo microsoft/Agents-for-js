@@ -16,8 +16,11 @@
   "main": "dist/index.js",
   "types": "dist/src/index.d.ts",
   "dependencies": {
+    "@azure/core-auth": "^1.10.1",
     "@azure/storage-blob": "^12.30.0",
-    "@microsoft/agents-hosting": "file:../../packages/agents-hosting"
+    "@microsoft/agents-hosting": "file:../../packages/agents-hosting",
+    "@microsoft/agents-activity": "file:../../packages/agents-activity",
+    "zod": "^3.25.75"
   },
   "license": "MIT",
   "files": [

@@ -14,7 +14,7 @@
         "test-tool": "teamsapptester start",
         "test": "npm-run-all -p -r start:anon test-tool",
         "prebundle": "npm run build",
-        "bundle": "esbuild ./src/index.js --bundle --platform=node --metafile=dist/meta.json --outfile=dist/bundle.cjs --tree-shaking=true --keep-names",
+        "bundle": "esbuild ./src/index.ts --bundle --platform=node --metafile=dist/meta.json --outfile=dist/bundle.cjs --tree-shaking=true --keep-names",
         "predocker": "npm run bundle",
         "docker": "docker build -t \"$npm_package_name:$npm_package_version\" ."
     },
@@ -22,6 +22,8 @@
         "@microsoft/agents-hosting": "file:../../packages/agents-hosting",
         "@microsoft/agents-hosting-storage-blob": "file:../../packages/agents-hosting-storage-blob",
         "@microsoft/agents-hosting-storage-cosmos": "file:../../packages/agents-hosting-storage-cosmos",
+        "@microsoft/agents-activity": "file:../../packages/agents-activity",
+        "@microsoft/microsoft-graph-client": "^3.0.7",
         "express": "^5.2.1"
     }
 }

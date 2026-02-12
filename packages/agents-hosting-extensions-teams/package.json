@@ -19,7 +19,10 @@
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
   "dependencies": {
-    "@microsoft/agents-hosting": "file:../agents-hosting"
+    "@microsoft/agents-hosting": "file:../agents-hosting",
+    "@microsoft/agents-activity": "file:../agents-activity",
+    "axios": "^1.13.4",
+    "zod": "^3.25.75"
   },
   "license": "MIT",
   "files": [

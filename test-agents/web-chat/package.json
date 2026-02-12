@@ -16,8 +16,10 @@
   },
   "dependencies": {
     "@microsoft/agents-hosting": "file:../../packages/agents-hosting",
+    "@microsoft/agents-activity": "file:../../packages/agents-activity",
     "@microsoft/microsoft-graph-client": "^3.0.7",
     "adaptivecards-templating": "^2.3.1",
+    "axios": "^1.13.4",
     "express": "^5.2.1"
   }
 }
