@@ -1,1 +1,1 @@
-export * from './A2AAdapter'
+export * from './adapter/A2AAdapter'
