@@ -180,7 +180,7 @@ export class UserAuthorization implements Authorization {
     if (authHandlerId) {
       await this.getHandler(authHandlerId).signout(context)
     } else {
-      for (const handler of Object.values(this.manager.handlers)) {
+      for (const handler of this.manager.handlers) {
         await handler.signout(context)
       }
     }
@@ -207,7 +207,7 @@ export class UserAuthorization implements Authorization {
    * @public
    */
   public onSignInSuccess (handler: (context: TurnContext, state: TurnState, authHandlerId?: string) => Promise<void>) {
-    for (const authHandler of Object.values(this.manager.handlers)) {
+    for (const authHandler of this.manager.handlers) {
       authHandler.onSuccess((context) => handler(context, new TurnState(), authHandler.id))
     }
   }
@@ -239,7 +239,7 @@ export class UserAuthorization implements Authorization {
    * @public
    */
   public onSignInFailure (handler: (context: TurnContext, state: TurnState, authHandlerId?: string, errorMessage?: string) => Promise<void>) {
-    for (const authHandler of Object.values(this.manager.handlers)) {
+    for (const authHandler of this.manager.handlers) {
       authHandler.onFailure((context, reason) => handler(context, new TurnState(), authHandler.id, reason))
     }
   }
@@ -253,9 +253,10 @@ export class UserAuthorization implements Authorization {
    * @private
    */
   private getHandler (id: string) {
-    if (!Object.prototype.hasOwnProperty.call(this.manager.handlers, id)) {
+    const handler = this.manager.handlers.find(e => e.id.toLowerCase() === id.toLowerCase())
+    if (!handler) {
       throw new Error(`Cannot find auth handler with ID '${id}'. Ensure it is configured in the agent application options.`)
     }
-    return this.manager.handlers[id]
+    return handler
   }
 }

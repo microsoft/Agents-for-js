@@ -74,8 +74,8 @@ export class AgentApplication<TState extends TurnState> {
   protected readonly _beforeTurn: ApplicationEventHandler<TState>[] = []
   protected readonly _afterTurn: ApplicationEventHandler<TState>[] = []
   private readonly _adapter?: CloudAdapter
-  private readonly _authorizationManager?: AuthorizationManager
-  private readonly _authorization?: Authorization
+  private readonly _authorizationManager: AuthorizationManager
+  private readonly _authorization: Authorization
   private _typingTimer: NodeJS.Timeout | undefined
   protected readonly _extensions: AgentExtension<TState>[] = []
   private readonly _adaptiveCards: AdaptiveCardsActions<TState>
@@ -125,11 +125,6 @@ export class AgentApplication<TState extends TurnState> {
       this._adapter = new CloudAdapter()
     }
 
-    if (this._options.authorization) {
-      this._authorizationManager = new AuthorizationManager(this, this._adapter.connectionManager)
-      this._authorization = new UserAuthorization(this._authorizationManager)
-    }
-
     if (this._options.longRunningMessages && !this._adapter && !this._options.agentAppId) {
       throw new Error('The Application.longRunningMessages property is unavailable because no adapter was configured in the app.')
     }
@@ -141,7 +136,11 @@ export class AgentApplication<TState extends TurnState> {
         this._adapter?.use(new TranscriptLoggerMiddleware(this._options.transcriptLogger))
       }
     }
+
     logger.debug('AgentApplication created with options:', this._options)
+
+    this._authorizationManager = new AuthorizationManager(this, this._adapter.connectionManager)
+    this._authorization = new UserAuthorization(this._authorizationManager)
   }
 
   /**
@@ -151,7 +150,7 @@ export class AgentApplication<TState extends TurnState> {
    * @throws Error if no authentication options were configured.
    */
   public get authorization (): Authorization {
-    if (!this._authorization) {
+    if (this._authorizationManager.handlers.length === 0) {
       throw new Error('The Application.authorization property is unavailable because no authorization options were configured.')
     }
     return this._authorization
@@ -626,7 +625,7 @@ export class AgentApplication<TState extends TurnState> {
         const state = turnStateFactory()
         await state.load(context, storage)
 
-        const { authorized } = await this._authorizationManager?.process(context, async activity => {
+        const { authorized } = await this._authorizationManager.process(context, async activity => {
           // The incoming activity may come from the storage, so we need to restore the auth handlers.
           // Since the current route may not have auth handlers.
           const route = await this.getRoute(new TurnContext(context.adapter, activity, turnContext.identity))

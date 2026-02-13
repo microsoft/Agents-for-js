@@ -70,23 +70,8 @@ describe('AgenticAuthorization', () => {
   it('should load scopes from options', () => {
     const scopes = ['scope1', 'scope2']
     const handler = new AgenticAuthorization('auth', { type: 'agentic', scopes }, settings)
-    assert.deepEqual((handler as any)._options.scopes, scopes)
-  })
-
-  it('should load scopes from environment variables', () => {
-    process.env.auth_scopes = 'envScope1,envScope2,envScope3'
-    const handler = new AgenticAuthorization('auth', { type: 'agentic' }, settings)
-    const scopes = ['envScope1', 'envScope2', 'envScope3']
-    assert.deepEqual((handler as any)._options.scopes, scopes)
-    delete process.env.auth_scopes
-  })
-
-  it('should trim whitespace from scopes in environment variables', () => {
-    process.env.auth_scopes = '  scope1  , scope2 ,  scope3  '
-    const handler = new AgenticAuthorization('auth', { type: 'agentic' }, settings)
-    const scopes = ['scope1', 'scope2', 'scope3']
-    assert.deepEqual((handler as any)._options.scopes, scopes)
-    delete process.env.auth_scopes
+    const options = (handler as any).options
+    assert.deepEqual(options.scopes, scopes)
   })
 
   it('should load altBlueprintConnectionName from options', () => {
@@ -95,14 +80,8 @@ describe('AgenticAuthorization', () => {
       scopes: ['scope1'],
       altBlueprintConnectionName: 'alt-connection'
     }, settings)
-    assert.deepEqual((handler as any)._options.altBlueprintConnectionName, 'alt-connection')
-  })
-
-  it('should load altBlueprintConnectionName from environment variables', () => {
-    process.env.auth_altBlueprintConnectionName = 'env-alt-connection'
-    const handler = new AgenticAuthorization('auth', { type: 'agentic', scopes: ['scope1'] }, settings)
-    assert.deepEqual((handler as any)._options.altBlueprintConnectionName, 'env-alt-connection')
-    delete process.env.auth_altBlueprintConnectionName
+    const options = (handler as any).options
+    assert.deepEqual(options.altBlueprintConnectionName, 'alt-connection')
   })
 
   it('should return IGNORED status on signin', async () => {
