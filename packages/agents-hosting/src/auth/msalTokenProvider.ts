@@ -127,7 +127,10 @@ export class MsalTokenProvider implements AuthProvider {
       oboAssertion: actualOboAssertion,
       scopes: actualScopes
     })
-    return token?.accessToken as string
+    if (!token?.accessToken) {
+      throw new Error('Failed to acquire token on behalf of user')
+    }
+    return token.accessToken
   }
 
   public async getAgenticInstanceToken (tenantId: string, agentAppInstanceId: string): Promise<string> {
@@ -427,7 +430,10 @@ export class MsalTokenProvider implements AuthProvider {
       scopes: [`${scope}/.default`],
       correlationId: v4()
     })
-    return token?.accessToken as string
+    if (!token?.accessToken) {
+      throw new Error('Failed to acquire token using certificate')
+    }
+    return token.accessToken
   }
 
   /**
@@ -449,7 +455,10 @@ export class MsalTokenProvider implements AuthProvider {
       scopes: [`${scope}/.default`],
       correlationId: v4()
     })
-    return token?.accessToken as string
+    if (!token?.accessToken) {
+      throw new Error('Failed to acquire token using client secret')
+    }
+    return token.accessToken
   }
 
   /**
@@ -471,7 +480,10 @@ export class MsalTokenProvider implements AuthProvider {
     })
     const token = await cca.acquireTokenByClientCredential({ scopes })
     logger.debug('got token using FIC client assertion')
-    return token?.accessToken as string
+    if (!token?.accessToken) {
+      throw new Error('Failed to acquire token using FIC client assertion')
+    }
+    return token.accessToken
   }
 
   /**
@@ -493,7 +505,10 @@ export class MsalTokenProvider implements AuthProvider {
     })
     const token = await cca.acquireTokenByClientCredential({ scopes })
     logger.info('got token using WID client assertion')
-    return token?.accessToken as string
+    if (!token?.accessToken) {
+      throw new Error('Failed to acquire token using WID client assertion')
+    }
+    return token.accessToken
   }
 
   /**
@@ -514,6 +529,9 @@ export class MsalTokenProvider implements AuthProvider {
       forceRefresh: true
     })
     logger.debug('got token for FIC')
+    if (!response?.accessToken) {
+      throw new Error('Failed to acquire external token for FIC client assertion')
+    }
     return response.accessToken
   }
 }
