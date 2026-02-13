@@ -88,7 +88,7 @@ export function recognizeChoices (
       numbers.forEach(matchChoiceByIndex)
     }
 
-    // Sort matches by position and de-duplicate overlapping spans
+    // Sort matches by position and remove duplicates
     // - The results from findChoices() are already properly sorted so we just need this
     //   for ordinal & numerical lookups.
     matched = matched.sort((a: ModelResult<FoundChoice>, b: ModelResult<FoundChoice>) => a.start - b.start)
