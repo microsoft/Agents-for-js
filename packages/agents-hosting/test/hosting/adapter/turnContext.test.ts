@@ -354,4 +354,34 @@ describe('TurnContext', { timeout: 5000 }, function () {
     assert.strictEqual(replies[0].text, 'test')
     assert.strictEqual(replies[1].text, 'second test')
   })
+
+  it('should validate activity via Activity.fromObject in sendActivities()', async function () {
+    const context = new TurnContext(new SimpleAdapter(), testMessage)
+    await assert.rejects(
+      async () => await context.sendActivities([{ type: '' } as Activity]),
+      /String must contain at least 1 character/
+    )
+  })
+
+  it('should validate activity via Activity.fromObject in updateActivity()', async function () {
+    const context = new TurnContext(new SimpleAdapter(), testMessage)
+    await assert.rejects(
+      async () => await context.updateActivity({ type: '' } as Activity),
+      /String must contain at least 1 character/
+    )
+  })
+
+  it('should accept valid activity in sendActivities()', async function () {
+    const context = new TurnContext(new SimpleAdapter(), testMessage)
+    const validActivity = { type: 'message', text: 'Hello' } as Activity
+    const responses = await context.sendActivities([validActivity])
+    assert(Array.isArray(responses), 'responses should be an array')
+    assert.strictEqual(responses.length, 1)
+  })
+
+  it('should accept valid activity in updateActivity()', async function () {
+    const context = new TurnContext(new SimpleAdapter(), testMessage)
+    const validActivity = { type: 'message', text: 'Updated', id: '1234' } as Activity
+    await context.updateActivity(validActivity)
+  })
 })
