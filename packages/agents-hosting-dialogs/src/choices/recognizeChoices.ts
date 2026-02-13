@@ -25,7 +25,14 @@ export function recognizeChoices (
 ): ModelResult<FoundChoice>[] {
   function matchChoiceByIndex (match: ModelResult<any>): void {
     try {
-      const index: number = parseInt(match.resolution.value, 10) - 1
+      if (!match.resolution || match.resolution.value === undefined || match.resolution.value === null) {
+        return
+      }
+      const value = Number(match.resolution.value)
+      if (!Number.isFinite(value) || !Number.isInteger(value)) {
+        return
+      }
+      const index: number = value - 1
       if (index >= 0 && index < list.length) {
         const choice: Choice = list[index]
         matched.push({
@@ -69,22 +76,32 @@ export function recognizeChoices (
   //   a numerical index or ordinal as well.
   let matched: ModelResult<FoundChoice>[] = findChoices(utterance, list, options)
   if (matched.length === 0) {
-    // Next try finding by ordinal
+    // Try finding by ordinal
     if (options.recognizeOrdinals) {
       const ordinals: ModelResult[] = Recognizers.recognizeOrdinal(utterance, options.locale ?? '')
       ordinals.forEach(matchChoiceByIndex)
     }
 
-    // Finally try by numerical index
-    if (matched.length === 0 && options.recognizeNumbers) {
+    // Try finding by numerical index
+    if (options.recognizeNumbers) {
       const numbers: ModelResult[] = Recognizers.recognizeNumber(utterance, options.locale ?? '')
       numbers.forEach(matchChoiceByIndex)
     }
 
-    // Sort any found matches by their position within the utterance.
+    // Sort matches by position and de-duplicate overlapping spans
     // - The results from findChoices() are already properly sorted so we just need this
     //   for ordinal & numerical lookups.
     matched = matched.sort((a: ModelResult<FoundChoice>, b: ModelResult<FoundChoice>) => a.start - b.start)
+
+    // Remove duplicates with overlapping spans (keep the first match for each span)
+    matched = matched.filter((match, index, self) =>
+      index === self.findIndex((m) => m.start === match.start && m.end === match.end)
+    )
+
+    // Remove duplicates selecting the same choice (keep the first match for each choice index)
+    matched = matched.filter((match, index, self) =>
+      index === self.findIndex((m) => m.resolution.index === match.resolution.index)
+    )
   }
 
   return matched
