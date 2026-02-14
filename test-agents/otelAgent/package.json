@@ -1,0 +1,28 @@
+{
+  "name": "otel-agent",
+  "version": "1.0.0",
+  "private": true,
+  "author": "Microsoft",
+  "license": "MIT",
+  "main": "./dist/agent.js",
+  "scripts": {
+    "build": "tsc --build",
+    "prestart": "npm run build",
+    "start": "node --env-file .env --import ./dist/instrumentation.js ./dist/agent.js",
+    "prebundle": "npm run build",
+    "bundle": "esbuild dist/agent.js --bundle --platform=node --metafile=dist/meta.json --outfile=dist/bundle.js --tree-shaking=true --keep-names",
+    "predocker": "npm run bundle",
+    "docker": "docker build -t \"$npm_package_name:$npm_package_version\" ."
+  },
+  "dependencies": {
+    "@azure/monitor-opentelemetry-exporter": "^1.0.0-beta.32",
+    "@microsoft/agents-hosting-express": "file:../../packages/agents-hosting-express",
+    "@opentelemetry/auto-instrumentations-node": "^0.69.0",
+    "@opentelemetry/sdk-node": "^0.211.0",
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/resources": "^2.5.0",
+    "@opentelemetry/sdk-metrics": "^2.5.0",
+    "@opentelemetry/sdk-trace-base": "^2.5.0",
+    "@opentelemetry/semantic-conventions": "^1.39.0"
+  }
+}
