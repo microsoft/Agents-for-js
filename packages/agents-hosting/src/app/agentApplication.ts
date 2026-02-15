@@ -593,16 +593,8 @@ export class AgentApplication<TState extends TurnState> {
    * 8. Executes after-turn event handlers
    * 9. Saves turn state
    *
-   * @example
-   * ```typescript
-   * const handled = await app.runInternal(turnContext);
-   * if (!handled) {
-   *   console.log('No handler matched the activity');
-   * }
-   * ```
-   *
    */
-  public async runInternal (turnContext: TurnContext): Promise<boolean> {
+  private async runInternal (turnContext: TurnContext): Promise<boolean> {
     if (turnContext.activity.type === ActivityTypes.Typing) {
       return false
     }

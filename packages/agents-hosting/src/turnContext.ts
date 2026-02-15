@@ -40,11 +40,6 @@ export type UpdateActivityHandler = (context: TurnContext, activity: Activity, n
 export type DeleteActivityHandler = (context: TurnContext, reference: ConversationReference, next: () => Promise<void>) => Promise<void>
 
 /**
- * Key for the agent callback handler in TurnState collection.
- */
-export const AgentCallbackHandlerKey = 'agentCallbackHandler'
-
-/**
  * Represents the context for a single turn in a conversation between a user and an agent.
  *
  * @remarks

@@ -58,10 +58,9 @@ describe('Application', () => {
       called = true
     })
     const context = new TurnContext(testAdapter, testActivity)
-    const handled = await app.runInternal(context)
+    await app.run(context)
     await context.sendActivity('test')
     assert.equal(called, true)
-    assert.equal(handled, true)
   })
 
   it('should route to an agentic activity handler', async () => {
@@ -96,10 +95,9 @@ describe('Application', () => {
       called = true
     })
     const context = new TurnContext(testAdapter, testActivity)
-    const handled = await app.runInternal(context)
+    await app.run(context)
     await context.sendActivity(MessageFactory.text('/yo'))
     assert.equal(called, true)
-    assert.equal(handled, true)
   })
 
   it('should route to an agentic message handler with string', async () => {
@@ -135,10 +133,9 @@ describe('Application', () => {
     })
     testActivity.text = 'foo'
     const context = new TurnContext(testAdapter, testActivity)
-    const handled = await app.runInternal(context)
+    await app.run(context)
     await context.sendActivity(testActivity)
     assert.equal(called, false)
-    assert.equal(handled, false)
   })
 
   it('should route to a message handler with string case insensitive', async () => {
@@ -151,10 +148,9 @@ describe('Application', () => {
     })
     testActivity.text = 'FOO'
     const context = new TurnContext(testAdapter, testActivity)
-    const handled = await app.runInternal(context)
+    await app.run(context)
     await context.sendActivity(testActivity)
     assert.equal(called, true)
-    assert.equal(handled, true)
   })
 
   it('should route to a act handler with regex', async () => {
@@ -166,10 +162,9 @@ describe('Application', () => {
       called = true
     })
     const context = new TurnContext(testAdapter, testActivity)
-    const handled = await app.runInternal(context)
+    await app.run(context)
     await context.sendActivity(MessageFactory.text('/yo'))
     assert.equal(called, true)
-    assert.equal(handled, true)
   })
 
   it('should route to a msg handler with regex', async () => {
@@ -181,10 +176,9 @@ describe('Application', () => {
       called = true
     })
     const context = new TurnContext(testAdapter, testActivity)
-    const handled = await app.runInternal(context)
+    await app.run(context)
     await context.sendActivity(MessageFactory.text('/yo'))
     assert.equal(called, true)
-    assert.equal(handled, true)
   })
 
   it('should ignore sencond message', async () => {
@@ -201,10 +195,9 @@ describe('Application', () => {
       timesCalled++
     })
     const context = new TurnContext(testAdapter, testActivity)
-    const handled = await app.runInternal(context)
+    await app.run(context)
     await context.sendActivity('/yo')
     assert.equal(timesCalled, 1)
-    assert.equal(handled, true)
   })
 
   it('should ignore sencond message with act', async () => {
@@ -221,10 +214,9 @@ describe('Application', () => {
       timesCalled++
     })
     const context = new TurnContext(testAdapter, testActivity)
-    const handled = await app.runInternal(context)
+    await app.run(context)
     await context.sendActivity('/yo')
     assert.equal(timesCalled, 1)
-    assert.equal(handled, true)
   })
 
   it('should add TranscriptLoggerMiddleware', async () => {
