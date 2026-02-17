@@ -151,6 +151,50 @@ describe('Choices Recognizers Tests', function () {
       assertChoice(found[0], 'red', 0, 1, 'red')
     })
 
+    it('should find a choice in an utterance by ordinal position.', function () {
+      const found = recognizeChoices('the first one please.', colorChoices)
+      assert(found.length === 1, `Invalid token count of '${found.length}' returned.`)
+      assertResult(found[0], 4, 8, 'first')
+      assertChoice(found[0], 'red', 0, 1.0)
+    })
+
+    it('should find multiple choices in an utterance by ordinal position.', function () {
+      const found = recognizeChoices('the first and third one please.', colorChoices)
+      assert(found.length === 2, `Invalid token count of '${found.length}' returned.`)
+      assertChoice(found[0], 'red', 0, 1.0)
+      assertChoice(found[1], 'blue', 2, 1.0)
+    })
+
+    it('should find a choice in an utterance by numerical index (as digit.)', function () {
+      const found = recognizeChoices('1', colorChoices)
+      assert(found.length === 1, `Invalid token count of '${found.length}' returned.`)
+      assertResult(found[0], 0, 0, '1')
+      assertChoice(found[0], 'red', 0, 1.0)
+    })
+
+    it('should find a choice in an utterance by numerical index (as text.)', function () {
+      const found = recognizeChoices('one', colorChoices)
+      assert(found.length === 1, `Invalid token count of '${found.length}' returned.`)
+      assertResult(found[0], 0, 2, 'one')
+      assertChoice(found[0], 'red', 0, 1.0)
+    })
+
+    it('should find multiple choices in an utterance by numerical index.', function () {
+      const found = recognizeChoices('option one and 3.', colorChoices)
+      assert(found.length === 2, `Invalid token count of '${found.length}' returned.`)
+      assertChoice(found[0], 'red', 0, 1.0)
+      assertChoice(found[1], 'blue', 2, 1.0)
+    })
+
+    it('should find multiple choices with mixed ordinal and digit inputs.', function () {
+      const found = recognizeChoices('first and 3', colorChoices)
+      assert(found.length === 2, `Invalid token count of '${found.length}' returned.`)
+      assertResult(found[0], 0, 4, 'first')
+      assertChoice(found[0], 'red', 0, 1.0)
+      assertResult(found[1], 10, 10, '3')
+      assertChoice(found[1], 'blue', 2, 1.0)
+    })
+
     it('should not find a choice if recognizeOrdinals option disabled.', function () {
       const found = recognizeChoices('first', colorChoices, { recognizeOrdinals: false })
       assert(found.length === 0, `Invalid token count of '${found.length}' returned.`)
