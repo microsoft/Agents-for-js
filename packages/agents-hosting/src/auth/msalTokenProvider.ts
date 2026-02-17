@@ -127,7 +127,10 @@ export class MsalTokenProvider implements AuthProvider {
       oboAssertion: actualOboAssertion,
       scopes: actualScopes
     })
-    return token?.accessToken as string
+    if (!token?.accessToken) {
+      throw new Error('Failed to acquire token on behalf of user')
+    }
+    return token.accessToken
   }
 
   public async getAgenticInstanceToken (tenantId: string, agentAppInstanceId: string): Promise<string> {
@@ -168,11 +171,32 @@ export class MsalTokenProvider implements AuthProvider {
       return this.connectionSettings?.authority ? `${this.connectionSettings.authority}/${this.connectionSettings?.tenantId}` : `https://login.microsoftonline.com/${this.connectionSettings?.tenantId || 'botframework.com'}`
     }
 
-    if (this.connectionSettings?.tenantId === 'common') {
-      return this.connectionSettings?.authority ? `${this.connectionSettings.authority}/${tenantId}` : `https://login.microsoftonline.com/${tenantId}`
-    } else {
-      return this.connectionSettings?.authority ? `${this.connectionSettings.authority}/${this.connectionSettings?.tenantId}` : `https://login.microsoftonline.com/${this.connectionSettings?.tenantId || 'botframework.com'}`
+    const configuredAuth = this.connectionSettings?.authority
+    const configuredTenantId = this.connectionSettings?.tenantId
+
+    // Prefer configured tenant unless it is 'common' or falsy, in which case use the tenantId parameter
+    const isConfiguredValid = configuredTenantId && configuredTenantId !== 'common'
+    const finalTenant = isConfiguredValid ? configuredTenantId : tenantId
+
+    // Use default Microsoft login endpoint when no custom authority is configured
+    if (!configuredAuth) {
+      return `https://login.microsoftonline.com/${finalTenant}`
     }
+
+    // Check if authority already contains a tenant identifier
+    const endsWithCommon = configuredAuth.endsWith('/common')
+    const guidPattern = /\/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
+    const hasTenantGuid = guidPattern.test(configuredAuth)
+
+    if (endsWithCommon || hasTenantGuid) {
+      return configuredAuth.replace(
+        /\/(?:common|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})(?=\/|$)/,
+        `/${tenantId}`
+      )
+    }
+
+    // Authority has no tenant segment - append the final selected tenant
+    return `${configuredAuth}/${finalTenant}`
   }
 
   /**
@@ -406,7 +430,10 @@ export class MsalTokenProvider implements AuthProvider {
       scopes: [`${scope}/.default`],
       correlationId: v4()
     })
-    return token?.accessToken as string
+    if (!token?.accessToken) {
+      throw new Error('Failed to acquire token using certificate')
+    }
+    return token.accessToken
   }
 
   /**
@@ -428,7 +455,10 @@ export class MsalTokenProvider implements AuthProvider {
       scopes: [`${scope}/.default`],
       correlationId: v4()
     })
-    return token?.accessToken as string
+    if (!token?.accessToken) {
+      throw new Error('Failed to acquire token using client secret')
+    }
+    return token.accessToken
   }
 
   /**
@@ -450,7 +480,10 @@ export class MsalTokenProvider implements AuthProvider {
     })
     const token = await cca.acquireTokenByClientCredential({ scopes })
     logger.debug('got token using FIC client assertion')
-    return token?.accessToken as string
+    if (!token?.accessToken) {
+      throw new Error('Failed to acquire token using FIC client assertion')
+    }
+    return token.accessToken
   }
 
   /**
@@ -472,7 +505,10 @@ export class MsalTokenProvider implements AuthProvider {
     })
     const token = await cca.acquireTokenByClientCredential({ scopes })
     logger.info('got token using WID client assertion')
-    return token?.accessToken as string
+    if (!token?.accessToken) {
+      throw new Error('Failed to acquire token using WID client assertion')
+    }
+    return token.accessToken
   }
 
   /**
@@ -493,6 +529,9 @@ export class MsalTokenProvider implements AuthProvider {
       forceRefresh: true
     })
     logger.debug('got token for FIC')
+    if (!response?.accessToken) {
+      throw new Error('Failed to acquire external token for FIC client assertion')
+    }
     return response.accessToken
   }
 }
