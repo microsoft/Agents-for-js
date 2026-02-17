@@ -6,7 +6,7 @@
 import type { Strategy, StrategySettings } from './strategy'
 
 /** @deprecated This interface will not be supported in future versions. Use StrategySettings instead. */
-export interface PublishedBotStrategySettings {
+interface PublishedBotStrategySettings {
   readonly host: URL;
   readonly schema: string;
 }

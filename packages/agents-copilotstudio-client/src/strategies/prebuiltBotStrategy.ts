@@ -6,7 +6,7 @@
 import type { Strategy, StrategySettings } from './strategy'
 
 /** @deprecated This interface will not be supported in future versions. Use StrategySettings instead. */
-export interface PrebuiltBotStrategySettings {
+interface PrebuiltBotStrategySettings {
   readonly host: URL;
   readonly identifier: string;
 }

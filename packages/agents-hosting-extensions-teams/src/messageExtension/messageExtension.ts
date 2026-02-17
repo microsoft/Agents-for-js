@@ -8,16 +8,16 @@ import { MessagingExtensionResponse } from './messagingExtensionResponse'
 import { MessagingExtensionResult } from './messagingExtensionResult'
 import { MessagingExtensionAction } from './messagingExtensionAction'
 
-export type RouteQueryHandler<TState extends TurnState> = (context: TurnContext, state: TState, query: MessagingExtensionQuery) => Promise<MessagingExtensionResult>
-export type SelectItemHandler<TState extends TurnState> = (context: TurnContext, state: TState, item: unknown) => Promise<MessagingExtensionResult>
-export type QueryLinkHandler<TState extends TurnState> = (context: TurnContext, state: TState, url: string) => Promise<MessagingExtensionResult>
-export type FetchTaskHanlder<TState extends TurnState> = (context: TurnContext, state: TState) => Promise<TaskModuleResponse>
-export type SubmitActionHanlder<TState extends TurnState> = (context: TurnContext, state: TState, data: unknown) => Promise<MessagingExtensionActionResponse>
-export type MessagePreviewEditHandler<TState extends TurnState> = (context: TurnContext, state: TState, activity: Activity) => Promise<MessagingExtensionActionResponse>
-export type MessagePreviewSendHandler<TState extends TurnState> = (context: TurnContext, state: TState, activity: Activity) => Promise<void>
-export type ConfigureQuerySettingUrlHandler<TState extends TurnState> = (context: TurnContext, state: TState, settings: unknown) => Promise<MessagingExtensionResponse>
-export type ConfigureSettingsHandler<TState extends TurnState> = (context: TurnContext, state: TState, settings: unknown) => Promise<void>
-export type CardButtonClickedHandler<TState extends TurnState> = (context: TurnContext, state: TState, cardData: unknown) => Promise<void>
+type RouteQueryHandler<TState extends TurnState> = (context: TurnContext, state: TState, query: MessagingExtensionQuery) => Promise<MessagingExtensionResult>
+type SelectItemHandler<TState extends TurnState> = (context: TurnContext, state: TState, item: unknown) => Promise<MessagingExtensionResult>
+type QueryLinkHandler<TState extends TurnState> = (context: TurnContext, state: TState, url: string) => Promise<MessagingExtensionResult>
+type FetchTaskHanlder<TState extends TurnState> = (context: TurnContext, state: TState) => Promise<TaskModuleResponse>
+type SubmitActionHanlder<TState extends TurnState> = (context: TurnContext, state: TState, data: unknown) => Promise<MessagingExtensionActionResponse>
+type MessagePreviewEditHandler<TState extends TurnState> = (context: TurnContext, state: TState, activity: Activity) => Promise<MessagingExtensionActionResponse>
+type MessagePreviewSendHandler<TState extends TurnState> = (context: TurnContext, state: TState, activity: Activity) => Promise<void>
+type ConfigureQuerySettingUrlHandler<TState extends TurnState> = (context: TurnContext, state: TState, settings: unknown) => Promise<MessagingExtensionResponse>
+type ConfigureSettingsHandler<TState extends TurnState> = (context: TurnContext, state: TState, settings: unknown) => Promise<void>
+type CardButtonClickedHandler<TState extends TurnState> = (context: TurnContext, state: TState, cardData: unknown) => Promise<void>
 /**
  * Class that exposes Teams messaging extension-related events.
  * Provides an organized way to handle messaging extension operations in Microsoft Teams.
