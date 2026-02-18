@@ -343,14 +343,15 @@ export class MsalTokenProvider implements AuthProvider {
 
     const privateKeyPem = fs.readFileSync(authConfig.certKeyFile as string)
 
-    const pubKeyObject = new crypto.X509Certificate(fs.readFileSync(authConfig.certPemFile as string))
+    const pemFile = fs.readFileSync(authConfig.certPemFile as string)
+    const pubKeyObject = new crypto.X509Certificate(pemFile)
 
     const der = pubKeyObject.raw
     const x5tS256 = base64url(crypto.createHash('sha256').update(der).digest())
 
     let x5c
     if (authConfig.sendX5C) {
-      x5c = Buffer.from(authConfig.certPemFile as string, 'base64').toString()
+      x5c = pemFile.toString()
     }
 
     const now = Math.floor(Date.now() / 1000)
@@ -412,7 +413,8 @@ export class MsalTokenProvider implements AuthProvider {
       type: 'pkcs8'
     })
 
-    const pubKeyObject = new crypto.X509Certificate(fs.readFileSync(authConfig.certPemFile as string))
+    const pemFile = fs.readFileSync(authConfig.certPemFile as string)
+    const pubKeyObject = new crypto.X509Certificate(pemFile)
 
     const cca = new ConfidentialClientApplication({
       auth: {
@@ -421,7 +423,7 @@ export class MsalTokenProvider implements AuthProvider {
         clientCertificate: {
           privateKey: privateKey as string,
           thumbprint: pubKeyObject.fingerprint.replaceAll(':', ''),
-          x5c: Buffer.from(authConfig.certPemFile as string, 'base64').toString()
+          x5c: pemFile.toString()
         }
       },
       system: this.sysOptions

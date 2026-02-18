@@ -4,7 +4,7 @@ import { Errors } from '../errorHelper'
 import { TaskModuleTaskInfo } from './taskModuleTaskInfo'
 import { TaskModuleResponse } from './taskModuleResponse'
 
-export enum TaskModuleInvokeNames {
+enum TaskModuleInvokeNames {
   CONFIG_FETCH_INVOKE_NAME = 'config/fetch',
   CONFIG_SUBMIT_INVOKE_NAME = 'config/submit',
   FETCH_INVOKE_NAME = 'task/fetch',
