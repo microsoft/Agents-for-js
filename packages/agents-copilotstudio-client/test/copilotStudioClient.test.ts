@@ -1452,7 +1452,8 @@ describe('CopilotStudioClient', function () {
       })
 
       try {
-        for await (const activity of client.executeStreaming(userActivity, '')) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        for await (const _activity of client.executeStreaming(userActivity, '')) {
           // Should not reach here
         }
         assert.fail('Should have thrown an error')
@@ -1696,7 +1697,8 @@ describe('subscribeAsync', function () {
     const client = new CopilotStudioClient(settings, 'test-token')
 
     try {
-      for await (const event of client.subscribeAsync('')) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      for await (const _event of client.subscribeAsync('')) {
         // Should not reach here
       }
       assert.fail('Should have thrown an error')

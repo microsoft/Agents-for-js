@@ -74,7 +74,7 @@ export class CopilotStudioClient {
   private async * postRequestAsync (url: string, body?: any, method: string = 'POST'): AsyncGenerator<Activity> {
     this.logDiagnostic(`Request URL: ${url}`)
     this.logDiagnostic(`Request Method: ${method}`)
-    this.logDiagnostic(`Request Body:`, body ? JSON.stringify(body, null, 2) : 'none')
+    this.logDiagnostic('Request Body:', body ? JSON.stringify(body, null, 2) : 'none')
 
     logger.debug(`>>> SEND TO ${url}`)
 
