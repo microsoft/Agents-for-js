@@ -56,8 +56,6 @@ export class ConnectionSettings extends ConnectionOptions {
   public cloud?: PowerPlatformCloud
   /** The type of the Copilot agent. */
   public copilotAgentType?: AgentType
-  /** Flag to enable diagnostic logging */
-  public enableDiagnostics?: boolean
 
   /**
    * Default constructor for the ConnectionSettings class.
