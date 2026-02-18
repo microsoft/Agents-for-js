@@ -23,7 +23,7 @@ The repository is a **monorepo** using npm workspaces with multiple interconnect
 
 ### Test Agents (in `test-agents/`)
 
-Sample agents used for internal testing ("tamples"). For learning examples, refer to https://github.com/Microsoft/Agents.
+Sample agents used for internal testing ("samples"). For learning examples, refer to https://github.com/Microsoft/Agents.
 
 ## Common Development Commands
 
