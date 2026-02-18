@@ -105,13 +105,13 @@ const createClient = async (): Promise<CopilotStudioClient> => {
   const copilotClient = new CopilotStudioClient(settings, token)
 
   // Display client information using new helper utilities
-  console.log(`\n=== Copilot Studio Client Information ===`)
+  console.log('\n=== Copilot Studio Client Information ===')
   console.log(`Version: ${UserAgentHelper.getVersion()}`)
   console.log(`User Agent: ${UserAgentHelper.getProductInfo()}`)
   console.log(`Token Scope: ${ScopeHelper.getScopeFromSettings(settings)}`)
   console.log(`Diagnostics Enabled: ${settings.enableDiagnostics ?? false}`)
   console.log(`Settings: ${JSON.stringify(settings, null, 2)}`)
-  console.log(`=========================================\n`)
+  console.log('=========================================\n')
 
   return copilotClient
 }
