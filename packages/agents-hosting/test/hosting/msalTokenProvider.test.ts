@@ -490,7 +490,7 @@ describe('MsalTokenProvider', () => {
 
     const jwtSignStub = sinon.stub(jwt, 'sign').returns('fake-jwt-token' as any)
 
-    const axiosPostStub = sinon.stub(axios, 'post').resolves({
+    sinon.stub(axios, 'post').resolves({
       data: { access_token: 'test-access-token', expires_in: 3600 }
     })
 
@@ -536,7 +536,7 @@ describe('MsalTokenProvider', () => {
 
     const jwtSignStub = sinon.stub(jwt, 'sign').returns('fake-jwt-token' as any)
 
-    const axiosPostStub = sinon.stub(axios, 'post').resolves({
+    sinon.stub(axios, 'post').resolves({
       data: { access_token: 'test-access-token', expires_in: 3600 }
     })
 
@@ -578,7 +578,7 @@ describe('MsalTokenProvider', () => {
 
     const jwtSignStub = sinon.stub(jwt, 'sign').returns('fake-jwt-token' as any)
 
-    const axiosPostStub = sinon.stub(axios, 'post').resolves({
+    sinon.stub(axios, 'post').resolves({
       data: { access_token: 'test-access-token', expires_in: 3600 }
     })
 
