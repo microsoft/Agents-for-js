@@ -89,7 +89,11 @@ export function getCopilotStudioSubscribeUrl (
   }
 
   const baseUrl = getCopilotStudioConnectionUrl(settings, conversationId)
-  const subscribeUrl = `${baseUrl}/subscribe`
+  const url = new URL(baseUrl)
+  url.pathname = url.pathname.endsWith('/')
+    ? `${url.pathname}subscribe`
+    : `${url.pathname}/subscribe`
+  const subscribeUrl = url.href
 
   logger.debug(`Generated Copilot Studio subscribe URL: ${subscribeUrl}`)
   return subscribeUrl
