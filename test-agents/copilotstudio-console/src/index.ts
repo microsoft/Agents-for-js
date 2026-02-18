@@ -148,7 +148,7 @@ const askQuestion = async (copilotClient: CopilotStudioClient, conversationId: s
 }
 
 /**
- * Writes formatted data to the console. This funciton does not handle all of the possible activity types and formats,
+ * Writes formatted data to the console. This function does not handle all of the possible activity types and formats,
  * it is focused on just a few common types.
  * @param act The activity to print.
  */
