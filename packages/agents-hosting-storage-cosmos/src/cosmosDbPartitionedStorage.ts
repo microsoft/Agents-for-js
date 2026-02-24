@@ -13,7 +13,7 @@ import { Errors } from './errorHelper'
  * A utility class to ensure that a specific asynchronous task is executed only once for a given key.
  * @typeParam T The type of the result returned by the asynchronous task.
  */
-export class DoOnce<T> {
+class DoOnce<T> {
   private task: {
     [key: string]: Promise<T>;
   } = {}

@@ -31,9 +31,12 @@ jobs:
       - name: Install dependencies with CI
         run: npm ci
 
-      - name: lint
+      - name: Lint codebase
         run: npm run lint
-        
+
+      - name: Validate unused dependencies, exports, and files
+        run: npm run lint:deps:ci
+
       - name: Build TS
         run: npm run build
 

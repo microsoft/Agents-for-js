@@ -61,7 +61,6 @@ const verifyToken = async (raw: string, config: AuthConfiguration): Promise<JwtP
   }
 
   const verifyOptions: jwt.VerifyOptions = {
-    issuer: authConfig.issuers as [string, ...string[]],
     audience: [authConfig.clientId!, 'https://api.botframework.com'],
     ignoreExpiration: false,
     algorithms: ['RS256'],
