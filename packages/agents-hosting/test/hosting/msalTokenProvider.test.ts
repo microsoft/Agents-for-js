@@ -406,7 +406,7 @@ describe('MsalTokenProvider', () => {
     ConfidentialClientApplicationStub.restore()
   })
 
-  it('should call the configured authority based on incoming message', async () => {
+  it('should prefer passed tenant id over configured tenant id in authority resolution', async () => {
     const adapter = new CloudAdapter({
       clientId: 'client-id',
       tenantId: 'original-tenant-id',
@@ -454,10 +454,10 @@ describe('MsalTokenProvider', () => {
     assert.strictEqual(memoryCacheStub.called, true)
     assert.strictEqual(ConfidentialClientApplicationStub.called, true)
 
-    // Check the URL it was called with - should have the tenant-id, not 'common'
+    // The passed agentic-tenant-id should be preferred over the configured original-tenant-id
     const callArgs = axiosPostStub.getCall(0).args
     const url = callArgs[0]
-    assert.ok(url === 'https://login.microsoftonline.com/original-tenant-id/oauth2/v2.0/token', `Expected URL to contain 'https://login.microsoftonline.com/original-tenant-id/oauth2/v2.0/token', got: ${url}`)
+    assert.ok(url === 'https://login.microsoftonline.com/agentic-tenant-id/oauth2/v2.0/token', `Expected URL to contain 'agentic-tenant-id', got: ${url}`)
     axiosPostStub.restore()
     memoryCacheStub.restore()
     connectorClientStub.restore()
