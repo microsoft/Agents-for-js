@@ -31,6 +31,7 @@ import { Errors } from './errorHelper'
 
 /**
  * Zod schema for validating an Activity object.
+ * @ignore
  */
 export const activityZodSchema = z.object({
   type: z.union([activityTypesZodSchema, z.string().min(1)]),

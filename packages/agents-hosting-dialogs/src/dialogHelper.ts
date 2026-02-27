@@ -149,7 +149,7 @@ async function innerRun (
  * @param dialogContext DialogContext for the current turn of conversation with the user.
  * @returns Active DialogContext.
  */
-export function getActiveDialogContext (dialogContext: DialogContext): DialogContext {
+function getActiveDialogContext (dialogContext: DialogContext): DialogContext {
   const child = dialogContext.child
   if (!child) {
     return dialogContext

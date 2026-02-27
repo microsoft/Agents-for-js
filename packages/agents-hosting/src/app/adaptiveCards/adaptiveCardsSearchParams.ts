@@ -21,6 +21,7 @@ export interface AdaptiveCardsSearchParams {
 
 /**
  * Zod schema for validating AdaptiveCardsSearchParams.
+ * @ignore
  */
 export const adaptiveCardsSearchParamsZodSchema = z.object({
   queryText: z.string(),
