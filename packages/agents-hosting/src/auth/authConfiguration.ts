@@ -377,12 +377,11 @@ export function resolveAuthority (authority?: string, tenantId?: string): string
 }
 
 function getDefaultIssuers (tenantId: string, authority: string) : string[] {
-  const effectiveTenantId = tenantId || 'botframework.com'
   // Convert empty string to undefined so resolveAuthority applies its 'botframework.com' default
-  const resolved = resolveAuthority(authority, tenantId || undefined)
+  const t = tenantId || undefined
   return [
     'https://api.botframework.com',
-    `https://sts.windows.net/${effectiveTenantId}/`,
-    `${resolved}/v2.0`
+    `${resolveAuthority('https://sts.windows.net', t)}/`,
+    `${resolveAuthority(authority, t)}/v2.0`
   ]
 }
