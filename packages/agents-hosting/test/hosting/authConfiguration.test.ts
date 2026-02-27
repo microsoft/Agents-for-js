@@ -73,7 +73,11 @@ describe('AuthConfiguration', () => {
       assert.strictEqual(config.certKeyFile, undefined)
       assert.strictEqual(config.connectionName, undefined)
       assert.strictEqual(config.FICClientId, undefined)
-      assert.deepStrictEqual(config.issuers, ['https://api.botframework.com'])
+      assert.deepStrictEqual(config.issuers, [
+        'https://api.botframework.com',
+        'https://sts.windows.net/botframework.com/',
+        'https://login.microsoftonline.com/botframework.com/v2.0'
+      ])
       assert.strictEqual(config.authority, 'https://login.microsoftonline.com')
     })
   })
@@ -122,7 +126,11 @@ describe('AuthConfiguration', () => {
       assert.strictEqual(config.certKeyFile, undefined)
       assert.strictEqual(config.connectionName, undefined)
       assert.strictEqual(config.FICClientId, undefined)
-      assert.deepStrictEqual(config.issuers, ['https://api.botframework.com'])
+      assert.deepStrictEqual(config.issuers, [
+        'https://api.botframework.com',
+        'https://sts.windows.net/botframework.com/',
+        'https://login.microsoftonline.com/botframework.com/v2.0'
+      ])
       assert.deepStrictEqual(config.authority, 'https://login.microsoftonline.com')
     })
   })
@@ -182,7 +190,11 @@ describe('AuthConfiguration', () => {
       assert.strictEqual(config.certPemFile, undefined)
       assert.strictEqual(config.certKeyFile, undefined)
       assert.strictEqual(config.connectionName, undefined)
-      assert.deepStrictEqual(config.issuers, ['https://api.botframework.com'])
+      assert.deepStrictEqual(config.issuers, [
+        'https://api.botframework.com',
+        'https://sts.windows.net/botframework.com/',
+        'https://login.microsoftonline.com/botframework.com/v2.0'
+      ])
       assert.strictEqual(config.authority, 'https://login.microsoftonline.com')
     })
   })
@@ -298,10 +310,10 @@ describe('AuthConfiguration', () => {
       )
     })
 
-    it('should throw when authority has no tenant path and tenantId is not provided', () => {
-      assert.throws(
-        () => resolveAuthority(),
-        { message: 'tenantId is required when authority does not include a tenant path' }
+    it('should use botframework.com as default when no tenantId is provided', () => {
+      assert.strictEqual(
+        resolveAuthority(),
+        'https://login.microsoftonline.com/botframework.com'
       )
     })
   })

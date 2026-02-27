@@ -370,18 +370,15 @@ export function resolveAuthority (authority?: string, tenantId?: string): string
   if (hasPathSegment) {
     return base
   }
-  if (!tenantId) {
-    throw new Error('tenantId is required when authority does not include a tenant path')
-  }
-  return `${base}/${tenantId}`
+  return `${base}/${tenantId ?? 'botframework.com'}`
 }
 
 function getDefaultIssuers (tenantId: string, authority: string) : string[] {
-  const issuers = ['https://api.botframework.com']
-  if (tenantId) {
-    const resolved = resolveAuthority(authority, tenantId)
-    issuers.push(`https://sts.windows.net/${tenantId}/`)
-    issuers.push(`${resolved}/v2.0`)
-  }
-  return issuers
+  const effectiveTenantId = tenantId || 'botframework.com'
+  const resolved = resolveAuthority(authority, tenantId || undefined)
+  return [
+    'https://api.botframework.com',
+    `https://sts.windows.net/${effectiveTenantId}/`,
+    `${resolved}/v2.0`
+  ]
 }
