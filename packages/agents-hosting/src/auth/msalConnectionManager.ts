@@ -4,7 +4,7 @@
  */
 
 import { Activity, RoleTypes } from '@microsoft/agents-activity'
-import { AuthConfiguration } from './authConfiguration'
+import { AuthConfiguration, resolveAuthority } from './authConfiguration'
 import { Connections } from './connections'
 import { MsalTokenProvider } from './msalTokenProvider'
 import { JwtPayload } from 'jsonwebtoken'
@@ -167,7 +167,7 @@ export class MsalConnectionManager implements Connections {
       conn.connectionSettings.issuers ??= [
         'https://api.botframework.com',
         `https://sts.windows.net/${conn.connectionSettings.tenantId}/`,
-        `${conn.connectionSettings.authority}/${conn.connectionSettings.tenantId}/v2.0`
+        `${resolveAuthority(conn.connectionSettings.authority, conn.connectionSettings.tenantId)}/v2.0`
       ]
     }
     return conn

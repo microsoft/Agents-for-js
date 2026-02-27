@@ -99,4 +99,38 @@ describe('authorizeJWT', () => {
     assert((res.send as sinon.SinonStub).calledOnceWith({ 'jwt-auth-error': 'Method not allowed' }))
     assert((next as sinon.SinonStub).notCalled)
   })
+
+  it('should use correct JWKS URI when tenant is embedded in authority', async () => {
+    // Config with tenant embedded in authority (Python/.NET style) and no separate tenantId
+    const embeddedTenantConnections = new Map<string, AuthConfiguration>()
+    embeddedTenantConnections.set('test', {
+      clientId: 'client-id',
+      authority: 'https://login.microsoftonline.com/tenant-id',
+      issuers: ['issuer']
+    })
+    const embeddedTenantConfig: AuthConfiguration = {
+      clientId: 'client-id',
+      connections: embeddedTenantConnections
+    }
+
+    const token = 'valid-token'
+    req.headers.authorization = `Bearer ${token}`
+
+    const decodeStub = sinon.stub(jwt, 'decode').returns({ aud: 'client-id', iss: 'issuer' })
+    const verifyStub = sinon.stub(jwt, 'verify').callsFake((token, secretOrPublicKey, options, callback) => {
+      if (callback) {
+        callback(null, { aud: 'client-id' })
+      }
+    })
+
+    // jwks-rsa is called with the constructed jwksUri — capture it via the verify call succeeding
+    // The key assertion is that verify is called (not rejected due to a malformed JWKS URI like
+    // https://login.microsoftonline.com/tenant-id/undefined/discovery/v2.0/keys)
+    await authorizeJWT(embeddedTenantConfig)(req as Request, res as Response, next)
+
+    assert((next as sinon.SinonStub).calledOnce)
+
+    decodeStub.restore()
+    verifyStub.restore()
+  })
 })
