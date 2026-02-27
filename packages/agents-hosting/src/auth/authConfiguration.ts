@@ -366,7 +366,7 @@ function buildLegacyAuthConfig (envPrefix: string = '', customConfig?: AuthConfi
 export function resolveAuthority (authority?: string, tenantId?: string): string {
   const base = (authority ?? 'https://login.microsoftonline.com').replace(/\/+$/, '')
   const url = new URL(base)
-  const hasPathSegment = url.pathname !== '/' && url.pathname !== ''
+  const hasPathSegment = url.pathname !== '/'
   if (hasPathSegment) {
     return base
   }
@@ -375,6 +375,7 @@ export function resolveAuthority (authority?: string, tenantId?: string): string
 
 function getDefaultIssuers (tenantId: string, authority: string) : string[] {
   const effectiveTenantId = tenantId || 'botframework.com'
+  // Convert empty string to undefined so resolveAuthority applies its 'botframework.com' default
   const resolved = resolveAuthority(authority, tenantId || undefined)
   return [
     'https://api.botframework.com',

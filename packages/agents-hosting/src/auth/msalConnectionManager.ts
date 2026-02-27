@@ -166,7 +166,7 @@ export class MsalConnectionManager implements Connections {
       conn.connectionSettings.authority ??= 'https://login.microsoftonline.com'
       conn.connectionSettings.issuers ??= [
         'https://api.botframework.com',
-        `https://sts.windows.net/${conn.connectionSettings.tenantId}/`,
+        `https://sts.windows.net/${conn.connectionSettings.tenantId ?? 'botframework.com'}/`,
         `${resolveAuthority(conn.connectionSettings.authority, conn.connectionSettings.tenantId)}/v2.0`
       ]
     }
