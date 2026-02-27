@@ -370,6 +370,9 @@ export function resolveAuthority (authority?: string, tenantId?: string): string
   if (hasPathSegment) {
     return base
   }
+  if (!tenantId) {
+    logger.warn('tenantId is not configured, defaulting to botframework.com')
+  }
   return `${base}/${tenantId ?? 'botframework.com'}`
 }
 
