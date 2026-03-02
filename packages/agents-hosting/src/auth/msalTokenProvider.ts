@@ -161,7 +161,8 @@ export class MsalTokenProvider implements AuthProvider {
   }
 
   /**
-   * This method can optionally accept a tenant ID that overrides the tenant ID in the connection settings, if the connection settings authority contains "common".
+   * This method can optionally accept a tenant ID that overrides the tenant ID in the connection settings.
+   * The passed tenantId is always preferred over the configured tenantId when present.
    * @param tenantId
    * @returns
    */
@@ -174,9 +175,8 @@ export class MsalTokenProvider implements AuthProvider {
     const configuredAuth = this.connectionSettings?.authority
     const configuredTenantId = this.connectionSettings?.tenantId
 
-    // Prefer configured tenant unless it is 'common' or falsy, in which case use the tenantId parameter
-    const isConfiguredValid = configuredTenantId && configuredTenantId !== 'common'
-    const finalTenant = isConfiguredValid ? configuredTenantId : tenantId
+    // Prefer the passed tenantId if present, falling back to the configured tenantId
+    const finalTenant = tenantId || configuredTenantId
 
     // Use default Microsoft login endpoint when no custom authority is configured
     if (!configuredAuth) {

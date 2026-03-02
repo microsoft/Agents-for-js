@@ -26,7 +26,7 @@ enum Category {
 /**
  * Active handler manager information.
  */
-export interface AzureBotActiveHandler extends ActiveAuthorizationHandler {
+interface AzureBotActiveHandler extends ActiveAuthorizationHandler {
   /**
    * The number of attempts left for the handler to process in case of failure.
    */

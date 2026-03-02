@@ -31,6 +31,7 @@ export interface MessagingExtensionQuery {
 
 /**
  * Zod schema for validating MessagingExtensionQuery.
+ * @ignore
  */
 export const messagingExtensionQueryZodSchema = z.object({
   commandId: z.string().min(1).optional(),
