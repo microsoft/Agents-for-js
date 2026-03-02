@@ -370,15 +370,15 @@ export function resolveAuthority (authority?: string, tenantId?: string): string
   if (hasPathSegment) {
     return base
   }
-  if (!tenantId) {
-    logger.warn('tenantId is not configured, defaulting to botframework.com')
-  }
   return `${base}/${tenantId ?? 'botframework.com'}`
 }
 
 function getDefaultIssuers (tenantId: string, authority: string) : string[] {
   // Convert empty string to undefined so resolveAuthority applies its 'botframework.com' default
   const t = tenantId || undefined
+  if (!t) {
+    logger.warn('tenantId is not configured, defaulting to botframework.com')
+  }
   return [
     'https://api.botframework.com',
     `${resolveAuthority('https://sts.windows.net', t)}/`,

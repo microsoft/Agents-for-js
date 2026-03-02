@@ -13,6 +13,18 @@ import { debug } from '@microsoft/agents-activity/logger'
 const logger = debug('agents:jwt-middleware')
 
 /**
+ * Builds the JWKS URI for the given token issuer and auth configuration.
+ * @param iss The token issuer claim.
+ * @param authConfig The authentication configuration for the matched audience.
+ * @returns The JWKS URI string.
+ */
+export function buildJwksUri (iss: string, authConfig: AuthConfiguration): string {
+  return iss === 'https://api.botframework.com'
+    ? 'https://login.botframework.com/v1/.well-known/keys'
+    : `${resolveAuthority(authConfig.authority, authConfig.tenantId)}/discovery/v2.0/keys`
+}
+
+/**
  * Verifies the JWT token.
  * @param raw The raw JWT token.
  * @param config The authentication configuration.
@@ -40,9 +52,7 @@ const verifyToken = async (raw: string, config: AuthConfiguration): Promise<JwtP
   const [key, authConfig] = matchingEntry
   logger.debug(`Audience found at key: ${key}`)
 
-  const jwksUri = payload.iss === 'https://api.botframework.com'
-    ? 'https://login.botframework.com/v1/.well-known/keys'
-    : `${resolveAuthority(authConfig.authority, authConfig.tenantId)}/discovery/v2.0/keys`
+  const jwksUri = buildJwksUri(payload.iss as string, authConfig)
 
   logger.debug(`fetching keys from ${jwksUri}`)
   const jwksClient: JwksClient = jwksRsa({ jwksUri })

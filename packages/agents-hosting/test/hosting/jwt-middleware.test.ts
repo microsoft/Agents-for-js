@@ -3,7 +3,7 @@ import { describe, it, beforeEach } from 'node:test'
 import sinon from 'sinon'
 import jwt from 'jsonwebtoken'
 import { Response, NextFunction } from 'express'
-import { authorizeJWT, AuthConfiguration, Request } from '../../src'
+import { authorizeJWT, buildJwksUri, AuthConfiguration, Request } from '../../src'
 
 describe('authorizeJWT', () => {
   let req: Request
@@ -100,37 +100,47 @@ describe('authorizeJWT', () => {
     assert((next as sinon.SinonStub).notCalled)
   })
 
-  it('should use correct JWKS URI when tenant is embedded in authority', async () => {
-    // Config with tenant embedded in authority (Python/.NET style) and no separate tenantId
-    const embeddedTenantConnections = new Map<string, AuthConfiguration>()
-    embeddedTenantConnections.set('test', {
-      clientId: 'client-id',
-      authority: 'https://login.microsoftonline.com/tenant-id',
-      issuers: ['issuer']
+  describe('buildJwksUri', () => {
+    it('should use botframework keys URI for botframework issuer', () => {
+      const authConfig: AuthConfiguration = { clientId: 'client-id', tenantId: 'tenant-id' }
+      assert.strictEqual(
+        buildJwksUri('https://api.botframework.com', authConfig),
+        'https://login.botframework.com/v1/.well-known/keys'
+      )
     })
-    const embeddedTenantConfig: AuthConfiguration = {
-      clientId: 'client-id',
-      connections: embeddedTenantConnections
-    }
 
-    const token = 'valid-token'
-    req.headers.authorization = `Bearer ${token}`
-
-    const decodeStub = sinon.stub(jwt, 'decode').returns({ aud: 'client-id', iss: 'issuer' })
-    const verifyStub = sinon.stub(jwt, 'verify').callsFake((token, secretOrPublicKey, options, callback) => {
-      if (callback) {
-        callback(null, { aud: 'client-id' })
+    it('should build JWKS URI from authority and tenantId', () => {
+      const authConfig: AuthConfiguration = {
+        clientId: 'client-id',
+        authority: 'https://login.microsoftonline.com',
+        tenantId: 'my-tenant'
       }
+      assert.strictEqual(
+        buildJwksUri('https://sts.windows.net/my-tenant/', authConfig),
+        'https://login.microsoftonline.com/my-tenant/discovery/v2.0/keys'
+      )
     })
 
-    // jwks-rsa is called with the constructed jwksUri — capture it via the verify call succeeding
-    // The key assertion is that verify is called (not rejected due to a malformed JWKS URI like
-    // https://login.microsoftonline.com/tenant-id/undefined/discovery/v2.0/keys)
-    await authorizeJWT(embeddedTenantConfig)(req as Request, res as Response, next)
+    it('should build JWKS URI when tenant is embedded in authority', () => {
+      const authConfig: AuthConfiguration = {
+        clientId: 'client-id',
+        authority: 'https://login.microsoftonline.com/my-tenant'
+      }
+      assert.strictEqual(
+        buildJwksUri('https://sts.windows.net/my-tenant/', authConfig),
+        'https://login.microsoftonline.com/my-tenant/discovery/v2.0/keys'
+      )
+    })
 
-    assert((next as sinon.SinonStub).calledOnce)
-
-    decodeStub.restore()
-    verifyStub.restore()
+    it('should not produce a double-tenant URI when tenant is embedded in authority', () => {
+      const authConfig: AuthConfiguration = {
+        clientId: 'client-id',
+        authority: 'https://login.microsoftonline.com/my-tenant',
+        tenantId: 'my-tenant'
+      }
+      const uri = buildJwksUri('https://sts.windows.net/my-tenant/', authConfig)
+      assert.strictEqual(uri, 'https://login.microsoftonline.com/my-tenant/discovery/v2.0/keys')
+      assert.ok(!uri.includes('my-tenant/my-tenant'), 'URI should not contain double tenant')
+    })
   })
 })
