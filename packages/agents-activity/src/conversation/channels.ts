@@ -8,6 +8,10 @@
  */
 export enum Channels {
   /**
+   * Represents the A2A channel.
+   */
+  A2A = 'A2A',
+  /**
    * Represents an agentic channel
    */
   Agents = 'agents',

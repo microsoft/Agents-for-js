@@ -525,6 +525,9 @@ export class StreamingResponse {
     } else if (Channels.Webchat === activity.channelId || Channels.Directline === activity.channelId) {
       this._isStreamingChannel = true
       this._delayInMs = 500
+    } else if (Channels.A2A === activity.channelId) {
+      // TODO: determine if A2A supports a compatible notion of streaming
+      this._isStreamingChannel = false
     } else {
       this._isStreamingChannel = false
     }

@@ -11,6 +11,9 @@
         "path": "packages/agents-hosting-express"
       },
       {
+        "path": "packages/agents-hosting-a2a"
+      },
+      {
         "path": "packages/agents-copilotstudio-client"
       },
       {
