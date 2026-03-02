@@ -3,7 +3,7 @@
  * @param err - The error to check.
  * @returns A boolean indicating whether the error should be ignored.
  */
-export type IgnoreError = (err: Error) => boolean
+type IgnoreError = (err: Error) => boolean
 
 export async function ignoreError<T> (promise: Promise<T>, ignore: IgnoreError): Promise<T | null> {
   try {
