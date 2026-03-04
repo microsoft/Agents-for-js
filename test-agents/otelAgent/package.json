@@ -16,13 +16,15 @@
   },
   "dependencies": {
     "@azure/monitor-opentelemetry-exporter": "^1.0.0-beta.32",
+    "@microsoft/agents-hosting": "file:../../packages/agents-hosting",
     "@microsoft/agents-hosting-express": "file:../../packages/agents-hosting-express",
-    "@opentelemetry/auto-instrumentations-node": "^0.69.0",
-    "@opentelemetry/sdk-node": "^0.211.0",
     "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.69.0",
     "@opentelemetry/resources": "^2.5.0",
     "@opentelemetry/sdk-metrics": "^2.5.0",
+    "@opentelemetry/sdk-node": "^0.211.0",
     "@opentelemetry/sdk-trace-base": "^2.5.0",
+    "@opentelemetry/sdk-trace-node": "^2.5.0",
     "@opentelemetry/semantic-conventions": "^1.39.0"
   }
 }
