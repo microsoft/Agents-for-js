@@ -17,7 +17,8 @@
   "types": "dist/src/index.d.ts",
   "dependencies": {
     "@azure/cosmos": "^4.9.1",
-    "@microsoft/agents-hosting": "file:../../packages/agents-hosting"
+    "@microsoft/agents-hosting": "file:../../packages/agents-hosting",
+    "@microsoft/agents-activity": "file:../../packages/agents-activity"
   },
   "license": "MIT",
   "files": [

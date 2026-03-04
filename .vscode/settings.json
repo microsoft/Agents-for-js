@@ -15,5 +15,8 @@
     ],
     "nodejs-testing.include": [
         "packages/*/test/"
-    ]
+    ],
+    "json.schemaDownload.trustedDomains": {
+        "https://unpkg.com/": true
+    }
 }

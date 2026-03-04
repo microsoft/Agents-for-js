@@ -4,7 +4,7 @@
  */
 
 export * from './auth/'
-export { authorizeJWT } from './auth/jwt-middleware'
+export { authorizeJWT, buildJwksUri } from './auth/jwt-middleware'
 
 export * from './app'
 export * from './cards'

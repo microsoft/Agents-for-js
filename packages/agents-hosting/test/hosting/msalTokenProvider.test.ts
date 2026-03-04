@@ -6,6 +6,7 @@ import { MsalTokenProvider, ConnectorClient, AuthConfiguration, CloudAdapter } f
 import fs from 'fs'
 import crypto from 'crypto'
 import axios from 'axios'
+import jwt from 'jsonwebtoken'
 import { MemoryCache } from '../../src/auth/MemoryCache'
 
 describe('MsalTokenProvider', () => {
@@ -405,7 +406,7 @@ describe('MsalTokenProvider', () => {
     ConfidentialClientApplicationStub.restore()
   })
 
-  it('should call the configured authority based on incoming message', async () => {
+  it('should prefer passed tenant id over configured tenant id in authority resolution', async () => {
     const adapter = new CloudAdapter({
       clientId: 'client-id',
       tenantId: 'original-tenant-id',
@@ -453,13 +454,188 @@ describe('MsalTokenProvider', () => {
     assert.strictEqual(memoryCacheStub.called, true)
     assert.strictEqual(ConfidentialClientApplicationStub.called, true)
 
-    // Check the URL it was called with - should have the tenant-id, not 'common'
+    // The passed agentic-tenant-id should be preferred over the configured original-tenant-id
     const callArgs = axiosPostStub.getCall(0).args
     const url = callArgs[0]
-    assert.ok(url === 'https://login.microsoftonline.com/original-tenant-id/oauth2/v2.0/token', `Expected URL to contain 'https://login.microsoftonline.com/original-tenant-id/oauth2/v2.0/token', got: ${url}`)
+    assert.ok(url === 'https://login.microsoftonline.com/agentic-tenant-id/oauth2/v2.0/token', `Expected URL to contain 'agentic-tenant-id', got: ${url}`)
     axiosPostStub.restore()
     memoryCacheStub.restore()
     connectorClientStub.restore()
     ConfidentialClientApplicationStub.restore()
+  })
+
+  it('should include x5c in JWT header when sendX5C is true', async () => {
+    sinon.restore()
+    const fakePem = '-----BEGIN CERTIFICATE-----\nMIIFakeCert\n-----END CERTIFICATE-----'
+    const fakeKey = '-----BEGIN PRIVATE KEY-----\nMIIFakeKey\n-----END PRIVATE KEY-----'
+    const fakeRaw = Buffer.from('fake-der-data')
+
+    const tokenProvider = new MsalTokenProvider({
+      clientId: 'client-id',
+      certPemFile: '/path/to/cert.pem',
+      certKeyFile: '/path/to/key.pem',
+      sendX5C: true,
+      tenantId: 'test-tenant-id',
+    })
+
+    const readFileSyncStub = sinon.stub(fs, 'readFileSync')
+    readFileSyncStub.withArgs('/path/to/key.pem').returns(Buffer.from(fakeKey))
+    readFileSyncStub.withArgs('/path/to/cert.pem').returns(Buffer.from(fakePem))
+
+    // @ts-ignore
+    sinon.stub(crypto, 'X509Certificate').returns({ raw: fakeRaw })
+
+    const fakeDigest = Buffer.from('fake-digest')
+    sinon.stub(crypto, 'createHash').returns({ update: sinon.stub().returnsThis(), digest: sinon.stub().returns(fakeDigest) } as any)
+
+    const jwtSignStub = sinon.stub(jwt, 'sign').returns('fake-jwt-token' as any)
+
+    sinon.stub(axios, 'post').resolves({
+      data: { access_token: 'test-access-token', expires_in: 3600 }
+    })
+
+    try {
+      await tokenProvider.getAgenticApplicationToken('agentic-tenant-id', 'agent-app-instance-id')
+
+      assert.strictEqual(jwtSignStub.called, true)
+      const signOptions = jwtSignStub.getCall(0).args[2] as jwt.SignOptions & { header: any }
+      assert.strictEqual(signOptions.header.x5c, fakePem, 'x5c header should contain the PEM certificate contents')
+      assert.strictEqual(signOptions.header.alg, 'PS256')
+      assert.strictEqual(signOptions.header.typ, 'JWT')
+      assert.ok(signOptions.header['x5t#S256'], 'x5t#S256 thumbprint should be present')
+    } finally {
+      // @ts-ignore
+      tokenProvider._agenticTokenCache.destroy()
+      sinon.restore()
+    }
+  })
+
+  it('should not include x5c in JWT header when sendX5C is false', async () => {
+    sinon.restore()
+    const fakePem = '-----BEGIN CERTIFICATE-----\nMIIFakeCert\n-----END CERTIFICATE-----'
+    const fakeKey = '-----BEGIN PRIVATE KEY-----\nMIIFakeKey\n-----END PRIVATE KEY-----'
+    const fakeRaw = Buffer.from('fake-der-data')
+
+    const tokenProvider = new MsalTokenProvider({
+      clientId: 'client-id',
+      certPemFile: '/path/to/cert.pem',
+      certKeyFile: '/path/to/key.pem',
+      sendX5C: false,
+      tenantId: 'test-tenant-id',
+    })
+
+    const readFileSyncStub = sinon.stub(fs, 'readFileSync')
+    readFileSyncStub.withArgs('/path/to/key.pem').returns(Buffer.from(fakeKey))
+    readFileSyncStub.withArgs('/path/to/cert.pem').returns(Buffer.from(fakePem))
+
+    // @ts-ignore
+    sinon.stub(crypto, 'X509Certificate').returns({ raw: fakeRaw })
+
+    const fakeDigest = Buffer.from('fake-digest')
+    sinon.stub(crypto, 'createHash').returns({ update: sinon.stub().returnsThis(), digest: sinon.stub().returns(fakeDigest) } as any)
+
+    const jwtSignStub = sinon.stub(jwt, 'sign').returns('fake-jwt-token' as any)
+
+    sinon.stub(axios, 'post').resolves({
+      data: { access_token: 'test-access-token', expires_in: 3600 }
+    })
+
+    try {
+      await tokenProvider.getAgenticApplicationToken('agentic-tenant-id', 'agent-app-instance-id')
+
+      assert.strictEqual(jwtSignStub.called, true)
+      const signOptions = jwtSignStub.getCall(0).args[2] as jwt.SignOptions & { header: any }
+      assert.strictEqual(signOptions.header.x5c, undefined, 'x5c header should not be set when sendX5C is false')
+    } finally {
+      // @ts-ignore
+      tokenProvider._agenticTokenCache.destroy()
+      sinon.restore()
+    }
+  })
+
+  it('should not include x5c in JWT header when sendX5C is undefined', async () => {
+    sinon.restore()
+    const fakePem = '-----BEGIN CERTIFICATE-----\nMIIFakeCert\n-----END CERTIFICATE-----'
+    const fakeKey = '-----BEGIN PRIVATE KEY-----\nMIIFakeKey\n-----END PRIVATE KEY-----'
+    const fakeRaw = Buffer.from('fake-der-data')
+
+    const tokenProvider = new MsalTokenProvider({
+      clientId: 'client-id',
+      certPemFile: '/path/to/cert.pem',
+      certKeyFile: '/path/to/key.pem',
+      tenantId: 'test-tenant-id',
+    })
+
+    const readFileSyncStub = sinon.stub(fs, 'readFileSync')
+    readFileSyncStub.withArgs('/path/to/key.pem').returns(Buffer.from(fakeKey))
+    readFileSyncStub.withArgs('/path/to/cert.pem').returns(Buffer.from(fakePem))
+
+    // @ts-ignore
+    sinon.stub(crypto, 'X509Certificate').returns({ raw: fakeRaw })
+
+    const fakeDigest = Buffer.from('fake-digest')
+    sinon.stub(crypto, 'createHash').returns({ update: sinon.stub().returnsThis(), digest: sinon.stub().returns(fakeDigest) } as any)
+
+    const jwtSignStub = sinon.stub(jwt, 'sign').returns('fake-jwt-token' as any)
+
+    sinon.stub(axios, 'post').resolves({
+      data: { access_token: 'test-access-token', expires_in: 3600 }
+    })
+
+    try {
+      await tokenProvider.getAgenticApplicationToken('agentic-tenant-id', 'agent-app-instance-id')
+
+      assert.strictEqual(jwtSignStub.called, true)
+      const signOptions = jwtSignStub.getCall(0).args[2] as jwt.SignOptions & { header: any }
+      assert.strictEqual(signOptions.header.x5c, undefined, 'x5c header should not be set when sendX5C is not provided')
+    } finally {
+      // @ts-ignore
+      tokenProvider._agenticTokenCache.destroy()
+      sinon.restore()
+    }
+  })
+
+  it('should pass x5c as the client_assertion in the token request when sendX5C is true', async () => {
+    sinon.restore()
+    const fakePem = '-----BEGIN CERTIFICATE-----\nMIIFakeCert\n-----END CERTIFICATE-----'
+    const fakeKey = '-----BEGIN PRIVATE KEY-----\nMIIFakeKey\n-----END PRIVATE KEY-----'
+    const fakeRaw = Buffer.from('fake-der-data')
+
+    const tokenProvider = new MsalTokenProvider({
+      clientId: 'client-id',
+      certPemFile: '/path/to/cert.pem',
+      certKeyFile: '/path/to/key.pem',
+      sendX5C: true,
+      tenantId: 'test-tenant-id',
+    })
+
+    const readFileSyncStub = sinon.stub(fs, 'readFileSync')
+    readFileSyncStub.withArgs('/path/to/key.pem').returns(Buffer.from(fakeKey))
+    readFileSyncStub.withArgs('/path/to/cert.pem').returns(Buffer.from(fakePem))
+
+    // @ts-ignore
+    sinon.stub(crypto, 'X509Certificate').returns({ raw: fakeRaw })
+
+    const fakeDigest = Buffer.from('fake-digest')
+    sinon.stub(crypto, 'createHash').returns({ update: sinon.stub().returnsThis(), digest: sinon.stub().returns(fakeDigest) } as any)
+
+    sinon.stub(jwt, 'sign').returns('fake-jwt-with-x5c' as any)
+
+    const axiosPostStub = sinon.stub(axios, 'post').resolves({
+      data: { access_token: 'test-access-token', expires_in: 3600 }
+    })
+
+    try {
+      await tokenProvider.getAgenticApplicationToken('agentic-tenant-id', 'agent-app-instance-id')
+
+      assert.strictEqual(axiosPostStub.called, true)
+      const postData = axiosPostStub.getCall(0).args[1] as any
+      assert.strictEqual(postData.client_assertion, 'fake-jwt-with-x5c', 'client_assertion should be the JWT signed with x5c')
+      assert.strictEqual(postData.client_assertion_type, 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer')
+    } finally {
+      // @ts-ignore
+      tokenProvider._agenticTokenCache.destroy()
+      sinon.restore()
+    }
   })
 })

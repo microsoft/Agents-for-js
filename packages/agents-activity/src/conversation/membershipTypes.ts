@@ -3,8 +3,6 @@
  * Licensed under the MIT License.
  */
 
-import { z } from 'zod'
-
 /**
  * Enum expressing the users relationship to the current channel.
  */
@@ -19,8 +17,3 @@ export enum MembershipTypes {
    */
   Transitive = 'transitive',
 }
-
-/**
- * Zod schema for validating membership source types.
- */
-export const membershipTypeZodSchema = z.enum(['direct', 'transitive'])

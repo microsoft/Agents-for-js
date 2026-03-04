@@ -8,15 +8,16 @@ import { MessagingExtensionResponse } from './messagingExtensionResponse'
 import { MessagingExtensionResult } from './messagingExtensionResult'
 import { MessagingExtensionAction } from './messagingExtensionAction'
 
-export type RouteQueryHandler<TState extends TurnState> = (context: TurnContext, state: TState, query: MessagingExtensionQuery) => Promise<MessagingExtensionResult>
-export type SelectItemHandler<TState extends TurnState> = (context: TurnContext, state: TState, item: unknown) => Promise<MessagingExtensionResult>
-export type QueryLinkHandler<TState extends TurnState> = (context: TurnContext, state: TState, url: string) => Promise<MessagingExtensionResult>
-export type FetchTaskHanlder<TState extends TurnState> = (context: TurnContext, state: TState) => Promise<TaskModuleResponse>
-export type SubmitActionHanlder<TState extends TurnState> = (context: TurnContext, state: TState, data: unknown) => Promise<MessagingExtensionActionResponse>
-export type MessagePreviewEditHandler<TState extends TurnState> = (context: TurnContext, state: TState, activity: Activity) => Promise<MessagingExtensionActionResponse>
-export type MessagePreviewSendHandler<TState extends TurnState> = (context: TurnContext, state: TState, activity: Activity) => Promise<void>
-export type ConfigureSettingsHandler<TState extends TurnState> = (context: TurnContext, state: TState, settings: unknown) => Promise<void>
-export type CardButtonClickedHandler<TState extends TurnState> = (context: TurnContext, state: TState, cardData: unknown) => Promise<void>
+type RouteQueryHandler<TState extends TurnState> = (context: TurnContext, state: TState, query: MessagingExtensionQuery) => Promise<MessagingExtensionResult>
+type SelectItemHandler<TState extends TurnState> = (context: TurnContext, state: TState, item: unknown) => Promise<MessagingExtensionResult>
+type QueryLinkHandler<TState extends TurnState> = (context: TurnContext, state: TState, url: string) => Promise<MessagingExtensionResult>
+type FetchTaskHandler<TState extends TurnState> = (context: TurnContext, state: TState) => Promise<TaskModuleResponse>
+type SubmitActionHandler<TState extends TurnState> = (context: TurnContext, state: TState, data: unknown) => Promise<MessagingExtensionActionResponse>
+type MessagePreviewEditHandler<TState extends TurnState> = (context: TurnContext, state: TState, activity: Activity) => Promise<MessagingExtensionActionResponse>
+type MessagePreviewSendHandler<TState extends TurnState> = (context: TurnContext, state: TState, activity: Activity) => Promise<void>
+type ConfigureQuerySettingUrlHandler<TState extends TurnState> = (context: TurnContext, state: TState, settings: unknown) => Promise<MessagingExtensionResponse>
+type ConfigureSettingsHandler<TState extends TurnState> = (context: TurnContext, state: TState, settings: unknown) => Promise<void>
+type CardButtonClickedHandler<TState extends TurnState> = (context: TurnContext, state: TState, cardData: unknown) => Promise<void>
 /**
  * Class that exposes Teams messaging extension-related events.
  * Provides an organized way to handle messaging extension operations in Microsoft Teams.
@@ -58,7 +59,7 @@ export class MessageExtension<TState extends TurnState> {
         status: 200,
         body: response
       }
-      context.sendActivity(invokeResponse)
+      await context.sendActivity(invokeResponse)
     }
     this._app.addRoute(routeSel, routeHandler, true) // Invoke requires true
     return this
@@ -145,7 +146,7 @@ export class MessageExtension<TState extends TurnState> {
    * @param handler - The handler to call when a fetch task is requested
    * @returns this (for method chaining)
   */
-  onFetchTask (handler: FetchTaskHanlder<TurnState>) {
+  onFetchTask (handler: FetchTaskHandler<TurnState>) {
     const routeSel: RouteSelector = (context: TurnContext) => {
       return Promise.resolve(
         context.activity.type === ActivityTypes.Invoke &&
@@ -171,7 +172,7 @@ export class MessageExtension<TState extends TurnState> {
    * @param handler - The handler to call when an action is submitted
    * @returns this (for method chaining)
    */
-  onSubmitAction (handler: SubmitActionHanlder<TurnState>) {
+  onSubmitAction (handler: SubmitActionHandler<TurnState>) {
     const routeSel: RouteSelector = (context: TurnContext) => {
       return Promise.resolve(
         context.activity.type === ActivityTypes.Invoke &&
@@ -252,7 +253,7 @@ export class MessageExtension<TState extends TurnState> {
    * @param handler - The handler to call when a config query setting URL is requested
    * @returns this (for method chaining)
    */
-  onConfigurationQuerySettingUrl (handler: ConfigureSettingsHandler<TurnState>) {
+  onConfigurationQuerySettingUrl (handler: ConfigureQuerySettingUrlHandler<TurnState>) {
     const routeSel: RouteSelector = (context: TurnContext) => {
       return Promise.resolve(
         context.activity.type === ActivityTypes.Invoke &&
@@ -261,10 +262,11 @@ export class MessageExtension<TState extends TurnState> {
       )
     }
     const routeHandler: RouteHandler<TurnState> = async (context: TurnContext, state: TurnState) => {
-      await handler(context, state, context.activity.value)
+      const response : MessagingExtensionResponse = await handler(context, state, context.activity.value)
       const invokeResponse = new Activity(ActivityTypes.InvokeResponse)
       invokeResponse.value = {
-        status: 200
+        status: 200,
+        body: response
       }
       await context.sendActivity(invokeResponse)
     }
