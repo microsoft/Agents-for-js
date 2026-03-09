@@ -22,7 +22,7 @@
     "@opentelemetry/auto-instrumentations-node": "^0.69.0",
     "@opentelemetry/resources": "^2.5.0",
     "@opentelemetry/sdk-metrics": "^2.5.0",
-    "@opentelemetry/sdk-node": "^0.211.0",
+    "@opentelemetry/sdk-node": "^0.213.0",
     "@opentelemetry/sdk-trace-base": "^2.6.0",
     "@opentelemetry/sdk-trace-node": "^2.5.0",
     "@opentelemetry/semantic-conventions": "^1.39.0"
