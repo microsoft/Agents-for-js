@@ -13,7 +13,7 @@ import { Connections } from '../../auth/connections'
 /**
  * Authorization configuration options.
  */
-export type AuthorizationOptions = Record<string, AzureBotAuthorizationOptions | AgenticAuthorizationOptions>
+export type AuthorizationOptions = Record<string, (AzureBotAuthorizationOptions & AzureBotAuthorizationOptionsLegacy) | AgenticAuthorizationOptions>
 
 /**
  * Represents the status of a handler registration attempt.
@@ -106,6 +106,99 @@ export interface AuthorizationHandlerTokenOptions {
   connection?: string
   /**
    * Optional scopes to request in the token. Usually used for OBO flows.
+   */
+  scopes?: string[]
+}
+
+/**
+ * Interface defining an authorization handler configuration.
+ * @remarks
+ * Properties can be configured via environment variables (case-insensitive).
+ * Use the format: `AgentApplication__UserAuthorization__handlers__{handlerId}__settings__{propertyName}`
+ * where `{handlerId}` is the handler's unique identifier and `{propertyName}` matches the property name.
+ *
+ * @example
+ * ```env
+ * # For a handler with id "myAuth":
+ * AgentApplication__UserAuthorization__handlers__myAuth__settings__azureBotOAuthConnectionName=MyConnection
+ * AgentApplication__UserAuthorization__handlers__myAuth__settings__oboScopes=api://scope1 api://scope2
+ * ```
+ */
+export interface AzureBotAuthorizationOptionsLegacy {
+  /**
+   * Connection name for the auth provider.
+   * @deprecated Use `azureBotOAuthConnectionName` instead.
+   * @remarks Env (legacy): `{handlerId}_connectionName`
+   */
+  name?: string,
+  /**
+   * Maximum number of attempts for entering the magic code. Defaults to 2.
+   * @deprecated Use `invalidSignInRetryMax` instead.
+   * @remarks Env (legacy): `{handlerId}_maxAttempts`
+   */
+  maxAttempts?: number
+  /**
+   * Messages to display for various authentication scenarios.
+   * @deprecated Use `invalidSignInRetryMessage`, `invalidSignInRetryMessageFormat`, and `invalidSignInRetryMaxExceededMessage` instead.
+   * @remarks
+   * Env (legacy):
+   * - `{handlerId}_messages_invalidCode`
+   * - `{handlerId}_messages_invalidCodeFormat`
+   * - `{handlerId}_messages_maxAttemptsExceeded`
+   */
+  messages?: AzureBotAuthorizationOptionsMessages
+  /**
+   * Settings for on-behalf-of token acquisition.
+   * @deprecated Use `oboConnectionName` and `oboScopes` instead.
+   * @remarks
+   * Env (legacy):
+   * - `{handlerId}_obo_connection`
+   * - `{handlerId}_obo_scopes` (comma or space-separated)
+   */
+  obo?: AzureBotAuthorizationOptionsOBO
+}
+
+/**
+ * @deprecated
+ * Messages configuration for the AzureBotAuthorization handler.
+ */
+export interface AzureBotAuthorizationOptionsMessages {
+  /**
+   * @deprecated Use `invalidSignInRetryMessage` instead.
+   * Message displayed when an invalid code is entered.
+   * Use `{code}` as a placeholder for the entered code.
+   * Defaults to: 'The code entered is invalid. Please sign-in again to continue.'
+   */
+  invalidCode?: string
+  /**
+   * @deprecated Use `invalidSignInRetryMessageFormat` instead.
+   * Message displayed when the entered code format is invalid.
+   * Use `{attemptsLeft}` as a placeholder for the number of attempts left.
+   * Defaults to: 'Please enter a valid **6-digit** code format (_e.g. 123456_).\r\n**{attemptsLeft} attempt(s) left...**'
+   */
+  invalidCodeFormat?: string
+  /**
+   * @deprecated Use `invalidSignInRetryMaxExceededMessage` instead.
+   * Message displayed when the maximum number of attempts is exceeded.
+   * Use `{maxAttempts}` as a placeholder for the maximum number of attempts.
+   * Defaults to: 'You have exceeded the maximum number of sign-in attempts ({maxAttempts}).'
+   */
+  maxAttemptsExceeded?: string
+}
+
+/**
+ * @deprecated
+ * Settings for on-behalf-of token acquisition.
+ */
+export interface AzureBotAuthorizationOptionsOBO {
+  /**
+   * @deprecated Use `oboConnectionName` instead.
+   * Connection name to use for on-behalf-of token acquisition.
+   */
+  connection?: string
+  /**
+   * @deprecated Use `oboScopes` instead.
+   * Scopes to request for on-behalf-of token acquisition.
    */
   scopes?: string[]
 }

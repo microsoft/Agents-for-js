@@ -10,6 +10,7 @@ import { TurnContext } from '../../turnContext'
 import { HandlerStorage } from './handlerStorage'
 import { ActiveAuthorizationHandler, AuthorizationHandlerStatus, AuthorizationHandler, AuthorizationHandlerSettings, AuthorizationOptions } from './types'
 import { Connections } from '../../auth/connections'
+import { envParser, envParserUtils } from '../../auth'
 
 const logger = debug('agents:authorization:manager')
 
@@ -48,53 +49,109 @@ export class AuthorizationManager {
   private _handlers: Record<string, AuthorizationHandler> = {}
 
   /**
-   * Creates an instance of the AuthorizationManager.
-   * @param app The agent application instance.
+   * Environment variable configuration for the latest format.
    */
-  constructor (private app: AgentApplication<any>, connections: Connections) {
-    if (!app.options.storage) {
-      throw new Error('Storage is required for Authorization. Ensure that a storage provider is configured in the AgentApplication options.')
-    }
+  private _envLatest = {
+    key: {
+      prefix: 'AgentApplication__UserAuthorization__Handlers__',
+      separator: '__Settings__',
+      create (id: string, prop: string) {
+        return `${this.prefix}${id}${this.separator}${prop}`
+      },
+      extract (envKey: string) {
+        // Substring: AgentApplication__UserAuthorization__Handlers__<id>__Settings__<prop>
+        // position —————————————————————————————————————————> start^   ^end         ^prop
+        const start = this.prefix.length
+        const end = envKey.toUpperCase().indexOf(this.separator.toUpperCase())
+        if (end === -1) {
+          return { id: undefined, prop: undefined }
+        }
 
-    if (app.options.authorization === undefined || Object.keys(app.options.authorization).length === 0) {
-      throw new Error('The AgentApplication.authorization does not have any auth handlers')
-    }
-
-    const settings: AuthorizationHandlerSettings = { storage: app.options.storage, connections }
-    for (const [id, handler] of Object.entries(app.options.authorization)) {
-      const options = this.loadOptions(id, handler)
-      if (options.type === 'agentic') {
-        this._handlers[id] = new AgenticAuthorization(id, options, settings)
-      } else {
-        this._handlers[id] = new AzureBotAuthorization(id, options, settings)
+        const id = envKey.substring(start, end)
+        const prop = envKey.substring(end + this.separator.length)
+        return { id, prop }
       }
-    }
+    },
+    parser: envParser({
+      // Common
+      type: envParserUtils.bypass,
+
+      // Azure Bot
+      azureBotOAuthConnectionName: envParserUtils.bypass,
+      title: envParserUtils.bypass,
+      text: envParserUtils.bypass,
+      invalidSignInRetryMessage: envParserUtils.bypass,
+      invalidSignInRetryMessageFormat: envParserUtils.bypass,
+      invalidSignInRetryMaxExceededMessage: envParserUtils.bypass,
+      oboConnectionName: envParserUtils.bypass,
+      enableSso (value) {
+        return { value: value !== 'false' }
+      },
+      invalidSignInRetryMax (value) {
+        return { value: parseInt(value) }
+      },
+      oboScopes (value) {
+        return this.scopes(value)
+      },
+
+      // Agentic
+      altBlueprintConnectionName: envParserUtils.bypass,
+      scopes (value) {
+        if (value.includes(',')) {
+          return { value: value.split(',').map(s => s.trim()).filter(Boolean) }
+        }
+        return { value: value.split(/\s+/).filter(Boolean) }
+      }
+    }),
   }
 
   /**
-   * Loads and validates the authorization handler options.
+   * Environment variable configuration for the legacy format.
    */
-  private loadOptions (id: string, options: AuthorizationOptions[string]) {
-    const result: AuthorizationOptions[string] = {
-      ...options,
-      type: (options.type ?? process.env[`${id}_type`])?.toLowerCase() as typeof options.type,
-    }
+  private _envLegacy = {
+    key: {
+      separator: '_',
+    },
+    parser: envParser({
+      // Common
+      type: envParserUtils.redirect(this._envLatest.parser, 'type'),
 
-    // Validate supported types, agentic, and default (Azure Bot - undefined)
-    const supportedTypes = ['agentic', undefined]
-    if (!supportedTypes.includes(result.type)) {
-      throw new Error(`Unsupported authorization handler type: '${result.type}' for auth handler: '${id}'. Supported types are: '${supportedTypes.filter(Boolean).join('\', \'')}'.`)
-    }
+      // Azure Bot
+      connectionName: envParserUtils.redirect(this._envLatest.parser, 'azureBotOAuthConnectionName'),
+      connectionTitle: envParserUtils.redirect(this._envLatest.parser, 'title'),
+      connectionText: envParserUtils.redirect(this._envLatest.parser, 'text'),
+      maxAttempts: envParserUtils.redirect(this._envLatest.parser, 'invalidSignInRetryMax'),
+      messages_invalidCode: envParserUtils.redirect(this._envLatest.parser, 'invalidSignInRetryMessage'),
+      messages_invalidCodeFormat: envParserUtils.redirect(this._envLatest.parser, 'invalidSignInRetryMessageFormat'),
+      messages_maxAttemptsExceeded: envParserUtils.redirect(this._envLatest.parser, 'invalidSignInRetryMaxExceededMessage'),
+      obo_connection: envParserUtils.redirect(this._envLatest.parser, 'oboConnectionName'),
+      obo_scopes: envParserUtils.redirect(this._envLatest.parser, 'oboScopes'),
+      enableSso: envParserUtils.redirect(this._envLatest.parser, 'enableSso'),
 
-    return result
+      // Agentic
+      scopes: envParserUtils.redirect(this._envLatest.parser, 'scopes'),
+      altBlueprintConnectionName: envParserUtils.redirect(this._envLatest.parser, 'altBlueprintConnectionName')
+    })
+  }
+
+  /**
+   * Creates an instance of the AuthorizationManager.
+   * @param app The agent application instance.
+   */
+  constructor (private app: AgentApplication<any>, private connections: Connections) {
+    this.createHandlers()
+
+    if (this.handlers.length === 0 && app.options.authorization !== undefined) {
+      throw new Error('The AgentApplication.authorization does not have any auth handlers configured.')
+    }
   }
 
   /**
    * Gets the registered authorization handlers.
    * @returns A record of authorization handlers by their IDs.
    */
-  public get handlers (): Record<string, AuthorizationHandler> {
-    return this._handlers
+  public get handlers (): AuthorizationHandler[] {
+    return Object.values(this._handlers)
   }
 
   /**
@@ -104,6 +161,10 @@ export class AuthorizationManager {
    * @returns The result of the authorization process.
    */
   public async process (context: TurnContext, getHandlerIds: GetHandlerIds): Promise<AuthorizationManagerProcessResult> {
+    if (this.handlers.length === 0) {
+      return { authorized: true }
+    }
+
     const storage = new HandlerStorage(this.app.options.storage!, context)
 
     let active = await this.active(storage, getHandlerIds)
@@ -197,16 +258,19 @@ export class AuthorizationManager {
    * Maps an array of handler IDs to their corresponding handler instances.
    */
   private mapHandlers (ids: string[]): AuthorizationHandler[] {
-    let unknownHandlers = ''
+    const unknownHandlers: string[] = []
     const handlers = ids.map(id => {
-      if (!this._handlers[id]) {
-        unknownHandlers += ` ${id}`
+      const handler = this.handlers.find(e => e.id.toLowerCase() === id.toLowerCase())
+      if (!handler) {
+        unknownHandlers.push(id)
       }
-      return this._handlers[id]
-    })
-    if (unknownHandlers) {
-      throw new Error(`Cannot find auth handlers with ID(s): ${unknownHandlers}`)
+      return handler
+    }).filter((handler) => handler !== undefined)
+
+    if (unknownHandlers.length > 0) {
+      throw new Error(`Cannot find auth handlers with ID(s): ${unknownHandlers.join(', ')}, make sure they are configured correctly.`)
     }
+
     return handlers
   }
 
@@ -215,5 +279,140 @@ export class AuthorizationManager {
    */
   private prefix (id: string, message: string) {
     return `[handler:${id}] ${message}`
+  }
+
+  /**
+   * Creates authorization handlers based on the application configuration and environment variables.
+   */
+  private createHandlers () {
+    let legacyMessage = ''
+    const settings: AuthorizationHandlerSettings = { storage: this.app.options.storage!, connections: this.connections }
+    const runtimeEntries = Object.entries(this.app.options.authorization ?? {})
+    const result = { latest: {}, legacy: {} } as {
+      latest: Record<string, Record<string, any> | undefined>;
+      legacy: Record<string, Record<string, any> | undefined>;
+    }
+
+    for (const [envKey, envValue] of Object.entries(process.env)) {
+      if (!envValue?.trim()) {
+        continue
+      }
+
+      const upperEnvKey = envKey.toUpperCase()
+
+      // Legacy: extract handler ID, handler options key and its value, and assign it to the correct runtime handler ID.
+      if (!upperEnvKey.startsWith(this._envLatest.key.prefix.toUpperCase())) {
+        const [id] = runtimeEntries.find(([id]) => upperEnvKey.startsWith(`${id.toUpperCase()}${this._envLegacy.key.separator}`)) ?? []
+        if (!id) {
+          continue
+        }
+
+        const prop = envKey.substring(id.length + this._envLegacy.key.separator.length)
+        if (!prop) {
+          continue
+        }
+
+        const { key, value } = this._envLegacy.parser.parse(prop as any, envValue)
+        if (!key) {
+          continue
+        }
+
+        legacyMessage += `  ${envKey}= # Use ${this._envLatest.key.create(id, key)} instead.\n`
+
+        result.legacy[id] ??= {}
+        result.legacy[id][key] = value
+        continue
+      }
+
+      // Latest: extract handler ID, handler options key and its value, and assign it to the correct latest handler ID.
+      const { id, prop } = this._envLatest.key.extract(envKey)
+      if (!id || !prop) {
+        continue
+      }
+
+      const { key, value } = this._envLatest.parser.parse(prop as any, envValue)
+      if (!key) {
+        continue
+      }
+
+      result.latest[id] ??= {}
+      result.latest[id][key] = value
+    }
+
+    if (legacyMessage.length > 0) {
+      logger.warn('Deprecated environment variables detected, update to the latest format: (case-insensitive)', `[\n${legacyMessage}]`)
+    }
+
+    const latestEntries = Object.entries(result.latest)
+    const legacyEntries = Object.entries(result.legacy)
+
+    for (const [id] of new Set([...runtimeEntries, ...latestEntries])) {
+      if (this._handlers[id] !== undefined) {
+        continue
+      }
+
+      // Find entries case-insensitively for later processing
+      const [, runtime] = runtimeEntries.find(([key]) => key.toLowerCase() === id.toLowerCase()) ?? []
+      const [, latest] = latestEntries.find(([key]) => key.toLowerCase() === id.toLowerCase()) ?? []
+      const [, legacy] = legacyEntries.find(([key]) => key.toLowerCase() === id.toLowerCase()) ?? []
+
+      if (runtime !== undefined && latest !== undefined) {
+        logger.warn(this.prefix(id, 'Both runtime and latest environment variable configurations detected. Runtime configuration will take precedence over latest environment variables.'))
+      }
+
+      // Convert incoming type identifiers to standard types for processing.
+      const fixType = runtime ?? latest ?? legacy
+      if (fixType?.type?.toLowerCase() === 'agentic') {
+        fixType.type = 'AgenticUserAuthorization'
+        logger.warn(this.prefix(id, 'The \'agentic\' type is deprecated. Please use \'AgenticUserAuthorization\' instead.'))
+      } else if (fixType?.type?.toLowerCase() === 'agenticuserauthorization') {
+        fixType.type = 'AgenticUserAuthorization'
+      } else if (fixType && (fixType.type === undefined || fixType.type.toLowerCase() === 'azurebotuserauthorization')) {
+        fixType.type = 'AzureBotUserAuthorization'
+      }
+
+      // Normalize runtime legacy options to latest format
+      if (runtime?.type === 'AzureBotUserAuthorization') {
+        runtime.azureBotOAuthConnectionName ??= runtime.name
+        runtime.invalidSignInRetryMax ??= runtime.maxAttempts
+        runtime.invalidSignInRetryMessage ??= runtime.messages?.invalidCode
+        runtime.invalidSignInRetryMessageFormat ??= runtime.messages?.invalidCodeFormat
+        runtime.invalidSignInRetryMaxExceededMessage ??= runtime.messages?.maxAttemptsExceeded
+        runtime.oboConnectionName ??= runtime.obo?.connection
+        runtime.oboScopes ??= runtime.obo?.scopes
+        delete runtime.name
+        delete runtime.maxAttempts
+        delete runtime.messages
+        delete runtime.obo
+      }
+
+      // Helper to remove undefined options
+      const prune = <T extends Record<string, any>>(obj: T) => {
+        const entries = Object.entries(obj).filter(([, e]) => e !== undefined)
+        return Object.fromEntries(entries) as T
+      }
+
+      // Priority: runtime > latest > legacy
+      // Pruning done individually to avoid overwriting with undefined when merging.
+      const options = runtime ? { ...prune(legacy || {}), ...prune(runtime) } : prune(latest || {}) as AuthorizationOptions[string]
+
+      if (!settings.storage) {
+        throw new Error('Storage is required for Authorization. Ensure that a storage provider is configured in the AgentApplication options.')
+      }
+
+      if (options.type === 'AgenticUserAuthorization') {
+        this._handlers[id] = new AgenticAuthorization(id, options, settings)
+      } else if (options.type === 'AzureBotUserAuthorization') {
+        // Set default values if not provided
+        options.title ||= 'Sign-in'
+        options.text ||= 'Please sign-in to continue'
+        options.oboScopes ??= []
+        options.enableSso = options.enableSso !== false // default value is true if undefined.
+
+        this._handlers[id] = new AzureBotAuthorization(id, options, settings)
+      } else {
+        throw new Error(this.prefix(id, `Unsupported authorization handler type: '${options.type}'. Supported types are 'AgenticUserAuthorization' and default (AzureBotUserAuthorization).`))
+      }
+    }
   }
 }
