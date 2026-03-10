@@ -27,11 +27,11 @@ class AgenticAI extends AgentApplication<TurnState> {
   agentic = async (ctx: TurnContext) => {
     const aauToken = await this.authorization.getToken(ctx, 'agentic')
 
-    const decoded = jwt.decode(aauToken.token ?? '') as jwt.JwtPayload | null;
-    const name = decoded?.name ?? 'unknown';
-    const upn = decoded?.upn ?? 'unknown';
-    const oid = decoded?.oid ?? 'unknown';
-    const tid = decoded?.tid ?? 'unknown';  
+    const decoded = jwt.decode(aauToken.token ?? '') as jwt.JwtPayload | null
+    const name = decoded?.name ?? 'unknown'
+    const upn = decoded?.upn ?? 'unknown'
+    const oid = decoded?.oid ?? 'unknown'
+    const tid = decoded?.tid ?? 'unknown'
     await ctx.sendActivity(`(Agentic) You said: ${ctx.activity.text}, user token length=${aauToken.token?.length ?? 0}\n\r\n\r\n\r\n\r**name**=${name}\n\r\n\r**upn**=${upn}\n\r\n\r**oid**=${oid}\n\r\n\r**tid**=${tid} `)
   }
 
