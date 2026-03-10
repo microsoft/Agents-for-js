@@ -6,7 +6,7 @@
 import { M365AttachmentDownloader } from '@microsoft/agents-hosting'
 
 /**
- * @deprecated Use {@link M365AttachmentDownloader} from @microsoft/agents-hosting instead.
+ * @deprecated Use {@link @microsoft/agents-hosting.M365AttachmentDownloader} instead.
  * Downloads attachments from Teams using the bots access token.
  */
 export class TeamsAttachmentDownloader extends M365AttachmentDownloader {

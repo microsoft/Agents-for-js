@@ -50,7 +50,7 @@ export function parseValueContinuation (value: unknown): string {
   return value as string
 }
 
-export interface ValueAction {
+interface ValueAction {
   action: {
     type: string;
     verb: string;

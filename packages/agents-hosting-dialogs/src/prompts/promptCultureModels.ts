@@ -5,7 +5,7 @@ import { Culture } from '@microsoft/recognizers-text-suite'
  * This interface provides language-specific formatting rules and translations for
  * interactive prompts such as choice lists and confirmation dialogs.
  */
-export interface PromptCultureModel {
+interface PromptCultureModel {
   /**
    * The locale identifier for this culture model.
    *
