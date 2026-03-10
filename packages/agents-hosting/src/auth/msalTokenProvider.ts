@@ -5,7 +5,7 @@
 
 import { ConfidentialClientApplication, LogLevel, ManagedIdentityApplication, NodeSystemOptions } from '@azure/msal-node'
 import axios from 'axios'
-import { AuthConfiguration } from './authConfiguration'
+import { AuthConfiguration, resolveAuthority as resolveAuthorityUtil } from './authConfiguration'
 import { AuthProvider } from './authProvider'
 import { debug } from '@microsoft/agents-activity/logger'
 import { v4 } from 'uuid'
@@ -167,36 +167,26 @@ export class MsalTokenProvider implements AuthProvider {
    * @returns
    */
   private resolveAuthority (tenantId?: string) : string {
-    // if for some reason the agentic tenant ID is not in the message, fall back to the original configured auth settings
+    const { authority: configuredAuth, tenantId: configuredTenantId } = this.connectionSettings ?? {}
+
     if (!tenantId) {
-      return this.connectionSettings?.authority ? `${this.connectionSettings.authority}/${this.connectionSettings?.tenantId}` : `https://login.microsoftonline.com/${this.connectionSettings?.tenantId || 'botframework.com'}`
+      // No agentic tenant override — delegate to shared utility
+      return resolveAuthorityUtil(configuredAuth, configuredTenantId)
     }
 
-    const configuredAuth = this.connectionSettings?.authority
-    const configuredTenantId = this.connectionSettings?.tenantId
-
-    // Prefer the passed tenantId if present, falling back to the configured tenantId
-    const finalTenant = tenantId || configuredTenantId
-
-    // Use default Microsoft login endpoint when no custom authority is configured
-    if (!configuredAuth) {
-      return `https://login.microsoftonline.com/${finalTenant}`
-    }
-
-    // Check if authority already contains a tenant identifier
-    const endsWithCommon = configuredAuth.endsWith('/common')
+    // Agentic override: build a clean base using the override tenant, then replace any
+    // /common or GUID placeholder left in the authority (e.g. from a multi-tenant config)
+    const base = resolveAuthorityUtil(configuredAuth, tenantId)
     const guidPattern = /\/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
-    const hasTenantGuid = guidPattern.test(configuredAuth)
 
-    if (endsWithCommon || hasTenantGuid) {
-      return configuredAuth.replace(
+    if (base.endsWith('/common') || guidPattern.test(base)) {
+      return base.replace(
         /\/(?:common|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})(?=\/|$)/,
         `/${tenantId}`
       )
     }
 
-    // Authority has no tenant segment - append the final selected tenant
-    return `${configuredAuth}/${finalTenant}`
+    return base
   }
 
   /**
