@@ -178,15 +178,7 @@ export class CopilotStudioClient {
         sanitizedHeaders.set(key, value)
       }
     })
-    logger.debug('Headers received:', sanitizedHeaders)
-
-    if (this.settings.enableDiagnostics) {
-      const headerObj: Record<string, string> = {}
-      sanitizedHeaders.forEach((value, key) => {
-        headerObj[key] = value
-      })
-      this.logDiagnostic('Response Headers:', headerObj)
-    }
+    this.logDiagnostic('Response Headers:', sanitizedHeaders)
   }
 
   /**
