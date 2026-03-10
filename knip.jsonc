@@ -1,18 +1,33 @@
 {
   "$schema": "https://unpkg.com/knip@latest/schema.json",
-  // Exclude unused enum member checks - SDK enums intentionally include all possible values
-  "exclude": ["enumMembers"],
+  // See https://knip.dev/reference/issue-types for details on each rule.
+  "rules": {
+    "files": "error",
+    "dependencies": "error",
+    "devDependencies": "error",
+    "optionalPeerDependencies": "error",
+    "unlisted": "error",
+    "binaries": "error",
+    "catalog": "error",
+    "unresolved": "error",
+    "exports": "error",
+    "types": "error",
+    "duplicates": "error",
+    // Set as "off" because SDK enums intentionally include all possible values.
+    "enumMembers": "off",
+    "nsExports": "off",
+    "nsTypes": "off",
+    "classMembers": "off"
+  },
   "workspaces": {
     // Root
     ".": {
-      "project": ["*.{js,mjs,ts}"],
-      "ignore": ["**/dist/**"]
+      "project": ["*.{js,mjs,ts}"]
     },
 
     // Packages
     "packages/*": {
-      "project": ["src/**/*.ts"],
-      "ignore": ["dist/**", "vendor/**"]
+      "project": ["src/**/*.ts"]
     },
     "packages/agents-copilotstudio-client": {
       "project": ["src/**/*.ts"],
@@ -33,8 +48,7 @@
     },
     "test-agents/*": {
       "entry": ["src/**/*.ts"],
-      "project": ["**/*.ts"],
-      "ignore": ["dist/**"]
+      "project": ["**/*.ts"]
     },
     "test-agents/state-agent": {
       "entry": ["src/**/*.ts"],

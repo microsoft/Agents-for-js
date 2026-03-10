@@ -26,6 +26,32 @@ export interface CopilotStudioWebChatSettings {
    * @default false
    */
   showTyping?: boolean;
+
+  /**
+   * An existing conversation ID to resume. When provided, the connection will
+   * send subsequent messages to this conversation instead of starting a new one.
+   *
+   * By default, providing a conversationId will skip the initial
+   * `startConversationStreaming()` call. Override this with the
+   * `startConversation` setting.
+   *
+   * **Note:** The server does not validate conversation IDs. A non-existent
+   * GUID will silently create a new conversation under that ID, while a
+   * non-GUID string may cause the server to return no response. Only pass
+   * IDs that were previously captured from a real conversation.
+   */
+  conversationId?: string;
+
+  /**
+   * Controls whether `startConversationStreaming()` is called when the
+   * connection is first subscribed to.
+   *
+   * - `undefined` (default): starts a new conversation only when no
+   *   `conversationId` is provided (`!conversationId`).
+   * - `true`: always starts a conversation, even when resuming.
+   * - `false`: never starts a conversation, even for new connections.
+   */
+  startConversation?: boolean;
 }
 
 /**
@@ -60,6 +86,13 @@ export interface CopilotStudioWebChatConnection {
    * - Standard Bot Framework Activity properties (type, text, attachments, etc.)
    */
   activity$: Observable<Partial<Activity>>;
+
+  /**
+   * The active conversation ID. Set from `CopilotStudioWebChatSettings.conversationId`
+   * when resuming, or captured from the first response activity for new conversations.
+   * Returns `undefined` until a conversation has been established.
+   */
+  readonly conversationId: string | undefined;
 
   /**
    * Posts a user activity to the Copilot Studio service and returns an observable
@@ -224,9 +257,19 @@ export class CopilotStudioWebChat {
     settings?: CopilotStudioWebChatSettings
   ): CopilotStudioWebChatConnection {
     logger.info('--> Creating connection between Copilot Studio and WebChat ...')
+
+    const normalizedConversationId =
+      settings?.conversationId && settings.conversationId.trim() !== ''
+        ? settings.conversationId.trim()
+        : undefined
+    const shouldStart = settings?.startConversation ?? !normalizedConversationId
+
     let sequence = 0
     let activitySubscriber: Subscriber<Partial<Activity>> | undefined
     let conversation: ConversationAccount | undefined
+    let activeConversationId: string | undefined = normalizedConversationId
+    let ended = false
+    let started = false
 
     const connectionStatus$ = new BehaviorSubject(0)
     const activity$ = createObservable<Partial<Activity>>(async (subscriber) => {
@@ -237,22 +280,29 @@ export class CopilotStudioWebChat {
         await Promise.resolve() // Webchat requires an extra tick to process the connection status change
       })
 
+      // When resuming (shouldStart === false), transition straight to connected
+      if (!shouldStart || started) {
+        await handleAcknowledgementOnce()
+        return
+      }
+      started = true
+
       logger.debug('--> Connection established.')
       notifyTyping()
 
-      if (connectionStatus$.value < 2) {
-        for await (const activity of client.startConversationStreaming()) {
-          delete activity.replyToId
-          if (!conversation && activity.conversation) {
-            conversation = activity.conversation
-            await handleAcknowledgementOnce()
-          }
-
-          notifyActivity(activity)
+      for await (const activity of client.startConversationStreaming()) {
+        delete activity.replyToId
+        if (!conversation && activity.conversation) {
+          conversation = activity.conversation
         }
-        // If no activities received from bot, we should still acknowledge.
+        if (activity.conversation?.id) {
+          activeConversationId = activity.conversation.id
+        }
         await handleAcknowledgementOnce()
+        notifyActivity(activity)
       }
+      // If no activities received from bot, we should still acknowledge.
+      await handleAcknowledgementOnce()
     })
 
     const notifyActivity = (activity: Partial<Activity>) => {
@@ -283,11 +333,20 @@ export class CopilotStudioWebChat {
     return {
       connectionStatus$,
       activity$,
+
+      get conversationId () {
+        return activeConversationId
+      },
+
       postActivity (activity: Activity) {
         logger.info('--> Preparing to send activity to Copilot Studio ...')
 
         if (!activity) {
           throw new Error('Activity cannot be null.')
+        }
+
+        if (ended) {
+          throw new Error('Connection has been ended.')
         }
 
         if (!activitySubscriber) {
@@ -309,8 +368,11 @@ export class CopilotStudioWebChat {
             // Notify WebChat immediately that the message was sent
             subscriber.next(newActivity.id!)
 
-            // Stream the agent's response, but don't block the UI
-            for await (const responseActivity of client.sendActivityStreaming(newActivity)) {
+            // Stream the agent's response, passing activeConversationId for URL routing
+            for await (const responseActivity of client.sendActivityStreaming(newActivity, activeConversationId)) {
+              if (!activeConversationId && responseActivity.conversation?.id) {
+                activeConversationId = responseActivity.conversation.id
+              }
               notifyActivity(responseActivity)
               logger.info('<-- Activity received correctly from Copilot Studio.')
             }
@@ -325,6 +387,7 @@ export class CopilotStudioWebChat {
 
       end () {
         logger.info('--> Ending connection between Copilot Studio and WebChat ...')
+        ended = true
         connectionStatus$.complete()
         if (activitySubscriber) {
           activitySubscriber.complete()

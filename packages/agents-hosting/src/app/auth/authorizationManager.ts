@@ -24,7 +24,7 @@ interface ManagerActiveHandler {
 /**
  * Result of the authorization manager process.
  */
-export interface AuthorizationManagerProcessResult {
+interface AuthorizationManagerProcessResult {
   /**
    * Indicates whether the authorization was successful.
    */
@@ -34,7 +34,7 @@ export interface AuthorizationManagerProcessResult {
 /**
  * Function to retrieve handler IDs for the current activity.
  */
-export type GetHandlerIds = (activity: Activity) => string[] | Promise<string[]>
+type GetHandlerIds = (activity: Activity) => string[] | Promise<string[]>
 
 /**
  * Manages multiple authorization handlers and their interactions.

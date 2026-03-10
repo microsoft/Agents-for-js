@@ -356,10 +356,32 @@ function buildLegacyAuthConfig (envPrefix: string = '', customConfig?: AuthConfi
   }
 }
 
+/**
+ * Resolves the full authority URL including the tenant ID.
+ * Supports both patterns:
+ *   - Tenant embedded in authority: https://login.microsoftonline.com/my-tenant
+ *   - Authority + separate tenantId: https://login.microsoftonline.com + tenantId
+ * Also handles trailing slashes on authority.
+ */
+export function resolveAuthority (authority?: string, tenantId?: string): string {
+  const base = (authority ?? 'https://login.microsoftonline.com').replace(/\/+$/, '')
+  const url = new URL(base)
+  const hasPathSegment = url.pathname !== '/'
+  if (hasPathSegment) {
+    return base
+  }
+  return `${base}/${tenantId ?? 'botframework.com'}`
+}
+
 function getDefaultIssuers (tenantId: string, authority: string) : string[] {
+  // Convert empty string to undefined so resolveAuthority applies its 'botframework.com' default
+  const t = tenantId || undefined
+  if (!t) {
+    logger.warn('tenantId is not configured, defaulting to botframework.com')
+  }
   return [
     'https://api.botframework.com',
-    `https://sts.windows.net/${tenantId}/`,
-    `${authority}/${tenantId}/v2.0`
+    `${resolveAuthority('https://sts.windows.net', t)}/`,
+    `${resolveAuthority(authority, t)}/v2.0`
   ]
 }

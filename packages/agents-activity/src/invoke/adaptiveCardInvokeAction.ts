@@ -29,6 +29,7 @@ export interface AdaptiveCardInvokeAction {
 
 /**
  * Zod schema for validating an adaptive card invoke action.
+ * @ignore
  */
 export const adaptiveCardInvokeActionZodSchema = z.object({
   type: z.string().min(1),
