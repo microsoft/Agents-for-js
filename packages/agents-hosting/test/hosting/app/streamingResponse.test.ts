@@ -108,6 +108,59 @@ describe('StreamingResponse', () => {
     formatCitationsStub.restore()
   })
 
+  it('should preserve whitespace-only chunks (spaces) in getMessage()', () => {
+    const formatCitationsStub = sinon.stub(CitationUtil, 'formatCitationsResponse').callsFake(msg => msg)
+
+    streamingResponse.queueTextChunk('Hello')
+    streamingResponse.queueTextChunk('  ')
+    streamingResponse.queueTextChunk('World')
+    clock.tick(1500)
+
+    assert.equal(streamingResponse.getMessage(), 'Hello  World')
+
+    formatCitationsStub.restore()
+  })
+
+  it('should preserve whitespace-only chunks (newlines) in getMessage()', () => {
+    const formatCitationsStub = sinon.stub(CitationUtil, 'formatCitationsResponse').callsFake(msg => msg)
+
+    streamingResponse.queueTextChunk('Line 1')
+    streamingResponse.queueTextChunk('\n\n')
+    streamingResponse.queueTextChunk('Line 2')
+    clock.tick(1500)
+
+    assert.equal(streamingResponse.getMessage(), 'Line 1\n\nLine 2')
+
+    formatCitationsStub.restore()
+  })
+
+  it('should include whitespace-only chunks in the sent typing activity text', () => {
+    const formatCitationsStub = sinon.stub(CitationUtil, 'formatCitationsResponse').callsFake(msg => msg)
+
+    streamingResponse.queueTextChunk('\n\n')
+
+    // sendActivity is called synchronously when queuing a chunk
+    sinon.assert.calledOnce(mockContext.sendActivity)
+    const activity = mockContext.sendActivity.firstCall.args[0] as Activity
+    assert.equal(activity.text, '\n\n')
+
+    formatCitationsStub.restore()
+  })
+
+  it('should skip null and undefined chunks but not whitespace-only chunks', () => {
+    const formatCitationsStub = sinon.stub(CitationUtil, 'formatCitationsResponse').callsFake(msg => msg)
+
+    streamingResponse.queueTextChunk('Hello')
+    streamingResponse.queueTextChunk(null as unknown as string)
+    streamingResponse.queueTextChunk(undefined as unknown as string)
+    streamingResponse.queueTextChunk(' ')
+    clock.tick(1500)
+
+    assert.equal(streamingResponse.getMessage(), 'Hello ')
+
+    formatCitationsStub.restore()
+  })
+
   it('should format citations in message', () => {
     const formatCitationsStub = sinon.stub(CitationUtil, 'formatCitationsResponse').returns('formatted message')
 
