@@ -19,7 +19,7 @@
     "@microsoft/agents-hosting": "file:../../packages/agents-hosting",
     "@microsoft/agents-hosting-express": "file:../../packages/agents-hosting-express",
     "@opentelemetry/api": "^1.9.0",
-    "@opentelemetry/auto-instrumentations-node": "^0.69.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.71.0",
     "@opentelemetry/resources": "^2.5.0",
     "@opentelemetry/sdk-metrics": "^2.5.0",
     "@opentelemetry/sdk-node": "^0.213.0",
