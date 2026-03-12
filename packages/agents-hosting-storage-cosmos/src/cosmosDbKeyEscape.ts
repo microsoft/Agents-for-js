@@ -25,7 +25,7 @@ export namespace CosmosDbKeyEscape {
    * @param compatibilityMode Indicates whether compatibility mode is enabled.
    * @returns The escaped key.
    */
-  export function escapeKey (key: string, keySuffix?: string, compatibilityMode?: boolean): string {
+  function escapeKey (key: string, keySuffix?: string, compatibilityMode?: boolean): string {
     if (!key) {
       throw ExceptionHelper.generateException(
         Error,
