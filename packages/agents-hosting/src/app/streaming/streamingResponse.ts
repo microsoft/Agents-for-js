@@ -164,7 +164,7 @@ export class StreamingResponse {
    *
    */
   public queueTextChunk (text: string, citations?: Citation[]): void {
-    if (!text.trim() || this._canceled) {
+    if (this._canceled) {
       return
     }
 
