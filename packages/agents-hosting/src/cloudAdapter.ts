@@ -161,9 +161,7 @@ export class CloudAdapter extends BaseAdapter {
         throw new Error('Could not create connector client for agentic user')
       }
     } else {
-      // ABS tokens will not have an azp/appid so use the botframework scope.
-      // Otherwise use the appId.  This will happen when communicating back to another agent.
-      const scope = identity.azp ?? identity.appid ?? 'https://api.botframework.com'
+      const scope = this.resolveConnectorScope(identity, activity)
       const token = await tokenProvider.getAccessToken(scope)
       connectorClient = ConnectorClient.createClientWithToken(
         activity.serviceUrl!,
@@ -172,6 +170,24 @@ export class CloudAdapter extends BaseAdapter {
       )
     }
     return connectorClient
+  }
+
+  /**
+   * Resolves the appropriate authentication scope for the connector client based on the identity and activity.
+   * @param identity The JWT payload containing the identity claims.
+   * @param activity The activity to process.
+   * @returns The resolved authentication scope for the connector client.
+   */
+  private resolveConnectorScope (identity: JwtPayload, activity: Activity): string {
+    const defaultScope = 'https://api.botframework.com'
+
+    // ABS tokens will not have an azp/appid so use the botframework scope.
+    // Otherwise use the appId. This will happen when communicating back to another agent.
+    if (activity.recipient?.role === RoleTypes.Skill) {
+      return identity.azp ?? identity.appid ?? defaultScope
+    }
+
+    return defaultScope
   }
 
   /**
