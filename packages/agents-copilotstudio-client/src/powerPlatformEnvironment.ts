@@ -34,13 +34,6 @@ export function getCopilotStudioConnectionUrl (
       throw new Error('directConnectUrl must be a valid URL')
     }
 
-    // FIX for Missing Tenant ID
-    if (settings.directConnectUrl.toLowerCase().includes('tenants/00000000-0000-0000-0000-000000000000')) {
-      logger.warn(`Direct connection cannot be used, forcing default settings flow. Tenant ID is missing in the URL: ${settings.directConnectUrl}`)
-      // Direct connection cannot be used, ejecting and forcing the normal settings flow:
-      return getCopilotStudioConnectionUrl({ ...settings, directConnectUrl: '' }, conversationId)
-    }
-
     return createURL(settings.directConnectUrl, conversationId).href
   }
 
@@ -78,6 +71,32 @@ export function getCopilotStudioConnectionUrl (
   const url = strategy.getConversationUrl(conversationId)
   logger.debug(`Generated Copilot Studio connection URL: ${url}`)
   return url
+}
+
+/**
+ * Generates the subscribe URL for Copilot Studio Server-Sent Events (SSE).
+ * @param settings - The connection settings.
+ * @param conversationId - The conversation ID to subscribe to.
+ * @returns The subscribe URL.
+ * @throws Will throw an error if required settings are missing or invalid.
+ */
+export function getCopilotStudioSubscribeUrl (
+  settings: ConnectionSettings,
+  conversationId: string
+): string {
+  if (!conversationId || !conversationId.trim()) {
+    throw new Error('conversationId is required for subscribe URL')
+  }
+
+  const baseUrl = getCopilotStudioConnectionUrl(settings, conversationId)
+  const url = new URL(baseUrl)
+  url.pathname = url.pathname.endsWith('/')
+    ? `${url.pathname}subscribe`
+    : `${url.pathname}/subscribe`
+  const subscribeUrl = url.href
+
+  logger.debug(`Generated Copilot Studio subscribe URL: ${subscribeUrl}`)
+  return subscribeUrl
 }
 
 /**

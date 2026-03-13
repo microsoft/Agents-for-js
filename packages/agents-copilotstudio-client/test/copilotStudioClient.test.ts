@@ -1,6 +1,16 @@
 import { strict as assert } from 'assert'
 import { describe, it, mock } from 'node:test'
-import { AgentType, ConnectionSettings, CopilotStudioClient, PowerPlatformCloud } from '../src'
+import {
+  AgentType,
+  ConnectionSettings,
+  CopilotStudioClient,
+  PowerPlatformCloud,
+  StartRequest,
+  UserAgentHelper,
+  ScopeHelper,
+  SubscribeEvent,
+  loadCopilotStudioConnectionSettingsFromEnv
+} from '../src'
 import { Activity, ActivityTypes } from '@microsoft/agents-activity'
 
 describe('scopeFromSettings', function () {
@@ -1202,5 +1212,562 @@ describe('CopilotStudioClient', function () {
       assert.equal(activities[0].text, 'First')
       assert.equal(activities[1].text, 'Second')
     })
+  })
+
+  describe('Diagnostics', function () {
+    it('should enable diagnostic logging when enableDiagnostics is true', function () {
+      const settings = new ConnectionSettings({
+        environmentId: 'test-env-id',
+        agentIdentifier: 'test-agent',
+        cloud: PowerPlatformCloud.Prod,
+        copilotAgentType: AgentType.Published,
+        enableDiagnostics: true
+      })
+
+      assert.equal(settings.enableDiagnostics, true)
+    })
+
+    it('should not enable diagnostics when enableDiagnostics is false', function () {
+      const settings = new ConnectionSettings({
+        environmentId: 'test-env-id',
+        agentIdentifier: 'test-agent',
+        enableDiagnostics: false
+      })
+
+      assert.equal(settings.enableDiagnostics, false)
+    })
+
+    it('should default enableDiagnostics to false when not provided', function () {
+      const settings = new ConnectionSettings({
+        environmentId: 'test-env-id',
+        agentIdentifier: 'test-agent'
+      })
+
+      // enableDiagnostics should be falsy (undefined or false)
+      assert.ok(!settings.enableDiagnostics)
+    })
+
+    it('should load enableDiagnostics from environment variable', function () {
+      process.env.enableDiagnostics = 'true'
+      process.env.environmentId = 'test-env-id'
+      process.env.agentIdentifier = 'test-agent'
+
+      const settings = loadCopilotStudioConnectionSettingsFromEnv()
+
+      assert.equal(settings.enableDiagnostics, true)
+
+      delete process.env.enableDiagnostics
+      delete process.env.environmentId
+      delete process.env.agentIdentifier
+    })
+
+    it('should handle enableDiagnostics environment variable as false', function () {
+      process.env.enableDiagnostics = 'false'
+
+      const settings = loadCopilotStudioConnectionSettingsFromEnv()
+
+      assert.equal(settings.enableDiagnostics, false)
+
+      delete process.env.enableDiagnostics
+    })
+  })
+
+  describe('StartRequest', function () {
+    it('should accept StartRequest object with locale', async function () {
+      const settings = createTestSettings()
+      const client = new CopilotStudioClient(settings, 'test-token')
+
+      const startRequest: StartRequest = {
+        locale: 'fr-FR',
+        emitStartConversationEvent: true
+      }
+
+      const welcomeActivity = Activity.fromObject({
+        type: ActivityTypes.Message,
+        text: 'Bienvenue!',
+        conversation: { id: 'test-conversation-id' }
+      })
+
+      const fetchMock = mock.fn(() => Promise.resolve(mockFetchResponse([welcomeActivity])))
+      global.fetch = fetchMock as any
+
+      const activities = await client.startConversationAsync(startRequest)
+
+      assert.equal(activities.length, 1)
+      assert.equal(activities[0].text, 'Bienvenue!')
+    })
+
+    it('should accept boolean for backward compatibility', async function () {
+      const settings = createTestSettings()
+      const client = new CopilotStudioClient(settings, 'test-token')
+
+      const welcomeActivity = Activity.fromObject({
+        type: ActivityTypes.Message,
+        text: 'Welcome!',
+        conversation: { id: 'test-conversation-id' }
+      })
+
+      const fetchMock = mock.fn(() => Promise.resolve(mockFetchResponse([welcomeActivity])))
+      global.fetch = fetchMock as any
+
+      const activities = await client.startConversationAsync(false)
+
+      assert.equal(activities.length, 1)
+    })
+
+    it('should use conversationId from StartRequest if provided', async function () {
+      const settings = createTestSettings()
+      const client = new CopilotStudioClient(settings, 'test-token')
+
+      const startRequest: StartRequest = {
+        conversationId: 'custom-conversation-id',
+        emitStartConversationEvent: true
+      }
+
+      const welcomeActivity = Activity.fromObject({
+        type: ActivityTypes.Message,
+        text: 'Welcome!',
+        conversation: { id: 'custom-conversation-id' }
+      })
+
+      const fetchMock = mock.fn(() => Promise.resolve(mockFetchResponse([welcomeActivity], 'custom-conversation-id')))
+      global.fetch = fetchMock as any
+
+      const activities = await client.startConversationAsync(startRequest)
+
+      assert.equal(activities.length, 1)
+      assert.equal(activities[0].conversation?.id, 'custom-conversation-id')
+    })
+
+    it('should work with startConversationStreaming using StartRequest', async function () {
+      const settings = createTestSettings()
+      const client = new CopilotStudioClient(settings, 'test-token')
+
+      const startRequest: StartRequest = {
+        locale: 'en-US',
+        emitStartConversationEvent: false
+      }
+
+      const welcomeActivity = Activity.fromObject({
+        type: ActivityTypes.Message,
+        text: 'Hello!',
+        conversation: { id: 'test-conversation-id' }
+      })
+
+      const fetchMock = mock.fn(() => Promise.resolve(mockFetchResponse([welcomeActivity])))
+      global.fetch = fetchMock as any
+
+      const activities: Activity[] = []
+      for await (const activity of client.startConversationStreaming(startRequest)) {
+        activities.push(activity)
+      }
+
+      assert.equal(activities.length, 1)
+      assert.equal(activities[0].text, 'Hello!')
+    })
+
+    it('should return StartResponse with metadata', async function () {
+      const settings = createTestSettings()
+      const client = new CopilotStudioClient(settings, 'test-token')
+
+      const welcomeActivity = Activity.fromObject({
+        type: ActivityTypes.Message,
+        text: 'Welcome!',
+        conversation: { id: 'test-conversation-id' }
+      })
+
+      const fetchMock = mock.fn(() => Promise.resolve(mockFetchResponse([welcomeActivity], 'test-conversation-id')))
+      global.fetch = fetchMock as any
+
+      const response = await client.startConversationWithResponse()
+
+      assert.equal(response.activities.length, 1)
+      assert.equal(response.conversationId, 'test-conversation-id')
+      assert.equal(response.isNewConversation, true)
+    })
+
+    it('should return StartResponse with StartRequest parameter', async function () {
+      const settings = createTestSettings()
+      const client = new CopilotStudioClient(settings, 'test-token')
+
+      const startRequest: StartRequest = {
+        locale: 'fr-FR',
+        emitStartConversationEvent: true
+      }
+
+      const welcomeActivity = Activity.fromObject({
+        type: ActivityTypes.Message,
+        text: 'Bienvenue!',
+        conversation: { id: 'test-conversation-id' }
+      })
+
+      const fetchMock = mock.fn(() => Promise.resolve(mockFetchResponse([welcomeActivity], 'test-conversation-id')))
+      global.fetch = fetchMock as any
+
+      const response = await client.startConversationWithResponse(startRequest)
+
+      assert.equal(response.activities.length, 1)
+      assert.equal(response.conversationId, 'test-conversation-id')
+      assert.equal(response.isNewConversation, true)
+    })
+  })
+
+  describe('ExecuteStreaming', function () {
+    it('should execute turn with explicit conversation ID', async function () {
+      const settings = createTestSettings()
+      const client = new CopilotStudioClient(settings, 'test-token')
+
+      const conversationId = 'explicit-conversation-id'
+      const userActivity = Activity.fromObject({
+        type: ActivityTypes.Message,
+        text: 'Hello',
+        conversation: { id: conversationId }
+      })
+
+      const responseActivity = Activity.fromObject({
+        type: ActivityTypes.Message,
+        text: 'Hi!',
+        conversation: { id: conversationId }
+      })
+
+      const fetchMock = mock.fn(() => Promise.resolve(mockFetchResponse([responseActivity])))
+      global.fetch = fetchMock as any
+
+      const activities: Activity[] = []
+      for await (const activity of client.executeStreaming(userActivity, conversationId)) {
+        activities.push(activity)
+      }
+
+      assert.equal(activities.length, 1)
+      assert.equal(activities[0].text, 'Hi!')
+    })
+
+    it('should throw error if conversationId is empty', async function () {
+      const settings = createTestSettings()
+      const client = new CopilotStudioClient(settings, 'test-token')
+
+      const userActivity = Activity.fromObject({
+        type: ActivityTypes.Message,
+        text: 'Hello'
+      })
+
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        for await (const _activity of client.executeStreaming(userActivity, '')) {
+          // Should not reach here
+        }
+        assert.fail('Should have thrown an error')
+      } catch (error: any) {
+        assert.equal(error.message, 'conversationId is required for executeStreaming')
+      }
+    })
+
+    it('should use deprecated execute method', async function () {
+      const settings = createTestSettings()
+      const client = new CopilotStudioClient(settings, 'test-token')
+
+      const conversationId = 'test-conversation-id'
+      const userActivity = Activity.fromObject({
+        type: ActivityTypes.Message,
+        text: 'Question'
+      })
+
+      const responseActivity = Activity.fromObject({
+        type: ActivityTypes.Message,
+        text: 'Answer'
+      })
+
+      const fetchMock = mock.fn(() => Promise.resolve(mockFetchResponse([responseActivity])))
+      global.fetch = fetchMock as any
+
+      const activities = await client.execute(userActivity, conversationId)
+
+      assert.equal(activities.length, 1)
+      assert.equal(activities[0].text, 'Answer')
+    })
+
+    it('should return ExecuteTurnResponse with activity count', async function () {
+      const settings = createTestSettings()
+      const client = new CopilotStudioClient(settings, 'test-token')
+
+      const userActivity = Activity.fromObject({
+        type: ActivityTypes.Message,
+        text: 'Question'
+      })
+
+      const responseActivities = [
+        Activity.fromObject({ type: ActivityTypes.Typing }),
+        Activity.fromObject({ type: ActivityTypes.Message, text: 'Answer 1' }),
+        Activity.fromObject({ type: ActivityTypes.Message, text: 'Answer 2' })
+      ]
+
+      const fetchMock = mock.fn(() => Promise.resolve(mockFetchResponse(responseActivities)))
+      global.fetch = fetchMock as any
+
+      const response = await client.executeWithResponse(userActivity, 'conv-id')
+
+      assert.equal(response.activities.length, 3)
+      assert.equal(response.activityCount, 3)
+      assert.equal(response.conversationId, 'conv-id')
+    })
+
+    it('should handle multiple activities in executeStreaming', async function () {
+      const settings = createTestSettings()
+      const client = new CopilotStudioClient(settings, 'test-token')
+
+      const conversationId = 'test-conversation-id'
+      const userActivity = Activity.fromObject({
+        type: ActivityTypes.Message,
+        text: 'Question'
+      })
+
+      const responseActivities = [
+        Activity.fromObject({ type: ActivityTypes.Typing }),
+        Activity.fromObject({ type: ActivityTypes.Message, text: 'Answer 1' }),
+        Activity.fromObject({ type: ActivityTypes.Message, text: 'Answer 2' })
+      ]
+
+      const fetchMock = mock.fn(() => Promise.resolve(mockFetchResponse(responseActivities)))
+      global.fetch = fetchMock as any
+
+      const activities: Activity[] = []
+      for await (const activity of client.executeStreaming(userActivity, conversationId)) {
+        activities.push(activity)
+      }
+
+      assert.equal(activities.length, 3)
+      assert.equal(activities[0].type, ActivityTypes.Typing)
+      assert.equal(activities[1].text, 'Answer 1')
+      assert.equal(activities[2].text, 'Answer 2')
+    })
+  })
+})
+
+describe('UserAgentHelper', function () {
+  it('should return product info string', function () {
+    const productInfo = UserAgentHelper.getProductInfo()
+    assert(productInfo.includes('CopilotStudioClient.agents-sdk-js/'))
+  })
+
+  it('should return version string', function () {
+    const versionString = UserAgentHelper.getVersionString()
+    assert(versionString.startsWith('CopilotStudioClient.agents-sdk-js/'))
+  })
+
+  it('should return version number', function () {
+    const version = UserAgentHelper.getVersion()
+    assert(version.match(/^\d+\.\d+\.\d+/))
+  })
+
+  it('should include platform info in Node.js', function () {
+    const productInfo = UserAgentHelper.getProductInfo()
+    if (typeof window === 'undefined') {
+      assert(productInfo.includes('nodejs/'))
+    }
+  })
+})
+
+describe('ScopeHelper', function () {
+  it('should return correct scope for Prod cloud', function () {
+    const settings = new ConnectionSettings({
+      environmentId: 'env-id',
+      agentIdentifier: 'agent',
+      cloud: PowerPlatformCloud.Prod
+    })
+
+    const scope = ScopeHelper.getScopeFromSettings(settings)
+    assert.equal(scope, 'https://api.powerplatform.com/.default')
+  })
+
+  it('should return correct scope for Gov cloud', function () {
+    const settings = new ConnectionSettings({
+      environmentId: 'env-id',
+      agentIdentifier: 'agent',
+      cloud: PowerPlatformCloud.Gov
+    })
+
+    const scope = ScopeHelper.getScopeFromSettings(settings)
+    assert.equal(scope, 'https://api.gov.powerplatform.microsoft.us/.default')
+  })
+
+  it('should match static method on CopilotStudioClient', function () {
+    const settings = new ConnectionSettings({
+      environmentId: 'env-id',
+      agentIdentifier: 'agent',
+      cloud: PowerPlatformCloud.Prod
+    })
+
+    const scope1 = ScopeHelper.getScopeFromSettings(settings)
+    const scope2 = CopilotStudioClient.scopeFromSettings(settings)
+
+    assert.equal(scope1, scope2)
+  })
+})
+
+describe('subscribeAsync', function () {
+  const createTestSettings = (): ConnectionSettings => {
+    return new ConnectionSettings({
+      appClientId: 'test-app-id',
+      tenantId: 'test-tenant-id',
+      environmentId: 'test-env-id',
+      agentIdentifier: 'test-agent',
+      cloud: PowerPlatformCloud.Prod,
+      copilotAgentType: AgentType.Published
+    })
+  }
+
+  const mockSubscribeFetchResponse = (activities: Activity[], eventIds?: string[]) => {
+    const mockHeaders = new Headers()
+    mockHeaders.set('x-ms-conversationid', 'test-conversation-id')
+
+    const mockResponse = {
+      ok: true,
+      status: 200,
+      headers: mockHeaders,
+      body: {
+        getReader: () => {
+          const encoder = new TextEncoder()
+          let index = 0
+
+          return {
+            read: async () => {
+              if (index < activities.length) {
+                const activity = activities[index]
+                const eventId = eventIds?.[index] || `event-${index}`
+                index++
+                const data = `id: ${eventId}\nevent: activity\ndata: ${activity.toJsonString()}\n\n`
+                return {
+                  done: false,
+                  value: encoder.encode(data)
+                }
+              } else if (index === activities.length) {
+                index++
+                const data = 'event: end\ndata: \n\n'
+                return {
+                  done: false,
+                  value: encoder.encode(data)
+                }
+              } else {
+                return { done: true, value: undefined }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return mockResponse as unknown as Response
+  }
+
+  it('should subscribe to conversation and receive events', async function () {
+    const settings = createTestSettings()
+    const client = new CopilotStudioClient(settings, 'test-token')
+
+    const conversationId = 'test-conversation-id'
+    const activities = [
+      Activity.fromObject({
+        type: ActivityTypes.Message,
+        text: 'Event 1',
+        conversation: { id: conversationId }
+      }),
+      Activity.fromObject({
+        type: ActivityTypes.Message,
+        text: 'Event 2',
+        conversation: { id: conversationId }
+      })
+    ]
+
+    const fetchMock = mock.fn(() => Promise.resolve(mockSubscribeFetchResponse(activities, ['evt-1', 'evt-2'])))
+    global.fetch = fetchMock as any
+
+    const events: SubscribeEvent[] = []
+    for await (const event of client.subscribeAsync(conversationId)) {
+      events.push(event)
+    }
+
+    assert.equal(events.length, 2)
+    assert.equal(events[0].activity.text, 'Event 1')
+    assert.equal(events[0].eventId, 'evt-1')
+    assert.equal(events[1].activity.text, 'Event 2')
+    assert.equal(events[1].eventId, 'evt-2')
+  })
+
+  it('should throw error if conversationId is empty', async function () {
+    const settings = createTestSettings()
+    const client = new CopilotStudioClient(settings, 'test-token')
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      for await (const _event of client.subscribeAsync('')) {
+        // Should not reach here
+      }
+      assert.fail('Should have thrown an error')
+    } catch (error: any) {
+      assert.equal(error.message, 'conversationId is required for subscribeAsync')
+    }
+  })
+
+  it('should include Last-Event-ID header when resuming', async function () {
+    const settings = createTestSettings()
+    const client = new CopilotStudioClient(settings, 'test-token')
+
+    const conversationId = 'test-conversation-id'
+    const lastEventId = 'last-event-123'
+
+    const activities = [
+      Activity.fromObject({
+        type: ActivityTypes.Message,
+        text: 'Resumed event',
+        conversation: { id: conversationId }
+      })
+    ]
+
+    const fetchMock = mock.fn(() => Promise.resolve(mockSubscribeFetchResponse(activities, ['evt-resumed'])))
+    global.fetch = fetchMock as any
+
+    const events: SubscribeEvent[] = []
+    for await (const event of client.subscribeAsync(conversationId, lastEventId)) {
+      events.push(event)
+    }
+
+    assert.equal(events.length, 1)
+    assert.equal(events[0].eventId, 'evt-resumed')
+  })
+
+  it('should handle empty subscription stream', async function () {
+    const settings = createTestSettings()
+    const client = new CopilotStudioClient(settings, 'test-token')
+
+    const conversationId = 'test-conversation-id'
+
+    const fetchMock = mock.fn(() => Promise.resolve(mockSubscribeFetchResponse([])))
+    global.fetch = fetchMock as any
+
+    const events: SubscribeEvent[] = []
+    for await (const event of client.subscribeAsync(conversationId)) {
+      events.push(event)
+    }
+
+    assert.equal(events.length, 0)
+  })
+
+  it('should use subscribe URL endpoint', async function () {
+    const settings = createTestSettings()
+    const client = new CopilotStudioClient(settings, 'test-token')
+
+    const conversationId = 'test-conversation-id'
+
+    const fetchMock = mock.fn(() => Promise.resolve(mockSubscribeFetchResponse([])))
+    global.fetch = fetchMock as any
+
+    const events: SubscribeEvent[] = []
+    for await (const event of client.subscribeAsync(conversationId)) {
+      events.push(event)
+    }
+
+    // Verify that the fetch was called with a URL ending in /subscribe
+    assert(fetchMock.mock.calls.length > 0)
+    const callUrl = fetchMock.mock.calls[0].arguments[0]
+    assert(callUrl.includes('/subscribe'), `URL should contain /subscribe: ${callUrl}`)
   })
 })
