@@ -166,12 +166,26 @@ export class Proactive<TState extends TurnState> {
 
     await adapter.continueConversation(conv.identity, conv.reference, async (ctx: TurnContext) => {
       try {
+        // Merge caller-supplied activity fields (e.g. value, valueType) into the
+        // continuation activity so the handler can read request-time parameters.
+        if (opts?.continuationActivity) {
+          Object.assign(ctx.activity, opts.continuationActivity)
+        }
+
         const state = this._app.options.turnStateFactory()
         await state.load(ctx, this._app.options.storage)
 
         // Token acquisition (optional — only when auth is configured)
         if (opts?.autoSignInHandlers?.length && this._app.hasUserAuthorization) {
-          // TODO: call app.authorization.getSignedInTokens() once that API lands
+          const results = await Promise.all(
+            opts.autoSignInHandlers.map((handlerId) =>
+              this._app.authorization.getToken(ctx, handlerId).catch(() => ({ token: undefined }))
+            )
+          )
+          const allAcquired = results.every((r) => !!r.token)
+          if (!allAcquired && this._options.failOnUnsignedInConnections !== false) {
+            throw new Error('Not all token handlers have a signed-in user.')
+          }
         }
 
         await handler(ctx, state)
@@ -211,26 +225,34 @@ export class Proactive<TState extends TurnState> {
       throw new Error('createConversation: at least one member must be specified in parameters.members.')
     }
 
-    // Cast to CloudAdapter which has createConversationAsync
+    // CloudAdapter.createConversationAsync(agentAppId, channelId, serviceUrl, audience, params, logic)
+    // The logic callback IS the handler — context is created internally by the adapter.
     const cloudAdapter = adapter as any
-    const ref = await cloudAdapter.createConversationAsync(
-      createOptions.identity,
+    let capturedConv: Conversation | undefined
+
+    await cloudAdapter.createConversationAsync(
+      createOptions.identity.aud,
       createOptions.channelId,
       createOptions.serviceUrl,
       createOptions.scope,
-      createOptions.parameters
+      createOptions.parameters,
+      async (ctx: TurnContext) => {
+        const conv = new Conversation(ctx.activity.getConversationReference(), createOptions.identity)
+        capturedConv = conv
+
+        if (createOptions.storeConversation) {
+          await this.storeConversation(conv)
+        }
+
+        if (handler) {
+          const state = this._app.options.turnStateFactory()
+          await state.load(ctx, this._app.options.storage)
+          await handler(ctx, state)
+          await state.save(ctx, this._app.options.storage)
+        }
+      }
     )
 
-    const conv = new Conversation(ref, createOptions.identity)
-
-    if (createOptions.storeConversation) {
-      await this.storeConversation(conv)
-    }
-
-    if (handler) {
-      await this.continueConversation(adapter, conv, handler, _opts)
-    }
-
-    return conv
+    return capturedConv!
   }
 }

@@ -71,8 +71,9 @@ export class ConversationBuilder {
       aud: id?.aud ?? '',
       ...(id ?? {})
     } as ConversationClaims
+    const aud = Array.isArray(id?.aud) ? id.aud[0] : (id?.aud ?? '')
     return new ConversationBuilder(
-      id?.aud ?? '',
+      aud,
       ref.channelId,
       ref.serviceUrl ?? '',
       claims,
@@ -113,14 +114,12 @@ export class ConversationBuilder {
       ConversationReferenceBuilder.serviceUrlForChannel(this._channelId)
 
     const reference: ConversationReference = {
-      channelId: this._channelId,
-      serviceUrl,
       conversation: this._reference.conversation ?? { id: '', isGroup: false },
       agent: this._reference.agent ?? { id: this._agentClientId },
       ...this._reference,
-      // Ensure channelId and serviceUrl are always from our resolved values
-      serviceUrl,
+      // Ensure channelId and serviceUrl always use our resolved values
       channelId: this._channelId,
+      serviceUrl,
     }
 
     if (!this._claims.aud) {

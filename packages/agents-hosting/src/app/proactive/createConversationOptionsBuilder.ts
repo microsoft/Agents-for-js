@@ -24,7 +24,7 @@ export class CreateConversationOptionsBuilder {
   private readonly _serviceUrl: string
   private _scope: string = AzureBotScope
   private _storeConversation: boolean = false
-  private _parameters: Partial<ConversationParameters> & { members?: { id: string; name?: string }[] } = {
+  private _parameters: Partial<ConversationParameters> = {
     channelData: {},
   }
   private _activity: Partial<Activity> | undefined
@@ -58,7 +58,7 @@ export class CreateConversationOptionsBuilder {
   /** Adds a member (the target user) to `parameters.members`. */
   withUser(userId: string, userName?: string): this {
     const members = this._parameters.members ?? []
-    members.push({ id: userId, name: userName })
+    members.push({ id: userId, name: userName } as any)
     this._parameters = { ...this._parameters, members }
     return this
   }
