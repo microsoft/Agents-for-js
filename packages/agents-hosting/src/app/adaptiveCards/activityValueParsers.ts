@@ -76,7 +76,7 @@ export function parseValueActionExecuteSelector (value: unknown): ValueAction | 
   })
   const safeParsedValue = actionValueExecuteSelector.passthrough().safeParse(value)
   if (!safeParsedValue.success) {
-    throw new Error(`Invalid action value: ${safeParsedValue.error}`)
+    return undefined
   }
   const parsedValue = safeParsedValue.data
   return {
