@@ -164,7 +164,7 @@ export class StreamingResponse {
    *
    */
   public queueTextChunk (text: string, citations?: Citation[]): void {
-    if (!text.trim() || this._canceled) {
+    if (text === null || text === undefined || this._canceled) {
       return
     }
 
@@ -513,7 +513,7 @@ export class StreamingResponse {
 
     if (activity.deliveryMode === DeliveryModes.ExpectReplies) {
       this._isStreamingChannel = false
-    } else if (Channels.Msteams === activity.channelId) {
+    } else if (Channels.Msteams === activity.channelIdChannel) {
       if (activity.isAgenticRequest()) {
         // Agentic requests do not support streaming responses at this time.
         // TODO: Enable streaming for agentic requests when supported.
@@ -522,7 +522,7 @@ export class StreamingResponse {
         this._isStreamingChannel = true
         this._delayInMs = 1000
       }
-    } else if (Channels.Webchat === activity.channelId || Channels.Directline === activity.channelId) {
+    } else if (Channels.Webchat === activity.channelId || Channels.Directline === activity.channelId || Channels.Emulator === activity.channelId) {
       this._isStreamingChannel = true
       this._delayInMs = 500
     } else {
