@@ -72,8 +72,8 @@ describe('Proactive', () => {
       const ctx = makeTurnContext(adapter)
       const id = await proactive.storeConversation(ctx)
       assert.equal(id, 'conv-1')
-      const stored = await storage.read([`conversationreferences/conv-1`])
-      assert.ok(stored[`conversationreferences/conv-1`])
+      const stored = await storage.read(['conversationreferences/conv-1'])
+      assert.ok(stored['conversationreferences/conv-1'])
     })
   })
 
@@ -82,8 +82,8 @@ describe('Proactive', () => {
       const conv = makeConversation()
       const id = await proactive.storeConversation(conv)
       assert.equal(id, 'conv-1')
-      const stored = await storage.read([`conversationreferences/conv-1`])
-      assert.ok(stored[`conversationreferences/conv-1`])
+      const stored = await storage.read(['conversationreferences/conv-1'])
+      assert.ok(stored['conversationreferences/conv-1'])
     })
   })
 

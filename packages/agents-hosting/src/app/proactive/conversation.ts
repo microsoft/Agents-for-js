@@ -29,9 +29,9 @@ export class Conversation {
   reference: ConversationReference
   claims: ConversationClaims
 
-  constructor(context: TurnContext)
-  constructor(reference: ConversationReference, claims: ConversationClaims)
-  constructor(
+  constructor (context: TurnContext)
+  constructor (reference: ConversationReference, claims: ConversationClaims)
+  constructor (
     contextOrReference: TurnContext | ConversationReference,
     claims?: ConversationClaims
   ) {
@@ -55,7 +55,7 @@ export class Conversation {
    * Returns a `JwtPayload`-compatible object for passing to
    * `adapter.continueConversation()` as `botAppIdOrIdentity`.
    */
-  get identity(): JwtPayload {
+  get identity (): JwtPayload {
     return this.claims as unknown as JwtPayload
   }
 
@@ -63,7 +63,7 @@ export class Conversation {
    * Returns a JSON string of `{ reference, claims }` — suitable for use in
    * HTTP request bodies when passing a conversation to another service.
    */
-  toJson(): string {
+  toJson (): string {
     return JSON.stringify({ reference: this.reference, claims: this.claims })
   }
 
@@ -71,7 +71,7 @@ export class Conversation {
    * Throws if any required field is missing.
    * Called by `ConversationBuilder.build()` and `Proactive` methods before use.
    */
-  validate(): void {
+  validate (): void {
     if (!this.reference.conversation?.id) {
       throw new Error('Conversation is invalid: reference.conversation.id is required.')
     }

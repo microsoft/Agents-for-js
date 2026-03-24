@@ -42,7 +42,7 @@ export class Proactive<TState extends TurnState> {
   private readonly _options: ProactiveOptions
   private readonly _storage: Storage
 
-  constructor(app: AgentApplication<TState>, options: ProactiveOptions) {
+  constructor (app: AgentApplication<TState>, options: ProactiveOptions) {
     this._app = app
     this._options = options
 
@@ -71,9 +71,9 @@ export class Proactive<TState extends TurnState> {
    * `Conversation` object.
    * @returns The conversation ID that can be used to retrieve it later.
    */
-  storeConversation(context: TurnContext): Promise<string>
-  storeConversation(conversation: Conversation): Promise<string>
-  async storeConversation(contextOrConversation: TurnContext | Conversation): Promise<string> {
+  storeConversation (context: TurnContext): Promise<string>
+  storeConversation (conversation: Conversation): Promise<string>
+  async storeConversation (contextOrConversation: TurnContext | Conversation): Promise<string> {
     const conv =
       contextOrConversation instanceof Conversation
         ? contextOrConversation
@@ -88,7 +88,7 @@ export class Proactive<TState extends TurnState> {
    * Retrieves a stored `Conversation` by ID.
    * Returns `undefined` if not found.
    */
-  async getConversation(conversationId: string): Promise<Conversation | undefined> {
+  async getConversation (conversationId: string): Promise<Conversation | undefined> {
     const result = await this._storage.read([`${STORAGE_KEY_PREFIX}${conversationId}`])
     const stored = result[`${STORAGE_KEY_PREFIX}${conversationId}`] as { reference: any; claims: any } | undefined
     if (!stored) return undefined
@@ -98,7 +98,7 @@ export class Proactive<TState extends TurnState> {
   /**
    * Retrieves a stored `Conversation` by ID, or throws if not found.
    */
-  async getConversationOrThrow(conversationId: string): Promise<Conversation> {
+  async getConversationOrThrow (conversationId: string): Promise<Conversation> {
     const conv = await this.getConversation(conversationId)
     if (!conv) {
       throw new Error(`Conversation '${conversationId}' was not found in proactive storage.`)
@@ -107,7 +107,7 @@ export class Proactive<TState extends TurnState> {
   }
 
   /** Removes a stored conversation from storage. */
-  async deleteConversation(conversationId: string): Promise<void> {
+  async deleteConversation (conversationId: string): Promise<void> {
     await this._storage.delete([`${STORAGE_KEY_PREFIX}${conversationId}`])
   }
 
@@ -115,9 +115,9 @@ export class Proactive<TState extends TurnState> {
   // Send activity (no state, no auth — just sends)
   // ---------------------------------------------------------------------------
 
-  sendActivity(adapter: BaseAdapter, conversationId: string, activity: Partial<Activity>): Promise<ResourceResponse>
-  sendActivity(adapter: BaseAdapter, conversation: Conversation, activity: Partial<Activity>): Promise<ResourceResponse>
-  async sendActivity(
+  sendActivity (adapter: BaseAdapter, conversationId: string, activity: Partial<Activity>): Promise<ResourceResponse>
+  sendActivity (adapter: BaseAdapter, conversation: Conversation, activity: Partial<Activity>): Promise<ResourceResponse>
+  async sendActivity (
     adapter: BaseAdapter,
     conversationOrId: Conversation | string,
     activity: Partial<Activity>
@@ -149,9 +149,9 @@ export class Proactive<TState extends TurnState> {
   // Full-turn handler (loads TurnState, handles auth tokens)
   // ---------------------------------------------------------------------------
 
-  continueConversation(adapter: BaseAdapter, conversationId: string, handler: RouteHandler<TState>, opts?: ContinueConversationOptions): Promise<void>
-  continueConversation(adapter: BaseAdapter, conversation: Conversation, handler: RouteHandler<TState>, opts?: ContinueConversationOptions): Promise<void>
-  async continueConversation(
+  continueConversation (adapter: BaseAdapter, conversationId: string, handler: RouteHandler<TState>, opts?: ContinueConversationOptions): Promise<void>
+  continueConversation (adapter: BaseAdapter, conversation: Conversation, handler: RouteHandler<TState>, opts?: ContinueConversationOptions): Promise<void>
+  async continueConversation (
     adapter: BaseAdapter,
     conversationOrId: Conversation | string,
     handler: RouteHandler<TState>,
@@ -215,7 +215,7 @@ export class Proactive<TState extends TurnState> {
    * This wraps `adapter.createConversationAsync()` which requires real
    * network connectivity and auth. Integration test territory, not unit tested.
    */
-  async createConversation(
+  async createConversation (
     adapter: BaseAdapter,
     createOptions: import('./createConversationOptions').CreateConversationOptions,
     handler?: RouteHandler<TState>,

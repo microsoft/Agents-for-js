@@ -29,7 +29,7 @@ export class ConversationBuilder {
   private _claims: ConversationClaims
   private _reference: Partial<ConversationReference>
 
-  private constructor(
+  private constructor (
     agentClientId: string,
     channelId: string,
     serviceUrl: string,
@@ -46,7 +46,7 @@ export class ConversationBuilder {
   /**
    * Creates a new builder for the given agent and channel.
    */
-  static create(
+  static create (
     agentClientId: string,
     channelId: string,
     serviceUrl?: string
@@ -64,7 +64,7 @@ export class ConversationBuilder {
    * Creates a builder pre-populated from a live `TurnContext`.
    * Captures both the conversation reference and the JWT identity claims.
    */
-  static fromContext(context: TurnContext): ConversationBuilder {
+  static fromContext (context: TurnContext): ConversationBuilder {
     const ref = context.activity.getConversationReference()
     const id = context.identity
     const claims: ConversationClaims = {
@@ -82,13 +82,13 @@ export class ConversationBuilder {
   }
 
   /** Sets `reference.user`. */
-  withUser(userId: string, userName?: string): this {
+  withUser (userId: string, userName?: string): this {
     this._reference = { ...this._reference, user: { id: userId, name: userName } }
     return this
   }
 
   /** Sets `reference.conversation.id`. */
-  withConversationId(id: string): this {
+  withConversationId (id: string): this {
     this._reference = {
       ...this._reference,
       conversation: { ...(this._reference.conversation ?? { isGroup: false }), id }
@@ -101,13 +101,13 @@ export class ConversationBuilder {
    * Useful for overlaying externally-provided reference data without losing
    * fields set by earlier builder calls.
    */
-  withReference(ref: Partial<ConversationReference>): this {
+  withReference (ref: Partial<ConversationReference>): this {
     this._reference = { ...this._reference, ...ref }
     return this
   }
 
   /** Builds the `Conversation`, auto-filling `serviceUrl` from channel defaults if needed. */
-  build(): Conversation {
+  build (): Conversation {
     const serviceUrl =
       this._serviceUrl ||
       this._reference.serviceUrl ||

@@ -37,7 +37,7 @@ export class ConversationReferenceBuilder {
   private _userName?: string
   private _conversationId?: string
 
-  private constructor(agentClientId: string, channelId: string, serviceUrl?: string) {
+  private constructor (agentClientId: string, channelId: string, serviceUrl?: string) {
     this._agentClientId = agentClientId
     this._channelId = channelId
     this._serviceUrl = serviceUrl ?? ''
@@ -50,7 +50,7 @@ export class ConversationReferenceBuilder {
    * @param serviceUrl Optional override. If omitted, `build()` fills in the
    *   channel default via `serviceUrlForChannel()`.
    */
-  static create(
+  static create (
     agentClientId: string,
     channelId: string,
     serviceUrl?: string
@@ -61,25 +61,25 @@ export class ConversationReferenceBuilder {
   /**
    * Returns the default service URL for a known channel, or empty string if unknown.
    */
-  static serviceUrlForChannel(channelId: string): string {
+  static serviceUrlForChannel (channelId: string): string {
     return CHANNEL_SERVICE_URLS[channelId] ?? ''
   }
 
   /** Sets `reference.user`. */
-  withUser(userId: string, userName?: string): this {
+  withUser (userId: string, userName?: string): this {
     this._userId = userId
     this._userName = userName
     return this
   }
 
   /** Sets `reference.conversation.id`. */
-  withConversationId(id: string): this {
+  withConversationId (id: string): this {
     this._conversationId = id
     return this
   }
 
   /** Builds and returns the `ConversationReference`. */
-  build(): ConversationReference {
+  build (): ConversationReference {
     const serviceUrl =
       this._serviceUrl || ConversationReferenceBuilder.serviceUrlForChannel(this._channelId)
 

@@ -27,9 +27,10 @@ export class CreateConversationOptionsBuilder {
   private _parameters: Partial<ConversationParameters> = {
     channelData: {},
   }
+
   private _activity: Partial<Activity> | undefined
 
-  private constructor(agentClientId: string, channelId: string, serviceUrl?: string) {
+  private constructor (agentClientId: string, channelId: string, serviceUrl?: string) {
     this._agentClientId = agentClientId
     this._channelId = channelId
     this._serviceUrl =
@@ -42,7 +43,7 @@ export class CreateConversationOptionsBuilder {
    * @param channelId The target channel (e.g. `'msteams'`).
    * @param serviceUrl Optional service URL override.
    */
-  static create(
+  static create (
     agentClientId: string,
     channelId: string,
     serviceUrl?: string,
@@ -56,7 +57,7 @@ export class CreateConversationOptionsBuilder {
   }
 
   /** Adds a member (the target user) to `parameters.members`. */
-  withUser(userId: string, userName?: string): this {
+  withUser (userId: string, userName?: string): this {
     const members = this._parameters.members ?? []
     members.push({ id: userId, name: userName } as any)
     this._parameters = { ...this._parameters, members }
@@ -64,13 +65,13 @@ export class CreateConversationOptionsBuilder {
   }
 
   /** Sets `parameters.activity`. Defaults `activity.type` to `'message'` if not provided. */
-  withActivity(activity: Partial<Activity>): this {
+  withActivity (activity: Partial<Activity>): this {
     this._activity = activity
     return this
   }
 
   /** Merges additional channel-specific data into `parameters.channelData`. */
-  withChannelData(data: object): this {
+  withChannelData (data: object): this {
     this._parameters = {
       ...this._parameters,
       channelData: { ...(this._parameters.channelData as object ?? {}), ...data },
@@ -82,7 +83,7 @@ export class CreateConversationOptionsBuilder {
    * Sets `parameters.tenantId`.
    * On `msteams` channels, also sets `channelData.tenant.id`.
    */
-  withTenantId(tenantId: string): this {
+  withTenantId (tenantId: string): this {
     this._parameters = { ...this._parameters, tenantId }
     if (this._channelId === 'msteams') {
       this.withChannelData({ tenant: { id: tenantId } })
@@ -94,7 +95,7 @@ export class CreateConversationOptionsBuilder {
    * Sets `parameters.isGroup = true` and `channelData.channel.id`.
    * Only has effect on `msteams` channels.
    */
-  withTeamsChannelId(teamsChannelId: string): this {
+  withTeamsChannelId (teamsChannelId: string): this {
     if (this._channelId !== 'msteams') return this
     this._parameters = { ...this._parameters, isGroup: true }
     this.withChannelData({ channel: { id: teamsChannelId } })
@@ -102,25 +103,25 @@ export class CreateConversationOptionsBuilder {
   }
 
   /** Sets `parameters.topicName`. */
-  withTopicName(name: string): this {
+  withTopicName (name: string): this {
     this._parameters = { ...this._parameters, topicName: name }
     return this
   }
 
   /** Sets `parameters.isGroup`. */
-  isGroup(value: boolean): this {
+  isGroup (value: boolean): this {
     this._parameters = { ...this._parameters, isGroup: value }
     return this
   }
 
   /** Overrides the default `AzureBotScope` OAuth scope. */
-  withScope(scope: string): this {
+  withScope (scope: string): this {
     this._scope = scope
     return this
   }
 
   /** Controls whether the resulting conversation is stored after creation. */
-  storeConversation(value: boolean): this {
+  storeConversation (value: boolean): this {
     this._storeConversation = value
     return this
   }
@@ -129,7 +130,7 @@ export class CreateConversationOptionsBuilder {
    * Builds and returns `CreateConversationOptions`.
    * @throws if no members were added via `withUser()`.
    */
-  build(): CreateConversationOptions {
+  build (): CreateConversationOptions {
     if (!this._parameters.members?.length) {
       throw new Error(
         'CreateConversationOptionsBuilder: at least one members entry must be added via withUser().'
