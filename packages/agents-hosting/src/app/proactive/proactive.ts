@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 import type { Activity } from '@microsoft/agents-activity'
+import { debug } from '@microsoft/agents-activity/logger'
 import type { ResourceResponse } from '../../connector-client'
 import type { BaseAdapter } from '../../baseAdapter'
 import type { TurnContext } from '../../turnContext'
@@ -10,11 +11,10 @@ import type { RouteHandler } from '../routeHandler'
 import type { Storage } from '../../storage/storage'
 import type { AgentApplication } from '../agentApplication'
 import type { ProactiveOptions } from './proactiveOptions'
+import type { CreateConversationOptions } from './createConversationOptions'
 import { Conversation } from './conversation'
 
-const logger = {
-  warn: (msg: string) => console.warn(`[Proactive] ${msg}`)
-}
+const logger = debug('agents:proactive')
 
 const STORAGE_KEY_PREFIX = 'conversationreferences/'
 
@@ -24,11 +24,6 @@ export interface ContinueConversationOptions {
   autoSignInHandlers?: string[]
   /** Override the default continuation activity. */
   continuationActivity?: Partial<Activity>
-}
-
-/** Options for `createConversation()`. */
-export interface CreateConversationHandlerOptions extends ContinueConversationOptions {
-  continuationActivityFactory?: (ref: any) => Partial<Activity>
 }
 
 /**
@@ -79,6 +74,7 @@ export class Proactive<TState extends TurnState> {
         ? contextOrConversation
         : new Conversation(contextOrConversation as TurnContext)
 
+    conv.validate()
     const id = conv.reference.conversation.id
     await this._storage.write({ [`${STORAGE_KEY_PREFIX}${id}`]: { reference: conv.reference, claims: conv.claims } })
     return id
@@ -142,7 +138,8 @@ export class Proactive<TState extends TurnState> {
     })
 
     if (caughtError !== undefined) throw caughtError
-    return response!
+    if (response === undefined) throw new Error('sendActivity: adapter did not return a ResourceResponse.')
+    return response
   }
 
   // ---------------------------------------------------------------------------
@@ -217,9 +214,8 @@ export class Proactive<TState extends TurnState> {
    */
   async createConversation (
     adapter: BaseAdapter,
-    createOptions: import('./createConversationOptions').CreateConversationOptions,
-    handler?: RouteHandler<TState>,
-    _opts?: CreateConversationHandlerOptions
+    createOptions: CreateConversationOptions,
+    handler?: RouteHandler<TState>
   ): Promise<Conversation> {
     if (!createOptions.parameters.members?.length) {
       throw new Error('createConversation: at least one member must be specified in parameters.members.')
@@ -228,6 +224,11 @@ export class Proactive<TState extends TurnState> {
     // CloudAdapter.createConversationAsync(agentAppId, channelId, serviceUrl, audience, params, logic)
     // The logic callback IS the handler — context is created internally by the adapter.
     const cloudAdapter = adapter as any
+    if (typeof cloudAdapter.createConversationAsync !== 'function') {
+      throw new TypeError(
+        'createConversation requires a CloudAdapter. The provided adapter does not implement createConversationAsync().'
+      )
+    }
     let capturedConv: Conversation | undefined
 
     await cloudAdapter.createConversationAsync(

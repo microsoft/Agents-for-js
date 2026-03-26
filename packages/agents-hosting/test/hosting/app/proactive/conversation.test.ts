@@ -50,6 +50,22 @@ describe('Conversation', () => {
       const conv = new Conversation(ctx)
       assert.equal(conv.claims.aud, 'bot-app-id')
     })
+
+    it('normalizes aud to a string when identity.aud is an array', () => {
+      const adapter = new TestAdapter()
+      const activity = Activity.fromObject({
+        type: 'message',
+        from: { id: 'user-1', name: 'User' },
+        conversation: { id: 'conv-1' },
+        channelId: 'webchat',
+        recipient: { id: 'bot-1', name: 'Bot' },
+        serviceUrl: 'https://example.com'
+      })
+      const ctx = new TurnContext(adapter, activity, { aud: ['bot-app-id', 'other-id'] } as any)
+      const conv = new Conversation(ctx)
+      assert.equal(typeof conv.claims.aud, 'string')
+      assert.equal(conv.claims.aud, 'bot-app-id')
+    })
   })
 
   describe('constructor from (reference, claims)', () => {

@@ -41,8 +41,8 @@ export class Conversation {
       this.reference = context.activity.getConversationReference()
       const id = context.identity as JwtPayload | undefined
       this.claims = {
-        aud: id?.aud ?? '',
-        ...(id ?? {})
+        ...(id ?? {}),
+        aud: Array.isArray(id?.aud) ? (id.aud as string[])[0] : (id?.aud ?? '')
       } as ConversationClaims
     } else {
       // (reference, claims) overload
@@ -69,7 +69,7 @@ export class Conversation {
 
   /**
    * Throws if any required field is missing.
-   * Called by `ConversationBuilder.build()` and `Proactive` methods before use.
+   * Called by `Proactive.storeConversation()` before writing to storage.
    */
   validate (): void {
     if (!this.reference.conversation?.id) {

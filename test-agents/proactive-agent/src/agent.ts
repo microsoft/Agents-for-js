@@ -26,6 +26,10 @@ const ALLOWED_CALLERS: string[] = (process.env.ALLOWED_CALLERS ?? '')
   .map((s) => s.trim())
   .filter(Boolean)
 
+if (!ALLOWED_CALLERS.length) {
+  console.warn('[ProactiveAgent] ALLOWED_CALLERS is not configured — caller authentication is disabled. Set ALLOWED_CALLERS in production.')
+}
+
 // ---------------------------------------------------------------------------
 // Agent
 // ---------------------------------------------------------------------------
@@ -167,7 +171,7 @@ server.post('/api/proactive/teams-channel', requireAllowedCaller, async (req: Re
     return
   }
 
-  const clientId = process.env.clientId ?? ''
+  const clientId = process.env.clientId ?? process.env.CLIENT_ID ?? ''
 
   try {
     const builder = CreateConversationOptionsBuilder

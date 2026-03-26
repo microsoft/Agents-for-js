@@ -122,9 +122,8 @@ export class ConversationBuilder {
       serviceUrl,
     }
 
-    if (!this._claims.aud) {
-      throw new Error('Conversation is invalid: claims.aud (agent client ID) is required.')
-    }
-    return new Conversation(reference, this._claims)
+    const conv = new Conversation(reference, this._claims)
+    conv.validate()
+    return conv
   }
 }

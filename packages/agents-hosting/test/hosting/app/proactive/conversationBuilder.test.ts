@@ -25,12 +25,12 @@ const makeTurnContext = (): TurnContext => {
 describe('ConversationBuilder', () => {
   describe('create()', () => {
     it('produces a Conversation with claims.aud set to agentClientId', () => {
-      const conv = ConversationBuilder.create('my-client-id', 'webchat').build()
+      const conv = ConversationBuilder.create('my-client-id', 'webchat').withConversationId('conv-1').build()
       assert.equal(conv.claims.aud, 'my-client-id')
     })
 
     it('sets channelId on the reference', () => {
-      const conv = ConversationBuilder.create('my-client-id', 'msteams').build()
+      const conv = ConversationBuilder.create('my-client-id', 'msteams').withConversationId('conv-1').build()
       assert.equal(conv.reference.channelId, 'msteams')
     })
   })
@@ -77,12 +77,12 @@ describe('ConversationBuilder', () => {
 
   describe('build()', () => {
     it('auto-fills serviceUrl from serviceUrlForChannel() when not set', () => {
-      const conv = ConversationBuilder.create('client-id', 'msteams').build()
+      const conv = ConversationBuilder.create('client-id', 'msteams').withConversationId('conv-1').build()
       assert.equal(conv.reference.serviceUrl, TeamsServiceEndpoints.publicGlobal)
     })
 
     it('preserves a caller-supplied serviceUrl', () => {
-      const conv = ConversationBuilder.create('client-id', 'msteams', 'https://custom.url/').build()
+      const conv = ConversationBuilder.create('client-id', 'msteams', 'https://custom.url/').withConversationId('conv-1').build()
       assert.equal(conv.reference.serviceUrl, 'https://custom.url/')
     })
 
@@ -91,6 +91,20 @@ describe('ConversationBuilder', () => {
       assert.throws(
         () => ConversationBuilder.create('', 'webchat').withConversationId('c1').build(),
         /aud/
+      )
+    })
+
+    it('throws if conversation.id is missing', () => {
+      assert.throws(
+        () => ConversationBuilder.create('client-id', 'webchat').build(),
+        /conversation\.id/
+      )
+    })
+
+    it('throws if serviceUrl cannot be resolved', () => {
+      assert.throws(
+        () => ConversationBuilder.create('client-id', 'unknown-channel').withConversationId('c1').build(),
+        /serviceUrl/
       )
     })
   })

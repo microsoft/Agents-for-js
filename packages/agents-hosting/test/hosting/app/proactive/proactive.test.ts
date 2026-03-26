@@ -85,6 +85,30 @@ describe('Proactive', () => {
       const stored = await storage.read(['conversationreferences/conv-1'])
       assert.ok(stored['conversationreferences/conv-1'])
     })
+
+    it('throws when conversation.id is empty', async () => {
+      const conv = new Conversation(
+        { conversation: { id: '', isGroup: false }, serviceUrl: 'https://example.com', channelId: 'webchat', user: { id: 'u1' }, agent: { id: 'b1' } },
+        { aud: 'bot-app-id' }
+      )
+      await assert.rejects(() => proactive.storeConversation(conv), /conversation\.id/)
+    })
+
+    it('throws when serviceUrl is empty', async () => {
+      const conv = new Conversation(
+        { conversation: { id: 'conv-1', isGroup: false }, serviceUrl: '', channelId: 'webchat', user: { id: 'u1' }, agent: { id: 'b1' } },
+        { aud: 'bot-app-id' }
+      )
+      await assert.rejects(() => proactive.storeConversation(conv), /serviceUrl/)
+    })
+
+    it('throws when claims.aud is empty', async () => {
+      const conv = new Conversation(
+        { conversation: { id: 'conv-1', isGroup: false }, serviceUrl: 'https://example.com', channelId: 'webchat', user: { id: 'u1' }, agent: { id: 'b1' } },
+        { aud: '' }
+      )
+      await assert.rejects(() => proactive.storeConversation(conv), /aud/)
+    })
   })
 
   describe('getConversation()', () => {
@@ -147,6 +171,21 @@ describe('Proactive', () => {
       })
       await proactive.sendActivity(adapter, conv, { text: 'hello' })
       assert.equal(sentType, 'message')
+    })
+
+    it('throws when the underlying sendActivity returns undefined', async () => {
+      const conv = makeConversation()
+      sinon.restore()
+      sinon.stub(adapter, 'continueConversation').callsFake(async (_identity, ref, logic) => {
+        const act = Activity.getContinuationActivity(ref as any)
+        const ctx = new TurnContext(adapter, act)
+        sinon.stub(ctx, 'sendActivity').resolves(undefined)
+        await logic(ctx)
+      })
+      await assert.rejects(
+        () => proactive.sendActivity(adapter, conv, { text: 'hi' }),
+        /ResourceResponse/
+      )
     })
 
     it('re-throws exceptions that occur inside the adapter callback', async () => {
@@ -240,6 +279,20 @@ describe('Proactive', () => {
         /handler-error/
       )
     })
+
+    it('makes continuationActivity fields visible on ctx.activity inside the handler', async () => {
+      const conv = makeConversation()
+      let receivedValue: unknown
+      await proactive.continueConversation(
+        adapter,
+        conv,
+        async (ctx) => {
+          receivedValue = ctx.activity.value
+        },
+        { continuationActivity: { value: { foo: 'bar' } } }
+      )
+      assert.deepEqual(receivedValue, { foo: 'bar' })
+    })
   })
 
   describe('continueConversation() — string overload', () => {
@@ -253,6 +306,31 @@ describe('Proactive', () => {
     it('throws when conversationId is not in storage', async () => {
       await assert.rejects(
         () => proactive.continueConversation(adapter, 'missing', async () => {})
+      )
+    })
+  })
+
+  // -------------------------------------------------------------------------
+  // createConversation
+  // -------------------------------------------------------------------------
+
+  describe('createConversation()', () => {
+    it('throws a clear error when adapter does not support createConversationAsync', async () => {
+      const opts = {
+        identity: { aud: 'bot-app-id' },
+        channelId: 'msteams',
+        serviceUrl: 'https://smba.trafficmanager.net/teams/',
+        scope: 'https://api.botframework.com',
+        parameters: { members: [{ id: 'user-1' }] }
+      }
+      // TestAdapter does not have createConversationAsync — expect a helpful error, not a generic TypeError
+      await assert.rejects(
+        () => proactive.createConversation(adapter, opts as any),
+        (err: Error) => {
+          assert.ok(err instanceof TypeError, 'Expected TypeError')
+          assert.match(err.message, /CloudAdapter/)
+          return true
+        }
       )
     })
   })
