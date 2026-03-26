@@ -945,7 +945,7 @@ export class AgentApplication<TState extends TurnState> {
         }
       }
     }).catch(err => {
-      logger.error('Unhandled error in long-running call:', err)
+      logger.error(`Unhandled error in long-running call for activity '${activity.type}' (id: ${activity.id}):`, err)
     })
   }
 

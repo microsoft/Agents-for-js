@@ -291,10 +291,13 @@ describe('Application', () => {
       const trackingAdapter = new TrackingAdapter()
       const localApp = new AgentApplication({ adapter: trackingAdapter as any })
       let handlerCalled = false
+      let handlerActivityType: string | undefined
 
-      // The continuation re-uses the same activity (signin/tokenExchange) via Object.assign
-      localApp.onActivity(ActivityTypes.Invoke, async (_ctx, _state) => {
+      // The continuation re-uses the original signin/tokenExchange activity (via Object.assign),
+      // so the handler should be called with the invoke activity type.
+      localApp.onActivity(ActivityTypes.Invoke, async (ctx, _state) => {
         handlerCalled = true
+        handlerActivityType = ctx.activity.type
       })
 
       const activity = createTokenExchangeActivity()
@@ -304,6 +307,7 @@ describe('Application', () => {
       assert.equal(trackingAdapter.continueConversationCalled, true)
       // Execute the continuation synchronously to verify the handler is eventually called
       if (trackingAdapter.continueConversationCallback) {
+        // The continuation context activity will be overwritten by the original tokenExchange activity
         const continuationCtx = new TurnContext(trackingAdapter, Activity.fromObject({
           type: ActivityTypes.Message,
           text: 'placeholder',
@@ -316,6 +320,7 @@ describe('Application', () => {
         await trackingAdapter.continueConversationCallback(continuationCtx)
       }
       assert.equal(handlerCalled, true, 'invoke handler should be called in the continuation')
+      assert.equal(handlerActivityType, ActivityTypes.Invoke, 'handler should receive the original invoke activity type')
     })
 
     it('should not detach regular message activities', async () => {
