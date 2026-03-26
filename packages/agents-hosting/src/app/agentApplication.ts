@@ -583,7 +583,7 @@ export class AgentApplication<TState extends TurnState> {
    * While this method is public, it's typically called internally by the `run` method.
    *
    * The method performs the following operations:
-   * 1. Handles authentication flows for for routes that has auth handlers configured. If NOT authorized, it will not continue with the 2nd step, returning false.
+   * 1. Handles authentication flows for routes that have auth handlers configured. If NOT authorized, it will not continue with the 2nd step, returning false.
    * 2. Starts typing timer if configured
    * 3. Processes mentions if configured
    * 4. Loads turn state
@@ -609,13 +609,11 @@ export class AgentApplication<TState extends TurnState> {
       return false
     }
 
-    if (turnContext.activity.type === ActivityTypes.Invoke && turnContext.activity.name === 'signin/tokenExchange') {
-      logger.debug('Starting long-running call on successful token exchange for activity:', context.activity.id!)
-      this.startLongRunningCall(context, ctx => this.runTurn(ctx))
-      return true
-    }
+    const isLongRunning =
+      (turnContext.activity.type === ActivityTypes.Invoke && turnContext.activity.name === 'signin/tokenExchange') ||
+      (this._options.longRunningMessages && turnContext.activity.type === ActivityTypes.Message)
 
-    if (this._options.longRunningMessages && context.activity.type === ActivityTypes.Message) {
+    if (isLongRunning) {
       logger.debug('Starting long-running messages for activity:', context.activity.id!)
       this.startLongRunningCall(context, ctx => this.runTurn(ctx))
       return true
@@ -932,23 +930,20 @@ export class AgentApplication<TState extends TurnState> {
    */
   protected startLongRunningCall (
     context: TurnContext,
-    handler: (context: TurnContext) => Promise<boolean>
-  ): Promise<boolean> {
-    return new Promise<boolean>((resolve, reject) => {
-      const activity = Activity.fromObject(context.activity)
-      this.continueConversationAsync(context.identity, activity.getConversationReference(), async (ctx) => {
-        try {
-          for (const key in activity) {
-            ctx.activity[key] = activity[key]
-          }
-
-          const result = await handler(ctx)
-          resolve(result)
-        } catch (err: any) {
-          logger.error(err)
-          reject(err)
+    handler: (context: TurnContext) => Promise<any>
+  ) {
+    const activity = Activity.fromObject(context.activity)
+    this.continueConversationAsync(context.identity, activity.getConversationReference(), async (ctx) => {
+      try {
+        Object.assign(ctx.activity, activity)
+        await handler(ctx)
+      } catch (err) {
+        if (this.adapter.onTurnError && err instanceof Error) {
+          await this.adapter.onTurnError(ctx, err)
+        } else {
+          throw err
         }
-      })
+      }
     })
   }
 
