@@ -550,8 +550,7 @@ export class AzureBotAuthorization implements AuthorizationHandler {
    * Sends an InvokeResponse activity if the channel is Microsoft Teams, including Copilot within MS Teams.
    */
   private sendInvokeResponse <T>(context: TurnContext, response: InvokeResponse<T>) {
-    const [parentChannel] = Activity.parseChannelId(context.activity.channelId!)
-    if (parentChannel !== Channels.Msteams) {
+    if (context.activity.channelIdChannel !== Channels.Msteams) {
       return Promise.resolve()
     }
 

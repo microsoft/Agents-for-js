@@ -583,10 +583,10 @@ export class AgentApplication<TState extends TurnState> {
    * While this method is public, it's typically called internally by the `run` method.
    *
    * The method performs the following operations:
-   * 1. Starts typing timer if configured
-   * 2. Processes mentions if configured
-   * 3. Loads turn state
-   * 4. Handles authentication flows
+   * 1. Handles authentication flows for for routes that has auth handlers configured. If NOT authorized, it will not continue with the 2nd step, returning false.
+   * 2. Starts typing timer if configured
+   * 3. Processes mentions if configured
+   * 4. Loads turn state
    * 5. Downloads files if file downloaders are configured
    * 6. Executes before-turn event handlers
    * 7. Routes to appropriate handlers
@@ -600,76 +600,100 @@ export class AgentApplication<TState extends TurnState> {
    *   console.log('No handler matched the activity');
    * }
    * ```
-   *
    */
   public async runInternal (turnContext: TurnContext): Promise<boolean> {
-    if (turnContext.activity.type === ActivityTypes.Typing) {
+    const { authorized, context } = await this.handleAuthorization(turnContext)
+
+    if (!authorized) {
+      // We don't log a message here because it is handled by the authorization manager and could cause confusion during mid sign-in operations.
       return false
     }
 
-    logger.info('Running application with activity:', turnContext.activity.id!)
-    return await this.startLongRunningCall(turnContext, async (context) => {
-      try {
-        if (this._options.startTypingTimer) {
-          this.startTypingTimer(context)
-        }
+    if (turnContext.activity.type === ActivityTypes.Invoke && turnContext.activity.name === 'signin/tokenExchange') {
+      logger.debug('Starting long-running call on successful token exchange for activity:', context.activity.id!)
+      this.startLongRunningCall(context, ctx => this.runTurn(ctx))
+      return true
+    }
 
-        if (this._options.removeRecipientMention && context.activity.type === ActivityTypes.Message) {
-          context.activity.removeRecipientMention()
-        }
+    if (this._options.longRunningMessages && context.activity.type === ActivityTypes.Message) {
+      logger.debug('Starting long-running messages for activity:', context.activity.id!)
+      this.startLongRunningCall(context, ctx => this.runTurn(ctx))
+      return true
+    }
 
-        if (this._options.normalizeMentions && context.activity.type === ActivityTypes.Message) {
-          context.activity.normalizeMentions()
-        }
+    logger.info('Running application with activity:', context.activity.id!)
+    return this.runTurn(context)
+  }
 
-        const { storage, turnStateFactory } = this._options
-        const state = turnStateFactory()
-        await state.load(context, storage)
+  /**
+   * Determines if the incoming activity is authorized to be processed by the application.
+   * @returns An object containing the authorization status and the context (could have the continuation activity) to be used for further processing.
+   */
+  private async handleAuthorization (context: TurnContext) {
+    if (context.activity.type === ActivityTypes.Typing) {
+      return { authorized: true, context }
+    }
 
-        const { authorized } = await this._authorizationManager?.process(context, async activity => {
-          // The incoming activity may come from the storage, so we need to restore the auth handlers.
-          // Since the current route may not have auth handlers.
-          const route = await this.getRoute(new TurnContext(context.adapter, activity, turnContext.identity))
-          return route?.authHandlers ?? []
-        }) ?? { authorized: true } // Default to authorized if no auth manager
+    return this._authorizationManager?.process(context, async activity => {
+      // The incoming activity may come from the storage, so we need to restore the auth handlers.
+      // Since the current route may not have auth handlers.
+      const route = await this.getRoute(new TurnContext(context.adapter, activity, context.identity))
+      return route?.authHandlers ?? []
+    }) ?? { authorized: true, context } // If no authorization manager is configured, we assume the activity is authorized.
+  }
 
-        if (!authorized) {
-          await state.save(context, storage)
-          return false
-        }
-
-        const route = await this.getRoute(context)
-
-        if (!route) {
-          logger.debug('No matching route found for activity:', context.activity)
-          return false
-        }
-
-        if (Array.isArray(this._options.fileDownloaders) && this._options.fileDownloaders.length > 0) {
-          for (let i = 0; i < this._options.fileDownloaders.length; i++) {
-            await this._options.fileDownloaders[i].downloadAndStoreFiles(context, state)
-          }
-        }
-
-        if (!(await this.callEventHandlers(context, state, this._beforeTurn))) {
-          await state.save(context, storage)
-          return false
-        }
-
-        await route.handler(context, state)
-
-        if (await this.callEventHandlers(context, state, this._afterTurn)) {
-          await state.save(context, storage)
-        }
-
-        return true
-      } catch (err: any) {
-        logger.error(err)
-        throw err
-      } finally {
-        this.stopTypingTimer()
+  /**
+   * Executes the turn processing logic for the given context, including routing and handler execution.
+   */
+  private async runTurn (context: TurnContext): Promise<boolean> {
+    try {
+      if (this._options.startTypingTimer) {
+        this.startTypingTimer(context)
       }
-    })
+
+      if (this._options.removeRecipientMention && context.activity.type === ActivityTypes.Message) {
+        context.activity.removeRecipientMention()
+      }
+
+      if (this._options.normalizeMentions && context.activity.type === ActivityTypes.Message) {
+        context.activity.normalizeMentions()
+      }
+
+      const { storage, turnStateFactory } = this._options
+      const state = turnStateFactory()
+      await state.load(context, storage)
+
+      const route = await this.getRoute(context)
+
+      if (!route) {
+        logger.debug('No matching route found for activity:', context.activity)
+        return false
+      }
+
+      if (Array.isArray(this._options.fileDownloaders) && this._options.fileDownloaders.length > 0) {
+        for (let i = 0; i < this._options.fileDownloaders.length; i++) {
+          await this._options.fileDownloaders[i].downloadAndStoreFiles(context, state)
+        }
+      }
+
+      if (!(await this.callEventHandlers(context, state, this._beforeTurn))) {
+        await state.save(context, storage)
+        return false
+      }
+
+      await route.handler(context, state)
+
+      if (await this.callEventHandlers(context, state, this._afterTurn)) {
+        await state.save(context, storage)
+      }
+
+      return true
+    } catch (err: any) {
+      logger.error(err)
+      throw err
+    } finally {
+      this.stopTypingTimer()
+    }
   }
 
   /**
@@ -910,25 +934,22 @@ export class AgentApplication<TState extends TurnState> {
     context: TurnContext,
     handler: (context: TurnContext) => Promise<boolean>
   ): Promise<boolean> {
-    if (context.activity.type === ActivityTypes.Message && this._options.longRunningMessages) {
-      return new Promise<boolean>((resolve, reject) => {
-        this.continueConversationAsync(context.identity, context, async (ctx) => {
-          try {
-            for (const key in context.activity) {
-              (ctx.activity as any)[key] = (context.activity as any)[key]
-            }
-
-            const result = await handler(ctx)
-            resolve(result)
-          } catch (err: any) {
-            logger.error(err)
-            reject(err)
+    return new Promise<boolean>((resolve, reject) => {
+      const activity = Activity.fromObject(context.activity)
+      this.continueConversationAsync(context.identity, activity.getConversationReference(), async (ctx) => {
+        try {
+          for (const key in activity) {
+            ctx.activity[key] = activity[key]
           }
-        })
+
+          const result = await handler(ctx)
+          resolve(result)
+        } catch (err: any) {
+          logger.error(err)
+          reject(err)
+        }
       })
-    } else {
-      return handler(context)
-    }
+    })
   }
 
   /**

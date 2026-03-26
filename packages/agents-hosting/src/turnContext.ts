@@ -330,7 +330,11 @@ export class TurnContext {
    * @protected
    */
   protected copyTo (context: TurnContext): void {
-    ['_adapter', '_activity', '_respondedRef', '_services', '_onSendActivities', '_onUpdateActivity', '_onDeleteActivity'].forEach((prop: string) => ((context as any)[prop] = (this as any)[prop]))
+    // Ignore streamingResponse since it has a reference to the previous context.
+    const copyableProperties = Object.keys(this).filter((prop) => prop !== '_streamingResponse')
+    for (const prop of copyableProperties) {
+      ;(context as any)[prop] = (this as any)[prop]
+    }
   }
 
   /**
