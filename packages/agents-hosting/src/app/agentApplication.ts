@@ -922,11 +922,11 @@ export class AgentApplication<TState extends TurnState> {
   }
 
   /**
-   * Starts a long-running call, potentially in a new conversation context.
+   * Starts a long-running call by continuing the conversation asynchronously (fire-and-forget).
+   * The current request/response cycle is not blocked; errors are forwarded to the adapter's error handler.
    *
    * @param context - The turn context for the current conversation.
-   * @param handler - The handler function to execute.
-   * @returns A promise that resolves to the result of the handler.
+   * @param handler - The handler function to execute in the continued conversation.
    */
   protected startLongRunningCall (
     context: TurnContext,
@@ -944,6 +944,8 @@ export class AgentApplication<TState extends TurnState> {
           throw err
         }
       }
+    }).catch(err => {
+      logger.error('Unhandled error in long-running call:', err)
     })
   }
 

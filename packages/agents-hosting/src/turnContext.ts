@@ -330,7 +330,8 @@ export class TurnContext {
    * @protected
    */
   protected copyTo (context: TurnContext): void {
-    // Ignore streamingResponse since it has a reference to the previous context.
+    // Skip _streamingResponse: it holds a reference to the HTTP response of the original request.
+    // Copying it to a cloned context would cause the clone to write to an already-completed response.
     const copyableProperties = Object.keys(this).filter((prop) => prop !== '_streamingResponse')
     for (const prop of copyableProperties) {
       ;(context as any)[prop] = (this as any)[prop]
