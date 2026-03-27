@@ -29,23 +29,17 @@ export function traceFactory (otel: OTel) {
           span.setStatus({ code: otel.SpanStatusCode.OK })
         },
         catch (error) {
-          let type
           let message
 
           if (error instanceof Error) {
-            type = error.name
             message = error.message
             span.recordException(error)
           } else {
-            type = typeof error
             message = String(error)
+            span.recordException({ name: String(typeof error), message })
           }
 
           span.setStatus({ code: otel.SpanStatusCode.ERROR, message })
-          span.addEvent(`${name}_failed`, {
-            'error.type': type,
-            'error.message': message
-          })
           throw error
         },
         finally () {
