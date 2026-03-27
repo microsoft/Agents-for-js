@@ -9,7 +9,7 @@
   ],
   "compilerOptions": {
     "outDir": "dist/cjs",
-    "rootDirs": [ "src/", "test/"],
+    "rootDirs": [ "src/" ],
     "paths": {
       "@microsoft/*": ["./packages/*"]
     }
