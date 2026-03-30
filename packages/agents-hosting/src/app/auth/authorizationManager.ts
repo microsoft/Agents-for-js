@@ -29,6 +29,10 @@ interface AuthorizationManagerProcessResult {
    * Indicates whether the authorization was successful.
    */
   authorized: boolean;
+  /**
+   * The context associated with the authorization process.
+   */
+  context: TurnContext;
 }
 
 /**
@@ -111,13 +115,16 @@ export class AuthorizationManager {
     if (active !== undefined && active?.data.activity.conversation?.id !== context.activity.conversation?.id) {
       logger.warn('Discarding the active session due to the conversation has changed during an active sign-in process', active?.data.activity)
       await storage.delete()
-      return { authorized: true }
+      return { authorized: true, context }
     }
 
     const handlers = active?.handlers ?? this.mapHandlers(await getHandlerIds(context.activity) ?? []) ?? []
 
+    // Create a shallow copy to modify the activity, since the signin process depends on it and we want to ensure the next handler depends on the initial activity, not the modified one.
+    const sharedContext = new TurnContext(context)
+
     for (const handler of handlers) {
-      const status = await this.signin(storage, handler, context, active?.data)
+      const status = await this.signin(storage, handler, sharedContext, active?.data)
       logger.debug(this.prefix(handler.id, `Sign-in status: ${status}`))
 
       if (status === AuthorizationHandlerStatus.IGNORED) {
@@ -126,17 +133,17 @@ export class AuthorizationManager {
       }
 
       if (status === AuthorizationHandlerStatus.PENDING) {
-        return { authorized: false }
+        return { authorized: false, context: sharedContext }
       }
 
       if (status === AuthorizationHandlerStatus.REJECTED) {
         await storage.delete()
-        return { authorized: false }
+        return { authorized: false, context: sharedContext }
       }
 
       if (status === AuthorizationHandlerStatus.REVALIDATE) {
         await storage.delete()
-        return this.process(context, getHandlerIds)
+        return this.process(sharedContext, getHandlerIds)
       }
 
       if (status !== AuthorizationHandlerStatus.APPROVED) {
@@ -146,14 +153,12 @@ export class AuthorizationManager {
       await storage.delete()
 
       if (active) {
-        // Restore the original activity in the turn context for the next handler to process.
-        // This is done like this to avoid losing data that may be set in the turn context.
-        (context as any)._activity = Activity.fromObject(active.data.activity)
+        (sharedContext as any)._activity = Activity.fromObject(active.data.activity)
         active = undefined
       }
     }
 
-    return { authorized: true }
+    return { authorized: true, context: sharedContext }
   }
 
   /**
