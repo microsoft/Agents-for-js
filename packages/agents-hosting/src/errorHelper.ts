@@ -669,7 +669,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   ProactivePropertyUnavailable: {
     code: -120740,
-    description: "The Application.proactive property is unavailable because no storage was configured. Set options.storage or options.proactive.storage."
+    description: 'The Application.proactive property is unavailable because no storage was configured. Set options.storage or options.proactive.storage.'
   },
 
   /**
