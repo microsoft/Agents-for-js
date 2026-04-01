@@ -1,7 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import type { ConversationReference } from '@microsoft/agents-activity'
+import type { ChannelAccount, ConversationReference } from '@microsoft/agents-activity'
+import { Channels, RoleTypes } from '@microsoft/agents-activity'
 
 /**
  * Well-known Teams service URLs for proactive messaging.
@@ -20,32 +21,28 @@ export const TeamsServiceEndpoints = {
   dod: 'https://smba.infra.dod.teams.microsoft.us/teams',
 } as const
 
-const CHANNEL_SERVICE_URLS: Record<string, string> = {
-  msteams: TeamsServiceEndpoints.publicGlobal,
-  webchat: 'https://webchat.botframework.com/',
-  directline: 'https://directline.botframework.com/',
-}
-
 /**
  * Fluent builder for `ConversationReference`.
  */
 export class ConversationReferenceBuilder {
-  private readonly _agentClientId: string
   private readonly _channelId: string
-  private readonly _serviceUrl: string
-  private _userId?: string
-  private _userName?: string
+  private _serviceUrl: string
+  private _agent: ChannelAccount
+  private _user?: ChannelAccount
   private _conversationId?: string
+  private _activityId?: string
+  private _locale?: string
 
-  private constructor (agentClientId: string, channelId: string, serviceUrl?: string) {
-    this._agentClientId = agentClientId
+  private constructor (channelId: string, serviceUrl: string, agent: ChannelAccount) {
     this._channelId = channelId
-    this._serviceUrl = serviceUrl ?? ''
+    this._serviceUrl = serviceUrl
+    this._agent = agent
   }
 
   /**
-   * Creates a new builder.
-   * @param agentClientId The agent's client (app) ID — set as `agent.id`.
+   * Creates a new builder seeded with the agent identity and channel.
+   * On Teams, the agent id is prefixed with `28:` automatically.
+   * @param agentClientId The agent's client (app) ID.
    * @param channelId The target channel (e.g. `'msteams'`, `'webchat'`).
    * @param serviceUrl Optional override. If omitted, `build()` fills in the
    *   channel default via `serviceUrlForChannel()`.
@@ -55,26 +52,67 @@ export class ConversationReferenceBuilder {
     channelId: string,
     serviceUrl?: string
   ): ConversationReferenceBuilder {
-    return new ConversationReferenceBuilder(agentClientId, channelId, serviceUrl)
+    return new ConversationReferenceBuilder(
+      channelId,
+      serviceUrl ?? '',
+      ConversationReferenceBuilder.agentForChannel(channelId, agentClientId)
+    )
   }
 
   /**
-   * Returns the default service URL for a known channel, or empty string if unknown.
+   * Returns the default service URL for a channel.
+   * Teams returns the public global endpoint; all other channels use the
+   * `https://{channelId}.botframework.com/` pattern (matching C# behavior).
    */
   static serviceUrlForChannel (channelId: string): string {
-    return CHANNEL_SERVICE_URLS[channelId] ?? ''
+    if (!channelId) return ''
+    if (channelId === Channels.Msteams) return TeamsServiceEndpoints.publicGlobal
+    return `https://${channelId}.botframework.com/`
   }
 
-  /** Sets `reference.user`. */
-  withUser (userId: string, userName?: string): this {
-    this._userId = userId
-    this._userName = userName
+  /** Sets `reference.user` from an id + optional name. Role defaults to `RoleTypes.User`. */
+  withUser (userId: string, userName?: string): this
+  /** Sets `reference.user` from a full `ChannelAccount`. */
+  withUser (account: ChannelAccount): this
+  withUser (userIdOrAccount: string | ChannelAccount, userName?: string): this {
+    this._user = typeof userIdOrAccount === 'string'
+      ? { id: userIdOrAccount, name: userName, role: RoleTypes.User }
+      : userIdOrAccount
+    return this
+  }
+
+  /** Sets `reference.agent` from an id + optional name. Role defaults to `RoleTypes.Agent`. On Teams, id is prefixed with `28:`. */
+  withAgent (agentClientId: string, agentName?: string): this
+  /** Sets `reference.agent` from a full `ChannelAccount`. */
+  withAgent (account: ChannelAccount): this
+  withAgent (agentIdOrAccount: string | ChannelAccount, agentName?: string): this {
+    this._agent = typeof agentIdOrAccount === 'string'
+      ? ConversationReferenceBuilder.agentForChannel(this._channelId, agentIdOrAccount, agentName)
+      : agentIdOrAccount
+    return this
+  }
+
+  /** Sets `reference.serviceUrl`. */
+  withServiceUrl (serviceUrl: string): this {
+    this._serviceUrl = serviceUrl
     return this
   }
 
   /** Sets `reference.conversation.id`. */
   withConversationId (id: string): this {
     this._conversationId = id
+    return this
+  }
+
+  /** Sets `reference.activityId`. */
+  withActivityId (activityId: string): this {
+    this._activityId = activityId
+    return this
+  }
+
+  /** Sets `reference.locale`. */
+  withLocale (locale: string): this {
+    this._locale = locale
     return this
   }
 
@@ -87,13 +125,25 @@ export class ConversationReferenceBuilder {
       channelId: this._channelId,
       serviceUrl,
       conversation: { id: this._conversationId ?? '', isGroup: false },
-      agent: { id: this._agentClientId },
+      agent: this._agent,
+      user: this._user ?? { role: RoleTypes.User },
     }
 
-    if (this._userId !== undefined) {
-      ref.user = { id: this._userId, name: this._userName }
-    }
+    if (this._activityId !== undefined) ref.activityId = this._activityId
+    if (this._locale !== undefined) ref.locale = this._locale
 
     return ref
+  }
+
+  /**
+   * Builds a `ChannelAccount` for the agent, applying the Teams `28:` id prefix
+   * when the channel is `msteams`.
+   */
+  private static agentForChannel (channelId: string, agentClientId: string, agentName?: string): ChannelAccount {
+    return {
+      id: channelId === Channels.Msteams ? `28:${agentClientId}` : agentClientId,
+      name: agentName,
+      role: RoleTypes.Agent,
+    }
   }
 }

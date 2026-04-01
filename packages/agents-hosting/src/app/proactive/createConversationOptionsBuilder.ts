@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 import type { Activity, ChannelAccount, ConversationParameters } from '@microsoft/agents-activity'
+import { Channels } from '@microsoft/agents-activity'
 import { AzureBotScope, type CreateConversationOptions } from './createConversationOptions'
 import type { ConversationClaims } from './conversation'
 import { ConversationReferenceBuilder } from './conversationReferenceBuilder'
@@ -91,7 +92,7 @@ export class CreateConversationOptionsBuilder {
    */
   withTenantId (tenantId: string): this {
     this._parameters = { ...this._parameters, tenantId }
-    if (this._channelId === 'msteams') {
+    if (this._channelId === Channels.Msteams) {
       this.withChannelData({ tenant: { id: tenantId } })
     }
     return this
@@ -102,7 +103,7 @@ export class CreateConversationOptionsBuilder {
    * Only has effect on `msteams` channels.
    */
   withTeamsChannelId (teamsChannelId: string): this {
-    if (this._channelId !== 'msteams') return this
+    if (this._channelId !== Channels.Msteams) return this
     this._parameters = { ...this._parameters, isGroup: true }
     this.withChannelData({ channel: { id: teamsChannelId } })
     return this

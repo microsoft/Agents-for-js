@@ -101,9 +101,9 @@ describe('ConversationBuilder', () => {
       )
     })
 
-    it('throws if serviceUrl cannot be resolved', () => {
+    it('throws if serviceUrl cannot be resolved (empty channelId)', () => {
       assert.throws(
-        () => ConversationBuilder.create('client-id', 'unknown-channel').withConversationId('c1').build(),
+        () => ConversationBuilder.create('client-id', '').withConversationId('c1').build(),
         /serviceUrl/
       )
     })
