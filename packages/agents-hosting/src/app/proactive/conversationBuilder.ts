@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import type { ConversationAccount, ConversationReference } from '@microsoft/agents-activity'
+import type { ChannelAccount, ConversationAccount, ConversationReference } from '@microsoft/agents-activity'
 import type { TurnContext } from '../../turnContext'
 import { Conversation, type ConversationClaims } from './conversation'
 import { ConversationReferenceBuilder } from './conversationReferenceBuilder'
@@ -56,7 +56,7 @@ export class ConversationBuilder {
   ): ConversationBuilder {
     const claims: ConversationClaims = { aud: agentClientId }
     if (requestorId) claims.appid = requestorId
-    return new ConversationBuilder(agentClientId, channelId, serviceUrl ?? '', claims, {})
+    return new ConversationBuilder(agentClientId, channelId, serviceUrl ?? '', claims, ConversationReferenceBuilder.create(agentClientId, channelId, serviceUrl).build())
   }
 
   /**
@@ -82,16 +82,15 @@ export class ConversationBuilder {
 
   /** Sets `reference.user`. */
   withUser (userId: string, userName?: string): this {
-    this._reference = { ...this._reference, user: { id: userId, name: userName } }
+    const user: ChannelAccount = { id: userId, name: userName }
+    this._reference = { ...this._reference, user }
     return this
   }
 
   /** Sets `reference.conversation.id`. */
   withConversationId (id: string): this {
-    this._reference = {
-      ...this._reference,
-      conversation: { ...(this._reference.conversation ?? { isGroup: false }), id }
-    }
+    const conversation: ConversationAccount = { ...(this._reference.conversation ?? { isGroup: false }), id }
+    this._reference = { ...this._reference, conversation }
     return this
   }
 
