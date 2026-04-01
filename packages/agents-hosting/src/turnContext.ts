@@ -330,7 +330,12 @@ export class TurnContext {
    * @protected
    */
   protected copyTo (context: TurnContext): void {
-    ['_adapter', '_activity', '_respondedRef', '_services', '_onSendActivities', '_onUpdateActivity', '_onDeleteActivity'].forEach((prop: string) => ((context as any)[prop] = (this as any)[prop]))
+    // Skip _streamingResponse: it holds a reference to the HTTP response of the original request.
+    // Copying it to a cloned context would cause the clone to write to an already-completed response.
+    const copyableProperties = Object.keys(this).filter((prop) => prop !== '_streamingResponse')
+    for (const prop of copyableProperties) {
+      ;(context as any)[prop] = (this as any)[prop]
+    }
   }
 
   /**
