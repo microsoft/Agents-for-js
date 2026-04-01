@@ -12,6 +12,7 @@ import {
   TurnContext,
   TurnState,
   CreateConversationOptionsBuilder,
+  Proactive,
 } from '@microsoft/agents-hosting'
 import type { JwtPayload } from 'jsonwebtoken'
 
@@ -142,7 +143,7 @@ server.post('/api/proactive/continue/:conversationId', requireAllowedCaller, asy
       // pattern from the C# spec).
       {
         value: req.body ?? {},
-        valueType: 'application/vnd.microsoft.activity.continueconversation+json',
+        valueType: Proactive.ContinueConversationValueType,
       }
     )
     res.status(200).json({ status: 'ok', conversationId })
