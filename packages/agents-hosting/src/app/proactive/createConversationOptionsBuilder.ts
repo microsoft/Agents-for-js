@@ -2,7 +2,8 @@
 // Licensed under the MIT License.
 
 import type { Activity, ChannelAccount, ConversationParameters } from '@microsoft/agents-activity'
-import { Channels, RoleTypes } from '@microsoft/agents-activity'
+import { Channels, ExceptionHelper, RoleTypes } from '@microsoft/agents-activity'
+import { Errors } from '../../errorHelper'
 import { AzureBotScope, type CreateConversationOptions } from './createConversationOptions'
 import type { ConversationClaims } from './conversation'
 import { ConversationReferenceBuilder } from './conversationReferenceBuilder'
@@ -157,9 +158,7 @@ export class CreateConversationOptionsBuilder {
    */
   build (): CreateConversationOptions {
     if (!this._parameters.members?.length) {
-      throw new Error(
-        'CreateConversationOptionsBuilder: at least one members entry must be added via withUser().'
-      )
+      throw ExceptionHelper.generateException(Error, Errors.CreateConversationBuilderMembersRequired)
     }
 
     const activity: Partial<Activity> = {

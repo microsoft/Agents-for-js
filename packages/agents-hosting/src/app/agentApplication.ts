@@ -22,6 +22,8 @@ import { CloudAdapter } from '../cloudAdapter'
 import { Authorization, UserAuthorization, AuthorizationManager } from './auth'
 import { Proactive } from './proactive'
 import { JwtPayload } from 'jsonwebtoken'
+import { ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from '../errorHelper'
 
 const logger = debug('agents:app')
 
@@ -175,10 +177,7 @@ export class AgentApplication<TState extends TurnState> {
    */
   public get proactive (): Proactive<TState> {
     if (!this._proactive) {
-      throw new Error(
-        'The Application.proactive property is unavailable because no storage was configured. ' +
-        'Set options.storage or options.proactive.storage.'
-      )
+      throw ExceptionHelper.generateException(Error, Errors.ProactivePropertyUnavailable)
     }
     return this._proactive
   }

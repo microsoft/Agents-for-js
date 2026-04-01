@@ -3,7 +3,9 @@
 
 import type { JwtPayload } from 'jsonwebtoken'
 import type { ConversationReference } from '@microsoft/agents-activity'
+import { ExceptionHelper } from '@microsoft/agents-activity'
 import type { TurnContext } from '../../turnContext'
+import { Errors } from '../../errorHelper'
 
 /**
  * JWT-like claims identifying the agent for proactive authentication.
@@ -73,13 +75,13 @@ export class Conversation {
    */
   validate (): void {
     if (!this.reference.conversation?.id) {
-      throw new Error('Conversation is invalid: reference.conversation.id is required.')
+      throw ExceptionHelper.generateException(Error, Errors.ConversationInvalidId)
     }
     if (!this.reference.serviceUrl) {
-      throw new Error('Conversation is invalid: reference.serviceUrl is required.')
+      throw ExceptionHelper.generateException(Error, Errors.ConversationInvalidServiceUrl)
     }
     if (!this.claims.aud) {
-      throw new Error('Conversation is invalid: claims.aud (agent client ID) is required.')
+      throw ExceptionHelper.generateException(Error, Errors.ConversationInvalidAud)
     }
   }
 }
