@@ -133,7 +133,7 @@ export class ConversationBuilder {
       serviceUrl,
     }
 
-    const conv = new Conversation(reference, this._claims)
+    const conv = new Conversation(this._claims, reference)
     conv.validate()
     return conv
   }

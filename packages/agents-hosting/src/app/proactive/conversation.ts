@@ -30,14 +30,14 @@ export class Conversation {
   claims: ConversationClaims
 
   constructor (context: TurnContext)
-  constructor (reference: ConversationReference, claims: ConversationClaims)
+  constructor (claims: ConversationClaims, reference: ConversationReference)
   constructor (
-    contextOrReference: TurnContext | ConversationReference,
-    claims?: ConversationClaims
+    contextOrClaims: TurnContext | ConversationClaims,
+    reference?: ConversationReference
   ) {
-    if ('activity' in contextOrReference) {
+    if ('activity' in contextOrClaims) {
       // TurnContext overload
-      const context = contextOrReference as TurnContext
+      const context = contextOrClaims as TurnContext
       this.reference = context.activity.getConversationReference()
       const id = context.identity as JwtPayload | undefined
       this.claims = {
@@ -45,9 +45,9 @@ export class Conversation {
         aud: Array.isArray(id?.aud) ? (id.aud as string[])[0] : (id?.aud ?? '')
       } as ConversationClaims
     } else {
-      // (reference, claims) overload
-      this.reference = contextOrReference as ConversationReference
-      this.claims = claims!
+      // (claims, reference) overload — matches C# parameter order
+      this.claims = contextOrClaims as ConversationClaims
+      this.reference = reference!
     }
   }
 

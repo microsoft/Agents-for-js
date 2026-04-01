@@ -68,11 +68,11 @@ describe('Conversation', () => {
     })
   })
 
-  describe('constructor from (reference, claims)', () => {
+  describe('constructor from (claims, reference)', () => {
     it('stores reference and claims', () => {
       const ref = makeReference()
       const claims = makeClaims()
-      const conv = new Conversation(ref, claims)
+      const conv = new Conversation(claims, ref)
       assert.deepEqual(conv.reference, ref)
       assert.deepEqual(conv.claims, claims)
     })
@@ -80,12 +80,12 @@ describe('Conversation', () => {
 
   describe('identity getter', () => {
     it('returns object with aud from claims', () => {
-      const conv = new Conversation(makeReference(), makeClaims())
+      const conv = new Conversation(makeClaims(), makeReference())
       assert.equal(conv.identity.aud, 'bot-app-id')
     })
 
     it('returns object with tid from claims', () => {
-      const conv = new Conversation(makeReference(), makeClaims())
+      const conv = new Conversation(makeClaims(), makeReference())
       assert.equal((conv.identity as any).tid, 'tenant-1')
     })
   })
@@ -94,33 +94,33 @@ describe('Conversation', () => {
     it('throws if reference.conversation.id is missing', () => {
       const ref = makeReference()
       ref.conversation.id = ''
-      const conv = new Conversation(ref, makeClaims())
+      const conv = new Conversation(makeClaims(), ref)
       assert.throws(() => conv.validate(), /conversation\.id/)
     })
 
     it('throws if reference.serviceUrl is missing', () => {
       const ref = makeReference()
       ref.serviceUrl = ''
-      const conv = new Conversation(ref, makeClaims())
+      const conv = new Conversation(makeClaims(), ref)
       assert.throws(() => conv.validate(), /serviceUrl/)
     })
 
     it('throws if claims.aud is missing', () => {
       const ref = makeReference()
       const claims = { ...makeClaims(), aud: '' }
-      const conv = new Conversation(ref, claims)
+      const conv = new Conversation(claims, ref)
       assert.throws(() => conv.validate(), /aud/)
     })
 
     it('passes when all required fields are present', () => {
-      const conv = new Conversation(makeReference(), makeClaims())
+      const conv = new Conversation(makeClaims(), makeReference())
       assert.doesNotThrow(() => conv.validate())
     })
   })
 
   describe('JSON roundtrip', () => {
     it('reconstructs reference and claims after JSON.stringify/parse', () => {
-      const conv = new Conversation(makeReference(), makeClaims())
+      const conv = new Conversation(makeClaims(), makeReference())
       const parsed = JSON.parse(JSON.stringify(conv))
       assert.deepEqual(parsed.reference, conv.reference)
       assert.deepEqual(parsed.claims, conv.claims)
@@ -129,14 +129,14 @@ describe('Conversation', () => {
 
   describe('toJson()', () => {
     it('returns a string that round-trips to reference and claims', () => {
-      const conv = new Conversation(makeReference(), makeClaims())
+      const conv = new Conversation(makeClaims(), makeReference())
       const parsed = JSON.parse(conv.toJson())
       assert.deepEqual(parsed.reference, conv.reference)
       assert.deepEqual(parsed.claims, conv.claims)
     })
 
     it('does not include the identity getter in output', () => {
-      const conv = new Conversation(makeReference(), makeClaims())
+      const conv = new Conversation(makeClaims(), makeReference())
       const parsed = JSON.parse(conv.toJson())
       assert.equal(parsed.identity, undefined)
     })

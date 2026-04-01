@@ -19,14 +19,14 @@ import { Proactive } from '../../../../src/app/proactive/proactive'
 
 const makeConversation = (): Conversation =>
   new Conversation(
+    { aud: 'bot-app-id' },
     {
       conversation: { id: 'conv-1', isGroup: false },
       serviceUrl: 'https://example.com',
       channelId: 'webchat',
       user: { id: 'user-1', name: 'User' },
       agent: { id: 'bot-1', name: 'Bot' }
-    },
-    { aud: 'bot-app-id' }
+    }
   )
 
 const makeTurnContext = (adapter: TestAdapter): TurnContext => {
@@ -88,24 +88,24 @@ describe('Proactive', () => {
 
     it('throws when conversation.id is empty', async () => {
       const conv = new Conversation(
-        { conversation: { id: '', isGroup: false }, serviceUrl: 'https://example.com', channelId: 'webchat', user: { id: 'u1' }, agent: { id: 'b1' } },
-        { aud: 'bot-app-id' }
+        { aud: 'bot-app-id' },
+        { conversation: { id: '', isGroup: false }, serviceUrl: 'https://example.com', channelId: 'webchat', user: { id: 'u1' }, agent: { id: 'b1' } }
       )
       await assert.rejects(() => proactive.storeConversation(conv), /conversation\.id/)
     })
 
     it('throws when serviceUrl is empty', async () => {
       const conv = new Conversation(
-        { conversation: { id: 'conv-1', isGroup: false }, serviceUrl: '', channelId: 'webchat', user: { id: 'u1' }, agent: { id: 'b1' } },
-        { aud: 'bot-app-id' }
+        { aud: 'bot-app-id' },
+        { conversation: { id: 'conv-1', isGroup: false }, serviceUrl: '', channelId: 'webchat', user: { id: 'u1' }, agent: { id: 'b1' } }
       )
       await assert.rejects(() => proactive.storeConversation(conv), /serviceUrl/)
     })
 
     it('throws when claims.aud is empty', async () => {
       const conv = new Conversation(
-        { conversation: { id: 'conv-1', isGroup: false }, serviceUrl: 'https://example.com', channelId: 'webchat', user: { id: 'u1' }, agent: { id: 'b1' } },
-        { aud: '' }
+        { aud: '' },
+        { conversation: { id: 'conv-1', isGroup: false }, serviceUrl: 'https://example.com', channelId: 'webchat', user: { id: 'u1' }, agent: { id: 'b1' } }
       )
       await assert.rejects(() => proactive.storeConversation(conv), /aud/)
     })

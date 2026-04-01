@@ -94,7 +94,7 @@ export class Proactive<TState extends TurnState> {
     const result = await this._storage.read([`${STORAGE_KEY_PREFIX}${conversationId}`])
     const stored = result[`${STORAGE_KEY_PREFIX}${conversationId}`] as { reference: any; claims: any } | undefined
     if (!stored) return undefined
-    return new Conversation(stored.reference, stored.claims)
+    return new Conversation(stored.claims, stored.reference)
   }
 
   /**
@@ -244,7 +244,7 @@ export class Proactive<TState extends TurnState> {
       createOptions.scope,
       createOptions.parameters,
       async (ctx: TurnContext) => {
-        const conv = new Conversation(ctx.activity.getConversationReference(), createOptions.identity)
+        const conv = new Conversation(createOptions.identity, ctx.activity.getConversationReference())
         capturedConv = conv
 
         if (createOptions.storeConversation) {
