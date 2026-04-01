@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import type { Activity, ConversationParameters } from '@microsoft/agents-activity'
+import type { Activity, ChannelAccount, ConversationParameters } from '@microsoft/agents-activity'
 import { AzureBotScope, type CreateConversationOptions } from './createConversationOptions'
 import type { ConversationClaims } from './conversation'
 import { ConversationReferenceBuilder } from './conversationReferenceBuilder'
@@ -57,9 +57,15 @@ export class CreateConversationOptionsBuilder {
   }
 
   /** Adds a member (the target user) to `parameters.members`. */
-  withUser (userId: string, userName?: string): this {
+  withUser (userId: string, userName?: string): this
+  withUser (account: ChannelAccount): this
+  withUser (userIdOrAccount: string | ChannelAccount, userName?: string): this {
+    const account: ChannelAccount =
+      typeof userIdOrAccount === 'string'
+        ? { id: userIdOrAccount, name: userName }
+        : userIdOrAccount
     const members = this._parameters.members ?? []
-    members.push({ id: userId, name: userName } as any)
+    members.push(account)
     this._parameters = { ...this._parameters, members }
     return this
   }

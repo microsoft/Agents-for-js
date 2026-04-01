@@ -68,12 +68,12 @@ describe('Proactive', () => {
   // -------------------------------------------------------------------------
 
   describe('storeConversation(context)', () => {
-    it('writes with key conversationreferences/{conversationId} and returns the id', async () => {
+    it('writes with key proactive/conversations/{conversationId} and returns the id', async () => {
       const ctx = makeTurnContext(adapter)
       const id = await proactive.storeConversation(ctx)
       assert.equal(id, 'conv-1')
-      const stored = await storage.read(['conversationreferences/conv-1'])
-      assert.ok(stored['conversationreferences/conv-1'])
+      const stored = await storage.read(['proactive/conversations/conv-1'])
+      assert.ok(stored['proactive/conversations/conv-1'])
     })
   })
 
@@ -82,8 +82,8 @@ describe('Proactive', () => {
       const conv = makeConversation()
       const id = await proactive.storeConversation(conv)
       assert.equal(id, 'conv-1')
-      const stored = await storage.read(['conversationreferences/conv-1'])
-      assert.ok(stored['conversationreferences/conv-1'])
+      const stored = await storage.read(['proactive/conversations/conv-1'])
+      assert.ok(stored['proactive/conversations/conv-1'])
     })
 
     it('throws when conversation.id is empty', async () => {

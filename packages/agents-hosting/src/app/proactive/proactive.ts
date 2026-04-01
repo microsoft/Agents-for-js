@@ -16,7 +16,7 @@ import { Conversation } from './conversation'
 
 const logger = debug('agents:proactive')
 
-const STORAGE_KEY_PREFIX = 'conversationreferences/'
+const STORAGE_KEY_PREFIX = 'proactive/conversations/'
 
 /** Options for `continueConversation()`. */
 export interface ContinueConversationOptions {
@@ -33,6 +33,12 @@ export interface ContinueConversationOptions {
  * `continueConversation`, mirroring the C# `Proactive` class from PR #694.
  */
 export class Proactive<TState extends TurnState> {
+  /**
+   * `activity.valueType` that indicates additional key/values for the ContinueConversation event.
+   * Mirrors `Proactive.ContinueConversationValueType` in C#.
+   */
+  static readonly ContinueConversationValueType = 'application/vnd.microsoft.activity.continueconversation+json'
+
   private readonly _app: AgentApplication<TState>
   private readonly _options: ProactiveOptions
   private readonly _storage: Storage

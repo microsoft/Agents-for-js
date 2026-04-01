@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import type { ConversationReference } from '@microsoft/agents-activity'
+import type { ConversationAccount, ConversationReference } from '@microsoft/agents-activity'
 import type { TurnContext } from '../../turnContext'
 import { Conversation, type ConversationClaims } from './conversation'
 import { ConversationReferenceBuilder } from './conversationReferenceBuilder'
@@ -45,19 +45,18 @@ export class ConversationBuilder {
 
   /**
    * Creates a new builder for the given agent and channel.
+   * @param requestorId Optional: the client ID of the app making the request.
+   *   Becomes the `appid` claim, used in multi-tenant Azure Bot scenarios.
    */
   static create (
     agentClientId: string,
     channelId: string,
-    serviceUrl?: string
+    serviceUrl?: string,
+    requestorId?: string
   ): ConversationBuilder {
-    return new ConversationBuilder(
-      agentClientId,
-      channelId,
-      serviceUrl ?? '',
-      { aud: agentClientId },
-      {}
-    )
+    const claims: ConversationClaims = { aud: agentClientId }
+    if (requestorId) claims.appid = requestorId
+    return new ConversationBuilder(agentClientId, channelId, serviceUrl ?? '', claims, {})
   }
 
   /**
@@ -93,6 +92,18 @@ export class ConversationBuilder {
       ...this._reference,
       conversation: { ...(this._reference.conversation ?? { isGroup: false }), id }
     }
+    return this
+  }
+
+  /** Sets `reference.conversation` from a full `ConversationAccount`. */
+  withConversation (account: ConversationAccount): this {
+    this._reference = { ...this._reference, conversation: account }
+    return this
+  }
+
+  /** Sets `reference.activityId`. */
+  withActivityId (activityId: string): this {
+    this._reference = { ...this._reference, activityId }
     return this
   }
 
