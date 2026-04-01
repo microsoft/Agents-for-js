@@ -341,9 +341,9 @@ describe('Proactive', () => {
   // -------------------------------------------------------------------------
 
   describe('AgentApplication.proactive getter', () => {
-    it('throws when options.proactive was not set', () => {
-      const appNoProactive = new AgentApplication({ storage })
-      assert.throws(() => appNoProactive.proactive, /proactive/)
+    it('returns a Proactive instance even when proactive options were not explicitly set', () => {
+      const appStorageOnly = new AgentApplication({ storage })
+      assert.ok(appStorageOnly.proactive instanceof Proactive)
     })
 
     it('returns the Proactive instance when configured', () => {
@@ -356,11 +356,19 @@ describe('Proactive', () => {
       assert.ok(appWithFallback.proactive instanceof Proactive)
     })
 
-    it('throws at construction when neither proactive.storage nor options.storage is set', () => {
-      assert.throws(
-        () => new AgentApplication({ proactive: {} }),
-        /storage/
-      )
+    it('constructs successfully with proactive: {} and storage operations throw but sendActivity still works', async () => {
+      const appNoStorage = new AgentApplication({ proactive: {} })
+      assert.ok(appNoStorage.proactive instanceof Proactive)
+      // Storage-backed operations throw when no storage is configured
+      const conv = makeConversation()
+      await assert.rejects(() => appNoStorage.proactive.storeConversation(conv), /storage/)
+      // But sendActivity with a Conversation object requires no storage
+      await appNoStorage.proactive.sendActivity(adapter, conv, { text: 'hi' })
+    })
+
+    it('throws on .proactive access when no storage was configured at all', () => {
+      const appNoStorage = new AgentApplication({})
+      assert.throws(() => appNoStorage.proactive, /storage/)
     })
   })
 })

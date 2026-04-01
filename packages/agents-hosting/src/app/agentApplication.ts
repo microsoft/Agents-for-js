@@ -132,8 +132,12 @@ export class AgentApplication<TState extends TurnState> {
       this._authorization = new UserAuthorization(this._authorizationManager)
     }
 
-    if (this._options.proactive) {
-      this._proactive = new Proactive<TState>(this, this._options.proactive)
+    // Create Proactive whenever proactive options are explicitly configured or a storage
+    // backend is available — no explicit `proactive` option is required.
+    if (this._options.proactive !== undefined || this._options.storage !== undefined) {
+      const proactiveOpts = this._options.proactive ?? {}
+      const proactiveStorage = proactiveOpts.storage ?? this._options.storage
+      this._proactive = new Proactive<TState>(this, { ...proactiveOpts, storage: proactiveStorage })
     }
 
     if (this._options.longRunningMessages && !this._adapter && !this._options.agentAppId) {
@@ -166,12 +170,14 @@ export class AgentApplication<TState extends TurnState> {
   /**
    * Gets the proactive messaging subsystem.
    *
-   * @throws Error if no proactive options were configured.
+   * @throws Error if no storage backend was configured (neither `options.storage` nor
+   *   `options.proactive.storage`).
    */
   public get proactive (): Proactive<TState> {
     if (!this._proactive) {
       throw new Error(
-        'The Application.proactive property is unavailable because no proactive options were configured.'
+        'The Application.proactive property is unavailable because no storage was configured. ' +
+        'Set options.storage or options.proactive.storage.'
       )
     }
     return this._proactive

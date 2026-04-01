@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 import type { Activity } from '@microsoft/agents-activity'
-import { debug } from '@microsoft/agents-activity/logger'
 import type { ResourceResponse } from '../../connector-client'
 import type { BaseAdapter } from '../../baseAdapter'
 import type { TurnContext } from '../../turnContext'
@@ -13,8 +12,6 @@ import type { AgentApplication } from '../agentApplication'
 import type { ProactiveOptions } from './proactiveOptions'
 import type { CreateConversationOptions } from './createConversationOptions'
 import { Conversation } from './conversation'
-
-const logger = debug('agents:proactive')
 
 const STORAGE_KEY_PREFIX = 'proactive/conversations/'
 
@@ -39,26 +36,22 @@ export class Proactive<TState extends TurnState> {
 
   private readonly _app: AgentApplication<TState>
   private readonly _options: ProactiveOptions
-  private readonly _storage: Storage
+  private readonly _storage?: Storage
 
   constructor (app: AgentApplication<TState>, options: ProactiveOptions) {
     this._app = app
     this._options = options
+    this._storage = options.storage
+  }
 
-    if (options.storage) {
-      this._storage = options.storage
-    } else if (app.options.storage) {
-      logger.warn(
-        'proactive.storage was not configured; falling back to app.options.storage. ' +
-        'Consider providing a dedicated storage for conversation references.'
-      )
-      this._storage = app.options.storage
-    } else {
+  private requireStorage (): Storage {
+    if (!this._storage) {
       throw new Error(
-        'Proactive subsystem requires a storage backend. ' +
-        'Set proactive.storage or app.options.storage.'
+        'This proactive operation requires a storage backend. ' +
+        'Set options.storage or options.proactive.storage.'
       )
     }
+    return this._storage
   }
 
   // ---------------------------------------------------------------------------
@@ -108,7 +101,7 @@ export class Proactive<TState extends TurnState> {
 
     conv.validate()
     const id = conv.reference.conversation.id
-    await this._storage.write({ [`${STORAGE_KEY_PREFIX}${id}`]: { reference: conv.reference, claims: conv.claims } })
+    await this.requireStorage().write({ [`${STORAGE_KEY_PREFIX}${id}`]: { reference: conv.reference, claims: conv.claims } })
     return id
   }
 
@@ -126,7 +119,7 @@ export class Proactive<TState extends TurnState> {
    * ```
    */
   async getConversation (conversationId: string): Promise<Conversation | undefined> {
-    const result = await this._storage.read([`${STORAGE_KEY_PREFIX}${conversationId}`])
+    const result = await this.requireStorage().read([`${STORAGE_KEY_PREFIX}${conversationId}`])
     const stored = result[`${STORAGE_KEY_PREFIX}${conversationId}`] as { reference: any; claims: any } | undefined
     if (!stored) return undefined
     return new Conversation(stored.claims, stored.reference)
@@ -168,7 +161,7 @@ export class Proactive<TState extends TurnState> {
    * ```
    */
   async deleteConversation (conversationId: string): Promise<void> {
-    await this._storage.delete([`${STORAGE_KEY_PREFIX}${conversationId}`])
+    await this.requireStorage().delete([`${STORAGE_KEY_PREFIX}${conversationId}`])
   }
 
   // ---------------------------------------------------------------------------
