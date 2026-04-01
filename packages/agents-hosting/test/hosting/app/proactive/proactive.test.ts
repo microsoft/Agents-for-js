@@ -289,7 +289,8 @@ describe('Proactive', () => {
         async (ctx) => {
           receivedValue = ctx.activity.value
         },
-        { continuationActivity: { value: { foo: 'bar' } } }
+        undefined,
+        { value: { foo: 'bar' } }
       )
       assert.deepEqual(receivedValue, { foo: 'bar' })
     })
