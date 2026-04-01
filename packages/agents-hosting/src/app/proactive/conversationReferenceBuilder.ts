@@ -3,6 +3,12 @@
 
 import type { ChannelAccount, ConversationReference } from '@microsoft/agents-activity'
 import { Channels, RoleTypes } from '@microsoft/agents-activity'
+import { debug } from '@microsoft/agents-activity/logger'
+
+const logger = debug('agents:conversation-reference-builder')
+
+/** Set of all channel IDs defined in the Channels enum, used for validation. */
+const knownChannelIds = new Set(Object.values(Channels) as string[])
 
 /**
  * Well-known Teams service URLs for proactive messaging.
@@ -67,6 +73,12 @@ export class ConversationReferenceBuilder {
   static serviceUrlForChannel (channelId: string): string {
     if (!channelId) return ''
     if (channelId === Channels.Msteams) return TeamsServiceEndpoints.publicGlobal
+    if (!knownChannelIds.has(channelId)) {
+      logger.warn(
+        `serviceUrlForChannel: unrecognized channelId '${channelId}' — constructing fallback URL ` +
+        'https://<channelId>.botframework.com/. Provide an explicit serviceUrl to suppress this warning.'
+      )
+    }
     return `https://${channelId}.botframework.com/`
   }
 

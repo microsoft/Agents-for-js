@@ -316,22 +316,107 @@ describe('Proactive', () => {
   // -------------------------------------------------------------------------
 
   describe('createConversation()', () => {
+    const makeCreateOpts = (overrides: Partial<{
+      storeConversation: boolean
+      members: Array<{ id: string }>
+    }> = {}) => ({
+      identity: { aud: 'bot-app-id' },
+      channelId: 'msteams',
+      serviceUrl: 'https://smba.trafficmanager.net/teams/',
+      scope: 'https://api.botframework.com',
+      parameters: { members: overrides.members ?? [{ id: 'user-1' }] },
+      storeConversation: overrides.storeConversation,
+    })
+
+    /**
+     * Returns a fake adapter with createConversationAsync that immediately invokes
+     * the logic callback with a synthetic TurnContext, mimicking CloudAdapter behaviour.
+     */
+    const makeCloudAdapter = (conversationId = 'new-conv-1') => ({
+      continueConversation: adapter.continueConversation.bind(adapter),
+      createConversationAsync: async (
+        _appId: string,
+        channelId: string,
+        serviceUrl: string,
+        _scope: string,
+        params: { members?: Array<{ id: string }> },
+        logic: (ctx: TurnContext) => Promise<void>
+      ) => {
+        const act = Activity.fromObject({
+          type: 'event',
+          channelId,
+          serviceUrl,
+          conversation: { id: conversationId, isGroup: false },
+          from: { id: params.members?.[0]?.id ?? 'user-1' },
+          recipient: { id: 'bot-app-id' },
+        })
+        await logic(new TurnContext(adapter, act, { aud: 'bot-app-id' }))
+      },
+    })
+
     it('throws a clear error when adapter does not support createConversationAsync', async () => {
-      const opts = {
-        identity: { aud: 'bot-app-id' },
-        channelId: 'msteams',
-        serviceUrl: 'https://smba.trafficmanager.net/teams/',
-        scope: 'https://api.botframework.com',
-        parameters: { members: [{ id: 'user-1' }] }
-      }
-      // TestAdapter does not have createConversationAsync — expect a helpful error, not a generic TypeError
+      // TestAdapter does not have createConversationAsync — expect a helpful TypeError
       await assert.rejects(
-        () => proactive.createConversation(adapter, opts as any),
+        () => proactive.createConversation(adapter, makeCreateOpts() as any),
         (err: Error) => {
           assert.ok(err instanceof TypeError, 'Expected TypeError')
           assert.match(err.message, /CloudAdapter/)
           return true
         }
+      )
+    })
+
+    it('returns a Conversation with the id from the created conversation', async () => {
+      const cloudAdapter = makeCloudAdapter('new-conv-42')
+      const conv = await proactive.createConversation(cloudAdapter as any, makeCreateOpts() as any)
+      assert.equal(conv.reference.conversation.id, 'new-conv-42')
+      assert.equal(conv.claims.aud, 'bot-app-id')
+    })
+
+    it('invokes the handler with a TurnContext', async () => {
+      const cloudAdapter = makeCloudAdapter()
+      let handlerCalled = false
+      await proactive.createConversation(
+        cloudAdapter as any,
+        makeCreateOpts() as any,
+        async (ctx) => {
+          handlerCalled = true
+          assert.ok(ctx instanceof TurnContext)
+        }
+      )
+      assert.ok(handlerCalled)
+    })
+
+    it('re-throws errors thrown inside the handler', async () => {
+      const cloudAdapter = makeCloudAdapter()
+      await assert.rejects(
+        () => proactive.createConversation(
+          cloudAdapter as any,
+          makeCreateOpts() as any,
+          async () => { throw new Error('handler-error') }
+        ),
+        /handler-error/
+      )
+    })
+
+    it('stores the conversation when storeConversation is true', async () => {
+      const cloudAdapter = makeCloudAdapter('stored-conv-1')
+      await proactive.createConversation(
+        cloudAdapter as any,
+        makeCreateOpts({ storeConversation: true }) as any
+      )
+      const stored = await storage.read(['proactive/conversations/stored-conv-1'])
+      assert.ok(stored['proactive/conversations/stored-conv-1'])
+    })
+
+    it('throws when parameters.members is empty', async () => {
+      const cloudAdapter = makeCloudAdapter()
+      await assert.rejects(
+        () => proactive.createConversation(
+          cloudAdapter as any,
+          makeCreateOpts({ members: [] }) as any
+        ),
+        /members/
       )
     })
   })

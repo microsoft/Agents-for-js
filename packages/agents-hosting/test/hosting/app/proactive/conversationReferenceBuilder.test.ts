@@ -50,7 +50,20 @@ describe('ConversationReferenceBuilder', () => {
       )
     })
 
-    it('returns a botframework.com URL for unknown channels', () => {
+    it('returns a botframework.com URL for known non-Teams channels', () => {
+      assert.equal(
+        ConversationReferenceBuilder.serviceUrlForChannel('webchat'),
+        'https://webchat.botframework.com/'
+      )
+      assert.equal(
+        ConversationReferenceBuilder.serviceUrlForChannel('directline'),
+        'https://directline.botframework.com/'
+      )
+    })
+
+    it('returns a constructed botframework.com URL for unrecognized channels (and emits a warning)', () => {
+      // Unknown channel IDs still produce a URL so callers are not hard-broken, but a
+      // logger.warn is emitted to flag that an explicit serviceUrl should be provided.
       assert.equal(
         ConversationReferenceBuilder.serviceUrlForChannel('unknown-channel'),
         'https://unknown-channel.botframework.com/'

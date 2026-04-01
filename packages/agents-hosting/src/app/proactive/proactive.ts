@@ -409,6 +409,7 @@ export class Proactive<TState extends TurnState> {
       )
     }
     let capturedConv: Conversation | undefined
+    let caughtError: unknown
 
     await cloudAdapter.createConversationAsync(
       createOptions.identity.aud,
@@ -417,21 +418,27 @@ export class Proactive<TState extends TurnState> {
       createOptions.scope,
       createOptions.parameters,
       async (ctx: TurnContext) => {
-        const conv = new Conversation(createOptions.identity, ctx.activity.getConversationReference())
-        capturedConv = conv
+        try {
+          const conv = new Conversation(createOptions.identity, ctx.activity.getConversationReference())
+          capturedConv = conv
 
-        if (createOptions.storeConversation) {
-          await this.storeConversation(conv)
-        }
+          if (createOptions.storeConversation) {
+            await this.storeConversation(conv)
+          }
 
-        if (handler) {
-          const state = this._app.options.turnStateFactory()
-          await state.load(ctx, this._app.options.storage)
-          await handler(ctx, state)
-          await state.save(ctx, this._app.options.storage)
+          if (handler) {
+            const state = this._app.options.turnStateFactory()
+            await state.load(ctx, this._app.options.storage)
+            await handler(ctx, state)
+            await state.save(ctx, this._app.options.storage)
+          }
+        } catch (err) {
+          caughtError = err
         }
       }
     )
+
+    if (caughtError !== undefined) throw caughtError
 
     if (!capturedConv) {
       throw new Error(
