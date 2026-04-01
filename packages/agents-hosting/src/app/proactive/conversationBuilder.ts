@@ -66,11 +66,11 @@ export class ConversationBuilder {
   static fromContext (context: TurnContext): ConversationBuilder {
     const ref = context.activity.getConversationReference()
     const id = context.identity
-    const claims: ConversationClaims = {
-      aud: id?.aud ?? '',
-      ...(id ?? {})
-    } as ConversationClaims
     const aud = Array.isArray(id?.aud) ? id.aud[0] : (id?.aud ?? '')
+    const claims: ConversationClaims = {
+      ...(id ?? {}),
+      aud,
+    } as ConversationClaims
     return new ConversationBuilder(
       aud,
       ref.channelId,

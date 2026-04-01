@@ -433,6 +433,11 @@ export class Proactive<TState extends TurnState> {
       }
     )
 
-    return capturedConv!
+    if (!capturedConv) {
+      throw new Error(
+        'createConversation: createConversationAsync completed without invoking its callback.'
+      )
+    }
+    return capturedConv
   }
 }

@@ -136,14 +136,13 @@ server.post('/api/proactive/continue/:conversationId', requireAllowedCaller, asy
 
         await ctx.sendActivity(message)
       },
+      undefined,
+      // Pass the HTTP request body as activity.value so the handler can
+      // read request-time parameters (mirrors the ContinueConversationValueType
+      // pattern from the C# spec).
       {
-        // Pass the HTTP request body as activity.value so the handler can
-        // read request-time parameters (mirrors the ContinueConversationValueType
-        // pattern from the C# spec).
-        continuationActivity: {
-          value: req.body ?? {},
-          valueType: 'application/vnd.microsoft.activity.continueconversation+json',
-        },
+        value: req.body ?? {},
+        valueType: 'application/vnd.microsoft.activity.continueconversation+json',
       }
     )
     res.status(200).json({ status: 'ok', conversationId })

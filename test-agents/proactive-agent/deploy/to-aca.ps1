@@ -41,9 +41,9 @@ az containerapp up `
         tenantId=$($secretJson.tenant) `
         DEBUG="*"
 
-$fqdn = az containerapp show --resource-g  $resourceGroup  --name $containerName --query properties.configuration.ingress.fqdn -o tsv
+$fqdn = az containerapp show --resource-group $resourceGroup --name $containerName --query properties.configuration.ingress.fqdn -o tsv
 $endpoint = "https://$fqdn/api/messages"
-echo "Created ACA app, listenting in endpoint: $endpoint"
+echo "Created ACA app, listening on endpoint: $endpoint"
 
 ## Create the Bot Service
 $botJson = az bot create `
