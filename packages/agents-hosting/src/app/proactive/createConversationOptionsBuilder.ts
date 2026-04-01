@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 import type { Activity, ChannelAccount, ConversationParameters } from '@microsoft/agents-activity'
-import { Channels } from '@microsoft/agents-activity'
+import { Channels, RoleTypes } from '@microsoft/agents-activity'
 import { AzureBotScope, type CreateConversationOptions } from './createConversationOptions'
 import type { ConversationClaims } from './conversation'
 import { ConversationReferenceBuilder } from './conversationReferenceBuilder'
@@ -20,7 +20,7 @@ import { ConversationReferenceBuilder } from './conversationReferenceBuilder'
  * ```
  */
 export class CreateConversationOptionsBuilder {
-  private readonly _agentClientId: string
+  private readonly _claims: ConversationClaims
   private readonly _channelId: string
   private readonly _serviceUrl: string
   private _scope: string = AzureBotScope
@@ -31,29 +31,47 @@ export class CreateConversationOptionsBuilder {
 
   private _activity: Partial<Activity> | undefined
 
-  private constructor (agentClientId: string, channelId: string, serviceUrl?: string) {
-    this._agentClientId = agentClientId
+  private constructor (claims: ConversationClaims, channelId: string, serviceUrl?: string) {
+    this._claims = claims
     this._channelId = channelId
     this._serviceUrl =
       serviceUrl ?? ConversationReferenceBuilder.serviceUrlForChannel(channelId)
   }
 
   /**
-   * Creates a new builder.
+   * Creates a new builder from an agent client ID string.
    * @param agentClientId The agent's client (app) ID.
    * @param channelId The target channel (e.g. `'msteams'`).
    * @param serviceUrl Optional service URL override.
    */
+  static create (agentClientId: string, channelId: string, serviceUrl?: string, parameters?: Partial<ConversationParameters>): CreateConversationOptionsBuilder
+  /**
+   * Creates a new builder from an existing claims object (e.g. from a stored `Conversation`).
+   * @param claims JWT claims — `aud` must be the agent's client ID.
+   * @param channelId The target channel (e.g. `'msteams'`).
+   * @param serviceUrl Optional service URL override.
+   */
+  static create (claims: ConversationClaims, channelId: string, serviceUrl?: string, parameters?: Partial<ConversationParameters>): CreateConversationOptionsBuilder
   static create (
-    agentClientId: string,
+    agentClientIdOrClaims: string | ConversationClaims,
     channelId: string,
     serviceUrl?: string,
     parameters?: Partial<ConversationParameters>
   ): CreateConversationOptionsBuilder {
-    const builder = new CreateConversationOptionsBuilder(agentClientId, channelId, serviceUrl)
+    const claims: ConversationClaims = typeof agentClientIdOrClaims === 'string'
+      ? { aud: agentClientIdOrClaims }
+      : agentClientIdOrClaims
+
+    const builder = new CreateConversationOptionsBuilder(claims, channelId, serviceUrl)
     if (parameters) {
       builder._parameters = { ...builder._parameters, ...parameters }
     }
+
+    // Set parameters.agent if not already provided — matches C# behavior
+    if (!builder._parameters.agent) {
+      builder._parameters.agent = { id: claims.aud, role: RoleTypes.Agent }
+    }
+
     return builder
   }
 
@@ -149,10 +167,8 @@ export class CreateConversationOptionsBuilder {
       ...this._activity,
     }
 
-    const identity: ConversationClaims = { aud: this._agentClientId }
-
     return {
-      identity,
+      identity: this._claims,
       channelId: this._channelId,
       serviceUrl: this._serviceUrl,
       scope: this._scope,

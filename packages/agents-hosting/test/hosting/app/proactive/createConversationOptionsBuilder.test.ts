@@ -44,6 +44,32 @@ describe('CreateConversationOptionsBuilder', () => {
         .build()
       assert.equal(opts.channelId, 'msteams')
     })
+
+    it('sets parameters.agent.id to agentClientId', () => {
+      const opts = CreateConversationOptionsBuilder.create('my-client-id', 'msteams')
+        .withUser('user-1')
+        .build()
+      assert.equal(opts.parameters.agent?.id, 'my-client-id')
+    })
+  })
+
+  describe('create() — claims overload', () => {
+    it('accepts a ConversationClaims object and sets identity', () => {
+      const opts = CreateConversationOptionsBuilder
+        .create({ aud: 'my-client-id', tid: 'tenant-1' }, 'msteams')
+        .withUser('user-1')
+        .build()
+      assert.equal(opts.identity.aud, 'my-client-id')
+      assert.equal((opts.identity as any).tid, 'tenant-1')
+    })
+
+    it('sets parameters.agent.id from claims.aud', () => {
+      const opts = CreateConversationOptionsBuilder
+        .create({ aud: 'my-client-id' }, 'msteams')
+        .withUser('user-1')
+        .build()
+      assert.equal(opts.parameters.agent?.id, 'my-client-id')
+    })
   })
 
   describe('withUser()', () => {
