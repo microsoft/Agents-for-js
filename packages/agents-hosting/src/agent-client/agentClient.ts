@@ -93,7 +93,7 @@ export class AgentClient {
     logger.debug('stateChanges: ', stateChanges)
 
     const authProvider = new MsalTokenProvider(authConfig)
-    const token = await authProvider.getAccessToken(this.agentClientConfig.clientId)
+    const token = await authProvider.getAccessToken(`${this.agentClientConfig.clientId}/.default`)
 
     logger.debug('agent request: ', activityCopy)
 
