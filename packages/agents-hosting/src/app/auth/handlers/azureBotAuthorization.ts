@@ -307,7 +307,8 @@ export class AzureBotAuthorization implements AuthorizationHandler {
       if (status !== AuthorizationHandlerStatus.IGNORED) {
         return status
       }
-    } else if (active.category === Category.SIGNIN) {
+    } else if (active.category === Category.SIGNIN && activity.channelId === Channels.Msteams) {
+      // Specific to MS Teams, M365 does not send signin/verifyState when user consent is required.
       // This is only for safety in case of unexpected behaviors during the MS Teams sign-in process,
       // e.g., user interrupts the flow by clicking the Consent Cancel button.
       logger.warn(this.prefix('The incoming activity will be revalidated due to a change in the sign-in flow'), activity)
@@ -550,8 +551,7 @@ export class AzureBotAuthorization implements AuthorizationHandler {
    * Sends an InvokeResponse activity if the channel is Microsoft Teams, including Copilot within MS Teams.
    */
   private sendInvokeResponse <T>(context: TurnContext, response: InvokeResponse<T>) {
-    const [parentChannel] = Activity.parseChannelId(context.activity.channelId!)
-    if (parentChannel !== Channels.Msteams) {
+    if (context.activity.channelIdChannel !== Channels.Msteams) {
       return Promise.resolve()
     }
 
