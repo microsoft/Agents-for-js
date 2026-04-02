@@ -44,6 +44,8 @@ abstract class ConnectionOptions implements Omit<CopilotStudioConnectionSettings
   public directConnectUrl?: string
   /** Flag to use the experimental endpoint if available */
   public useExperimentalEndpoint?: boolean = false
+  /** Flag to enable diagnostic logging. Default is false. */
+  public enableDiagnostics?: boolean = false
 }
 
 /**
@@ -108,6 +110,7 @@ export const loadCopilotStudioConnectionSettingsFromEnv: () => ConnectionSetting
     customPowerPlatformCloud: process.env.customPowerPlatformCloud,
     copilotAgentType: process.env.copilotAgentType as AgentType,
     directConnectUrl: process.env.directConnectUrl,
-    useExperimentalEndpoint: process.env.useExperimentalEndpoint?.toLowerCase() === 'true'
+    useExperimentalEndpoint: process.env.useExperimentalEndpoint?.toLowerCase() === 'true',
+    enableDiagnostics: process.env.enableDiagnostics?.toLowerCase() === 'true'
   })
 }

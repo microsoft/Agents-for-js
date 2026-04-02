@@ -3,7 +3,7 @@ import { describe, it, beforeEach } from 'node:test'
 import sinon from 'sinon'
 import jwt from 'jsonwebtoken'
 import { Response, NextFunction } from 'express'
-import { authorizeJWT, AuthConfiguration, Request } from '../../src'
+import { authorizeJWT, buildJwksUri, AuthConfiguration, Request } from '../../src'
 
 describe('authorizeJWT', () => {
   let req: Request
@@ -98,5 +98,49 @@ describe('authorizeJWT', () => {
     assert((res.status as sinon.SinonStub).calledOnceWith(405))
     assert((res.send as sinon.SinonStub).calledOnceWith({ 'jwt-auth-error': 'Method not allowed' }))
     assert((next as sinon.SinonStub).notCalled)
+  })
+
+  describe('buildJwksUri', () => {
+    it('should use botframework keys URI for botframework issuer', () => {
+      const authConfig: AuthConfiguration = { clientId: 'client-id', tenantId: 'tenant-id' }
+      assert.strictEqual(
+        buildJwksUri('https://api.botframework.com', authConfig),
+        'https://login.botframework.com/v1/.well-known/keys'
+      )
+    })
+
+    it('should build JWKS URI from authority and tenantId', () => {
+      const authConfig: AuthConfiguration = {
+        clientId: 'client-id',
+        authority: 'https://login.microsoftonline.com',
+        tenantId: 'my-tenant'
+      }
+      assert.strictEqual(
+        buildJwksUri('https://sts.windows.net/my-tenant/', authConfig),
+        'https://login.microsoftonline.com/my-tenant/discovery/v2.0/keys'
+      )
+    })
+
+    it('should build JWKS URI when tenant is embedded in authority', () => {
+      const authConfig: AuthConfiguration = {
+        clientId: 'client-id',
+        authority: 'https://login.microsoftonline.com/my-tenant'
+      }
+      assert.strictEqual(
+        buildJwksUri('https://sts.windows.net/my-tenant/', authConfig),
+        'https://login.microsoftonline.com/my-tenant/discovery/v2.0/keys'
+      )
+    })
+
+    it('should not produce a double-tenant URI when tenant is embedded in authority', () => {
+      const authConfig: AuthConfiguration = {
+        clientId: 'client-id',
+        authority: 'https://login.microsoftonline.com/my-tenant',
+        tenantId: 'my-tenant'
+      }
+      const uri = buildJwksUri('https://sts.windows.net/my-tenant/', authConfig)
+      assert.strictEqual(uri, 'https://login.microsoftonline.com/my-tenant/discovery/v2.0/keys')
+      assert.ok(!uri.includes('my-tenant/my-tenant'), 'URI should not contain double tenant')
+    })
   })
 })

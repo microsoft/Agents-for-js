@@ -1,6 +1,6 @@
 import { strict as assert } from 'assert'
 import { describe, it, beforeEach, afterEach } from 'node:test'
-import { AuthConfiguration, getAuthConfigWithDefaults, loadAuthConfigFromEnv, loadPrevAuthConfigFromEnv } from '../../src'
+import { AuthConfiguration, getAuthConfigWithDefaults, loadAuthConfigFromEnv, loadPrevAuthConfigFromEnv, resolveAuthority } from '../../src'
 
 describe('AuthConfiguration', () => {
   let originalEnv: NodeJS.ProcessEnv
@@ -75,8 +75,8 @@ describe('AuthConfiguration', () => {
       assert.strictEqual(config.FICClientId, undefined)
       assert.deepStrictEqual(config.issuers, [
         'https://api.botframework.com',
-        'https://sts.windows.net/undefined/',
-        'https://login.microsoftonline.com/undefined/v2.0'
+        'https://sts.windows.net/botframework.com/',
+        'https://login.microsoftonline.com/botframework.com/v2.0'
       ])
       assert.strictEqual(config.authority, 'https://login.microsoftonline.com')
     })
@@ -126,6 +126,11 @@ describe('AuthConfiguration', () => {
       assert.strictEqual(config.certKeyFile, undefined)
       assert.strictEqual(config.connectionName, undefined)
       assert.strictEqual(config.FICClientId, undefined)
+      assert.deepStrictEqual(config.issuers, [
+        'https://api.botframework.com',
+        'https://sts.windows.net/botframework.com/',
+        'https://login.microsoftonline.com/botframework.com/v2.0'
+      ])
       assert.deepStrictEqual(config.authority, 'https://login.microsoftonline.com')
     })
   })
@@ -187,8 +192,8 @@ describe('AuthConfiguration', () => {
       assert.strictEqual(config.connectionName, undefined)
       assert.deepStrictEqual(config.issuers, [
         'https://api.botframework.com',
-        'https://sts.windows.net//',
-        'https://login.microsoftonline.com//v2.0'
+        'https://sts.windows.net/botframework.com/',
+        'https://login.microsoftonline.com/botframework.com/v2.0'
       ])
       assert.strictEqual(config.authority, 'https://login.microsoftonline.com')
     })
@@ -266,6 +271,50 @@ describe('AuthConfiguration', () => {
       assert.strictEqual(config.altBlueprintConnectionName, undefined)
       assert.strictEqual(config.connections?.size, 1)
       assert.strictEqual(config.connectionsMap?.length, 1)
+    })
+  })
+
+  describe('resolveAuthority', () => {
+    it('should return authority as-is when tenant is embedded (no trailing slash)', () => {
+      assert.strictEqual(
+        resolveAuthority('https://login.microsoftonline.com/my-tenant'),
+        'https://login.microsoftonline.com/my-tenant'
+      )
+    })
+
+    it('should strip trailing slash when tenant is embedded', () => {
+      assert.strictEqual(
+        resolveAuthority('https://login.microsoftonline.com/my-tenant/'),
+        'https://login.microsoftonline.com/my-tenant'
+      )
+    })
+
+    it('should append tenantId when authority has no path segment', () => {
+      assert.strictEqual(
+        resolveAuthority('https://login.microsoftonline.com', 'my-tenant'),
+        'https://login.microsoftonline.com/my-tenant'
+      )
+    })
+
+    it('should append tenantId when authority has trailing slash and no path segment', () => {
+      assert.strictEqual(
+        resolveAuthority('https://login.microsoftonline.com/', 'my-tenant'),
+        'https://login.microsoftonline.com/my-tenant'
+      )
+    })
+
+    it('should use default authority when none provided, appending tenantId', () => {
+      assert.strictEqual(
+        resolveAuthority(undefined, 'my-tenant'),
+        'https://login.microsoftonline.com/my-tenant'
+      )
+    })
+
+    it('should use botframework.com as default when no tenantId is provided', () => {
+      assert.strictEqual(
+        resolveAuthority(),
+        'https://login.microsoftonline.com/botframework.com'
+      )
     })
   })
 

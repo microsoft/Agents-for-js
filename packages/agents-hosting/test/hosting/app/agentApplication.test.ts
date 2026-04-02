@@ -245,6 +245,112 @@ describe('Application', () => {
 
     assert.throws(() => new AgentApplication({ transcriptLogger: logger }))
   })
+
+  describe('signin/tokenExchange detaching', () => {
+    class TrackingAdapter extends TestAdapter {
+      continueConversationCalled = false
+      continueConversationCallback: ((ctx: TurnContext) => Promise<void>) | undefined
+
+      override continueConversation (_identity: any, _reference: any, logic: (ctx: TurnContext) => Promise<void>): Promise<void> {
+        this.continueConversationCalled = true
+        this.continueConversationCallback = logic
+        return Promise.resolve()
+      }
+    }
+
+    const createTokenExchangeActivity = () => Activity.fromObject({
+      type: ActivityTypes.Invoke,
+      name: 'signin/tokenExchange',
+      from: { id: 'user', name: 'user' },
+      conversation: { id: 'conv' },
+      channelId: 'test',
+      recipient: { id: 'bot' },
+      serviceUrl: 'https://test.example',
+      value: { token: 'mytoken', id: 'exchangeId' }
+    })
+
+    it('should detach signin/tokenExchange and return true immediately', async () => {
+      const trackingAdapter = new TrackingAdapter()
+      const localApp = new AgentApplication({ adapter: trackingAdapter as any })
+      let handlerCalled = false
+
+      localApp.onActivity(ActivityTypes.Message, async (_ctx, _state) => {
+        handlerCalled = true
+      })
+
+      const activity = createTokenExchangeActivity()
+      const context = new TurnContext(trackingAdapter, activity)
+      const handled = await localApp.runInternal(context)
+
+      assert.equal(handled, true, 'runInternal should return true for tokenExchange')
+      assert.equal(trackingAdapter.continueConversationCalled, true, 'continueConversationAsync should be called')
+      assert.equal(handlerCalled, false, 'turn handler should not be called synchronously')
+    })
+
+    it('should execute the turn handler in the detached continuation', async () => {
+      const trackingAdapter = new TrackingAdapter()
+      const localApp = new AgentApplication({ adapter: trackingAdapter as any })
+      let handlerCalled = false
+      let handlerActivityType: string | undefined
+
+      // The continuation re-uses the original signin/tokenExchange activity (via Object.assign),
+      // so the handler should be called with the invoke activity type.
+      localApp.onActivity(ActivityTypes.Invoke, async (ctx, _state) => {
+        handlerCalled = true
+        handlerActivityType = ctx.activity.type
+      })
+
+      const activity = createTokenExchangeActivity()
+      const context = new TurnContext(trackingAdapter, activity)
+      await localApp.runInternal(context)
+
+      assert.equal(trackingAdapter.continueConversationCalled, true)
+      // Execute the continuation synchronously to verify the handler is eventually called
+      if (trackingAdapter.continueConversationCallback) {
+        // The continuation context activity will be overwritten by the original tokenExchange activity
+        const continuationCtx = new TurnContext(trackingAdapter, Activity.fromObject({
+          type: ActivityTypes.Message,
+          text: 'placeholder',
+          from: { id: 'user', name: 'user' },
+          conversation: { id: 'conv' },
+          channelId: 'test',
+          recipient: { id: 'bot' },
+          serviceUrl: 'https://test.example'
+        }))
+        await trackingAdapter.continueConversationCallback(continuationCtx)
+      }
+      assert.equal(handlerCalled, true, 'invoke handler should be called in the continuation')
+      assert.equal(handlerActivityType, ActivityTypes.Invoke, 'handler should receive the original invoke activity type')
+    })
+
+    it('should not detach regular message activities', async () => {
+      const trackingAdapter = new TrackingAdapter()
+      const localApp = new AgentApplication({ adapter: trackingAdapter as any })
+      let handlerCalled = false
+
+      localApp.onActivity(ActivityTypes.Message, async (_ctx, _state) => {
+        handlerCalled = true
+      })
+
+      const context = new TurnContext(trackingAdapter, testActivity)
+      const handled = await localApp.runInternal(context)
+
+      assert.equal(handled, true)
+      assert.equal(trackingAdapter.continueConversationCalled, false, 'continueConversation should not be called for message activities')
+      assert.equal(handlerCalled, true, 'handler should be called synchronously for messages')
+    })
+
+    it('should call continueConversationAsync for longRunningMessages option', async () => {
+      const trackingAdapter = new TrackingAdapter()
+      const localApp = new AgentApplication({ adapter: trackingAdapter as any, longRunningMessages: true })
+
+      const context = new TurnContext(trackingAdapter, testActivity)
+      const handled = await localApp.runInternal(context)
+
+      assert.equal(handled, true)
+      assert.equal(trackingAdapter.continueConversationCalled, true, 'continueConversation should be called for longRunningMessages')
+    })
+  })
 })
 
 describe('RouteList', () => {

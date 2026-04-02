@@ -126,6 +126,7 @@ export class CloudAdapter extends BaseAdapter {
     headers?: HeaderPropagationCollection) {
     if (!identity?.aud) {
       // anonymous
+      logger.warn('Missing identity or identity.aud when creating connector client. Using anonymous identity')
       return ConnectorClient.createClientWithToken(
         activity.serviceUrl!,
         null!,
@@ -318,6 +319,10 @@ export class CloudAdapter extends BaseAdapter {
    * @param res - The response to send.
    * @param logic - The logic to execute.
    * @param headerPropagation - Optional function to handle header propagation.
+   *
+   * @remarks This function supports both authenticated and unauthenticated requests. When the request is not authenticated,
+   * the adapter will use anonymous identity. For authenticated requests, the adapter relies on the presence of a user identity
+   * on `request.user`. It is strongly recommended to use the `authorizeJWT` middleware to ensure that requests are correctly authenticated.
    */
   public async process (
     request: Request,

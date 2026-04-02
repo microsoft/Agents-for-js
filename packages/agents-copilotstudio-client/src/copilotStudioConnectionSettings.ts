@@ -37,6 +37,13 @@ export interface CopilotStudioConnectionSettings {
   useExperimentalEndpoint?: boolean
 
   /**
+   * Enables diagnostic logging for debugging purposes.
+   * When enabled, detailed logs about requests, responses, and connection status will be emitted.
+   * Default value is false.
+   */
+  enableDiagnostics?: boolean
+
+  /**
    * The login authority to use for the connection.
    * @deprecated This property will not be supported in future versions. Handle the auth properties in the agent.
    **/

@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 import { Container, CosmosClient } from '@azure/cosmos'
-import { CosmosDbKeyEscape } from './cosmosDbKeyEscape'
+import { escapeKey } from './cosmosDbKeyEscape'
 import { DocumentStoreItem } from './documentStoreItem'
 import { CosmosDbPartitionedStorageOptions } from './cosmosDbPartitionedStorageOptions'
 import { Storage, StoreItems } from '@microsoft/agents-hosting'
@@ -95,7 +95,7 @@ export class CosmosDbPartitionedStorage implements Storage {
           Errors.InvalidCompatibilityModeWithKeySuffix
         )
       }
-      const suffixEscaped = CosmosDbKeyEscape.escapeKey(cosmosDbStorageOptions.keySuffix)
+      const suffixEscaped = escapeKey(cosmosDbStorageOptions.keySuffix)
       if (cosmosDbStorageOptions.keySuffix !== suffixEscaped) {
         throw ExceptionHelper.generateException(
           ReferenceError,
@@ -129,7 +129,7 @@ export class CosmosDbPartitionedStorage implements Storage {
     await Promise.all(
       keys.map(async (k: string): Promise<void> => {
         try {
-          const escapedKey = CosmosDbKeyEscape.escapeKey(
+          const escapedKey = escapeKey(
             k,
             this.cosmosDbStorageOptions.keySuffix,
             this.cosmosDbStorageOptions.compatibilityMode
@@ -185,7 +185,7 @@ export class CosmosDbPartitionedStorage implements Storage {
     await Promise.all(
       Object.entries(changes).map(async ([key, { eTag, ...change }]): Promise<void> => {
         const document = new DocumentStoreItem({
-          id: CosmosDbKeyEscape.escapeKey(
+          id: escapeKey(
             key,
             this.cosmosDbStorageOptions.keySuffix,
             this.cosmosDbStorageOptions.compatibilityMode
@@ -222,7 +222,7 @@ export class CosmosDbPartitionedStorage implements Storage {
 
     await Promise.all(
       keys.map(async (k: string): Promise<void> => {
-        const escapedKey = CosmosDbKeyEscape.escapeKey(
+        const escapedKey = escapeKey(
           k,
           this.cosmosDbStorageOptions.keySuffix,
           this.cosmosDbStorageOptions.compatibilityMode
