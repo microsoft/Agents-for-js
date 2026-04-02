@@ -55,6 +55,14 @@ export class Proactive<TState extends TurnState> {
     return this._storage
   }
 
+  private requireAppStorage (): Storage {
+    const storage = this._app.options.storage
+    if (!storage) {
+      throw ExceptionHelper.generateException(Error, Errors.ProactiveAppStorageRequired)
+    }
+    return storage
+  }
+
   // ---------------------------------------------------------------------------
   // Conversation reference storage
   // ---------------------------------------------------------------------------
@@ -331,7 +339,7 @@ export class Proactive<TState extends TurnState> {
         }
 
         const state = this._app.options.turnStateFactory()
-        await state.load(ctx, this._app.options.storage)
+        await state.load(ctx, this.requireAppStorage())
 
         // Token acquisition (optional — only when auth is configured)
         if (autoSignInHandlers?.length && this._app.hasUserAuthorization) {
@@ -352,7 +360,7 @@ export class Proactive<TState extends TurnState> {
         }
 
         await handler(ctx, state)
-        await state.save(ctx, this._app.options.storage)
+        await state.save(ctx, this.requireAppStorage())
       } catch (err) {
         caughtError = err
       } finally {
@@ -450,9 +458,9 @@ export class Proactive<TState extends TurnState> {
 
           if (handler) {
             const state = this._app.options.turnStateFactory()
-            await state.load(ctx, this._app.options.storage)
+            await state.load(ctx, this.requireAppStorage())
             await handler(ctx, state)
-            await state.save(ctx, this._app.options.storage)
+            await state.save(ctx, this.requireAppStorage())
           }
         } catch (err) {
           caughtError = err

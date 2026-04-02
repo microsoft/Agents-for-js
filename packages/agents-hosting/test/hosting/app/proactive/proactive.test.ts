@@ -451,6 +451,16 @@ describe('Proactive', () => {
       await appNoStorage.proactive.sendActivity(adapter, conv, { text: 'hi' })
     })
 
+    it('continueConversation throws when proactive storage is set but app storage is not', async () => {
+      const proactiveOnlyStorage = new MemoryStorage()
+      const appProactiveOnly = new AgentApplication({ proactive: { storage: proactiveOnlyStorage } })
+      const conv = makeConversation()
+      await assert.rejects(
+        () => appProactiveOnly.proactive.continueConversation(adapter, conv, async () => {}),
+        /storage/
+      )
+    })
+
     it('throws on .proactive access when no storage was configured at all', () => {
       const appNoStorage = new AgentApplication({})
       assert.throws(() => appNoStorage.proactive, /storage/)

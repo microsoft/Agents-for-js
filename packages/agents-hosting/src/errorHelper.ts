@@ -760,6 +760,14 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
     description: 'CreateConversationOptionsBuilder: at least one members entry must be added via withUser().'
   },
 
+  /**
+   * Error thrown when a proactive operation that requires TurnState load/save is called without app storage.
+   */
+  ProactiveAppStorageRequired: {
+    code: -120752,
+    description: 'This proactive operation requires app storage to load and save TurnState. Set options.storage on AgentApplication.'
+  },
+
   // ============================================================================
   // General Errors (-120990)
   // ============================================================================
