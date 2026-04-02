@@ -380,4 +380,20 @@ describe('StreamingResponse', () => {
 
     assert.equal(streamingResponse.updatesSent, 1)
   })
+
+  it('should treat Teams with composite channelId (msteams:COPILOT) as a streaming channel with 1000ms delay', () => {
+    // When Copilot in Teams is active, channelId is a composite value like 'msteams:COPILOT'
+    // but channelIdChannel (primary channel) should still resolve to 'msteams'
+    mockContext = createContext({ channelId: `${Channels.Msteams}:COPILOT` })
+    streamingResponse = new StreamingResponse(mockContext)
+
+    assert.equal(streamingResponse.delayInMs, 1000)
+  })
+
+  it('should treat Emulator channel as a streaming channel with 500ms delay', () => {
+    mockContext = createContext({ channelId: Channels.Emulator })
+    streamingResponse = new StreamingResponse(mockContext)
+
+    assert.equal(streamingResponse.delayInMs, 500)
+  })
 })
