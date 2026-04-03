@@ -207,6 +207,15 @@ export class AzureBotAuthorization implements AuthorizationHandler {
     return result
   }
 
+  readonly type = 'azurebot'
+
+  /**
+   * The OBO scopes configured for this handler.
+   */
+  get scopes (): string[] | undefined {
+    return this._options.obo?.scopes
+  }
+
   /**
    * Maximum number of attempts for magic code entry.
    */

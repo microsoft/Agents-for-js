@@ -3,11 +3,13 @@
  * Licensed under the MIT License.
  */
 
-import { Activity, RoleTypes } from '@microsoft/agents-activity'
+import { Activity, RoleTypes, debug } from '@microsoft/agents-activity'
 import { AuthConfiguration, resolveAuthority } from './authConfiguration'
 import { Connections } from './connections'
 import { MsalTokenProvider } from './msalTokenProvider'
 import { JwtPayload } from 'jsonwebtoken'
+
+const logger = debug('agents:authorization:connections')
 
 export interface ConnectionMapItem {
   audience?: string
@@ -37,6 +39,27 @@ export class MsalConnectionManager implements Connections {
       if (name === MsalConnectionManager.DEFAULT_CONNECTION) {
         this._serviceConnectionConfiguration = config
       }
+    }
+
+    const connLines = [...this._connections.entries()].map(([name, provider]) => {
+      const cfg = provider.connectionSettings
+      const authType = cfg?.certPemFile
+        ? 'certificate'
+        : cfg?.clientSecret
+          ? 'clientSecret'
+          : (cfg as any)?.WIDAssertionFile || cfg?.FICClientId
+              ? 'workloadIdentity'
+              : 'none'
+      return `  ${name}\n    clientId=${cfg?.clientId ?? '<none>'}\n    tenantId=${cfg?.tenantId ?? '<none>'}\n    authType=${authType}`
+    })
+    logger.info(`connections:\n${connLines.join('\n')}`)
+
+    if (this._connectionsMap.length > 0) {
+      const routeLines = this._connectionsMap.map(item => {
+        const audience = item.audience ? `  (audience=${item.audience})` : ''
+        return `  ${item.serviceUrl}  →  ${item.connection}${audience}`
+      })
+      logger.info(`connectionsMap:\n${routeLines.join('\n')}`)
     }
   }
 
@@ -107,6 +130,7 @@ export class MsalConnectionManager implements Connections {
     if (!audience || !serviceUrl) throw new Error('Audience and Service URL are required to get the token provider.')
 
     if (this._connectionsMap.length === 0) {
+      logger.info(`no connectionsMap, using default connection for serviceUrl="${serviceUrl}"`)
       return this.getDefaultConnection()
     }
 
@@ -120,11 +144,13 @@ export class MsalConnectionManager implements Connections {
 
       if (audienceMatch) {
         if (item.serviceUrl === '*' || !item.serviceUrl) {
+          logger.info(`connection "${item.connection}" matched (wildcard/no serviceUrl) for audience="${audience}"`)
           return this.getConnection(item.connection)
         }
 
         const regex = new RegExp(item.serviceUrl, 'i')
         if (regex.test(serviceUrl)) {
+          logger.info(`connection "${item.connection}" matched serviceUrl="${serviceUrl}" for audience="${audience}"`)
           return this.getConnection(item.connection)
         }
       }

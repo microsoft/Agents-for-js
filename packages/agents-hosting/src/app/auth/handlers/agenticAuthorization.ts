@@ -79,6 +79,15 @@ export class AgenticAuthorization implements AuthorizationHandler {
     return result
   }
 
+  readonly type = 'agentic'
+
+  /**
+   * The scopes configured for this handler.
+   */
+  get scopes (): string[] | undefined {
+    return this._options.scopes
+  }
+
   /**
    * @inheritdoc
    */

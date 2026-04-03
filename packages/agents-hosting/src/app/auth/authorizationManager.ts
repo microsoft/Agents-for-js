@@ -73,6 +73,14 @@ export class AuthorizationManager {
         this._handlers[id] = new AzureBotAuthorization(id, options, settings)
       }
     }
+
+    const handlerSummary = Object.entries(this._handlers)
+      .map(([id, handler]) => {
+        const scopeStr = handler.scopes?.length ? ` scopes=[${handler.scopes.join(',')}]` : ''
+        return `${id}(${handler.type}${scopeStr})`
+      })
+      .join(', ')
+    logger.info(`auth handlers: ${handlerSummary}`)
   }
 
   /**
@@ -124,6 +132,8 @@ export class AuthorizationManager {
     const sharedContext = new TurnContext(context)
 
     for (const handler of handlers) {
+      const scopeStr = handler.scopes?.length ? ` scopes=[${handler.scopes.join(',')}]` : ''
+      logger.info(`invoking auth handler "${handler.id}"${scopeStr}`)
       const status = await this.signin(storage, handler, sharedContext, active?.data)
       logger.debug(this.prefix(handler.id, `Sign-in status: ${status}`))
 
