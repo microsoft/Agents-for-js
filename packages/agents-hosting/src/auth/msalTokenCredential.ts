@@ -1,5 +1,8 @@
 import { GetTokenOptions, TokenCredential } from '@azure/core-auth'
 import { AuthConfiguration, MsalTokenProvider } from './'
+import { debug } from '@microsoft/agents-activity/logger'
+
+const logger = debug('agents:msal')
 
 /**
  * Token credential implementation that uses MSAL (Microsoft Authentication Library) to acquire access tokens.
@@ -19,6 +22,7 @@ export class MsalTokenCredential implements TokenCredential {
    * @returns Promise that resolves to an access token with expiration timestamp.
    */
   public async getToken (scopes: string[], options?: GetTokenOptions) {
+    logger.debug('getToken scopes=%o', scopes)
     const scope = scopes[0].substring(0, scopes[0].lastIndexOf('/'))
     const token = await new MsalTokenProvider().getAccessToken(this.authConfig, scope)
     return {
