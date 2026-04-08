@@ -58,7 +58,7 @@ Each namespace in the tables below ends with `:*` to enable all log levels for t
 
 #### Auth & connections
 
-| Namespace | What it logs |
+| DEBUG filter | What it logs |
 |---|---|
 | `agents:authorization:connections:*` | Auth connections loaded at startup (clientId, tenantId, authType); which connection is selected per request |
 | `agents:authorization:manager:*` | Auth handlers configured at startup (type, scopes); which handler is invoked per request |
@@ -71,7 +71,7 @@ Each namespace in the tables below ends with `:*` to enable all log levels for t
 
 #### Adapter & request handling
 
-| Namespace | What it logs |
+| DEBUG filter | What it logs |
 |---|---|
 | `agents:cloud-adapter:*` | Incoming request processing, activity dispatch |
 | `agents:base-adapter:*` | Base adapter lifecycle |
@@ -80,7 +80,7 @@ Each namespace in the tables below ends with `:*` to enable all log levels for t
 
 #### Application & state
 
-| Namespace | What it logs |
+| DEBUG filter | What it logs |
 |---|---|
 | `agents:app:*` | AgentApplication routing and lifecycle |
 | `agents:activity-handler:*` | ActivityHandler event dispatch |
@@ -88,10 +88,12 @@ Each namespace in the tables below ends with `:*` to enable all log levels for t
 | `agents:turnState:*` | Turn state access |
 | `agents:memory-storage:*` | MemoryStorage read/write |
 | `agents:middleware:*` | Middleware pipeline execution |
+| `agents:proactive:*` | Proactive message sending to conversations |
+| `agents:conversation-reference-builder:*` | Building and validating conversation references |
 
 #### Streaming, attachments & transcripts
 
-| Namespace | What it logs |
+| DEBUG filter | What it logs |
 |---|---|
 | `agents:streamingResponse:*` | Streaming response lifecycle |
 | `agents:attachmentDownloader:*` | Attachment download requests |
@@ -101,7 +103,7 @@ Each namespace in the tables below ends with `:*` to enable all log levels for t
 
 #### Agent-to-agent
 
-| Namespace | What it logs |
+| DEBUG filter | What it logs |
 |---|---|
 | `agents:agent-client:*` | Outbound agent client calls and response handling |
 

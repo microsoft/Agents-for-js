@@ -3,7 +3,8 @@
  * Licensed under the MIT License.
  */
 
-import { Activity, RoleTypes, debug } from '@microsoft/agents-activity'
+import { Activity, RoleTypes } from '@microsoft/agents-activity'
+import { debug } from '@microsoft/agents-activity/logger'
 import { AuthConfiguration, resolveAuthority } from './authConfiguration'
 import { Connections } from './connections'
 import { MsalTokenProvider } from './msalTokenProvider'
@@ -54,7 +55,7 @@ export class MsalConnectionManager implements Connections {
     }
 
     for (const item of this._connectionsMap) {
-      logger.debug('connectionsMap: %s → %s audience=%s', item.serviceUrl, item.connection, item.audience ?? '')
+      logger.debug('connectionsMap: %s -> %s audience=%s', item.serviceUrl, item.connection, item.audience ?? '')
     }
   }
 

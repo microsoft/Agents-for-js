@@ -256,7 +256,7 @@ export class MsalTokenProvider implements AuthProvider {
   }
 
   public async getAgenticUserToken (tenantId: string, agentAppInstanceId: string, agenticUserId: string, scopes: string[]): Promise<string> {
-    logger.debug('getAgenticUserToken tenantId=%s agentAppInstanceId=%s agenticUserId=%s scopes=%o', tenantId, agentAppInstanceId, agenticUserId, scopes)
+    logger.debug('getAgenticUserToken tenantId=%s agentAppInstanceId=%s scopes=%o', tenantId, agentAppInstanceId, scopes)
     const agentToken = await this.getAgenticApplicationToken(tenantId, agentAppInstanceId)
     const instanceToken = await this.getAgenticInstanceToken(tenantId, agentAppInstanceId)
 
@@ -379,7 +379,6 @@ export class MsalTokenProvider implements AuthProvider {
    * @returns A promise that resolves to the access token.
    */
   private async acquireTokenWithUserAssignedIdentity (authConfig: AuthConfiguration, scope: string) {
-    logger.debug('acquireTokenWithUserAssignedIdentity clientId=%s scope=%s', authConfig.clientId, scope)
     const mia = new ManagedIdentityApplication({
       managedIdentityIdParams: {
         userAssignedClientId: authConfig.clientId || ''
@@ -399,7 +398,6 @@ export class MsalTokenProvider implements AuthProvider {
    * @returns A promise that resolves to the access token.
    */
   private async acquireTokenWithCertificate (authConfig: AuthConfiguration, scope: string) {
-    logger.debug('acquireTokenWithCertificate clientId=%s scope=%s certPemFile=%s', authConfig.clientId, scope, authConfig.certPemFile)
     const privateKeySource = fs.readFileSync(authConfig.certKeyFile as string)
 
     const privateKeyObject = crypto.createPrivateKey({
@@ -444,7 +442,6 @@ export class MsalTokenProvider implements AuthProvider {
    * @returns A promise that resolves to the access token.
    */
   private async acquireAccessTokenViaSecret (authConfig: AuthConfiguration, scope: string) {
-    logger.debug('acquireAccessTokenViaSecret clientId=%s scope=%s', authConfig.clientId, scope)
     const cca = new ConfidentialClientApplication({
       auth: {
         clientId: authConfig.clientId as string,
@@ -470,7 +467,6 @@ export class MsalTokenProvider implements AuthProvider {
    * @returns A promise that resolves to the access token.
    */
   private async acquireAccessTokenViaFIC (authConfig: AuthConfiguration, scope: string) : Promise<string> {
-    logger.debug('acquireAccessTokenViaFIC clientId=%s FICClientId=%s scope=%s', authConfig.clientId, authConfig.FICClientId, scope)
     const scopes = [`${scope}/.default`]
     const clientAssertion = await this.fetchExternalToken(authConfig.FICClientId as string)
     const cca = new ConfidentialClientApplication({
@@ -496,7 +492,6 @@ export class MsalTokenProvider implements AuthProvider {
    * @returns A promise that resolves to the access token.
    */
   private async acquireAccessTokenViaWID (authConfig: AuthConfiguration, scope: string) : Promise<string> {
-    logger.debug('acquireAccessTokenViaWID clientId=%s tenantId=%s scope=%s', authConfig.clientId, authConfig.tenantId, scope)
     const scopes = [`${scope}/.default`]
     const clientAssertion = fs.readFileSync(authConfig.WIDAssertionFile as string, 'utf8')
     const cca = new ConfidentialClientApplication({

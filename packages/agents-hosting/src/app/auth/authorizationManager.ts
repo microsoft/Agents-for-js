@@ -3,7 +3,8 @@
  * Licensed under the MIT License.
  */
 
-import { Activity, debug } from '@microsoft/agents-activity'
+import { Activity } from '@microsoft/agents-activity'
+import { debug } from '@microsoft/agents-activity/logger'
 import { AgentApplication } from '../agentApplication'
 import { AgenticAuthorization, AzureBotAuthorization } from './handlers'
 import { TurnContext } from '../../turnContext'
@@ -134,7 +135,7 @@ export class AuthorizationManager {
         logger.debug('invoking auth handler "%s"', handler.id)
       }
       const status = await this.signin(storage, handler, sharedContext, active?.data)
-      logger.debug(this.prefix(handler.id, `Sign-in status: ${status}`))
+      logger.debug('auth handler "%s" sign-in status=%s', handler.id, status)
 
       if (status === AuthorizationHandlerStatus.IGNORED) {
         await storage.delete()
