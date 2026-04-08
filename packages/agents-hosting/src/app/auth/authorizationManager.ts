@@ -80,7 +80,7 @@ export class AuthorizationManager {
         return `${id}(${handler.type}${scopeStr})`
       })
       .join(', ')
-    logger.info(`auth handlers: ${handlerSummary}`)
+    logger.debug(`auth handlers: ${handlerSummary}`)
   }
 
   /**
