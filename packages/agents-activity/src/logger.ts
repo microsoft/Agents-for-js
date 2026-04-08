@@ -92,7 +92,6 @@ export class Logger {
   debug (message: string, ...args: any[]) {
     this.loggers.debug(message, ...args)
   }
-
 }
 
 /**
