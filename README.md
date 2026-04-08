@@ -54,6 +54,8 @@ The packages include the source code in the `src`, along with the sourcemaps in 
 
 The packages use the [`debug`](https://github.com/debug-js/debug) library. Set the `DEBUG` environment variable to enable logging for specific subsystems.
 
+Each namespace in the tables below is a prefix; append `:*` to enable all log levels for that prefix (e.g. `DEBUG=agents:msal:*`).
+
 #### Auth & connections
 
 | Namespace | What it logs |
@@ -113,7 +115,7 @@ DEBUG=agents:authorization:* node index.js
 DEBUG=agents:* node index.js
 
 # Show auth connections + MSAL
-DEBUG=agents:authorization:connections,agents:msal node index.js
+DEBUG=agents:authorization:connections:*,agents:msal:* node index.js
 ```
 
 ### Code Style

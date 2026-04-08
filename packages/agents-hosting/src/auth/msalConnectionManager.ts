@@ -47,7 +47,7 @@ export class MsalConnectionManager implements Connections {
         ? 'certificate'
         : cfg?.clientSecret
           ? 'clientSecret'
-          : (cfg as any)?.WIDAssertionFile || cfg?.FICClientId
+          : cfg?.WIDAssertionFile || cfg?.FICClientId
               ? 'workloadIdentity'
               : 'none'
       return `  ${name}\n    clientId=${cfg?.clientId ?? '<none>'}\n    tenantId=${cfg?.tenantId ?? '<none>'}\n    authType=${authType}`
@@ -130,7 +130,7 @@ export class MsalConnectionManager implements Connections {
     if (!audience || !serviceUrl) throw new Error('Audience and Service URL are required to get the token provider.')
 
     if (this._connectionsMap.length === 0) {
-      logger.info(`no connectionsMap, using default connection for serviceUrl="${serviceUrl}"`)
+      logger.debug(`no connectionsMap, using default connection for serviceUrl="${serviceUrl}"`)
       return this.getDefaultConnection()
     }
 
@@ -144,13 +144,13 @@ export class MsalConnectionManager implements Connections {
 
       if (audienceMatch) {
         if (item.serviceUrl === '*' || !item.serviceUrl) {
-          logger.info(`connection "${item.connection}" matched (wildcard/no serviceUrl) for audience="${audience}"`)
+          logger.debug(`connection "${item.connection}" matched (wildcard/no serviceUrl) for audience="${audience}"`)
           return this.getConnection(item.connection)
         }
 
         const regex = new RegExp(item.serviceUrl, 'i')
         if (regex.test(serviceUrl)) {
-          logger.info(`connection "${item.connection}" matched serviceUrl="${serviceUrl}" for audience="${audience}"`)
+          logger.debug(`connection "${item.connection}" matched serviceUrl="${serviceUrl}" for audience="${audience}"`)
           return this.getConnection(item.connection)
         }
       }

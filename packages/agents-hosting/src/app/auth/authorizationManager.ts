@@ -133,7 +133,7 @@ export class AuthorizationManager {
 
     for (const handler of handlers) {
       const scopeStr = handler.scopes?.length ? ` scopes=[${handler.scopes.join(',')}]` : ''
-      logger.info(`invoking auth handler "${handler.id}"${scopeStr}`)
+      logger.debug(`invoking auth handler "${handler.id}"${scopeStr}`)
       const status = await this.signin(storage, handler, sharedContext, active?.data)
       logger.debug(this.prefix(handler.id, `Sign-in status: ${status}`))
 
