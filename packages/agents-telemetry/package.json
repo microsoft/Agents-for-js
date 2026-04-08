@@ -24,6 +24,7 @@
   "types": "./dist/esm/src/index.d.mts",
   "browser": "./dist/esm/src/index.mjs",
   "scripts": {
+    "clean:esm": "node -e \"require('node:fs').rmSync('dist/esm', { recursive: true, force: true })\"",
     "build:esm": "tsc --project tsconfig.esm.json && node scripts/esm.mjs"
   },
   "peerDependencies": {

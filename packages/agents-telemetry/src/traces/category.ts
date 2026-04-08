@@ -6,12 +6,13 @@
 import { AGENTS_TELEMETRY_DISABLED_SPAN_CATEGORIES, SpanCategories, SpanNames } from './constants.js'
 import { createDebugLogger } from '../loggers/debug.js'
 import type { SpanName } from '../types.js'
+import { isBrowser } from '../utils/platform.js'
 
 const logger = createDebugLogger('agents:telemetry')
 
 const disabledSpans = (() => {
   let rawValue: string
-  if (typeof window === 'undefined') {
+  if (!isBrowser) {
     rawValue = (process.env[AGENTS_TELEMETRY_DISABLED_SPAN_CATEGORIES] ?? '').trim().toUpperCase()
   } else {
     try {
