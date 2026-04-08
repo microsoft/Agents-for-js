@@ -103,7 +103,7 @@ export class CloudAdapter extends BaseAdapter {
     // get the correct token provider
     const tokenProvider = this.connectionManager.getTokenProvider(identity, serviceUrl)
 
-    const token = await tokenProvider.getAccessToken(scope)
+    const token = await tokenProvider.getAccessToken(`${scope}/.default`)
     return ConnectorClient.createClientWithToken(
       serviceUrl,
       token,
@@ -164,7 +164,7 @@ export class CloudAdapter extends BaseAdapter {
     } else {
       // ABS tokens will not have an azp/appid so use the botframework scope.
       // Otherwise use the appId.  This will happen when communicating back to another agent.
-      const scope = identity.azp ?? identity.appid ?? 'https://api.botframework.com'
+      const scope = `${identity.azp ?? identity.appid ?? 'https://api.botframework.com'}/.default`
       const token = await tokenProvider.getAccessToken(scope)
       connectorClient = ConnectorClient.createClientWithToken(
         activity.serviceUrl!,
@@ -213,7 +213,7 @@ export class CloudAdapter extends BaseAdapter {
   protected async createUserTokenClient (
     identity: JwtPayload,
     tokenServiceEndpoint: string = getTokenServiceEndpoint(),
-    scope: string = 'https://api.botframework.com',
+    scope: string = 'https://api.botframework.com/.default',
     audience: string = 'https://api.botframework.com',
     headers?: HeaderPropagationCollection
   ): Promise<UserTokenClient> {

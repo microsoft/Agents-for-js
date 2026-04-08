@@ -55,7 +55,7 @@ export class AttachmentDownloader<TState extends TurnState = TurnState> implemen
     // TODO: from adapter
     const authProvider: AuthProvider = new MsalTokenProvider()
 
-    const accessToken = await authProvider.getAccessToken(loadAuthConfigFromEnv(), 'https://api.botframework.com')
+    const accessToken = await authProvider.getAccessToken(loadAuthConfigFromEnv(), 'https://api.botframework.com/.default')
 
     const files: InputFile[] = []
     for (const attachment of attachments) {

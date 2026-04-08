@@ -378,8 +378,10 @@ export class MsalTokenProvider implements AuthProvider {
       },
       system: this.sysOptions
     })
+    // ManagedIdentityApplication.acquireToken expects a bare resource URL without a /.default suffix
+    const resource = scope.endsWith('/.default') ? scope.slice(0, -('/.default'.length)) : scope
     const token = await mia.acquireToken({
-      resource: scope
+      resource
     })
     return token?.accessToken
   }
@@ -419,7 +421,7 @@ export class MsalTokenProvider implements AuthProvider {
       system: this.sysOptions
     })
     const token = await cca.acquireTokenByClientCredential({
-      scopes: [`${scope}/.default`],
+      scopes: [scope],
       correlationId: v4()
     })
     if (!token?.accessToken) {
@@ -444,7 +446,7 @@ export class MsalTokenProvider implements AuthProvider {
       system: this.sysOptions
     })
     const token = await cca.acquireTokenByClientCredential({
-      scopes: [`${scope}/.default`],
+      scopes: [scope],
       correlationId: v4()
     })
     if (!token?.accessToken) {
@@ -460,7 +462,7 @@ export class MsalTokenProvider implements AuthProvider {
    * @returns A promise that resolves to the access token.
    */
   private async acquireAccessTokenViaFIC (authConfig: AuthConfiguration, scope: string) : Promise<string> {
-    const scopes = [`${scope}/.default`]
+    const scopes = [scope]
     const clientAssertion = await this.fetchExternalToken(authConfig.FICClientId as string)
     const cca = new ConfidentialClientApplication({
       auth: {
@@ -485,7 +487,7 @@ export class MsalTokenProvider implements AuthProvider {
    * @returns A promise that resolves to the access token.
    */
   private async acquireAccessTokenViaWID (authConfig: AuthConfiguration, scope: string) : Promise<string> {
-    const scopes = [`${scope}/.default`]
+    const scopes = [scope]
     const clientAssertion = fs.readFileSync(authConfig.WIDAssertionFile as string, 'utf8')
     const cca = new ConfidentialClientApplication({
       auth: {

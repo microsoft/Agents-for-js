@@ -58,8 +58,9 @@ describe('MsalTokenProvider', () => {
     authConfig.certKeyFile = undefined
     // @ts-ignore
     const acquireTokenStub = sinon.stub(ManagedIdentityApplication.prototype, 'acquireToken').resolves({ accessToken: 'test-token' })
-    const token = await msalTokenProvider.getAccessToken(authConfig, 'scope')
+    const token = await msalTokenProvider.getAccessToken(authConfig, 'https://api.botframework.com/.default')
     assert.strictEqual(token, 'test-token')
+    assert.strictEqual(acquireTokenStub.firstCall.args[0].resource, 'https://api.botframework.com')
     acquireTokenStub.restore()
   })
 

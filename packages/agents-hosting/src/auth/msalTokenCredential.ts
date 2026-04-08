@@ -19,8 +19,7 @@ export class MsalTokenCredential implements TokenCredential {
    * @returns Promise that resolves to an access token with expiration timestamp.
    */
   public async getToken (scopes: string[], options?: GetTokenOptions) {
-    const scope = scopes[0].substring(0, scopes[0].lastIndexOf('/'))
-    const token = await new MsalTokenProvider().getAccessToken(this.authConfig, scope)
+    const token = await new MsalTokenProvider().getAccessToken(this.authConfig, scopes[0])
     return {
       token,
       expiresOnTimestamp: Date.now() + 10000
