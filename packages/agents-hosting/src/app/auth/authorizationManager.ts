@@ -74,13 +74,11 @@ export class AuthorizationManager {
       }
     }
 
-    const handlerSummary = Object.entries(this._handlers)
-      .map(([id, handler]) => {
-        const scopeStr = handler.scopes?.length ? ` scopes=[${handler.scopes.join(',')}]` : ''
-        return `${id}(${handler.type}${scopeStr})`
-      })
-      .join(', ')
-    logger.debug(`auth handlers: ${handlerSummary}`)
+    if (logger.enabled) {
+      for (const [id, handler] of Object.entries(this._handlers)) {
+        logger.debug('auth handler "%s" type=%s scopes=%o', id, handler.type, handler.scopes)
+      }
+    }
   }
 
   /**
@@ -132,8 +130,13 @@ export class AuthorizationManager {
     const sharedContext = new TurnContext(context)
 
     for (const handler of handlers) {
-      const scopeStr = handler.scopes?.length ? ` scopes=[${handler.scopes.join(',')}]` : ''
-      logger.debug(`invoking auth handler "${handler.id}"${scopeStr}`)
+      if (logger.enabled) {
+        if (handler.scopes?.length) {
+          logger.debug('invoking auth handler "%s" scopes=[%s]', handler.id, handler.scopes.join(','))
+        } else {
+          logger.debug('invoking auth handler "%s"', handler.id)
+        }
+      }
       const status = await this.signin(storage, handler, sharedContext, active?.data)
       logger.debug(this.prefix(handler.id, `Sign-in status: ${status}`))
 

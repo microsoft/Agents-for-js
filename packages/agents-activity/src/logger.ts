@@ -92,6 +92,17 @@ export class Logger {
   debug (message: string, ...args: any[]) {
     this.loggers.debug(message, ...args)
   }
+
+  /**
+   * Returns true if any log level is enabled for this namespace.
+   * Use this to guard expensive log-string construction.
+   */
+  get enabled (): boolean {
+    return this.loggers.debug.enabled ||
+      this.loggers.info.enabled ||
+      this.loggers.warn.enabled ||
+      this.loggers.error.enabled
+  }
 }
 
 /**
