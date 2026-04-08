@@ -20,7 +20,10 @@ import { RouteList } from './routeList'
 import { TranscriptLoggerMiddleware } from '../transcript'
 import { CloudAdapter } from '../cloudAdapter'
 import { Authorization, UserAuthorization, AuthorizationManager } from './auth'
+import { Proactive } from './proactive'
 import { JwtPayload } from 'jsonwebtoken'
+import { ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from '../errorHelper'
 
 const logger = debug('agents:app')
 
@@ -76,6 +79,7 @@ export class AgentApplication<TState extends TurnState> {
   private readonly _adapter?: CloudAdapter
   private readonly _authorizationManager?: AuthorizationManager
   private readonly _authorization?: Authorization
+  private readonly _proactive?: Proactive<TState>
   private _typingTimer: NodeJS.Timeout | undefined
   protected readonly _extensions: AgentExtension<TState>[] = []
   private readonly _adaptiveCards: AdaptiveCardsActions<TState>
@@ -130,6 +134,14 @@ export class AgentApplication<TState extends TurnState> {
       this._authorization = new UserAuthorization(this._authorizationManager)
     }
 
+    // Create Proactive whenever proactive options are explicitly configured or a storage
+    // backend is available — no explicit `proactive` option is required.
+    if (this._options.proactive !== undefined || this._options.storage !== undefined) {
+      const proactiveOpts = this._options.proactive ?? {}
+      const proactiveStorage = proactiveOpts.storage ?? this._options.storage
+      this._proactive = new Proactive<TState>(this, { ...proactiveOpts, storage: proactiveStorage })
+    }
+
     if (this._options.longRunningMessages && !this._adapter && !this._options.agentAppId) {
       throw new Error('The Application.longRunningMessages property is unavailable because no adapter was configured in the app.')
     }
@@ -155,6 +167,27 @@ export class AgentApplication<TState extends TurnState> {
       throw new Error('The Application.authorization property is unavailable because no authorization options were configured.')
     }
     return this._authorization
+  }
+
+  /**
+   * Gets the proactive messaging subsystem.
+   *
+   * @throws Error if no storage backend was configured (neither `options.storage` nor
+   *   `options.proactive.storage`).
+   */
+  public get proactive (): Proactive<TState> {
+    if (!this._proactive) {
+      throw ExceptionHelper.generateException(Error, Errors.ProactivePropertyUnavailable)
+    }
+    return this._proactive
+  }
+
+  /**
+   * Returns `true` if user authorization was configured, without throwing.
+   * Used internally by the Proactive subsystem to check whether token acquisition is available.
+   */
+  public get hasUserAuthorization (): boolean {
+    return this._authorization !== undefined
   }
 
   /**

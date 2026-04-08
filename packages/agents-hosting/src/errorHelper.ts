@@ -661,6 +661,114 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   },
 
   // ============================================================================
+  // Proactive Messaging Errors (-120740 to -120799)
+  // ============================================================================
+
+  /**
+   * Error thrown when Application.proactive is accessed but no storage was configured.
+   */
+  ProactivePropertyUnavailable: {
+    code: -120740,
+    description: 'The Application.proactive property is unavailable because no storage was configured. Set options.storage or options.proactive.storage.'
+  },
+
+  /**
+   * Error thrown when a proactive storage operation is attempted without a storage backend.
+   */
+  ProactiveStorageRequired: {
+    code: -120741,
+    description: 'This proactive operation requires a storage backend. Set options.storage or options.proactive.storage.'
+  },
+
+  /**
+   * Error thrown when a conversation is not found in proactive storage.
+   */
+  ProactiveConversationNotFound: {
+    code: -120742,
+    description: "Conversation '{conversationId}' was not found in proactive storage."
+  },
+
+  /**
+   * Error thrown when sendActivity does not receive a ResourceResponse from the adapter.
+   */
+  ProactiveSendActivityNoResponse: {
+    code: -120743,
+    description: 'sendActivity: adapter did not return a ResourceResponse.'
+  },
+
+  /**
+   * Error thrown when not all token handlers have a signed-in user for proactive continuation.
+   */
+  ProactiveNotAllTokensAcquired: {
+    code: -120744,
+    description: 'Not all token handlers have a signed-in user.'
+  },
+
+  /**
+   * Error thrown when createConversation is called without any members.
+   */
+  ProactiveMembersRequired: {
+    code: -120745,
+    description: 'createConversation: at least one member must be specified in parameters.members.'
+  },
+
+  /**
+   * Error thrown when the adapter passed to createConversation does not support createConversationAsync.
+   */
+  ProactiveCloudAdapterRequired: {
+    code: -120746,
+    description: 'createConversation requires a CloudAdapter. The provided adapter does not implement createConversationAsync().'
+  },
+
+  /**
+   * Error thrown when createConversationAsync completes without invoking its callback.
+   */
+  ProactiveCallbackNotInvoked: {
+    code: -120747,
+    description: 'createConversation: createConversationAsync completed without invoking its callback.'
+  },
+
+  /**
+   * Error thrown when a Conversation reference is missing conversation.id.
+   */
+  ConversationInvalidId: {
+    code: -120748,
+    description: 'Conversation is invalid: reference.conversation.id is required.'
+  },
+
+  /**
+   * Error thrown when a Conversation reference is missing serviceUrl.
+   */
+  ConversationInvalidServiceUrl: {
+    code: -120749,
+    description: 'Conversation is invalid: reference.serviceUrl is required.'
+  },
+
+  /**
+   * Error thrown when a Conversation reference is missing claims.aud.
+   */
+  ConversationInvalidAud: {
+    code: -120750,
+    description: 'Conversation is invalid: claims.aud (agent client ID) is required.'
+  },
+
+  /**
+   * Error thrown when CreateConversationOptionsBuilder.build() is called without any members.
+   */
+  CreateConversationBuilderMembersRequired: {
+    code: -120751,
+    description: 'CreateConversationOptionsBuilder: at least one members entry must be added via withUser().'
+  },
+
+  /**
+   * Error thrown when a proactive operation that requires TurnState load/save is called without app storage.
+   */
+  ProactiveAppStorageRequired: {
+    code: -120752,
+    description: 'This proactive operation requires app storage to load and save TurnState. Set options.storage on AgentApplication.'
+  },
+
+  // ============================================================================
   // General Errors (-120990)
   // ============================================================================
 
