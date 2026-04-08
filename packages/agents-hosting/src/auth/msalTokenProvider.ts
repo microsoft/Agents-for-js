@@ -378,8 +378,10 @@ export class MsalTokenProvider implements AuthProvider {
       },
       system: this.sysOptions
     })
+    // ManagedIdentityApplication.acquireToken expects a bare resource URL without a /.default suffix
+    const resource = scope.endsWith('/.default') ? scope.slice(0, -('/.default'.length)) : scope
     const token = await mia.acquireToken({
-      resource: scope
+      resource
     })
     return token?.accessToken
   }
