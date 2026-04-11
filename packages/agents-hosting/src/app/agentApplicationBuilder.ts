@@ -7,6 +7,7 @@ import { Storage } from '../storage'
 import { AgentApplication } from './agentApplication'
 import { AgentApplicationOptions } from './agentApplicationOptions'
 import { AuthorizationOptions } from './auth/types'
+import { ProactiveOptions } from './proactive'
 import { TurnState } from './turnState'
 
 /**
@@ -61,6 +62,16 @@ export class AgentApplicationBuilder<TState extends TurnState = TurnState> {
    */
   public withAuthorization (authHandlers: AuthorizationOptions): this {
     this._options.authorization = authHandlers
+    return this
+  }
+
+  /**
+   * Configures the proactive messaging subsystem.
+   * @param options Proactive options including optional storage backend
+   * @returns This builder instance for chaining
+   */
+  public withProactive (options: ProactiveOptions): this {
+    this._options.proactive = options
     return this
   }
 

@@ -12,6 +12,7 @@ import { TurnState } from './turnState'
 import { HeaderPropagationDefinition } from '../headerPropagation'
 import { AuthorizationOptions } from './auth/types'
 import { Connections } from '../auth/connections'
+import { ProactiveOptions } from './proactive'
 
 /**
  * Configuration options for creating and initializing an Agent Application.
@@ -147,4 +148,10 @@ export interface AgentApplicationOptions<TState extends TurnState> {
    * identity providers.
    */
   connections?: Connections
+
+  /**
+   * Optional. Configuration for the proactive messaging subsystem.
+   * When provided, `app.proactive` will be available.
+   */
+  proactive?: ProactiveOptions
 }
