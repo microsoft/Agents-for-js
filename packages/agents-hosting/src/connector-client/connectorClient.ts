@@ -211,7 +211,7 @@ export class ConnectorClient {
         'Content-Type': 'application/json'
       },
       data: normalizeOutgoingActivity(body),
-      ...(body.channelIdChannel === Channels.Msteams && body.isTargetedActivity() ? { params: { isTargetedActivity: 'true' } } : {})
+      ...(body.channelId === Channels.Msteams && body.isTargetedActivity() ? { params: { isTargetedActivity: 'true' } } : {})
     }
     const response = await this._axiosInstance(config)
     logger.info('Reply to conversation/activity: ', response.data.id!, activityId)
@@ -262,7 +262,7 @@ export class ConnectorClient {
         'Content-Type': 'application/json'
       },
       data: normalizeOutgoingActivity(body),
-      ...(body.channelIdChannel === Channels.Msteams && body.isTargetedActivity() ? { params: { isTargetedActivity: 'true' } } : {})
+      ...(body.channelId === Channels.Msteams && body.isTargetedActivity() ? { params: { isTargetedActivity: 'true' } } : {})
     }
     const response = await this._axiosInstance(config)
     return response.data
@@ -290,7 +290,7 @@ export class ConnectorClient {
         'Content-Type': 'application/json'
       },
       data: normalizeOutgoingActivity(body),
-      ...(body.channelIdChannel === Channels.Msteams && body.isTargetedActivity() ? { params: { isTargetedActivity: 'true' } } : {})
+      ...(body.channelId === Channels.Msteams && body.isTargetedActivity() ? { params: { isTargetedActivity: 'true' } } : {})
     }
     const response = await this._axiosInstance(config)
     return response.data
