@@ -210,7 +210,8 @@ export class ConnectorClient {
       headers: {
         'Content-Type': 'application/json'
       },
-      data: normalizeOutgoingActivity(body)
+      data: normalizeOutgoingActivity(body),
+      ...(body.channelIdChannel === Channels.Msteams && body.isTargetedActivity() ? { params: { isTargetedActivity: 'true' } } : {})
     }
     const response = await this._axiosInstance(config)
     logger.info('Reply to conversation/activity: ', response.data.id!, activityId)
@@ -260,7 +261,8 @@ export class ConnectorClient {
       headers: {
         'Content-Type': 'application/json'
       },
-      data: normalizeOutgoingActivity(body)
+      data: normalizeOutgoingActivity(body),
+      ...(body.channelIdChannel === Channels.Msteams && body.isTargetedActivity() ? { params: { isTargetedActivity: 'true' } } : {})
     }
     const response = await this._axiosInstance(config)
     return response.data
@@ -287,7 +289,8 @@ export class ConnectorClient {
       headers: {
         'Content-Type': 'application/json'
       },
-      data: normalizeOutgoingActivity(body)
+      data: normalizeOutgoingActivity(body),
+      ...(body.channelIdChannel === Channels.Msteams && body.isTargetedActivity() ? { params: { isTargetedActivity: 'true' } } : {})
     }
     const response = await this._axiosInstance(config)
     return response.data
@@ -301,7 +304,8 @@ export class ConnectorClient {
    */
   public async deleteActivity (
     conversationId: string,
-    activityId: string
+    activityId: string,
+    targeted?: boolean
   ): Promise<void> {
     if (!conversationId || !activityId) {
       throw ExceptionHelper.generateException(Error, Errors.ConversationIdAndActivityIdRequired)
@@ -311,7 +315,8 @@ export class ConnectorClient {
       url: `v3/conversations/${conversationId}/activities/${activityId}`,
       headers: {
         'Content-Type': 'application/json'
-      }
+      },
+      ...(targeted ? { params: { isTargetedActivity: 'true' } } : {})
     }
     const response = await this._axiosInstance(config)
     return response.data
