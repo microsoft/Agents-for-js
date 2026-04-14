@@ -300,12 +300,13 @@ export class ConnectorClient {
    * Deletes an activity from a conversation.
    * @param conversationId - The ID of the conversation.
    * @param activityId - The ID of the activity.
+   * @param isTargetedActivity - When true, appends ?isTargetedActivity=true to the request URL.
    * @returns A promise that resolves when the activity is deleted.
    */
   public async deleteActivity (
     conversationId: string,
     activityId: string,
-    targeted?: boolean
+    isTargetedActivity?: boolean
   ): Promise<void> {
     if (!conversationId || !activityId) {
       throw ExceptionHelper.generateException(Error, Errors.ConversationIdAndActivityIdRequired)
@@ -316,7 +317,7 @@ export class ConnectorClient {
       headers: {
         'Content-Type': 'application/json'
       },
-      ...(targeted ? { params: { isTargetedActivity: 'true' } } : {})
+      ...(isTargetedActivity ? { params: { isTargetedActivity: 'true' } } : {})
     }
     const response = await this._axiosInstance(config)
     return response.data

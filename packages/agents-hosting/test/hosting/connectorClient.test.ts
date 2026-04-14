@@ -307,7 +307,7 @@ describe('ConnectorClient', () => {
       assert.strictEqual(config.params, undefined)
     })
 
-    it('deleteActivity adds isTargetedActivity param when targeted=true', async () => {
+    it('deleteActivity adds isTargetedActivity param when isTargetedActivity=true', async () => {
       await client.deleteActivity('conv-id', 'act-id', true)
 
       sinon.assert.calledOnce(mockAxios)
@@ -315,7 +315,7 @@ describe('ConnectorClient', () => {
       assert.deepStrictEqual(config.params, { isTargetedActivity: 'true' })
     })
 
-    it('deleteActivity does NOT add param when targeted=false', async () => {
+    it('deleteActivity does NOT add param when isTargetedActivity=false', async () => {
       await client.deleteActivity('conv-id', 'act-id', false)
 
       sinon.assert.calledOnce(mockAxios)
@@ -323,7 +323,7 @@ describe('ConnectorClient', () => {
       assert.strictEqual(config.params, undefined)
     })
 
-    it('deleteActivity does NOT add param when targeted is omitted', async () => {
+    it('deleteActivity does NOT add param when isTargetedActivity is omitted', async () => {
       await client.deleteActivity('conv-id', 'act-id')
 
       sinon.assert.calledOnce(mockAxios)
