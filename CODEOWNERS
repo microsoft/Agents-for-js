@@ -2,6 +2,5 @@
 
 # Global ownership - fallback for any files not covered by more specific rules
 * @microsoft/agents-admin
-* @benbrown
 #   Team is found here:
 #   https://github.com/orgs/microsoft/teams/agents-admin
