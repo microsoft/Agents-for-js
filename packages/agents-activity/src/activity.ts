@@ -28,6 +28,7 @@ import { TextHighlight, textHighlightZodSchema } from './textHighlight'
 import { RoleTypes } from './conversation/roleTypes'
 import { ExceptionHelper } from './exceptionHelper'
 import { Errors } from './errorHelper'
+import { ActivityTreatments } from './activityTreatments'
 
 /**
  * Zod schema for validating an Activity object.
@@ -691,6 +692,28 @@ export class Activity {
       return this.removeMentionText(this.recipient.id)
     }
     return ''
+  }
+
+  /**
+   * Determines whether this activity is a targeted activity treatment.
+   * A targeted activity is visible only to the recipient, even in a group conversation.
+   * @returns true if the activity contains an activityTreatment entity with treatment 'targeted'.
+   */
+  public isTargetedActivity (): boolean {
+    if (!this.entities?.length) return false
+    return this.entities.some(
+      e => e.type === 'activityTreatment' && e.treatment === ActivityTreatments.Targeted
+    )
+  }
+
+  /**
+   * Marks this activity as a targeted activity treatment.
+   * Idempotent — has no effect if the activity is already targeted.
+   */
+  public makeTargetedActivity (): void {
+    if (this.isTargetedActivity()) return
+    this.entities ??= []
+    this.entities.push({ type: 'activityTreatment', treatment: ActivityTreatments.Targeted })
   }
 
   /**
