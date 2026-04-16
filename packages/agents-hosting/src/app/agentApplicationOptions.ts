@@ -15,6 +15,35 @@ import { Connections } from '../auth/connections'
 import { ProactiveOptions } from './proactive'
 
 /**
+ * Typing timer settings for a specific channel or the global default.
+ */
+export interface TypingTimingOptions {
+  /**
+   * Delay in milliseconds before the first typing indicator is sent.
+   *
+   * @default 0
+   */
+  initialDelayMs?: number
+
+  /**
+   * Delay in milliseconds between subsequent typing indicators.
+   *
+   * @default 4000
+   */
+  intervalMs?: number
+}
+
+/**
+ * Configuration options for automatic typing indicators.
+ */
+export interface TypingOptions extends TypingTimingOptions {
+  /**
+   * Optional channel-specific timing overrides keyed by channel ID.
+   */
+  channelStrategies?: Record<string, TypingTimingOptions>
+}
+
+/**
  * Configuration options for creating and initializing an Agent Application.
  * This interface defines all the configurable aspects of an agent's behavior,
  * including adapter settings, storage, authorization, and various feature flags.
@@ -59,6 +88,13 @@ export interface AgentApplicationOptions<TState extends TurnState> {
    * @default false
    */
   startTypingTimer: boolean;
+
+  /**
+   * Optional timing settings for automatic typing indicators.
+   *
+   * @default undefined
+   */
+  typing?: TypingOptions;
 
   /**
    * Whether to enable support for long-running message processing operations.
