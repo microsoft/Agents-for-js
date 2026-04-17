@@ -78,6 +78,15 @@ export const SpanNames = {
   USER_TOKEN_CLIENT_GET_TOKEN_STATUS: 'agents.user_token_client.get_token_status',
   USER_TOKEN_CLIENT_GET_AAD_TOKENS: 'agents.user_token_client.get_aad_tokens',
 
+  // Proactive
+  PROACTIVE_STORE_CONVERSATION: 'agents.proactive.store_conversation',
+  PROACTIVE_GET_CONVERSATION: 'agents.proactive.get_conversation',
+  PROACTIVE_GET_CONVERSATION_OR_THROW: 'agents.proactive.get_conversation_or_throw',
+  PROACTIVE_DELETE_CONVERSATION: 'agents.proactive.delete_conversation',
+  PROACTIVE_SEND_ACTIVITY: 'agents.proactive.send_activity',
+  PROACTIVE_CONTINUE_CONVERSATION: 'agents.proactive.continue_conversation',
+  PROACTIVE_CREATE_CONVERSATION: 'agents.proactive.create_conversation',
+
   // TurnContext
   TURN_SEND_ACTIVITIES: 'agents.turn.send_activities',
 
@@ -126,6 +135,10 @@ export const MetricNames = {
   // UserTokenClient metrics
   USER_TOKEN_CLIENT_REQUESTS: 'agents.user_token_client.request.count',
   USER_TOKEN_CLIENT_REQUEST_DURATION: 'agents.user_token_client.request.duration',
+
+  // Proactive
+  PROACTIVE_OPERATION_COUNT: 'agents.proactive.operation.count',
+  PROACTIVE_OPERATION_DURATION: 'agents.proactive.operation.duration',
 
   // Copilot Studio Client
   CSC_ACTIVITIES_RECEIVED: 'agents.copilot_client.activities.received',

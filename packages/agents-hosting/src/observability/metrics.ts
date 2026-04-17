@@ -55,6 +55,11 @@ export const HostingMetrics = {
     description: 'Total number of user token client HTTP requests'
   }),
 
+  proactiveOperationCounter: metric.counter(MetricNames.PROACTIVE_OPERATION_COUNT, {
+    unit: 'operation',
+    description: 'Total number of proactive operations (sendActivity, continueConversation, createConversation)'
+  }),
+
   // Duration Histograms
   adapterProcessDuration: metric.histogram(MetricNames.ADAPTER_PROCESS_DURATION, {
     unit: 'ms',
@@ -89,5 +94,10 @@ export const HostingMetrics = {
   userTokenClientRequestDuration: metric.histogram(MetricNames.USER_TOKEN_CLIENT_REQUEST_DURATION, {
     unit: 'ms',
     description: 'Duration of user token client HTTP requests in milliseconds'
+  }),
+
+  proactiveOperationDuration: metric.histogram(MetricNames.PROACTIVE_OPERATION_DURATION, {
+    unit: 'ms',
+    description: 'Duration of proactive operations in milliseconds'
   })
 }
