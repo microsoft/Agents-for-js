@@ -181,6 +181,28 @@ app.onActivity('message', async (context: TurnContext, state: TurnState) => {
 
 The client requires a JWT token and `ConnectionSettings` (environment ID + agent schema name, or direct connect URL). See `packages/agents-copilotstudio-client/README.md` for detailed setup including Azure app registration requirements.
 
+### Error Handling Pattern
+
+Across **all packages in this repo**, thrown errors must use `ExceptionHelper.generateException()` with a predefined entry from an `Errors` constant — **never** use `throw new Error(...)` or `throw new TypeError(...)` directly.
+
+```typescript
+// Import pattern
+import { ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from '../errorHelper'  // adjust relative path per package
+
+// Usage
+throw ExceptionHelper.generateException(Error, Errors.SomeErrorKey)
+throw ExceptionHelper.generateException(TypeError, Errors.SomeErrorKey)
+
+// With template substitution (description uses {key} placeholders)
+throw ExceptionHelper.generateException(Error, Errors.SomeErrorKey, undefined, { key: value })
+
+// With inner exception
+throw ExceptionHelper.generateException(Error, Errors.SomeErrorKey, originalError)
+```
+
+Each package keeps its error definitions in a local `errorHelper.ts` (e.g. `packages/agents-hosting/src/errorHelper.ts`) as `AgentErrorDefinition` entries with a unique numeric `code`, a `description`, and an optional `helplink`. When adding new errors, continue the numeric sequence in the appropriate range for the subsystem. Code reviews should flag any raw `throw new Error` that bypasses this pattern.
+
 ## Git Workflow
 
 - **Main branch**: `main`

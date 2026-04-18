@@ -12,6 +12,36 @@ import { TurnState } from './turnState'
 import { HeaderPropagationDefinition } from '../headerPropagation'
 import { AuthorizationOptions } from './auth/types'
 import { Connections } from '../auth/connections'
+import { ProactiveOptions } from './proactive'
+
+/**
+ * Typing timer settings for a specific channel or the global default.
+ */
+export interface TypingTimingOptions {
+  /**
+   * Delay in milliseconds before the first typing indicator is sent.
+   *
+   * @default 0
+   */
+  initialDelayMs?: number
+
+  /**
+   * Delay in milliseconds between subsequent typing indicators.
+   *
+   * @default 4000
+   */
+  intervalMs?: number
+}
+
+/**
+ * Configuration options for automatic typing indicators.
+ */
+export interface TypingOptions extends TypingTimingOptions {
+  /**
+   * Optional channel-specific timing overrides keyed by channel ID.
+   */
+  channelStrategies?: Record<string, TypingTimingOptions>
+}
 
 /**
  * Configuration options for creating and initializing an Agent Application.
@@ -58,6 +88,13 @@ export interface AgentApplicationOptions<TState extends TurnState> {
    * @default false
    */
   startTypingTimer: boolean;
+
+  /**
+   * Optional timing settings for automatic typing indicators.
+   *
+   * @default undefined
+   */
+  typing?: TypingOptions;
 
   /**
    * Whether to enable support for long-running message processing operations.
@@ -147,4 +184,10 @@ export interface AgentApplicationOptions<TState extends TurnState> {
    * identity providers.
    */
   connections?: Connections
+
+  /**
+   * Optional. Configuration for the proactive messaging subsystem.
+   * When provided, `app.proactive` will be available.
+   */
+  proactive?: ProactiveOptions
 }

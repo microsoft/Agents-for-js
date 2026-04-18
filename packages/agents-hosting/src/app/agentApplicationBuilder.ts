@@ -7,7 +7,9 @@ import { Storage } from '../storage'
 import { AgentApplication } from './agentApplication'
 import { AgentApplicationOptions } from './agentApplicationOptions'
 import { AuthorizationOptions } from './auth/types'
+import { ProactiveOptions } from './proactive'
 import { TurnState } from './turnState'
+import { TypingOptions } from './agentApplicationOptions'
 
 /**
  * Builder class for creating and configuring AgentApplication instances.
@@ -49,10 +51,20 @@ export class AgentApplicationBuilder<TState extends TurnState = TurnState> {
    * @param startTypingTimer Whether to show typing indicators
    * @returns This builder instance for chaining
    */
-  // public setStartTypingTimer (startTypingTimer: boolean): this {
-  //   this._options.startTypingTimer = startTypingTimer
-  //   return this
-  // }
+  public setStartTypingTimer (startTypingTimer: boolean): this {
+    this._options.startTypingTimer = startTypingTimer
+    return this
+  }
+
+  /**
+   * Configures timing behavior for automatic typing indicators.
+   * @param typing Typing timer options
+   * @returns This builder instance for chaining
+   */
+  public withTyping (typing: TypingOptions): this {
+    this._options.typing = typing
+    return this
+  }
 
   /**
    * Sets authentication options for the AgentApplication.
@@ -61,6 +73,16 @@ export class AgentApplicationBuilder<TState extends TurnState = TurnState> {
    */
   public withAuthorization (authHandlers: AuthorizationOptions): this {
     this._options.authorization = authHandlers
+    return this
+  }
+
+  /**
+   * Configures the proactive messaging subsystem.
+   * @param options Proactive options including optional storage backend
+   * @returns This builder instance for chaining
+   */
+  public withProactive (options: ProactiveOptions): this {
+    this._options.proactive = options
     return this
   }
 
