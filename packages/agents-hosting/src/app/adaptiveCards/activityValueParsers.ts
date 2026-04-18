@@ -61,7 +61,7 @@ interface ValueAction {
  * Parses the given value as a value action execute selector.
  *
  * @param {unknown} value - The value to parse.
- * @returns {object} - The parsed value action execute selector.
+ * @returns {ValueAction | undefined} The parsed value action, or `undefined` if `value` is null/undefined or does not match the expected shape.
  */
 export function parseValueActionExecuteSelector (value: unknown): ValueAction | undefined {
   if (value === undefined || value === null) {
