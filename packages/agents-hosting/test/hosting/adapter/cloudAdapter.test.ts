@@ -2,7 +2,7 @@ import { strict as assert, strict } from 'assert'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 import { AuthConfiguration, CloudAdapter, INVOKE_RESPONSE_KEY, MsalConnectionManager, Request, UserTokenClient, TurnContext } from '../../../src'
 import sinon, { SinonSandbox } from 'sinon'
-import { Activity, ActivityTypes, ConversationReference, DeliveryModes } from '@microsoft/agents-activity'
+import { Activity, ActivityTypes, ConversationReference, DeliveryModes, RoleTypes } from '@microsoft/agents-activity'
 import { ConnectorClient } from '../../../src/connector-client/connectorClient'
 import { Response } from 'express'
 
@@ -166,6 +166,27 @@ describe('CloudAdapter', function () {
       sinon.assert.calledOnce(createConnectorClientWithIdentitySpy)
 
       stubfromObject.restore()
+    })
+
+    it('Non-Skill role should use api.botframework scope', function () {
+      const identity = { azp: 'agentId' }
+      const activity = { type: ActivityTypes.Message }
+      const scope = (cloudAdapter as any).resolveConnectorScope(identity, activity)
+      assert.equal(scope, 'https://api.botframework.com')
+    })
+
+    it('Skill role should use Agent appid as scope', function () {
+      const identity = { azp: 'agentId' }
+      const activity = { recipient: { role: RoleTypes.Skill } }
+      const scope = (cloudAdapter as any).resolveConnectorScope(identity, activity)
+      assert.equal(scope, 'agentId')
+    })
+
+    it('Skill role without azp/appid should use api.botframework as scope', function () {
+      const identity = {}
+      const activity = { recipient: { role: RoleTypes.Skill } }
+      const scope = (cloudAdapter as any).resolveConnectorScope(identity, activity)
+      assert.equal(scope, 'https://api.botframework.com')
     })
   })
 
