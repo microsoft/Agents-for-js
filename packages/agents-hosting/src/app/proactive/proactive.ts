@@ -458,16 +458,17 @@ export class Proactive<TState extends TurnState> {
     handler?: RouteHandler<TState>
   ): Promise<Conversation> {
     return trace(ProactiveTraceDefinitions.createConversation, async ({ record }) => {
+      record({
+        channelId: createOptions.channelId,
+        storeConversation: !!createOptions.storeConversation,
+        hasHandler: !!handler,
+      })
+
       if (!createOptions.parameters.members?.length) {
         throw ExceptionHelper.generateException(Error, Errors.ProactiveMembersRequired)
       }
 
-      record({
-        channelId: createOptions.channelId,
-        membersCount: createOptions.parameters.members.length,
-        storeConversation: !!createOptions.storeConversation,
-        hasHandler: !!handler,
-      })
+      record({ membersCount: createOptions.parameters.members.length })
 
       // CloudAdapter.createConversationAsync(agentAppId, channelId, serviceUrl, audience, params, logic)
       // The logic callback IS the handler — context is created internally by the adapter.
