@@ -8,6 +8,7 @@ import {
 import {
   AgentApplication,
   CloudAdapter,
+  loadAuthConfigFromEnv,
   MemoryStorage,
   TurnContext,
   TurnState,
@@ -171,7 +172,7 @@ server.post('/api/proactive/teams-channel', requireAllowedCaller, async (req: Re
     return
   }
 
-  const clientId = process.env.clientId ?? process.env.CLIENT_ID ?? ''
+  const clientId = loadAuthConfigFromEnv().clientId ?? ''
 
   try {
     const builder = CreateConversationOptionsBuilder
