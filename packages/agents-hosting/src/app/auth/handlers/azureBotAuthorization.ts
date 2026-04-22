@@ -161,7 +161,7 @@ export class AzureBotAuthorization implements AuthorizationHandler {
    * The OBO scopes configured for this handler.
    */
   get scopes (): string[] | undefined {
-    return this._options.obo?.scopes
+    return this.options.oboScopes
   }
 
   /**

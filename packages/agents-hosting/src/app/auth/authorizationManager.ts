@@ -154,7 +154,7 @@ export class AuthorizationManager {
     if (this.handlers.length === 0 && app.options.authorization !== undefined) {
       throw ExceptionHelper.generateException(Error, Errors.NoAuthHandlersConfigured)
     }
-    
+
     for (const [id, handler] of Object.entries(this._handlers)) {
       logger.debug('auth handler "%s" type=%s scopes=%o', id, handler.type, handler.scopes)
     }
