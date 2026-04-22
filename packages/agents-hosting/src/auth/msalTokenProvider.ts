@@ -150,7 +150,8 @@ export class MsalTokenProvider implements AuthProvider {
 
     const token = await cca.acquireTokenByClientCredential({
       scopes: ['api://AzureAdTokenExchange/.default'],
-      correlationId: v4()
+      correlationId: v4(),
+      azureRegion: this.connectionSettings?.azureRegion
     })
 
     if (!token?.accessToken) {
@@ -420,7 +421,8 @@ export class MsalTokenProvider implements AuthProvider {
     })
     const token = await cca.acquireTokenByClientCredential({
       scopes: [`${scope}/.default`],
-      correlationId: v4()
+      correlationId: v4(),
+      azureRegion: authConfig.azureRegion
     })
     if (!token?.accessToken) {
       throw new Error('Failed to acquire token using certificate')
@@ -445,7 +447,8 @@ export class MsalTokenProvider implements AuthProvider {
     })
     const token = await cca.acquireTokenByClientCredential({
       scopes: [`${scope}/.default`],
-      correlationId: v4()
+      correlationId: v4(),
+      azureRegion: authConfig.azureRegion
     })
     if (!token?.accessToken) {
       throw new Error('Failed to acquire token using client secret')
@@ -470,7 +473,7 @@ export class MsalTokenProvider implements AuthProvider {
       },
       system: this.sysOptions
     })
-    const token = await cca.acquireTokenByClientCredential({ scopes })
+    const token = await cca.acquireTokenByClientCredential({ scopes, azureRegion: authConfig.azureRegion })
     logger.debug('got token using FIC client assertion')
     if (!token?.accessToken) {
       throw new Error('Failed to acquire token using FIC client assertion')
@@ -495,7 +498,7 @@ export class MsalTokenProvider implements AuthProvider {
       },
       system: this.sysOptions
     })
-    const token = await cca.acquireTokenByClientCredential({ scopes })
+    const token = await cca.acquireTokenByClientCredential({ scopes, azureRegion: authConfig.azureRegion })
     logger.info('got token using WID client assertion')
     if (!token?.accessToken) {
       throw new Error('Failed to acquire token using WID client assertion')

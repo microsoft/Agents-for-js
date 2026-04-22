@@ -90,6 +90,13 @@ export interface AuthConfiguration {
    * The path to K8s provided token.
    */
   WIDAssertionFile?: string
+
+  /**
+   * The Azure region for ESTS-R regional token acquisition (e.g. 'westus', 'eastus').
+   * When set, MSAL routes token requests to the specified regional endpoint.
+   * See https://learn.microsoft.com/en-us/entra/msal/javascript/node/regional-authorities for details.
+   */
+  azureRegion?: string
 }
 
 /**
@@ -196,6 +203,7 @@ export const loadPrevAuthConfigFromEnv: () => AuthConfiguration = () => {
       issuers: getDefaultIssuers(process.env.MicrosoftAppTenantId ?? '', authority),
       altBlueprintConnectionName: process.env.altBlueprintConnectionName,
       WIDAssertionFile: process.env.WIDAssertionFile,
+      azureRegion: process.env.azureRegion,
     }
     envConnections.connections.set(DEFAULT_CONNECTION, authConfig)
     envConnections.connectionsMap.push({
@@ -352,7 +360,8 @@ function buildLegacyAuthConfig (envPrefix: string = '', customConfig?: AuthConfi
     scope: customConfig?.scope ?? process.env[`${prefix}scope`],
     issuers: customConfig?.issuers ?? getDefaultIssuers(tenantId as string, authority),
     altBlueprintConnectionName: customConfig?.altBlueprintConnectionName ?? process.env[`${prefix}altBlueprintConnectionName`],
-    WIDAssertionFile: customConfig?.WIDAssertionFile ?? process.env[`${prefix}WIDAssertionFile`]
+    WIDAssertionFile: customConfig?.WIDAssertionFile ?? process.env[`${prefix}WIDAssertionFile`],
+    azureRegion: customConfig?.azureRegion ?? process.env[`${prefix}azureRegion`]
   }
 }
 
