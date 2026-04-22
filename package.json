@@ -37,7 +37,8 @@
   "license": "MIT",
   "workspaces": [
     "packages/*",
-    "test-agents/*"
+    "test-agents/*",
+    "!test-agents/otelAgent"
   ],
   "devDependencies": {
     "@microsoft/api-extractor": "^7.57.7",

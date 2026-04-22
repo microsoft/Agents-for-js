@@ -19,8 +19,8 @@ class OTelAgent extends AgentApplication<TurnState> {
   welcome = async (ctx: TurnContext) => {
     return this.tracer.startActiveSpan('agent.welcome_message', async (span: Span) => {
       try {
-        span.setAttribute('conversation.id', ctx.activity.conversation?.id ?? '')
-        span.setAttribute('channel.id', ctx.activity.channelId ?? '')
+        span.setAttribute('conversation.id', ctx.activity.conversation?.id ?? 'unknown')
+        span.setAttribute('channel.id', ctx.activity.channelId ?? 'unknown')
         span.setAttribute('members.added.count', ctx.activity.membersAdded?.length ?? 0)
 
         ctx.activity.membersAdded?.forEach((member) => {
@@ -46,14 +46,8 @@ class OTelAgent extends AgentApplication<TurnState> {
       } catch (error) {
         if (error instanceof Error) {
           span.recordException(error)
-          span.addEvent(
-            'exception',
-            {
-              'exception.name': error.name,
-              'exception.message': error.message,
-              'exception.stacktrace': error.stack,
-            },
-            Date.now())
+        } else {
+          span.recordException(new Error(String(error)))
         }
         span.setStatus({ code: SpanStatusCode.ERROR })
         throw error
@@ -67,10 +61,10 @@ class OTelAgent extends AgentApplication<TurnState> {
     return this.tracer.startActiveSpan('agent.message_handler', async (span: Span) => {
       const t0 = performance.now()
       try {
-        span.setAttribute('conversation.id', ctx.activity.conversation?.id ?? '')
-        span.setAttribute('channel.id', ctx.activity.channelId ?? '')
+        span.setAttribute('conversation.id', ctx.activity.conversation?.id ?? 'unknown')
+        span.setAttribute('channel.id', ctx.activity.channelId ?? 'unknown')
         span.setAttribute('message.text.length', ctx.activity.text?.length ?? 0)
-        span.setAttribute('user.id', ctx.activity.from?.id ?? '')
+        span.setAttribute('user.id', ctx.activity.from?.id ?? 'unknown')
 
         span.addEvent(
           'message.received',
@@ -114,7 +108,8 @@ class OTelAgent extends AgentApplication<TurnState> {
         AgentTelemetry.messageProcessingDuration.record(processedMs,
           {
             'conversation.id': ctx.activity.conversation?.id ?? 'unknown',
-            'channel.id': ctx.activity.channelId ?? 'unknown'
+            'channel.id': ctx.activity.channelId ?? 'unknown',
+            status: 'success'
           })
         AgentTelemetry.routeExecutedCounter.add(1,
           {
@@ -125,24 +120,17 @@ class OTelAgent extends AgentApplication<TurnState> {
       } catch (error) {
         if (error instanceof Error) {
           span.recordException(error)
-          span.addEvent(
-            'exception',
-            {
-              'exception.name': error.name,
-              'exception.message': error.message,
-              'exception.stacktrace': error.stack, // don't do this in production!
-            },
-            Date.now())
-
-          const elapsedMs = performance.now() - t0
-          AgentTelemetry.messageProcessingDuration.record(elapsedMs,
-            {
-              'conversation.id': ctx.activity.conversation?.id ?? 'unknown',
-              'channel.id': ctx.activity.channelId ?? 'unknown',
-              status: 'error'
-            })
+        } else {
+          span.recordException(new Error(String(error)))
         }
         span.setStatus({ code: SpanStatusCode.ERROR })
+        const elapsedMs = performance.now() - t0
+        AgentTelemetry.messageProcessingDuration.record(elapsedMs,
+          {
+            'conversation.id': ctx.activity.conversation?.id ?? 'unknown',
+            'channel.id': ctx.activity.channelId ?? 'unknown',
+            status: 'error'
+          })
         throw error
       } finally {
         span.end()
