@@ -612,7 +612,7 @@ describe('MsalTokenProvider', () => {
       const requestArg = acquireTokenStub.getCall(0).args[0] as any
       assert.strictEqual(requestArg.azureRegion, 'westus', 'azureRegion must be forwarded to acquireTokenByClientCredential')
     } finally {
-      acquireTokenStub.restore()
+      sinon.restore()
     }
   })
 
