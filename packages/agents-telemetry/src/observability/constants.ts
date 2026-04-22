@@ -15,6 +15,7 @@ export const SpanCategories = {
   STORAGE: ['STORAGE_'],
   AUTHORIZATION: ['AUTHORIZATION_', 'USER_TOKEN_CLIENT_'],
   AUTHENTICATION: ['AUTHENTICATION_'],
+  DIALOGS: ['DIALOGS_'],
 } as const
 
 /**
@@ -81,6 +82,14 @@ export const SpanNames = {
   // TurnContext
   TURN_SEND_ACTIVITIES: 'agents.turn.send_activities',
 
+  // Dialogs
+  DIALOGS_RUN: 'agents.dialogs.run',
+  DIALOGS_CONTEXT_BEGIN: 'agents.dialogs.context.begin',
+  DIALOGS_CONTEXT_CONTINUE: 'agents.dialogs.context.continue',
+  DIALOGS_CONTEXT_END: 'agents.dialogs.context.end',
+  DIALOGS_CONTEXT_REPLACE: 'agents.dialogs.context.replace',
+  DIALOGS_CONTEXT_CANCEL_ALL: 'agents.dialogs.context.cancel_all',
+
   // Copilot Studio Client
   COPILOT_START_CONVERSATION: 'agents.copilot_client.start_conversation',
   COPILOT_SEND_ACTIVITY: 'agents.copilot_client.send_activity',
@@ -115,6 +124,10 @@ export const MetricNames = {
   TURNS_COUNT: 'agents.turn.count',
   TURNS_ERRORS: 'agents.turn.error.count',
   TURN_DURATION: 'agents.turn.duration',
+
+  // Dialog metrics
+  DIALOGS_CONTEXT_COUNT: 'agents.dialogs.context.count',
+  DIALOGS_CONTEXT_DURATION: 'agents.dialogs.context.duration',
 
   // Storage metrics
   STORAGE_OPERATION_DURATION: 'agents.storage.operation.duration',
