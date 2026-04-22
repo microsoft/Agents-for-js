@@ -95,7 +95,6 @@ export const DialogsTraceDefinitions = {
       activity: defaultActivity,
       dialogId: '',
       name: 'unknown',
-      reason: '',
       status: 'unknown',
     },
     end ({ span, record, duration }) {
@@ -104,7 +103,6 @@ export const DialogsTraceDefinitions = {
         'activity.conversation_id': unknownValue(record.activity?.conversation?.id),
         'dialog.id': unknownValue(record.dialogId),
         'dialog.name': unknownValue(record.name),
-        'dialog.reason': unknownValue(record.reason),
         'dialog.status': unknownValue(record.status),
       }
 
@@ -113,7 +111,6 @@ export const DialogsTraceDefinitions = {
       const metricAttributes = {
         operation: 'end',
         'result.status': unknownValue(record.status),
-        'dialog.reason': unknownValue(record.reason),
       }
 
       DialogsMetrics.contextCount.add(1, metricAttributes)

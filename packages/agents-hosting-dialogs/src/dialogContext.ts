@@ -532,7 +532,6 @@ export class DialogContext {
         activity: this.context.activity,
         dialogId: this.activeDialog?.id,
         name: activeDialogDefinition?.constructor.name,
-        reason: DialogReason.endCalled,
       })
 
       // End the active dialog
