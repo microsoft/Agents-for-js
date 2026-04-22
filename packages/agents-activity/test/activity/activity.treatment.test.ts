@@ -58,6 +58,7 @@ describe('isTargetedActivity', () => {
 describe('makeTargetedActivity', () => {
   it('adds entity when entities is undefined', () => {
     const activity = new Activity(ActivityTypes.Message)
+    activity.conversation = { isGroup: true } as any
     activity.makeTargetedActivity()
     assert.strictEqual(activity.entities?.length, 1)
     assert.strictEqual(activity.entities![0].type, 'activityTreatment')
@@ -66,6 +67,7 @@ describe('makeTargetedActivity', () => {
 
   it('adds entity when entities is empty', () => {
     const activity = new Activity(ActivityTypes.Message)
+    activity.conversation = { isGroup: true } as any
     activity.entities = []
     activity.makeTargetedActivity()
     assert.strictEqual(activity.entities.length, 1)
@@ -73,6 +75,7 @@ describe('makeTargetedActivity', () => {
 
   it('is idempotent — calling twice does not add a duplicate', () => {
     const activity = new Activity(ActivityTypes.Message)
+    activity.conversation = { isGroup: true } as any
     activity.makeTargetedActivity()
     activity.makeTargetedActivity()
     assert.strictEqual(activity.entities?.length, 1)
@@ -80,10 +83,16 @@ describe('makeTargetedActivity', () => {
 
   it('does not remove existing entities', () => {
     const activity = new Activity(ActivityTypes.Message)
+    activity.conversation = { isGroup: true } as any
     activity.entities = [{ type: 'mention', mentioned: { id: 'u1', name: 'User' }, text: '@User' } as unknown as Entity]
     activity.makeTargetedActivity()
     assert.strictEqual(activity.entities.length, 2)
     assert.strictEqual(activity.entities[0].type, 'mention')
     assert.strictEqual(activity.entities[1].type, 'activityTreatment')
+  })
+
+  it('throws when conversation is not a group', () => {
+    const activity = new Activity(ActivityTypes.Message)
+    assert.throws(() => activity.makeTargetedActivity(), { code: -110008 })
   })
 })
