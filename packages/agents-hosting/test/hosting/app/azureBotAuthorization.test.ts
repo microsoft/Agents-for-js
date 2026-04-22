@@ -40,7 +40,7 @@ describe('AzureBotAuthorization', () => {
 
   it('token should call getTokenOrSignInResource when token not in context', async () => {
     mockClient.getTokenOrSignInResource.resolves({ tokenResponse: { token: 'token' } } as any)
-    const handler = new AzureBotAuthorization('auth', { name: 'connection' }, settings)
+    const handler = new AzureBotAuthorization('auth', { azureBotOAuthConnectionName: 'connection' }, settings)
     const context = new TurnContext(baseAdapter, baseActivity)
     context.turnState.set(baseAdapter.UserTokenClientKey, mockClient)
     const result = await handler.token(context)
@@ -49,7 +49,7 @@ describe('AzureBotAuthorization', () => {
   })
 
   it('signout should call UserTokenClient.signOut', async () => {
-    const handler = new AzureBotAuthorization('auth', { name: 'connection' }, settings)
+    const handler = new AzureBotAuthorization('auth', { azureBotOAuthConnectionName: 'connection' }, settings)
     const context = new TurnContext(baseAdapter, baseActivity)
     context.turnState.set(baseAdapter.UserTokenClientKey, mockClient)
     const ok = await handler.signout(context)
@@ -59,7 +59,7 @@ describe('AzureBotAuthorization', () => {
 
   it('should return pending status when starting the auth flow', async () => {
     mockClient.getTokenOrSignInResource.resolves({ tokenResponse: undefined, signInResource: { signInLink: 'link' } } as any)
-    const handler = new AzureBotAuthorization('auth', { name: 'connection' }, settings)
+    const handler = new AzureBotAuthorization('auth', { azureBotOAuthConnectionName: 'connection' }, settings)
     const context = new TurnContext(baseAdapter, baseActivity)
     context.turnState.set(baseAdapter.UserTokenClientKey, mockClient)
     const status = await handler.signin(context)
@@ -69,7 +69,7 @@ describe('AzureBotAuthorization', () => {
 
   it('should return approved status on valid magic code', async () => {
     mockClient.getTokenOrSignInResource.resolves({ tokenResponse: { token: 'token' } } as any)
-    const handler = new AzureBotAuthorization('auth', { name: 'connection' }, settings)
+    const handler = new AzureBotAuthorization('auth', { azureBotOAuthConnectionName: 'connection' }, settings)
     const activity = Activity.fromObject({
       ...baseActivity,
       text: '123456'
@@ -82,7 +82,7 @@ describe('AzureBotAuthorization', () => {
   })
 
   it('should return pending status on wrong magic code', async () => {
-    const handler = new AzureBotAuthorization('auth', { name: 'connection' }, settings)
+    const handler = new AzureBotAuthorization('auth', { azureBotOAuthConnectionName: 'connection' }, settings)
     const activity = Activity.fromObject({
       ...baseActivity,
       text: '123'
@@ -94,7 +94,7 @@ describe('AzureBotAuthorization', () => {
   })
 
   it('should return rejected status on max attempts exceeded', async () => {
-    const handler = new AzureBotAuthorization('auth', { name: 'connection' }, settings)
+    const handler = new AzureBotAuthorization('auth', { azureBotOAuthConnectionName: 'connection' }, settings)
     const context = new TurnContext(baseAdapter, baseActivity)
     context.turnState.set(baseAdapter.UserTokenClientKey, mockClient)
     const status = await handler.signin(context, { ...active, attemptsLeft: 0 })
@@ -104,7 +104,7 @@ describe('AzureBotAuthorization', () => {
   describe('Teams flow', () => {
     it('should return approved status on valid signin/verifyState magic code', async () => {
       mockClient.getTokenOrSignInResource.resolves({ tokenResponse: { token: 'token' } } as any)
-      const handler = new AzureBotAuthorization('auth', { name: 'connection' }, settings)
+      const handler = new AzureBotAuthorization('auth', { azureBotOAuthConnectionName: 'connection' }, settings)
       const activity = Activity.fromObject({
         ...baseActivity,
         name: 'signin/verifyState',
@@ -118,7 +118,7 @@ describe('AzureBotAuthorization', () => {
     })
 
     it('should return rejected status on signin/verifyState CancelledByUser', async () => {
-      const handler = new AzureBotAuthorization('auth', { name: 'connection' }, settings)
+      const handler = new AzureBotAuthorization('auth', { azureBotOAuthConnectionName: 'connection' }, settings)
       const activity = Activity.fromObject({
         ...baseActivity,
         name: 'signin/verifyState',
@@ -131,7 +131,7 @@ describe('AzureBotAuthorization', () => {
     })
 
     it('should return rejected status on signin/tokenExchange without token', async () => {
-      const handler = new AzureBotAuthorization('auth', { name: 'connection' }, settings)
+      const handler = new AzureBotAuthorization('auth', { azureBotOAuthConnectionName: 'connection' }, settings)
       const activity = Activity.fromObject({
         ...baseActivity,
         name: 'signin/tokenExchange',
@@ -143,7 +143,7 @@ describe('AzureBotAuthorization', () => {
     })
 
     it('should return rejected status on signin/tokenExchange with different connectionName', async () => {
-      const handler = new AzureBotAuthorization('auth', { name: 'connection' }, settings)
+      const handler = new AzureBotAuthorization('auth', { azureBotOAuthConnectionName: 'connection' }, settings)
       const activity = Activity.fromObject({
         ...baseActivity,
         name: 'signin/tokenExchange',
@@ -157,7 +157,7 @@ describe('AzureBotAuthorization', () => {
 
     it('should return pending status on signin/tokenExchange when unable to exchange the token', async () => {
       mockClient.exchangeTokenAsync.resolves({ token: undefined } as any)
-      const handler = new AzureBotAuthorization('auth', { name: 'connection' }, settings)
+      const handler = new AzureBotAuthorization('auth', { azureBotOAuthConnectionName: 'connection' }, settings)
       const activity = Activity.fromObject({
         ...baseActivity,
         name: 'signin/tokenExchange',
@@ -172,7 +172,7 @@ describe('AzureBotAuthorization', () => {
 
     it('should return approved status on signin/tokenExchange when exchanging the token', async () => {
       mockClient.exchangeTokenAsync.resolves({ token: 'exchanged' } as any)
-      const handler = new AzureBotAuthorization('auth', { name: 'connection' }, settings)
+      const handler = new AzureBotAuthorization('auth', { azureBotOAuthConnectionName: 'connection' }, settings)
       const activity = Activity.fromObject({
         ...baseActivity,
         name: 'signin/tokenExchange',
@@ -186,7 +186,7 @@ describe('AzureBotAuthorization', () => {
     })
 
     it('should return rejected status on signin/failure', async () => {
-      const handler = new AzureBotAuthorization('auth', { name: 'connection' }, settings)
+      const handler = new AzureBotAuthorization('auth', { azureBotOAuthConnectionName: 'connection' }, settings)
       const activity = Activity.fromObject({
         ...baseActivity,
         name: 'signin/failure',
