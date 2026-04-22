@@ -3,7 +3,8 @@
  * Licensed under the MIT License.
  */
 
-import { Activity, debug, ExceptionHelper } from '@microsoft/agents-activity'
+import { Activity, ExceptionHelper } from '@microsoft/agents-activity'
+import { debug } from '@microsoft/agents-activity/logger'
 import { AgentApplication } from '../agentApplication'
 import { AgenticAuthorization, AzureBotAuthorization } from './handlers'
 import { TurnContext } from '../../turnContext'
@@ -153,6 +154,10 @@ export class AuthorizationManager {
     if (this.handlers.length === 0 && app.options.authorization !== undefined) {
       throw ExceptionHelper.generateException(Error, Errors.NoAuthHandlersConfigured)
     }
+    
+    for (const [id, handler] of Object.entries(this._handlers)) {
+      logger.debug('auth handler "%s" type=%s scopes=%o', id, handler.type, handler.scopes)
+    }
   }
 
   /**
@@ -190,8 +195,13 @@ export class AuthorizationManager {
     const sharedContext = new TurnContext(context)
 
     for (const handler of handlers) {
+      if (handler.scopes?.length) {
+        logger.debug('invoking auth handler "%s" scopes=[%s]', handler.id, handler.scopes.join(','))
+      } else {
+        logger.debug('invoking auth handler "%s"', handler.id)
+      }
       const status = await this.signin(storage, handler, sharedContext, active?.data)
-      logger.debug(this.prefix(handler.id, `Sign-in status: ${status}`))
+      logger.debug('auth handler "%s" sign-in status=%s', handler.id, status)
 
       if (status === AuthorizationHandlerStatus.IGNORED) {
         await storage.delete()

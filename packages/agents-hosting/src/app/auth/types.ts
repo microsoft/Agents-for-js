@@ -51,6 +51,14 @@ export interface AuthorizationHandler {
    */
   readonly id: string
   /**
+   * The type of this handler (resolved, including env vars).
+   */
+  readonly type?: string
+  /**
+   * The scopes configured for this handler (resolved, including env vars).
+   */
+  readonly scopes?: string[]
+  /**
    * Initiates the sign-in process for the handler.
    * @param context The turn context.
    * @param active Optional active handler data.
