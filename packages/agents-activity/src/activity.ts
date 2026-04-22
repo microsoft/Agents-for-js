@@ -711,6 +711,14 @@ export class Activity {
    * Idempotent — has no effect if the activity is already targeted.
    */
   public makeTargetedActivity (): void {
+    // only available in group contexts
+    if (!this.conversation?.isGroup) {
+      throw ExceptionHelper.generateException(
+        Error,
+        Errors.TargetedActivityIsGroupOnly
+      )
+    }
+
     if (this.isTargetedActivity()) return
     this.entities ??= []
     this.entities.push({ type: 'activityTreatment', treatment: ActivityTreatments.Targeted })
