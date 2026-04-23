@@ -320,7 +320,7 @@ export const ProactiveTraceDefinitions = {
 
       const metricsAttributes = {
         ...attributes,
-        operation: 'send_activity',
+        operation: 'send.activity',
         'operation.success': error === undefined,
       }
 
@@ -348,7 +348,7 @@ export const ProactiveTraceDefinitions = {
 
       const metricsAttributes = {
         ...attributes,
-        operation: 'continue_conversation',
+        operation: 'continue.conversation',
         'operation.success': error === undefined,
       }
 
@@ -378,7 +378,7 @@ export const ProactiveTraceDefinitions = {
 
       const metricsAttributes = {
         ...attributes,
-        operation: 'create_conversation',
+        operation: 'create.conversation',
         'operation.success': error === undefined,
       }
 
@@ -412,7 +412,7 @@ export const ConnectorClientTraceDefinitions = {
     },
     end ({ record, duration }) {
       const attributes = {
-        operation: 'get.conversation_member',
+        operation: 'get.conversation.member',
         'http.method': 'GET',
         'http.status_code': record.httpStatusCode ?? 'unknown'
       }
