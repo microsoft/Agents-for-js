@@ -23,7 +23,7 @@
         "@microsoft/agents-hosting-storage-blob": "file:../../packages/agents-hosting-storage-blob",
         "@microsoft/agents-hosting-storage-cosmos": "file:../../packages/agents-hosting-storage-cosmos",
         "@microsoft/agents-activity": "file:../../packages/agents-activity",
-        "@microsoft/microsoft-graph-client": "^3.0.7",
-        "express": "^5.2.1"
+        "@microsoft/microsoft-graph-client": "3.0.7",
+        "express": "5.2.1"
     }
 }
