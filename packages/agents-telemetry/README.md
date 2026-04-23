@@ -110,6 +110,7 @@ Valid category names are:
 - `STORAGE`
 - `AUTHENTICATION`
 - `AUTHORIZATION`
+- `DIALOGS`
 
 When a span category is disabled, instrumented code still runs normally with a noop context — no telemetry is emitted for those spans.
 

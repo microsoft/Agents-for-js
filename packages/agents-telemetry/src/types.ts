@@ -16,6 +16,7 @@ import type { Span, Meter } from '@opentelemetry/api'
  * to noop behavior if the optional dependencies are absent.
  */
 export type * from '@opentelemetry/api'
+export type { Span, Meter } from '@opentelemetry/api'
 export type * from '@opentelemetry/api-logs'
 
 /**
@@ -52,6 +53,12 @@ export interface TraceContext<TRecord extends object, TActions extends object> {
   record(values: Partial<TRecord>): void
   actions: TActions
 }
+
+/**
+ * Callback used by callback-based trace execution.
+ */
+export type TraceCallback<TRecord extends object, TActions extends object, TReturn = unknown> =
+  (context: TraceContext<TRecord, TActions>) => TReturn
 
 /**
  * Context used to create action helpers backed by the underlying span.
@@ -98,7 +105,7 @@ export interface TraceDefinition<TRecord extends object = Record<string, never>,
 export interface TraceFunction {
   define<TRecord extends object, TActions extends object>(definition: TraceDefinition<TRecord, TActions>): TraceDefinition<TRecord, TActions>
   <TRecord extends object, TActions extends object>(definition: TraceDefinition<TRecord, TActions>): TraceManagedContext<TRecord, TActions>
-  <TRecord extends object, TActions extends object, TReturn>(definition: TraceDefinition<TRecord, TActions>, callback: (context: TraceContext<TRecord, TActions>) => TReturn): TReturn
+  <TRecord extends object, TActions extends object, TReturn>(definition: TraceDefinition<TRecord, TActions>, callback: TraceCallback<TRecord, TActions, TReturn>): TReturn
 }
 
 /**

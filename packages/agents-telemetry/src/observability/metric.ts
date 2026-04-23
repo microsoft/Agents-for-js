@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { Metric, OTel } from '../types.js'
+import type { Metric, OTel } from '../types.js'
 
 /**
  * Creates metric helpers backed by the package meter.

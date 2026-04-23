@@ -9,7 +9,7 @@
  * entrypoint uses async import() fallback loading that is only valid in an ES module.
  */
 
-import { OTel, OTelLogs } from './types.js'
+import type { OTel, OTelLogs } from './types.js'
 import { index } from './index.js'
 
 export type { TraceDefinition } from './types.js'

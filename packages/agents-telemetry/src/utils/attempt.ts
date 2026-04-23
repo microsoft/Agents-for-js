@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { AttemptOptions } from '../types.js'
+import type { AttemptOptions } from '../types.js'
 
 /**
  * Detects promise-like values returned by internal loaders and callbacks.

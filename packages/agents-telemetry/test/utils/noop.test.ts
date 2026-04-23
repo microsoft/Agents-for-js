@@ -77,7 +77,7 @@ describe('noopMetric', () => {
 
 describe('noopContext', () => {
   it('returns managed context when callback is not provided', () => {
-    const result = noopContext(undefined as any) as any
+    const result = noopContext() as any
 
     assert.strictEqual(typeof result.record, 'function')
     assert.strictEqual(typeof result.end, 'function')
@@ -86,12 +86,12 @@ describe('noopContext', () => {
   })
 
   it('record is callable and does not throw', () => {
-    const result = noopContext(undefined as any) as any
+    const result = noopContext() as any
     assert.doesNotThrow(() => result.record({ key: 'value' }))
   })
 
   it('actions proxy returns functions for any property access', () => {
-    const result = noopContext(undefined as any) as any
+    const result = noopContext() as any
     assert.strictEqual(typeof result.actions.anyAction, 'function')
     assert.strictEqual(typeof result.actions.anotherAction, 'function')
     assert.doesNotThrow(() => result.actions.anyAction())

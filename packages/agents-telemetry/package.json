@@ -29,7 +29,7 @@
   },
   "peerDependencies": {
     "@opentelemetry/api": "1",
-    "@opentelemetry/api-logs": "^0.211.0"
+    "@opentelemetry/api-logs": ">=0.214.0 <1"
   },
   "peerDependenciesMeta": {
     "@opentelemetry/api": {
@@ -41,7 +41,7 @@
   },
   "devDependencies": {
     "@opentelemetry/api": "1",
-    "@opentelemetry/api-logs": "^0.211.0"
+    "@opentelemetry/api-logs": "0.214.0"
   },
   "dependencies": {
     "debug": "^4.4.3"

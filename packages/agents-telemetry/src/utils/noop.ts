@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import type { Metric, TraceFunction } from '../types.js'
+import type { Metric, TraceCallback, TraceContext, TraceFunction, TraceManagedContext } from '../types.js'
 
 const noopFn = () => {}
 
@@ -29,17 +29,27 @@ export function noopMetric (): Metric {
 /**
  * Creates a callback/manually-managed trace context that safely does nothing.
  */
-export function noopContext (callback: Function) {
-  const actions = new Proxy({}, { get: () => noopFn })
-
-  if (callback) {
-    return callback({ record: noopFn, actions })
-  }
-
-  return {
+export function noopContext<TRecord extends object, TActions extends object> (): TraceManagedContext<TRecord, TActions>
+export function noopContext<TRecord extends object, TActions extends object, TReturn> (callback: TraceCallback<TRecord, TActions, TReturn>): TReturn
+export function noopContext<TRecord extends object, TActions extends object, TReturn> (callback?: TraceCallback<TRecord, TActions, TReturn>): TraceManagedContext<TRecord, TActions> | TReturn {
+  const actions = new Proxy({}, { get: () => noopFn }) as TActions
+  const context: TraceContext<TRecord, TActions> = {
     record: noopFn,
     actions,
-    end: noopFn,
-    fail: (error: unknown) => error,
   }
+
+  if (callback) {
+    return callback(context)
+  }
+
+  const managedContext: TraceManagedContext<TRecord, TActions> = {
+    record: context.record,
+    actions: context.actions,
+    end: noopFn,
+    fail<T extends unknown> (error: T): T {
+      return error
+    },
+  }
+
+  return managedContext
 }
