@@ -4,11 +4,13 @@
  */
 
 import { debug } from '@microsoft/agents-activity/logger'
+import { ExceptionHelper } from '@microsoft/agents-activity'
 import { TokenResponse } from '../../oauth'
 import { TurnContext } from '../../turnContext'
 import { TurnState } from '../turnState'
 import { AuthorizationManager } from './authorizationManager'
 import { AuthorizationHandlerTokenOptions } from './types'
+import { Errors } from '../../errorHelper'
 
 const logger = debug('agents:authorization')
 
@@ -148,7 +150,7 @@ export class UserAuthorization implements Authorization {
       return { token }
     }
 
-    throw new Error('Invalid parameters for exchangeToken method.')
+    throw ExceptionHelper.generateException(Error, Errors.InvalidExchangeTokenParameters)
   }
 
   /**
@@ -180,7 +182,7 @@ export class UserAuthorization implements Authorization {
     if (authHandlerId) {
       await this.getHandler(authHandlerId).signout(context)
     } else {
-      for (const handler of Object.values(this.manager.handlers)) {
+      for (const handler of this.manager.handlers) {
         await handler.signout(context)
       }
     }
@@ -207,7 +209,7 @@ export class UserAuthorization implements Authorization {
    * @public
    */
   public onSignInSuccess (handler: (context: TurnContext, state: TurnState, authHandlerId?: string) => Promise<void>) {
-    for (const authHandler of Object.values(this.manager.handlers)) {
+    for (const authHandler of this.manager.handlers) {
       authHandler.onSuccess((context) => handler(context, new TurnState(), authHandler.id))
     }
   }
@@ -239,7 +241,7 @@ export class UserAuthorization implements Authorization {
    * @public
    */
   public onSignInFailure (handler: (context: TurnContext, state: TurnState, authHandlerId?: string, errorMessage?: string) => Promise<void>) {
-    for (const authHandler of Object.values(this.manager.handlers)) {
+    for (const authHandler of this.manager.handlers) {
       authHandler.onFailure((context, reason) => handler(context, new TurnState(), authHandler.id, reason))
     }
   }
@@ -253,9 +255,10 @@ export class UserAuthorization implements Authorization {
    * @private
    */
   private getHandler (id: string) {
-    if (!Object.prototype.hasOwnProperty.call(this.manager.handlers, id)) {
-      throw new Error(`Cannot find auth handler with ID '${id}'. Ensure it is configured in the agent application options.`)
+    const handler = this.manager.handlers.find(e => e.id.toLowerCase() === id.toLowerCase())
+    if (!handler) {
+      throw ExceptionHelper.generateException(Error, Errors.AuthHandlerNotFound, undefined, { handlerId: id })
     }
-    return this.manager.handlers[id]
+    return handler
   }
 }

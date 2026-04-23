@@ -40,6 +40,8 @@ describe('CloudAdapter', function () {
       body: {}
     }
     res = {
+      headersSent: false,
+      writableEnded: false,
       status: sinon.stub().returnsThis(),
       send: sinon.stub().returnsThis(),
       end: sinon.stub().returnsThis(),
@@ -164,6 +166,30 @@ describe('CloudAdapter', function () {
       sinon.assert.notCalled((res as any).setHeader)
       sinon.assert.notCalled((res as any).send)
       sinon.assert.calledOnce(createConnectorClientWithIdentitySpy)
+
+      stubfromObject.restore()
+    })
+
+    it('Should not touch the response after logic already committed it', async function () {
+      const activity = createActivity(ActivityTypes.Message)
+      activity.deliveryMode = DeliveryModes.ExpectReplies
+      activity.text = 'test-message'
+      activity.serviceUrl = undefined
+
+      const stubfromObject = sinon.stub(Activity, 'fromObject').returns(activity)
+
+      const logic = async (_context: TurnContext) => {
+        ;(res as any).headersSent = true
+        ;(res as any).writableEnded = true
+      }
+
+      await cloudAdapter.process(req as Request, res as Response, logic)
+
+      sinon.assert.notCalled((res as any).status)
+      sinon.assert.notCalled((res as any).setHeader)
+      sinon.assert.notCalled((res as any).send)
+      sinon.assert.notCalled((res as any).end)
+      sinon.assert.notCalled(createConnectorClientWithIdentitySpy)
 
       stubfromObject.restore()
     })

@@ -500,6 +500,22 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
     description: 'Storage is required for Authorization. Ensure that a storage provider is configured in the app options.'
   },
 
+  /**
+     * Error thrown when the azureBotOAuthConnectionName option is missing for AzureBot authorization.
+     */
+  AzureBotOAuthConnectionNameRequired: {
+    code: -120591,
+    description: "The 'azureBotOAuthConnectionName' option is not available in the app options. Ensure that the app is properly configured."
+  },
+
+  /**
+     * Error thrown when the AzureBot connection token is not exchangeable for an OBO flow.
+     */
+  AzureBotConnectionTokenNotExchangeable: {
+    code: -120592,
+    description: "The current token for the '{connectionName}' AzureBot connection is not exchangeable for an on-behalf-of flow. Ensure the token exchange URL starts with 'api://'."
+  },
+
   // ============================================================================
   // Agent and Client Errors (-120600 to -120630)
   // ============================================================================

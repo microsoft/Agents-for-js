@@ -92,8 +92,8 @@ export class AgentApplication<TState extends TurnState> {
   protected readonly _beforeTurn: ApplicationEventHandler<TState>[] = []
   protected readonly _afterTurn: ApplicationEventHandler<TState>[] = []
   private readonly _adapter?: CloudAdapter
-  private readonly _authorizationManager?: AuthorizationManager
-  private readonly _authorization?: Authorization
+  private readonly _authorizationManager: AuthorizationManager
+  private readonly _authorization: Authorization
   private readonly _proactive?: Proactive<TState>
   protected readonly _extensions: AgentExtension<TState>[] = []
   private readonly _adaptiveCards: AdaptiveCardsActions<TState>
@@ -144,11 +144,6 @@ export class AgentApplication<TState extends TurnState> {
       this._adapter = new CloudAdapter()
     }
 
-    if (this._options.authorization) {
-      this._authorizationManager = new AuthorizationManager(this, this._adapter.connectionManager)
-      this._authorization = new UserAuthorization(this._authorizationManager)
-    }
-
     // Create Proactive whenever proactive options are explicitly configured or a storage
     // backend is available — no explicit `proactive` option is required.
     if (this._options.proactive !== undefined || this._options.storage !== undefined) {
@@ -168,7 +163,11 @@ export class AgentApplication<TState extends TurnState> {
         this._adapter?.use(new TranscriptLoggerMiddleware(this._options.transcriptLogger))
       }
     }
+
     logger.debug('AgentApplication created with options:', this._options)
+
+    this._authorizationManager = new AuthorizationManager(this, this._adapter.connectionManager)
+    this._authorization = new UserAuthorization(this._authorizationManager)
   }
 
   /**
@@ -178,7 +177,7 @@ export class AgentApplication<TState extends TurnState> {
    * @throws Error if no authentication options were configured.
    */
   public get authorization (): Authorization {
-    if (!this._authorization) {
+    if (this._authorizationManager.handlers.length === 0) {
       throw new Error('The Application.authorization property is unavailable because no authorization options were configured.')
     }
     return this._authorization
