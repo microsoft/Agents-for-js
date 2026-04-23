@@ -471,7 +471,7 @@ export class DialogContext {
         this.context.turnState.set(ACTIVITY_RECEIVED_EMITTED, true)
 
         // Dispatch "activityReceived" event
-        // - This fired from teh leaf and will queue up any interruptions.
+        // - This fired from the leaf and will queue up any interruptions.
         await this.emitEvent(DialogEvents.activityReceived, this.context.activity, true, true)
       }
 

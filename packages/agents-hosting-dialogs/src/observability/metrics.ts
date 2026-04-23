@@ -5,7 +5,7 @@ import { metric, MetricNames } from '@microsoft/agents-telemetry'
 
 export const DialogsMetrics = {
   contextCount: metric.counter(MetricNames.DIALOGS_CONTEXT_COUNT, {
-    unit: 'operation',
+    unit: 'operations',
     description: 'Total number of dialog context operations'
   }),
 
