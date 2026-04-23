@@ -18,6 +18,7 @@
         "@microsoft/agents-hosting-dialogs": "file:../../packages/agents-hosting-dialogs",
         "@microsoft/agents-hosting": "file:../../packages/agents-hosting",
         "@microsoft/agents-activity": "file:../../packages/agents-activity",
-        "express": "^5.2.1"
+        "express": "^5.2.1",
+        "express-rate-limit": "8.3.2"
     }
 }

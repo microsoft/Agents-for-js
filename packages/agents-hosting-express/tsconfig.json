@@ -6,7 +6,8 @@
   ],
   "compilerOptions": {
     "rootDirs": [
-      "src/"
+      "src/",
+      "test/"
     ],
     "outDir": "dist",
     "paths": {

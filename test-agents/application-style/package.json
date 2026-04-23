@@ -24,6 +24,7 @@
         "@microsoft/agents-hosting-storage-cosmos": "file:../../packages/agents-hosting-storage-cosmos",
         "@microsoft/agents-activity": "file:../../packages/agents-activity",
         "@microsoft/microsoft-graph-client": "^3.0.7",
-        "express": "^5.2.1"
+        "express": "^5.2.1",
+        "express-rate-limit": "8.3.2"
     }
 }
