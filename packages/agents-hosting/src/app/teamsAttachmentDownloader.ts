@@ -4,7 +4,7 @@
  */
 
 import { Attachment, Channels } from '@microsoft/agents-activity'
-import { debug } from '@microsoft/agents-activity/logger'
+import { debug } from '@microsoft/agents-telemetry'
 import { ConnectorClient } from '../connector-client'
 import { InputFile, InputFileDownloader } from './inputFileDownloader'
 import { TurnContext } from '../turnContext'

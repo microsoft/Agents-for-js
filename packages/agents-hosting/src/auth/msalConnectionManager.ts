@@ -4,7 +4,7 @@
  */
 
 import { Activity, RoleTypes } from '@microsoft/agents-activity'
-import { debug } from '@microsoft/agents-activity/logger'
+import { debug } from '@microsoft/agents-telemetry'
 import { AuthConfiguration, resolveAuthority } from './authConfiguration'
 import { Connections } from './connections'
 import { MsalTokenProvider } from './msalTokenProvider'

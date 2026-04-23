@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { debug } from '@microsoft/agents-activity/logger'
+import { debug } from '@microsoft/agents-telemetry'
 import { ExceptionHelper } from '@microsoft/agents-activity'
 import { TokenResponse } from '../../oauth'
 import { TurnContext } from '../../turnContext'

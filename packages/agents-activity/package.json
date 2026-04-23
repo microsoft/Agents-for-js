@@ -36,11 +36,7 @@
       "import": "./dist/src/index.js",
       "require": "./dist/src/index.js"
     },
-    "./logger": {
-      "types": "./dist/src/logger.d.ts",
-      "import": "./dist/src/logger.js",
-      "require": "./dist/src/logger.js"
-    },
+    
     "./package.json": "./package.json"
   },
   "engines": {

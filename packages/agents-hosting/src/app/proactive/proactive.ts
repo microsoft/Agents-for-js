@@ -13,7 +13,7 @@ import type { ProactiveOptions } from './proactiveOptions'
 import type { CreateConversationOptions } from './createConversationOptions'
 import { ExceptionHelper } from '@microsoft/agents-activity'
 import { Conversation } from './conversation'
-import { debug } from '@microsoft/agents-activity/logger'
+import { debug } from '@microsoft/agents-telemetry'
 import { Errors } from '../../errorHelper'
 
 const logger = debug('agents:proactive')

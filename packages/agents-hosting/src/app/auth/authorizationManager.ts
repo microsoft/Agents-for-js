@@ -4,7 +4,7 @@
  */
 
 import { Activity, ExceptionHelper } from '@microsoft/agents-activity'
-import { debug } from '@microsoft/agents-activity/logger'
+import { debug } from '@microsoft/agents-telemetry'
 import { AgentApplication } from '../agentApplication'
 import { AgenticAuthorization, AzureBotAuthorization } from './handlers'
 import { TurnContext } from '../../turnContext'
