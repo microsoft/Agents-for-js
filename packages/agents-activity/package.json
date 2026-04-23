@@ -19,7 +19,6 @@
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
   "dependencies": {
-    "debug": "4.4.3",
     "uuid": "11.1.0",
     "zod": "3.25.75"
   },
@@ -36,7 +35,6 @@
       "import": "./dist/src/index.js",
       "require": "./dist/src/index.js"
     },
-    
     "./package.json": "./package.json"
   },
   "engines": {
