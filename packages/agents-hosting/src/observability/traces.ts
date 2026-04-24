@@ -253,6 +253,141 @@ export const AdapterTraceDefinitions = {
   }),
 }
 
+export const ProactiveTraceDefinitions = {
+  storeConversation: trace.define({
+    name: SpanNames.PROACTIVE_STORE_CONVERSATION,
+    record: {
+      conversationId: '',
+    },
+    end ({ span, record }) {
+      span.setAttributes({
+        'activity.conversation_id': record.conversationId ?? 'unknown',
+      })
+    }
+  }),
+  getConversation: trace.define({
+    name: SpanNames.PROACTIVE_GET_CONVERSATION,
+    record: {
+      conversationId: '',
+      found: false,
+    },
+    end ({ span, record }) {
+      span.setAttributes({
+        'activity.conversation_id': record.conversationId ?? 'unknown',
+        'proactive.conversation_found': record.found,
+      })
+    }
+  }),
+  getConversationOrThrow: trace.define({
+    name: SpanNames.PROACTIVE_GET_CONVERSATION_OR_THROW,
+    record: {
+      conversationId: '',
+    },
+    end ({ span, record }) {
+      span.setAttributes({
+        'activity.conversation_id': record.conversationId ?? 'unknown',
+      })
+    }
+  }),
+  deleteConversation: trace.define({
+    name: SpanNames.PROACTIVE_DELETE_CONVERSATION,
+    record: {
+      conversationId: '',
+    },
+    end ({ span, record }) {
+      span.setAttributes({
+        'activity.conversation_id': record.conversationId ?? 'unknown',
+      })
+    }
+  }),
+  sendActivity: trace.define({
+    name: SpanNames.PROACTIVE_SEND_ACTIVITY,
+    record: {
+      conversationId: '',
+      channelId: '',
+      activityType: '',
+    },
+    end ({ span, record, duration, error }) {
+      const attributes = {
+        'activity.channel_id': record.channelId ?? 'unknown',
+        'activity.type': record.activityType ?? 'unknown'
+      }
+
+      span.setAttributes({
+        ...attributes,
+        'activity.conversation_id': record.conversationId ?? 'unknown',
+      })
+
+      const metricsAttributes = {
+        ...attributes,
+        operation: 'send.activity',
+        'operation.success': error === undefined,
+      }
+
+      HostingMetrics.proactiveOperationCounter.add(1, metricsAttributes)
+      HostingMetrics.proactiveOperationDuration.record(duration, metricsAttributes)
+    }
+  }),
+  continueConversation: trace.define({
+    name: SpanNames.PROACTIVE_CONTINUE_CONVERSATION,
+    record: {
+      conversationId: '',
+      channelId: '',
+      hasAutoSignIn: false,
+    },
+    end ({ span, record, duration, error }) {
+      const attributes = {
+        'activity.channel_id': record.channelId ?? 'unknown',
+        'proactive.has_auto_sign_in': record.hasAutoSignIn,
+      }
+
+      span.setAttributes({
+        ...attributes,
+        'activity.conversation_id': record.conversationId ?? 'unknown',
+      })
+
+      const metricsAttributes = {
+        ...attributes,
+        operation: 'continue.conversation',
+        'operation.success': error === undefined,
+      }
+
+      HostingMetrics.proactiveOperationCounter.add(1, metricsAttributes)
+      HostingMetrics.proactiveOperationDuration.record(duration, metricsAttributes)
+    }
+  }),
+  createConversation: trace.define({
+    name: SpanNames.PROACTIVE_CREATE_CONVERSATION,
+    record: {
+      channelId: '',
+      membersCount: 0,
+      storeConversation: false,
+      hasHandler: false,
+    },
+    end ({ span, record, duration, error }) {
+      const attributes = {
+        'activity.channel_id': record.channelId ?? 'unknown',
+        'proactive.store_conversation': record.storeConversation,
+        'proactive.has_handler': record.hasHandler,
+      }
+
+      span.setAttributes({
+        ...attributes,
+        'proactive.members_count': record.membersCount,
+      })
+
+      const metricsAttributes = {
+        ...attributes,
+        operation: 'create.conversation',
+        'operation.success': error === undefined,
+      }
+
+      HostingMetrics.proactiveOperationCounter.add(1, metricsAttributes)
+      HostingMetrics.proactiveOperationDuration.record(duration, metricsAttributes)
+    }
+  }),
+}
+
 export const ConnectorClientTraceDefinitions = {
   getConversations: trace.define({
     name: SpanNames.CONNECTOR_GET_CONVERSATIONS,
@@ -277,7 +412,7 @@ export const ConnectorClientTraceDefinitions = {
     },
     end ({ record, duration }) {
       const attributes = {
-        operation: 'get.conversation_member',
+        operation: 'get.conversation.member',
         'http.method': 'GET',
         'http.status_code': record.httpStatusCode ?? 'unknown'
       }
