@@ -16,6 +16,7 @@ import { DialogSet } from './dialogSet'
 import { DialogStateManager, DialogStateManagerConfiguration } from './memory'
 import { DialogTurnResult } from './dialogTurnResult'
 import { DialogTurnStatus } from './dialogTurnStatus'
+import { DialogsTraceDefinitions, trace } from './observability'
 
 /**
  * Runs a dialog from a given context and accessor.
@@ -78,45 +79,53 @@ export async function internalRun (
   dialogContext: DialogContext,
   dialogStateManagerConfiguration?: DialogStateManagerConfiguration
 ): Promise<DialogTurnResult> {
-  // map TurnState into root dialog context.services
-  context.turnState.forEach((service, key) => {
-    dialogContext.services.push(key, service)
-  })
+  return trace(DialogsTraceDefinitions.run, async ({ record }) => {
+    record({ activity: context.activity, dialogId })
 
-  const dialogStateManager = new DialogStateManager(dialogContext, dialogStateManagerConfiguration)
+    // map TurnState into root dialog context.services
+    context.turnState.forEach((service, key) => {
+      dialogContext.services.push(key, service)
+    })
 
-  await dialogStateManager.loadAllScopes()
-  dialogContext.context.turnState.push('DialogStateManager', dialogStateManager)
-  let dialogTurnResult: DialogTurnResult = null
+    const dialogStateManager = new DialogStateManager(dialogContext, dialogStateManagerConfiguration)
 
-  // Loop as long as we are getting valid OnError handled we should continue executing the actions for the turn.
-  // NOTE: We loop around this block because each pass through we either complete the turn and break out of the loop
-  // or we have had an exception AND there was an OnError action which captured the error. We need to continue the
-  // turn based on the actions the OnError handler introduced.
-  let endOfTurn = false
-  while (!endOfTurn) {
-    try {
-      dialogTurnResult = await innerRun(context, dialogId, dialogContext)
+    await dialogStateManager.loadAllScopes()
+    dialogContext.context.turnState.push('DialogStateManager', dialogStateManager)
+    let dialogTurnResult: DialogTurnResult = null
+    let attemptCount = 0
 
-      // turn successfully completed, break the loop
-      endOfTurn = true
-    } catch (err) {
-      // fire error event, bubbling from the leaf.
-      const handled = await dialogContext.emitEvent(DialogEvents.error, err, true, true)
+    // Loop as long as we are getting valid OnError handled we should continue executing the actions for the turn.
+    // NOTE: We loop around this block because each pass through we either complete the turn and break out of the loop
+    // or we have had an exception AND there was an OnError action which captured the error. We need to continue the
+    // turn based on the actions the OnError handler introduced.
+    let endOfTurn = false
+    while (!endOfTurn) {
+      attemptCount += 1
+      record({ attemptCount })
+      try {
+        dialogTurnResult = await innerRun(context, dialogId, dialogContext)
+        record({ status: dialogTurnResult?.status })
 
-      if (!handled) {
-        // error was NOT handled, throw the exception and end the turn.
-        // (This will trigger the Adapter.OnError handler and end the entire dialog stack)
-        throw err
+        // turn successfully completed, break the loop
+        endOfTurn = true
+      } catch (err) {
+        // fire error event, bubbling from the leaf.
+        const handled = await dialogContext.emitEvent(DialogEvents.error, err, true, true)
+
+        if (!handled) {
+          // error was NOT handled, throw the exception and end the turn.
+          // (This will trigger the Adapter.OnError handler and end the entire dialog stack)
+          throw err
+        }
       }
     }
-  }
 
-  // save all state scopes to their respective agentState locations.
-  await dialogStateManager.saveAllChanges()
+    // save all state scopes to their respective agentState locations.
+    await dialogStateManager.saveAllChanges()
 
-  // return the redundant result because the DialogManager contract expects it
-  return dialogTurnResult
+    // return the redundant result because the DialogManager contract expects it
+    return dialogTurnResult
+  })
 }
 
 /**
