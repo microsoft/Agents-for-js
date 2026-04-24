@@ -61,7 +61,7 @@ interface ValueAction {
  * Parses the given value as a value action execute selector.
  *
  * @param {unknown} value - The value to parse.
- * @returns {object} - The parsed value action execute selector.
+ * @returns {ValueAction | undefined} The parsed value action, or `undefined` if `value` is null/undefined or does not match the expected shape.
  */
 export function parseValueActionExecuteSelector (value: unknown): ValueAction | undefined {
   if (value === undefined || value === null) {
@@ -76,7 +76,7 @@ export function parseValueActionExecuteSelector (value: unknown): ValueAction | 
   })
   const safeParsedValue = actionValueExecuteSelector.passthrough().safeParse(value)
   if (!safeParsedValue.success) {
-    throw new Error(`Invalid action value: ${safeParsedValue.error}`)
+    return undefined
   }
   const parsedValue = safeParsedValue.data
   return {

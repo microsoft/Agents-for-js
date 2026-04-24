@@ -130,13 +130,14 @@ export class TaskModule<TState extends TurnState> {
    * @returns this (for method chaining)
    */
   onFetchByVerb (verb: string, handler: RouteHandler<TurnState>) {
+    const filterField = this._options.taskDataFilter ?? TaskModuleInvokeNames.DEFAULT_TASK_DATA_FILTER
     const routeSel: RouteSelector = (context: TurnContext) => {
+      const data = (context.activity.value as any)?.data
       return Promise.resolve(
         context.activity.type === ActivityTypes.Invoke &&
         context.activity.channelId === 'msteams' &&
         context.activity.name === 'task/fetch' &&
-        // @ts-ignore
-        context.activity.value?.data === verb
+        typeof data === 'object' && data !== null && data[filterField] === verb
       )
     }
     this._app.addRoute(routeSel, handler, true)
@@ -150,13 +151,14 @@ export class TaskModule<TState extends TurnState> {
    * @returns this (for method chaining)
    */
   onSubmitByVerb (verb: string, handler: RouteHandler<TurnState>) {
+    const filterField = this._options.taskDataFilter ?? TaskModuleInvokeNames.DEFAULT_TASK_DATA_FILTER
     const routeSel: RouteSelector = (context: TurnContext) => {
+      const data = (context.activity.value as any)?.data
       return Promise.resolve(
         context.activity.type === ActivityTypes.Invoke &&
         context.activity.channelId === 'msteams' &&
         context.activity.name === 'task/submit' &&
-        // @ts-ignore
-        context.activity.value?.data === verb
+        typeof data === 'object' && data !== null && data[filterField] === verb
       )
     }
     this._app.addRoute(routeSel, handler, true)
