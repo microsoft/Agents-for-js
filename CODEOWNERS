@@ -1,6 +1,6 @@
 # CODEOWNERS for Microsoft 365 Agents SDK for JS
 
 # Global ownership - fallback for any files not covered by more specific rules
-* @microsoft/agents-sdk
+* @microsoft/agents-admin
 #   Team is found here:
-#   https://github.com/orgs/microsoft/teams/agents-sdk
+#   https://github.com/orgs/microsoft/teams/agents-admin
