@@ -15,6 +15,7 @@ export const SpanCategories = {
   STORAGE: ['STORAGE_'],
   AUTHORIZATION: ['AUTHORIZATION_', 'USER_TOKEN_CLIENT_'],
   AUTHENTICATION: ['AUTHENTICATION_'],
+  DIALOGS: ['DIALOGS_'],
 } as const
 
 /**
@@ -66,6 +67,7 @@ export const SpanNames = {
   // Authorization
   AUTHORIZATION_AGENTIC_TOKEN: 'agents.authorization.agentic_token',
   AUTHORIZATION_AZURE_BOT_TOKEN: 'agents.authorization.azure_bot_token',
+  AUTHORIZATION_AZURE_BOT_OBO_TOKEN: 'agents.authorization.azure_bot_obo_token',
   AUTHORIZATION_AZURE_BOT_SIGNIN: 'agents.authorization.azure_bot_signin',
   AUTHORIZATION_AZURE_BOT_SIGNOUT: 'agents.authorization.azure_bot_signout',
 
@@ -78,8 +80,25 @@ export const SpanNames = {
   USER_TOKEN_CLIENT_GET_TOKEN_STATUS: 'agents.user_token_client.get_token_status',
   USER_TOKEN_CLIENT_GET_AAD_TOKENS: 'agents.user_token_client.get_aad_tokens',
 
+  // Proactive
+  PROACTIVE_STORE_CONVERSATION: 'agents.proactive.store_conversation',
+  PROACTIVE_GET_CONVERSATION: 'agents.proactive.get_conversation',
+  PROACTIVE_GET_CONVERSATION_OR_THROW: 'agents.proactive.get_conversation_or_throw',
+  PROACTIVE_DELETE_CONVERSATION: 'agents.proactive.delete_conversation',
+  PROACTIVE_SEND_ACTIVITY: 'agents.proactive.send_activity',
+  PROACTIVE_CONTINUE_CONVERSATION: 'agents.proactive.continue_conversation',
+  PROACTIVE_CREATE_CONVERSATION: 'agents.proactive.create_conversation',
+
   // TurnContext
   TURN_SEND_ACTIVITIES: 'agents.turn.send_activities',
+
+  // Dialogs
+  DIALOGS_RUN: 'agents.dialogs.run',
+  DIALOGS_CONTEXT_BEGIN: 'agents.dialogs.context.begin',
+  DIALOGS_CONTEXT_CONTINUE: 'agents.dialogs.context.continue',
+  DIALOGS_CONTEXT_END: 'agents.dialogs.context.end',
+  DIALOGS_CONTEXT_REPLACE: 'agents.dialogs.context.replace',
+  DIALOGS_CONTEXT_CANCEL_ALL: 'agents.dialogs.context.cancel_all',
 
   // Copilot Studio Client
   COPILOT_START_CONVERSATION: 'agents.copilot_client.start_conversation',
@@ -116,6 +135,10 @@ export const MetricNames = {
   TURNS_ERRORS: 'agents.turn.error.count',
   TURN_DURATION: 'agents.turn.duration',
 
+  // Dialog metrics
+  DIALOGS_CONTEXT_COUNT: 'agents.dialogs.context.count',
+  DIALOGS_CONTEXT_DURATION: 'agents.dialogs.context.duration',
+
   // Storage metrics
   STORAGE_OPERATION_DURATION: 'agents.storage.operation.duration',
 
@@ -126,6 +149,10 @@ export const MetricNames = {
   // UserTokenClient metrics
   USER_TOKEN_CLIENT_REQUESTS: 'agents.user_token_client.request.count',
   USER_TOKEN_CLIENT_REQUEST_DURATION: 'agents.user_token_client.request.duration',
+
+  // Proactive
+  PROACTIVE_OPERATION_COUNT: 'agents.proactive.operation.count',
+  PROACTIVE_OPERATION_DURATION: 'agents.proactive.operation.duration',
 
   // Copilot Studio Client
   CSC_ACTIVITIES_RECEIVED: 'agents.copilot_client.activities.received',

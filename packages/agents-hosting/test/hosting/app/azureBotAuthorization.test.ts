@@ -1,6 +1,7 @@
 import { strict as assert } from 'assert'
 import { beforeEach, describe, it } from 'node:test'
 import sinon from 'sinon'
+import jwt from 'jsonwebtoken'
 
 import { AzureBotAuthorization } from '../../../src/app/auth/handlers/azureBotAuthorization'
 import type { AzureBotAuthorizationSettings } from '../../../src/app/auth/handlers/azureBotAuthorization'
@@ -12,17 +13,29 @@ import { Activity } from '@microsoft/agents-activity'
 import { AuthorizationHandlerStatus } from '../../../src/app/auth/types'
 import { ActivityTypes } from '../../../../agents-activity/src'
 
-const createSettings = (): AzureBotAuthorizationSettings => ({
+type MockConnection = {
+  acquireTokenOnBehalfOf: sinon.SinonStub<[string[], string], Promise<string>>
+}
+
+const createConnection = (): MockConnection => ({
+  acquireTokenOnBehalfOf: sinon.stub<[string[], string], Promise<string>>().resolves('obo-token')
+})
+
+const createSettings = (defaultConnection: MockConnection, namedConnection: MockConnection): AzureBotAuthorizationSettings => ({
   storage: new MemoryStorage(),
   connections: {
-    getDefaultConnection: () => ({ acquireTokenOnBehalfOf: sinon.stub().resolves('obo-token') }),
-    getConnection: () => ({ acquireTokenOnBehalfOf: sinon.stub().resolves('obo-token') })
+    getDefaultConnection: () => defaultConnection,
+    getConnection: () => namedConnection
   } as any
 })
+
+const createToken = (audience: string, appid = 'resource-app') => jwt.sign({ sub: 'user-1', appid }, 'secret', { audience })
 
 describe('AzureBotAuthorization', () => {
   let settings: AzureBotAuthorizationSettings
   let mockClient: sinon.SinonStubbedInstance<UserTokenClient>
+  let defaultConnection: MockConnection
+  let namedConnection: MockConnection
   const baseAdapter = new TestAdapter()
   const baseActivity = Activity.fromObject({
     type: ActivityTypes.Message,
@@ -34,7 +47,9 @@ describe('AzureBotAuthorization', () => {
   const active = { id: 'auth', activity: baseActivity, attemptsLeft: 2 }
 
   beforeEach(() => {
-    settings = createSettings()
+    defaultConnection = createConnection()
+    namedConnection = createConnection()
+    settings = createSettings(defaultConnection, namedConnection)
     mockClient = sinon.createStubInstance(UserTokenClient)
   })
 
@@ -46,6 +61,70 @@ describe('AzureBotAuthorization', () => {
     const result = await handler.token(context)
     assert.deepEqual(result, { token: 'token' })
     assert.equal(mockClient.getTokenOrSignInResource.calledOnce, true)
+  })
+
+  it('token should exchange a base token for an OBO token when scopes are provided', async () => {
+    const baseToken = createToken('api://resource-app')
+    mockClient.getTokenOrSignInResource.resolves({ tokenResponse: { token: baseToken } } as any)
+    const handler = new AzureBotAuthorization('auth', { azureBotOAuthConnectionName: 'connection' }, settings)
+    const context = new TurnContext(baseAdapter, baseActivity)
+    context.turnState.set(baseAdapter.UserTokenClientKey, mockClient)
+
+    const result = await handler.token(context, { connection: 'obo-connection', scopes: ['scope.read'] })
+
+    assert.deepEqual(result, { token: 'obo-token' })
+    assert.equal(mockClient.getTokenOrSignInResource.calledOnce, true)
+    assert.equal(defaultConnection.acquireTokenOnBehalfOf.notCalled, true)
+    sinon.assert.calledOnce(namedConnection.acquireTokenOnBehalfOf)
+    sinon.assert.calledWithExactly(namedConnection.acquireTokenOnBehalfOf, ['scope.read'], baseToken)
+  })
+
+  it('token should reject OBO when the base token is not exchangeable', async () => {
+    mockClient.getTokenOrSignInResource.resolves({ tokenResponse: { token: createToken('https://graph.microsoft.com') } } as any)
+    const handler = new AzureBotAuthorization('auth', { azureBotOAuthConnectionName: 'connection' }, settings)
+    const context = new TurnContext(baseAdapter, baseActivity)
+    context.turnState.set(baseAdapter.UserTokenClientKey, mockClient)
+
+    await assert.rejects(
+      handler.token(context, { scopes: ['scope.read'] }),
+      /not exchangeable/
+    )
+
+    assert.equal(defaultConnection.acquireTokenOnBehalfOf.notCalled, true)
+    assert.equal(namedConnection.acquireTokenOnBehalfOf.notCalled, true)
+  })
+
+  it('token should reject OBO when the base token is malformed', async () => {
+    mockClient.getTokenOrSignInResource.resolves({ tokenResponse: { token: 'not-a-jwt' } } as any)
+    const handler = new AzureBotAuthorization('auth', { azureBotOAuthConnectionName: 'connection' }, settings)
+    const context = new TurnContext(baseAdapter, baseActivity)
+    context.turnState.set(baseAdapter.UserTokenClientKey, mockClient)
+
+    await assert.rejects(
+      handler.token(context, { scopes: ['scope.read'] }),
+      /not exchangeable/
+    )
+
+    assert.equal(defaultConnection.acquireTokenOnBehalfOf.notCalled, true)
+    assert.equal(namedConnection.acquireTokenOnBehalfOf.notCalled, true)
+  })
+
+  it('token should throw when OBO exchange fails', async () => {
+    const baseToken = createToken('api://resource-app')
+    mockClient.getTokenOrSignInResource.resolves({ tokenResponse: { token: baseToken } } as any)
+    defaultConnection.acquireTokenOnBehalfOf.rejects(new Error('exchange failed'))
+    const handler = new AzureBotAuthorization('auth', { azureBotOAuthConnectionName: 'connection' }, settings)
+    const context = new TurnContext(baseAdapter, baseActivity)
+    context.turnState.set(baseAdapter.UserTokenClientKey, mockClient)
+
+    await assert.rejects(
+      handler.token(context, { scopes: ['scope.read'] }),
+      /exchange failed/
+    )
+
+    sinon.assert.calledOnce(defaultConnection.acquireTokenOnBehalfOf)
+    sinon.assert.calledWithExactly(defaultConnection.acquireTokenOnBehalfOf, ['scope.read'], baseToken)
+    assert.equal(namedConnection.acquireTokenOnBehalfOf.notCalled, true)
   })
 
   it('signout should call UserTokenClient.signOut', async () => {

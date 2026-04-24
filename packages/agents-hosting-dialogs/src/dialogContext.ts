@@ -19,6 +19,7 @@ import { DialogTurnResult } from './dialogTurnResult'
 import { DialogTurnStatus } from './dialogTurnStatus'
 import { Choice } from './choices'
 import { Activity } from '@microsoft/agents-activity'
+import { DialogsTraceDefinitions, trace } from './observability'
 
 /**
  * Wraps a promise in a try-catch that automatically enriches errors with extra dialog context.
@@ -248,24 +249,36 @@ export class DialogContext {
      *
      */
   async beginDialog (dialogId: string, options?: object): Promise<DialogTurnResult> {
-    // Lookup dialog
-    const dialog: Dialog<{}> = this.findDialog(dialogId)
-    if (!dialog) {
-      throw new DialogContextError(
-                `DialogContext.beginDialog(): A dialog with an id of '${dialogId}' wasn't found.`,
-                this
-      )
-    }
+    return trace(DialogsTraceDefinitions.contextBegin, async ({ record }) => {
+      record({
+        dialogId,
+        parentId: this.activeDialog?.id,
+        activity: this.context.activity,
+      })
 
-    // Push new instance onto stack.
-    const instance: DialogInstance<any> = {
-      id: dialogId,
-      state: {},
-    }
-    this.stack.push(instance)
+      // Lookup dialog
+      const dialog: Dialog<{}> = this.findDialog(dialogId)
+      if (!dialog) {
+        throw new DialogContextError(
+                    `DialogContext.beginDialog(): A dialog with an id of '${dialogId}' wasn't found.`,
+                    this
+        )
+      }
 
-    // Call dialogs begin() method.
-    return wrapErrors(this, dialog.beginDialog(this, options))
+      record({ name: dialog.constructor.name })
+
+      // Push new instance onto stack.
+      const instance: DialogInstance<any> = {
+        id: dialogId,
+        state: {},
+      }
+      this.stack.push(instance)
+
+      // Call dialogs begin() method.
+      const result = await wrapErrors(this, dialog.beginDialog(this, options))
+      record({ status: result?.status })
+      return result
+    })
   }
 
   /**
@@ -286,36 +299,52 @@ export class DialogContext {
      *
      */
   async cancelAllDialogs (cancelParents = false, eventName?: string, eventValue?: any): Promise<DialogTurnResult> {
-    eventName = eventName || DialogEvents.cancelDialog
-    if (this.stack.length > 0 || this.parent !== undefined) {
-      // Cancel all local and parent dialogs while checking for interception
-      let notify = false
+    return trace(DialogsTraceDefinitions.contextCancelAll, async ({ record }) => {
+      eventName = eventName || DialogEvents.cancelDialog
+      const activeDialogDefinition = this.activeDialog ? this.findDialog(this.activeDialog.id) : undefined
 
-      let dialogContext: DialogContext = this
-      while (dialogContext !== undefined) {
-        if (dialogContext.stack.length > 0) {
-          // Check to see if the dialog wants to handle the event
-          // - We skip notifying the first dialog which actually called cancelAllDialogs()
-          if (notify) {
-            const handled = await dialogContext.emitEvent(eventName, eventValue, false, false)
-            if (handled) {
-              break
+      record({
+        activity: this.context.activity,
+        cancelParents,
+        dialogId: this.activeDialog?.id,
+        eventName,
+        name: activeDialogDefinition?.constructor.name,
+      })
+
+      let result: DialogTurnResult
+      if (this.stack.length > 0 || this.parent !== undefined) {
+        // Cancel all local and parent dialogs while checking for interception
+        let notify = false
+
+        let dialogContext: DialogContext = this
+        while (dialogContext !== undefined) {
+          if (dialogContext.stack.length > 0) {
+            // Check to see if the dialog wants to handle the event
+            // - We skip notifying the first dialog which actually called cancelAllDialogs()
+            if (notify) {
+              const handled = await dialogContext.emitEvent(eventName, eventValue, false, false)
+              if (handled) {
+                break
+              }
             }
+
+            // End the active dialog
+            await dialogContext.endActiveDialog(DialogReason.cancelCalled)
+          } else {
+            dialogContext = cancelParents ? dialogContext.parent : undefined
           }
 
-          // End the active dialog
-          await dialogContext.endActiveDialog(DialogReason.cancelCalled)
-        } else {
-          dialogContext = cancelParents ? dialogContext.parent : undefined
+          notify = true
         }
 
-        notify = true
+        result = { status: DialogTurnStatus.cancelled }
+      } else {
+        result = { status: DialogTurnStatus.empty }
       }
 
-      return { status: DialogTurnStatus.cancelled }
-    } else {
-      return { status: DialogTurnStatus.empty }
-    }
+      record({ status: result.status })
+      return result
+    })
   }
 
   /**
@@ -430,33 +459,46 @@ export class DialogContext {
      *
      */
   async continueDialog (): Promise<DialogTurnResult> {
-    // if we are continuing and haven't emitted the activityReceived event, emit it
-    // NOTE: This is backward compatible way for activity received to be fired even if you have legacy dialog loop
-    if (!this.context.turnState.has(ACTIVITY_RECEIVED_EMITTED)) {
-      this.context.turnState.set(ACTIVITY_RECEIVED_EMITTED, true)
+    return trace(DialogsTraceDefinitions.contextContinue, async ({ record }) => {
+      record({
+        dialogId: this.activeDialog?.id,
+        activity: this.context.activity,
+      })
 
-      // Dispatch "activityReceived" event
-      // - This fired from teh leaf and will queue up any interruptions.
-      await this.emitEvent(DialogEvents.activityReceived, this.context.activity, true, true)
-    }
+      // if we are continuing and haven't emitted the activityReceived event, emit it
+      // NOTE: This is backward compatible way for activity received to be fired even if you have legacy dialog loop
+      if (!this.context.turnState.has(ACTIVITY_RECEIVED_EMITTED)) {
+        this.context.turnState.set(ACTIVITY_RECEIVED_EMITTED, true)
 
-    // Check for a dialog on the stack
-    const instance: DialogInstance<any> = this.activeDialog
-    if (instance) {
-      // Lookup dialog
-      const dialog: Dialog<{}> = this.findDialog(instance.id)
-      if (!dialog) {
-        throw new DialogContextError(
-                    `DialogContext.continueDialog(): Can't continue dialog. A dialog with an id of '${instance.id}' wasn't found.`,
-                    this
-        )
+        // Dispatch "activityReceived" event
+        // - This fired from the leaf and will queue up any interruptions.
+        await this.emitEvent(DialogEvents.activityReceived, this.context.activity, true, true)
       }
 
-      // Continue execution of dialog
-      return wrapErrors(this, dialog.continueDialog(this))
-    } else {
-      return { status: DialogTurnStatus.empty }
-    }
+      // Check for a dialog on the stack
+      const instance: DialogInstance<any> = this.activeDialog
+      let result: DialogTurnResult
+      if (instance) {
+        // Lookup dialog
+        const dialog: Dialog<{}> = this.findDialog(instance.id)
+        if (!dialog) {
+          throw new DialogContextError(
+                        `DialogContext.continueDialog(): Can't continue dialog. A dialog with an id of '${instance.id}' wasn't found.`,
+                        this
+          )
+        }
+
+        record({ name: dialog.constructor.name })
+
+        // Continue execution of dialog
+        result = await wrapErrors(this, dialog.continueDialog(this))
+      } else {
+        result = { status: DialogTurnStatus.empty }
+      }
+
+      record({ status: result.status })
+      return result
+    })
   }
 
   /**
@@ -483,27 +525,41 @@ export class DialogContext {
      *
      */
   async endDialog (result?: any): Promise<DialogTurnResult> {
-    // End the active dialog
-    await this.endActiveDialog(DialogReason.endCalled, result)
+    return trace(DialogsTraceDefinitions.contextEnd, async ({ record }) => {
+      const activeDialogDefinition = this.activeDialog ? this.findDialog(this.activeDialog.id) : undefined
 
-    // Resume parent dialog
-    const instance: DialogInstance<any> = this.activeDialog
-    if (instance) {
-      // Lookup dialog
-      const dialog: Dialog<{}> = this.findDialog(instance.id)
-      if (!dialog) {
-        throw new DialogContextError(
-                    `DialogContext.endDialog(): Can't resume previous dialog. A dialog with an id of '${instance.id}' wasn't found.`,
-                    this
-        )
+      record({
+        activity: this.context.activity,
+        dialogId: this.activeDialog?.id,
+        name: activeDialogDefinition?.constructor.name,
+      })
+
+      // End the active dialog
+      await this.endActiveDialog(DialogReason.endCalled, result)
+
+      // Resume parent dialog
+      const instance: DialogInstance<any> = this.activeDialog
+      let turnResult: DialogTurnResult
+      if (instance) {
+        // Lookup dialog
+        const dialog: Dialog<{}> = this.findDialog(instance.id)
+        if (!dialog) {
+          throw new DialogContextError(
+                        `DialogContext.endDialog(): Can't resume previous dialog. A dialog with an id of '${instance.id}' wasn't found.`,
+                        this
+          )
+        }
+
+        // Return result to previous dialog
+        turnResult = await wrapErrors(this, dialog.resumeDialog(this, DialogReason.endCalled, result))
+      } else {
+        // Signal completion
+        turnResult = { status: DialogTurnStatus.complete, result }
       }
 
-      // Return result to previous dialog
-      return wrapErrors(this, dialog.resumeDialog(this, DialogReason.endCalled, result))
-    } else {
-      // Signal completion
-      return { status: DialogTurnStatus.complete, result }
-    }
+      record({ status: turnResult.status })
+      return turnResult
+    })
   }
 
   /**
@@ -524,11 +580,26 @@ export class DialogContext {
      *
      */
   async replaceDialog (dialogId: string, options?: object): Promise<DialogTurnResult> {
-    // End the active dialog
-    await this.endActiveDialog(DialogReason.replaceCalled)
+    return trace(DialogsTraceDefinitions.contextReplace, async ({ record }) => {
+      const activeDialogDefinition = this.activeDialog ? this.findDialog(this.activeDialog.id) : undefined
+      const replacementDialog = this.findDialog(dialogId)
 
-    // Start replacement dialog
-    return this.beginDialog(dialogId, options)
+      record({
+        activity: this.context.activity,
+        dialogId: this.activeDialog?.id,
+        name: activeDialogDefinition?.constructor.name,
+        replacementDialogId: dialogId,
+        replacementName: replacementDialog?.constructor.name,
+      })
+
+      // End the active dialog
+      await this.endActiveDialog(DialogReason.replaceCalled)
+
+      // Start replacement dialog
+      const result = await this.beginDialog(dialogId, options)
+      record({ status: result?.status })
+      return result
+    })
   }
 
   /**
