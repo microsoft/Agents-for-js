@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "name": "@microsoft/agents-telemetry",
+  "version": "0.1.0",
+  "homepage": "https://github.com/microsoft/Agents-for-js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/microsoft/Agents-for-js.git"
+  },
+  "author": {
+    "name": "Microsoft",
+    "email": "agentssdk@microsoft.com",
+    "url": "https://aka.ms/Agents"
+  },
+  "description": "Telemetry instrumentation for Microsoft Agents SDK",
+  "keywords": [
+    "Agents",
+    "Telemetry",
+    "OpenTelemetry",
+    "OTel"
+  ],
+  "main": "./dist/cjs/src/index.cjs",
+  "module": "./dist/esm/src/index.mjs",
+  "types": "./dist/esm/src/index.d.mts",
+  "browser": "./dist/esm/src/index.mjs",
+  "scripts": {
+    "clean:esm": "node -e \"require('node:fs').rmSync('dist/esm', { recursive: true, force: true })\"",
+    "build:esm": "tsc --project tsconfig.esm.json && node scripts/esm.mjs"
+  },
+  "peerDependencies": {
+    "@opentelemetry/api": "1",
+    "@opentelemetry/api-logs": ">=0.214.0 <1"
+  },
+  "peerDependenciesMeta": {
+    "@opentelemetry/api": {
+      "optional": true
+    },
+    "@opentelemetry/api-logs": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@opentelemetry/api": "1",
+    "@opentelemetry/api-logs": "0.214.0"
+  },
+  "dependencies": {
+    "debug": "^4.4.3"
+  },
+  "license": "MIT",
+  "files": [
+    "README.md",
+    "dist",
+    "package.json"
+  ],
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/esm/src/index.d.mts",
+        "browser": "./dist/esm/src/index.mjs",
+        "default": "./dist/esm/src/index.mjs"
+      },
+      "require": {
+        "types": "./dist/cjs/src/index.d.cts",
+        "default": "./dist/cjs/src/index.cjs"
+      },
+      "default": "./dist/esm/src/index.mjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

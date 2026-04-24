@@ -3,34 +3,43 @@
  * Licensed under the MIT License.
  */
 
-import { debug } from '@microsoft/agents-activity'
+import { ExceptionHelper } from '@microsoft/agents-activity'
 import { TurnContext } from '../../../turnContext'
+import { trace, debug } from '@microsoft/agents-telemetry'
 import { AuthorizationHandler, AuthorizationHandlerSettings, AuthorizationHandlerStatus, AuthorizationHandlerTokenOptions } from '../types'
 import { TokenResponse } from '../../../oauth'
 import { AuthProvider } from '../../../auth'
+import { AuthorizationTraceDefinitions } from '../../../observability'
+import { Errors } from '../../../errorHelper'
 
 const logger = debug('agents:authorization:agentic')
 
 /**
  * Options for configuring the Agentic authorization handler.
+ * @remarks
+ * Properties can be configured via environment variables (case-insensitive).
+ * Use the format: `AgentApplication__UserAuthorization__handlers__{handlerId}__settings__{propertyName}`
+ * where `{handlerId}` is the handler's unique identifier and `{propertyName}` matches the property name.
+ *
+ * @example
+ * ```env
+ * # For a handler with id "myAuth":
+ * AgentApplication__UserAuthorization__handlers__myAuth__settings__type=AgenticUserAuthorization
+ * AgentApplication__UserAuthorization__handlers__myAuth__settings__scopes=api://scope1 api://scope2
+ * ```
  */
 export interface AgenticAuthorizationOptions {
   /**
    * The type of authorization handler.
-   * @remarks
-   * When using environment variables, this can be set using the `${authHandlerId}_type` variable.
    */
-  type: 'agentic'
+  type: 'AgenticUserAuthorization' | 'agentic'
   /**
    * The scopes required for the authorization.
-   * @remarks
-   * When using environment variables, this can be set using the `${authHandlerId}_scopes` variable (comma-separated values, e.g. `scope1,scope2`).
+   * @remarks When set via environment variable, use comma or space-separated values (e.g. `scope1,scope2` or `scope1 scope2`).
    */
   scopes?: string[]
   /**
-   * (Optional) An alternative connection name to use for the authorization process.
-   * @remarks
-   * When using environment variables, this can be set using the `${authHandlerId}_altBlueprintConnectionName` variable.
+   * An alternative connection name to use for the authorization process.
    */
   altBlueprintConnectionName?: string
 }
@@ -44,39 +53,32 @@ export interface AgenticAuthorizationSettings extends AuthorizationHandlerSettin
  * Authorization handler for Agentic authentication.
  */
 export class AgenticAuthorization implements AuthorizationHandler {
-  private _options: AgenticAuthorizationOptions
   private _onSuccess?: Parameters<AuthorizationHandler['onSuccess']>[0]
   private _onFailure?: Parameters<AuthorizationHandler['onFailure']>[0]
 
   /**
    * Creates an instance of the AgenticAuthorization class.
    * @param id The unique identifier for the authorization handler.
-   * @param options The options for configuring the authorization handler.
+   * @param options The options for configuring the authorization handler (must be fully resolved).
    * @param settings The settings for the authorization handler.
    */
-  constructor (public readonly id: string, options: AgenticAuthorizationOptions, private settings: AgenticAuthorizationSettings) {
+  constructor (public readonly id: string, private options: AgenticAuthorizationOptions, private settings: AgenticAuthorizationSettings) {
     if (!this.settings.connections) {
-      throw new Error(this.prefix('The \'connections\' option is not available in the app options. Ensure that the app is properly configured.'))
+      throw ExceptionHelper.generateException(Error, Errors.ConnectionsOptionNotAvailable)
     }
 
-    this._options = this.loadOptions(options)
+    if (!options.scopes || options.scopes.length === 0) {
+      throw ExceptionHelper.generateException(Error, Errors.AtLeastOneScopeRequired)
+    }
   }
 
+  readonly type = 'agentic'
+
   /**
-   * Loads and validates the authorization handler options.
+   * The scopes configured for this handler.
    */
-  private loadOptions (settings: AgenticAuthorizationOptions) {
-    const result: AgenticAuthorizationOptions = {
-      type: 'agentic',
-      altBlueprintConnectionName: settings.altBlueprintConnectionName ?? (process.env[`${this.id}_altBlueprintConnectionName`]),
-      scopes: settings.scopes ?? this.loadScopes(process.env[`${this.id}_scopes`]),
-    }
-
-    if (!result.scopes || result.scopes.length === 0) {
-      throw new Error(this.prefix('At least one scope must be specified for the Agentic authorization handler.'))
-    }
-
-    return result
+  get scopes (): string[] | undefined {
+    return this.options.scopes
   }
 
   /**
@@ -97,39 +99,46 @@ export class AgenticAuthorization implements AuthorizationHandler {
    * @inheritdoc
    */
   async token (context: TurnContext, options?: AuthorizationHandlerTokenOptions): Promise<TokenResponse> {
-    try {
-      const scopes = options?.scopes || this._options.scopes!
+    return trace(AuthorizationTraceDefinitions.agenticToken, async ({ record }) => {
+      let connection: AuthProvider | undefined
+      const scopes = options?.scopes || this.options.scopes!
 
-      const tokenResponse = this.getContext(context, scopes)
-      if (tokenResponse.token) {
-        logger.debug(this.prefix('Using cached Agentic user token'))
-        return tokenResponse
+      try {
+        const tokenResponse = this.getContext(context, scopes)
+        if (tokenResponse.token) {
+          logger.debug(this.prefix('Using cached Agentic user token'))
+          return tokenResponse
+        }
+
+        if (this.options.altBlueprintConnectionName?.trim()) {
+          connection = this.settings.connections.getConnection(this.options.altBlueprintConnectionName)
+        } else {
+          connection = this.settings.connections.getTokenProvider(context.identity, context.activity.serviceUrl ?? '')
+        }
+
+        const token = await connection.getAgenticUserToken(
+          context.activity.getAgenticTenantId() ?? '',
+          context.activity.getAgenticInstanceId() ?? '',
+          context.activity.getAgenticUser() ?? '',
+          scopes
+        )
+
+        this.setContext(context, scopes, { token })
+        this._onSuccess?.(context)
+        return { token }
+      } catch (error) {
+        const reason = 'Error retrieving Agentic user token'
+        logger.error(this.prefix(reason), error)
+        this._onFailure?.(context, `${reason}: ${(error as Error).message}`)
+        return { token: undefined }
+      } finally {
+        record({
+          handlerId: this.id,
+          connectionName: connection?.connectionSettings?.connectionName ?? this.options.altBlueprintConnectionName ?? 'unknown',
+          authScopes: scopes ?? []
+        })
       }
-
-      let connection: AuthProvider
-
-      if (this._options.altBlueprintConnectionName?.trim()) {
-        connection = this.settings.connections.getConnection(this._options.altBlueprintConnectionName)
-      } else {
-        connection = this.settings.connections.getTokenProvider(context.identity, context.activity.serviceUrl ?? '')
-      }
-
-      const token = await connection.getAgenticUserToken(
-        context.activity.getAgenticTenantId() ?? '',
-        context.activity.getAgenticInstanceId() ?? '',
-        context.activity.getAgenticUser() ?? '',
-        scopes
-      )
-
-      this.setContext(context, scopes, { token })
-      this._onSuccess?.(context)
-      return { token }
-    } catch (error) {
-      const reason = 'Error retrieving Agentic user token'
-      logger.error(this.prefix(reason), error)
-      this._onFailure?.(context, `${reason}: ${(error as Error).message}`)
-      return { token: undefined }
-    }
+    })
   }
 
   /**
@@ -172,18 +181,5 @@ export class AgenticAuthorization implements AuthorizationHandler {
   private getContext (context: TurnContext, scopes: string[]): TokenResponse {
     const result = context.turnState.get(`${this._key}:${scopes.join(';')}`)
     return result?.() ?? { token: undefined }
-  }
-
-  /**
-   * Loads the OAuth scopes from the environment variables.
-   */
-  private loadScopes (value:string | undefined): string[] {
-    return value?.split(',').reduce<string[]>((acc, scope) => {
-      const trimmed = scope.trim()
-      if (trimmed) {
-        acc.push(trimmed)
-      }
-      return acc
-    }, []) ?? []
   }
 }

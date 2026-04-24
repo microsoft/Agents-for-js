@@ -2,6 +2,9 @@
     "files": [],
     "references": [
       {
+        "path": "packages/agents-telemetry"
+      },
+      {
         "path": "packages/agents-activity"
       },
       {
