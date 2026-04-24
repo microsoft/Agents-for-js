@@ -8,13 +8,12 @@ import { MessageFactory } from '../../../messageFactory'
 import { CardFactory } from '../../../cards'
 import { TurnContext } from '../../../turnContext'
 import { TokenExchangeRequest, TokenExchangeInvokeResponse, TokenResponse, UserTokenClient } from '../../../oauth'
-import jwt, { JwtPayload } from 'jsonwebtoken'
+import jwt from 'jsonwebtoken'
 import { HandlerStorage } from '../handlerStorage'
 import { TokenExchangeInvokeRequest } from '../../../invoke'
 import { sendInvokeResponse } from '../utils'
 import { Channels, ExceptionHelper } from '@microsoft/agents-activity'
 import { trace, debug } from '@microsoft/agents-telemetry'
-import { AuthProvider } from '../../../auth'
 import { AuthorizationTraceDefinitions } from '../../../observability'
 import { Errors } from '../../../errorHelper'
 
@@ -199,36 +198,20 @@ export class AzureBotAuthorization implements AuthorizationHandler {
    * @returns The token response containing the token or undefined if not available.
    */
   async token (context: TurnContext, options?: AuthorizationHandlerTokenOptions): Promise<TokenResponse> {
+    const oboScopes = options?.scopes && options.scopes.length > 0 ? options.scopes : this.options.oboScopes
+
+    // OBO token acquisition
+    if (oboScopes && oboScopes.length > 0) {
+      const oboConnection = options?.connection ?? this.options.oboConnectionName
+      const token = await this.getOBOToken(context, oboConnection, oboScopes)
+      return { token }
+    }
+
+    // Regular token acquisition
     return trace(AuthorizationTraceDefinitions.azureBotToken, async ({ record }) => {
-      let { token } = this.getContext(context)
-      const traceContext = { connection: this.options.azureBotOAuthConnectionName, scopes: [] }
-
-      try {
-        if (!token?.trim()) {
-          const { activity } = context
-
-          const userTokenClient = await this.getUserTokenClient(context)
-          // Using getTokenOrSignInResource instead of getUserToken to avoid HTTP 404 errors.
-          const { tokenResponse } = await userTokenClient.getTokenOrSignInResource(activity.from?.id!, this.options.azureBotOAuthConnectionName!, activity.channelId!, activity.getConversationReference(), activity.relatesTo!, '')
-          token = tokenResponse?.token
-        }
-
-        if (!token?.trim()) {
-          return { token: undefined }
-        }
-
-        return await this.handleOBO(token, options, traceContext)
-      } finally {
-        record({
-          handlerId: this.id,
-          connectionName: traceContext.connection ?? 'unknown',
-          authFlow: traceContext.scopes && traceContext.scopes.length > 0 ? 'obo' : '',
-          authScopes: traceContext.scopes ?? []
-        })
-        if (traceContext.scopes && traceContext.scopes.length > 0) {
-          record({ authFlow: 'obo', authScopes: traceContext.scopes })
-        }
-      }
+      record({ handlerId: this.id, connectionName: this.options.azureBotOAuthConnectionName })
+      const token = await this.getBaseToken(context)
+      return { token }
     })
   }
 
@@ -340,35 +323,51 @@ export class AzureBotAuthorization implements AuthorizationHandler {
   }
 
   /**
-   * Handles on-behalf-of token acquisition.
+   * Retrieves the base token from the turn state or the user token client.
+   * @param context The turn context.
+   * @returns The token string or undefined if not available.
    */
-  private async handleOBO (token: string, options?: AuthorizationHandlerTokenOptions, traceContext: { connection?: string, scopes?: string[] } = {}): Promise<TokenResponse> {
-    const oboConnection = options?.connection ?? this.options.oboConnectionName
-    const oboScopes = options?.scopes && options.scopes.length > 0 ? options.scopes : this.options.oboScopes
+  private async getBaseToken (context: TurnContext) {
+    const { token } = this.getContext(context)
 
-    if (!oboScopes || oboScopes.length === 0) {
-      traceContext.connection = this.options.azureBotOAuthConnectionName
-      traceContext.scopes = undefined
-      return { token }
+    if (!token?.trim()) {
+      const { activity } = context
+      const userTokenClient = await this.getUserTokenClient(context)
+      // Using getTokenOrSignInResource instead of getUserToken to avoid HTTP 404 errors.
+      const { tokenResponse } = await userTokenClient.getTokenOrSignInResource(activity.from?.id!, this.options.azureBotOAuthConnectionName!, activity.channelId!, activity.getConversationReference(), activity.relatesTo!, '')
+      return tokenResponse?.token
     }
 
-    if (!this.isExchangeable(token)) {
-      throw ExceptionHelper.generateException(Error, Errors.AzureBotConnectionTokenNotExchangeable, undefined, { connectionName: this.options.azureBotOAuthConnectionName! })
-    }
+    return token
+  }
 
-    let provider: AuthProvider | undefined
-    try {
-      provider = oboConnection ? this.settings.connections.getConnection(oboConnection) : this.settings.connections.getDefaultConnection()
-      const newToken = await provider.acquireTokenOnBehalfOf(oboScopes, token)
-      logger.debug(this.prefix('Successfully acquired on-behalf-of token'), { connection: oboConnection, scopes: oboScopes })
-      return { token: newToken }
-    } catch (error) {
-      logger.error(this.prefix('Failed to exchange on-behalf-of token'), { connection: oboConnection, scopes: oboScopes }, error)
-      return { token: undefined }
-    } finally {
-      traceContext.connection = provider?.connectionSettings?.connectionName ?? oboConnection
-      traceContext.scopes = oboScopes
-    }
+  /**
+   * Acquires an on-behalf-of token for the user based on the provided scopes and connection.
+   */
+  private async getOBOToken (context: TurnContext, oboConnection: string | undefined, oboScopes: string[]) {
+    return trace(AuthorizationTraceDefinitions.azureBotOBOToken, async ({ record }) => {
+      record({ handlerId: this.id, connectionName: oboConnection, authScopes: oboScopes })
+      const token = await this.getBaseToken(context)
+      if (!token) {
+        return
+      }
+
+      if (!this.isExchangeable(token)) {
+        throw ExceptionHelper.generateException(Error, Errors.AzureBotConnectionTokenNotExchangeable, undefined, { connectionName: this.options.azureBotOAuthConnectionName! })
+      }
+
+      try {
+        const provider = oboConnection ? this.settings.connections.getConnection(oboConnection) : this.settings.connections.getDefaultConnection()
+        // Record the connection name again in case it changes.
+        record({ connectionName: provider?.connectionSettings?.connectionName ?? oboConnection })
+        const newToken = await provider.acquireTokenOnBehalfOf(oboScopes, token)
+        logger.debug(this.prefix('Successfully acquired on-behalf-of token'), { connection: oboConnection, scopes: oboScopes })
+        return newToken
+      } catch (error) {
+        logger.error(this.prefix('Failed to exchange on-behalf-of token'), { connection: oboConnection, scopes: oboScopes }, error)
+        throw error
+      }
+    })
   }
 
   /**
@@ -378,9 +377,19 @@ export class AzureBotAuthorization implements AuthorizationHandler {
     if (!token || typeof token !== 'string') {
       return false
     }
-    const payload = jwt.decode(token) as JwtPayload
+
+    const payload = jwt.decode(token)
+    if (!payload || typeof payload === 'string') {
+      return false
+    }
+
+    const appid = payload.azp ?? payload.appid
+    if (typeof appid !== 'string' || appid.length === 0) {
+      return false
+    }
+
     const audiences = Array.isArray(payload.aud) ? payload.aud : [payload.aud]
-    return audiences.some(aud => typeof aud === 'string' && aud.startsWith('api://'))
+    return audiences.some(aud => typeof aud === 'string' && aud.includes(appid))
   }
 
   /**

@@ -730,22 +730,27 @@ export const AuthorizationTraceDefinitions = {
     record: {
       handlerId: '',
       connectionName: '',
-      authFlow: '',
-      authScopes: [] as string[],
     },
     end ({ span, record }) {
       span.setAttributes({
         'auth.handler.id': record.handlerId ?? 'unknown',
         'auth.connection.name': record.connectionName ?? 'unknown',
       })
-
-      if (record.authFlow) {
-        span.setAttribute('auth.flow', record.authFlow)
-      }
-
-      if (record.authScopes.length > 0) {
-        span.setAttribute('auth.scopes', record.authScopes)
-      }
+    }
+  }),
+  azureBotOBOToken: trace.define({
+    name: SpanNames.AUTHORIZATION_AZURE_BOT_OBO_TOKEN,
+    record: {
+      handlerId: '',
+      connectionName: '',
+      authScopes: [] as string[],
+    },
+    end ({ span, record }) {
+      span.setAttributes({
+        'auth.handler.id': record.handlerId ?? 'unknown',
+        'auth.connection.name': record.connectionName ?? 'unknown',
+        'auth.scopes': record.authScopes
+      })
     }
   }),
   azureBotSignout: trace.define({

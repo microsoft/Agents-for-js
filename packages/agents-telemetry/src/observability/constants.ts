@@ -67,6 +67,7 @@ export const SpanNames = {
   // Authorization
   AUTHORIZATION_AGENTIC_TOKEN: 'agents.authorization.agentic_token',
   AUTHORIZATION_AZURE_BOT_TOKEN: 'agents.authorization.azure_bot_token',
+  AUTHORIZATION_AZURE_BOT_OBO_TOKEN: 'agents.authorization.azure_bot_obo_token',
   AUTHORIZATION_AZURE_BOT_SIGNIN: 'agents.authorization.azure_bot_signin',
   AUTHORIZATION_AZURE_BOT_SIGNOUT: 'agents.authorization.azure_bot_signout',
 
