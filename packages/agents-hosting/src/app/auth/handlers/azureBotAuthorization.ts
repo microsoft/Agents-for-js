@@ -10,8 +10,9 @@ import { TurnContext } from '../../../turnContext'
 import { TokenExchangeRequest, TokenExchangeInvokeResponse, TokenResponse, UserTokenClient } from '../../../oauth'
 import jwt, { JwtPayload } from 'jsonwebtoken'
 import { HandlerStorage } from '../handlerStorage'
-import { Activity, ActivityTypes, Channels, ExceptionHelper } from '@microsoft/agents-activity'
-import { InvokeResponse, TokenExchangeInvokeRequest } from '../../../invoke'
+import { TokenExchangeInvokeRequest } from '../../../invoke'
+import { sendInvokeResponse } from '../utils'
+import { Channels, ExceptionHelper } from '@microsoft/agents-activity'
 import { trace, debug } from '@microsoft/agents-telemetry'
 import { AuthProvider } from '../../../auth'
 import { AuthorizationTraceDefinitions } from '../../../observability'
@@ -312,15 +313,15 @@ export class AzureBotAuthorization implements AuthorizationHandler {
           const result = await this.setToken(storage, context, active, verification.code, reason)
           status = result
           if (result !== AuthorizationHandlerStatus.APPROVED) {
-            await this.sendInvokeResponse(context, { status: 404 })
+            await sendInvokeResponse(context, { status: 404 })
             return result
           }
 
-          await this.sendInvokeResponse(context, { status: 200 })
+          await sendInvokeResponse(context, { status: 200 })
           await this._onSuccess?.(context)
           return result
         } catch (error) {
-          await this.sendInvokeResponse(context, { status: 500 })
+          await sendInvokeResponse(context, { status: 500 })
           if (error instanceof Error) {
             error.message = this.prefix(error.message)
           }
@@ -433,7 +434,7 @@ export class AzureBotAuthorization implements AuthorizationHandler {
 
       if (!tokenExchangeRequest?.token) {
         reason.message = 'The Agent received an InvokeActivity that is missing a TokenExchangeInvokeRequest value. This is required to be sent with the InvokeActivity.'
-        await this.sendInvokeResponse<TokenExchangeInvokeResponse>(context, {
+        await sendInvokeResponse<TokenExchangeInvokeResponse>(context, {
           status: 400,
           body: { connectionName: this.options.azureBotOAuthConnectionName!, failureDetail: reason.message }
         })
@@ -444,7 +445,7 @@ export class AzureBotAuthorization implements AuthorizationHandler {
 
       if (tokenExchangeInvokeRequest.connectionName !== this.options.azureBotOAuthConnectionName) {
         reason.message = `The Agent received an InvokeActivity with a TokenExchangeInvokeRequest for a different connection name ('${tokenExchangeInvokeRequest.connectionName}') than expected ('${this.options.azureBotOAuthConnectionName}').`
-        await this.sendInvokeResponse<TokenExchangeInvokeResponse>(context, {
+        await sendInvokeResponse<TokenExchangeInvokeResponse>(context, {
           status: 400,
           body: { id: tokenExchangeInvokeRequest.id, connectionName: this.options.azureBotOAuthConnectionName!, failureDetail: reason.message }
         })
@@ -456,7 +457,7 @@ export class AzureBotAuthorization implements AuthorizationHandler {
       const { token } = await userTokenClient.exchangeTokenAsync(activity.from?.id!, this.options.azureBotOAuthConnectionName!, activity.channelId!, tokenExchangeRequest)
       if (!token) {
         reason.message = 'The MS Teams token service didn\'t send back the exchanged token. Waiting for MS Teams to send another signin/tokenExchange request. After multiple failed attempts, the user will be asked to enter the magic code.'
-        await this.sendInvokeResponse<TokenExchangeInvokeResponse>(context, {
+        await sendInvokeResponse<TokenExchangeInvokeResponse>(context, {
           status: 412,
           body: { id: tokenExchangeInvokeRequest.id, connectionName: this.options.azureBotOAuthConnectionName, failureDetail: reason.message }
         })
@@ -464,7 +465,7 @@ export class AzureBotAuthorization implements AuthorizationHandler {
         return AuthorizationHandlerStatus.PENDING
       }
 
-      await this.sendInvokeResponse<TokenExchangeInvokeResponse>(context, {
+      await sendInvokeResponse<TokenExchangeInvokeResponse>(context, {
         status: 200,
         body: { id: tokenExchangeInvokeRequest.id, connectionName: this.options.azureBotOAuthConnectionName! }
       })
@@ -476,7 +477,7 @@ export class AzureBotAuthorization implements AuthorizationHandler {
     }
 
     if (activity.name === 'signin/failure') {
-      await this.sendInvokeResponse(context, { status: 200 })
+      await sendInvokeResponse(context, { status: 200 })
       reason.message = 'Failed to sign-in'
       const value = activity.value as SignInFailureValue
       logger.error(this.prefix(reason.message), value, activity)
@@ -512,7 +513,7 @@ export class AzureBotAuthorization implements AuthorizationHandler {
     }
 
     if (state === 'CancelledByUser') {
-      await this.sendInvokeResponse(context, { status: 200 })
+      await sendInvokeResponse(context, { status: 200 })
       reason.message = 'Sign-in process was cancelled by the user'
       logger.warn(this.prefix(reason.message), activity)
       return { status: AuthorizationHandlerStatus.REJECTED }
@@ -526,7 +527,7 @@ export class AzureBotAuthorization implements AuthorizationHandler {
       return { status: AuthorizationHandlerStatus.PENDING }
     }
 
-    await this.sendInvokeResponse(context, { status: 200 })
+    await sendInvokeResponse(context, { status: 200 })
     reason.message = 'Code verification successful'
     logger.debug(this.prefix(reason.message), activity)
     return { status: AuthorizationHandlerStatus.APPROVED, code: state }
@@ -558,20 +559,6 @@ export class AzureBotAuthorization implements AuthorizationHandler {
       throw ExceptionHelper.generateException(Error, Errors.UserTokenClientNotAvailable)
     }
     return userTokenClient
-  }
-
-  /**
-   * Sends an InvokeResponse activity if the channel is Microsoft Teams, including Copilot within MS Teams.
-   */
-  private sendInvokeResponse <T>(context: TurnContext, response: InvokeResponse<T>) {
-    if (context.activity.channelIdChannel !== Channels.Msteams) {
-      return Promise.resolve()
-    }
-
-    return context.sendActivity(Activity.fromObject({
-      type: ActivityTypes.InvokeResponse,
-      value: response
-    }))
   }
 
   /**
