@@ -162,11 +162,6 @@ export class MsalTokenProvider implements AuthProvider {
       if (!this.connectionSettings) {
         throw new Error('Connection settings must be provided when calling getAgenticInstanceToken')
       }
-      const token = await cca.acquireTokenByClientCredential({
-        scopes: ['api://AzureAdTokenExchange/.default'],
-        correlationId: v4(),
-        azureRegion: this.connectionSettings?.azureRegion
-      })
       const appToken = await this.getAgenticApplicationToken(tenantId, agentAppInstanceId)
       const cca = new ConfidentialClientApplication({
         auth: {
@@ -179,7 +174,8 @@ export class MsalTokenProvider implements AuthProvider {
 
       const token = await cca.acquireTokenByClientCredential({
         scopes: ['api://AzureAdTokenExchange/.default'],
-        correlationId: v4()
+        correlationId: v4(),
+        azureRegion: this.connectionSettings?.azureRegion
       })
 
       if (!token?.accessToken) {
