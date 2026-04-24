@@ -8,7 +8,7 @@ import { MessageFactory } from '../../../messageFactory'
 import { CardFactory } from '../../../cards'
 import { TurnContext } from '../../../turnContext'
 import { TokenExchangeRequest, TokenExchangeInvokeResponse, TokenResponse, UserTokenClient } from '../../../oauth'
-import jwt, { JwtPayload } from 'jsonwebtoken'
+import jwt from 'jsonwebtoken'
 import { HandlerStorage } from '../handlerStorage'
 import { TokenExchangeInvokeRequest } from '../../../invoke'
 import { sendInvokeResponse } from '../utils'
@@ -359,7 +359,7 @@ export class AzureBotAuthorization implements AuthorizationHandler {
       try {
         const provider = oboConnection ? this.settings.connections.getConnection(oboConnection) : this.settings.connections.getDefaultConnection()
         // Record the connection name again in case it changes.
-        record({ connectionName: provider?.connectionSettings?.connectionName })
+        record({ connectionName: provider?.connectionSettings?.connectionName ?? oboConnection })
         const newToken = await provider.acquireTokenOnBehalfOf(oboScopes, token)
         logger.debug(this.prefix('Successfully acquired on-behalf-of token'), { connection: oboConnection, scopes: oboScopes })
         return newToken
@@ -377,10 +377,19 @@ export class AzureBotAuthorization implements AuthorizationHandler {
     if (!token || typeof token !== 'string') {
       return false
     }
-    const payload = jwt.decode(token) as JwtPayload
-    const audiences = Array.isArray(payload.aud) ? payload.aud : [payload.aud]
+
+    const payload = jwt.decode(token)
+    if (!payload || typeof payload === 'string') {
+      return false
+    }
+
     const appid = payload.azp ?? payload.appid
-    return audiences.some(aud => aud?.includes(appid))
+    if (typeof appid !== 'string' || appid.length === 0) {
+      return false
+    }
+
+    const audiences = Array.isArray(payload.aud) ? payload.aud : [payload.aud]
+    return audiences.some(aud => typeof aud === 'string' && aud.includes(appid))
   }
 
   /**

@@ -94,6 +94,21 @@ describe('AzureBotAuthorization', () => {
     assert.equal(namedConnection.acquireTokenOnBehalfOf.notCalled, true)
   })
 
+  it('token should reject OBO when the base token is malformed', async () => {
+    mockClient.getTokenOrSignInResource.resolves({ tokenResponse: { token: 'not-a-jwt' } } as any)
+    const handler = new AzureBotAuthorization('auth', { azureBotOAuthConnectionName: 'connection' }, settings)
+    const context = new TurnContext(baseAdapter, baseActivity)
+    context.turnState.set(baseAdapter.UserTokenClientKey, mockClient)
+
+    await assert.rejects(
+      handler.token(context, { scopes: ['scope.read'] }),
+      /not exchangeable/
+    )
+
+    assert.equal(defaultConnection.acquireTokenOnBehalfOf.notCalled, true)
+    assert.equal(namedConnection.acquireTokenOnBehalfOf.notCalled, true)
+  })
+
   it('token should throw when OBO exchange fails', async () => {
     const baseToken = createToken('api://resource-app')
     mockClient.getTokenOrSignInResource.resolves({ tokenResponse: { token: baseToken } } as any)
