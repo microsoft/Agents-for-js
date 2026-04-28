@@ -1,5 +1,5 @@
 const { CardFactory, MessageFactory } = require('@microsoft/agents-hosting')
-const { TeamsActivityHandler } = require('@microsoft/agents-hosting-extensions-teams')
+const { TeamsActivityHandler, SetTeamsApiClientMiddleware } = require('@microsoft/agents-hosting-extensions-teams')
 const axios = require('axios')
 const querystring = require('querystring')
 const { startServer } = require('@microsoft/agents-hosting-express')
@@ -368,4 +368,10 @@ class TeamsBot extends TeamsActivityHandler {
   }
 }
 
-startServer(new TeamsBot())
+startServer(
+  new TeamsBot(),
+  {
+    configureAdapter: (adapter) => {
+      adapter.use(new SetTeamsApiClientMiddleware())
+    }
+  })

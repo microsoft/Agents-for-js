@@ -1,9 +1,8 @@
 import { Activity, ActivityTypes } from '@microsoft/agents-activity'
 import assert from 'assert'
 import { describe, it } from 'node:test'
-import { parseTeamsChannelData } from '../../src/activity-extensions/teamsChannelDataParser'
-import { ChannelInfo } from '../../src/activity-extensions/channelInfo'
-import { ChannelTypes } from '../../src/activity-extensions/channelTypes'
+import { parseTeamsChannelData } from '../../src/activity-extensions'
+import type { ChannelInfo } from '@microsoft/teams.api'
 
 describe('parseTeamsChannelData test', () => {
   it('Parse with no properties defined', () => {
@@ -106,7 +105,7 @@ describe('parseTeamsChannelData test', () => {
     const channelInfo: ChannelInfo = {
       id: 'id',
       name: 'name',
-      type: ChannelTypes.Standard
+      type: 'standard'
     }
     const settings = {
       selectedChannel: channelInfo
@@ -125,7 +124,7 @@ describe('parseTeamsChannelData test', () => {
     const channelInfo: ChannelInfo = {
       id: 'id',
       name: 'name',
-      type: ChannelTypes.Standard
+      type: 'standard'
     }
     const settings = {
       selectedChannel: channelInfo,

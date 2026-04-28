@@ -1,6 +1,6 @@
 import { MessageFactory, TurnContext } from '@microsoft/agents-hosting'
 import { startServer } from '@microsoft/agents-hosting-express'
-import { TeamsActivityHandler } from '@microsoft/agents-hosting-extensions-teams'
+import { TeamsActivityHandler, SetTeamsApiClientMiddleware } from '@microsoft/agents-hosting-extensions-teams'
 
 class TeamsEventsBot extends TeamsActivityHandler {
   constructor () {
@@ -104,4 +104,10 @@ class TeamsEventsBot extends TeamsActivityHandler {
     await context.sendActivity(reply)
   }
 }
-startServer(new TeamsEventsBot())
+startServer(
+  new TeamsEventsBot(),
+  {
+    configureAdapter: (adapter) => {
+      adapter.use(new SetTeamsApiClientMiddleware())
+    }
+  })

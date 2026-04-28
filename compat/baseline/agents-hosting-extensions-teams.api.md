@@ -7,98 +7,42 @@
 import { Activity } from '@microsoft/agents-activity';
 import { ActivityHandler } from '@microsoft/agents-hosting';
 import { AgentApplication } from '@microsoft/agents-hosting';
+import { AgentErrorDefinition } from '@microsoft/agents-activity';
 import { AgentExtension } from '@microsoft/agents-hosting';
-import { Attachment } from '@microsoft/agents-activity';
-import { CardAction } from '@microsoft/agents-activity';
-import { ChannelAccount } from '@microsoft/agents-activity';
-import { ConversationAccount } from '@microsoft/agents-activity';
+import type { AppBasedLinkQuery } from '@microsoft/teams.api';
+import type { ChannelData } from '@microsoft/teams.api';
+import { ChannelInfo } from '@microsoft/teams.api';
+import { Client } from '@microsoft/teams.api';
 import { ConversationReference } from '@microsoft/agents-activity';
-import { ConversationUpdateEvents } from '@microsoft/agents-hosting';
-import { InputFile } from '@microsoft/agents-hosting';
-import { InputFileDownloader } from '@microsoft/agents-hosting';
+import type { FileConsentCardResponse } from '@microsoft/teams.api';
 import { InvokeResponse } from '@microsoft/agents-hosting';
+import { M365AttachmentDownloader } from '@microsoft/agents-hosting';
+import type { MeetingDetails } from '@microsoft/teams.api';
+import { MeetingInfo } from '@microsoft/teams.api';
+import { MeetingNotificationParams } from '@microsoft/teams.api';
+import { MeetingNotificationResponse } from '@microsoft/teams.api';
+import { MeetingParticipant } from '@microsoft/teams.api';
+import type { MessagingExtensionAction } from '@microsoft/teams.api';
+import type { MessagingExtensionActionResponse } from '@microsoft/teams.api';
+import type { MessagingExtensionQuery } from '@microsoft/teams.api';
+import type { MessagingExtensionResponse } from '@microsoft/teams.api';
+import type { MessagingExtensionResult } from '@microsoft/teams.api';
+import { Middleware } from '@microsoft/agents-hosting';
+import { PagedMembersResult } from '@microsoft/teams.api';
 import { RouteHandler } from '@microsoft/agents-hosting';
 import { RouteSelector } from '@microsoft/agents-hosting';
+import type { TaskModuleRequest } from '@microsoft/teams.api';
+import type { TaskModuleResponse } from '@microsoft/teams.api';
+import type { TaskModuleTaskInfo } from '@microsoft/teams.api';
+import { TeamDetails } from '@microsoft/teams.api';
+import type { TeamInfo } from '@microsoft/teams.api';
+import { TeamsChannelAccount } from '@microsoft/teams.api';
 import { TurnContext } from '@microsoft/agents-hosting';
 import { TurnState } from '@microsoft/agents-hosting';
 import { z } from 'zod';
 
-// @public
-export interface AppBasedLinkQuery {
-    state?: string;
-    url?: string;
-}
-
-// @public
-export type AttachmentLayout = 'list' | 'grid';
-
-// @public
-export interface BatchFailedEntriesResponse {
-    continuationToken: string;
-    failedEntryResponses: BatchFailedEntry[];
-}
-
-// @public
-export interface BatchFailedEntry {
-    error: string;
-    id: string;
-}
-
-// @public
-export interface BatchOperationResponse {
-    operationId: string;
-}
-
-// @public
-export interface BatchOperationStateResponse {
-    retryAfter?: Date;
-    state: string;
-    statusMap: Record<number, number>;
-    totalEntriesCount: number;
-}
-
-// @public
-export type CancelOperationResponse = {
-    _response: Response & {
-        bodyAsText: string;
-        parsedBody: {};
-    };
-};
-
-// @public
-export interface ChannelInfo {
-    id?: string;
-    name?: string;
-    type?: string;
-}
-
-// @public
-export const channelInfoZodSchema: z.ZodObject<{
-    id: z.ZodOptional<z.ZodString>;
-    name: z.ZodOptional<z.ZodString>;
-    type: z.ZodOptional<z.ZodString>;
-}, "strip", z.ZodTypeAny, {
-    type?: string | undefined;
-    id?: string | undefined;
-    name?: string | undefined;
-}, {
-    type?: string | undefined;
-    id?: string | undefined;
-    name?: string | undefined;
-}>;
-
-// @public
-export type CommandContext = 'message' | 'compose' | 'commandbox';
-
-// @public
-export interface FeedbackLoopData {
-    actionName: 'feedback';
-    actionValue: {
-        reaction: 'like' | 'dislike';
-        feedback: string | Record<string, any>;
-    };
-    replyToId: string;
-}
+// @public (undocumented)
+export function getTeamsClient(context: TurnContext): Client;
 
 // @public
 export class Meeting<TState extends TurnState> {
@@ -120,119 +64,6 @@ export class Meeting<TState extends TurnState> {
     onScreenShareStop(handler: RouteHandler<TurnState>): this;
     onSmartReply(handler: RouteHandler<TurnState>): this;
     onStageView(handler: RouteHandler<TurnState>): this;
-}
-
-// @public
-export interface MeetingDetails extends MeetingDetailsBase {
-    msGraphResourceId: string;
-    scheduledEndTime?: Date;
-    scheduledStartTime?: Date;
-    type: string;
-}
-
-// @public
-export interface MeetingDetailsBase {
-    id: string;
-    joinUrl: string;
-    title: string;
-}
-
-// @public
-export interface MeetingEndEventDetails extends MeetingEventDetails {
-    endTime: Date;
-}
-
-// @public
-export interface MeetingEventDetails extends MeetingDetailsBase {
-    meetingType: string;
-}
-
-// @public
-export type MeetingNotification = TargetedMeetingNotification;
-
-// @public
-export interface MeetingNotificationChannelData {
-    onBehalfOf?: OnBehalfOf[];
-}
-
-// @public
-export interface MeetingNotificationRecipientFailureInfo {
-    errorCode: string;
-    failureReason: string;
-    recipientMri: string;
-}
-
-// @public
-export interface MeetingParticipantsEventDetails {
-    members: TeamsMeetingMember[];
-}
-
-// @public
-export interface MeetingStageSurface<T> {
-    content: T;
-    contentType: 'task';
-    surface: 'meetingStage';
-}
-
-// @public
-export interface MeetingStartEventDetails extends MeetingEventDetails {
-    startTime: Date;
-}
-
-// @public
-export type MeetingSurface = MeetingStageSurface<any> | MeetingTabIconSurface;
-
-// @public
-export interface MeetingTabIconSurface {
-    surface: 'meetingTabIcon';
-    tabEntityId?: string;
-}
-
-// @public
-export type MessagePreviewActionType = 'edit' | 'send';
-
-// @public
-export type MessagePreviewType = 'message' | 'continue';
-
-// @public
-export interface MessagingExtensionAction extends TaskModuleRequest {
-    activityPreview?: Activity[];
-    commandContext?: CommandContext;
-    commandId?: string;
-    messagePayload?: MessageActionsPayload;
-    messagePreviewAction?: MessagePreviewActionType;
-}
-
-// @public
-export interface MessagingExtensionActionResponse {
-    cacheInfo?: unknown;
-    composeExtension?: MessagingExtensionResult;
-    task?: TaskModuleContinueResponse | TaskModuleMessageResponse;
-}
-
-// @public
-export interface MessagingExtensionAttachment extends Attachment {
-    preview?: Attachment;
-}
-
-// @public
-export interface MessagingExtensionParameter {
-    name?: string;
-    value?: any;
-}
-
-// @public
-export interface MessagingExtensionQuery {
-    commandId?: string;
-    parameters?: MessagingExtensionParameter[];
-    queryOptions?: MessagingExtensionQueryOptions;
-    state?: string;
-}
-
-// @public
-export interface MessagingExtensionQueryOptions {
-    count?: number;
-    skip?: number;
 }
 
 // @public
@@ -259,151 +90,83 @@ export const messagingExtensionQueryZodSchema: z.ZodObject<{
         count?: number | undefined;
     }>>;
     state: z.ZodOptional<z.ZodString>;
-}, "strip", z.ZodTypeAny, {
-    commandId?: string | undefined;
-    parameters?: {
+}, "passthrough", z.ZodTypeAny, z.objectOutputType<{
+    commandId: z.ZodOptional<z.ZodString>;
+    parameters: z.ZodOptional<z.ZodArray<z.ZodObject<{
+        name: z.ZodOptional<z.ZodString>;
+        value: z.ZodOptional<z.ZodAny>;
+    }, "strip", z.ZodTypeAny, {
         value?: any;
         name?: string | undefined;
-    }[] | undefined;
-    queryOptions?: {
-        skip?: number | undefined;
-        count?: number | undefined;
-    } | undefined;
-    state?: string | undefined;
-}, {
-    commandId?: string | undefined;
-    parameters?: {
+    }, {
         value?: any;
         name?: string | undefined;
-    }[] | undefined;
-    queryOptions?: {
+    }>, "many">>;
+    queryOptions: z.ZodOptional<z.ZodObject<{
+        skip: z.ZodOptional<z.ZodNumber>;
+        count: z.ZodOptional<z.ZodNumber>;
+    }, "strip", z.ZodTypeAny, {
         skip?: number | undefined;
         count?: number | undefined;
-    } | undefined;
-    state?: string | undefined;
-}>;
+    }, {
+        skip?: number | undefined;
+        count?: number | undefined;
+    }>>;
+    state: z.ZodOptional<z.ZodString>;
+}, z.ZodTypeAny, "passthrough">, z.objectInputType<{
+    commandId: z.ZodOptional<z.ZodString>;
+    parameters: z.ZodOptional<z.ZodArray<z.ZodObject<{
+        name: z.ZodOptional<z.ZodString>;
+        value: z.ZodOptional<z.ZodAny>;
+    }, "strip", z.ZodTypeAny, {
+        value?: any;
+        name?: string | undefined;
+    }, {
+        value?: any;
+        name?: string | undefined;
+    }>, "many">>;
+    queryOptions: z.ZodOptional<z.ZodObject<{
+        skip: z.ZodOptional<z.ZodNumber>;
+        count: z.ZodOptional<z.ZodNumber>;
+    }, "strip", z.ZodTypeAny, {
+        skip?: number | undefined;
+        count?: number | undefined;
+    }, {
+        skip?: number | undefined;
+        count?: number | undefined;
+    }>>;
+    state: z.ZodOptional<z.ZodString>;
+}, z.ZodTypeAny, "passthrough">>;
 
 // @public
-export interface MessagingExtensionResponse {
-    cacheInfo?: unknown;
-    composeExtension?: MessagingExtensionResult;
-}
-
-// @public
-export interface MessagingExtensionResult {
-    activityPreview?: Activity;
-    attachmentLayout?: AttachmentLayout;
-    attachments?: MessagingExtensionAttachment[];
-    suggestedActions?: MessagingExtensionSuggestedAction;
-    text?: string;
-    type?: MessagingExtensionResultType;
-}
-
-// @public
-export type MessagingExtensionResultType = 'result' | 'auth' | 'config' | 'message' | 'botMessagePreview' | 'silentAuth';
-
-// @public
-export interface MessagingExtensionSuggestedAction {
-    actions?: CardAction[];
-}
-
-// @public
-export interface NotificationInfo {
-    alert?: boolean;
-    alertInMeeting?: boolean;
-    externalResourceUrl?: string;
-}
-
-// @public
-export interface OnBehalfOf {
-    displayName?: string;
-    itemid: 0 | number;
-    mentionType: 'person' | string;
-    mri: string;
-}
-
-// @public
-export function parseTeamsChannelData(o: object): TeamsChannelData;
+export function parseTeamsChannelData(o: object): ChannelData;
 
 // @public
 export function parseValueMessagingExtensionQuery(value: unknown): MessagingExtensionQuery;
 
-// @public
-export interface ResourceResponse {
-    id: string;
+// @public (undocumented)
+export function setTeamsApiClient(context: TurnContext, channelId?: string): void;
+
+// @public (undocumented)
+export class SetTeamsApiClientMiddleware implements Middleware {
+    constructor(channelId?: string);
+    // (undocumented)
+    onTurn(context: TurnContext, next: () => Promise<void>): Promise<void>;
 }
 
 // @public
-export interface TargetedMeetingNotification extends MeetingNotificationBase<TargetedMeetingNotificationValue> {
-    channelData?: MeetingNotificationChannelData;
-    type: 'targetedMeetingNotification';
-}
-
-// @public
-export interface TargetedMeetingNotificationValue {
-    recipients: string[];
-    surfaces: MeetingSurface[];
-}
-
-// @public
-export interface TaskModuleContinueResponse extends TaskModuleResponseBase {
-    value?: TaskModuleTaskInfo;
-}
-
-// @public
-export interface TaskModuleMessageResponse extends TaskModuleResponseBase {
-    value?: string;
-}
-
-// @public
-export interface TaskModuleRequest {
-    context?: TaskModuleRequestContext;
-    data?: any;
-    tabContext?: any;
-}
-
-// @public
-export interface TaskModuleRequestContext {
-    theme?: string;
-}
-
-// @public
-export interface TaskModuleResponse {
-    cacheInfo?: any;
-    task?: TaskModuleContinueResponse | TaskModuleMessageResponse;
-}
-
-// @public
-export interface TaskModuleResponseBase {
-    type?: MessagePreviewType;
-}
-
-// @public
-export interface TaskModuleTaskInfo {
-    card?: Attachment;
-    completionAgentId?: string;
-    fallbackUrl?: string;
-    height?: number | 'small' | 'medium' | 'large';
-    title?: string;
-    url?: string;
-    width?: number | 'small' | 'medium' | 'large';
-}
-
-// @public
-export interface TeamDetails {
-    aadGroupId?: string;
-    channelCount?: number;
-    id?: string;
-    memberCount?: number;
-    name?: string;
-    type?: string;
-}
-
-// @public
-export interface TeamInfo {
-    aadGroupId?: string;
-    id?: string;
-    name?: string;
+export class TaskModule<TState extends TurnState> {
+    constructor(app: AgentApplication<TState>, options?: TaskModuleOptions);
+    // (undocumented)
+    _app: AgentApplication<TState>;
+    onConfigurationFetch(handler: RouteHandler<TurnState>): this;
+    onConfigurationSubmit(handler: RouteHandler<TurnState>): this;
+    onFetch(handler: RouteHandler<TurnState>): this;
+    onFetchByVerb(verb: string, handler: RouteHandler<TurnState>): this;
+    onSubmitByVerb(verb: string, handler: RouteHandler<TurnState>): this;
+    // (undocumented)
+    _options: TaskModuleOptions;
+    submit<TData extends Record<string, any> = Record<string, any>>(verb: string | RegExp | RouteSelector | (string | RegExp | RouteSelector)[], handler: (context: TurnContext, state: TState, data: TData) => Promise<TaskModuleTaskInfo | string | null | undefined>): AgentApplication<TState>;
 }
 
 // @public
@@ -442,13 +205,13 @@ export class TeamsActivityHandler extends ActivityHandler {
     protected onTeamsChannelRestored(context: TurnContext): Promise<void>;
     onTeamsChannelRestoredEvent(handler: (channelInfo: ChannelInfo, teamInfo: TeamInfo, context: TurnContext, next: () => Promise<void>) => Promise<void>): this;
     protected onTeamsMeetingEnd(context: TurnContext): Promise<void>;
-    onTeamsMeetingEndEvent(handler: (meeting: MeetingEndEventDetails, context: TurnContext, next: () => Promise<void>) => Promise<void>): this;
+    onTeamsMeetingEndEvent(handler: (meeting: MeetingDetails, context: TurnContext, next: () => Promise<void>) => Promise<void>): this;
     protected onTeamsMeetingParticipantsJoin(context: TurnContext): Promise<void>;
-    onTeamsMeetingParticipantsJoinEvent(handler: (meeting: MeetingParticipantsEventDetails, context: TurnContext, next: () => Promise<void>) => Promise<void>): this;
+    onTeamsMeetingParticipantsJoinEvent(handler: (meeting: MeetingParticipant[], context: TurnContext, next: () => Promise<void>) => Promise<void>): this;
     protected onTeamsMeetingParticipantsLeave(context: TurnContext): Promise<void>;
-    onTeamsMeetingParticipantsLeaveEvent(handler: (meeting: MeetingParticipantsEventDetails, context: TurnContext, next: () => Promise<void>) => Promise<void>): this;
+    onTeamsMeetingParticipantsLeaveEvent(handler: (meeting: MeetingParticipant[], context: TurnContext, next: () => Promise<void>) => Promise<void>): this;
     protected onTeamsMeetingStart(context: TurnContext): Promise<void>;
-    onTeamsMeetingStartEvent(handler: (meeting: MeetingStartEventDetails, context: TurnContext, next: () => Promise<void>) => Promise<void>): this;
+    onTeamsMeetingStartEvent(handler: (meeting: MeetingDetails, context: TurnContext, next: () => Promise<void>) => Promise<void>): this;
     protected onTeamsMembersAdded(context: TurnContext): Promise<void>;
     onTeamsMembersAddedEvent(handler: (membersAdded: TeamsChannelAccount[], teamInfo: TeamInfo, context: TurnContext, next: () => Promise<void>) => Promise<void>): this;
     protected onTeamsMembersRemoved(context: TurnContext): Promise<void>;
@@ -479,6 +242,8 @@ export class TeamsActivityHandler extends ActivityHandler {
 export class TeamsAgentExtension<TState extends TurnState = TurnState> extends AgentExtension<TState> {
     constructor(app: AgentApplication<TState>);
     // (undocumented)
+    static getTeamsClient(context: TurnContext): Client;
+    // (undocumented)
     get meeting(): Meeting<TState>;
     // (undocumented)
     get messageExtension(): MessageExtension<TState>;
@@ -499,6 +264,10 @@ export class TeamsAgentExtension<TState extends TurnState = TurnState> extends A
     // (undocumented)
     onTeamsChannelRestored(handler: RouteHandler<TurnState>): this;
     // (undocumented)
+    onTeamsChannelShared(handler: RouteHandler<TurnState>): this;
+    // (undocumented)
+    onTeamsChannelUnshared(handler: RouteHandler<TurnState>): this;
+    // (undocumented)
     onTeamsMembersAdded(handler: RouteHandler<TurnState>): this;
     // (undocumented)
     onTeamsMembersRemoved(handler: RouteHandler<TurnState>): this;
@@ -516,337 +285,34 @@ export class TeamsAgentExtension<TState extends TurnState = TurnState> extends A
     onTeamsTeamUnarchived(handler: RouteHandler<TurnState>): this;
     // (undocumented)
     get taskModule(): TaskModule<TState>;
+    // (undocumented)
+    static readonly TeamsApiClientKey: symbol;
+}
+
+// @public (undocumented)
+export const TeamsApiClientKey: unique symbol;
+
+// @public @deprecated (undocumented)
+export class TeamsAttachmentDownloader extends M365AttachmentDownloader {
 }
 
 // @public
-export class TeamsAttachmentDownloader<TState extends TurnState = TurnState> implements InputFileDownloader<TState> {
-    constructor(stateKey?: string);
-    downloadAndStoreFiles(context: TurnContext, state: TState): Promise<void>;
-    downloadFiles(context: TurnContext): Promise<InputFile[]>;
-}
-
-// @public
-export type TeamsBatchOperationResponse = BatchOperationResponse & {
-    _response: Response & {
-        bodyAsText: string;
-        parsedBody: BatchOperationResponse | {};
-    };
+export const TeamsExtensionErrors: {
+    [key: string]: AgentErrorDefinition;
 };
-
-// @public
-export interface TeamsChannelAccount extends ChannelAccount {
-    email?: string;
-    givenName?: string;
-    surname?: string;
-    tenantId?: string;
-    userPrincipalName?: string;
-    userRole?: string;
-}
-
-// @public
-export interface TeamsChannelData {
-    channel?: ChannelInfo;
-    eventType?: string;
-    meeting?: TeamsMeetingInfo;
-    notification?: NotificationInfo;
-    onBehalfOf?: OnBehalfOf[];
-    settings?: TeamsChannelDataSettings;
-    team?: TeamInfo;
-    tenant?: TenantInfo;
-}
-
-// @public
-export interface TeamsChannelDataSettings {
-    [properties: string]: unknown;
-    selectedChannel?: ChannelInfo;
-}
-
-// @public
-export const teamsChannelDataZodSchema: z.ZodObject<{
-    channel: z.ZodOptional<z.ZodObject<{
-        id: z.ZodOptional<z.ZodString>;
-        name: z.ZodOptional<z.ZodString>;
-        type: z.ZodOptional<z.ZodString>;
-    }, "strip", z.ZodTypeAny, {
-        type?: string | undefined;
-        id?: string | undefined;
-        name?: string | undefined;
-    }, {
-        type?: string | undefined;
-        id?: string | undefined;
-        name?: string | undefined;
-    }>>;
-    eventType: z.ZodOptional<z.ZodString>;
-    team: z.ZodOptional<z.ZodObject<{
-        id: z.ZodOptional<z.ZodString>;
-        name: z.ZodOptional<z.ZodString>;
-        aadGroupId: z.ZodOptional<z.ZodString>;
-    }, "strip", z.ZodTypeAny, {
-        id?: string | undefined;
-        name?: string | undefined;
-        aadGroupId?: string | undefined;
-    }, {
-        id?: string | undefined;
-        name?: string | undefined;
-        aadGroupId?: string | undefined;
-    }>>;
-    notification: z.ZodOptional<z.ZodObject<{
-        alert: z.ZodOptional<z.ZodBoolean>;
-        alertInMeeting: z.ZodOptional<z.ZodBoolean>;
-        externalResourceUrl: z.ZodOptional<z.ZodString>;
-    }, "strip", z.ZodTypeAny, {
-        alert?: boolean | undefined;
-        alertInMeeting?: boolean | undefined;
-        externalResourceUrl?: string | undefined;
-    }, {
-        alert?: boolean | undefined;
-        alertInMeeting?: boolean | undefined;
-        externalResourceUrl?: string | undefined;
-    }>>;
-    tenant: z.ZodOptional<z.ZodObject<{
-        id: z.ZodOptional<z.ZodString>;
-    }, "strip", z.ZodTypeAny, {
-        id?: string | undefined;
-    }, {
-        id?: string | undefined;
-    }>>;
-    meeting: z.ZodOptional<z.ZodObject<{
-        id: z.ZodOptional<z.ZodString>;
-    }, "strip", z.ZodTypeAny, {
-        id?: string | undefined;
-    }, {
-        id?: string | undefined;
-    }>>;
-    settings: z.ZodOptional<z.ZodObject<{
-        selectedChannel: z.ZodOptional<z.ZodObject<{
-            id: z.ZodOptional<z.ZodString>;
-            name: z.ZodOptional<z.ZodString>;
-            type: z.ZodOptional<z.ZodString>;
-        }, "strip", z.ZodTypeAny, {
-            type?: string | undefined;
-            id?: string | undefined;
-            name?: string | undefined;
-        }, {
-            type?: string | undefined;
-            id?: string | undefined;
-            name?: string | undefined;
-        }>>;
-    }, "strip", z.ZodTypeAny, {
-        selectedChannel?: {
-            type?: string | undefined;
-            id?: string | undefined;
-            name?: string | undefined;
-        } | undefined;
-    }, {
-        selectedChannel?: {
-            type?: string | undefined;
-            id?: string | undefined;
-            name?: string | undefined;
-        } | undefined;
-    }>>;
-    onBehalfOf: z.ZodOptional<z.ZodArray<z.ZodObject<{
-        itemid: z.ZodUnion<[z.ZodLiteral<0>, z.ZodNumber]>;
-        mentionType: z.ZodUnion<[z.ZodString, z.ZodLiteral<"person">]>;
-        mri: z.ZodString;
-        displayName: z.ZodOptional<z.ZodString>;
-    }, "strip", z.ZodTypeAny, {
-        itemid: number;
-        mentionType: string;
-        mri: string;
-        displayName?: string | undefined;
-    }, {
-        itemid: number;
-        mentionType: string;
-        mri: string;
-        displayName?: string | undefined;
-    }>, "many">>;
-}, "strip", z.ZodTypeAny, {
-    channel?: {
-        type?: string | undefined;
-        id?: string | undefined;
-        name?: string | undefined;
-    } | undefined;
-    eventType?: string | undefined;
-    team?: {
-        id?: string | undefined;
-        name?: string | undefined;
-        aadGroupId?: string | undefined;
-    } | undefined;
-    notification?: {
-        alert?: boolean | undefined;
-        alertInMeeting?: boolean | undefined;
-        externalResourceUrl?: string | undefined;
-    } | undefined;
-    tenant?: {
-        id?: string | undefined;
-    } | undefined;
-    meeting?: {
-        id?: string | undefined;
-    } | undefined;
-    settings?: {
-        selectedChannel?: {
-            type?: string | undefined;
-            id?: string | undefined;
-            name?: string | undefined;
-        } | undefined;
-    } | undefined;
-    onBehalfOf?: {
-        itemid: number;
-        mentionType: string;
-        mri: string;
-        displayName?: string | undefined;
-    }[] | undefined;
-}, {
-    channel?: {
-        type?: string | undefined;
-        id?: string | undefined;
-        name?: string | undefined;
-    } | undefined;
-    eventType?: string | undefined;
-    team?: {
-        id?: string | undefined;
-        name?: string | undefined;
-        aadGroupId?: string | undefined;
-    } | undefined;
-    notification?: {
-        alert?: boolean | undefined;
-        alertInMeeting?: boolean | undefined;
-        externalResourceUrl?: string | undefined;
-    } | undefined;
-    tenant?: {
-        id?: string | undefined;
-    } | undefined;
-    meeting?: {
-        id?: string | undefined;
-    } | undefined;
-    settings?: {
-        selectedChannel?: {
-            type?: string | undefined;
-            id?: string | undefined;
-            name?: string | undefined;
-        } | undefined;
-    } | undefined;
-    onBehalfOf?: {
-        itemid: number;
-        mentionType: string;
-        mri: string;
-        displayName?: string | undefined;
-    }[] | undefined;
-}>;
-
-// @public
-export type TeamsConversationUpdateEvents = ConversationUpdateEvents |
-/**
-* Event triggered when a new channel is created.
-*/
-'channelCreated'
-/**
-* Event triggered when a channel is renamed.
-*/
-| 'channelRenamed'
-/**
-* Event triggered when a channel is deleted.
-*/
-| 'channelDeleted'
-/**
-* Event triggered when a deleted channel is restored.
-*/
-| 'channelRestored'
-/**
-* Event triggered when a team is renamed.
-*/
-| 'teamRenamed'
-/**
-* Event triggered when a team is deleted.
-*/
-| 'teamDeleted'
-/**
-* Event triggered when a team is permanently deleted.
-*/
-| 'teamHardDeleted'
-/**
-* Event triggered when a team is archived.
-*/
-| 'teamArchived'
-/**
-* Event triggered when an archived team is unarchived.
-*/
-| 'teamUnarchived'
-/**
-* Event triggered when a deleted team is restored.
-*/
-| 'teamRestored'
-/**
-* Event triggered when the topic name is updated.
-*/
-| 'topicName'
-/**
-* Event triggered when the conversation history is disclosed.
-*/
-| 'historyDisclosed';
 
 // @public
 export class TeamsInfo {
-    static cancelOperation(context: TurnContext, operationId: string): Promise<CancelOperationResponse>;
-    static getFailedEntries(context: TurnContext, operationId: string): Promise<BatchFailedEntriesResponse>;
     static getMeetingInfo(context: TurnContext, meetingId?: string): Promise<MeetingInfo>;
-    static getMeetingParticipant(context: TurnContext, meetingId?: string, participantId?: string, tenantId?: string): Promise<TeamsMeetingParticipant<TurnState>>;
+    static getMeetingParticipant(context: TurnContext, meetingId?: string, participantId?: string, tenantId?: string): Promise<MeetingParticipant>;
     static getMember(context: TurnContext, userId: string): Promise<TeamsChannelAccount>;
-    static getOperationState(context: TurnContext, operationId: string): Promise<BatchOperationStateResponse>;
-    static getPagedMembers(context: TurnContext, pageSize?: number, continuationToken?: string): Promise<TeamsPagedMembersResult>;
-    static getPagedTeamMembers(context: TurnContext, teamId?: string, pageSize?: number, continuationToken?: string): Promise<TeamsPagedMembersResult>;
+    static getPagedMembers(context: TurnContext, pageSize?: number, continuationToken?: string): Promise<PagedMembersResult>;
+    static getPagedTeamMembers(context: TurnContext, teamId?: string, pageSize?: number, continuationToken?: string): Promise<PagedMembersResult>;
     static getTeamChannels(context: TurnContext, teamId?: string): Promise<ChannelInfo[]>;
     static getTeamDetails(context: TurnContext, teamId?: string): Promise<TeamDetails>;
     static getTeamMember(context: TurnContext, teamId: string, userId: string): Promise<TeamsChannelAccount>;
-    static sendMeetingNotification(context: TurnContext, notification: MeetingNotification, meetingId?: string): Promise<MeetingNotificationResponse>;
-    static sendMessageToAllUsersInTeam(context: TurnContext, activity: Activity, tenantId: string, teamId: string): Promise<BatchOperationResponse>;
-    static sendMessageToAllUsersInTenant(context: TurnContext, activity: Activity, tenantId: string): Promise<BatchOperationResponse>;
-    static sendMessageToListOfChannels(context: TurnContext, activity: Activity, tenantId: string, members: TeamsMember[]): Promise<BatchOperationResponse>;
-    static sendMessageToListOfUsers(context: TurnContext, activity: Activity, tenantId: string, members: TeamsMember[]): Promise<BatchOperationResponse>;
+    static sendMeetingNotification(context: TurnContext, notification: MeetingNotificationParams, meetingId?: string): Promise<MeetingNotificationResponse | undefined>;
     static sendMessageToTeamsChannel(context: TurnContext, activity: Activity, teamsChannelId: string, appId?: string): Promise<[ConversationReference, string]>;
-}
-
-// @public
-export interface TeamsMeetingInfo {
-    id?: string;
-}
-
-// @public
-export interface TeamsMeetingMember {
-    meeting: UserMeetingDetails;
-    user: TeamsChannelAccount;
-}
-
-// @public
-export interface TeamsMeetingParticipant<TState extends TurnState> {
-    conversation?: ConversationAccount;
-    meeting?: Meeting<TState>;
-    user?: TeamsChannelAccount;
-}
-
-// @public
-export type TeamsMember = {
-    id: string;
-};
-
-// @public
-export type TeamsMessageEvents = 'undeleteMessage' | 'softDeleteMessage' | 'editMessage';
-
-// @public
-export interface TeamsPagedMembersResult {
-    continuationToken: string;
-    members: TeamsChannelAccount[];
-}
-
-// @public
-export interface TenantInfo {
-    id?: string;
-}
-
-// @public
-export interface UserMeetingDetails {
-    inMeeting: boolean;
-    role: string;
 }
 
 // (No @packageDocumentation comment for this package)

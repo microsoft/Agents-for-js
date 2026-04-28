@@ -6,11 +6,9 @@ import * as z from 'zod'
 import { ActivityHandler, InvokeResponse, TurnContext } from '@microsoft/agents-hosting'
 import { ExceptionHelper } from '@microsoft/agents-activity'
 import { Errors } from '../errorHelper'
-import { AppBasedLinkQuery, MessagingExtensionAction, MessagingExtensionActionResponse, MessagingExtensionQuery, MessagingExtensionResponse, parseValueMessagingExtensionQuery } from '../messageExtension'
-import { TaskModuleRequest, TaskModuleResponse } from '../taskModule'
-import { FileConsentCardResponse } from '../file'
-import { ChannelInfo, parseTeamsChannelData, TeamInfo, TeamsChannelAccount } from '../activity-extensions'
-import { MeetingEndEventDetails, MeetingParticipantsEventDetails, MeetingStartEventDetails, TeamsMeetingMember } from '../meeting'
+import type { AppBasedLinkQuery, FileConsentCardResponse, MessagingExtensionAction, MessagingExtensionActionResponse, MessagingExtensionQuery, MessagingExtensionResponse, TaskModuleRequest, TaskModuleResponse, ChannelInfo, TeamInfo, TeamsChannelAccount, MeetingDetails, MeetingParticipant } from '@microsoft/teams.api'
+import { parseValueMessagingExtensionQuery } from '../messageExtension'
+import { parseTeamsChannelData } from '../activity-extensions'
 import { ReadReceiptInfo } from './readReceipInfo'
 
 const TeamsMeetingStartT = z
@@ -19,7 +17,8 @@ const TeamsMeetingStartT = z
     JoinUrl: z.string(),
     MeetingType: z.string(),
     Title: z.string(),
-    StartTime: z.string()
+    StartTime: z.string(),
+    MsGraphResourceId: z.string()
   })
 
 const TeamsMeetingEndT = z
@@ -28,8 +27,19 @@ const TeamsMeetingEndT = z
     JoinUrl: z.string(),
     MeetingType: z.string(),
     Title: z.string(),
-    EndTime: z.string()
+    EndTime: z.string(),
+    MsGraphResourceId: z.string()
   })
+
+const MeetingParticipantT = z.object({
+  user: z.unknown().optional(),
+  meeting: z.unknown().optional(),
+  conversation: z.unknown().optional()
+}).passthrough().transform((value): MeetingParticipant => value as MeetingParticipant)
+
+const TeamsMeetingParticipantsT = z.object({
+  members: z.array(MeetingParticipantT)
+})
 
 /**
  * A handler for processing Microsoft Teams-specific activities.
@@ -397,8 +407,8 @@ export class TeamsActivityHandler extends ActivityHandler {
     context: TurnContext,
     action: MessagingExtensionAction
   ): Promise<MessagingExtensionActionResponse> {
-    if (action.messagePreviewAction) {
-      switch (action.messagePreviewAction) {
+    if (action.botMessagePreviewAction) {
+      switch (action.botMessagePreviewAction) {
         case 'edit':
           return await this.handleTeamsMessagingExtensionMessagePreviewEdit(context, action)
         case 'send':
@@ -778,7 +788,7 @@ export class TeamsActivityHandler extends ActivityHandler {
   ): this {
     return this.on('TeamsMembersAdded', async (context, next) => {
       const teamsChannelData = parseTeamsChannelData(context.activity.channelData)
-      await handler(context.activity.membersAdded || [], teamsChannelData.team as TeamInfo, context, next)
+      await handler((context.activity.membersAdded || []) as TeamsChannelAccount[], teamsChannelData.team as TeamInfo, context, next)
     })
   }
 
@@ -797,7 +807,7 @@ export class TeamsActivityHandler extends ActivityHandler {
   ): this {
     return this.on('TeamsMembersRemoved', async (context, next) => {
       const teamsChannelData = parseTeamsChannelData(context.activity.channelData)
-      await handler(context.activity.membersRemoved || [], teamsChannelData.team as TeamInfo, context, next)
+      await handler((context.activity.membersRemoved || []) as TeamsChannelAccount[], teamsChannelData.team as TeamInfo, context, next)
     })
   }
 
@@ -1036,7 +1046,7 @@ export class TeamsActivityHandler extends ActivityHandler {
    * @returns {this}
    */
   onTeamsMeetingStartEvent (
-    handler: (meeting: MeetingStartEventDetails, context: TurnContext, next: () => Promise<void>) => Promise<void>
+    handler: (meeting: MeetingDetails, context: TurnContext, next: () => Promise<void>) => Promise<void>
   ): this {
     return this.on('TeamsMeetingStart', async (context, next) => {
       const meeting = TeamsMeetingStartT.parse(context.activity.value)
@@ -1044,9 +1054,10 @@ export class TeamsActivityHandler extends ActivityHandler {
         {
           id: meeting.Id,
           joinUrl: meeting.JoinUrl,
-          meetingType: meeting.MeetingType,
-          startTime: new Date(meeting.StartTime),
-          title: meeting.Title
+          type: meeting.MeetingType,
+          scheduledStartTime: new Date(meeting.StartTime),
+          title: meeting.Title,
+          msGraphResourceId: meeting.MsGraphResourceId
         },
         context,
         next
@@ -1060,7 +1071,7 @@ export class TeamsActivityHandler extends ActivityHandler {
    * @returns {this}
    */
   onTeamsMeetingEndEvent (
-    handler: (meeting: MeetingEndEventDetails, context: TurnContext, next: () => Promise<void>) => Promise<void>
+    handler: (meeting: MeetingDetails, context: TurnContext, next: () => Promise<void>) => Promise<void>
   ): this {
     return this.on('TeamsMeetingEnd', async (context, next) => {
       const meeting = TeamsMeetingEndT.parse(context.activity.value)
@@ -1068,9 +1079,10 @@ export class TeamsActivityHandler extends ActivityHandler {
         {
           id: meeting.Id,
           joinUrl: meeting.JoinUrl,
-          meetingType: meeting.MeetingType,
-          endTime: new Date(meeting.EndTime),
-          title: meeting.Title
+          type: meeting.MeetingType,
+          scheduledEndTime: new Date(meeting.EndTime),
+          title: meeting.Title,
+          msGraphResourceId: meeting.MsGraphResourceId
         },
         context,
         next
@@ -1099,17 +1111,15 @@ export class TeamsActivityHandler extends ActivityHandler {
    */
   onTeamsMeetingParticipantsJoinEvent (
     handler: (
-      meeting: MeetingParticipantsEventDetails,
+      meeting: MeetingParticipant[],
       context: TurnContext,
       next: () => Promise<void>
     ) => Promise<void>
   ): this {
     return this.on('TeamsMeetingParticipantsJoin', async (context, next) => {
-      const meeting = TeamsMeetingStartT.parse(context.activity.value)
+      const participants = TeamsMeetingParticipantsT.parse(context.activity.value)
       await handler(
-        {
-          members: (meeting as unknown as { members: TeamsMeetingMember[] }).members
-        },
+        participants.members,
         context,
         next
       )
@@ -1123,17 +1133,15 @@ export class TeamsActivityHandler extends ActivityHandler {
    */
   onTeamsMeetingParticipantsLeaveEvent (
     handler: (
-      meeting: MeetingParticipantsEventDetails,
+      meeting: MeetingParticipant[],
       context: TurnContext,
       next: () => Promise<void>
     ) => Promise<void>
   ): this {
     return this.on('TeamsMeetingParticipantsLeave', async (context, next) => {
-      const meeting = TeamsMeetingEndT.parse(context.activity.value)
+      const participants = TeamsMeetingParticipantsT.parse(context.activity.value)
       await handler(
-        {
-          members: (meeting as unknown as { members: TeamsMeetingMember[] }).members
-        },
+        participants.members,
         context,
         next
       )

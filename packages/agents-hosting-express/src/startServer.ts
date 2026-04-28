@@ -6,17 +6,38 @@
 import express, { Response } from 'express'
 import { ActivityHandler, AgentApplication, AuthConfiguration, authorizeJWT, CloudAdapter, getAuthConfigWithDefaults, HeaderPropagationDefinition, Request, TurnState } from '@microsoft/agents-hosting'
 import { version } from '@microsoft/agents-hosting/package.json'
+
+export interface StartServerOptions {
+  authConfiguration?: AuthConfiguration
+  configureAdapter?: (adapter: CloudAdapter) => void
+}
+
+function isStartServerOptions (value: AuthConfiguration | StartServerOptions | undefined): value is StartServerOptions {
+  return !!value && (
+    'authConfiguration' in value ||
+    'configureAdapter' in value
+  )
+}
+
+function getStartServerOptions (authConfigurationOrOptions?: AuthConfiguration | StartServerOptions): StartServerOptions {
+  if (isStartServerOptions(authConfigurationOrOptions)) {
+    return authConfigurationOrOptions
+  }
+
+  return { authConfiguration: authConfigurationOrOptions }
+}
 /**
  * Starts an Express server for handling Agent requests.
  *
  * @param agent - The AgentApplication or ActivityHandler instance to process incoming activities.
- * @param authConfiguration - Optional custom authentication configuration. If not provided,
- * configuration will be loaded from environment variables using loadAuthConfigFromEnv().
+ * @param authConfigurationOrOptions - Optional custom authentication configuration or server startup options.
  * @returns {express.Express} - The Express server instance.
  *
  * @remarks
  * This function sets up an Express server with the necessary middleware and routes for handling
  * agent requests. It configures JWT authorization middleware and sets up the message endpoint.
+ * Use `configureAdapter` when you need to attach middleware or otherwise customize the
+ * adapter created for an `ActivityHandler` or reused from an `AgentApplication`.
  * The server will listen on the port specified in the PORT environment variable (or 3978 by default)
  * and logs startup information including the SDK version and configured app ID.
  *
@@ -31,11 +52,20 @@ import { version } from '@microsoft/agents-hosting/package.json'
  * });
  *
  * startServer(app);
+ *
+ * startServer(app, {
+ *   configureAdapter: (adapter) => {
+ *     // Example: add custom middleware
+ *   }
+ * });
  * ```
  *
  */
-export const startServer = (agent: AgentApplication<TurnState<any, any>> | ActivityHandler, authConfiguration?: AuthConfiguration) : express.Express => {
-  const authConfig: AuthConfiguration = getAuthConfigWithDefaults(authConfiguration)
+export function startServer (agent: AgentApplication<TurnState<any, any>> | ActivityHandler, authConfiguration?: AuthConfiguration): express.Express
+export function startServer (agent: AgentApplication<TurnState<any, any>> | ActivityHandler, options?: StartServerOptions): express.Express
+export function startServer (agent: AgentApplication<TurnState<any, any>> | ActivityHandler, authConfigurationOrOptions?: AuthConfiguration | StartServerOptions) : express.Express {
+  const options = getStartServerOptions(authConfigurationOrOptions)
+  const authConfig: AuthConfiguration = getAuthConfigWithDefaults(options.authConfiguration)
   let adapter: CloudAdapter
   let headerPropagation: HeaderPropagationDefinition | undefined
   if (agent instanceof ActivityHandler || !agent.adapter) {
@@ -44,6 +74,8 @@ export const startServer = (agent: AgentApplication<TurnState<any, any>> | Activ
     adapter = agent.adapter as CloudAdapter
     headerPropagation = (agent as AgentApplication<TurnState<any, any>>)?.options.headerPropagation
   }
+
+  options.configureAdapter?.(adapter)
 
   const server = express()
   server.use(express.json())
