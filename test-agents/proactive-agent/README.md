@@ -82,9 +82,12 @@ If `message` is omitted the agent sends a default "You have a proactive message!
 
 ```bash
 curl -X POST http://localhost:3978/api/proactive/continue/19:abc123@thread.tacv2 \
+  -H "Authorization: Bearer <jwt-token>" \
   -H "Content-Type: application/json" \
   -d '{ "message": "Your nightly report is ready." }'
 ```
+
+> See [Caller Authentication](#caller-authentication) for how to obtain a JWT token, or disable auth for local testing by leaving `ALLOWED_CALLERS` empty and calling without the `Authorization` header.
 
 ---
 
@@ -112,9 +115,12 @@ Creates a brand-new Teams conversation (1:1 or channel) using `CreateConversatio
 
 ```bash
 curl -X POST http://localhost:3978/api/proactive/teams-channel \
+  -H "Authorization: Bearer <jwt-token>" \
   -H "Content-Type: application/json" \
   -d '{ "userId": "aad-object-id", "tenantId": "tenant-id" }'
 ```
+
+> See [Caller Authentication](#caller-authentication) for how to obtain a JWT token, or disable auth for local testing by leaving `ALLOWED_CALLERS` empty and calling without the `Authorization` header.
 
 To get the correct values for your current user, send `/teams-payload` to the agent in Teams — it will reply with the pre-filled JSON body to use here.
 
