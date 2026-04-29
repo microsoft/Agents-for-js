@@ -128,15 +128,13 @@ To get the correct values for your current user, send `/teams-payload` to the ag
 
 ## Caller Authentication
 
-The proactive endpoints (`/api/proactive/*`) require the caller to authenticate using a JWT token (same mechanism as `/api/messages`).
+The proactive endpoints (`/api/proactive/*`) require the caller to authenticate using a JWT token (same mechanism as `/api/messages`). If no `clientId` is configured and the `Authorization` header is excluded, the app is treated as un-authenticated. This is useful for local development, but should *never* be used in production.
 
 In addition, you can restrict which app IDs are allowed to call these endpoints by setting `ALLOWED_CALLERS` in your `.env` file:
 
 ```
 ALLOWED_CALLERS=app-id-1,app-id-2
 ```
-
-When `ALLOWED_CALLERS` is empty, the caller check is skipped. This is convenient for local development but **must not be used in production**.
 
 ## Further Reading
 
