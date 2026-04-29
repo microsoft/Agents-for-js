@@ -56,9 +56,9 @@ Continues a previously stored conversation. The agent sends a message into the c
 
 **URL parameter**
 
-| Parameter        | Description                                              |
-|------------------|----------------------------------------------------------|
-| `conversationId` | The ID returned when the conversation was stored         |
+| Parameter        | Description
+|------------------|----------------------------------------------------------
+| `conversationId` | The ID returned when the conversation was stored
 
 **Request body** (optional JSON)
 
@@ -72,11 +72,11 @@ If `message` is omitted the agent sends a default "You have a proactive message!
 
 **Responses**
 
-| Status | Body                                        | Meaning                                    |
-|--------|---------------------------------------------|--------------------------------------------|
-| `200`  | `{ "status": "ok", "conversationId": "…" }` | Activity sent successfully                 |
-| `404`  | `{ "error": "…" }`                          | No stored conversation for that ID         |
-| `500`  | `{ "error": "…" }`                          | Adapter or channel error                   |
+| Status | Body                                        | Meaning
+|--------|---------------------------------------------|--------------------------------------------
+| `200`  | `{ "status": "ok", "conversationId": "…" }` | Activity sent successfully
+| `404`  | `{ "error": "…" }`                          | No stored conversation for that ID
+| `500`  | `{ "error": "…" }`                          | Adapter or channel error
 
 **Example**
 
@@ -97,19 +97,19 @@ Creates a brand-new Teams conversation (1:1 or channel) using `CreateConversatio
 
 **Request body**
 
-| Field            | Type   | Required | Description                                                           |
-|------------------|--------|----------|-----------------------------------------------------------------------|
-| `userId`         | string | yes      | AAD object ID of the Teams user to contact                            |
-| `tenantId`       | string | yes      | AAD tenant ID                                                         |
-| `teamsChannelId` | string | no       | Teams channel ID; omit for a 1:1 personal chat                        |
+| Field            | Type   | Required | Description
+|------------------|--------|----------|-----------------------------------------------------------------------
+| `userId`         | string | yes      | AAD object ID of the Teams user to contact
+| `tenantId`       | string | yes      | AAD tenant ID
+| `teamsChannelId` | string | no       | Teams channel ID; omit for a 1:1 personal chat
 
 **Responses**
 
-| Status | Body                                                    | Meaning                          |
-|--------|---------------------------------------------------------|----------------------------------|
-| `200`  | `{ "status": "ok", "conversationId": "…" }`             | Conversation created             |
-| `400`  | `{ "error": "userId and tenantId are required." }`      | Missing required fields          |
-| `500`  | `{ "error": "…" }`                                      | Adapter or channel error         |
+| Status | Body                                                    | Meaning
+|--------|---------------------------------------------------------|----------------------------------
+| `200`  | `{ "status": "ok", "conversationId": "…" }`             | Conversation created
+| `400`  | `{ "error": "userId and tenantId are required." }`      | Missing required fields
+| `500`  | `{ "error": "…" }`                                      | Adapter or channel error
 
 **Example**
 
