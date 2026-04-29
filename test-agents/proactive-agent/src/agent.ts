@@ -124,7 +124,7 @@ const adapter = agent.adapter as CloudAdapter
 // Continues a stored conversation. Any JSON body is forwarded to the handler
 // via activity.value so callers can pass runtime parameters (e.g. query args).
 // ---------------------------------------------------------------------------
-server.post('/api/proactive/continue/:conversationId', authorizeJWT(authConfig), requireAllowedCaller, async (req: Request, res: Response) => {
+server.post('/api/proactive/continue/:conversationId', [authorizeJWT(authConfig), requireAllowedCaller], async (req: Request, res: Response) => {
   const { conversationId } = req.params as { conversationId: string }
 
   try {
@@ -163,7 +163,7 @@ server.post('/api/proactive/continue/:conversationId', authorizeJWT(authConfig),
 // Creates a brand-new Teams 1:1 conversation using CreateConversationOptionsBuilder.
 // Expected body: { userId, tenantId, teamsChannelId? }
 // ---------------------------------------------------------------------------
-server.post('/api/proactive/teams-channel', authorizeJWT(authConfig), requireAllowedCaller, async (req: Request, res: Response) => {
+server.post('/api/proactive/teams-channel', [authorizeJWT(authConfig), requireAllowedCaller], async (req: Request, res: Response) => {
   const { userId, tenantId, teamsChannelId } = req.body as {
     userId?: string
     tenantId?: string
