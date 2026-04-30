@@ -1,0 +1,60 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.22/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.22",
+  "version": "1.0.0",
+  "id": "4b091af2-34c2-492b-abde-7464ae58ca5c",
+  "developer": {
+    "name": "Microsoft, Inc.",
+    "websiteUrl": "https://example.azurewebsites.net",
+    "privacyUrl": "https://example.azurewebsites.net/privacy",
+    "termsOfUseUrl": "https://example.azurewebsites.net/termsofuse"
+  },
+  "icons": {
+    "color": "color.png",
+    "outline": "outline.png"
+  },
+  "name": {
+    "short": "Node.js Teams Sample (RB)",
+    "full": "Node.js Teams Sample"
+  },
+  "description": {
+    "short": "Sample demonstrating AgentSDK + Teams using AgentApplication. (RB)",
+    "full": "Sample demonstrating AgentSDK + Teams using AgentApplication."
+  },
+  "accentColor": "#FFFFFF",
+  "copilotAgents": {
+    "customEngineAgents": [
+      {
+        "id": "4b091af2-34c2-492b-abde-7464ae58ca5c",
+        "type": "bot"
+      }
+    ]
+  },
+  "bots": [
+    {
+      "botId": "4b091af2-34c2-492b-abde-7464ae58ca5c",
+      "isNotificationOnly": false,
+      "scopes": [
+        "personal",
+        "team",
+        "groupChat"
+      ],
+      "supportsCalling": true,
+      "supportsFiles": true,
+      "supportsTargetedMessages": true,
+      "supportsVideo": true
+    }
+  ],
+  "permissions": [
+    "identity",
+    "messageTeamMembers"
+  ],
+  "validDomains": [
+    "token.botframework.com",
+    "lj781498-3978.usw3.devtunnels.ms"
+  ],
+  "webApplicationInfo": {
+    "id": "4b091af2-34c2-492b-abde-7464ae58ca5c",
+    "resource": "api://botid-4b091af2-34c2-492b-abde-7464ae58ca5c"
+  }
+}
