@@ -29,6 +29,13 @@
     "packages/*": {
       "project": ["src/**/*.ts"]
     },
+    "packages/agents-telemetry": {
+      "project": ["src/**/*.ts"],
+      "ignoreDependencies": [
+        "@opentelemetry/api",
+        "@opentelemetry/api-logs"
+      ]
+    },
     "packages/agents-copilotstudio-client": {
       "project": ["src/**/*.ts"],
       "ignore": [

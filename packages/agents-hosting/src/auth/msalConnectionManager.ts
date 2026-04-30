@@ -4,10 +4,13 @@
  */
 
 import { Activity, RoleTypes } from '@microsoft/agents-activity'
+import { debug } from '@microsoft/agents-telemetry'
 import { AuthConfiguration, resolveAuthority } from './authConfiguration'
 import { Connections } from './connections'
 import { MsalTokenProvider } from './msalTokenProvider'
 import { JwtPayload } from 'jsonwebtoken'
+
+const logger = debug('agents:authorization:connections')
 
 export interface ConnectionMapItem {
   audience?: string
@@ -37,6 +40,22 @@ export class MsalConnectionManager implements Connections {
       if (name === MsalConnectionManager.DEFAULT_CONNECTION) {
         this._serviceConnectionConfiguration = config
       }
+    }
+
+    for (const [name, provider] of this._connections.entries()) {
+      const cfg = provider.connectionSettings
+      const authType = cfg?.certPemFile
+        ? 'certificate'
+        : cfg?.clientSecret
+          ? 'clientSecret'
+          : cfg?.WIDAssertionFile || cfg?.FICClientId
+            ? 'workloadIdentity'
+            : 'none'
+      logger.debug('connection "%s" clientId=%s tenantId=%s authType=%s', name, cfg?.clientId ?? '<none>', cfg?.tenantId ?? '<none>', authType)
+    }
+
+    for (const item of this._connectionsMap) {
+      logger.debug('connectionsMap: %s -> %s audience=%s', item.serviceUrl, item.connection, item.audience ?? '')
     }
   }
 
@@ -107,6 +126,7 @@ export class MsalConnectionManager implements Connections {
     if (!audience || !serviceUrl) throw new Error('Audience and Service URL are required to get the token provider.')
 
     if (this._connectionsMap.length === 0) {
+      logger.debug('no connectionsMap, using default connection for serviceUrl=%s', serviceUrl)
       return this.getDefaultConnection()
     }
 
@@ -120,11 +140,13 @@ export class MsalConnectionManager implements Connections {
 
       if (audienceMatch) {
         if (item.serviceUrl === '*' || !item.serviceUrl) {
+          logger.debug('connection "%s" matched (wildcard/no serviceUrl) for audience=%s', item.connection, audience)
           return this.getConnection(item.connection)
         }
 
         const regex = new RegExp(item.serviceUrl, 'i')
         if (regex.test(serviceUrl)) {
+          logger.debug('connection "%s" matched serviceUrl=%s for audience=%s', item.connection, serviceUrl, audience)
           return this.getConnection(item.connection)
         }
       }

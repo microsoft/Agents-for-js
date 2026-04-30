@@ -1,9 +1,11 @@
 import { AuthConfiguration, MsalTokenProvider } from '../auth'
 import { Activity, ConversationReference, RoleTypes } from '@microsoft/agents-activity'
 import { v4 } from 'uuid'
-import { debug } from '@microsoft/agents-activity/logger'
+import { debug } from '@microsoft/agents-telemetry'
 import { ConversationState } from '../state'
 import { TurnContext } from '../turnContext'
+import { trace } from '@microsoft/agents-telemetry'
+import { AgentClientTraceDefinitions } from '../observability'
 
 const logger = debug('agents:agent-client')
 
@@ -68,56 +70,65 @@ export class AgentClient {
    * @throws Error if the request to the agent endpoint fails
    */
   public async postActivity (activity: Activity, authConfig: AuthConfiguration, conversationState: ConversationState, context: TurnContext): Promise<string> {
-    const activityCopy = activity.clone()
-    activityCopy.serviceUrl = this.agentClientConfig.serviceUrl
-    activityCopy.recipient = { ...activityCopy.recipient, role: RoleTypes.Skill }
-    activityCopy.relatesTo = {
-      serviceUrl: activity.serviceUrl,
-      activityId: activityCopy.id,
-      channelId: activityCopy.channelId!,
-      locale: activityCopy.locale,
-      conversation: {
-        id: activity.conversation!.id,
-        ...activityCopy.conversation
+    return trace(AgentClientTraceDefinitions.postActivity, async ({ record }) => {
+      record({
+        endpoint: this.agentClientConfig.endPoint,
+        clientId: this.agentClientConfig.clientId,
+      })
+      const activityCopy = activity.clone()
+      activityCopy.serviceUrl = this.agentClientConfig.serviceUrl
+      activityCopy.recipient = { ...activityCopy.recipient, role: RoleTypes.Skill }
+      activityCopy.relatesTo = {
+        serviceUrl: activity.serviceUrl,
+        activityId: activityCopy.id,
+        channelId: activityCopy.channelId!,
+        locale: activityCopy.locale,
+        conversation: {
+          id: activity.conversation!.id,
+          ...activityCopy.conversation
+        }
       }
-    }
-    activityCopy.conversation!.id = v4()
+      activityCopy.conversation!.id = v4()
 
-    const conversationDataAccessor = conversationState.createProperty<ConversationData>(activityCopy.conversation!.id)
-    const convRef = await conversationDataAccessor.set(context,
-      { conversationReference: activity.getConversationReference(), nameRequested: false },
-      { channelId: activityCopy.channelId!, conversationId: activityCopy.conversation!.id }
-    )
+      const conversationDataAccessor = conversationState.createProperty<ConversationData>(activityCopy.conversation!.id)
+      const convRef = await conversationDataAccessor.set(context,
+        { conversationReference: activity.getConversationReference(), nameRequested: false },
+        { channelId: activityCopy.channelId!, conversationId: activityCopy.conversation!.id }
+      )
 
-    const stateChanges = JSON.stringify(convRef)
-    logger.debug('stateChanges: ', stateChanges)
+      const stateChanges = JSON.stringify(convRef)
+      logger.debug('stateChanges: ', stateChanges)
 
-    const authProvider = new MsalTokenProvider(authConfig)
-    const token = await authProvider.getAccessToken(this.agentClientConfig.clientId)
+      const authProvider = new MsalTokenProvider(authConfig)
+      const token = await authProvider.getAccessToken(this.agentClientConfig.clientId)
 
-    logger.debug('agent request: ', activityCopy)
+      logger.debug('agent request: ', activityCopy)
 
-    let authHeader = '' // Allow anonymous auth.
+      let authHeader = '' // Allow anonymous auth.
 
-    if (token.trim().length > 0) {
-      authHeader = `Bearer ${token}`
-    }
+      if (token.trim().length > 0) {
+        authHeader = `Bearer ${token}`
+      }
 
-    await conversationState.saveChanges(context, false, { channelId: activityCopy.channelId!, conversationId: activityCopy.conversation!.id })
-    const response = await fetch(this.agentClientConfig.endPoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: authHeader,
-        'x-ms-conversation-id': activityCopy.conversation!.id
-      },
-      body: JSON.stringify(activityCopy)
+      await conversationState.saveChanges(context, false, { channelId: activityCopy.channelId!, conversationId: activityCopy.conversation!.id })
+      const response = await fetch(this.agentClientConfig.endPoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: authHeader,
+          'x-ms-conversation-id': activityCopy.conversation!.id
+        },
+        body: JSON.stringify(activityCopy)
+      })
+
+      record({ httpStatusCode: response.status.toString() })
+
+      if (!response.ok) {
+        await conversationDataAccessor.delete(context, { channelId: activityCopy.channelId!, conversationId: activityCopy.conversation!.id })
+        throw new Error(`Failed to post activity to agent: ${response.statusText}`)
+      }
+      return response.statusText
     })
-    if (!response.ok) {
-      await conversationDataAccessor.delete(context, { channelId: activityCopy.channelId!, conversationId: activityCopy.conversation!.id })
-      throw new Error(`Failed to post activity to agent: ${response.statusText}`)
-    }
-    return response.statusText
   }
 
   /**
