@@ -78,29 +78,33 @@ describe('MsalTokenProvider', () => {
   })
 
   it('should acquire token with WID', async () => {
+    sinon.restore()
     authConfig.clientSecret = undefined
     authConfig.certPemFile = undefined
     authConfig.certKeyFile = undefined
-    authConfig.WIDAssertionFile = '/etc/issue'
+    authConfig.WIDAssertionFile = '/var/run/secrets/azure/tokens/azure-identity-token'
+    sinon.stub(fs, 'readFileSync').returns('fake-wid-assertion')
     // @ts-ignore
     const acquireTokenStub = sinon.stub(ConfidentialClientApplication.prototype, 'acquireTokenByClientCredential').resolves({ accessToken: 'test-token' })
     const token = await msalTokenProvider.getAccessToken(authConfig, 'scope')
     assert.strictEqual(token, 'test-token')
-    acquireTokenStub.restore()
+    sinon.restore()
   })
 
   it('should acquire token with WID using authtype and federatedtokenfile', async () => {
+    sinon.restore()
     authConfig.clientSecret = undefined
     authConfig.certPemFile = undefined
     authConfig.certKeyFile = undefined
     authConfig.WIDAssertionFile = undefined
     authConfig.authtype = AuthType.WorkloadIdentity
-    authConfig.federatedtokenfile = '/etc/issue'
+    authConfig.federatedtokenfile = '/var/run/secrets/azure/tokens/azure-identity-token'
+    sinon.stub(fs, 'readFileSync').returns('fake-wid-assertion')
     // @ts-ignore
     const acquireTokenStub = sinon.stub(ConfidentialClientApplication.prototype, 'acquireTokenByClientCredential').resolves({ accessToken: 'test-token' })
     const token = await msalTokenProvider.getAccessToken(authConfig, 'scope')
     assert.strictEqual(token, 'test-token')
-    acquireTokenStub.restore()
+    sinon.restore()
   })
 
   it('should throw error for invalid authConfig', async () => {
