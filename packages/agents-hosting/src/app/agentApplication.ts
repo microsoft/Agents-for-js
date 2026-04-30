@@ -3,9 +3,8 @@
  * Licensed under the MIT License.
  */
 
-import { Activity, ActivityTypes, ConversationReference } from '@microsoft/agents-activity'
+import { Activity, ActivityTypes, ConversationReference, ExceptionHelper } from '@microsoft/agents-activity'
 import { ResourceResponse } from '../connector-client'
-import { debug } from '@microsoft/agents-activity/logger'
 import { TurnContext } from '../turnContext'
 import { AdaptiveCardsActions } from './adaptiveCards'
 import { AgentApplicationOptions, TypingTimingOptions } from './agentApplicationOptions'
@@ -22,7 +21,8 @@ import { CloudAdapter } from '../cloudAdapter'
 import { Authorization, UserAuthorization, AuthorizationManager } from './auth'
 import { Proactive } from './proactive'
 import { JwtPayload } from 'jsonwebtoken'
-import { ExceptionHelper } from '@microsoft/agents-activity'
+import { trace, debug } from '@microsoft/agents-telemetry'
+import { AgentApplicationTraceDefinitions } from '../observability'
 import { Errors } from '../errorHelper'
 
 const logger = debug('agents:app')
@@ -92,8 +92,8 @@ export class AgentApplication<TState extends TurnState> {
   protected readonly _beforeTurn: ApplicationEventHandler<TState>[] = []
   protected readonly _afterTurn: ApplicationEventHandler<TState>[] = []
   private readonly _adapter?: CloudAdapter
-  private readonly _authorizationManager?: AuthorizationManager
-  private readonly _authorization?: Authorization
+  private readonly _authorizationManager: AuthorizationManager
+  private readonly _authorization: Authorization
   private readonly _proactive?: Proactive<TState>
   protected readonly _extensions: AgentExtension<TState>[] = []
   private readonly _adaptiveCards: AdaptiveCardsActions<TState>
@@ -144,11 +144,6 @@ export class AgentApplication<TState extends TurnState> {
       this._adapter = new CloudAdapter()
     }
 
-    if (this._options.authorization) {
-      this._authorizationManager = new AuthorizationManager(this, this._adapter.connectionManager)
-      this._authorization = new UserAuthorization(this._authorizationManager)
-    }
-
     // Create Proactive whenever proactive options are explicitly configured or a storage
     // backend is available — no explicit `proactive` option is required.
     if (this._options.proactive !== undefined || this._options.storage !== undefined) {
@@ -168,7 +163,11 @@ export class AgentApplication<TState extends TurnState> {
         this._adapter?.use(new TranscriptLoggerMiddleware(this._options.transcriptLogger))
       }
     }
+
     logger.debug('AgentApplication created with options:', this._options)
+
+    this._authorizationManager = new AuthorizationManager(this, this._adapter.connectionManager)
+    this._authorization = new UserAuthorization(this._authorizationManager)
   }
 
   /**
@@ -178,7 +177,7 @@ export class AgentApplication<TState extends TurnState> {
    * @throws Error if no authentication options were configured.
    */
   public get authorization (): Authorization {
-    if (!this._authorization) {
+    if (this._authorizationManager.handlers.length === 0) {
       throw new Error('The Application.authorization property is unavailable because no authorization options were configured.')
     }
     return this._authorization
@@ -653,6 +652,9 @@ export class AgentApplication<TState extends TurnState> {
     const { authorized, context } = await this.handleAuthorization(turnContext)
 
     if (!authorized) {
+      const managed = trace(AgentApplicationTraceDefinitions.run)
+      managed.record({ authorized, activity: context.activity })
+      managed.end()
       // We don't log a message here because it is handled by the authorization manager and could cause confusion during mid sign-in operations.
       return false
     }
@@ -692,54 +694,75 @@ export class AgentApplication<TState extends TurnState> {
    * Executes the turn processing logic for the given context, including routing and handler execution.
    */
   private async runTurn (context: TurnContext): Promise<boolean> {
-    try {
-      if (this._options.startTypingTimer) {
-        this.startTypingTimer(context)
-      }
+    return trace(AgentApplicationTraceDefinitions.run, async ({ record }) => {
+      record({ authorized: true, activity: context.activity })
 
-      if (this._options.removeRecipientMention && context.activity.type === ActivityTypes.Message) {
-        context.activity.removeRecipientMention()
-      }
-
-      if (this._options.normalizeMentions && context.activity.type === ActivityTypes.Message) {
-        context.activity.normalizeMentions()
-      }
-
-      const { storage, turnStateFactory } = this._options
-      const state = turnStateFactory()
-      await state.load(context, storage)
-
-      const route = await this.getRoute(context)
-
-      if (!route) {
-        logger.debug('No matching route found for activity:', context.activity)
-        return false
-      }
-
-      if (Array.isArray(this._options.fileDownloaders) && this._options.fileDownloaders.length > 0) {
-        for (let i = 0; i < this._options.fileDownloaders.length; i++) {
-          await this._options.fileDownloaders[i].downloadAndStoreFiles(context, state)
+      try {
+        if (this._options.startTypingTimer) {
+          this.startTypingTimer(context)
         }
+
+        if (this._options.removeRecipientMention && context.activity.type === ActivityTypes.Message) {
+          context.activity.removeRecipientMention()
+        }
+
+        if (this._options.normalizeMentions && context.activity.type === ActivityTypes.Message) {
+          context.activity.normalizeMentions()
+        }
+
+        const { storage, turnStateFactory } = this._options
+        const state = turnStateFactory()
+        await state.load(context, storage)
+
+        const route = await this.getRoute(context)
+
+        record({ routeMatched: route !== undefined })
+
+        if (!route) {
+          logger.debug('No matching route found for activity:', context.activity)
+          return false
+        }
+
+        const fileDownloaders = this._options.fileDownloaders
+        if (Array.isArray(fileDownloaders) && fileDownloaders.length > 0) {
+          await trace(AgentApplicationTraceDefinitions.downloadFiles, async ({ record }) => {
+            record({ attachmentsCount: context.activity.attachments?.length })
+            for (let i = 0; i < fileDownloaders.length; i++) {
+              await fileDownloaders[i].downloadAndStoreFiles(context, state)
+            }
+          })
+        }
+
+        if (this._beforeTurn.length > 0) {
+          await trace(AgentApplicationTraceDefinitions.beforeTurn, async () => {
+            if (!(await this.callEventHandlers(context, state, this._beforeTurn))) {
+              await state.save(context, storage)
+              return false
+            }
+          })
+        }
+
+        await trace(AgentApplicationTraceDefinitions.routeHandler, async ({ record }) => {
+          record({ isInvoke: route.isInvokeRoute, isAgentic: route.isAgenticRoute })
+          await route.handler(context, state)
+        })
+
+        if (this._afterTurn.length > 0) {
+          await trace(AgentApplicationTraceDefinitions.afterTurn, async () => {
+            if (await this.callEventHandlers(context, state, this._afterTurn)) {
+              await state.save(context, storage)
+            }
+          })
+        }
+
+        return true
+      } catch (err: any) {
+        logger.error(err)
+        throw err
+      } finally {
+        this.stopTypingTimer(context)
       }
-
-      if (!(await this.callEventHandlers(context, state, this._beforeTurn))) {
-        await state.save(context, storage)
-        return false
-      }
-
-      await route.handler(context, state)
-
-      if (await this.callEventHandlers(context, state, this._afterTurn)) {
-        await state.save(context, storage)
-      }
-
-      return true
-    } catch (err: any) {
-      logger.error(err)
-      throw err
-    } finally {
-      this.stopTypingTimer(context)
-    }
+    })
   }
 
   /**

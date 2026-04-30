@@ -29,34 +29,36 @@
     "clean": "git clean -xdf",
     "build:samples": "tsc --build --verbose tsconfig.samples.json",
     "build:browser": "npm run build:browser --workspaces --if-present",
+    "build:esm": "npm run build:esm --workspaces --if-present",
     "build": "tsc --build --verbose tsconfig.build.json",
     "build:clean": "npm run clean:dist && npm run build",
-    "postbuild": "npm run build:browser"
+    "postbuild": "npm run build:esm && npm run build:browser"
   },
   "license": "MIT",
   "workspaces": [
     "packages/*",
-    "test-agents/*"
+    "test-agents/*",
+    "!test-agents/otelAgent"
   ],
   "devDependencies": {
-    "@microsoft/api-extractor": "^7.57.7",
-    "@microsoft/m365agentsplayground": "^0.2.23",
-    "@microsoft/microsoft-graph-types": "^2.43.1",
-    "@types/debug": "^4.1.12",
-    "@types/express": "^5.0.6",
-    "@types/node": "^25.5.0",
-    "@types/sinon": "^21.0.0",
-    "@types/uuid": "^10.0.0",
-    "esbuild": "^0.27.3",
-    "eslint": "^9.39.2",
-    "knip": "^5.86.0",
-    "neostandard": "^0.13.0",
-    "nerdbank-gitversioning": "^3.9.50",
-    "npm-run-all": "^4.1.5",
-    "sinon": "^21.0.3",
-    "tsx": "^4.21.0",
-    "typedoc": "^0.28.18",
-    "typescript": "^5.9.3"
+    "@microsoft/api-extractor": "7.58.2",
+    "@microsoft/m365agentsplayground": "0.2.23",
+    "@microsoft/microsoft-graph-types": "2.43.1",
+    "@types/debug": "4.1.12",
+    "@types/express": "5.0.6",
+    "@types/node": "25.5.0",
+    "@types/sinon": "21.0.0",
+    "@types/uuid": "10.0.0",
+    "esbuild": "0.27.3",
+    "eslint": "9.39.2",
+    "knip": "5.86.0",
+    "neostandard": "0.13.0",
+    "nerdbank-gitversioning": "3.9.50",
+    "npm-run-all": "4.1.5",
+    "sinon": "21.0.3",
+    "tsx": "4.21.0",
+    "typedoc": "0.28.18",
+    "typescript": "5.9.3"
   },
   "peerDependencies": {
     "@rushstack/terminal": "*"
@@ -67,11 +69,11 @@
   "overrides": {
     "adaptivecards-templating": {
       "adaptive-expressions": {
-        "fast-xml-parser": "^5.5.7"
+        "fast-xml-parser": "5.5.7"
       }
     }
   },
   "overridesComments": {
-    "adaptivecards-templating/adaptive-expressions/fast-xml-parser": "Override to ^5.5.7 because adaptive-expressions pulls vulnerable 4.5.3 (test-agents/web-chat)"
+    "adaptivecards-templating/adaptive-expressions/fast-xml-parser": "Override to 5.5.7 because adaptive-expressions pulls vulnerable 4.5.3 (test-agents/web-chat)"
   }
 }

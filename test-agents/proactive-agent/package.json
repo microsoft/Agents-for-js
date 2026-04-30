@@ -17,6 +17,6 @@
   "dependencies": {
     "@microsoft/agents-hosting": "file:../../packages/agents-hosting",
     "@microsoft/agents-hosting-express": "file:../../packages/agents-hosting-express",
-    "jsonwebtoken": "^9.0.3"
+    "jsonwebtoken": "9.0.3"
   }
 }
