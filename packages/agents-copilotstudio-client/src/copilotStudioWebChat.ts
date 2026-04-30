@@ -9,7 +9,8 @@ import { Activity, Attachment, ConversationAccount } from '@microsoft/agents-act
 import { Observable, BehaviorSubject, type Subscriber } from 'rxjs'
 
 import { CopilotStudioClient } from './copilotStudioClient'
-import { debug } from '@microsoft/agents-activity/logger'
+import { debug, trace } from '@microsoft/agents-telemetry'
+import { CopilotStudioClientTraceDefinitions } from './observability'
 
 const logger = debug('copilot-studio:webchat')
 
@@ -256,144 +257,175 @@ export class CopilotStudioWebChat {
     client: CopilotStudioClient,
     settings?: CopilotStudioWebChatSettings
   ): CopilotStudioWebChatConnection {
-    logger.info('--> Creating connection between Copilot Studio and WebChat ...')
+    const managed = trace(CopilotStudioClientTraceDefinitions.createConnection)
+    managed.record({ showTyping: settings?.showTyping })
 
-    const normalizedConversationId =
+    try {
+      logger.info('--> Creating connection between Copilot Studio and WebChat ...')
+
+      const normalizedConversationId =
       settings?.conversationId && settings.conversationId.trim() !== ''
         ? settings.conversationId.trim()
         : undefined
-    const shouldStart = settings?.startConversation ?? !normalizedConversationId
+      const shouldStart = settings?.startConversation ?? !normalizedConversationId
 
-    let sequence = 0
-    let activitySubscriber: Subscriber<Partial<Activity>> | undefined
-    let conversation: ConversationAccount | undefined
-    let activeConversationId: string | undefined = normalizedConversationId
-    let ended = false
-    let started = false
+      let sequence = 0
+      let activitySubscriber: Subscriber<Partial<Activity>> | undefined
+      let conversation: ConversationAccount | undefined
+      let activeConversationId: string | undefined = normalizedConversationId
+      let ended = false
+      let started = false
 
-    const connectionStatus$ = new BehaviorSubject(0)
-    const activity$ = createObservable<Partial<Activity>>(async (subscriber) => {
-      activitySubscriber = subscriber
+      const connectionStatus$ = new BehaviorSubject(0)
+      const activity$ = createObservable<Partial<Activity>>(async (subscriber) => {
+        try {
+          activitySubscriber = subscriber
 
-      const handleAcknowledgementOnce = once(async (): Promise<void> => {
-        connectionStatus$.next(2)
-        await Promise.resolve() // Webchat requires an extra tick to process the connection status change
+          const handleAcknowledgementOnce = once(async (): Promise<void> => {
+            connectionStatus$.next(2)
+            await Promise.resolve() // Webchat requires an extra tick to process the connection status change
+          })
+
+          // When resuming (shouldStart === false), transition straight to connected
+          if (!shouldStart || started) {
+            await handleAcknowledgementOnce()
+            return
+          }
+          started = true
+
+          logger.debug('--> Connection established.')
+          notifyTyping()
+
+          for await (const activity of client.startConversationStreaming()) {
+            delete activity.replyToId
+            if (!conversation && activity.conversation) {
+              conversation = activity.conversation
+            }
+            if (activity.conversation?.id) {
+              activeConversationId = activity.conversation.id
+            }
+            await handleAcknowledgementOnce()
+            notifyActivity(activity)
+            managed.actions.receivedFromCopilot(activity)
+          }
+          // If no activities received from bot, we should still acknowledge.
+          await handleAcknowledgementOnce()
+        } catch (error) {
+          throw managed.fail(error)
+        } finally {
+          managed.end()
+        }
       })
 
-      // When resuming (shouldStart === false), transition straight to connected
-      if (!shouldStart || started) {
-        await handleAcknowledgementOnce()
-        return
-      }
-      started = true
-
-      logger.debug('--> Connection established.')
-      notifyTyping()
-
-      for await (const activity of client.startConversationStreaming()) {
-        delete activity.replyToId
-        if (!conversation && activity.conversation) {
-          conversation = activity.conversation
+      const notifyActivity = (activity: Partial<Activity>) => {
+        const newActivity = {
+          ...activity,
+          timestamp: new Date().toISOString(),
+          channelData: {
+            ...activity.channelData,
+            'webchat:sequence-id': sequence,
+          },
         }
-        if (activity.conversation?.id) {
-          activeConversationId = activity.conversation.id
-        }
-        await handleAcknowledgementOnce()
-        notifyActivity(activity)
+        sequence++
+        logger.debug(`Notify '${newActivity.type}' activity to WebChat:`, newActivity)
+        activitySubscriber?.next(newActivity)
       }
-      // If no activities received from bot, we should still acknowledge.
-      await handleAcknowledgementOnce()
-    })
 
-    const notifyActivity = (activity: Partial<Activity>) => {
-      const newActivity = {
-        ...activity,
-        timestamp: new Date().toISOString(),
-        channelData: {
-          ...activity.channelData,
-          'webchat:sequence-id': sequence,
+      const notifyTyping = () => {
+        if (!settings?.showTyping) {
+          return
+        }
+
+        const from = conversation
+          ? { id: conversation.id, name: conversation.name }
+          : { id: 'agent', name: 'Agent' }
+        notifyActivity({ type: 'typing', from })
+      }
+
+      return {
+        connectionStatus$,
+        activity$,
+
+        get conversationId () {
+          return activeConversationId
         },
-      }
-      sequence++
-      logger.debug(`Notify '${newActivity.type}' activity to WebChat:`, newActivity)
-      activitySubscriber?.next(newActivity)
-    }
 
-    const notifyTyping = () => {
-      if (!settings?.showTyping) {
-        return
-      }
-
-      const from = conversation
-        ? { id: conversation.id, name: conversation.name }
-        : { id: 'agent', name: 'Agent' }
-      notifyActivity({ type: 'typing', from })
-    }
-
-    return {
-      connectionStatus$,
-      activity$,
-
-      get conversationId () {
-        return activeConversationId
-      },
-
-      postActivity (activity: Activity) {
-        logger.info('--> Preparing to send activity to Copilot Studio ...')
-
-        if (!activity) {
-          throw new Error('Activity cannot be null.')
-        }
-
-        if (ended) {
-          throw new Error('Connection has been ended.')
-        }
-
-        if (!activitySubscriber) {
-          throw new Error('Activity subscriber is not initialized.')
-        }
-
-        return createObservable<string>(async (subscriber) => {
+        postActivity (activity: Activity) {
           try {
-            logger.info('--> Sending activity to Copilot Studio ...')
-            const newActivity = Activity.fromObject({
-              ...activity,
-              id: uuid(),
-              attachments: await processAttachments(activity)
-            })
+            logger.info('--> Preparing to send activity to Copilot Studio ...')
 
-            notifyActivity(newActivity)
-            notifyTyping()
-
-            // Notify WebChat immediately that the message was sent
-            subscriber.next(newActivity.id!)
-
-            // Stream the agent's response, passing activeConversationId for URL routing
-            for await (const responseActivity of client.sendActivityStreaming(newActivity, activeConversationId)) {
-              if (!activeConversationId && responseActivity.conversation?.id) {
-                activeConversationId = responseActivity.conversation.id
-              }
-              notifyActivity(responseActivity)
-              logger.info('<-- Activity received correctly from Copilot Studio.')
+            if (!activity) {
+              throw new Error('Activity cannot be null.')
             }
 
-            subscriber.complete()
-          } catch (error) {
-            logger.error('Error sending Activity to Copilot Studio:', error)
-            subscriber.error(error)
-          }
-        })
-      },
+            if (ended) {
+              throw new Error('Connection has been ended.')
+            }
 
-      end () {
-        logger.info('--> Ending connection between Copilot Studio and WebChat ...')
-        ended = true
-        connectionStatus$.complete()
-        if (activitySubscriber) {
-          activitySubscriber.complete()
-          activitySubscriber = undefined
-        }
-      },
+            if (!activitySubscriber) {
+              throw new Error('Activity subscriber is not initialized.')
+            }
+
+            const result = createObservable<string>(async (subscriber) => {
+              try {
+                logger.info('--> Sending activity to Copilot Studio ...')
+                const newActivity = Activity.fromObject({
+                  ...activity,
+                  id: uuid(),
+                  attachments: await processAttachments(activity)
+                })
+
+                notifyActivity(newActivity)
+                managed.actions.sentToWebChat(newActivity)
+                notifyTyping()
+
+                // Notify WebChat immediately that the message was sent
+                subscriber.next(newActivity.id!)
+
+                // Stream the agent's response, passing activeConversationId for URL routing
+                for await (const responseActivity of client.sendActivityStreaming(newActivity, activeConversationId)) {
+                  if (!activeConversationId && responseActivity.conversation?.id) {
+                    activeConversationId = responseActivity.conversation.id
+                  }
+                  notifyActivity(responseActivity)
+                  managed.actions.receivedFromCopilot(responseActivity)
+                  logger.info('<-- Activity received correctly from Copilot Studio.')
+                }
+
+                subscriber.complete()
+              } catch (error) {
+                logger.error('Error sending Activity to Copilot Studio:', error)
+                subscriber.error(error)
+                managed.fail(error)
+              } finally {
+                managed.end()
+              }
+            })
+
+            return result
+          } catch (error) {
+            throw managed.fail(error)
+          } finally {
+            managed.end()
+          }
+        },
+
+        end () {
+          logger.info('--> Ending connection between Copilot Studio and WebChat ...')
+          ended = true
+          connectionStatus$.complete()
+          if (activitySubscriber) {
+            activitySubscriber.complete()
+            activitySubscriber = undefined
+          }
+          // End the connection span
+          managed.end()
+        },
+      }
+    } catch (error) {
+      throw managed.fail(error)
+    } finally {
+      managed.end()
     }
   }
 }

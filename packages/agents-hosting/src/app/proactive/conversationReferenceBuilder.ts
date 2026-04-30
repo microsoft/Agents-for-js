@@ -3,7 +3,7 @@
 
 import type { ChannelAccount, ConversationReference } from '@microsoft/agents-activity'
 import { Channels, RoleTypes } from '@microsoft/agents-activity'
-import { debug } from '@microsoft/agents-activity/logger'
+import { debug } from '@microsoft/agents-telemetry'
 
 const logger = debug('agents:conversation-reference-builder')
 

@@ -13,6 +13,15 @@ import { HandlerStorage } from '../../../src/app/auth/handlerStorage'
 import { Connections } from '../../../src/auth/connections'
 import { AzureBotAuthorizationOptions } from '../../../src/app/auth/handlers'
 
+class RecordingTestAdapter extends TestAdapter {
+  public readonly sentActivities: Activity[] = []
+
+  async sendActivities (context: TurnContext, activities: Activity[]) {
+    this.sentActivities.push(...activities.map(activity => Activity.fromObject(activity)))
+    return await super.sendActivities(context, activities)
+  }
+}
+
 describe('AuthorizationManager - Configuration', () => {
   let originalEnv: NodeJS.ProcessEnv
 
@@ -847,6 +856,33 @@ describe('AuthorizationManager - Processing', () => {
     const storageResult = await handlerStorage.read()
     assert.equal(result.authorized, true)
     assert.equal(storageResult, undefined)
+  })
+
+  it('should reject signin invokes without an active flow and send an invoke response for Teams', async () => {
+    const adapter = new RecordingTestAdapter()
+    const signinActivity = Activity.fromObject({
+      type: ActivityTypes.Invoke,
+      from: { id: 'user-1' },
+      recipient: { id: 'bot-1' },
+      conversation: { id: 'conv-1' },
+      channelId: 'msteams',
+      serviceUrl: 'https://example.test',
+      name: 'signin/verifyState'
+    })
+    const signinContext = new TurnContext(adapter, signinActivity)
+    const handler = manager.handlers.find(handler => handler.id === 'handler1')!
+    const signinStub = sinon.stub(handler, 'signin').resolves(AuthorizationHandlerStatus.APPROVED)
+
+    const result = await manager.process(signinContext, getHandlerIds)
+
+    assert.equal(result.authorized, false)
+    assert.equal(getHandlerIds.called, false)
+    assert.equal(signinStub.called, false)
+    assert.equal(adapter.sentActivities.length, 1)
+    assert.equal(adapter.sentActivities[0].type, ActivityTypes.InvokeResponse)
+    const invokeResponse = adapter.sentActivities[0].value as { status: number, body: { failureDetail: string } }
+    assert.equal(invokeResponse.status, 400)
+    assert.equal(invokeResponse.body.failureDetail, "Received 'signin/verifyState' but no active sign-in flow exists for user 'user-1'.")
   })
 
   it('should return authorized:true when handler returns APPROVED', async () => {
