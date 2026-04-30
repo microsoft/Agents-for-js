@@ -1,4 +1,5 @@
 import { describe, it, beforeEach, afterEach } from 'node:test'
+import { strict as assert } from 'assert'
 import { ConnectorClient } from '../../src'
 import { Activity, RoleTypes, Channels } from '@microsoft/agents-activity'
 import sinon from 'sinon'
@@ -206,6 +207,128 @@ describe('ConnectorClient', () => {
         data: { type: 'message', channelId: Channels.Msteams, from: { role: RoleTypes.AgenticUser } }
       })
       delete process.env.MAX_APX_CONVERSATION_ID_LENGTH
+    })
+  })
+
+  describe('targeted activity query parameter', () => {
+    it('sendToConversation adds isTargetedActivity param for msteams targeted activity', async () => {
+      const activity = Activity.fromObject({ type: 'message', channelId: Channels.Msteams, conversation: { id: 'conv-id', isGroup: true } })
+      activity.makeTargetedActivity()
+
+      await client.sendToConversation('conv-id', activity)
+
+      sinon.assert.calledOnce(mockAxios)
+      const config = mockAxios.getCall(0).args[0]
+      assert.deepStrictEqual(config.params, { isTargetedActivity: 'true' })
+    })
+
+    it('sendToConversation does NOT add param for msteams non-targeted activity', async () => {
+      const activity = Activity.fromObject({ type: 'message', channelId: Channels.Msteams })
+
+      await client.sendToConversation('conv-id', activity)
+
+      sinon.assert.calledOnce(mockAxios)
+      const config = mockAxios.getCall(0).args[0]
+      assert.strictEqual(config.params, undefined)
+    })
+
+    it('sendToConversation does NOT add param for non-msteams targeted activity', async () => {
+      const activity = Activity.fromObject({ type: 'message', channelId: 'webchat', conversation: { id: 'conv-id', isGroup: true } })
+      activity.makeTargetedActivity()
+
+      await client.sendToConversation('conv-id', activity)
+
+      sinon.assert.calledOnce(mockAxios)
+      const config = mockAxios.getCall(0).args[0]
+      assert.strictEqual(config.params, undefined)
+    })
+
+    it('replyToActivity adds isTargetedActivity param for msteams targeted activity', async () => {
+      const activity = Activity.fromObject({ type: 'message', channelId: Channels.Msteams, conversation: { id: 'conv-id', isGroup: true } })
+      activity.makeTargetedActivity()
+
+      await client.replyToActivity('conv-id', 'act-id', activity)
+
+      sinon.assert.calledOnce(mockAxios)
+      const config = mockAxios.getCall(0).args[0]
+      assert.deepStrictEqual(config.params, { isTargetedActivity: 'true' })
+    })
+
+    it('replyToActivity does NOT add param for msteams non-targeted activity', async () => {
+      const activity = Activity.fromObject({ type: 'message', channelId: Channels.Msteams })
+
+      await client.replyToActivity('conv-id', 'act-id', activity)
+
+      sinon.assert.calledOnce(mockAxios)
+      const config = mockAxios.getCall(0).args[0]
+      assert.strictEqual(config.params, undefined)
+    })
+
+    it('replyToActivity does NOT add param for non-msteams targeted activity', async () => {
+      const activity = Activity.fromObject({ type: 'message', channelId: 'webchat', conversation: { id: 'conv-id', isGroup: true } })
+      activity.makeTargetedActivity()
+
+      await client.replyToActivity('conv-id', 'act-id', activity)
+
+      sinon.assert.calledOnce(mockAxios)
+      const config = mockAxios.getCall(0).args[0]
+      assert.strictEqual(config.params, undefined)
+    })
+
+    it('updateActivity adds isTargetedActivity param for msteams targeted activity', async () => {
+      const activity = Activity.fromObject({ type: 'message', channelId: Channels.Msteams, conversation: { id: 'conv-id', isGroup: true } })
+      activity.makeTargetedActivity()
+
+      await client.updateActivity('conv-id', 'act-id', activity)
+
+      sinon.assert.calledOnce(mockAxios)
+      const config = mockAxios.getCall(0).args[0]
+      assert.deepStrictEqual(config.params, { isTargetedActivity: 'true' })
+    })
+
+    it('updateActivity does NOT add param for msteams non-targeted activity', async () => {
+      const activity = Activity.fromObject({ type: 'message', channelId: Channels.Msteams })
+
+      await client.updateActivity('conv-id', 'act-id', activity)
+
+      sinon.assert.calledOnce(mockAxios)
+      const config = mockAxios.getCall(0).args[0]
+      assert.strictEqual(config.params, undefined)
+    })
+
+    it('updateActivity does NOT add param for non-msteams targeted activity', async () => {
+      const activity = Activity.fromObject({ type: 'message', channelId: 'webchat', conversation: { id: 'conv-id', isGroup: true } })
+      activity.makeTargetedActivity()
+
+      await client.updateActivity('conv-id', 'act-id', activity)
+
+      sinon.assert.calledOnce(mockAxios)
+      const config = mockAxios.getCall(0).args[0]
+      assert.strictEqual(config.params, undefined)
+    })
+
+    it('deleteActivity adds isTargetedActivity param when isTargetedActivity=true', async () => {
+      await client.deleteActivity('conv-id', 'act-id', true)
+
+      sinon.assert.calledOnce(mockAxios)
+      const config = mockAxios.getCall(0).args[0]
+      assert.deepStrictEqual(config.params, { isTargetedActivity: 'true' })
+    })
+
+    it('deleteActivity does NOT add param when isTargetedActivity=false', async () => {
+      await client.deleteActivity('conv-id', 'act-id', false)
+
+      sinon.assert.calledOnce(mockAxios)
+      const config = mockAxios.getCall(0).args[0]
+      assert.strictEqual(config.params, undefined)
+    })
+
+    it('deleteActivity does NOT add param when isTargetedActivity is omitted', async () => {
+      await client.deleteActivity('conv-id', 'act-id')
+
+      sinon.assert.calledOnce(mockAxios)
+      const config = mockAxios.getCall(0).args[0]
+      assert.strictEqual(config.params, undefined)
     })
   })
 })
