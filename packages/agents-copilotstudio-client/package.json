@@ -24,7 +24,7 @@
     "crypto": "./src/browser/crypto.ts"
   },
   "scripts": {
-    "build:browser": "esbuild --platform=browser --target=es2022 --format=esm --bundle --sourcemap --minify --outfile=dist/src/browser.mjs src/index.ts"
+    "build:browser": "esbuild --platform=browser --target=es2019 --format=esm --bundle --sourcemap --minify --outfile=dist/src/browser.mjs src/index.ts"
   },
   "dependencies": {
     "@microsoft/agents-activity": "file:../agents-activity",

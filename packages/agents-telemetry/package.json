@@ -22,7 +22,7 @@
   "main": "./dist/cjs/src/index.cjs",
   "module": "./dist/esm/src/index.mjs",
   "types": "./dist/esm/src/index.d.mts",
-  "browser": "./dist/esm/src/index.mjs",
+  "browser": "./dist/cjs/src/index.cjs",
   "scripts": {
     "clean:esm": "node -e \"require('node:fs').rmSync('dist/esm', { recursive: true, force: true })\"",
     "build:esm": "tsc --project tsconfig.esm.json && node scripts/esm.mjs"
@@ -56,7 +56,7 @@
     ".": {
       "import": {
         "types": "./dist/esm/src/index.d.mts",
-        "browser": "./dist/esm/src/index.mjs",
+        "browser": "./dist/cjs/src/index.cjs",
         "default": "./dist/esm/src/index.mjs"
       },
       "require": {
