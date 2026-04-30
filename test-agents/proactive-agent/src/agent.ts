@@ -7,6 +7,7 @@ import {
 } from '@microsoft/agents-hosting-express'
 import {
   AgentApplication,
+  authorizeJWT,
   CloudAdapter,
   loadAuthConfigFromEnv,
   MemoryStorage,
@@ -20,6 +21,8 @@ import type { JwtPayload } from 'jsonwebtoken'
 // ---------------------------------------------------------------------------
 // Configuration
 // ---------------------------------------------------------------------------
+
+const authConfig = loadAuthConfigFromEnv()
 
 // Comma-separated list of app IDs permitted to call the proactive endpoints.
 // In production, set this via an environment variable.
@@ -121,7 +124,7 @@ const adapter = agent.adapter as CloudAdapter
 // Continues a stored conversation. Any JSON body is forwarded to the handler
 // via activity.value so callers can pass runtime parameters (e.g. query args).
 // ---------------------------------------------------------------------------
-server.post('/api/proactive/continue/:conversationId', requireAllowedCaller, async (req: Request, res: Response) => {
+server.post('/api/proactive/continue/:conversationId', [authorizeJWT(authConfig), requireAllowedCaller], async (req: Request, res: Response) => {
   const { conversationId } = req.params as { conversationId: string }
 
   try {
@@ -160,7 +163,7 @@ server.post('/api/proactive/continue/:conversationId', requireAllowedCaller, asy
 // Creates a brand-new Teams 1:1 conversation using CreateConversationOptionsBuilder.
 // Expected body: { userId, tenantId, teamsChannelId? }
 // ---------------------------------------------------------------------------
-server.post('/api/proactive/teams-channel', requireAllowedCaller, async (req: Request, res: Response) => {
+server.post('/api/proactive/teams-channel', [authorizeJWT(authConfig), requireAllowedCaller], async (req: Request, res: Response) => {
   const { userId, tenantId, teamsChannelId } = req.body as {
     userId?: string
     tenantId?: string
@@ -172,7 +175,7 @@ server.post('/api/proactive/teams-channel', requireAllowedCaller, async (req: Re
     return
   }
 
-  const clientId = loadAuthConfigFromEnv().clientId ?? ''
+  const clientId = authConfig.clientId ?? ''
 
   try {
     const builder = CreateConversationOptionsBuilder
