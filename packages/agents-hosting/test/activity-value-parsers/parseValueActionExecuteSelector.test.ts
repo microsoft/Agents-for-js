@@ -14,27 +14,52 @@ describe('parseValueActionExecuteSelector test', () => {
     assert.deepEqual(parsedValue, valueObject)
   })
 
-  it('Should throw with wrong type', () => {
+  it('Should return undefined with wrong type', () => {
     const valueObject = {
       action: {
         type: 1,
         verb: 'verb'
       }
     }
-    assert.throws(() => {
-      parseValueActionExecuteSelector(valueObject)
-    }, Error)
+    const result = parseValueActionExecuteSelector(valueObject)
+    assert.strictEqual(result, undefined)
   })
 
-  it('Should throw with wrong verb', () => {
+  it('Should return undefined with wrong verb', () => {
     const valueObject = {
       action: {
         type: 'type',
         verb: 1
       }
     }
-    assert.throws(() => {
-      parseValueActionExecuteSelector(valueObject)
-    }, Error)
+    const result = parseValueActionExecuteSelector(valueObject)
+    assert.strictEqual(result, undefined)
+  })
+
+  it('Should return undefined for null', () => {
+    const result = parseValueActionExecuteSelector(null)
+    assert.strictEqual(result, undefined)
+  })
+
+  it('Should return undefined for undefined', () => {
+    const result = parseValueActionExecuteSelector(undefined)
+    assert.strictEqual(result, undefined)
+  })
+
+  it('Should return undefined for non-AdaptiveCard invoke value', () => {
+    const composeExtensionValue = {
+      commandId: 'searchQuery',
+      parameters: [{ name: 'search', value: 'test' }]
+    }
+    const result = parseValueActionExecuteSelector(composeExtensionValue)
+    assert.strictEqual(result, undefined)
+  })
+
+  it('Should return undefined for value with missing action', () => {
+    const valueObject = {
+      data: { verb: 'test' }
+    }
+    const result = parseValueActionExecuteSelector(valueObject)
+    assert.strictEqual(result, undefined)
   })
 })
