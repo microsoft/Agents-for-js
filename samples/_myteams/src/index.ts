@@ -1,3 +1,4 @@
+import { Activity, ActivityTypes, ActionTypes, CardAction } from '@microsoft/agents-activity'
 import {
   AgentApplication,
   CloudAdapter,
@@ -9,7 +10,12 @@ import {
   TurnState
 } from '@microsoft/agents-hosting'
 import { startServer } from '@microsoft/agents-hosting-express'
-import { SetTeamsApiClientMiddleware, TeamsAgentExtension, TeamsInfo } from '@microsoft/agents-hosting-extensions-teams'
+import {
+  parseTeamsChannelData,
+  SetTeamsApiClientMiddleware,
+  TeamsAgentExtension,
+  TeamsInfo
+} from '@microsoft/agents-hosting-extensions-teams'
 
 const STORED_FILES_KEY = 'STORED_FILES'
 
@@ -24,8 +30,34 @@ const app = new AgentApplication<TurnState>({
 
 const teamsExt = new TeamsAgentExtension(app)
 
+function heroCardActivity (text: string): Activity {
+  const activity = new Activity(ActivityTypes.Message)
+  activity.attachments = [
+    {
+      contentType: 'application/vnd.microsoft.card.hero',
+      content: {
+        text
+      }
+    }
+  ]
+
+  return activity
+}
+
+function newCard (title: string): Array<CardAction> {
+  return [
+    {
+      type: ActionTypes.MessageBack,
+      title: 'Message all members',
+      text: 'messageall'
+    }
+  ]
+}
+
 app.registerExtension<TeamsAgentExtension>(teamsExt, (tae) => {
   console.log('Teams extension registered')
+
+  // Chat events -> test in  a team
 
   tae.onMessageEdit(async (context: TurnContext, state: TurnState) => {
     console.log('Message edited:', context.activity.text)
@@ -42,14 +74,92 @@ app.registerExtension<TeamsAgentExtension>(teamsExt, (tae) => {
     await context.sendActivity('I noticed you undeleted a message.')
   })
 
+  // Team events
+
   tae.onTeamsMembersAdded(async (context: TurnContext, state: TurnState) => {
     console.log('Teams members added')
-    await context.sendActivity('Welcome to the team!')
+    for (const member of context.activity.membersAdded || []) {
+      if (member.id !== context.activity.recipient?.id && context.activity.conversation?.conversationType !== 'personal') {
+        await context.sendActivity(`Welcome to the team ${member.name}.`)
+      }
+    }
   })
 
   tae.onTeamsMembersRemoved(async (context: TurnContext, state: TurnState) => {
     console.log('Teams members removed')
-    await context.sendActivity('A member has left the team.')
+    for (const member of context.activity.membersRemoved || []) {
+      if (member.id === context.activity.recipient?.id) {
+        // The bot was removed.
+        // You should clear any cached data you have for this team.
+        console.log('The bot has been removed from the team.')
+      } else {
+        const teamDetails = await TeamsInfo.getTeamDetails(context)
+        await context.sendActivity(heroCardActivity(`${member.name} was removed from ${teamDetails.name}`))
+      }
+    }
+  })
+
+  tae.onTeamsTeamRenamed(async (context: TurnContext, state: TurnState) => {
+    console.log('Team renamed')
+
+    const teamInfo = parseTeamsChannelData(context.activity.channelData).team
+
+    const activity = heroCardActivity(`${teamInfo?.name} is the new Team name`)
+    await context.sendActivity(activity)
+  })
+
+  tae.onTeamsTeamDeleted(async (context: TurnContext, state: TurnState) => {
+    console.log('Team deleted')
+    await context.sendActivity('The team has been deleted.')
+  })
+
+  tae.onTeamsTeamArchived(async (context: TurnContext, state: TurnState) => {
+    console.log('Team archived')
+    await context.sendActivity('The team has been archived.')
+  })
+
+  tae.onTeamsTeamHardDeleted(async (context: TurnContext, state: TurnState) => {
+    console.log('Team hard deleted')
+    await context.sendActivity('The team has been permanently deleted.')
+  })
+
+  tae.onTeamsTeamRestored(async (context: TurnContext, state: TurnState) => {
+    console.log('Team restored')
+    await context.sendActivity('The team has been restored.')
+  })
+
+  tae.onTeamsTeamUnarchived(async (context: TurnContext, state: TurnState) => {
+    console.log('Team unarchived')
+    await context.sendActivity('The team has been unarchived.')
+  })
+
+  // Channel events
+
+  tae.onTeamsChannelCreated(async (context: TurnContext, state: TurnState) => {
+    console.log('Channel created')
+
+    const teamsChannelData = parseTeamsChannelData(context.activity.channelData)
+
+    const activity = heroCardActivity(`${teamsChannelData.channel?.name} is the Channel created`)
+    await context.sendActivity(activity)
+  })
+
+  tae.onTeamsChannelRenamed(async (context: TurnContext, state: TurnState) => {
+    console.log('Channel renamed')
+
+    const teamsChannelData = parseTeamsChannelData(context.activity.channelData)
+
+    const activity = heroCardActivity(`${teamsChannelData.channel?.name} is the new Channel name`)
+    await context.sendActivity(activity)
+  })
+
+  tae.onTeamsChannelDeleted(async (context: TurnContext, state: TurnState) => {
+    console.log('Channel deleted')
+
+    const teamsChannelData = parseTeamsChannelData(context.activity.channelData)
+
+    const activity = heroCardActivity(`${teamsChannelData.channel?.name} is the Channel deleted`)
+    await context.sendActivity(activity)
   })
 
   tae.meeting
