@@ -85,6 +85,7 @@ describe('MsalTokenProvider', () => {
     authConfig.WIDAssertionFile = '/var/run/secrets/azure/tokens/azure-identity-token'
     sinon.stub(fs, 'readFileSync').returns('fake-wid-assertion')
     // @ts-ignore
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const acquireTokenStub = sinon.stub(ConfidentialClientApplication.prototype, 'acquireTokenByClientCredential').resolves({ accessToken: 'test-token' })
     const token = await msalTokenProvider.getAccessToken(authConfig, 'scope')
     assert.strictEqual(token, 'test-token')
@@ -101,6 +102,7 @@ describe('MsalTokenProvider', () => {
     authConfig.federatedtokenfile = '/var/run/secrets/azure/tokens/azure-identity-token'
     sinon.stub(fs, 'readFileSync').returns('fake-wid-assertion')
     // @ts-ignore
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const acquireTokenStub = sinon.stub(ConfidentialClientApplication.prototype, 'acquireTokenByClientCredential').resolves({ accessToken: 'test-token' })
     const token = await msalTokenProvider.getAccessToken(authConfig, 'scope')
     assert.strictEqual(token, 'test-token')
