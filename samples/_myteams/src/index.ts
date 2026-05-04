@@ -1,12 +1,25 @@
-import { AgentApplication, M365AttachmentDownloader, MemoryStorage, TurnContext, TurnState } from '@microsoft/agents-hosting'
+import {
+  AgentApplication,
+  CloudAdapter,
+  ConsoleTranscriptLogger,
+  loadAuthConfigFromEnv,
+  M365AttachmentDownloader,
+  MemoryStorage,
+  TurnContext,
+  TurnState
+} from '@microsoft/agents-hosting'
 import { startServer } from '@microsoft/agents-hosting-express'
 import { SetTeamsApiClientMiddleware, TeamsAgentExtension, TeamsInfo } from '@microsoft/agents-hosting-extensions-teams'
 
 const STORED_FILES_KEY = 'STORED_FILES'
 
+const adapter = new CloudAdapter(loadAuthConfigFromEnv())
+
 const app = new AgentApplication<TurnState>({
+  adapter,
   storage: new MemoryStorage(),
-  fileDownloaders: [new M365AttachmentDownloader(STORED_FILES_KEY)]
+  fileDownloaders: [new M365AttachmentDownloader(STORED_FILES_KEY)],
+  transcriptLogger: new ConsoleTranscriptLogger()
 })
 
 const teamsExt = new TeamsAgentExtension(app)
