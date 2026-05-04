@@ -114,6 +114,13 @@ export interface AuthConfiguration {
    * The path to the federated token file used for Workload Identity authentication.
    */
   federatedtokenfile?: string
+
+  /**
+   * The Azure region for ESTS-R regional token acquisition (e.g. 'westus', 'eastus').
+   * When set, MSAL routes token requests to the specified regional endpoint.
+   * See https://learn.microsoft.com/en-us/entra/msal/javascript/node/regional-authorities for details.
+   */
+  azureRegion?: string
 }
 
 /**
@@ -222,6 +229,7 @@ export const loadPrevAuthConfigFromEnv: () => AuthConfiguration = () => {
       WIDAssertionFile: process.env.WIDAssertionFile,
       authtype: process.env.authtype,
       federatedtokenfile: process.env.federatedtokenfile,
+      azureRegion: process.env.azureRegion,
     }
     envConnections.connections.set(DEFAULT_CONNECTION, authConfig)
     envConnections.connectionsMap.push({
@@ -380,7 +388,8 @@ function buildLegacyAuthConfig (envPrefix: string = '', customConfig?: AuthConfi
     altBlueprintConnectionName: customConfig?.altBlueprintConnectionName ?? process.env[`${prefix}altBlueprintConnectionName`],
     WIDAssertionFile: customConfig?.WIDAssertionFile ?? process.env[`${prefix}WIDAssertionFile`],
     authtype: customConfig?.authtype ?? process.env[`${prefix}authtype`],
-    federatedtokenfile: customConfig?.federatedtokenfile ?? process.env[`${prefix}federatedtokenfile`]
+    federatedtokenfile: customConfig?.federatedtokenfile ?? process.env[`${prefix}federatedtokenfile`],
+    azureRegion: customConfig?.azureRegion ?? process.env[`${prefix}azureRegion`]
   }
 }
 
