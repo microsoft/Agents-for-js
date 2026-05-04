@@ -104,8 +104,10 @@ export class MsalTokenProvider implements AuthProvider {
             token = await this.acquireTokenWithCertificate(authConfig, actualScope)
             break
           case AuthType.UserManagedIdentity:
-          case AuthType.SystemManagedIdentity:
             token = await this.acquireTokenWithUserAssignedIdentity(authConfig, actualScope)
+            break
+          case AuthType.SystemManagedIdentity:
+            token = await this.acquireTokenWithSystemAssignedIdentity(authConfig, actualScope)
             break
           default:
             throw ExceptionHelper.generateException(Error, Errors.UnsupportedAuthType, undefined, { authType: authConfig.authtype })
@@ -472,6 +474,22 @@ export class MsalTokenProvider implements AuthProvider {
       managedIdentityIdParams: {
         userAssignedClientId: authConfig.clientId || ''
       },
+      system: this.sysOptions
+    })
+    const token = await mia.acquireToken({
+      resource: scope
+    })
+    return token?.accessToken
+  }
+
+  /**
+   * Acquires a token using a system-assigned identity.
+   * @param authConfig The authentication configuration.
+   * @param scope The scope for the token.
+   * @returns A promise that resolves to the access token.
+   */
+  private async acquireTokenWithSystemAssignedIdentity (authConfig: AuthConfiguration, scope: string) {
+    const mia = new ManagedIdentityApplication({
       system: this.sysOptions
     })
     const token = await mia.acquireToken({
