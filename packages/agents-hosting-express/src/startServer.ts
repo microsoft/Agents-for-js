@@ -30,6 +30,23 @@ export interface StartServerOptions {
   routePath?: string
 
   /**
+   * Optional rate limiting configuration for the messages endpoint.
+   * If not provided, no rate limiting is applied.
+   * Specify windowMs (in milliseconds) and max (number of requests) to enable rate limiting.
+   *
+   * @example
+   * ```typescript
+   * startServer(agent, {
+   *   rateLimitOptions: {
+   *     windowMs: 15 * 60 * 1000, // 15 minutes
+   *     max: 1000 // limit each IP to 1000 requests per windowMs
+   *   }
+   * });
+   * ```
+   */
+  rateLimitOptions?: { windowMs: number; max: number }
+
+  /**
    * A callback invoked with the Express app before `listen()` is called.
    * Use this to add custom routes, middleware, or static file serving.
    *
@@ -88,7 +105,7 @@ export function startServer (agent: AgentApplication<TurnState<any, any>> | Acti
 export function startServer (agent: AgentApplication<TurnState<any, any>> | ActivityHandler, authConfiguration?: AuthConfiguration): express.Express
 export function startServer (agent: AgentApplication<TurnState<any, any>> | ActivityHandler, optionsOrAuth?: StartServerOptions | AuthConfiguration): express.Express {
   const isOptions = typeof optionsOrAuth === 'object' && optionsOrAuth !== null &&
-    ('authConfig' in optionsOrAuth || 'port' in optionsOrAuth || 'routePath' in optionsOrAuth || 'beforeListen' in optionsOrAuth)
+    ('authConfig' in optionsOrAuth || 'port' in optionsOrAuth || 'routePath' in optionsOrAuth || 'rateLimitOptions' in optionsOrAuth || 'beforeListen' in optionsOrAuth)
 
   const opts: StartServerOptions = isOptions ? optionsOrAuth as StartServerOptions : { authConfig: optionsOrAuth as AuthConfiguration | undefined }
   const authConfig: AuthConfiguration = getAuthConfigWithDefaults(opts.authConfig)
@@ -102,14 +119,18 @@ export function startServer (agent: AgentApplication<TurnState<any, any>> | Acti
     opts.beforeListen(server)
   }
 
-  const messagesRateLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // limit each IP to 100 requests per windowMs
-    standardHeaders: true,
-    legacyHeaders: false
-  })
+  const middlewares: express.RequestHandler[] = [authorizeJWT(authConfig)]
+  if (opts.rateLimitOptions) {
+    const messagesRateLimiter = rateLimit({
+      windowMs: opts.rateLimitOptions.windowMs,
+      max: opts.rateLimitOptions.max,
+      standardHeaders: true,
+      legacyHeaders: false
+    })
+    middlewares.unshift(messagesRateLimiter)
+  }
 
-  server.post(routePath, messagesRateLimiter, authorizeJWT(authConfig), (req: Request, res: Response) =>
+  server.post(routePath, ...middlewares, (req: Request, res: Response) =>
     adapter.process(req, res, (context) =>
       agent.run(context)
     , headerPropagation)

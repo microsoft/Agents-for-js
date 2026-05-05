@@ -17,6 +17,7 @@ export interface WebResponse {
   send (body?: unknown): this
   end (): this
   headersSent: boolean
+  writableEnded: boolean
 }
 
 /**
