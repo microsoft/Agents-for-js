@@ -1,0 +1,137 @@
+{
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.22/MicrosoftTeams.schema.json",
+  "version": "1.0.0",
+  "manifestVersion": "1.22",
+  "id": "{{ BOT_ID }}",
+  "name": {
+    "short": "Teams Extension (RB)",
+    "full": "Node.js Teams Sample"
+  },
+  "developer": {
+    "name": "Microsoft, Inc.",
+    "websiteUrl": "https://example.azurewebsites.net",
+    "privacyUrl": "https://example.azurewebsites.net/privacy",
+    "termsOfUseUrl": "https://example.azurewebsites.net/termsofuse"
+  },
+  "description": {
+    "short": "Sample demonstrating AgentSDK + Teams using AgentApplication. (RB)",
+    "full": "Sample demonstrating AgentSDK + Teams using AgentApplication."
+  },
+  "icons": {
+    "outline": "outline.png",
+    "color": "color.png"
+  },
+  "accentColor": "#FFFFFF",
+  "bots": [
+    {
+      "botId": "{{ BOT_ID }}",
+      "scopes": [
+        "personal",
+        "team",
+        "groupChat"
+      ],
+      "isNotificationOnly": false,
+      "supportsCalling": true,
+      "supportsVideo": true,
+      "supportsFiles": true
+    }
+  ],
+  "composeExtensions": [
+    {
+      "botId": "{{ BOT_ID }}",
+      "commands": [],
+      "canUpdateConfiguration": true
+    }
+  ],
+  "validDomains": [
+    "token.botframework.com",
+    "{{ BOT_MESSAGING_DOMAIN }}"
+  ],
+  "webApplicationInfo": {
+    "id": "{{ BOT_ID }}",
+    "resource": "api://botid-{{ BOT_ID }}"
+  },
+  "meetingExtensionDefinition": {
+    "scenes": [],
+    "supportsStreaming": true,
+    "supportsAnonymousGuestUsers": true
+  },
+  "authorization": {
+    "permissions": {
+      "resourceSpecific": [
+        {
+          "name": "OnlineMeetingParticipant.Read.Chat",
+          "type": "Application"
+        },
+        {
+          "name": "ChannelMember.Read.Group",
+          "type": "Application"
+        },
+        {
+          "name": "ChannelMessage.Read.Group",
+          "type": "Application"
+        },
+        {
+          "name": "ChannelMessage.Send.Group",
+          "type": "Application"
+        },
+        {
+          "name": "Member.Read.Group",
+          "type": "Application"
+        },
+        {
+          "name": "TeamMember.Read.Group",
+          "type": "Application"
+        },
+        {
+          "name": "ChatSettings.Read.Chat",
+          "type": "Application"
+        },
+        {
+          "name": "ChatMessage.Read.Chat",
+          "type": "Application"
+        },
+        {
+          "name": "ChatMessageReadReceipt.Read.Chat",
+          "type": "Application"
+        },
+        {
+          "name": "ChatMember.Read.Chat",
+          "type": "Application"
+        },
+        {
+          "name": "OnlineMeeting.ReadBasic.Chat",
+          "type": "Application"
+        },
+        {
+          "name": "OnlineMeetingRecording.Read.Chat",
+          "type": "Application"
+        },
+        {
+          "name": "OnlineMeetingArtifact.Read.Chat",
+          "type": "Application"
+        },
+        {
+          "name": "VirtualEvent.Read.Chat",
+          "type": "Application"
+        },
+        {
+          "name": "Calls.AccessMedia.Chat",
+          "type": "Application"
+        },
+        {
+          "name": "OnlineMeeting.Read.Chat",
+          "type": "Application"
+        }
+      ]
+    }
+  },
+  "copilotAgents": {
+    "customEngineAgents": [
+      {
+        "type": "bot",
+        "id": "{{ BOT_ID }}"
+      }
+    ]
+  }
+}
