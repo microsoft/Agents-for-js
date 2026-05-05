@@ -2,7 +2,6 @@ import {
   Activity,
   ActivityTreatments,
   ActivityTypes,
-  Channels,
   Mention,
   RoleTypes
 } from '@microsoft/agents-activity'
@@ -10,8 +9,6 @@ import {
   AgentApplication,
   CloudAdapter,
   ConsoleTranscriptLogger,
-  CreateConversationOptions,
-  CreateConversationOptionsBuilder,
   loadAuthConfigFromEnv,
   M365AttachmentDownloader,
   MemoryStorage,
@@ -25,16 +22,10 @@ import {
   TeamsAgentExtension,
   TeamsInfo
 } from '@microsoft/agents-hosting-extensions-teams'
-import {
-  PagedMembersResult,
-  TeamsChannelAccount
-} from '@microsoft/teams.api'
-import {
-  registerBasicRoutes
-} from './basicRoutes'
-import {
-  createCard
-} from './cards'
+
+import { registerBasicRoutes } from './basicRoutes'
+import { createCard } from './cards'
+import { getTeamMembers } from './utils'
 
 const STORED_FILES_KEY = 'STORED_FILES'
 
@@ -85,16 +76,7 @@ app
   })
 
 app.onMessage('/targeted', async (context: TurnContext, state: TurnState) => {
-  const PAGE_SIZE = 20
-  const pages: PagedMembersResult[] = [await TeamsInfo.getPagedMembers(context, PAGE_SIZE)]
-  let continuationToken: string | undefined = pages[0].continuationToken
-  while (continuationToken) {
-    const nextPage = await TeamsInfo.getPagedMembers(context, PAGE_SIZE, continuationToken)
-    continuationToken = nextPage.continuationToken
-    pages.push(nextPage)
-  }
-
-  const members: TeamsChannelAccount[] = pages.flatMap(page => page.members)
+  const members = await getTeamMembers(context)
   for (const member of members) {
     const activity = new Activity(ActivityTypes.Message)
     activity.text = `${member.name}, this is a **targeted message** - only you can see this.`
@@ -127,44 +109,59 @@ app.onMessage('/card', async (context: TurnContext, state: TurnState) => {
   await context.sendActivity(activity)
 })
 
-app.onMessage('/messageall', async (context: TurnContext, state: TurnState) => {
-  let continuationToken: string | undefined
+// app.onMessage('/messageall', async (context: TurnContext, state: TurnState) => {
+//   if (!context.identity.aud) throw new Error('No audience found in the bot identity.')
 
-  do {
-    const page = await TeamsInfo.getPagedMembers(context, 100, continuationToken)
-    continuationToken = page.continuationToken
+//   const members = await getTeamMembers(context)
 
-    for (const member of page.members) {
-      if (!context.identity.aud) throw new Error('No audience found in the bot identity.')
+//   for (const member of members) {
+//     let audience: string = ''
+//     if (Array.isArray(context.identity.aud)) {
+//       audience = context.identity.aud[0]
+//     } else {
+//       audience = context.identity.aud
+//     }
 
-      let audience: string = ''
-      if (Array.isArray(context.identity.aud)) {
-        audience = context.identity.aud[0]
-      } else {
-        audience = context.identity.aud
-      }
-      const createOptions: CreateConversationOptions = CreateConversationOptionsBuilder
-        .create(audience, Channels.Msteams, context.activity.serviceUrl)
-        .withUser(member.id)
-        .withTenantId(context.activity.conversation?.tenantId ?? '')
-        .isGroup(false)
-        .build()
+//     // const replyActivity = Activity.fromObject({
+//     //   type: ActivityTypes.Message,
+//     //   text: `Hello ${member.name}, this is a proactive message.`,
+//     //   from: context.activity.recipient,
+//     //   channelId: context.activity.channelId,
+//     //   recipient: {
+//     //     id: member.id,
+//     //     name: member.name,
+//     //     aadObjectId: member.aadObjectId,
+//     //     role: RoleTypes.User
+//     //   }
+//     // })
 
-      app.proactive.createConversation(
-        adapter,
-        createOptions,
-        async (proactiveContext) => {
-          await proactiveContext.sendActivity(`Hello ${member.name}. I'm a Teams agent.`)
-        }
-      )
-    }
-  } while (continuationToken)
+//     const createOptions: CreateConversationOptions = CreateConversationOptionsBuilder
+//       .create(audience, 'msteams', context.activity.serviceUrl)
+//       .withUser(member.id)
+//       .withTenantId(context.activity.conversation?.tenantId ?? '')
+//       // .withActivity(replyActivity)
+//       // .withTeamsChannelId(context.activity.channelId ?? '')
+//       .isGroup(false)
+//       .build()
 
-  await context.sendActivity('All messages have been sent')
-})
+//     await app.proactive.createConversation(
+//       adapter,
+//       createOptions
+//       // async (context) => {
+
+//       //   })
+
+//       //   await context.sendActivity(replyActivity)
+//       // }
+//     )
+//   }
+
+//   await context.sendActivity('All messages have been sent')
+// })
 
 app.onMessage('/atmention', async (context: TurnContext, state: TurnState) => {
   const mention: Mention = {
+    type: 'mention',
     mentioned: context.activity.from!,
     text: `<at>${context.activity.from?.name}</at>`
   }
@@ -190,12 +187,13 @@ app.onActivity('message', async (context: TurnContext, state: TurnState) => {
       - '/getMeetingInfo' - Get information about the current meeting
       - '/getPagedMembers' - Get a paged list of team members
       \n
-      You can also:
-      - Add reactions to messages, and I will respond when reactions are added or removed.
-      '
+      - '/card' - Send an adaptive card with the following commands
+      - '/messageall' - Send a message to all members of the team
+      - '/atmention' - Mention a user in a message
+      - '/targeted' - Send a targeted message to each team member
     `)
   } else {
-    await context.sendActivity(`I received your message: "${text}". Type "help" to see available commands.`)
+    await context.sendActivity(`I received your message: '${text}'. Enter 'help' to see available commands.`)
   }
 })
 
