@@ -104,6 +104,9 @@ export class MsalTokenProvider implements AuthProvider {
             token = await this.acquireTokenWithCertificate(authConfig, actualScope)
             break
           case AuthType.UserManagedIdentity:
+            if (!authConfig.clientId) {
+              throw ExceptionHelper.generateException(Error, Errors.ClientIdRequiredForUserManagedIdentity)
+            }
             token = await this.acquireTokenWithUserAssignedIdentity(authConfig, actualScope)
             break
           case AuthType.SystemManagedIdentity:

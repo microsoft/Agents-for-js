@@ -517,11 +517,11 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   },
 
   /**
-   * Error thrown when an unsupported authorization type is specified in authConfig.
+   * Error thrown when an unsupported authentication type is specified in authConfig.
    */
   UnsupportedAuthType: {
     code: -120593,
-    description: 'Unsupported authorization type: {authType}'
+    description: 'Unsupported authentication type: {authType}'
   },
 
   /**
@@ -554,6 +554,14 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   FICClientIdRequired: {
     code: -120597,
     description: 'FederatedCredentials authentication requires `FICClientId` to be configured'
+  },
+
+  /**
+   * Error thrown when UserManagedIdentity authentication is specified but `clientId` is not configured.
+   */
+  ClientIdRequiredForUserManagedIdentity: {
+    code: -120598,
+    description: 'UserManagedIdentity authentication requires `clientId` to be configured'
   },
 
   // ============================================================================

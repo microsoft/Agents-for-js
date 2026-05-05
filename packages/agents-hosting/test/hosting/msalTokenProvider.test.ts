@@ -1,5 +1,5 @@
 import { strict as assert } from 'assert'
-import { describe, it, beforeEach } from 'node:test'
+import { describe, it, beforeEach, afterEach } from 'node:test'
 import sinon from 'sinon'
 import { ConfidentialClientApplication, ManagedIdentityApplication } from '@azure/msal-node'
 import { MsalTokenProvider, ConnectorClient, AuthConfiguration, AuthType, CloudAdapter } from '../../src'
@@ -25,6 +25,10 @@ describe('MsalTokenProvider', () => {
     }
   })
 
+  afterEach(() => {
+    sinon.restore()
+  })
+
   it('should return empty string if clientId is missing and not in production', async () => {
     authConfig.clientId = ''
     const token = await msalTokenProvider.getAccessToken(authConfig, 'scope')
@@ -33,23 +37,21 @@ describe('MsalTokenProvider', () => {
 
   it('should acquire access token via secret', async () => {
     // @ts-ignore
-    const acquireTokenStub = sinon.stub(ConfidentialClientApplication.prototype, 'acquireTokenByClientCredential').resolves({ accessToken: 'test-token' })
+    sinon.stub(ConfidentialClientApplication.prototype, 'acquireTokenByClientCredential').resolves({ accessToken: 'test-token' })
     const token = await msalTokenProvider.getAccessToken(authConfig, 'scope')
     assert.strictEqual(token, 'test-token')
-    acquireTokenStub.restore()
   })
 
   it('should acquire token with certificate', async () => {
     authConfig.clientSecret = undefined
     // @ts-ignore
-    const acquireTokenStub = sinon.stub(ConfidentialClientApplication.prototype, 'acquireTokenByClientCredential').resolves({ accessToken: 'test-token' })
+    sinon.stub(ConfidentialClientApplication.prototype, 'acquireTokenByClientCredential').resolves({ accessToken: 'test-token' })
     sinon.stub(fs, 'readFileSync').returns('test-cert')
     // @ts-ignore
     sinon.stub(crypto, 'createPrivateKey').returns({ export: () => 'test-key' })
     sinon.stub(crypto, 'X509Certificate').returns({ fingerprint: 'test-fingerprint' })
     const token = await msalTokenProvider.getAccessToken(authConfig, 'scope')
     assert.strictEqual(token, 'test-token')
-    acquireTokenStub.restore()
   })
 
   it('should acquire token with user assigned identity', async () => {
@@ -57,10 +59,27 @@ describe('MsalTokenProvider', () => {
     authConfig.certPemFile = undefined
     authConfig.certKeyFile = undefined
     // @ts-ignore
-    const acquireTokenStub = sinon.stub(ManagedIdentityApplication.prototype, 'acquireToken').resolves({ accessToken: 'test-token' })
+    sinon.stub(ManagedIdentityApplication.prototype, 'acquireToken').resolves({ accessToken: 'test-token' })
     const token = await msalTokenProvider.getAccessToken(authConfig, 'scope')
     assert.strictEqual(token, 'test-token')
-    acquireTokenStub.restore()
+  })
+
+  it('should acquire token with system managed identity without managedIdentityIdParams', async () => {
+    authConfig.clientSecret = undefined
+    authConfig.certPemFile = undefined
+    authConfig.certKeyFile = undefined
+    authConfig.authtype = AuthType.SystemManagedIdentity
+
+    sinon.stub(ManagedIdentityApplication.prototype, 'acquireToken').callsFake(async function (this: any, request: any) {
+      assert.strictEqual(this.config.managedIdentityId.id, 'system_assigned_managed_identity')
+      assert.strictEqual(this.config.managedIdentityId.idType, 'system-assigned')
+      assert.notStrictEqual(this.config.managedIdentityId.id, authConfig.clientId)
+      assert.strictEqual(request.resource, 'scope')
+      return { accessToken: 'test-token' } as any
+    })
+
+    const token = await msalTokenProvider.getAccessToken(authConfig, 'scope')
+    assert.strictEqual(token, 'test-token')
   })
 
   it('should acquire token with Fic', async () => {
@@ -71,29 +90,24 @@ describe('MsalTokenProvider', () => {
     // @ts-ignore
     sinon.stub(ManagedIdentityApplication.prototype, 'acquireToken').resolves({ accessToken: 'test-token' })
     // @ts-ignore
-    const acquireTokenStub = sinon.stub(ConfidentialClientApplication.prototype, 'acquireTokenByClientCredential').resolves({ accessToken: 'test-token' })
+    sinon.stub(ConfidentialClientApplication.prototype, 'acquireTokenByClientCredential').resolves({ accessToken: 'test-token' })
     const token = await msalTokenProvider.getAccessToken(authConfig, 'scope')
     assert.strictEqual(token, 'test-token')
-    acquireTokenStub.restore()
   })
 
   it('should acquire token with WID', async () => {
-    sinon.restore()
     authConfig.clientSecret = undefined
     authConfig.certPemFile = undefined
     authConfig.certKeyFile = undefined
     authConfig.WIDAssertionFile = '/var/run/secrets/azure/tokens/azure-identity-token'
     sinon.stub(fs, 'readFileSync').returns('fake-wid-assertion')
     // @ts-ignore
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const acquireTokenStub = sinon.stub(ConfidentialClientApplication.prototype, 'acquireTokenByClientCredential').resolves({ accessToken: 'test-token' })
+    sinon.stub(ConfidentialClientApplication.prototype, 'acquireTokenByClientCredential').resolves({ accessToken: 'test-token' })
     const token = await msalTokenProvider.getAccessToken(authConfig, 'scope')
     assert.strictEqual(token, 'test-token')
-    sinon.restore()
   })
 
   it('should acquire token with WID using authtype and federatedtokenfile', async () => {
-    sinon.restore()
     authConfig.clientSecret = undefined
     authConfig.certPemFile = undefined
     authConfig.certKeyFile = undefined
@@ -102,11 +116,9 @@ describe('MsalTokenProvider', () => {
     authConfig.federatedtokenfile = '/var/run/secrets/azure/tokens/azure-identity-token'
     sinon.stub(fs, 'readFileSync').returns('fake-wid-assertion')
     // @ts-ignore
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const acquireTokenStub = sinon.stub(ConfidentialClientApplication.prototype, 'acquireTokenByClientCredential').resolves({ accessToken: 'test-token' })
+    sinon.stub(ConfidentialClientApplication.prototype, 'acquireTokenByClientCredential').resolves({ accessToken: 'test-token' })
     const token = await msalTokenProvider.getAccessToken(authConfig, 'scope')
     assert.strictEqual(token, 'test-token')
-    sinon.restore()
   })
 
   it('should throw error for invalid authConfig', async () => {
@@ -148,7 +160,6 @@ describe('MsalTokenProvider', () => {
       // stop caching
       // @ts-ignore
       tokenProvider._agenticTokenCache.destroy()
-      axiosPostStub.restore()
     }
   })
 
@@ -181,7 +192,6 @@ describe('MsalTokenProvider', () => {
       // stop caching
       // @ts-ignore
       tokenProvider._agenticTokenCache.destroy()
-      axiosPostStub.restore()
     }
   })
 
@@ -214,7 +224,6 @@ describe('MsalTokenProvider', () => {
       // stop caching
       // @ts-ignore
       tokenProvider._agenticTokenCache.destroy()
-      axiosPostStub.restore()
     }
   })
 
@@ -246,7 +255,6 @@ describe('MsalTokenProvider', () => {
       // stop caching
       // @ts-ignore
       tokenProvider._agenticTokenCache.destroy()
-      axiosPostStub.restore()
     }
   })
 
@@ -303,10 +311,6 @@ describe('MsalTokenProvider', () => {
     const callArgs = axiosPostStub.getCall(0).args
     const url = callArgs[0]
     assert.ok(url === 'https://foo.bar.com/agentic-tenant-id/oauth2/v2.0/token', `Expected URL to contain 'foo.bar', got: ${url}`)
-    axiosPostStub.restore()
-    memoryCacheStub.restore()
-    connectorClientStub.restore()
-    ConfidentialClientApplicationStub.restore()
   })
 
   it('should properly handle common with custom authority url as tenantId based on incoming message', async () => {
@@ -362,10 +366,6 @@ describe('MsalTokenProvider', () => {
     const callArgs = axiosPostStub.getCall(0).args
     const url = callArgs[0]
     assert.ok(url === 'https://foo.bar.com/agentic-tenant-id/oauth2/v2.0/token', `Expected URL to contain 'foo.bar', got: ${url}`)
-    axiosPostStub.restore()
-    memoryCacheStub.restore()
-    connectorClientStub.restore()
-    ConfidentialClientApplicationStub.restore()
   })
 
   it('should call the common/multi-tenant authority based on incoming message', async () => {
@@ -420,10 +420,6 @@ describe('MsalTokenProvider', () => {
     const callArgs = axiosPostStub.getCall(0).args
     const url = callArgs[0]
     assert.ok(url === 'https://login.microsoftonline.com/agentic-tenant-id/oauth2/v2.0/token', `Expected URL to contain 'https://login.microsoftonline.com/agentic-tenant-id/oauth2/v2.0/token', got: ${url}`)
-    axiosPostStub.restore()
-    memoryCacheStub.restore()
-    connectorClientStub.restore()
-    ConfidentialClientApplicationStub.restore()
   })
 
   it('should prefer passed tenant id over configured tenant id in authority resolution', async () => {
@@ -478,14 +474,9 @@ describe('MsalTokenProvider', () => {
     const callArgs = axiosPostStub.getCall(0).args
     const url = callArgs[0]
     assert.ok(url === 'https://login.microsoftonline.com/agentic-tenant-id/oauth2/v2.0/token', `Expected URL to contain 'agentic-tenant-id', got: ${url}`)
-    axiosPostStub.restore()
-    memoryCacheStub.restore()
-    connectorClientStub.restore()
-    ConfidentialClientApplicationStub.restore()
   })
 
   it('should include x5c in JWT header when sendX5C is true', async () => {
-    sinon.restore()
     const fakePem = '-----BEGIN CERTIFICATE-----\nMIIFakeCert\n-----END CERTIFICATE-----'
     const fakeKey = '-----BEGIN PRIVATE KEY-----\nMIIFakeKey\n-----END PRIVATE KEY-----'
     const fakeRaw = Buffer.from('fake-der-data')
@@ -526,12 +517,10 @@ describe('MsalTokenProvider', () => {
     } finally {
       // @ts-ignore
       tokenProvider._agenticTokenCache.destroy()
-      sinon.restore()
     }
   })
 
   it('should not include x5c in JWT header when sendX5C is false', async () => {
-    sinon.restore()
     const fakePem = '-----BEGIN CERTIFICATE-----\nMIIFakeCert\n-----END CERTIFICATE-----'
     const fakeKey = '-----BEGIN PRIVATE KEY-----\nMIIFakeKey\n-----END PRIVATE KEY-----'
     const fakeRaw = Buffer.from('fake-der-data')
@@ -569,12 +558,10 @@ describe('MsalTokenProvider', () => {
     } finally {
       // @ts-ignore
       tokenProvider._agenticTokenCache.destroy()
-      sinon.restore()
     }
   })
 
   it('should not include x5c in JWT header when sendX5C is undefined', async () => {
-    sinon.restore()
     const fakePem = '-----BEGIN CERTIFICATE-----\nMIIFakeCert\n-----END CERTIFICATE-----'
     const fakeKey = '-----BEGIN PRIVATE KEY-----\nMIIFakeKey\n-----END PRIVATE KEY-----'
     const fakeRaw = Buffer.from('fake-der-data')
@@ -611,12 +598,11 @@ describe('MsalTokenProvider', () => {
     } finally {
       // @ts-ignore
       tokenProvider._agenticTokenCache.destroy()
-      sinon.restore()
     }
   })
 
   it('should pass azureRegion to acquireTokenByClientCredential when configured', async () => {
-    const acquireTokenStub = sinon.stub(ConfidentialClientApplication.prototype, 'acquireTokenByClientCredential').resolves({ accessToken: 'regional-token' })
+    const acquireTokenStub = sinon.stub(ConfidentialClientApplication.prototype, 'acquireTokenByClientCredential').resolves({ accessToken: 'regional-token' } as any)
 
     const provider = new MsalTokenProvider({
       clientId: 'client-id',
@@ -625,19 +611,14 @@ describe('MsalTokenProvider', () => {
       azureRegion: 'westus',
     })
 
-    try {
-      const token = await provider.getAccessToken('https://graph.microsoft.com')
-      assert.strictEqual(token, 'regional-token')
-      assert.strictEqual(acquireTokenStub.called, true)
-      const requestArg = acquireTokenStub.getCall(0).args[0] as any
-      assert.strictEqual(requestArg.azureRegion, 'westus', 'azureRegion must be forwarded to acquireTokenByClientCredential')
-    } finally {
-      sinon.restore()
-    }
+    const token = await provider.getAccessToken('https://graph.microsoft.com')
+    assert.strictEqual(token, 'regional-token')
+    assert.strictEqual(acquireTokenStub.called, true)
+    const requestArg = acquireTokenStub.getCall(0).args[0] as any
+    assert.strictEqual(requestArg.azureRegion, 'westus', 'azureRegion must be forwarded to acquireTokenByClientCredential')
   })
 
   it('should pass x5c as the client_assertion in the token request when sendX5C is true', async () => {
-    sinon.restore()
     const fakePem = '-----BEGIN CERTIFICATE-----\nMIIFakeCert\n-----END CERTIFICATE-----'
     const fakeKey = '-----BEGIN PRIVATE KEY-----\nMIIFakeKey\n-----END PRIVATE KEY-----'
     const fakeRaw = Buffer.from('fake-der-data')
@@ -676,7 +657,6 @@ describe('MsalTokenProvider', () => {
     } finally {
       // @ts-ignore
       tokenProvider._agenticTokenCache.destroy()
-      sinon.restore()
     }
   })
 })

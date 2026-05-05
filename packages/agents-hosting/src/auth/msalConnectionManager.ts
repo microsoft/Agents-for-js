@@ -49,9 +49,11 @@ export class MsalConnectionManager implements Connections {
           ? AuthType.Certificate
           : cfg?.clientSecret
             ? AuthType.ClientSecret
-            : cfg?.WIDAssertionFile || cfg?.FICClientId
+            : cfg?.WIDAssertionFile
               ? AuthType.WorkloadIdentity
-              : 'none')
+              : cfg?.FICClientId
+                ? AuthType.FederatedCredentials
+                : 'none')
       logger.debug('connection "%s" clientId=%s tenantId=%s authType=%s', name, cfg?.clientId ?? '<none>', cfg?.tenantId ?? '<none>', authType)
     }
 
