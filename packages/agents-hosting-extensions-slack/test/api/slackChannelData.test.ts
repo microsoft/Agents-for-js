@@ -11,7 +11,7 @@ import {
 } from '../../src/api/slackChannelData.js'
 import type { TurnContext } from '@microsoft/agents-hosting'
 
-function makeContext(channelData: unknown): TurnContext {
+function makeContext (channelData: unknown): TurnContext {
   return { activity: { channelData } } as unknown as TurnContext
 }
 
