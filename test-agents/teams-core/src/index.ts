@@ -102,10 +102,7 @@ app.onMessage('/delete', async (context: TurnContext, state: TurnState) => {
 
 app.onMessage('/card', async (context: TurnContext, state: TurnState) => {
   const card = createCard('Teams Bot Actions')
-  const activity = Activity.fromObject({
-    type: ActivityTypes.Message,
-    attachments: [card]
-  })
+  const activity = MessageFactory.attachment(card)
   await context.sendActivity(activity)
 })
 

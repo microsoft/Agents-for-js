@@ -25,14 +25,14 @@ export function createHeroCardActivity (text: string): Activity {
 export function createCard (title: string): Attachment {
   return CardFactory.heroCard(
     title,
-    undefined,
+    'Choose an option',
     undefined,
     [
-      {
-        type: ActionTypes.MessageBack,
-        title: 'Message all members',
-        text: '/messageall'
-      },
+      // {
+      //   type: ActionTypes.MessageBack,
+      //   title: 'Message all members',
+      //   text: '/messageall'
+      // },
       {
         type: ActionTypes.MessageBack,
         title: 'Mention Me',
