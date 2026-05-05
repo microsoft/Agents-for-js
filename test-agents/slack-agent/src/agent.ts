@@ -35,9 +35,7 @@ app.registerExtension<SlackAgentExtension<TurnState>>(new SlackAgentExtension(ap
     const { channelId, threadTs } = getThreadContext(ctx)
     const title = ctx.activity.text!.match(/^topic (.+)/i)![1].trim()
 
-    await Promise.all([
-      api.call('assistant.threads.setTitle', { channel_id: channelId, thread_ts: threadTs, title }),
-    ])
+    await api.call('assistant.threads.setTitle', { channel_id: channelId, thread_ts: threadTs, title })
     await ctx.sendActivity(`Title set to: *${title}*`)
   })
 
@@ -159,7 +157,7 @@ app.registerExtension<SlackAgentExtension<TurnState>>(new SlackAgentExtension(ap
 })
 
 app.onActivity('message', async (ctx: TurnContext, state: TurnState) => {
-  ctx.sendActivity('Normal activity reply')
+  await ctx.sendActivity('Normal activity reply')
 })
 
 startServer(app)
