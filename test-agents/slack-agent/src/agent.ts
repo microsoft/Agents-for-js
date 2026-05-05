@@ -159,7 +159,7 @@ app.registerExtension<SlackAgentExtension<TurnState>>(new SlackAgentExtension(ap
 })
 
 app.onActivity('message', async (ctx: TurnContext, state: TurnState) => {
-  ctx.sendActivity('Normal activity reply')
+  await ctx.sendActivity('Normal activity reply')
 })
 
 startServer(app)
