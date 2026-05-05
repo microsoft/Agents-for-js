@@ -1,7 +1,8 @@
 import { ActionTypes, Attachment, CardAction } from '@microsoft/agents-activity'
 import { CardFactory, CardImage, HeroCard, ThumbnailCard, TurnContext } from '@microsoft/agents-hosting'
 import { startServer } from '@microsoft/agents-hosting-express'
-import { MessagingExtensionAttachment, MessagingExtensionQuery, MessagingExtensionResponse, TeamsActivityHandler } from '@microsoft/agents-hosting-extensions-teams'
+import { TeamsActivityHandler, SetTeamsApiClientMiddleware } from '@microsoft/agents-hosting-extensions-teams'
+import { MessagingExtensionAttachment, MessagingExtensionQuery, MessagingExtensionResponse } from '@microsoft/teams.api'
 
 class MsgExtension extends TeamsActivityHandler {
   constructor () {
@@ -140,4 +141,10 @@ class MsgExtension extends TeamsActivityHandler {
     }
   }
 }
-startServer(new MsgExtension())
+startServer(
+  new MsgExtension(),
+  {
+    configureAdapter: (adapter) => {
+      adapter.use(new SetTeamsApiClientMiddleware())
+    }
+  })

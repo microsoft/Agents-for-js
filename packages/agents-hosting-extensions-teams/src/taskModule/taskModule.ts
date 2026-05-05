@@ -1,8 +1,7 @@
 import { Activity, ActivityTypes, Channels, ExceptionHelper } from '@microsoft/agents-activity'
 import { AgentApplication, INVOKE_RESPONSE_KEY, InvokeResponse, RouteHandler, RouteSelector, TurnContext, TurnState } from '@microsoft/agents-hosting'
+import type { TaskModuleResponse, TaskModuleTaskInfo } from '@microsoft/teams.api'
 import { Errors } from '../errorHelper'
-import { TaskModuleTaskInfo } from './taskModuleTaskInfo'
-import { TaskModuleResponse } from './taskModuleResponse'
 
 enum TaskModuleInvokeNames {
   CONFIG_FETCH_INVOKE_NAME = 'config/fetch',
@@ -43,7 +42,7 @@ export class TaskModule<TState extends TurnState> {
       return Promise.resolve(
         context.activity.type === ActivityTypes.Invoke &&
         context.activity.channelId === 'msteams' &&
-        context.activity.name === 'task/fetch'
+        context.activity.name === TaskModuleInvokeNames.FETCH_INVOKE_NAME
       )
     }
     this._app.addRoute(routeSel, handler, true) // Invoke requires true
@@ -190,7 +189,7 @@ export class TaskModule<TState extends TurnState> {
       return Promise.resolve(
         context.activity.type === ActivityTypes.Invoke &&
         context.activity.channelId === 'msteams' &&
-        context.activity.name === 'config/submit'
+        context.activity.name === TaskModuleInvokeNames.CONFIG_SUBMIT_INVOKE_NAME
       )
     }
     this._app.addRoute(routeSel, handler, true)

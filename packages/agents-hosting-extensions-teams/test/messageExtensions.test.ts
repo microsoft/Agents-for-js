@@ -3,11 +3,26 @@ import { describe, it } from 'node:test'
 import { AgentApplication, TurnContext, TurnState, INVOKE_RESPONSE_KEY, CloudAdapter } from '@microsoft/agents-hosting'
 import { Activity, ActivityTypes } from '@microsoft/agents-activity'
 import { TeamsAgentExtension } from '../src/teamsAgentExtension'
-import { MessagingExtensionResponse } from '../src/messageExtension/messagingExtensionResponse'
+import type { MessagingExtensionResponse } from '@microsoft/teams.api'
 
 interface InvokeValue {
   status: number
   body?: any
+}
+
+function addConnectorClientToTurnState (context: TurnContext): void {
+  context.turnState.set(context.adapter.ConnectorClientKey, {
+    axiosInstance: {
+      defaults: {
+        baseURL: 'https://service.example.com',
+        headers: {
+          common: {
+            Authorization: 'Bearer token'
+          }
+        }
+      }
+    }
+  })
 }
 
 describe('MessageExtension', function () {
@@ -39,6 +54,7 @@ describe('MessageExtension', function () {
 
     activity.name = 'composeExtension/querySettingUrl'
     const context = new TurnContext(adapter, activity)
+    addConnectorClientToTurnState(context)
     await app.run(context)
 
     assert.strictEqual(handled, true)
@@ -64,6 +80,7 @@ describe('MessageExtension', function () {
 
     activity.name = 'composeExtension/setting'
     const context = new TurnContext(adapter, activity)
+    addConnectorClientToTurnState(context)
     await app.run(context)
 
     assert.strictEqual(handled, true)

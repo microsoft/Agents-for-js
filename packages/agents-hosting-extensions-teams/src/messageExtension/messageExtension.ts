@@ -1,12 +1,16 @@
 import { Activity, ActivityTypes } from '@microsoft/agents-activity'
 import { AgentApplication, RouteHandler, RouteSelector, TurnContext, TurnState } from '@microsoft/agents-hosting'
+import type { MessagingExtensionAction, MessagingExtensionActionResponse, MessagingExtensionQuery, MessagingExtensionResponse, MessagingExtensionResult, TaskModuleResponse } from '@microsoft/teams.api'
 import { z } from 'zod'
-import { TaskModuleResponse } from '../taskModule'
-import { MessagingExtensionActionResponse } from './messagingExtensionActionResponse'
-import { MessagingExtensionQuery, messagingExtensionQueryZodSchema } from './messagingExtensionQuery'
-import { MessagingExtensionResponse } from './messagingExtensionResponse'
-import { MessagingExtensionResult } from './messagingExtensionResult'
-import { MessagingExtensionAction } from './messagingExtensionAction'
+import { messagingExtensionQueryZodSchema } from './messagingExtensionQuery'
+
+const appBasedLinkQuerySchema = z.object({
+  url: z.string().url()
+})
+
+function parseAppBasedLinkQuery (value: unknown): { url: string } {
+  return appBasedLinkQuerySchema.parse(value)
+}
 
 type RouteQueryHandler<TState extends TurnState> = (context: TurnContext, state: TState, query: MessagingExtensionQuery) => Promise<MessagingExtensionResult>
 type SelectItemHandler<TState extends TurnState> = (context: TurnContext, state: TState, item: unknown) => Promise<MessagingExtensionResult>
@@ -101,10 +105,7 @@ export class MessageExtension<TState extends TurnState> {
       )
     }
     const routeHandler : RouteHandler<TurnState> = async (context: TurnContext, state: TurnState) => {
-      const appBasedLinkQuerySchema = z.object({
-        url: z.string().url()
-      })
-      const query = appBasedLinkQuerySchema.parse(context.activity.value)
+      const query = parseAppBasedLinkQuery(context.activity.value)
       const res = await handler(context, state, query.url)
       const response: MessagingExtensionResponse = { composeExtension: res }
       const invokeResponse = Activity.fromObject({ type: ActivityTypes.InvokeResponse, value: { status: 200, body: response } })
@@ -128,10 +129,7 @@ export class MessageExtension<TState extends TurnState> {
       )
     }
     const routeHandler : RouteHandler<TurnState> = async (context: TurnContext, state: TurnState) => {
-      const appBasedLinkQuerySchema = z.object({
-        url: z.string().url()
-      })
-      const query = appBasedLinkQuerySchema.parse(context.activity.value)
+      const query = parseAppBasedLinkQuery(context.activity.value)
       const res = await handler(context, state, query.url)
       const response: MessagingExtensionResponse = { composeExtension: res }
       const invokeResponse = Activity.fromObject({ type: ActivityTypes.InvokeResponse, value: { status: 200, body: response } })
@@ -240,8 +238,8 @@ export class MessageExtension<TState extends TurnState> {
         context.activity.value['botMessagePreviewAction'] === 'send'))
     }
     const routeHandler: RouteHandler<TurnState> = async (context: TurnContext, state: TurnState) => {
-      const msgExtensionAction: MessagingExtensionAction = context.activity.value as MessagingExtensionAction
-      const activityPreview : Activity = msgExtensionAction.activityPreview?.length! > 0 ? Activity.fromObject(msgExtensionAction.activityPreview![0]) : new Activity(ActivityTypes.Message)
+      const msgExtensionAction = context.activity.value as MessagingExtensionAction
+      const activityPreview : Activity = msgExtensionAction.botActivityPreview?.length! > 0 ? Activity.fromObject(msgExtensionAction.botActivityPreview![0]) : new Activity(ActivityTypes.Message)
       await handler(context, state, activityPreview)
     }
     this._app.addRoute(routeSel, routeHandler, true)

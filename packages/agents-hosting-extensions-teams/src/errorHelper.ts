@@ -77,76 +77,11 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   },
 
   /**
-   * Error thrown when activity is required but not provided.
-   */
-  ActivityRequired: {
-    code: -150007,
-    description: 'activity is required.'
-  },
-
-  /**
-   * Error thrown when tenantId is required but not provided.
+   * Error thrown when tenantId cannot be null or empty.
    */
   TenantIdRequired: {
-    code: -150008,
-    description: 'tenantId is required.'
-  },
-
-  /**
-   * Error thrown when members list is required but not provided.
-   */
-  MembersListRequired: {
-    code: -150009,
-    description: 'members list is required.'
-  },
-
-  /**
-   * Error thrown when operationId is required but not provided.
-   */
-  OperationIdRequired: {
-    code: -150010,
-    description: 'operationId is required.'
-  },
-
-  // TeamsConnectorClient Errors (-150011 to -150014)
-  /**
-   * Error thrown when activity parameter is missing.
-   */
-  MissingActivityParameter: {
-    code: -150011,
-    description: 'Missing activity parameter'
-  },
-
-  /**
-   * Error thrown when method is only valid within MS Teams Team scope.
-   */
-  OnlyValidInTeamsScope: {
-    code: -150012,
-    description: 'This method is only valid within the scope of a MS Teams Team.'
-  },
-
-  /**
-   * Error thrown when userId is required but not provided.
-   */
-  UserIdRequired: {
-    code: -150013,
-    description: 'userId is required'
-  },
-
-  /**
-   * Error thrown when conversationId is required but not provided.
-   */
-  ConversationIdRequired: {
-    code: -150014,
-    description: 'conversationId is required'
-  },
-
-  /**
-   * Error thrown when client is not available in the context.
-   */
-  ClientNotAvailable: {
-    code: -150015,
-    description: 'Client is not available in the context.'
+    code: -150007,
+    description: 'The tenantId cannot be null or empty'
   },
 
   // TaskModule Errors (-150016)
@@ -173,5 +108,22 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   BadRequest: {
     code: -150018,
     description: 'BadRequest'
+  },
+
+  // TeamsApiClient Errors (-150010 to -150011)
+  /**
+   * Error thrown when the Teams SDK client is not available in the context.
+   */
+  TeamsApiClientNotAvailable: {
+    code: -150010,
+    description: 'Teams API client is not available in the context. Add TeamsAgentExtension or SetTeamsApiClientMiddleware to populate it, or call setTeamsApiClient before use.'
+  },
+
+  /**
+   * Error thrown when Teams API client prerequisites are missing for Teams activities.
+   */
+  TeamsApiClientSetupFailed: {
+    code: -150011,
+    description: 'Teams API client setup failed: missing {missing}.'
   }
 }
