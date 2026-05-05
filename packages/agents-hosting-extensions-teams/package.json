@@ -21,8 +21,8 @@
   "dependencies": {
     "@microsoft/agents-hosting": "file:../agents-hosting",
     "@microsoft/agents-activity": "file:../agents-activity",
-    "axios": "^1.15.0",
-    "zod": "^3.25.75"
+    "axios": "1.15.0",
+    "zod": "3.25.75"
   },
   "license": "MIT",
   "files": [

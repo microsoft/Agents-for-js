@@ -7,7 +7,7 @@ import { Storage, StoreItems } from '../storage'
 import { AppMemory } from './appMemory'
 import { TurnStateEntry } from './turnStateEntry'
 import { TurnContext } from '../turnContext'
-import { debug } from '@microsoft/agents-activity/logger'
+import { debug } from '@microsoft/agents-telemetry'
 
 const logger = debug('agents:turnState')
 

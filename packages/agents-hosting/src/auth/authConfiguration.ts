@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { debug } from '@microsoft/agents-activity/logger'
+import { debug } from '@microsoft/agents-telemetry'
 import { ConnectionMapItem } from './msalConnectionManager'
 import objectPath from 'object-path'
 
@@ -90,6 +90,13 @@ export interface AuthConfiguration {
    * The path to K8s provided token.
    */
   WIDAssertionFile?: string
+
+  /**
+   * The Azure region for ESTS-R regional token acquisition (e.g. 'westus', 'eastus').
+   * When set, MSAL routes token requests to the specified regional endpoint.
+   * See https://learn.microsoft.com/en-us/entra/msal/javascript/node/regional-authorities for details.
+   */
+  azureRegion?: string
 }
 
 /**
@@ -196,6 +203,7 @@ export const loadPrevAuthConfigFromEnv: () => AuthConfiguration = () => {
       issuers: getDefaultIssuers(process.env.MicrosoftAppTenantId ?? '', authority),
       altBlueprintConnectionName: process.env.altBlueprintConnectionName,
       WIDAssertionFile: process.env.WIDAssertionFile,
+      azureRegion: process.env.azureRegion,
     }
     envConnections.connections.set(DEFAULT_CONNECTION, authConfig)
     envConnections.connectionsMap.push({
@@ -352,7 +360,8 @@ function buildLegacyAuthConfig (envPrefix: string = '', customConfig?: AuthConfi
     scope: customConfig?.scope ?? process.env[`${prefix}scope`],
     issuers: customConfig?.issuers ?? getDefaultIssuers(tenantId as string, authority),
     altBlueprintConnectionName: customConfig?.altBlueprintConnectionName ?? process.env[`${prefix}altBlueprintConnectionName`],
-    WIDAssertionFile: customConfig?.WIDAssertionFile ?? process.env[`${prefix}WIDAssertionFile`]
+    WIDAssertionFile: customConfig?.WIDAssertionFile ?? process.env[`${prefix}WIDAssertionFile`],
+    azureRegion: customConfig?.azureRegion ?? process.env[`${prefix}azureRegion`]
   }
 }
 
@@ -384,4 +393,61 @@ function getDefaultIssuers (tenantId: string, authority: string) : string[] {
     `${resolveAuthority('https://sts.windows.net', t)}/`,
     `${resolveAuthority(authority, t)}/v2.0`
   ]
+}
+
+/**
+ * A type representing a parser settings object.
+ */
+type ParserSettings<K extends string> = {
+  [key in K]: (value: string) => { key?: string, value?: any } | undefined
+}
+
+/**
+ * Creates an environment variable parser that maps the variable keys to parsing functions.
+ * @param settings An object where each key is an environment variable name and the value is a function
+ * that takes the variable value as input and returns an object with optional `key` and `value` properties.
+ * @remarks
+ * The `key` property in the returned object can be used to rename the environment variable key,
+ * while the `value` property contains the parsed value.
+ * @returns An object with a `parse` method that takes an environment variable key and value,
+ * and returns the parsed result.
+ */
+export function envParser<K extends string> (settings: ParserSettings<K> & ThisType<ParserSettings<K>>) {
+  const keys = Object.keys(settings) as K[]
+  return {
+    /**
+     * Parses the given environment variable key and value using the provided settings.
+     * @param key The environment variable key.
+     * @param value The environment variable value.
+     * @returns The parsed result with optional renamed key and parsed value.
+     */
+    parse (key: K, value: string) {
+      const match = keys.find(k => k.toUpperCase() === key.toUpperCase())
+      if (!match) {
+        return {}
+      }
+
+      const result = settings[match](value)
+      return { key: result?.key ?? match, value: result?.value }
+    }
+  }
+}
+
+/**
+ * Utility functions for environment variable parsers.
+ */
+export const envParserUtils = {
+  /**
+   * Bypass parser that returns the value as is.
+   * @param value The environment variable value.
+   * @returns An object with the original value.
+   */
+  bypass: (value: string) => ({ value }),
+  /**
+   * Redirects the parsing to another parser for a specific key.
+   * @param parser The target parser to redirect to.
+   * @param key The key to use in the target parser.
+   * @returns A function that takes the environment variable value and returns the parsed result from the target parser.
+   */
+  redirect: <Parser extends ReturnType<typeof envParser>>(parser: Parser, key: Parameters<Parser['parse']>[0]) => (value: string) => parser.parse(key, value)
 }

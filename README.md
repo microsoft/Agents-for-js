@@ -50,6 +50,76 @@ The packages should target node18 or greater, and can be used from JavaScript us
 
 The packages include the source code in the `src`, along with the sourcemaps in the `dist/src` folder to allow VSCode to debug the typescript files.
 
+### Debug Logging
+
+The packages use the [`debug`](https://github.com/debug-js/debug) library. Set the `DEBUG` environment variable to enable logging for specific subsystems.
+
+Each namespace in the tables below ends with `:*` to enable all log levels for that prefix.
+
+#### Auth & connections
+
+| DEBUG filter | What it logs |
+|---|---|
+| `agents:authorization:connections:*` | Auth connections loaded at startup (clientId, tenantId, authType); which connection is selected per request |
+| `agents:authorization:manager:*` | Auth handlers configured at startup (type, scopes); which handler is invoked per request |
+| `agents:authorization:azurebot:*` | Azure Bot sign-in flow detail (token exchange, magic code, SSO) |
+| `agents:authorization:agentic:*` | Agentic auth flow detail (token acquisition, OBO) |
+| `agents:authorization:*` | High-level authorization middleware decisions |
+| `agents:msal:*` | MSAL token acquisition (token requests, cache hits, OBO) |
+| `agents:jwt-middleware:*` | Incoming JWT validation |
+| `agents:authConfiguration:*` | Auth configuration loading |
+
+#### Adapter & request handling
+
+| DEBUG filter | What it logs |
+|---|---|
+| `agents:cloud-adapter:*` | Incoming request processing, activity dispatch |
+| `agents:base-adapter:*` | Base adapter lifecycle |
+| `agents:connector-client:*` | Outbound calls to the Bot Connector service |
+| `agents:user-token-client:*` | User token client requests |
+
+#### Application & state
+
+| DEBUG filter | What it logs |
+|---|---|
+| `agents:app:*` | AgentApplication routing and lifecycle |
+| `agents:activity-handler:*` | ActivityHandler event dispatch |
+| `agents:state:*` | State read/write operations |
+| `agents:turnState:*` | Turn state access |
+| `agents:memory-storage:*` | MemoryStorage read/write |
+| `agents:middleware:*` | Middleware pipeline execution |
+| `agents:proactive:*` | Proactive message sending to conversations |
+| `agents:conversation-reference-builder:*` | Building and validating conversation references |
+
+#### Streaming, attachments & transcripts
+
+| DEBUG filter | What it logs |
+|---|---|
+| `agents:streamingResponse:*` | Streaming response lifecycle |
+| `agents:attachmentDownloader:*` | Attachment download requests |
+| `agents:M365AttachmentDownloader:*` | M365-specific attachment downloads |
+| `agents:file-transcript-logger:*` | File transcript write operations |
+| `agents:rest-client:*` | REST client calls (transcript middleware) |
+
+#### Agent-to-agent
+
+| DEBUG filter | What it logs |
+|---|---|
+| `agents:agent-client:*` | Outbound agent client calls and response handling |
+
+#### Examples
+
+```sh
+# Show all auth and connection logs
+DEBUG=agents:authorization:* node index.js
+
+# Show everything
+DEBUG=agents:* node index.js
+
+# Show auth connections + MSAL
+DEBUG=agents:authorization:connections:*,agents:msal:* node index.js
+```
+
 ### Code Style
 
 We are using `eslint` configured with [neostandard](https://github.com/neostandard/neostandard)

@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "exclude": [],
+  "compilerOptions": {
+    "outDir": "dist/esm",
+    "composite": false,
+    "module": "es2022",
+    "moduleResolution": "bundler"
+  }
+}

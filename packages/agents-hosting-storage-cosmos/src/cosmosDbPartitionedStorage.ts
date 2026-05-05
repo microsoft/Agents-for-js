@@ -8,6 +8,8 @@ import { CosmosDbPartitionedStorageOptions } from './cosmosDbPartitionedStorageO
 import { Storage, StoreItems } from '@microsoft/agents-hosting'
 import { ExceptionHelper } from '@microsoft/agents-activity'
 import { Errors } from './errorHelper'
+import { trace } from '@microsoft/agents-telemetry'
+import { CosmosStorageTraceDefinitions } from './observability'
 
 /**
  * A utility class to ensure that a specific asynchronous task is executed only once for a given key.
@@ -113,57 +115,60 @@ export class CosmosDbPartitionedStorage implements Storage {
    * @returns A promise that resolves to the read items.
    */
   async read (keys: string[]): Promise<StoreItems> {
-    if (!keys) {
-      throw ExceptionHelper.generateException(
-        ReferenceError,
-        Errors.MissingReadKeys
+    return trace(CosmosStorageTraceDefinitions.read, async ({ record }) => {
+      if (!keys) {
+        throw ExceptionHelper.generateException(
+          ReferenceError,
+          Errors.MissingReadKeys
+        )
+      } else if (keys.length === 0) {
+        return {}
+      }
+
+      record({ keyCount: keys?.length })
+      await this.initialize()
+
+      const storeItems: StoreItems = {}
+
+      await Promise.all(
+        keys.map(async (k: string): Promise<void> => {
+          try {
+            const escapedKey = escapeKey(
+              k,
+              this.cosmosDbStorageOptions.keySuffix,
+              this.cosmosDbStorageOptions.compatibilityMode
+            )
+
+            const readItemResponse = await this.container
+              .item(escapedKey, this.getPartitionKey(escapedKey))
+              .read<DocumentStoreItem>()
+            const documentStoreItem = readItemResponse.resource
+            if (documentStoreItem) {
+              storeItems[documentStoreItem.realId] = documentStoreItem.document
+              storeItems[documentStoreItem.realId].eTag = documentStoreItem._etag
+            }
+          } catch (err: any) {
+            if (err.code === 404) {
+              // Not Found is not an error during read operations, just skip
+            } else if (err.code === 400) {
+              throw ExceptionHelper.generateException(
+                Error,
+                Errors.ContainerReadBadRequest,
+                err
+              )
+            } else {
+              throw ExceptionHelper.generateException(
+                Error,
+                Errors.ContainerReadError,
+                err
+              )
+            }
+          }
+        })
       )
-    } else if (keys.length === 0) {
-      return {}
-    }
 
-    await this.initialize()
-
-    const storeItems: StoreItems = {}
-
-    await Promise.all(
-      keys.map(async (k: string): Promise<void> => {
-        try {
-          const escapedKey = escapeKey(
-            k,
-            this.cosmosDbStorageOptions.keySuffix,
-            this.cosmosDbStorageOptions.compatibilityMode
-          )
-
-          const readItemResponse = await this.container
-            .item(escapedKey, this.getPartitionKey(escapedKey))
-            .read<DocumentStoreItem>()
-          const documentStoreItem = readItemResponse.resource
-          if (documentStoreItem) {
-            storeItems[documentStoreItem.realId] = documentStoreItem.document
-            storeItems[documentStoreItem.realId].eTag = documentStoreItem._etag
-          }
-        } catch (err: any) {
-          if (err.code === 404) {
-            // Not Found is not an error during read operations, just skip
-          } else if (err.code === 400) {
-            throw ExceptionHelper.generateException(
-              Error,
-              Errors.ContainerReadBadRequest,
-              err
-            )
-          } else {
-            throw ExceptionHelper.generateException(
-              Error,
-              Errors.ContainerReadError,
-              err
-            )
-          }
-        }
-      })
-    )
-
-    return storeItems
+      return storeItems
+    })
   }
 
   /**
@@ -171,46 +176,50 @@ export class CosmosDbPartitionedStorage implements Storage {
    * @param changes The items to write.
    */
   async write (changes: StoreItems): Promise<void> {
-    if (!changes) {
-      throw ExceptionHelper.generateException(
-        ReferenceError,
-        Errors.MissingWriteChanges
-      )
-    } else if (changes.length === 0) {
-      return
-    }
+    return trace(CosmosStorageTraceDefinitions.write, async ({ record }) => {
+      if (!changes) {
+        throw ExceptionHelper.generateException(
+          ReferenceError,
+          Errors.MissingWriteChanges
+        )
+      } else if (changes.length === 0) {
+        return
+      }
 
-    await this.initialize()
+      record({ keyCount: Object.keys(changes).length })
 
-    await Promise.all(
-      Object.entries(changes).map(async ([key, { eTag, ...change }]): Promise<void> => {
-        const document = new DocumentStoreItem({
-          id: escapeKey(
-            key,
-            this.cosmosDbStorageOptions.keySuffix,
-            this.cosmosDbStorageOptions.compatibilityMode
-          ),
-          realId: key,
-          document: change,
+      await this.initialize()
+
+      await Promise.all(
+        Object.entries(changes).map(async ([key, { eTag, ...change }]): Promise<void> => {
+          const document = new DocumentStoreItem({
+            id: escapeKey(
+              key,
+              this.cosmosDbStorageOptions.keySuffix,
+              this.cosmosDbStorageOptions.compatibilityMode
+            ),
+            realId: key,
+            document: change,
+          })
+
+          const accessCondition =
+                      eTag !== '*' && eTag != null && eTag.length > 0
+                        ? { accessCondition: { type: 'IfMatch', condition: eTag } }
+                        : undefined
+
+          try {
+            await this.container.items.upsert(document, accessCondition)
+          } catch (err: any) {
+            this.checkForNestingError(change, err)
+            throw ExceptionHelper.generateException(
+              Error,
+              Errors.DocumentUpsertError,
+              err
+            )
+          }
         })
-
-        const accessCondition =
-                    eTag !== '*' && eTag != null && eTag.length > 0
-                      ? { accessCondition: { type: 'IfMatch', condition: eTag } }
-                      : undefined
-
-        try {
-          await this.container.items.upsert(document, accessCondition)
-        } catch (err: any) {
-          this.checkForNestingError(change, err)
-          throw ExceptionHelper.generateException(
-            Error,
-            Errors.DocumentUpsertError,
-            err
-          )
-        }
-      })
-    )
+      )
+    })
   }
 
   /**
@@ -218,30 +227,33 @@ export class CosmosDbPartitionedStorage implements Storage {
    * @param keys The keys of the items to delete.
    */
   async delete (keys: string[]): Promise<void> {
-    await this.initialize()
+    return trace(CosmosStorageTraceDefinitions.delete, async ({ record }) => {
+      record({ keyCount: keys?.length })
+      await this.initialize()
 
-    await Promise.all(
-      keys.map(async (k: string): Promise<void> => {
-        const escapedKey = escapeKey(
-          k,
-          this.cosmosDbStorageOptions.keySuffix,
-          this.cosmosDbStorageOptions.compatibilityMode
-        )
-        try {
-          await this.container.item(escapedKey, this.getPartitionKey(escapedKey)).delete()
-        } catch (err: any) {
-          if (err.code === 404) {
-            // Not Found is not an error during delete operations, just skip
-          } else {
-            throw ExceptionHelper.generateException(
-              Error,
-              Errors.DocumentDeleteError,
-              err
-            )
+      await Promise.all(
+        keys.map(async (k: string): Promise<void> => {
+          const escapedKey = escapeKey(
+            k,
+            this.cosmosDbStorageOptions.keySuffix,
+            this.cosmosDbStorageOptions.compatibilityMode
+          )
+          try {
+            await this.container.item(escapedKey, this.getPartitionKey(escapedKey)).delete()
+          } catch (err: any) {
+            if (err.code === 404) {
+              // Not Found is not an error during delete operations, just skip
+            } else {
+              throw ExceptionHelper.generateException(
+                Error,
+                Errors.DocumentDeleteError,
+                err
+              )
+            }
           }
-        }
-      })
-    )
+        })
+      )
+    })
   }
 
   /**
