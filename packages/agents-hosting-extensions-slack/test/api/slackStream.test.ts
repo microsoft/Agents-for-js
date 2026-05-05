@@ -103,15 +103,21 @@ describe('SlackStream', () => {
     assert.deepStrictEqual(opts.blocks, finalBlocks)
   })
 
-  it('append() is a no-op (no throw) when start() not called', async () => {
+  it('append() throws when start() not called', async () => {
     const stream = new SlackStream(api, 'C123', '111.222')
-    await stream.append('ignored')
+    await assert.rejects(() => stream.append('ignored'), (err: Error) => {
+      assert.ok(err.message.includes('-160003'))
+      return true
+    })
     assert.equal(callStub.callCount, 0)
   })
 
-  it('stop() is a no-op (no throw) when start() not called', async () => {
+  it('stop() throws when start() not called', async () => {
     const stream = new SlackStream(api, 'C123', '111.222')
-    await stream.stop('ignored')
+    await assert.rejects(() => stream.stop('ignored'), (err: Error) => {
+      assert.ok(err.message.includes('-160003'))
+      return true
+    })
     assert.equal(callStub.callCount, 0)
   })
 

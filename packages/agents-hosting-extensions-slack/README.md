@@ -34,10 +34,10 @@ app.registerExtension(new SlackAgentExtension(app), (ext) => {
 
 ## Configuration
 
-| Variable | Source | Description |
-|---|---|---|
-| Slack bot token | `activity.channelData.ApiToken` | Injected by Azure Bot Service (preferred) |
-| `SLACK_TOKEN` | Environment variable | Fallback when not provided by ABS |
+| Variable | Source | Description
+| --- | --- | ---
+| Slack bot token | `activity.channelData.ApiToken` | Injected by Azure Bot Service (preferred)
+| `SLACK_TOKEN` | Environment variable | Fallback when not provided by ABS
 
 ## Required Slack Scopes
 

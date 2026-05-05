@@ -1,11 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { debug } from '@microsoft/agents-telemetry'
+import { ExceptionHelper } from '@microsoft/agents-activity'
 import type { SlackApi } from './slackApi.js'
 import { markdown, type Chunk } from './chunk.js'
-
-const logger = debug('agents:slack:stream')
+import { Errors } from '../errorHelper.js'
 
 /**
  * Options for configuring a {@link SlackStream} instance.
@@ -32,7 +31,7 @@ function normalizeContent (content: string | Chunk | Chunk[]): Chunk[] {
  * Maps to the Slack API methods `chat.startStream`, `chat.appendStream`, and `chat.stopStream`.
  * Obtain an instance via {@link SlackAgentExtension.createStream} rather than constructing directly.
  *
- * Calling `append()` or `stop()` before `start()` is safe and has no effect.
+ * `start()` must be called before `append()` or `stop()`; calling either without it throws.
  */
 export class SlackStream {
   private readonly _api: SlackApi
@@ -79,11 +78,11 @@ export class SlackStream {
    * A plain string is automatically wrapped as a {@link MarkdownTextChunk}.
    * @param {string | Chunk | Chunk[]} content - Content to append.
    * @returns {Promise<this>} The stream instance, for chaining.
+   * @throws If `start()` has not been called.
    */
   async append (content: string | Chunk | Chunk[]): Promise<this> {
     if (!this._messageTs) {
-      logger.debug('append() called before start() — skipping')
-      return this
+      throw ExceptionHelper.generateException(Error, Errors.SlackStreamNotStarted)
     }
     await this._api.call('chat.appendStream', {
       channel: this._channel,
@@ -98,11 +97,11 @@ export class SlackStream {
    * @param {string | Chunk | Chunk[]} [finalContent] - Optional final chunks to include in the closing payload.
    * @param {unknown[]} [blocks] - Optional top-level Block Kit blocks rendered as the final message layout.
    * @returns {Promise<this>} The stream instance, for chaining.
+   * @throws If `start()` has not been called.
    */
   async stop (finalContent?: string | Chunk | Chunk[], blocks?: unknown[]): Promise<this> {
     if (!this._messageTs) {
-      logger.debug('stop() called before start() — skipping')
-      return this
+      throw ExceptionHelper.generateException(Error, Errors.SlackStreamNotStarted)
     }
     const body: Record<string, unknown> = {
       channel: this._channel,
