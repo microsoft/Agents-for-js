@@ -119,38 +119,34 @@ app.onMessage('/card', async (context: TurnContext, state: TurnState) => {
 //       audience = context.identity.aud
 //     }
 
-//     // const replyActivity = Activity.fromObject({
-//     //   type: ActivityTypes.Message,
-//     //   text: `Hello ${member.name}, this is a proactive message.`,
-//     //   from: context.activity.recipient,
-//     //   channelId: context.activity.channelId,
-//     //   recipient: {
-//     //     id: member.id,
-//     //     name: member.name,
-//     //     aadObjectId: member.aadObjectId,
-//     //     role: RoleTypes.User
-//     //   }
-//     // })
+//     const replyActivity = Activity.fromObject({
+//       type: ActivityTypes.Message,
+//       text: `Hello ${member.name}, this is a proactive message.`,
+//       from: context.activity.recipient,
+//       channelId: context.activity.channelId,
+//       recipient: {
+//         id: member.id,
+//         name: member.name,
+//         aadObjectId: member.aadObjectId,
+//         role: RoleTypes.User
+//       }
+//     })
 
 //     const createOptions: CreateConversationOptions = CreateConversationOptionsBuilder
 //       .create(audience, 'msteams', context.activity.serviceUrl)
 //       .withUser(member.id)
 //       .withTenantId(context.activity.conversation?.tenantId ?? '')
-//       // .withActivity(replyActivity)
-//       // .withTeamsChannelId(context.activity.channelId ?? '')
+//       .withActivity(replyActivity)
+//       .withTeamsChannelId(context.activity.channelId ?? '')
 //       .isGroup(false)
 //       .build()
 
 //     await app.proactive.createConversation(
 //       adapter,
-//       createOptions
-//       // async (context) => {
-
-//       //   })
-
-//       //   await context.sendActivity(replyActivity)
-//       // }
-//     )
+//       createOptions,
+//       async (context) => {
+//         // await context.sendActivity(`Hello ${member.name}, this is a proactive message.`)
+//       })
 //   }
 
 //   await context.sendActivity('All messages have been sent')

@@ -1,4 +1,3 @@
-import path from 'path'
 import { ActionTypes } from '@microsoft/agents-activity'
 import {
   AgentApplication,
@@ -11,7 +10,6 @@ import {
   TurnContext,
   TurnState
 } from '@microsoft/agents-hosting'
-import { startServer } from '@microsoft/agents-hosting-express'
 import {
   SetTeamsApiClientMiddleware,
   TeamsAgentExtension
@@ -26,6 +24,9 @@ import {
   AdaptiveCard,
   TextBlock
 } from '@microsoft/teams.cards'
+import express from 'express'
+import path from 'path'
+import { myStartServer } from './myStartServer'
 
 const STORED_FILES_KEY = 'STORED_FILES'
 
@@ -149,8 +150,8 @@ app.registerExtension<TeamsAgentExtension>(teamsExt, (tae) => {
       }
     })
     .onSubmitAction(async (context: TurnContext, state: TurnState, data: any) : Promise<MessagingExtensionResponse> => {
-      const title = 'Default Title' // TODO
-      const description = 'Default Description' // TODO
+      const title = data?.data?.title ?? 'Default Title'
+      const description = data?.data?.description ?? 'Default Description'
 
       console.info(`Creating card with Title: ${title} and Description: ${description}`)
 
@@ -258,7 +259,7 @@ app.registerExtension<TeamsAgentExtension>(teamsExt, (tae) => {
             actions: [
               {
                 type: ActionTypes.OpenUrl,
-                value: 'https://bot-devtunnel-url/settings',
+                value: 'https://lj781498-3978.usw3.devtunnels.ms/settings.html',
                 title: 'Configure'
               }
             ]
@@ -268,7 +269,7 @@ app.registerExtension<TeamsAgentExtension>(teamsExt, (tae) => {
     })
     .onConfigurationSetting(async (context: TurnContext, state: TurnState, settings: any) : Promise<void> => {
       const settingsQuery = settings as MessagingExtensionQuery
-      console.info(`Message extension settings submitetd with state: ${settingsQuery.state}`)
+      console.info(`Message extension settings submitted with state: ${settingsQuery.state}`)
 
       if (settingsQuery.state === 'CancelledByUser') {
         console.info('Cancelled by user')
@@ -279,10 +280,10 @@ app.registerExtension<TeamsAgentExtension>(teamsExt, (tae) => {
 
 app.onActivity(() => { return Promise.resolve(true) }, async (context: TurnContext, state: TurnState) => {
   console.log('Received activity:', context.activity)
-  await context.sendActivity('I received your activity. How can I assist you?')
+  await context.sendActivity(`Echo: ${context.activity.text}\n\nThis is a message extension agent. Use the message extension commands in Teams to test functionality.`)
 })
 
-const expressApp = startServer(
+const expressApp = myStartServer(
   app,
   {
     configureAdapter: (adapter) => {
@@ -291,6 +292,4 @@ const expressApp = startServer(
   }
 )
 
-expressApp.get('/settings', (req, res) => {
-  res.sendFile(path.join(__dirname, 'settings.html'))
-})
+expressApp.use(express.static(path.join(__dirname, '../public')))

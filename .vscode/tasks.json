@@ -27,6 +27,34 @@
 			"path": "test-agents/empty-agent"
 		},
 		{
+			"label": "build_teams_core",
+			"type": "npm",
+			"script": "build",
+			"group": {
+				"kind": "build",
+				"isDefault": false
+			},
+			"dependsOn": [
+				"build_packages"
+			],
+			"problemMatcher": [],
+			"path": "test-agents/teams-core"
+		},
+		{
+			"label": "build_teams_message_extension",
+			"type": "npm",
+			"script": "build",
+			"group": {
+				"kind": "build",
+				"isDefault": false
+			},
+			"dependsOn": [
+				"build_packages"
+			],
+			"problemMatcher": [],
+			"path": "test-agents/teams-message-extension"
+		},
+		{
 			"label": "build_agentic",
 			"type": "npm",
 			"script": "build",
@@ -110,6 +138,6 @@
 				"build_packages"
 			],
 			"path": "test-agents/root-agent"
-		}
+		},
 	]
 }

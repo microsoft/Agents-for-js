@@ -23,6 +23,22 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "teams-core",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/test-agents/teams-core/src/index.ts",
+            "outFiles": [
+                "${workspaceFolder}/**/dist/**/*.js"
+            ],
+            "preLaunchTask": "build_teams_core",
+            "envFile": "${workspaceFolder}/test-agents/teams-core/.env",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "copilotstudio-console",
             "skipFiles": [
                 "<node_internals>/**"
@@ -113,6 +129,22 @@
             ],
             "preLaunchTask": "build_agentic",
             "envFile": "${workspaceFolder}/test-agents/agentic-ai/.env",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "teams-message-extension",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/test-agents/teams-message-extension/src/index.ts",
+            "outFiles": [
+                "${workspaceFolder}/**/dist/**/*.js"
+            ],
+            "preLaunchTask": "build_teams_message_extension",
+            "envFile": "${workspaceFolder}/test-agents/teams-message-extension/.env",
             "console": "integratedTerminal",
             "internalConsoleOptions": "openOnSessionStart"
         },
