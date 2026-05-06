@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 import express, { Response } from 'express'
-
+import rateLimit from 'express-rate-limit'
 import { Request, CloudAdapter, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv, configureResponseController, UserState, ConversationState } from '@microsoft/agents-hosting'
 import { version as sdkVersion } from '@microsoft/agents-hosting/package.json'
 import { RootHandlerWithBlobStorageMemory } from './agent'
@@ -24,12 +24,17 @@ const myAgent = new RootHandlerWithBlobStorageMemory(conversationState, userStat
 const app = express()
 
 app.use(express.json())
-app.use(authorizeJWT(authConfig))
 
-app.post('/api/messages', async (req: Request, res: Response) => {
+const messagesRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100
+})
+
+app.post('/api/messages', messagesRateLimiter, authorizeJWT(authConfig), async (req: Request, res: Response) => {
   await adapter.process(req, res, async (context) => await myAgent.run(context))
 })
 
+app.use('/api/agentresponse', messagesRateLimiter, authorizeJWT(authConfig))
 configureResponseController(app, adapter, myAgent, conversationState)
 
 const port = process.env.PORT || 3978
