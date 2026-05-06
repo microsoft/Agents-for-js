@@ -1,3 +1,4 @@
+import path from 'path'
 import { ActionTypes } from '@microsoft/agents-activity'
 import {
   AgentApplication,
@@ -281,7 +282,7 @@ app.onActivity(() => { return Promise.resolve(true) }, async (context: TurnConte
   await context.sendActivity('I received your activity. How can I assist you?')
 })
 
-startServer(
+const expressApp = startServer(
   app,
   {
     configureAdapter: (adapter) => {
@@ -289,3 +290,7 @@ startServer(
     }
   }
 )
+
+expressApp.get('/settings', (req, res) => {
+  res.sendFile(path.join(__dirname, 'settings.html'))
+})
