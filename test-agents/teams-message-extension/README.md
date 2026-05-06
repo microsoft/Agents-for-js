@@ -36,6 +36,4 @@ Filling out and then submnitting that form will trigger this route, which create
 
 ![alt text](doc/image-7.png)
 
-Clicking on that results in the following window:
-
-![alt text](doc/image-8.png)
+Clicking on that results in a new popup.
