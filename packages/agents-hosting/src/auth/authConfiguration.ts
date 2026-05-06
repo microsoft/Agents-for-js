@@ -11,6 +11,19 @@ const logger = debug('agents:authConfiguration')
 const DEFAULT_CONNECTION = 'serviceConnection'
 
 /**
+ * Supported authentication types for agent connections.
+ */
+export enum AuthType {
+  Certificate = 'Certificate',
+  CertificateSubjectName = 'CertificateSubjectName',
+  ClientSecret = 'ClientSecret',
+  UserManagedIdentity = 'UserManagedIdentity',
+  SystemManagedIdentity = 'SystemManagedIdentity',
+  FederatedCredentials = 'FederatedCredentials',
+  WorkloadIdentity = 'WorkloadIdentity'
+}
+
+/**
  * Represents the authentication configuration.
  */
 export interface AuthConfiguration {
@@ -88,8 +101,19 @@ export interface AuthConfiguration {
 
   /**
    * The path to K8s provided token.
+   * @deprecated Use `authtype` set to `'WorkloadIdentity'` and `federatedtokenfile` instead.
    */
   WIDAssertionFile?: string
+
+  /**
+   * The authentication type for the connection.
+   */
+  authtype?: AuthType | string
+
+  /**
+   * The path to the federated token file used for Workload Identity authentication.
+   */
+  federatedtokenfile?: string
 
   /**
    * The Azure region for ESTS-R regional token acquisition (e.g. 'westus', 'eastus').
@@ -203,6 +227,8 @@ export const loadPrevAuthConfigFromEnv: () => AuthConfiguration = () => {
       issuers: getDefaultIssuers(process.env.MicrosoftAppTenantId ?? '', authority),
       altBlueprintConnectionName: process.env.altBlueprintConnectionName,
       WIDAssertionFile: process.env.WIDAssertionFile,
+      authtype: process.env.authtype,
+      federatedtokenfile: process.env.federatedtokenfile,
       azureRegion: process.env.azureRegion,
     }
     envConnections.connections.set(DEFAULT_CONNECTION, authConfig)
@@ -361,6 +387,8 @@ function buildLegacyAuthConfig (envPrefix: string = '', customConfig?: AuthConfi
     issuers: customConfig?.issuers ?? getDefaultIssuers(tenantId as string, authority),
     altBlueprintConnectionName: customConfig?.altBlueprintConnectionName ?? process.env[`${prefix}altBlueprintConnectionName`],
     WIDAssertionFile: customConfig?.WIDAssertionFile ?? process.env[`${prefix}WIDAssertionFile`],
+    authtype: customConfig?.authtype ?? process.env[`${prefix}authtype`],
+    federatedtokenfile: customConfig?.federatedtokenfile ?? process.env[`${prefix}federatedtokenfile`],
     azureRegion: customConfig?.azureRegion ?? process.env[`${prefix}azureRegion`]
   }
 }

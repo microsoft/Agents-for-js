@@ -516,6 +516,54 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
     description: "The current token for the '{connectionName}' AzureBot connection is not exchangeable for an on-behalf-of flow. Ensure the base token audience is for the bot/resource app, such as an App ID URI like 'api://...' or otherwise includes the app's client id."
   },
 
+  /**
+   * Error thrown when an unsupported authentication type is specified in authConfig.
+   */
+  UnsupportedAuthType: {
+    code: -120593,
+    description: 'Unsupported authentication type: {authType}'
+  },
+
+  /**
+     * Error thrown when WorkloadIdentity authentication requires `federatedtokenfile` or the deprecated `WIDAssertionFile` to be configured.
+     */
+  WorkloadIdentityTokenFileRequired: {
+    code: -120594,
+    description: 'WorkloadIdentity authentication requires `federatedtokenfile` or the deprecated `WIDAssertionFile` to be configured'
+  },
+
+  /**
+   * Error thrown when ClientSecret authentication is specified but `clientSecret` is not configured.
+   */
+  ClientSecretRequired: {
+    code: -120595,
+    description: 'ClientSecret authentication requires `clientSecret` to be configured'
+  },
+
+  /**
+   * Error thrown when Certificate authentication is specified but `certPemFile` or `certKeyFile` is not configured.
+   */
+  CertificateFilesRequired: {
+    code: -120596,
+    description: 'Certificate authentication requires both `certPemFile` and `certKeyFile` to be configured'
+  },
+
+  /**
+   * Error thrown when FederatedCredentials authentication is specified but `FICClientId` is not configured.
+   */
+  FICClientIdRequired: {
+    code: -120597,
+    description: 'FederatedCredentials authentication requires `FICClientId` to be configured'
+  },
+
+  /**
+   * Error thrown when UserManagedIdentity authentication is specified but `clientId` is not configured.
+   */
+  ClientIdRequiredForUserManagedIdentity: {
+    code: -120598,
+    description: 'UserManagedIdentity authentication requires `clientId` to be configured'
+  },
+
   // ============================================================================
   // Agent and Client Errors (-120600 to -120630)
   // ============================================================================
