@@ -72,7 +72,8 @@ export class M365AttachmentDownloader<TState extends TurnState = TurnState> impl
         const response = await this._httpClient.get(downloadUrl, { responseType: 'arraybuffer' })
 
         const content = Buffer.from(response.data, 'binary')
-        const contentType = response.headers['content-type'] || 'application/octet-stream'
+        const contentTypeHeader = response.headers['content-type']
+        const contentType = typeof contentTypeHeader === 'string' ? contentTypeHeader : 'application/octet-stream'
         inputFile = { content, contentType, contentUrl: attachment.contentUrl }
       } catch (error) {
         logger.error(`Failed to download Teams attachment: ${error}`)
