@@ -12,13 +12,16 @@ import {
 } from '@microsoft/agents-hosting'
 import {
   SetTeamsApiClientMiddleware,
-  TeamsAgentExtension
+  TeamsAgentExtension,
+  TeamsInfo
 } from '@microsoft/agents-hosting-extensions-teams'
 import {
   MessagingExtensionAttachment,
   MessagingExtensionQuery,
   MessagingExtensionResponse,
-  MessagingExtensionResult
+  MessagingExtensionResult,
+  TaskModuleContinueResponse,
+  TaskModuleResponse
 } from '@microsoft/teams.api'
 import {
   AdaptiveCard,
@@ -275,6 +278,39 @@ app.registerExtension<TeamsAgentExtension>(teamsExt, (tae) => {
         console.info('Cancelled by user')
       }
       // process settings data
+    })
+    .onFetchTask(async (context: TurnContext, state: TurnState) : Promise<TaskModuleResponse> => {
+      console.info('Fetch MessageExtensions.Action requested')
+
+      const pagedMembersResponse = await TeamsInfo.getPagedMembers(context, 100)
+      const memberTextBlocks: TextBlock[] = []
+      for (const member of pagedMembersResponse.members) {
+        memberTextBlocks.push(
+          new TextBlock(
+            `${member.name} (${member.email})`,
+            {
+              wrap: true,
+              isSubtle: true
+            }
+          )
+        )
+      }
+
+      const card = new AdaptiveCard(...memberTextBlocks)
+
+      const taskModuleContinueResponse: TaskModuleContinueResponse = {
+        type: 'continue',
+        value: {
+          card: {
+            contentType: 'application/vnd.microsoft.card.adaptive',
+            content: card
+          }
+        }
+      }
+
+      return {
+        task: taskModuleContinueResponse
+      }
     })
 })
 

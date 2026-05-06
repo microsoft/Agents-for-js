@@ -45,7 +45,7 @@ export function myStartServer (agent: AgentApplication<TurnState<any, any>> | Ac
 
   const server = express()
   server.use(express.json())
-  // server.use(authorizeJWT(authConfig))
+  server.use(authorizeJWT(authConfig))
 
   server.post('/api/messages', (req: Request, res: Response) =>
     adapter.process(req, res, (context) =>

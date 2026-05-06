@@ -9,6 +9,8 @@ import {
   AgentApplication,
   CloudAdapter,
   ConsoleTranscriptLogger,
+  CreateConversationOptions,
+  CreateConversationOptionsBuilder,
   loadAuthConfigFromEnv,
   M365AttachmentDownloader,
   MemoryStorage,
@@ -106,51 +108,48 @@ app.onMessage('/card', async (context: TurnContext, state: TurnState) => {
   await context.sendActivity(activity)
 })
 
-// app.onMessage('/messageall', async (context: TurnContext, state: TurnState) => {
-//   if (!context.identity.aud) throw new Error('No audience found in the bot identity.')
+app.onMessage('/messageall', async (context: TurnContext, state: TurnState) => {
+  if (!context.identity.aud) throw new Error('No audience found in the bot identity.')
 
-//   const members = await getTeamMembers(context)
+  const members = await getTeamMembers(context)
 
-//   for (const member of members) {
-//     let audience: string = ''
-//     if (Array.isArray(context.identity.aud)) {
-//       audience = context.identity.aud[0]
-//     } else {
-//       audience = context.identity.aud
-//     }
+  for (const member of members) {
+    let audience: string = ''
+    if (Array.isArray(context.identity.aud)) {
+      audience = context.identity.aud[0]
+    } else {
+      audience = context.identity.aud
+    }
 
-//     const replyActivity = Activity.fromObject({
-//       type: ActivityTypes.Message,
-//       text: `Hello ${member.name}, this is a proactive message.`,
-//       from: context.activity.recipient,
-//       channelId: context.activity.channelId,
-//       recipient: {
-//         id: member.id,
-//         name: member.name,
-//         aadObjectId: member.aadObjectId,
-//         role: RoleTypes.User
-//       }
-//     })
+    // const replyActivity = Activity.fromObject({
+    //   type: ActivityTypes.Message,
+    //   text: `Hello ${member.name}, this is a proactive message.`,
+    //   channelId: context.activity.channelId,
+    //   recipient: {
+    //     id: member.id,
+    //     name: member.name,
+    //     aadObjectId: member.aadObjectId,
+    //     role: RoleTypes.User
+    //   }
+    // })
 
-//     const createOptions: CreateConversationOptions = CreateConversationOptionsBuilder
-//       .create(audience, 'msteams', context.activity.serviceUrl)
-//       .withUser(member.id)
-//       .withTenantId(context.activity.conversation?.tenantId ?? '')
-//       .withActivity(replyActivity)
-//       .withTeamsChannelId(context.activity.channelId ?? '')
-//       .isGroup(false)
-//       .build()
+    const createOptions: CreateConversationOptions = CreateConversationOptionsBuilder
+      .create(audience, 'msteams', context.activity.serviceUrl)
+      .withUser(member.id)
+      .withTenantId(context.activity.conversation?.tenantId ?? '')
+      // .withActivity(replyActivity)
+      .build()
 
-//     await app.proactive.createConversation(
-//       adapter,
-//       createOptions,
-//       async (context) => {
-//         // await context.sendActivity(`Hello ${member.name}, this is a proactive message.`)
-//       })
-//   }
+    await app.proactive.createConversation(
+      adapter,
+      createOptions,
+      async (context) => {
+        await context.sendActivity(`Hello ${member.name}, this is a proactive message.`)
+      })
+  }
 
-//   await context.sendActivity('All messages have been sent')
-// })
+  await context.sendActivity('All messages have been sent')
+})
 
 app.onMessage('/atmention', async (context: TurnContext, state: TurnState) => {
   const mention: Mention = {
