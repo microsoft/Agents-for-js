@@ -49,6 +49,7 @@
     "@types/node": "25.6.0",
     "@types/sinon": "21.0.0",
     "@types/uuid": "10.0.0",
+    "axios": "1.15.1",
     "esbuild": "0.27.3",
     "eslint": "9.39.2",
     "knip": "5.86.0",
