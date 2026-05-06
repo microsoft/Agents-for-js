@@ -50,6 +50,9 @@ export interface StartServerOptions {
    * A callback invoked with the Express app before `listen()` is called.
    * Use this to add custom routes, middleware, or static file serving.
    *
+   * **Note:** The agent messages route is registered *after* this callback.
+   * Avoid adding catch-all routes (e.g., `app.all('*', ...)` or `app.use('*', ...)`)
+   * here, as they will shadow the messages endpoint.
    * @example
    * ```typescript
    * startServer(agent, {

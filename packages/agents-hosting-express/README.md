@@ -27,6 +27,10 @@ startServer(app);
 
 Use the `beforeListen` hook to add routes before the server starts listening:
 
+_**Note:** The agent messages route is registered *after* this callback.
+Avoid adding catch-all routes (e.g., `app.all('*', ...)` or `app.use('*', ...)`)
+here, as they will shadow the messages endpoint._
+
 ```ts
 import { AgentApplication, TurnState } from '@microsoft/agents-hosting';
 import { startServer } from '@microsoft/agents-hosting-express';
