@@ -181,7 +181,10 @@ server.post('/api/proactive/teams-channel', requireAllowedCaller, async (req: Re
       .withTenantId(tenantId)
 
     if (teamsChannelId) {
-      builder.withTeamsChannelId(teamsChannelId)
+      // Channel conversations require an initial activity to create the thread post.
+      builder
+        .withTeamsChannelId(teamsChannelId)
+        .withActivity({ type: 'message', text: 'New topic: proactive messages from agents' })
     }
 
     const opts = builder.build()
@@ -196,6 +199,7 @@ server.post('/api/proactive/teams-channel', requireAllowedCaller, async (req: Re
 
     res.status(200).json({ status: 'ok', conversationId: conv.reference.conversation.id })
   } catch (err: unknown) {
+    console.error(err)
     const message = err instanceof Error ? err.message : String(err)
     res.status(500).json({ error: message })
   }

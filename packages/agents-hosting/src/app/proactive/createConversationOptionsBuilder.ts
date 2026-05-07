@@ -161,11 +161,6 @@ export class CreateConversationOptionsBuilder {
       throw ExceptionHelper.generateException(Error, Errors.CreateConversationBuilderMembersRequired)
     }
 
-    const activity: Partial<Activity> = {
-      type: 'message',
-      ...this._activity,
-    }
-
     return {
       identity: this._claims,
       channelId: this._channelId,
@@ -174,7 +169,7 @@ export class CreateConversationOptionsBuilder {
       storeConversation: this._storeConversation,
       parameters: {
         ...this._parameters,
-        activity: activity as Activity,
+        activity: this._activity ? { type: 'message', ...this._activity } as Activity : undefined,
       },
     }
   }
