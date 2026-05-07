@@ -66,6 +66,9 @@ export class CreateConversationOptionsBuilder {
     const builder = new CreateConversationOptionsBuilder(claims, channelId, serviceUrl)
     if (parameters) {
       builder._parameters = { ...builder._parameters, ...parameters }
+      if (parameters.activity) {
+        builder._activity = parameters.activity
+      }
     }
 
     // Set parameters.agent if not already provided — matches C# behavior
