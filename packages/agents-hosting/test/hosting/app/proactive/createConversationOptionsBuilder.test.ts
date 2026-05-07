@@ -39,6 +39,25 @@ describe('CreateConversationOptionsBuilder', () => {
       )
     })
 
+    it('parameters.activity from create() overload satisfies Teams channel requirement', () => {
+      assert.doesNotThrow(
+        () => CreateConversationOptionsBuilder.create('client-id', 'msteams', undefined, {
+          activity: { type: 'message', text: 'hello' } as any,
+        })
+          .withUser('user-1')
+          .withTenantId('tenant-1')
+          .withTeamsChannelId('19:channel@thread.tacv2')
+          .build()
+      )
+    })
+
+    it('omits parameters.activity when withActivity() is not called', () => {
+      const opts = CreateConversationOptionsBuilder.create('client-id', 'msteams')
+        .withUser('user-1')
+        .build()
+      assert.equal(opts.parameters.activity, undefined)
+    })
+
     it('defaults scope to AzureBotScope when not explicitly set', () => {
       const opts = CreateConversationOptionsBuilder.create('client-id', 'msteams')
         .withUser('user-1')
