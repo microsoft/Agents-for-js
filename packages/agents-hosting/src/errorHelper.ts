@@ -784,6 +784,15 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
     description: 'This proactive operation requires app storage to load and save TurnState. Set options.storage on AgentApplication.'
   },
 
+  /**
+   * Error thrown when CreateConversationOptionsBuilder.build() is called for a Teams channel
+   * conversation (withTeamsChannelId) without an activity set via withActivity().
+   */
+  CreateConversationBuilderChannelActivityRequired: {
+    code: -120753,
+    description: 'CreateConversationOptionsBuilder: Teams channel conversations require an initial activity. Call withActivity() before build().'
+  },
+
   // ============================================================================
   // General Errors (-120990)
   // ============================================================================

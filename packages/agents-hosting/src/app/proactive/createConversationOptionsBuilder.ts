@@ -161,6 +161,12 @@ export class CreateConversationOptionsBuilder {
       throw ExceptionHelper.generateException(Error, Errors.CreateConversationBuilderMembersRequired)
     }
 
+    const isTeamsChannel = this._channelId === Channels.Msteams &&
+      !!(this._parameters.channelData as Record<string, any>)?.channel?.id
+    if (isTeamsChannel && !this._activity) {
+      throw ExceptionHelper.generateException(Error, Errors.CreateConversationBuilderChannelActivityRequired)
+    }
+
     return {
       identity: this._claims,
       channelId: this._channelId,
