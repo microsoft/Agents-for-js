@@ -17,6 +17,28 @@ describe('CreateConversationOptionsBuilder', () => {
       )
     })
 
+    it('throws if withTeamsChannelId() was called but withActivity() was not', () => {
+      assert.throws(
+        () => CreateConversationOptionsBuilder.create('client-id', 'msteams')
+          .withUser('user-1')
+          .withTenantId('tenant-1')
+          .withTeamsChannelId('19:channel@thread.tacv2')
+          .build(),
+        /activity/
+      )
+    })
+
+    it('does not throw when withTeamsChannelId() and withActivity() are both set', () => {
+      assert.doesNotThrow(
+        () => CreateConversationOptionsBuilder.create('client-id', 'msteams')
+          .withUser('user-1')
+          .withTenantId('tenant-1')
+          .withTeamsChannelId('19:channel@thread.tacv2')
+          .withActivity({ text: 'hello' })
+          .build()
+      )
+    })
+
     it('defaults scope to AzureBotScope when not explicitly set', () => {
       const opts = CreateConversationOptionsBuilder.create('client-id', 'msteams')
         .withUser('user-1')
@@ -112,6 +134,7 @@ describe('CreateConversationOptionsBuilder', () => {
       const opts = CreateConversationOptionsBuilder.create('client-id', 'msteams')
         .withUser('user-1')
         .withTeamsChannelId('teams-ch-1')
+        .withActivity({ text: 'hello' })
         .build()
       assert.equal(opts.parameters.isGroup, true)
       assert.equal((opts.parameters.channelData as any)?.channel?.id, 'teams-ch-1')
