@@ -30,8 +30,8 @@ Environment file templates are included in this folder:
 Run from `samples/`:
 
 ```bash
-copy .\authorization\absGraphLatest.env.TEMPLATE .\authorization\absGraphLatest.env
-copy .\authorization\absGraphLegacy.env.TEMPLATE .\authorization\absGraphLegacy.env
+cp ./authorization/absGraphLatest.env.TEMPLATE ./authorization/absGraphLatest.env
+cp ./authorization/absGraphLegacy.env.TEMPLATE ./authorization/absGraphLegacy.env
 npm run authorization:absGraphLatest
 npm run authorization:absGraphLegacy
 ```
