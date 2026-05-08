@@ -165,7 +165,7 @@ export class CreateConversationOptionsBuilder {
     }
 
     const isTeamsChannel = this._channelId === Channels.Msteams &&
-      !!(this._parameters.channelData as Record<string, any>)?.channel?.id
+      Boolean((this._parameters.channelData as Record<string, any>)?.channel?.id)
     if (isTeamsChannel && !this._activity) {
       throw ExceptionHelper.generateException(Error, Errors.CreateConversationBuilderChannelActivityRequired)
     }
