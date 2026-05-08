@@ -609,6 +609,9 @@ export class CloudAdapter extends BaseAdapter {
     }
     activity.channelData = conversationParameters.channelData
     activity.recipient = conversationParameters.agent
+    // For 1:1 conversations members[0] is the target user; for channel conversations
+    // (where members is absent) we fall back to the agent so from.id is always present.
+    activity.from = conversationParameters.members?.[0] ?? conversationParameters.agent
 
     return activity
   }
