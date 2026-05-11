@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { v4 as uuid } from 'uuid'
+import { randomUUID } from 'crypto'
 import { z } from 'zod'
 import { SemanticAction, semanticActionZodSchema } from './action/semanticAction'
 import { SuggestedActions, suggestedActionsZodSchema } from './action/suggestedActions'
@@ -453,7 +453,7 @@ export class Activity {
     const continuationActivityObj = {
       type: ActivityTypes.Event,
       name: ActivityEventNames.ContinueConversation,
-      id: reference.activityId ?? uuid(),
+      id: reference.activityId ?? randomUUID(),
       channelId: reference.channelId,
       locale: reference.locale,
       serviceUrl: reference.serviceUrl,

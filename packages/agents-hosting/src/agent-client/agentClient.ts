@@ -1,6 +1,6 @@
 import { AuthConfiguration, MsalTokenProvider } from '../auth'
 import { Activity, ConversationReference, RoleTypes } from '@microsoft/agents-activity'
-import { v4 } from 'uuid'
+import { randomUUID } from 'crypto'
 import { debug } from '@microsoft/agents-telemetry'
 import { ConversationState } from '../state'
 import { TurnContext } from '../turnContext'
@@ -88,7 +88,7 @@ export class AgentClient {
           ...activityCopy.conversation
         }
       }
-      activityCopy.conversation!.id = v4()
+      activityCopy.conversation!.id = randomUUID()
 
       const conversationDataAccessor = conversationState.createProperty<ConversationData>(activityCopy.conversation!.id)
       const convRef = await conversationDataAccessor.set(context,
