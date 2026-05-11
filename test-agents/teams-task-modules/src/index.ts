@@ -8,17 +8,16 @@ import {
   TurnContext,
   TurnState
 } from '@microsoft/agents-hosting'
-import { startServer } from '@microsoft/agents-hosting-express'
 import {
   SetTeamsApiClientMiddleware,
   TeamsAgentExtension
 } from '@microsoft/agents-hosting-extensions-teams'
 import { TaskModuleResponse, TaskModuleTaskInfo } from '@microsoft/teams.api'
-import express from 'express'
 import path from 'path'
 import { loadCardJson } from './loadCard'
+import { myStartServer } from './myStartServer'
 
-const APP_BASE_URL = process.env.AppBaseUrl ?? 'http://localhost:3978'
+const APP_BASE_URL = process.env.APP_BASE_URL ?? 'http://localhost:3978'
 
 const adapter = new CloudAdapter(loadAuthConfigFromEnv())
 
@@ -82,20 +81,6 @@ app.registerExtension<TeamsAgentExtension>(teamsExt, (tae) => {
               title: 'Multi-step Form Dialog',
               height: 'small',
               width: 'small'
-            } as TaskModuleTaskInfo
-          }
-        }
-        break
-
-      case 'mixed_example':
-        response = {
-          task: {
-            type: 'continue',
-            value: {
-              url: 'https://teams.microsoft.com/l/task/example-mixed',
-              title: 'Mixed Example',
-              height: 600,
-              width: 800
             } as TaskModuleTaskInfo
           }
         }
@@ -193,13 +178,12 @@ app.onActivity('message', async (context: TurnContext, _state: TurnState) => {
   }))
 })
 
-const expressApp = startServer(
+myStartServer(
   app,
   {
     configureAdapter: (adapter) => {
       adapter.use(new SetTeamsApiClientMiddleware())
-    }
+    },
+    staticDir: path.join(__dirname, '../public')
   }
 )
-
-expressApp.use(express.static(path.join(__dirname, '../public')))

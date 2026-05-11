@@ -39,16 +39,6 @@
         },
         "task": "multi_step_form"
       }
-    },
-    {
-      "type": "Action.Submit",
-      "title": "Mixed Example",
-      "data": {
-        "msteams": {
-          "type": "task/fetch"
-        },
-        "task": "mixed_example"
-      }
     }
   ]
 }
