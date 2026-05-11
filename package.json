@@ -69,13 +69,13 @@
   "overrides": {
     "adaptivecards-templating": {
       "adaptive-expressions": {
-        "fast-xml-parser": "5.5.7",
+        "fast-xml-parser": "5.7.0",
         "uuid": "11.1.1"
       }
     }
   },
   "overridesComments": {
-    "adaptivecards-templating/adaptive-expressions/fast-xml-parser": "Override to 5.5.7 because adaptive-expressions pulls vulnerable 4.5.3 (test-agents/web-chat)",
+    "adaptivecards-templating/adaptive-expressions/fast-xml-parser": "Override to 5.7.0 because adaptive-expressions pulls vulnerable 4.5.3 (test-agents/web-chat)",
     "adaptivecards-templating/adaptive-expressions/uuid": "Override to 11.1.1 to address vulnerabilities in older versions (test-agents/web-chat)"
   }
 }
