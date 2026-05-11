@@ -66,6 +66,9 @@ export class CreateConversationOptionsBuilder {
     const builder = new CreateConversationOptionsBuilder(claims, channelId, serviceUrl)
     if (parameters) {
       builder._parameters = { ...builder._parameters, ...parameters }
+      if (parameters.activity) {
+        builder._activity = parameters.activity
+      }
     }
 
     // Set parameters.agent if not already provided — matches C# behavior
@@ -161,9 +164,10 @@ export class CreateConversationOptionsBuilder {
       throw ExceptionHelper.generateException(Error, Errors.CreateConversationBuilderMembersRequired)
     }
 
-    const activity: Partial<Activity> = {
-      type: 'message',
-      ...this._activity,
+    const isTeamsChannel = this._channelId === Channels.Msteams &&
+      Boolean((this._parameters.channelData as Record<string, any>)?.channel?.id)
+    if (isTeamsChannel && !this._activity) {
+      throw ExceptionHelper.generateException(Error, Errors.CreateConversationBuilderChannelActivityRequired)
     }
 
     return {
@@ -174,7 +178,7 @@ export class CreateConversationOptionsBuilder {
       storeConversation: this._storeConversation,
       parameters: {
         ...this._parameters,
-        activity: activity as Activity,
+        activity: this._activity ? { type: 'message', ...this._activity } as Activity : undefined,
       },
     }
   }

@@ -318,6 +318,34 @@ describe('AuthConfiguration', () => {
     })
   })
 
+  describe('azureRegion', () => {
+    describe('with connections env vars', () => {
+      beforeEach(() => {
+        process.env['connections__serviceConnection__settings__clientId'] = 'test-client-id'
+        process.env['connectionsMap__0__serviceUrl'] = '*'
+        process.env['connectionsMap__0__connection'] = 'serviceConnection'
+      })
+
+      it('should load azureRegion from connections env var', () => {
+        process.env['connections__serviceConnection__settings__azureRegion'] = 'westus'
+        const config = loadAuthConfigFromEnv()
+        assert.strictEqual(config.azureRegion, 'westus')
+      })
+
+      it('should leave azureRegion undefined when not set in connections', () => {
+        const config = loadAuthConfigFromEnv()
+        assert.strictEqual(config.azureRegion, undefined)
+      })
+    })
+
+    it('should load azureRegion from legacy env var', () => {
+      process.env.azureRegion = 'eastus'
+      const config = loadAuthConfigFromEnv()
+      assert.strictEqual(config.azureRegion, 'eastus')
+      delete process.env.azureRegion
+    })
+  })
+
   describe('AuthConfiguration interface', () => {
     it('should allow creating a valid AuthConfiguration object', () => {
       const config: AuthConfiguration = {
