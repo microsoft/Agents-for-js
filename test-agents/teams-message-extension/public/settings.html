@@ -107,11 +107,14 @@
                 settings[key] = value;
             }
 
-            microsoftTeams.dialog.url.submit(settings);
+            // Settings URL is opened in "authentication" context, not "task".
+            // Result arrives on the bot as the `state` field of the
+            // composeExtension/setting invoke handled by onConfigurationSetting.
+            microsoftTeams.authentication.notifySuccess(JSON.stringify(settings));
         }
 
         function cancelSettings() {
-            microsoftTeams.dialog.url.submit();
+            microsoftTeams.authentication.notifyFailure('CancelledByUser');
         }
     </script>
 </body>

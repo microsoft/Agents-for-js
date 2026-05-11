@@ -27,7 +27,6 @@ import {
   AdaptiveCard,
   TextBlock
 } from '@microsoft/teams.cards'
-import express from 'express'
 import path from 'path'
 import { myStartServer } from './myStartServer'
 
@@ -275,8 +274,10 @@ app.registerExtension<TeamsAgentExtension>(teamsExt, (tae) => {
       console.info(`Message extension settings submitted with state: ${settingsQuery.state}`)
 
       if (settingsQuery.state === 'CancelledByUser') {
+        await context.sendActivity('Settings update cancelled')
         console.info('Cancelled by user')
       }
+      await context.sendActivity(`Settings received with state: ${settingsQuery.state}`)
       // process settings data
     })
     .onFetchTask(async (context: TurnContext, state: TurnState) : Promise<TaskModuleResponse> => {
@@ -319,13 +320,12 @@ app.onActivity(() => { return Promise.resolve(true) }, async (context: TurnConte
   await context.sendActivity(`Echo: ${context.activity.text}\n\nThis is a message extension agent. Use the message extension commands in Teams to test functionality.`)
 })
 
-const expressApp = myStartServer(
+myStartServer(
   app,
   {
     configureAdapter: (adapter) => {
       adapter.use(new SetTeamsApiClientMiddleware())
-    }
+    },
+    staticDir: path.join(__dirname, '../public')
   }
 )
-
-expressApp.use(express.static(path.join(__dirname, '../public')))

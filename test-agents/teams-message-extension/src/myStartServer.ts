@@ -3,13 +3,17 @@
  * Licensed under the MIT License.
  */
 
-import { ActivityHandler, AgentApplication, AuthConfiguration, CloudAdapter, getAuthConfigWithDefaults, HeaderPropagationDefinition, Request, TurnState } from '@microsoft/agents-hosting'
+import { ActivityHandler, AgentApplication, AuthConfiguration, authorizeJWT, CloudAdapter, getAuthConfigWithDefaults, HeaderPropagationDefinition, Request, TurnState } from '@microsoft/agents-hosting'
 import { version } from '@microsoft/agents-hosting/package.json'
 import express, { Response } from 'express'
 
 export interface StartServerOptions {
   authConfiguration?: AuthConfiguration
   configureAdapter?: (adapter: CloudAdapter) => void
+  // Directory of static files (e.g. settings.html) to serve without requiring
+  // a JWT, since the Teams iframe loading these URLs does not send the bot's
+  // Bearer token.
+  staticDir?: string
 }
 
 function isStartServerOptions (value: AuthConfiguration | StartServerOptions | undefined): value is StartServerOptions {
@@ -45,12 +49,20 @@ export function myStartServer (agent: AgentApplication<TurnState<any, any>> | Ac
 
   const server = express()
   server.use(express.json())
-  server.use(authorizeJWT(authConfig))
 
-  server.post('/api/messages', (req: Request, res: Response) =>
-    adapter.process(req, res, (context) =>
-      agent.run(context)
-    , headerPropagation)
+  // Mount static assets BEFORE the JWT middleware so URLs loaded by the Teams
+  // iframe (which does not send a Bearer token) can be served.
+  if (options.staticDir) {
+    server.use(express.static(options.staticDir))
+  }
+
+  // Apply JWT auth only on the bot endpoint, not on the static asset routes.
+  server.post('/api/messages',
+    authorizeJWT(authConfig),
+    (req: Request, res: Response) =>
+      adapter.process(req, res, (context) =>
+        agent.run(context)
+      , headerPropagation)
   )
 
   const port = process.env.PORT || 3978
