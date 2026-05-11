@@ -180,7 +180,6 @@ app.onActivity('message', async (context: TurnContext, state: TurnState) => {
       - '/getPagedMembers' - Get a paged list of team members
       \n
       - '/card' - Send an adaptive card with the following commands
-      - '/messageall' - Send a message to all members of the team
       - '/atmention' - Mention a user in a message
       - '/targeted' - Send a targeted message to each team member
     `)
