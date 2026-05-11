@@ -3,33 +3,32 @@
  * Licensed under the MIT License.
  */
 
-import { AgentHandler, INVOKE_RESPONSE_KEY } from './activityHandler'
-import { BaseAdapter } from './baseAdapter'
-import { TurnContext } from './turnContext'
+import { Activity, ActivityEventNames, ActivityTypes, Channels, ConversationParameters, ConversationReference, DeliveryModes, ExceptionHelper, RoleTypes } from '@microsoft/agents-activity'
+import { debug, trace } from '@microsoft/agents-telemetry'
 import { Response } from 'express'
-import { Request } from './auth/request'
-import { ConnectorClient } from './connector-client/connectorClient'
-import { AuthConfiguration, getAuthConfigWithDefaults } from './auth/authConfiguration'
-import { AuthProvider } from './auth/authProvider'
-import { ApxProductionScope } from './auth/authConstants'
-import { MsalConnectionManager } from './auth/msalConnectionManager'
-import { Activity, ActivityEventNames, ActivityTypes, Channels, ConversationReference, DeliveryModes, ConversationParameters, RoleTypes, ExceptionHelper } from '@microsoft/agents-activity'
-import { Errors } from './errorHelper'
-import { ResourceResponse } from './connector-client/resourceResponse'
+import { JwtPayload } from 'jsonwebtoken'
 import * as uuid from 'uuid'
-import { debug } from '@microsoft/agents-telemetry'
-import { StatusCodes } from './statusCodes'
-import { InvokeResponse } from './invoke/invokeResponse'
+import { AgentHandler, INVOKE_RESPONSE_KEY } from './activityHandler'
+import { normalizeIncomingActivity } from './activityWireCompat'
+import { AuthConfiguration, getAuthConfigWithDefaults } from './auth/authConfiguration'
+import { ApxProductionScope } from './auth/authConstants'
+import { AuthProvider } from './auth/authProvider'
+import { Connections } from './auth/connections'
+import { MsalConnectionManager } from './auth/msalConnectionManager'
+import { Request } from './auth/request'
+import { BaseAdapter } from './baseAdapter'
 import { AttachmentData } from './connector-client/attachmentData'
 import { AttachmentInfo } from './connector-client/attachmentInfo'
-import { normalizeIncomingActivity } from './activityWireCompat'
-import { UserTokenClient } from './oauth'
+import { ConnectorClient } from './connector-client/connectorClient'
+import { ResourceResponse } from './connector-client/resourceResponse'
+import { Errors } from './errorHelper'
 import { HeaderPropagation, HeaderPropagationCollection, HeaderPropagationDefinition } from './headerPropagation'
-import { JwtPayload } from 'jsonwebtoken'
+import { InvokeResponse } from './invoke/invokeResponse'
+import { UserTokenClient } from './oauth'
 import { getTokenServiceEndpoint } from './oauth/customUserTokenAPI'
-import { Connections } from './auth/connections'
-import { trace } from '@microsoft/agents-telemetry'
 import { AdapterTraceDefinitions } from './observability'
+import { StatusCodes } from './statusCodes'
+import { TurnContext } from './turnContext'
 const logger = debug('agents:cloud-adapter')
 
 /**
@@ -609,6 +608,8 @@ export class CloudAdapter extends BaseAdapter {
     }
     activity.channelData = conversationParameters.channelData
     activity.recipient = conversationParameters.agent
+
+    activity.from = conversationParameters.members?.[0] ?? conversationParameters.agent
 
     return activity
   }
