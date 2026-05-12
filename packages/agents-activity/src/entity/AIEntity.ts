@@ -9,50 +9,79 @@ import { Entity } from './entity'
 /**
  * Supported icon names for client citations. These icons are displayed in Teams to help users
  * identify the type of content being referenced in AI-generated responses.
+ *
+ * The set of allowed values is defined by the
+ * [Add citations](https://learn.microsoft.com/microsoftteams/platform/bots/how-to/bot-messages-ai-generated-content?tabs=desktop%2Cjs%2Cbotmessage#add-citations)
+ * section of the Microsoft Teams documentation (property `citation.appearance.image.name`).
+ *
+ * `ClientCitationIconName` is both a value (a frozen object with named members, e.g.
+ * `ClientCitationIconName.MicrosoftWord`) and a type alias (the string-literal union of all
+ * supported icon names). Either form may be assigned to `citation.appearance.image.name`.
+ *
+ * @example
+ * ```typescript
+ * const citation: ClientCitation = {
+ *   '@type': 'Claim',
+ *   position: 1,
+ *   appearance: {
+ *     '@type': 'DigitalDocument',
+ *     name: 'Quarterly report',
+ *     abstract: 'Q1 results',
+ *     image: { '@type': 'ImageObject', name: ClientCitationIconName.MicrosoftWord }
+ *   }
+ * }
+ * ```
  */
-export type ClientCitationIconName =
+export const ClientCitationIconName = {
   /** Microsoft Word document icon */
-  | 'Microsoft Word'
+  MicrosoftWord: 'Microsoft Word',
   /** Microsoft Excel spreadsheet icon */
-  | 'Microsoft Excel'
+  MicrosoftExcel: 'Microsoft Excel',
   /** Microsoft PowerPoint presentation icon */
-  | 'Microsoft PowerPoint'
+  MicrosoftPowerPoint: 'Microsoft PowerPoint',
   /** Microsoft OneNote notebook icon */
-  | 'Microsoft OneNote'
+  MicrosoftOneNote: 'Microsoft OneNote',
   /** Microsoft SharePoint site or document icon */
-  | 'Microsoft SharePoint'
+  MicrosoftSharePoint: 'Microsoft SharePoint',
   /** Microsoft Visio diagram icon */
-  | 'Microsoft Visio'
+  MicrosoftVisio: 'Microsoft Visio',
   /** Microsoft Loop component icon */
-  | 'Microsoft Loop'
+  MicrosoftLoop: 'Microsoft Loop',
   /** Microsoft Whiteboard icon */
-  | 'Microsoft Whiteboard'
+  MicrosoftWhiteboard: 'Microsoft Whiteboard',
   /** Adobe Illustrator vector graphics icon */
-  | 'Adobe Illustrator'
+  AdobeIllustrator: 'Adobe Illustrator',
   /** Adobe Photoshop image editing icon */
-  | 'Adobe Photoshop'
+  AdobePhotoshop: 'Adobe Photoshop',
   /** Adobe InDesign layout design icon */
-  | 'Adobe InDesign'
+  AdobeInDesign: 'Adobe InDesign',
   /** Adobe Flash multimedia icon */
-  | 'Adobe Flash'
+  AdobeFlash: 'Adobe Flash',
   /** Sketch design tool icon */
-  | 'Sketch'
+  Sketch: 'Sketch',
   /** Source code file icon */
-  | 'Source Code'
+  SourceCode: 'Source Code',
   /** Generic image file icon */
-  | 'Image'
+  Image: 'Image',
   /** Animated GIF image icon */
-  | 'GIF'
+  GIF: 'GIF',
   /** Video file icon */
-  | 'Video'
+  Video: 'Video',
   /** Audio/sound file icon */
-  | 'Sound'
+  Sound: 'Sound',
   /** ZIP archive file icon */
-  | 'ZIP'
+  ZIP: 'ZIP',
   /** Plain text file icon */
-  | 'Text'
+  Text: 'Text',
   /** PDF document icon */
-  | 'PDF'
+  PDF: 'PDF'
+} as const
+
+/**
+ * String-literal union of all supported {@link ClientCitationIconName} values.
+ */
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type ClientCitationIconName = typeof ClientCitationIconName[keyof typeof ClientCitationIconName]
 
 /**
  *  Represents a Teams client citation to be included in a message.

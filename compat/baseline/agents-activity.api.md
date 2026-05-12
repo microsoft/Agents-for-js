@@ -918,49 +918,32 @@ export interface ClientCitation {
 }
 
 // @public
-export type ClientCitationIconName =
-/** Microsoft Word document icon */
-'Microsoft Word'
-/** Microsoft Excel spreadsheet icon */
-| 'Microsoft Excel'
-/** Microsoft PowerPoint presentation icon */
-| 'Microsoft PowerPoint'
-/** Microsoft OneNote notebook icon */
-| 'Microsoft OneNote'
-/** Microsoft SharePoint site or document icon */
-| 'Microsoft SharePoint'
-/** Microsoft Visio diagram icon */
-| 'Microsoft Visio'
-/** Microsoft Loop component icon */
-| 'Microsoft Loop'
-/** Microsoft Whiteboard icon */
-| 'Microsoft Whiteboard'
-/** Adobe Illustrator vector graphics icon */
-| 'Adobe Illustrator'
-/** Adobe Photoshop image editing icon */
-| 'Adobe Photoshop'
-/** Adobe InDesign layout design icon */
-| 'Adobe InDesign'
-/** Adobe Flash multimedia icon */
-| 'Adobe Flash'
-/** Sketch design tool icon */
-| 'Sketch'
-/** Source code file icon */
-| 'Source Code'
-/** Generic image file icon */
-| 'Image'
-/** Animated GIF image icon */
-| 'GIF'
-/** Video file icon */
-| 'Video'
-/** Audio/sound file icon */
-| 'Sound'
-/** ZIP archive file icon */
-| 'ZIP'
-/** Plain text file icon */
-| 'Text'
-/** PDF document icon */
-| 'PDF';
+export const ClientCitationIconName: {
+    readonly MicrosoftWord: "Microsoft Word";
+    readonly MicrosoftExcel: "Microsoft Excel";
+    readonly MicrosoftPowerPoint: "Microsoft PowerPoint";
+    readonly MicrosoftOneNote: "Microsoft OneNote";
+    readonly MicrosoftSharePoint: "Microsoft SharePoint";
+    readonly MicrosoftVisio: "Microsoft Visio";
+    readonly MicrosoftLoop: "Microsoft Loop";
+    readonly MicrosoftWhiteboard: "Microsoft Whiteboard";
+    readonly AdobeIllustrator: "Adobe Illustrator";
+    readonly AdobePhotoshop: "Adobe Photoshop";
+    readonly AdobeInDesign: "Adobe InDesign";
+    readonly AdobeFlash: "Adobe Flash";
+    readonly Sketch: "Sketch";
+    readonly SourceCode: "Source Code";
+    readonly Image: "Image";
+    readonly GIF: "GIF";
+    readonly Video: "Video";
+    readonly Sound: "Sound";
+    readonly ZIP: "ZIP";
+    readonly Text: "Text";
+    readonly PDF: "PDF";
+};
+
+// @public
+export type ClientCitationIconName = typeof ClientCitationIconName[keyof typeof ClientCitationIconName];
 
 // @public
 export interface ConversationAccount {
