@@ -67,6 +67,30 @@ Console.WriteLine($"User Job Title: {user.jobTitle}");
 
 For more examples, see the [glossary](#graph-client-usage) section, which are taken for your convenience from this [document](https://microsoft.github.io/teams-sdk/csharp/essentials/graph).
 
+### Reactions Client (Experimental)
+
+The `ReactionClient` is tagged as experimental, but there is already a sample in the `teams.ts` repo demonstrating its usage. This client makes `PUT` and `DELETE` requests to `/v3/conversations/<convId>/activities/<activityId>/reactions/` endpoint to add.
+
+Example usage:
+
+```ts
+await context.api.reactions.add(
+    context.activity.conversation.id,
+    context.activity.id,
+    reactionType
+);
+```
+
+There is no support for this behavior in the Agents SDK.
+
+### Cards
+
+The Teams SDK provides a lot of adaptive card support with its own type definitions for several models important to adaptive card development. However, devs can also just import the Teams SDK cards package and use it alongside the Agents SDK.
+
+### Documentation
+
+One thing that is lacking in the Agents SDK samples is how to serve static files, which is especially relevant to task module and message extension features.
+
 
 ## Appendix
 
@@ -177,7 +201,7 @@ var user = await context.UserGraph.Me.GetAsync();
 Console.WriteLine($"User ID: {user.id}");
 Console.WriteLine($"User Display Name: {user.displayName}");
 Console.WriteLine($"User Email: {user.mail}");
-    Console.WriteLine($"User Job Title: {user.jobTitle}");
+Console.WriteLine($"User Job Title: {user.jobTitle}");
 ```
 
 and the TS verison:
