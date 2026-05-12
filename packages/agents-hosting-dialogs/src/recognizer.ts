@@ -6,7 +6,6 @@ import { Activity, ExceptionHelper } from '@microsoft/agents-activity'
 import { Errors } from './errorHelper'
 import { Configurable } from './configurable'
 import { DialogContext } from './dialogContext'
-import omit from 'lodash/omit'
 import { RecognizerResult, getTopScoringIntent } from './recognizerResult'
 
 /**
@@ -133,9 +132,7 @@ export class Recognizer extends Configurable implements RecognizerConfiguration 
       TopIntentScore: intents.length > 0 ? score.toString() : '',
       Intents: intents.length > 0 ? JSON.stringify(recognizerResult.intents) : '',
       Entities: recognizerResult.entities ? JSON.stringify(recognizerResult.entities) : '',
-      AdditionalProperties: JSON.stringify(
-        omit(recognizerResult, ['text', 'alteredText', 'intents', 'entities'])
-      ),
+      AdditionalProperties: this.stringifyAdditionalPropertiesOfRecognizerResult(recognizerResult),
     }
 
     if (telemetryProperties) {
