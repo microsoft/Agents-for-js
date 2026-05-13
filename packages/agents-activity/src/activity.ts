@@ -482,10 +482,11 @@ export class Activity {
 
   /**
    * Gets the conversation reference for the activity.
+   * @param options Optional conversation reference options.
    * @returns The conversation reference.
    * @throws Will throw an error if required properties are undefined.
    */
-  public getConversationReference (): ConversationReference {
+  public getConversationReference (options?: { forceBaseChannel?: boolean }): ConversationReference {
     if (this.recipient === null || this.recipient === undefined) {
       throw ExceptionHelper.generateException(
         Error,
@@ -504,13 +505,14 @@ export class Activity {
         Errors.ActivityChannelIdUndefined
       )
     }
+    const channelId = options?.forceBaseChannel ? (this.channelIdChannel ?? this.channelId) : this.channelId
 
     return {
       activityId: this.getAppropriateReplyToId(),
       user: this.from,
       agent: this.recipient,
       conversation: this.conversation,
-      channelId: this.channelId,
+      channelId,
       locale: this.locale,
       serviceUrl: this.serviceUrl
     }
