@@ -482,7 +482,9 @@ export class Activity {
 
   /**
    * Gets the conversation reference for the activity.
-   * @param options Optional conversation reference options.
+   * @param options Optional conversation reference options. Set `forceBaseChannel` to `true`
+   * to use the primary channel ID instead of the composite `channelId` value when the
+   * activity includes a sub-channel such as `m365:copilot`.
    * @returns The conversation reference.
    * @throws Will throw an error if required properties are undefined.
    */
