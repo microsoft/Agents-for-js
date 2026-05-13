@@ -1,9 +1,11 @@
 # M365 Agents SDK - Teams Extension
 # API Surface and Gaps
 
-## Comparison to Teams SDK
+## About this document
 
-Most of this comparison is done with the TypeScript variants of each SDK.
+Most of this comparison is done with the TypeScript variants of each SDK. There are many features that are possible in the Agents SDK but are facilitated in the Teams SDK, and while an extra line or two might not be much here and there, for larger agents this may result in a non-insignificant amount of boilerplate and mental overhead.
+
+## Significant Gaps
 
 ### Quotes
 
@@ -43,17 +45,15 @@ replyActivity.Entities = [mention]
 await context.sendActivity(replyActivity)
 ```
 
+## Smaller Gaps
+
 ### Graph Client
 
-```
-DIFFERENCE ACROSS TEAMS SDKs:
+In the Python and .NET versions of the Teams SDK, an extra package needs to be installed to allow the `ActivityContext` (counterpart of`TurnContext`) to construct the Graph clients.
 
-In the Python and .NET versions of the Teams SDK, there is an extension that facilitates the creation of a `GraphServiceClient` or `GraphClient` instance from the `msgraph` or `Microsoft.Graph` packages, respectively.
+In TypeScript, `@microsoft/teams.graph` is already a dependency of `@microsoft/teams.apps`, so this extra step is not needed. Moreover, the TypeScript Teams SDK Graph package does not rely on the Graph SDK. Instead, it defines a lightweight HTTP client wrapper that is meant to be used with the `@microsoft/teams.graph-endpoints` package containsing a large set of Graph endpoint builders.
 
-In the TypeScript `@microsoft/teams.graph` extension, it defines `Client`, a thin wrapper that adds a few headers to outgoing requests. There is also a `@microsoft/teams.graph-endpoints` package, which provides builders for graph endpoints, which are then provided to `Client` calls.
-```
-
-This extensions allow code to access an app's Graph client (using the app's credentials) or a user's graph client (using the user's credentials).
+Across the languages, these packages inject into the `ActivityContext` a lazily-loaded Graph client that uses the app token and another that uses the user token.
 
 Here is example usage of the app's Graph client in .NET
 
@@ -65,23 +65,11 @@ Console.WriteLine($"User Email: {user.mail}");
 Console.WriteLine($"User Job Title: {user.jobTitle}");
 ```
 
-For more examples, see the [glossary](#graph-client-usage) section, which are taken for your convenience from this [document](https://microsoft.github.io/teams-sdk/csharp/essentials/graph).
+In the Agents SDK for .NET, the GraphServiceClient would have to be manually instantiated with the user or app token. This is a small cost, but from a developer perspective, in the Teams SDK this takes 0 steps (as accessing the Graph field instantiates the client if it does not already exist) and it takes two steps in the Agents SDK to get the token, create the client, and a third step if client is to be persisted in a variable.
 
-### Reactions Client (Experimental)
+For more examples with .NET and TypeScript, see the [glossary](#graph-client-usage) section, which are taken for your convenience from this [document](https://microsoft.github.io/teams-sdk/csharp/essentials/graph).
 
-The `ReactionClient` is tagged as experimental, but there is already a sample in the `teams.ts` repo demonstrating its usage. This client makes `PUT` and `DELETE` requests to `/v3/conversations/<convId>/activities/<activityId>/reactions/` endpoint to add.
 
-Example usage:
-
-```ts
-await context.api.reactions.add(
-    context.activity.conversation.id,
-    context.activity.id,
-    reactionType
-);
-```
-
-There is no support for this behavior in the Agents SDK.
 
 ### Cards
 
