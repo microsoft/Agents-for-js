@@ -5,7 +5,7 @@
 
 Most of this comparison is done with the TypeScript variants of each SDK. There are many features that are possible in the Agents SDK but are facilitated in the Teams SDK, and while an extra line or two might not be much here and there, for larger agents this may result in a non-insignificant amount of boilerplate and mental overhead.
 
-## Significant Gaps
+## Gaps
 
 ### Quotes
 
@@ -45,13 +45,11 @@ replyActivity.Entities = [mention]
 await context.sendActivity(replyActivity)
 ```
 
-## Smaller Gaps
-
 ### Graph Client
 
 In the Python and .NET versions of the Teams SDK, an extra package needs to be installed to allow the `ActivityContext` (counterpart of`TurnContext`) to construct the Graph clients.
 
-In TypeScript, `@microsoft/teams.graph` is already a dependency of `@microsoft/teams.apps`, so this extra step is not needed. Moreover, the TypeScript Teams SDK Graph package does not rely on the Graph SDK. Instead, it defines a lightweight HTTP client wrapper that is meant to be used with the `@microsoft/teams.graph-endpoints` package containsing a large set of Graph endpoint builders.
+In TypeScript, `@microsoft/teams.graph` is already a dependency of `@microsoft/teams.apps`, so this extra step is not needed. Moreover, the TypeScript Teams SDK Graph package does not rely on the Graph SDK. Instead, it defines a lightweight HTTP client wrapper that is meant to be used with the `@microsoft/teams.graph-endpoints` package containsing a large set of Graph endpoint builders. 
 
 Across the languages, these packages inject into the `ActivityContext` a lazily-loaded Graph client that uses the app token and another that uses the user token.
 
@@ -68,17 +66,26 @@ Console.WriteLine($"User Job Title: {user.jobTitle}");
 In the Agents SDK for .NET, the GraphServiceClient would have to be manually instantiated with the user or app token. This is a small cost, but from a developer perspective, in the Teams SDK this takes 0 steps (as accessing the Graph field instantiates the client if it does not already exist) and it takes two steps in the Agents SDK to get the token, create the client, and a third step if client is to be persisted in a variable.
 
 For more examples with .NET and TypeScript, see the [glossary](#graph-client-usage) section, which are taken for your convenience from this [document](https://microsoft.github.io/teams-sdk/csharp/essentials/graph).
-
-
-
+ 
 ### Cards
 
 The Teams SDK provides a lot of adaptive card support with its own type definitions for several models important to adaptive card development. However, devs can also just import the Teams SDK cards package and use it alongside the Agents SDK.
 
 ### Documentation
 
-One thing that is lacking in the Agents SDK samples is how to serve static files, which is especially relevant to task module and message extension features.
+This part is very subjective. The Teams SDK documentation, in my opinion, is more inviting. Their docs feel less verbose. I think a big part of this is that there is a larger text to visual ratio.
 
+![alt text](image-2.png)
+
+There are [portions](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/state-concepts) of our [docs](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/activity-protocol) that have a lot of text without many supporting visuals. Most of our docs do have a decent amount of code snippets, but other forms of visual are lacking. JSON payloads, schemas, architecture diagrams, and flow charts could all be helpful.
+
+Furthermore, our docs are too wordy. Here is the Teams SDK's description of `typing` activities:
+
+> Sends a typing indicator to indicate the app got the user's message and is computing a response
+
+and then ours:
+
+> A Typing type of Activity is a classification of activity to indicate someone is typing in a conversation. This activity is commonly seen between human to human conversations in Microsoft Teams client, for example. Typing activities aren't supported in every client. Notably, Microsoft 365 Copilot doesn't support typing activities.
 
 ## Appendix
 
