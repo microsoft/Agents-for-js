@@ -89,7 +89,7 @@ await app.proactive.continueConversation(
 
 ### Teams Proactive Threading
 
-I have yet to see or think of a use case where the Teams Channel id and the activity id are obtained separately and make this feature useful, but the Teams SDK docs feature this helper, so it is included here.
+I have yet to see or think of a use case where the Teams Channel id and the activity id are obtained separately and make this feature useful, [but the Teams SDK docs and samples feature this helper](https://microsoft.github.io/teams-sdk/typescript/essentials/sending-messages/proactive-messaging#thread-id-helper), so it is included here.
 
 To send a proactive message to Teams Channel thread, the conversation id must be in the format:
 
