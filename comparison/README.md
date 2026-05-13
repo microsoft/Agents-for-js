@@ -171,7 +171,7 @@ const activity = await context.reply('hello there')
 
 is
 
-```json
+```python
 {
   type: 'message',
   text: '<blockquote itemscope="" itemtype="http://schema.skype.com/Reply" itemid="1778622431758">\n' +
@@ -195,7 +195,7 @@ is
 
 However, the repo's main branch recently had an update that produces the following activity instead, which does not work in the Teams client I tested with. It is included here because this may indicate a [different approach and new support by Teams](https://github.com/microsoft/teams.ts/commit/bc4498d86aba21dc75016765b6968ff96e1e63b0).
 
-```json
+```python
 {
   type: 'message',
   id: '1778622006252',
