@@ -699,6 +699,22 @@ describe('Activity getConversationReference', () => {
 
     assert.deepEqual(conversationReference, expected)
   })
+
+  it('should return the base channel when forceBaseChannel is true', () => {
+    const activity = Activity.fromObject({
+      type: ActivityTypes.Message,
+      id: 'activity123',
+      from: { id: 'user1', name: 'User' },
+      recipient: { id: 'bot1', name: 'Bot' },
+      conversation: { id: 'conversation1' },
+      channelId: 'm365:copilot',
+      locale: 'en-US',
+      serviceUrl: 'http://example.com'
+    })
+
+    assert.equal(activity.getConversationReference().channelId, 'm365:copilot')
+    assert.equal(activity.getConversationReference({ forceBaseChannel: true }).channelId, 'm365')
+  })
 })
 
 describe('Activity applyConversationReference', () => {

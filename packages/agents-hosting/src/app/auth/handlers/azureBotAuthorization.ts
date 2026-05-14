@@ -334,7 +334,7 @@ export class AzureBotAuthorization implements AuthorizationHandler {
       const { activity } = context
       const userTokenClient = await this.getUserTokenClient(context)
       // Using getTokenOrSignInResource instead of getUserToken to avoid HTTP 404 errors.
-      const { tokenResponse } = await userTokenClient.getTokenOrSignInResource(activity.from?.id!, this.options.azureBotOAuthConnectionName!, activity.channelId!, activity.getConversationReference(), activity.relatesTo!, '')
+      const { tokenResponse } = await userTokenClient.getTokenOrSignInResource(activity.from?.id!, this.options.azureBotOAuthConnectionName!, activity.channelId!, activity.getConversationReference({ forceBaseChannel: true }), activity.relatesTo!, '')
       return tokenResponse?.token
     }
 
@@ -399,7 +399,7 @@ export class AzureBotAuthorization implements AuthorizationHandler {
     const { activity } = context
 
     const userTokenClient = await this.getUserTokenClient(context)
-    const { tokenResponse, signInResource } = await userTokenClient.getTokenOrSignInResource(activity.from?.id!, this.options.azureBotOAuthConnectionName!, activity.channelId!, activity.getConversationReference(), activity.relatesTo!, code ?? '')
+    const { tokenResponse, signInResource } = await userTokenClient.getTokenOrSignInResource(activity.from?.id!, this.options.azureBotOAuthConnectionName!, activity.channelId!, activity.getConversationReference({ forceBaseChannel: true }), activity.relatesTo!, code ?? '')
 
     if (!tokenResponse && active && code) {
       reason.message = 'Invalid code entered. Restarting sign-in flow'
