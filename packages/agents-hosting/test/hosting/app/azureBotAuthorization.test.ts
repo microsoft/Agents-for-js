@@ -63,6 +63,26 @@ describe('AzureBotAuthorization', () => {
     assert.equal(mockClient.getTokenOrSignInResource.calledOnce, true)
   })
 
+  it('token should use the base channel in the conversation reference for OAuth state', async () => {
+    mockClient.getTokenOrSignInResource.resolves({ tokenResponse: { token: 'token' } } as any)
+    const handler = new AzureBotAuthorization('auth', { azureBotOAuthConnectionName: 'connection' }, settings)
+    const activity = Activity.fromObject(baseActivity)
+    activity.channelId = 'm365:copilot'
+    const context = new TurnContext(baseAdapter, activity)
+    context.turnState.set(baseAdapter.UserTokenClientKey, mockClient)
+
+    await handler.token(context)
+
+    sinon.assert.calledOnce(mockClient.getTokenOrSignInResource)
+    sinon.assert.calledWithMatch(
+      mockClient.getTokenOrSignInResource,
+      'user-1',
+      'connection',
+      'm365:copilot',
+      sinon.match.has('channelId', 'm365')
+    )
+  })
+
   it('token should exchange a base token for an OBO token when scopes are provided', async () => {
     const baseToken = createToken('api://resource-app')
     mockClient.getTokenOrSignInResource.resolves({ tokenResponse: { token: baseToken } } as any)
@@ -158,6 +178,28 @@ describe('AzureBotAuthorization', () => {
     const status = await handler.signin(context, active)
     assert.equal(status, AuthorizationHandlerStatus.APPROVED)
     assert.equal(mockClient.getTokenOrSignInResource.calledOnce, true)
+  })
+
+  it('should use the base channel in the conversation reference when redeeming a magic code', async () => {
+    mockClient.getTokenOrSignInResource.resolves({ tokenResponse: { token: 'token' } } as any)
+    const handler = new AzureBotAuthorization('auth', { azureBotOAuthConnectionName: 'connection' }, settings)
+    const activity = Activity.fromObject(baseActivity)
+    activity.channelId = 'm365:copilot'
+    activity.text = '123456'
+    const context = new TurnContext(baseAdapter, activity)
+    context.turnState.set(baseAdapter.UserTokenClientKey, mockClient)
+
+    const status = await handler.signin(context, active)
+
+    assert.equal(status, AuthorizationHandlerStatus.APPROVED)
+    sinon.assert.calledOnce(mockClient.getTokenOrSignInResource)
+    sinon.assert.calledWithMatch(
+      mockClient.getTokenOrSignInResource,
+      'user-1',
+      'connection',
+      'm365:copilot',
+      sinon.match.has('channelId', 'm365')
+    )
   })
 
   it('should return pending status on wrong magic code', async () => {
