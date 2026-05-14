@@ -101,6 +101,16 @@ The Teams SDKs have helpers for this construction. In TypeScript, this is the `t
 
 Again, I'm unsure of the utility of this helper. The samples that demonstrate it acquire the two ids by splitting an incoming conversation id, and they then reconstruct that conversation id.
 
+```ts
+const threadParts = conversationId.split(';messageid=');
+const threadRootId = threadParts.length > 1 ? threadParts[1] : messageId;
+
+// some code
+
+const threadId = toThreadedConversationId(conversationId, threadRootId);
+await app.send(threadId, 'This was sent using toThreadedConversationId() + app.send() for manual control.');
+```
+
 ### Graph Client
 
 In the Python and .NET versions of the Teams SDK, an extra package needs to be installed to allow the `ActivityContext` (counterpart of`TurnContext`) to construct the Graph clients.
@@ -122,10 +132,6 @@ Console.WriteLine($"User Job Title: {user.jobTitle}");
 In the Agents SDK for .NET, the GraphServiceClient would have to be manually instantiated with the user or app token. This is a small cost, but from a developer perspective, in the Teams SDK this takes 0 steps (as accessing the Graph field instantiates the client if it does not already exist) and it takes two steps in the Agents SDK to get the token, create the client, and a third step if client is to be persisted in a variable.
 
 For more examples with .NET and TypeScript, see the [appendix](#graph-client-usage) section, which are taken for your convenience from this [document](https://microsoft.github.io/teams-sdk/csharp/essentials/graph).
- 
-### Cards
-
-The Teams SDK provides a lot of adaptive card support. However, devs can also simply import the Teams SDK cards package and use it alongside the Agents SDK.
 
 ### Documentation
 
@@ -158,6 +164,11 @@ Above is a screenshot of a [page](https://learn.microsoft.com/en-us/microsoft-36
 In the Teams SDK docs, each document is more self-contained. The sidebar on the left shows a more nested structure. Jumping from one topic to another is easier, in my experience.
 
 Another advantage of this organization is the separation of topics based on depth and necessity. The Teams SDK document introduces topics slowly, and each page tends to have a narrower focus. A new user doesn't know the relevance of each topic or how much time to devote to each one unless we tell them explicitly or implicitly, and I think the Teams SDK documentation does both better than the Agents SDK.
+
+### Cards
+
+The Teams SDK provides a lot of adaptive card support. However, devs can also simply import the Teams SDK cards package and use it alongside the Agents SDK.
+
 
 ## Appendix
 
