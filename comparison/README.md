@@ -139,7 +139,7 @@ This part is very subjective. The Teams SDK documentation, in my opinion, is mor
 
 ![alt text](image-2.png)
 
- Most of our docs do have a decent amount of code snippets, but other forms of visual are lacking. More schemas, architecture diagrams, and flow charts could be helpful.
+ Most of our docs do have a decent amount of code snippets, but other forms of visuals are lacking. More schemas, architecture diagrams, and flow charts could be helpful.
 
  <br>
 
@@ -163,7 +163,7 @@ Above is a screenshot of a [page](https://learn.microsoft.com/en-us/microsoft-36
 
 In the Teams SDK docs, each document is more self-contained. The sidebar on the left shows a more nested structure. Jumping from one topic to another is easier, in my experience.
 
-Another advantage of this organization is the separation of topics based on depth and necessity. The Teams SDK document introduces topics slowly, and each page tends to have a narrower focus. A new user doesn't know the relevance of each topic or how much time to devote to each one unless we tell them explicitly or implicitly, and I think the Teams SDK documentation does both better than the Agents SDK.
+Another advantage of this organization is the separation of topics based on depth and necessity. The Teams SDK documentation introduces topics slowly, and each page tends to have a narrower focus. A new user doesn't know the relevance of each topic or how much time to devote to each one unless we tell them explicitly or implicitly, and I think the Teams SDK documentation does both better than the Agents SDK.
 
 ### Cards
 
