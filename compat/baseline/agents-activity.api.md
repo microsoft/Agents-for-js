@@ -918,49 +918,53 @@ export interface ClientCitation {
 }
 
 // @public
-export type ClientCitationIconName =
-/** Microsoft Word document icon */
-'Microsoft Word'
-/** Microsoft Excel spreadsheet icon */
-| 'Microsoft Excel'
-/** Microsoft PowerPoint presentation icon */
-| 'Microsoft PowerPoint'
-/** Microsoft OneNote notebook icon */
-| 'Microsoft OneNote'
-/** Microsoft SharePoint site or document icon */
-| 'Microsoft SharePoint'
-/** Microsoft Visio diagram icon */
-| 'Microsoft Visio'
-/** Microsoft Loop component icon */
-| 'Microsoft Loop'
-/** Microsoft Whiteboard icon */
-| 'Microsoft Whiteboard'
-/** Adobe Illustrator vector graphics icon */
-| 'Adobe Illustrator'
-/** Adobe Photoshop image editing icon */
-| 'Adobe Photoshop'
-/** Adobe InDesign layout design icon */
-| 'Adobe InDesign'
-/** Adobe Flash multimedia icon */
-| 'Adobe Flash'
-/** Sketch design tool icon */
-| 'Sketch'
-/** Source code file icon */
-| 'Source Code'
-/** Generic image file icon */
-| 'Image'
-/** Animated GIF image icon */
-| 'GIF'
-/** Video file icon */
-| 'Video'
-/** Audio/sound file icon */
-| 'Sound'
-/** ZIP archive file icon */
-| 'ZIP'
-/** Plain text file icon */
-| 'Text'
-/** PDF document icon */
-| 'PDF';
+export const ClientCitationIconName: {
+    /** Microsoft Word document icon */
+    readonly MicrosoftWord: "Microsoft Word";
+    /** Microsoft Excel spreadsheet icon */
+    readonly MicrosoftExcel: "Microsoft Excel";
+    /** Microsoft PowerPoint presentation icon */
+    readonly MicrosoftPowerPoint: "Microsoft PowerPoint";
+    /** Microsoft OneNote notebook icon */
+    readonly MicrosoftOneNote: "Microsoft OneNote";
+    /** Microsoft SharePoint site or document icon */
+    readonly MicrosoftSharePoint: "Microsoft SharePoint";
+    /** Microsoft Visio diagram icon */
+    readonly MicrosoftVisio: "Microsoft Visio";
+    /** Microsoft Loop component icon */
+    readonly MicrosoftLoop: "Microsoft Loop";
+    /** Microsoft Whiteboard icon */
+    readonly MicrosoftWhiteboard: "Microsoft Whiteboard";
+    /** Adobe Illustrator vector graphics icon */
+    readonly AdobeIllustrator: "Adobe Illustrator";
+    /** Adobe Photoshop image editing icon */
+    readonly AdobePhotoshop: "Adobe Photoshop";
+    /** Adobe InDesign layout design icon */
+    readonly AdobeInDesign: "Adobe InDesign";
+    /** Adobe Flash multimedia icon */
+    readonly AdobeFlash: "Adobe Flash";
+    /** Sketch design tool icon */
+    readonly Sketch: "Sketch";
+    /** Source code file icon */
+    readonly SourceCode: "Source Code";
+    /** Generic image file icon */
+    readonly Image: "Image";
+    /** Animated GIF image icon */
+    readonly GIF: "GIF";
+    /** Video file icon */
+    readonly Video: "Video";
+    /** Audio/sound file icon */
+    readonly Sound: "Sound";
+    /** ZIP archive file icon */
+    readonly ZIP: "ZIP";
+    /** Plain text file icon */
+    readonly Text: "Text";
+    /** PDF document icon */
+    readonly PDF: "PDF";
+};
+
+// @public
+export type ClientCitationIconName = typeof ClientCitationIconName[keyof typeof ClientCitationIconName];
 
 // @public
 export interface ConversationAccount {

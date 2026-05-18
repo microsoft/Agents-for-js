@@ -18,8 +18,10 @@
   ],
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
+  "browser": {
+    "crypto": "./src/browser/crypto.ts"
+  },
   "dependencies": {
-    "uuid": "11.1.0",
     "zod": "3.25.75"
   },
   "license": "MIT",

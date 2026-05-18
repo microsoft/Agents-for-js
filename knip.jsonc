@@ -22,7 +22,11 @@
   "workspaces": {
     // Root
     ".": {
-      "project": ["*.{js,mjs,ts}"]
+      "project": ["*.{js,mjs,ts}"],
+      "ignoreDependencies": [
+        // Samples are built from the root tsconfig, but knip does not model them as a root package.
+        "axios"
+      ]
     },
 
     // Packages
@@ -36,11 +40,19 @@
         "@opentelemetry/api-logs"
       ]
     },
+    "packages/agents-activity": {
+      "project": ["src/**/*.ts"],
+      "ignore": [
+         // Ignore fake module used in browser builds by esbuild.
+        "src/browser/crypto.ts"
+      ]
+    },
     "packages/agents-copilotstudio-client": {
       "project": ["src/**/*.ts"],
       "ignore": [
-         // Ignore fake os module used in browser builds by esbuild.
-        "src/browser/os.ts"
+         // Ignore fake module used in browser builds by esbuild.
+        "src/browser/os.ts",
+        "src/browser/crypto.ts"
       ]
     },
     "packages/*/test": {

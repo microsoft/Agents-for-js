@@ -8,7 +8,7 @@ import axios from 'axios'
 import { AuthConfiguration, resolveAuthority as resolveAuthorityUtil } from './authConfiguration'
 import { AuthProvider } from './authProvider'
 import { debug, trace } from '@microsoft/agents-telemetry'
-import { v4 } from 'uuid'
+import { randomUUID } from 'crypto'
 import { MemoryCache } from './MemoryCache'
 import jwt from 'jsonwebtoken'
 
@@ -174,7 +174,7 @@ export class MsalTokenProvider implements AuthProvider {
 
       const token = await cca.acquireTokenByClientCredential({
         scopes: ['api://AzureAdTokenExchange/.default'],
-        correlationId: v4(),
+        correlationId: randomUUID(),
         azureRegion: this.connectionSettings?.azureRegion
       })
 
@@ -380,7 +380,7 @@ export class MsalTokenProvider implements AuthProvider {
       aud: `${this.resolveAuthority(authConfig.tenantId)}/oauth2/v2.0/token`,
       iss: authConfig.clientId,
       sub: authConfig.clientId,
-      jti: v4(),
+      jti: randomUUID(),
       nbf: now,
       iat: now,
       exp: now + 600, // 10 minutes
@@ -451,7 +451,7 @@ export class MsalTokenProvider implements AuthProvider {
     })
     const token = await cca.acquireTokenByClientCredential({
       scopes: [`${scope}/.default`],
-      correlationId: v4(),
+      correlationId: randomUUID(),
       azureRegion: authConfig.azureRegion
     })
     if (!token?.accessToken) {
@@ -477,7 +477,7 @@ export class MsalTokenProvider implements AuthProvider {
     })
     const token = await cca.acquireTokenByClientCredential({
       scopes: [`${scope}/.default`],
-      correlationId: v4(),
+      correlationId: randomUUID(),
       azureRegion: authConfig.azureRegion
     })
     if (!token?.accessToken) {
