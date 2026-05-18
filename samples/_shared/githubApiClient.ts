@@ -15,7 +15,7 @@ export const getCurrentProfile = async (token: string) : Promise<any> => {
   if (!response.ok) {
     throw new Error(`Error fetching pull requests: ${response.statusText}`)
   }
-  const data = await response.json()
+  const data = await response.json() as any
   return {
     $root: {
       displayName: data.name || '',

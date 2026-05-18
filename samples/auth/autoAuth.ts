@@ -3,7 +3,6 @@
 
 import { startServer } from '@microsoft/agents-hosting-express'
 import { AgentApplication, CardFactory, MemoryStorage, MessageFactory, TurnContext, TurnState } from '@microsoft/agents-hosting'
-import { Template } from 'adaptivecards-templating'
 import { getUserInfo } from '../_shared/userGraphClient.js'
 import { getCurrentProfile, getPullRequests } from '../_shared/githubApiClient.js'
 
@@ -65,9 +64,16 @@ class OneProvider extends AgentApplication<TurnState> {
     }
 
     const userTemplate = (await import('./../_resources/UserProfileCard.json'))
-    const template = new Template(userTemplate)
     const userInfo = await getUserInfo(userTokenResponse?.token!)
-    const card = template.expand(userInfo)
+    /* eslint-disable no-template-curly-in-string */
+    const card = JSON.parse(JSON.stringify(userTemplate)
+      .replaceAll('${displayName}', userInfo.$root.displayName)
+      .replaceAll('${mail}', userInfo.$root.mail)
+      .replaceAll('${jobTitle}', (userInfo.$root.jobTitle ?? '').toUpperCase())
+      .replaceAll('${givenName}', userInfo.$root.givenName)
+      .replaceAll('${surname}', userInfo.$root.surname)
+      .replaceAll('${imageUri}', userInfo.$root.imageUri))
+    /* eslint-enable no-template-curly-in-string */
     const activity = MessageFactory.attachment(CardFactory.adaptiveCard(card))
     await context.sendActivity(activity)
   }
@@ -81,23 +87,26 @@ class OneProvider extends AgentApplication<TurnState> {
 
     const ghProf = await getCurrentProfile(userTokenResponse.token)
     const userTemplate = (await import('./../_resources/UserProfileCard.json'))
-    const template = new Template(userTemplate)
-    const card = template.expand(ghProf)
+    /* eslint-disable no-template-curly-in-string */
+    const card = JSON.parse(JSON.stringify(userTemplate)
+      .replaceAll('${displayName}', ghProf.$root.displayName)
+      .replaceAll('${mail}', ghProf.$root.mail)
+      .replaceAll('${jobTitle}', (ghProf.$root.jobTitle ?? '').toUpperCase())
+      .replaceAll('${givenName}', ghProf.$root.givenName)
+      .replaceAll('${surname}', ghProf.$root.surname)
+      .replaceAll('${imageUri}', ghProf.$root.imageUri))
+    /* eslint-enable no-template-curly-in-string */
     const activity = MessageFactory.attachment(CardFactory.adaptiveCard(card))
     await context.sendActivity(activity)
 
     const prs = await getPullRequests('microsoft', 'agents', userTokenResponse.token)
     for (const pr of prs) {
       const prCard = (await import('./../_resources/PullRequestCard.json'))
-      const template = new Template(prCard)
-      const toExpand = {
-        $root: {
-          title: pr.title,
-          url: pr.url,
-          id: pr.id,
-        }
-      }
-      const card = template.expand(toExpand)
+      /* eslint-disable no-template-curly-in-string */
+      const card = JSON.parse(JSON.stringify(prCard)
+        .replaceAll('${title}', pr.title)
+        .replaceAll('${url}', pr.url))
+      /* eslint-enable no-template-curly-in-string */
       await context.sendActivity(MessageFactory.attachment(CardFactory.adaptiveCard(card)))
     }
   }
