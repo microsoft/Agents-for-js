@@ -1,32 +1,53 @@
 import assert from 'assert'
-import { describe, it } from 'node:test'
+import { beforeEach, describe, it } from 'node:test'
 import { AgentApplication, TurnContext, TurnState, INVOKE_RESPONSE_KEY, CloudAdapter } from '@microsoft/agents-hosting'
 import { Activity, ActivityTypes } from '@microsoft/agents-activity'
 import { TeamsAgentExtension } from '../src/teamsAgentExtension'
-import { MessagingExtensionResponse } from '../src/messageExtension/messagingExtensionResponse'
+import type { MessagingExtensionQuery, MessagingExtensionResponse } from '@microsoft/teams.api'
 
 interface InvokeValue {
   status: number
   body?: any
 }
 
+function addConnectorClientToTurnState (context: TurnContext): void {
+  context.turnState.set(context.adapter.ConnectorClientKey, {
+    axiosInstance: {
+      defaults: {
+        baseURL: 'https://service.example.com',
+        headers: {
+          common: {
+            Authorization: 'Bearer token'
+          }
+        }
+      }
+    }
+  })
+}
+
 describe('MessageExtension', function () {
-  const app = new AgentApplication()
-  const adapter = new CloudAdapter()
-  const activity = Activity.fromObject({
-    type: ActivityTypes.Invoke,
-    channelId: 'msteams',
-    from: { id: 'user', name: 'User' },
-    conversation: { id: 'conv' },
-    recipient: { id: 'bot' }
+  let app: AgentApplication<TurnState>
+  let adapter: CloudAdapter
+  let activity: Activity
+
+  beforeEach(function () {
+    app = new AgentApplication()
+    adapter = new CloudAdapter()
+    activity = Activity.fromObject({
+      type: ActivityTypes.Invoke,
+      channelId: 'msteams',
+      from: { id: 'user', name: 'User' },
+      conversation: { id: 'conv' },
+      recipient: { id: 'bot' }
+    })
   })
 
-  it('onConfigurationQuerySettingUrl sets an InvokeResponse with status and body when handler returns a response', async function () {
+  it('onQueryUrlSetting sets an InvokeResponse with status and body when handler returns a response', async function () {
     let handled = false
     const teamsExt = new TeamsAgentExtension(app)
 
     app.registerExtension<TeamsAgentExtension>(teamsExt, (tae) => {
-      tae.messageExtension.onConfigurationQuerySettingUrl(async (_context: TurnContext, _state: TurnState, _settings: unknown): Promise<MessagingExtensionResponse> => {
+      tae.messageExtensions.onQueryUrlSetting(async (_context: TurnContext, _state: TurnState): Promise<MessagingExtensionResponse> => {
         handled = true
         return {
           composeExtension: {
@@ -39,6 +60,7 @@ describe('MessageExtension', function () {
 
     activity.name = 'composeExtension/querySettingUrl'
     const context = new TurnContext(adapter, activity)
+    addConnectorClientToTurnState(context)
     await app.run(context)
 
     assert.strictEqual(handled, true)
@@ -52,18 +74,25 @@ describe('MessageExtension', function () {
     assert.strictEqual(invokeValue.body.composeExtension.text, 'url configured')
   })
 
-  it('onConfigurationSetting sets an InvokeResponse with status 200 when handler returns a response', async function () {
+  it('onConfigureSettings sets an InvokeResponse with status 200 when handler returns a response', async function () {
     const teamsExt = new TeamsAgentExtension(app)
     let handled = false
 
     app.registerExtension<TeamsAgentExtension>(teamsExt, (tae) => {
-      tae.messageExtension.onConfigurationSetting(async (_context: TurnContext, _state: TurnState, _settings: unknown): Promise<void> => {
+      tae.messageExtensions.onConfigureSettings(async (_context: TurnContext, _state: TurnState, _settings: MessagingExtensionQuery): Promise<MessagingExtensionResponse> => {
         handled = true
+        return {
+          composeExtension: {
+            type: 'result',
+            text: 'settings configured'
+          }
+        }
       })
     })
 
     activity.name = 'composeExtension/setting'
     const context = new TurnContext(adapter, activity)
+    addConnectorClientToTurnState(context)
     await app.run(context)
 
     assert.strictEqual(handled, true)
