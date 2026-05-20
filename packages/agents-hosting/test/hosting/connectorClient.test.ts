@@ -105,6 +105,19 @@ describe('ConnectorClient', () => {
       })
     })
 
+    it('replyToActivity should URL encode truncated conversation id for agents channel', async () => {
+      const conversationId = 'a'.repeat(149) + '/z'
+      const expectedEncodedConversationId = encodeURIComponent(conversationId.substring(0, 150))
+
+      await client.replyToActivity(conversationId, 'activityId', Activity.fromObject({ type: 'message', channelId: 'agents:email', from: { role: RoleTypes.AgenticUser } }))
+
+      sinon.assert.calledOnce(mockAxios)
+      const config = mockAxios.getCall(0).args[0]
+      assert.equal(config.method, 'post')
+      assert.equal(config.url, `v3/conversations/${expectedEncodedConversationId}/activities/activityId`)
+      assert.deepEqual(config.headers, { 'Content-Type': 'application/json' })
+    })
+
     /** ************************************************ */
     /** ************************************************ */
     /** ************************************************ */
@@ -207,6 +220,19 @@ describe('ConnectorClient', () => {
         data: { type: 'message', channelId: Channels.Msteams, from: { role: RoleTypes.AgenticUser } }
       })
       delete process.env.MAX_APX_CONVERSATION_ID_LENGTH
+    })
+
+    it('sendToConversation should URL encode truncated conversation id for agents channel', async () => {
+      const conversationId = 'a'.repeat(149) + '/z'
+      const expectedEncodedConversationId = encodeURIComponent(conversationId.substring(0, 150))
+
+      await client.sendToConversation(conversationId, Activity.fromObject({ type: 'message', channelId: 'agents:email', from: { role: RoleTypes.AgenticUser } }))
+
+      sinon.assert.calledOnce(mockAxios)
+      const config = mockAxios.getCall(0).args[0]
+      assert.equal(config.method, 'post')
+      assert.equal(config.url, `v3/conversations/${expectedEncodedConversationId}/activities`)
+      assert.deepEqual(config.headers, { 'Content-Type': 'application/json' })
     })
   })
 
