@@ -236,14 +236,14 @@ export class ConnectorClient {
   }
 
   /**
-   * Trim the conversationId to a fixed length when creating the URL. This is applied only in specific API calls for agentic calls.
+   * Trim and URL encode the conversationId when creating the URL for agentic calls in agents channels.
    * @param conversationId The ID of the conversation to potentially truncate.
    * @param activity The activity object used to determine if truncation is necessary.
-   * @returns The original, truncated, or URL encoded conversationId, depending on the channel and activity role.
+   * @returns The original conversationId for non-agents channels/non-agentic roles, otherwise a trimmed and URL encoded value.
    */
   private conditionallyTruncateConversationId (conversationId: string, activity: Activity): string {
     if (
-      (activity.channelIdChannel === Channels.Msteams || activity.channelIdChannel === Channels.Agents) &&
+      activity.channelIdChannel === Channels.Agents &&
       (activity.from?.role === RoleTypes.AgenticIdentity || activity.from?.role === RoleTypes.AgenticUser)) {
       let maxLength = 150
       if (process.env.MAX_APX_CONVERSATION_ID_LENGTH && !isNaN(parseInt(process.env.MAX_APX_CONVERSATION_ID_LENGTH, 10))) {
@@ -251,7 +251,7 @@ export class ConnectorClient {
       }
       const trimmedConversationId = conversationId.length > maxLength ? conversationId.substring(0, maxLength) : conversationId
 
-      return activity.channelIdChannel === Channels.Agents ? encodeURIComponent(trimmedConversationId) : trimmedConversationId
+      return encodeURIComponent(trimmedConversationId)
     } else {
       return conversationId
     }
