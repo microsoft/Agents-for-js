@@ -236,10 +236,10 @@ export class ConnectorClient {
   }
 
   /**
-   * Trim and URL encode the conversationId when creating the URL for agentic calls in agents channels.
+   * Trim and sanitize the conversationId when creating the URL for agentic calls in agents channels.
    * @param conversationId The ID of the conversation to potentially truncate.
    * @param activity The activity object used to determine if truncation is necessary.
-   * @returns The original conversationId for non-agents channels/non-agentic roles, otherwise a trimmed and URL encoded value.
+   * @returns The original conversationId for non-agents channels/non-agentic roles, otherwise a trimmed and sanitized value.
    */
   private conditionallyTruncateConversationId (conversationId: string, activity: Activity): string {
     if (
@@ -251,7 +251,7 @@ export class ConnectorClient {
       }
       const trimmedConversationId = conversationId.length > maxLength ? conversationId.substring(0, maxLength) : conversationId
 
-      return encodeURIComponent(trimmedConversationId)
+      return trimmedConversationId.replace(/[/\\#?]/g, '_')
     } else {
       return conversationId
     }

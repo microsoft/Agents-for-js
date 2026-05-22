@@ -89,16 +89,16 @@ describe('ConnectorClient', () => {
       assert.deepEqual(config.headers, { 'Content-Type': 'application/json' })
     })
 
-    it('replyToActivity should URL encode truncated conversation id for agents channel', async () => {
-      const conversationId = 'a'.repeat(149) + '/z'
-      const expectedEncodedConversationId = encodeURIComponent(conversationId.substring(0, 150))
+    it('replyToActivity should sanitize path-significant chars in truncated conversation id for agents channel', async () => {
+      const conversationId = 'a'.repeat(146) + '/\\#?z'
+      const expectedSanitizedConversationId = `${'a'.repeat(146)}____`
 
       await client.replyToActivity(conversationId, 'activityId', Activity.fromObject({ type: 'message', channelId: 'agents:email', from: { role: RoleTypes.AgenticUser } }))
 
       sinon.assert.calledOnce(mockAxios)
       const config = mockAxios.getCall(0).args[0]
       assert.equal(config.method, 'post')
-      assert.equal(config.url, `v3/conversations/${expectedEncodedConversationId}/activities/activityId`)
+      assert.equal(config.url, `v3/conversations/${expectedSanitizedConversationId}/activities/activityId`)
       assert.deepEqual(config.headers, { 'Content-Type': 'application/json' })
     })
 
@@ -218,16 +218,16 @@ describe('ConnectorClient', () => {
       })
     })
 
-    it('sendToConversation should URL encode truncated conversation id for agents channel', async () => {
-      const conversationId = 'a'.repeat(149) + '/z'
-      const expectedEncodedConversationId = encodeURIComponent(conversationId.substring(0, 150))
+    it('sendToConversation should sanitize path-significant chars in truncated conversation id for agents channel', async () => {
+      const conversationId = 'a'.repeat(146) + '/\\#?z'
+      const expectedSanitizedConversationId = `${'a'.repeat(146)}____`
 
       await client.sendToConversation(conversationId, Activity.fromObject({ type: 'message', channelId: 'agents:email', from: { role: RoleTypes.AgenticUser } }))
 
       sinon.assert.calledOnce(mockAxios)
       const config = mockAxios.getCall(0).args[0]
       assert.equal(config.method, 'post')
-      assert.equal(config.url, `v3/conversations/${expectedEncodedConversationId}/activities`)
+      assert.equal(config.url, `v3/conversations/${expectedSanitizedConversationId}/activities`)
       assert.deepEqual(config.headers, { 'Content-Type': 'application/json' })
     })
   })
