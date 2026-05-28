@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "name": "@microsoft/agents-hosting-extensions-teams",
+  "name": "@microsoft/agents-hosting-extensions-slack",
   "version": "0.1.0",
   "homepage": "https://github.com/microsoft/Agents-for-js",
   "repository": {
@@ -12,7 +12,7 @@
     "email": "agentssdk@microsoft.com",
     "url": "https://aka.ms/Agents"
   },
-  "description": "Microsoft 365 Agents SDK for JavaScript. Teams extensions",
+  "description": "Microsoft 365 Agents SDK for JavaScript. Slack extensions",
   "keywords": [
     "Agents"
   ],
@@ -20,9 +20,7 @@
   "types": "dist/src/index.d.ts",
   "dependencies": {
     "@microsoft/agents-hosting": "file:../agents-hosting",
-    "@microsoft/agents-activity": "file:../agents-activity",
-    "axios": "1.16.0",
-    "zod": "3.25.75"
+    "@microsoft/agents-activity": "file:../agents-activity"
   },
   "license": "MIT",
   "files": [
@@ -37,7 +35,7 @@
     },
     "./package.json": "./package.json"
   },
-   "engines": {
+  "engines": {
     "node": ">=20.0.0"
   }
 }

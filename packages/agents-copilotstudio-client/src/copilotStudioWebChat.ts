@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { v4 as uuid } from 'uuid'
+import { randomUUID } from 'crypto'
 
 import { Activity, Attachment, ConversationAccount } from '@microsoft/agents-activity'
 import { Observable, BehaviorSubject, type Subscriber } from 'rxjs'
@@ -371,7 +371,7 @@ export class CopilotStudioWebChat {
                 logger.info('--> Sending activity to Copilot Studio ...')
                 const newActivity = Activity.fromObject({
                   ...activity,
-                  id: uuid(),
+                  id: randomUUID(),
                   attachments: await processAttachments(activity)
                 })
 
