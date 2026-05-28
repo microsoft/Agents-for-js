@@ -106,7 +106,7 @@ describe('SlackStream', () => {
   it('append() throws when start() not called', async () => {
     const stream = new SlackStream(api, 'C123', '111.222')
     await assert.rejects(() => stream.append('ignored'), (err: Error) => {
-      assert.ok(err.message.includes('-160003'))
+      assert.ok(err.message.includes('-170003'))
       return true
     })
     assert.equal(callStub.callCount, 0)
@@ -115,7 +115,7 @@ describe('SlackStream', () => {
   it('stop() throws when start() not called', async () => {
     const stream = new SlackStream(api, 'C123', '111.222')
     await assert.rejects(() => stream.stop('ignored'), (err: Error) => {
-      assert.ok(err.message.includes('-160003'))
+      assert.ok(err.message.includes('-170003'))
       return true
     })
     assert.equal(callStub.callCount, 0)
