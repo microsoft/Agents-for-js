@@ -6,6 +6,9 @@
 import { AgentType } from './agentType'
 import { CopilotStudioConnectionSettings } from './copilotStudioConnectionSettings'
 import { PowerPlatformCloud } from './powerPlatformCloud'
+import { debug, redactUrl } from '@microsoft/agents-telemetry'
+
+const logger = debug('copilot-studio:settings')
 
 /**
  * Configuration options for establishing a connection to Copilot Studio.
@@ -89,6 +92,17 @@ export class ConnectionSettings extends ConnectionOptions {
     if (!Object.values(AgentType).includes(copilotAgentType as AgentType)) {
       throw new Error(`Invalid AgentType: '${copilotAgentType}'. Supported values: ${Object.values(AgentType).join(', ')}`)
     }
+
+    logger.info('Copilot Studio connection settings loaded', {
+      schemaName: options.schemaName ?? options.agentIdentifier,
+      cloud,
+      environmentId: options.environmentId,
+      customPowerPlatformCloud: redactUrl(options.customPowerPlatformCloud),
+      copilotAgentType,
+      directConnectUrl: redactUrl(options.directConnectUrl),
+      useExperimentalEndpoint: options.useExperimentalEndpoint,
+      enableDiagnostics: options.enableDiagnostics,
+    })
 
     Object.assign(this, { ...options, cloud, copilotAgentType, authority })
   }

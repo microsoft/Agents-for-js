@@ -12,6 +12,7 @@
 import { index } from './index.js'
 
 export type { TraceDefinition } from './types.js'
+export { redactString, redactUrl, redactScopes } from './utils/redact.js'
 
 export const {
   SpanNames,
