@@ -1,8 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { chmod, lstat, unlink } from 'node:fs/promises'
-import { connect, createServer, type Server, type Socket } from 'node:net'
+import { createServer, type Server, type Socket } from 'node:net'
 import { ExceptionHelper } from '@microsoft/agents-activity'
 import { NamedPipeTransport } from './namedPipeTransport.js'
 import { debug } from '@microsoft/agents-telemetry'
@@ -12,21 +11,32 @@ const logger = debug('agents:named-pipe-connection')
 const MAX_PIPE_NAME_LENGTH = 78
 const MAX_PIPE_PATH_COMPONENT_LENGTH = MAX_PIPE_NAME_LENGTH + '.incoming'.length
 const VALID_PIPE_NAME = /^[A-Za-z0-9._-]+$/
-// Intentional one-shot, process-wide flag: the underlying limitation
-// (Unix-domain socket peer-uid semantics on non-Linux platforms) is global,
-// so repeating the warning per NamedPipeConnection instance would only add
-// noise. Reset is therefore not desirable.
-let warnedAboutUnixSocketPermissions = false
 
 /**
- * Returns the platform-appropriate pipe/socket path.
+ * Throws if the current process is not running on Windows.
+ *
+ * Named pipe hosting in this package is Windows-only by design: the wire
+ * format and security model are tailored to Win32 named pipes, and the
+ * Unix-domain socket equivalent would need a different threat model
+ * (peer-uid checks, filesystem permissions, etc.). Surfacing this as a
+ * single, explicit failure mode keeps consumers from silently relying on
+ * an unsupported configuration on macOS/Linux.
+ */
+export function assertWindowsPlatform (): void {
+  if (process.platform !== 'win32') {
+    throw ExceptionHelper.generateException(Error, Errors.PipePlatformNotSupported, undefined, {
+      platform: process.platform
+    })
+  }
+}
+
+/**
+ * Returns the Windows named pipe path for the given pipe name.
  */
 export function getPipePath (pipeName: string): string {
+  assertWindowsPlatform()
   validatePipePathComponent(pipeName)
-  if (process.platform === 'win32') {
-    return `\\\\.\\pipe\\${pipeName}`
-  }
-  return `/tmp/CoreFxPipe_${pipeName}`
+  return `\\\\.\\pipe\\${pipeName}`
 }
 
 /**
@@ -67,7 +77,12 @@ function validatePipePathComponent (pipeName: string, maxLength = MAX_PIPE_PATH_
 
 /**
  * Manages a dual named pipe connection (incoming + outgoing).
- * Creates two net.Server instances that listen on `{pipeName}.incoming` and `{pipeName}.outgoing`.
+ * Creates two net.Server instances that listen on `{pipeName}.incoming`
+ * and `{pipeName}.outgoing`.
+ *
+ * Windows-only: the constructor throws PipePlatformNotSupported on any
+ * other platform so misuse fails fast rather than producing confusing
+ * socket errors later.
  */
 export class NamedPipeConnection {
   private readonly _pipeName: string
@@ -77,6 +92,7 @@ export class NamedPipeConnection {
   private _writer: NamedPipeTransport | null = null
 
   constructor (pipeName: string) {
+    assertWindowsPlatform()
     validatePipeName(pipeName)
     this._pipeName = pipeName
   }
@@ -149,12 +165,11 @@ export class NamedPipeConnection {
   }
 
   private async _listen (path: string, setServer: (s: Server) => void, cancellationToken?: AbortSignal): Promise<Socket> {
-    await this._prepareSocketPath(path)
-
-    // On Windows, named pipes may remain held briefly after the previous process exits
-    // (common during Azure App Service restarts). Retry the listen with a short interval
-    // rather than failing immediately and going through the full reconnect cycle.
-    const maxAttempts = process.platform === 'win32' ? 30 : 1
+    // Windows named pipes may remain held briefly after the previous
+    // process exits (common during Azure App Service restarts). Retry the
+    // listen with a short interval rather than failing immediately and
+    // going through the full reconnect cycle.
+    const maxAttempts = 30
     const retryDelayMs = 250
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -218,110 +233,8 @@ export class NamedPipeConnection {
 
       cancellationToken?.addEventListener('abort', onAbort, { once: true })
 
-      this._withRestrictiveSocketUmask(() => {
-        server.listen(path, async () => {
-          logger.debug(`Server listening on ${path}`)
-          try {
-            await this._hardenSocketPath(path)
-          } catch (err) {
-            server.close()
-            const error = err instanceof Error
-              ? err
-              : ExceptionHelper.generateException(Error, Errors.PipeSocketPathUnsafe, undefined, {
-                reason: String(err)
-              })
-            settle(() => reject(error))
-          }
-        })
-      })
-    })
-  }
-
-  private _withRestrictiveSocketUmask (callback: () => void): void {
-    if (process.platform === 'win32') {
-      callback()
-      return
-    }
-    if (process.platform !== 'linux' && !warnedAboutUnixSocketPermissions) {
-      warnedAboutUnixSocketPermissions = true
-      logger.warn('Unix-domain socket permissions are platform-dependent; use named pipes only where local users are trusted on this OS')
-    }
-
-    const previousUmask = process.umask()
-    process.umask(previousUmask | 0o177)
-    try {
-      callback()
-    } finally {
-      process.umask(previousUmask)
-    }
-  }
-
-  private async _prepareSocketPath (path: string): Promise<void> {
-    if (process.platform === 'win32') return
-
-    let stat
-    try {
-      stat = await lstat(path)
-    } catch (err) {
-      if ((err as NodeJS.ErrnoException).code === 'ENOENT') return
-      throw ExceptionHelper.generateException(Error, Errors.PipeSocketPathUnsafe, err as Error, {
-        reason: `unable to inspect ${path}`
-      })
-    }
-
-    if (!stat.isSocket()) {
-      throw ExceptionHelper.generateException(Error, Errors.PipeSocketPathUnsafe, undefined, {
-        reason: `${path} already exists and is not a socket`
-      })
-    }
-
-    if (await this._isSocketAcceptingConnections(path)) {
-      throw ExceptionHelper.generateException(Error, Errors.PipeSocketPathUnsafe, undefined, {
-        reason: `${path} is already in use`
-      })
-    }
-
-    try {
-      await unlink(path)
-    } catch (err) {
-      throw ExceptionHelper.generateException(Error, Errors.PipeSocketPathUnsafe, err as Error, {
-        reason: `unable to remove stale socket ${path}`
-      })
-    }
-  }
-
-  private async _hardenSocketPath (path: string): Promise<void> {
-    if (process.platform === 'win32') return
-    try {
-      await chmod(path, 0o600)
-    } catch (err) {
-      throw ExceptionHelper.generateException(Error, Errors.PipeSocketPathUnsafe, err as Error, {
-        reason: `unable to restrict permissions on ${path}`
-      })
-    }
-  }
-
-  private _isSocketAcceptingConnections (path: string): Promise<boolean> {
-    return new Promise((resolve) => {
-      const socket = connect(path)
-      let settled = false
-      const timer = setTimeout(() => settle(true), 500)
-      const settle = (isAccepting: boolean) => {
-        if (settled) return
-        settled = true
-        clearTimeout(timer)
-        socket.removeAllListeners()
-        socket.destroy()
-        resolve(isAccepting)
-      }
-
-      socket.once('connect', () => settle(true))
-      socket.once('error', (err: NodeJS.ErrnoException) => {
-        if (err.code === 'ECONNREFUSED' || err.code === 'ENOENT') {
-          settle(false)
-          return
-        }
-        settle(true)
+      server.listen(path, () => {
+        logger.debug(`Server listening on ${path}`)
       })
     })
   }

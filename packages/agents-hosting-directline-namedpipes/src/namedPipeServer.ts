@@ -4,7 +4,7 @@
 import { CloudAdapter, TurnContext } from '@microsoft/agents-hosting'
 import { ExceptionHelper } from '@microsoft/agents-activity'
 import { debug, trace } from '@microsoft/agents-telemetry'
-import { NamedPipeConnection, validatePipeName } from './transport/namedPipeConnection.js'
+import { assertWindowsPlatform, NamedPipeConnection, validatePipeName } from './transport/namedPipeConnection.js'
 import { NamedPipeProtocol } from './protocol/namedPipeProtocol.js'
 import { NamedPipeActivityHandler } from './namedPipeActivityHandler.js'
 import { NamedPipeMessageHandler } from './namedPipeMessageHandler.js'
@@ -88,6 +88,7 @@ export class NamedPipeService {
    */
   async start (): Promise<void> {
     if (this._running) return
+    assertWindowsPlatform()
     this._running = true
     this._abortController = new AbortController()
 

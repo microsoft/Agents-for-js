@@ -5,8 +5,8 @@ import { describe, it } from 'node:test'
 import assert from 'node:assert'
 import { NamedPipeService } from '../src/namedPipeServer.js'
 import { CloudAdapter } from '@microsoft/agents-hosting'
-import { writeFile, unlink } from 'node:fs/promises'
-import { getPipePath } from '../src/transport/namedPipeConnection.js'
+
+const windowsOnly = process.platform === 'win32' ? undefined : 'Named pipe hosting is Windows-only'
 
 describe('NamedPipeService', () => {
   it('should construct with default options', () => {
@@ -37,7 +37,17 @@ describe('NamedPipeService', () => {
     assert.strictEqual(service.messageHandler.shouldHandle('https://example.com'), false)
   })
 
-  it('should reject ready when stopped before connecting', async () => {
+  it('start() throws PipePlatformNotSupported on non-Windows platforms', async (context) => {
+    if (process.platform === 'win32') {
+      context.skip('Test asserts non-Windows behavior')
+      return
+    }
+    const adapter = new CloudAdapter()
+    const service = new NamedPipeService(adapter, async () => {}, { pipeName: `platform-${process.pid}-${Date.now()}` })
+    await assert.rejects(async () => await service.start(), /Named pipe hosting is only supported on Windows/)
+  })
+
+  it('should reject ready when stopped before connecting', { skip: windowsOnly }, async () => {
     const adapter = new CloudAdapter()
     const service = new NamedPipeService(adapter, async () => {}, { pipeName: `stop-test-${process.pid}-${Date.now()}` })
     const startPromise = service.start()
@@ -48,26 +58,5 @@ describe('NamedPipeService', () => {
 
     await assert.rejects(async () => await ready, /Named pipe server stopped before connecting/)
     await startPromise
-  })
-
-  it('should reject ready on terminal startup failure', async (context) => {
-    if (process.platform === 'win32') {
-      context.skip('Unix socket path hardening does not apply on Windows')
-      return
-    }
-
-    const pipeName = `startup-fail-${process.pid}-${Date.now()}`
-    const path = getPipePath(`${pipeName}.incoming`)
-    await writeFile(path, 'not a socket')
-    try {
-      const adapter = new CloudAdapter()
-      const service = new NamedPipeService(adapter, async () => {}, { pipeName, autoReconnect: false })
-      const startPromise = service.start()
-
-      await assert.rejects(async () => await service.ready, /Named pipe socket path is unsafe/)
-      await startPromise
-    } finally {
-      await unlink(path).catch(() => {})
-    }
   })
 })

@@ -1151,7 +1151,7 @@ export class NamedPipeProtocol {
    * received from the relay recently, the relay is likely degraded. Proactively tear
    * down the connection so the server can reconnect with a fresh pipe.
    *
-   * Triggered from: diagnostic interval (every 10s) and on outbound timeout.
+   * Triggered from: diagnostic interval (every 5s) and on outbound timeout.
    */
   private _checkHealth (): void {
     const now = Date.now()
@@ -1184,7 +1184,7 @@ export class NamedPipeProtocol {
    * dispatches so we can see what's stuck and for how long.
    */
   private _startDiagnosticInterval (): void {
-    // Every 10s, check health and log diagnostics
+    // Every 5s, check health and log diagnostics
     this._diagnosticInterval = setInterval(() => {
       if (!this._running) return
       const now = Date.now()

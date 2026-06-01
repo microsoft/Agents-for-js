@@ -2,13 +2,17 @@
 
 DirectLine Named Pipes transport for the Microsoft 365 Agents SDK for JavaScript/TypeScript.
 
-Enables agents to communicate over named pipes, used in Azure App Service and DirectLineFlex scenarios. Compatible with the .NET Agents SDK named pipe protocol.
+Enables agents to communicate over Windows named pipes, used in Azure App Service (Windows) and DirectLineFlex scenarios. Compatible with the .NET Agents SDK named pipe protocol.
+
+> **Windows-only.** This package only supports Windows. See [Platform Support](#platform-support) below.
 
 ## Installation
 
-```bash
+```powershell
 npm install @microsoft/agents-hosting-directline-namedpipes
 ```
+
+The package manifest declares `"os": ["win32"]`, so `npm install` will warn or refuse on macOS and Linux depending on the installer's `--os` enforcement.
 
 ## Usage
 
@@ -54,26 +58,19 @@ await startNamedPipeServer(adapter, logic, { pipeName: 'my-custom.pipes' })
 
 Pipe names are validated before any OS path is created. Names containing path separators, consecutive dots, control characters, whitespace padding, or unsupported characters are rejected.
 
-## Cross-Platform Support
+## Platform Support
 
-The transport works on both Windows and Linux/macOS:
+This package is **Windows-only**. Named pipe paths use the Win32 `\\.\pipe\{pipeName}.incoming` / `\\.\pipe\{pipeName}.outgoing` convention. Calling `startNamedPipeServer`, constructing `NamedPipeService.start()`, or instantiating `NamedPipeConnection` on macOS or Linux throws `PipePlatformNotSupported` (-180019). The package manifest declares `"os": ["win32"]`, so `npm install` will warn (or refuse, depending on the installer) on non-Windows platforms.
 
-| Platform | Pipe path |
-|----------|-----------|
-| Windows | `\\.\pipe\{pipeName}.incoming` / `\\.\pipe\{pipeName}.outgoing` |
-| Linux/macOS | `/tmp/CoreFxPipe_{pipeName}.incoming` / `/tmp/CoreFxPipe_{pipeName}.outgoing` |
-
-The Unix path format matches the .NET runtime convention (`System.IO.Pipes`), ensuring interoperability with the .NET Agents SDK.
+If you need local IPC on macOS or Linux, use a different transport (HTTP or a Unix-domain socket adapter outside of this package).
 
 ## Security Considerations
 
-Named pipes are local IPC. This package does not add HTTP or Entra authentication on top of the pipe; the local OS pipe/socket boundary is the trust boundary.
+Named pipes are local IPC. This package does not add HTTP or Entra authentication on top of the pipe; the local OS pipe boundary is the trust boundary.
 
 - Use a unique pipe name for each app or deployment slot to avoid collisions.
 - Treat any process that can connect to the pipe as trusted.
-- On Linux/macOS, sockets use the .NET-compatible `/tmp/CoreFxPipe_*` path. The server rejects unsafe pipe names, refuses to unlink non-socket files, removes stale socket files only when no listener is accepting connections, creates sockets with a restrictive umask, and applies owner-only permissions after bind.
-- Linux enforces pathname socket permissions for peer connections. Other Unix variants can differ; on macOS/BSD, use named pipes only on single-user machines or where every local user is trusted.
-- Run production agents under a dedicated OS user where possible. Do not use shared pipe names on multi-user machines.
+- Run production agents under a dedicated Windows account where possible. Do not use shared pipe names on multi-user machines.
 - The wire protocol remains compatible with the .NET Agents SDK; malformed or abusive peers may be disconnected to protect the process.
 
 ## Architecture
@@ -132,7 +129,9 @@ Outbound activities are sent fire-and-forget to avoid deadlocks with DirectLineF
 
 ## Azure App Service / DirectLineFlex
 
-When deploying to Azure App Service with DirectLineFlex, the connector communicates with your agent via named pipes. Configure the pipe name to match the platform expectation (default `bfv4.pipes`).
+When deploying to **Windows** Azure App Service with DirectLineFlex, the connector communicates with your agent via named pipes. Configure the pipe name to match the platform expectation (default `bfv4.pipes`).
+
+> Linux Azure App Service plans are **not supported** by this package because Windows named pipes are unavailable. Use a Windows App Service plan, or use an HTTP-based hosting transport on Linux.
 
 ```typescript
 import { AgentApplication, TurnState } from '@microsoft/agents-hosting'

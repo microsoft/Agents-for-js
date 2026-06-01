@@ -59,11 +59,6 @@ export const Errors = {
     description: 'Invalid named pipe name: {reason}'
   } satisfies AgentErrorDefinition,
 
-  PipeSocketPathUnsafe: {
-    code: -180011,
-    description: 'Named pipe socket path is unsafe: {reason}'
-  } satisfies AgentErrorDefinition,
-
   PipeServerStoppedBeforeConnecting: {
     code: -180012,
     description: 'Named pipe server stopped before connecting.'
@@ -97,5 +92,10 @@ export const Errors = {
   PipeTrailingStreamReadFailed: {
     code: -180018,
     description: 'Pipe closed while draining {missing} trailing bytes for stream {streamId}; framing would desynchronize. Tearing down the connection to force reconnect.'
+  } satisfies AgentErrorDefinition,
+
+  PipePlatformNotSupported: {
+    code: -180019,
+    description: 'Named pipe hosting is only supported on Windows; current platform is {platform}. Use a different transport (e.g. HTTP) on this platform.'
   } satisfies AgentErrorDefinition
 }

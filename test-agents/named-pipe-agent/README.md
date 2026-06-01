@@ -13,16 +13,17 @@ Compared to [empty-agent](../empty-agent/README.md), this sample:
 ## Prerequisites
 
 - [Node.js 20+](https://nodejs.org/)
+- **Windows** — `@microsoft/agents-hosting-directline-namedpipes` is Windows-only. Running this sample on macOS or Linux will throw `PipePlatformNotSupported` (-180019) at startup. See the [package README](../../packages/agents-hosting-directline-namedpipes/README.md#platform-support) for details.
 - The repo built (`npm run build` from root)
 
 ## Running Locally
 
-```bash
+```powershell
 # From the repo root
 npm run build
 
 # From this directory
-cp env.TEMPLATE .env  # edit if needed
+Copy-Item env.TEMPLATE .env  # edit if needed
 npm start
 ```
 
@@ -38,8 +39,8 @@ To exercise the agent locally, you need a process on the same machine that conne
 
  > **Note:** The DirectLine App Service extension uses the pipe name `{WEBSITE_SITE_NAME}.directline`. See the library [README](../../libraries/Hosting/DirectLine.NamedPipes/README.md#pipe-name) for details.
 
-```bash
-PIPE_NAME='{WEBSITE_SITE_NAME}.directline' npm start
+```powershell
+$env:PIPE_NAME='{WEBSITE_SITE_NAME}.directline'; npm start
 ```
 
 ## Architecture

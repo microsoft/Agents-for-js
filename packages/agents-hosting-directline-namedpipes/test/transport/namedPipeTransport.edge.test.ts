@@ -187,7 +187,7 @@ describe('NamedPipeTransport edge cases', () => {
       assert.deepStrictEqual(result, { success: true, data: partialPayload, partial: true })
     })
 
-    it('returns partial false success false when no data arrives before timeout', async () => {
+    it('returns success=false partial=true when no data arrives before timeout', async () => {
       const socket = createMockSocket()
       const transport = new NamedPipeTransport(socket as unknown as Socket)
 

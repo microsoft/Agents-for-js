@@ -14,5 +14,8 @@
   "dependencies": {
     "@microsoft/agents-hosting": "file:../../packages/agents-hosting",
     "@microsoft/agents-hosting-directline-namedpipes": "file:../../packages/agents-hosting-directline-namedpipes"
-  }
+  },
+  "os": [
+    "win32"
+  ]
 }
