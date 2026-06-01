@@ -21,7 +21,7 @@
   "dependencies": {
     "@microsoft/agents-hosting": "file:../agents-hosting",
     "express": "5.2.1",
-    "express-rate-limit": "8.3.2"
+    "express-rate-limit": "8.5.2"
   },
   "license": "MIT",
   "files": [
