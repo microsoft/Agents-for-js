@@ -7,7 +7,10 @@ import express, { Response } from 'express'
 import rateLimit from 'express-rate-limit'
 import { ActivityHandler, AgentApplication, AuthConfiguration, authorizeJWT, getAuthConfigWithDefaults, Request, TurnState } from '@microsoft/agents-hosting'
 import { version } from '@microsoft/agents-hosting/package.json'
+import { debug } from '@microsoft/agents-telemetry'
 import { createCloudAdapter } from './createCloudAdapter'
+
+const logger = debug('agents:hosting-express')
 
 /**
  * Options for configuring the Express server started by `startServer`.
@@ -140,6 +143,20 @@ export function startServer (agent: AgentApplication<TurnState<any, any>> | Acti
   )
 
   const port = opts.port ?? process.env.PORT ?? 3978
+  const className = (obj: any) => obj?.constructor?.name ?? (obj ? 'custom' : undefined)
+  logger.info('Express server settings loaded', {
+    messageEndpoint: `POST ${routePath}`,
+    port: {
+      value: port,
+      source: opts.port ? 'options' : process.env.PORT ? 'env' : 'default',
+    },
+    middlewares: ['express.json', 'authorizeJWT'],
+    adapter: {
+      className: className(adapter),
+      source: agent instanceof ActivityHandler || !agent.adapter ? 'created' : 'agent.adapter',
+    },
+    headerPropagation: headerPropagation !== undefined ? 'enabled' : 'disabled',
+  })
   server.listen(port, async () => {
     console.log(`\nServer listening to port ${port} on sdk ${version} for appId ${authConfig.clientId} debug ${process.env.DEBUG}`)
   }).on('error', console.error)
