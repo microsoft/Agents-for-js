@@ -39,25 +39,36 @@ export class NamedPipeActivityHandler {
   }
 
   private async _processActivity (request: NamedPipeRequest, signal?: AbortSignal): Promise<NamedPipeResponse> {
+    if (!request.body) {
+      logger.warn('[ActivityHandler] Missing request body')
+      return { statusCode: 400, body: Buffer.from(JSON.stringify({ error: 'Missing request body' })) }
+    }
+
+    // Reject non-JSON content types with 415
+    if (request.contentType && !this._isJsonContentType(request.contentType)) {
+      logger.warn(`[ActivityHandler] Unsupported content type '${request.contentType}'`)
+      return { statusCode: 415, body: null }
+    }
+
+    // Parse + validate caller input separately so malformed bodies surface as
+    // 400 Bad Request rather than 500 Internal Server Error (the server is
+    // healthy; the inbound payload is the problem).
+    let activity: Activity
     try {
-      if (!request.body) {
-        logger.warn('[ActivityHandler] Missing request body')
-        return { statusCode: 400, body: Buffer.from(JSON.stringify({ error: 'Missing request body' })) }
-      }
-
-      // Reject non-JSON content types with 415
-      if (request.contentType && !this._isJsonContentType(request.contentType)) {
-        logger.warn(`[ActivityHandler] Unsupported content type '${request.contentType}'`)
-        return { statusCode: 415, body: null }
-      }
-
       const bodyStr = request.body.toString('utf8')
       logger.info(`[ActivityHandler] Parsing activity body (${bodyStr.length} chars)`)
       logger.debug(`[ActivityHandler] Body: ${bodyStr.substring(0, 1000)}`)
-
       const activityJson = JSON.parse(bodyStr)
-      const activity = Activity.fromObject(activityJson)
+      activity = Activity.fromObject(activityJson)
+    } catch (err) {
+      logger.warn(`[ActivityHandler] Invalid activity body: ${err}`)
+      return {
+        statusCode: 400,
+        body: Buffer.from(JSON.stringify({ error: 'Invalid activity body', detail: (err as Error)?.message }))
+      }
+    }
 
+    try {
       logger.info(`[ActivityHandler] Activity parsed: type=${activity.type} id=${activity.id} from=${activity.from?.name || activity.from?.id}`)
 
       // Surface multi-stream attachments (Streams[1..N]) onto Activity.Attachments

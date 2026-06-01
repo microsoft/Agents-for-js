@@ -92,13 +92,14 @@ describe('NamedPipeActivityHandler', () => {
     assert.strictEqual(adapter.processCallCount, 1)
   })
 
-  it('returns 500 when the body is not valid JSON', async () => {
+  it('returns 400 when the body is not valid JSON', async () => {
     const handler = new NamedPipeActivityHandler(new MockAdapter(), async () => {})
 
     const response = await handler.handle(createRequest({ body: Buffer.from('{not valid json', 'utf8') }))
 
-    assert.strictEqual(response.statusCode, 500)
-    assert.strictEqual(response.body, null)
+    assert.strictEqual(response.statusCode, 400)
+    const parsed = JSON.parse(response.body?.toString('utf8') ?? '{}')
+    assert.strictEqual(parsed.error, 'Invalid activity body')
   })
 
   it('passes valid activities to adapter.process and returns its status', async () => {

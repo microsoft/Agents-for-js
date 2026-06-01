@@ -410,12 +410,18 @@ export class NamedPipeProtocol {
     pendingResponses: Map<string, PendingResponseDispatch>
   ): void {
     if (!payload) {
-      logger.info(`[RECV_RESPONSE] No-payload response for ${header.id} — resolving as 200`)
+      // A Response frame must always carry a JSON ResponsePayload (statusCode + streams).
+      // A zero-payload response is a protocol violation (corrupted stream / broken relay).
+      // Resolving it as 200 would mask real send failures, so we reject the pending request
+      // so callers can observe and react to the protocol error.
+      logger.error(`[RECV_RESPONSE] Protocol violation: empty Response frame for ${header.id}`)
       const pending = this._pendingRequests.get(header.id)
       if (pending) {
         clearTimeout(pending.timer)
         this._pendingRequests.delete(header.id)
-        pending.resolve({ statusCode: 200, body: null })
+        pending.reject(ExceptionHelper.generateException(Error, Errors.PipeProtocolError, undefined, {
+          reason: `empty Response frame for request ${header.id}`
+        }))
       } else {
         logger.warn(`[RECV_RESPONSE] No pending request found for ${header.id} (already timed out?)`)
       }

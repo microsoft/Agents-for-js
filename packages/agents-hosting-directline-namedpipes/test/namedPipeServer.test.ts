@@ -47,6 +47,21 @@ describe('NamedPipeService', () => {
     await assert.rejects(async () => await service.start(), /Named pipe hosting is only supported on Windows/)
   })
 
+  it('rejects ready promise grabbed before start() when platform check fails', async (context) => {
+    if (process.platform === 'win32') {
+      context.skip('Test asserts non-Windows behavior')
+      return
+    }
+    const adapter = new CloudAdapter()
+    const service = new NamedPipeService(adapter, async () => {}, { pipeName: `ready-platform-${process.pid}-${Date.now()}` })
+    // Grab the promise BEFORE calling start() — this is the regression case where
+    // the constructor's ready promise must be rejected (not orphaned by being
+    // replaced with a fresh promise before rejection).
+    const heldReady = service.ready
+    await assert.rejects(async () => await service.start(), /Named pipe hosting is only supported on Windows/)
+    await assert.rejects(async () => await heldReady, /Named pipe hosting is only supported on Windows/)
+  })
+
   it('should reject ready when stopped before connecting', { skip: windowsOnly }, async () => {
     const adapter = new CloudAdapter()
     const service = new NamedPipeService(adapter, async () => {}, { pipeName: `stop-test-${process.pid}-${Date.now()}` })

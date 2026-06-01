@@ -170,7 +170,12 @@ export class NamedPipeTransport {
    * Writes a buffer to the pipe.
    */
   async write (buffer: Buffer): Promise<void> {
-    if (!this._stream || this._stream.destroyed) {
+    // Mirror `isConnected`: a socket that has been `end()`-ed is no longer writable
+    // even though it hasn't been destroyed yet. Treating that as PipeNotConnected
+    // (instead of letting Node fire ERR_STREAM_WRITE_AFTER_END → PipeWriteFailed)
+    // keeps the failure surface consistent with `isConnected` for callers that
+    // pre-check before writing.
+    if (!this._stream || this._stream.destroyed || !this._stream.writable) {
       throw ExceptionHelper.generateException(Error, Errors.PipeNotConnected)
     }
 

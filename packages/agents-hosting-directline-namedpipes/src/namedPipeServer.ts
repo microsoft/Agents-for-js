@@ -88,15 +88,30 @@ export class NamedPipeService {
    */
   async start (): Promise<void> {
     if (this._running) return
-    assertWindowsPlatform()
+    try {
+      assertWindowsPlatform()
+    } catch (err) {
+      // Reject the CURRENT ready promise (which may already be held by an external
+      // awaiter via `service.ready`) so it unblocks with the platform error instead
+      // of hanging forever. Do NOT swap in a new promise first — that would re-target
+      // the resolver/rejecter to a fresh promise nobody is awaiting and orphan P1.
+      this._rejectReady(this._toError(err))
+      throw err
+    }
     this._running = true
     this._abortController = new AbortController()
 
-    // Reset ready promise for this start cycle
+    // Reset ready promise for this start cycle (success path)
     this._ready = this._createReadyPromise()
 
     logger.info(`Starting named pipe server on '${this._pipeName}'`)
-    await this._connectLoop()
+    try {
+      await this._connectLoop()
+    } catch (err) {
+      // Propagate any fatal startup error to awaiters of `ready` so they don't hang.
+      this._rejectReady(this._toError(err))
+      throw err
+    }
   }
 
   /**
@@ -228,8 +243,14 @@ export async function startNamedPipeServer (
   logic: (context: TurnContext) => Promise<void>,
   options?: NamedPipeServerOptions
 ): Promise<NamedPipeService> {
+  // Fail fast on unsupported platforms so callers get a synchronous error
+  // matching the README's "throws PipePlatformNotSupported at startup" contract,
+  // rather than a service whose `ready` promise silently rejects later.
+  assertWindowsPlatform()
   const service = new NamedPipeService(adapter, logic, options)
-  // Start without awaiting the connect loop (it runs in background)
+  // Start without awaiting the connect loop (it runs in background).
+  // `service.start()` rejects `service.ready` on failure, so callers awaiting
+  // `ready` will observe the underlying error instead of hanging.
   service.start().catch((err) => {
     logger.error(`Named pipe server start failed: ${err}`)
   })
