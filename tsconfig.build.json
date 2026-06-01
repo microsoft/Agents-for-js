@@ -32,6 +32,9 @@
         "path": "packages/agents-hosting-extensions-slack"
       },
       {
+        "path": "packages/agents-hosting-directline-namedpipes"
+      },
+      {
         "path": "test-agents/application-style"
       },
       {
