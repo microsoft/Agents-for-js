@@ -308,9 +308,10 @@ export class NamedPipeProtocol {
 
         // Bot.Streaming / DirectLineFlex compatibility: the DL ASE can send a Stream
         // frame with End=true but then write MORE unframed bytes after the declared
-        // PayloadLength. When the stream descriptor declares a length larger than what
-        // has been received (including prior chunks), read the trailing raw bytes so
-        // they don't corrupt subsequent header reads.
+        // PayloadLength when the sender's content stream is larger than what fits in
+        // the chunked frames. When the stream descriptor declares a length larger
+        // than what has been received (including prior chunks), we MUST read the
+        // trailing raw bytes so they don't corrupt subsequent header reads.
         if (header.type === PayloadTypes.Stream && header.end) {
           payload = await this._readTrailingStreamBytesIfNeeded(
             header, payload, streamSizes, expectedStreamLengths
@@ -569,12 +570,25 @@ export class NamedPipeProtocol {
   // ─── Trailing Stream Bytes (DirectLineFlex Compatibility) ───────────────
 
   /**
-   * Bot.Streaming / DirectLineFlex sends a stream frame with End=true but may
-   * write MORE raw bytes after the declared PayloadLength when the sender's
-   * content stream is larger than what fits in the chunked frames. This reads
-   * those trailing unframed bytes so they don't corrupt the next header read.
+   * Bot.Streaming / DirectLineFlex sends a SINGLE stream frame with End=true
+   * but may write MORE raw bytes after the declared PayloadLength when the
+   * sender's content stream is larger than what fits in the one chunked frame.
+   * This reads those trailing unframed bytes so they don't corrupt the next
+   * header read.
    *
-   * Mirrors .NET ReadTrailingSingleFrameStreamBytesIfNeededAsync.
+   * Single-frame ONLY (mirrors .NET ReadTrailingSingleFrameStreamBytesIfNeededAsync):
+   * if any prior chunked frames have arrived for this stream id, the sender
+   * is using the standard multi-frame chunking path — every byte is on the
+   * wire as part of a properly framed payload, and there are NO unframed
+   * trailing bytes. In that path, end=true with received < expected simply
+   * means the sender truncated the stream; trying to drain would block
+   * forever waiting for bytes that don't exist.
+   *
+   * BLOCKING (no timeout): the sender already put these bytes on the wire and
+   * we MUST consume every one of them. A timeout-based approach silently
+   * desynchronizes framing because partially consuming the trailing bytes
+   * leaves the next readExact(48) starting mid-payload. The only acceptable
+   * failure mode is the connection actually closing, which we surface as fatal.
    */
   private async _readTrailingStreamBytesIfNeeded (
     header: Header,
@@ -588,8 +602,16 @@ export class NamedPipeProtocol {
     }
 
     const bufferedLength = streamSizes.get(header.id) ?? 0
-    const receivedLength = bufferedLength + (payload?.length ?? 0)
 
+    // Single-frame guard: only drain when this is the FIRST and ONLY frame
+    // for the stream. Multi-frame chunked streams never have unframed
+    // trailing bytes — the sender either chunks the full payload (no drain
+    // needed) or truncates cleanly at end=true (no bytes to drain).
+    if (bufferedLength > 0) {
+      return payload
+    }
+
+    const receivedLength = payload?.length ?? 0
     if (receivedLength >= expectedLength) {
       return payload
     }
@@ -609,14 +631,6 @@ export class NamedPipeProtocol {
       })
     }
 
-    // BLOCKING drain (no timeout): the sender already wrote these bytes onto
-    // the pipe, they will arrive as fast as the OS can deliver them. A
-    // timeout here is unsafe because partially consuming the trailing bytes
-    // leaves the pipe in a corrupt state — the next readExact for a frame
-    // header would start mid-payload and silently desynchronize the protocol
-    // (this manifests as "trailing-bytes drain incomplete" errors on large
-    // attachments under load). The only legitimate non-success outcome is
-    // the connection actually closing, which is correctly treated as fatal.
     const trailingResult = await this._reader.readExact(missing)
 
     if (!trailingResult.success) {
@@ -980,7 +994,9 @@ export class NamedPipeProtocol {
   }
 
   private async _sendStreamFrames (streamId: string, data: Buffer): Promise<void> {
-    // Send in chunks up to MAX_STREAM_CHUNK_SIZE (4096), matching Bot.Streaming
+    // Send in chunks up to MAX_STREAM_CHUNK_SIZE (65 536 bytes / 64 KB). The
+    // .NET Bot.Streaming SDK chunks at 4 KB; we use the larger size to reduce
+    // frame count for large attachments while staying well under MAX_PAYLOAD_SIZE.
     let offset = 0
     do {
       const chunkSize = Math.min(MAX_STREAM_CHUNK_SIZE, data.length - offset)

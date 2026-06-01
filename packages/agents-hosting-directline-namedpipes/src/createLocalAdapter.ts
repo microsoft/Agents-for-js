@@ -31,7 +31,7 @@ class LocalPipeAdapter extends CloudAdapter {
   private static readonly MAX_QUEUED_SENDS = 100
   /**
    * Timeout for outbound activity sends (bot → relay → client).
-   * Shorter than the protocol-level REQUEST_TIMEOUT_MS (60s) to prevent
+   * Shorter than the protocol-level REQUEST_TIMEOUT_MS (20s) to prevent
    * one dead client from holding send slots and blocking all other conversations.
    */
   private static readonly OUTBOUND_SEND_TIMEOUT_MS = 15_000
@@ -156,7 +156,7 @@ class LocalPipeAdapter extends CloudAdapter {
 
         // Race the actual send against a shorter timeout to prevent one dead
         // client's conversation from holding a concurrent send slot for the
-        // full protocol timeout (60s). If the relay can't forward within 15s,
+        // full protocol timeout (20s). If the relay can't forward within 15s,
         // the client is likely disconnected — free the slot for other conversations.
         const sendPromise = messageHandler.sendViaPipe('POST', path, body, null, 'application/json')
         let sendTimer: ReturnType<typeof setTimeout> | undefined

@@ -138,6 +138,24 @@ describe('NamedPipeTransport edge cases', () => {
       assert.strictEqual(result.success, false)
       assert.strictEqual(socket.destroyed, true, 'stream must be destroyed when close interrupts a partial frame')
     })
+    it('returns success immediately when count is 0 (no data event needed)', async () => {
+      const socket = createMockSocket()
+      const transport = new NamedPipeTransport(socket as unknown as Socket)
+
+      // Must NOT hang waiting for a 'data' event the caller cannot guarantee
+      // will ever fire. Reproduces the latent hang when callers compute
+      // `missing = expected - received` and the result is exactly 0.
+      const result = await transport.readExact(0)
+      assert.deepStrictEqual(result, { success: true, data: Buffer.alloc(0) })
+    })
+
+    it('returns success immediately when count is negative', async () => {
+      const socket = createMockSocket()
+      const transport = new NamedPipeTransport(socket as unknown as Socket)
+
+      const result = await transport.readExact(-5)
+      assert.deepStrictEqual(result, { success: true, data: Buffer.alloc(0) })
+    })
   })
 
   describe('readExactWithTimeout', () => {
@@ -188,6 +206,21 @@ describe('NamedPipeTransport edge cases', () => {
 
       const result = await readPromise
       assert.deepStrictEqual(result, { success: false, data: Buffer.alloc(0), partial: false })
+    })
+
+    it('returns success immediately when count is 0 without waiting for the timeout', async () => {
+      const socket = createMockSocket()
+      const transport = new NamedPipeTransport(socket as unknown as Socket)
+
+      // With a large timeout, the call must NOT block — a zero-byte read has
+      // nothing to wait for and the previous implementation hung for the full
+      // timeoutMs before resolving.
+      const started = Date.now()
+      const result = await transport.readExactWithTimeout(0, 5000)
+      const elapsed = Date.now() - started
+
+      assert.deepStrictEqual(result, { success: true, data: Buffer.alloc(0), partial: false })
+      assert.ok(elapsed < 50, `must resolve immediately, took ${elapsed}ms`)
     })
   })
 

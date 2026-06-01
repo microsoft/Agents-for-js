@@ -25,6 +25,12 @@ export class NamedPipeTransport {
    * Returns false if the connection closed before all bytes were read.
    */
   async readExact (count: number): Promise<{ success: boolean, data: Buffer }> {
+    if (count <= 0) {
+      // A zero/negative read has nothing to wait for. Returning success with
+      // an empty buffer keeps callers that compute `missing = expected - got`
+      // safe from hanging when the expected count is already satisfied.
+      return { success: true, data: Buffer.alloc(0) }
+    }
     if (!this._stream || this._stream.destroyed) {
       return { success: false, data: Buffer.alloc(0) }
     }
@@ -93,6 +99,11 @@ export class NamedPipeTransport {
    * Used for draining trailing stream bytes that may or may not arrive.
    */
   async readExactWithTimeout (count: number, timeoutMs: number): Promise<{ success: boolean, data: Buffer, partial: boolean }> {
+    if (count <= 0) {
+      // No bytes requested → resolve immediately rather than waiting for the
+      // timeout to fire. Reported as a non-partial success with an empty buffer.
+      return { success: true, data: Buffer.alloc(0), partial: false }
+    }
     if (!this._stream || this._stream.destroyed) {
       return { success: false, data: Buffer.alloc(0), partial: false }
     }

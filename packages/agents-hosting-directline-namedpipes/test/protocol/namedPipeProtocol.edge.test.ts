@@ -354,12 +354,147 @@ describe('NamedPipeProtocol edge cases', () => {
     await protocol.dispose()
   })
 
-  it('tears down the protocol when the pipe closes while draining trailing stream bytes', async () => {
+  it('does NOT attempt to drain when a multi-frame stream ends truncated (no unframed bytes on wire)', async () => {
+    // Regression for production hang: when a stream arrives as multiple
+    // properly framed chunks (frame1 end=false, frame2 end=false, frame3
+    // end=true) and the final received length is less than the declared
+    // expectedLength, the sender simply truncated — there are NO trailing
+    // unframed bytes on the wire. Attempting to drain would block forever
+    // waiting for bytes that don't exist. The protocol MUST accept the
+    // truncated stream and continue reading the next frame normally.
+    const { reader, writer, readerStream, writerStream } = createTransportPair()
+    const protocol = new NamedPipeProtocol(reader, writer)
+    const written: Buffer[] = []
+    writerStream.on('data', (chunk: Buffer) => written.push(Buffer.from(chunk)))
+
+    const dispatched: NamedPipeRequest[] = []
+    protocol.onRequestReceived = async (req) => {
+      dispatched.push(req)
+      return { statusCode: 200, body: null }
+    }
+    protocol.start()
+
+    const bodyStreamId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
+    const attachmentId = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'
+    const followUpId = 'cccccccc-cccc-cccc-cccc-cccccccccccc'
+
+    // Request declaring a 262144-byte attachment that will be truncated
+    // across 3 framed chunks of 4096 totaling 12288.
+    const reqPayload = Buffer.from(JSON.stringify({
+      verb: 'POST',
+      path: '/multi-frame-truncated',
+      streams: [
+        { id: bodyStreamId, type: 'application/json', length: 4 },
+        { id: attachmentId, type: 'application/octet-stream', length: 262144 }
+      ]
+    }), 'utf8')
+    readerStream.push(serializeHeader({ type: PayloadTypes.Request, payloadLength: reqPayload.length, id: 'dddddddd-dddd-dddd-dddd-dddddddddddd', end: true }))
+    readerStream.push(reqPayload)
+    readerStream.push(serializeHeader({ type: PayloadTypes.Stream, payloadLength: 4, id: bodyStreamId, end: true }))
+    readerStream.push(Buffer.from('null', 'utf8'))
+    // 3 framed chunks: first 2 end=false, last end=true. Total = 12288 << 262144.
+    readerStream.push(serializeHeader({ type: PayloadTypes.Stream, payloadLength: 4096, id: attachmentId, end: false }))
+    readerStream.push(Buffer.alloc(4096, 0xa1))
+    readerStream.push(serializeHeader({ type: PayloadTypes.Stream, payloadLength: 4096, id: attachmentId, end: false }))
+    readerStream.push(Buffer.alloc(4096, 0xa2))
+    readerStream.push(serializeHeader({ type: PayloadTypes.Stream, payloadLength: 4096, id: attachmentId, end: true }))
+    readerStream.push(Buffer.alloc(4096, 0xa3))
+
+    // A second request immediately after — its header MUST be read at the
+    // correct offset. If the protocol tried to drain 249856 bytes for the
+    // attachment, it would either hang forever or consume this header and
+    // desynchronize framing.
+    const followUpPayload = Buffer.from(JSON.stringify({
+      verb: 'POST',
+      path: '/after-truncated',
+      streams: [{ id: followUpId, type: 'application/json', length: 2 }]
+    }), 'utf8')
+    readerStream.push(serializeHeader({ type: PayloadTypes.Request, payloadLength: followUpPayload.length, id: 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', end: true }))
+    readerStream.push(followUpPayload)
+    readerStream.push(serializeHeader({ type: PayloadTypes.Stream, payloadLength: 2, id: followUpId, end: true }))
+    readerStream.push(Buffer.from('{}', 'utf8'))
+
+    await waitFor(() => dispatched.length >= 2 ? dispatched : undefined, 2000)
+
+    assert.strictEqual(dispatched.length, 2, 'both requests must dispatch — second proves the protocol did NOT block on a phantom drain')
+    assert.strictEqual(dispatched[0].path, '/multi-frame-truncated')
+    assert.strictEqual(dispatched[0].attachments.length, 1)
+    assert.strictEqual(dispatched[0].attachments[0].body.length, 12288, 'truncated multi-frame stream delivers exactly the framed bytes')
+    assert.strictEqual(dispatched[1].path, '/after-truncated')
+
+    await protocol.dispose()
+  })
+
+  it('drains trailing unframed bytes when DL ASE writes more raw data after end=true (single-frame DirectLineFlex compat)', async () => {
+    // Real-world DL ASE behavior: sends a Stream frame with payloadLength=4096
+    // end=true but then writes MORE unframed bytes immediately after the frame
+    // payload to flush the rest of a large attachment. We MUST consume these
+    // bytes or the next readExact(48) for the following header will start
+    // mid-payload and silently desynchronize all subsequent framing.
+    const { reader, writer, readerStream, writerStream } = createTransportPair()
+    const protocol = new NamedPipeProtocol(reader, writer)
+    const written: Buffer[] = []
+    writerStream.on('data', (chunk: Buffer) => written.push(Buffer.from(chunk)))
+
+    const dispatched: NamedPipeRequest[] = []
+    protocol.onRequestReceived = async (req) => {
+      dispatched.push(req)
+      return { statusCode: 200, body: null }
+    }
+    protocol.start()
+
+    const bodyStreamId = '11111111-1111-1111-1111-111111111111'
+    const attachmentId = '22222222-2222-2222-2222-222222222222'
+    const attachmentLen = 262144
+    const framedLen = 4096
+    const trailingLen = attachmentLen - framedLen
+
+    const requestPayload = Buffer.from(JSON.stringify({
+      verb: 'POST',
+      path: '/api/messages',
+      streams: [
+        { id: bodyStreamId, type: 'application/json', length: 4 },
+        { id: attachmentId, type: 'application/octet-stream', length: attachmentLen }
+      ]
+    }), 'utf8')
+
+    readerStream.push(serializeHeader({ type: PayloadTypes.Request, payloadLength: requestPayload.length, id: '33333333-3333-3333-3333-333333333333', end: true }))
+    readerStream.push(requestPayload)
+    readerStream.push(serializeHeader({ type: PayloadTypes.Stream, payloadLength: 4, id: bodyStreamId, end: true }))
+    readerStream.push(Buffer.from('null', 'utf8'))
+
+    // Attachment: framed 4KB chunk end=true, then 252KB raw unframed bytes
+    readerStream.push(serializeHeader({ type: PayloadTypes.Stream, payloadLength: framedLen, id: attachmentId, end: true }))
+    readerStream.push(Buffer.alloc(framedLen, 0xab))
+
+    // Trickle the trailing bytes in 32KB chunks across several ticks to prove
+    // the BLOCKING drain waits as long as needed (regression: the old 200ms
+    // timeout silently consumed partial data and corrupted framing).
+    const tickSize = 32 * 1024
+    ;(async () => {
+      for (let offset = 0; offset < trailingLen; offset += tickSize) {
+        await delay(40)
+        readerStream.push(Buffer.alloc(Math.min(tickSize, trailingLen - offset), 0xcd))
+      }
+    })().catch(() => {})
+
+    const result = await waitFor(() => dispatched.length >= 1 ? dispatched : undefined, 5000)
+    assert.strictEqual(result.length, 1)
+    assert.strictEqual(result[0].attachments.length, 1)
+    assert.strictEqual(result[0].attachments[0].body.length, attachmentLen, 'full attachment reassembled from framed + trailing unframed bytes')
+    assert.strictEqual(result[0].attachments[0].body[0], 0xab)
+    assert.strictEqual(result[0].attachments[0].body[framedLen - 1], 0xab)
+    assert.strictEqual(result[0].attachments[0].body[framedLen], 0xcd)
+    assert.strictEqual(result[0].attachments[0].body[attachmentLen - 1], 0xcd)
+
+    await protocol.dispose()
+  })
+
+  it('tears down the protocol when the pipe closes mid-drain', async () => {
     // The blocking trailing-bytes drain only fails fatally when the pipe
-    // physically closes mid-drain. A slow sender (e.g. a 200KB attachment that
-    // takes >200ms to flush) must NOT trip the fatal path — that was the
-    // previous bug where a 200ms timeout silently consumed partial bytes and
-    // desynchronized framing on the next header read.
+    // physically closes mid-drain. The framing would be corrupt at that
+    // point, so we tear down and force a reconnect rather than silently
+    // accept truncated data.
     const { reader, writer, readerStream, writerStream } = createTransportPair()
     const protocol = new NamedPipeProtocol(reader, writer)
     const written: Buffer[] = []
@@ -375,46 +510,30 @@ describe('NamedPipeProtocol edge cases', () => {
     const streamId = '99999999-9999-9999-9999-999999999999'
     const requestPayload = Buffer.from(JSON.stringify({
       verb: 'POST',
-      path: '/truncated-trailing',
-      streams: [{ id: streamId, type: 'application/json', length: 10 }]
+      path: '/truncated',
+      streams: [{ id: streamId, type: 'application/octet-stream', length: 100 }]
     }), 'utf8')
 
-    readerStream.push(serializeHeader({
-      type: PayloadTypes.Request,
-      payloadLength: requestPayload.length,
-      id: '88888888-8888-8888-8888-888888888888',
-      end: true
-    }))
+    readerStream.push(serializeHeader({ type: PayloadTypes.Request, payloadLength: requestPayload.length, id: '88888888-8888-8888-8888-888888888888', end: true }))
     readerStream.push(requestPayload)
-    readerStream.push(serializeHeader({
-      type: PayloadTypes.Stream,
-      payloadLength: 5,
-      id: streamId,
-      end: true
-    }))
+    readerStream.push(serializeHeader({ type: PayloadTypes.Stream, payloadLength: 5, id: streamId, end: true }))
     readerStream.push(Buffer.from('short', 'utf8'))
 
-    // The drain will block waiting for 5 more bytes. Close the pipe to
-    // simulate a peer that died mid-transfer.
     await delay(50)
     readerStream.destroy()
 
-    await Promise.race([
-      protocol.completion,
-      delay(1000)
-    ])
+    await Promise.race([protocol.completion, delay(1000)])
 
-    assert.strictEqual(dispatched, false, 'Request must NOT be dispatched when the pipe closes mid-drain')
-    assert.strictEqual(written.length, 0, 'Protocol must not write any frames after a fatal framing error')
+    assert.strictEqual(dispatched, false, 'request must NOT dispatch when pipe closes mid-drain')
+    assert.strictEqual(written.length, 0, 'no frames written after fatal framing error')
 
     await protocol.dispose()
   })
 
-  it('drains slow trailing stream bytes without a timeout (regression: large attachments)', async () => {
-    // Real-world repro: a 256KB attachment whose trailing bytes arrive over
-    // multiple ticks must complete successfully — never abort because some
-    // bytes are still in flight. The previous 200ms timeout caused these to
-    // intermittently fail under load with "trailing-bytes drain incomplete".
+  it('correctly reassembles a large attachment delivered as multiple end=false frames + final end=true (no drain needed)', async () => {
+    // Sanity check: when the sender properly framed every byte and the last
+    // frame's end=true accumulates to exactly expectedLength, the trailing-
+    // bytes drain must be a no-op and dispatch must succeed normally.
     const { reader, writer, readerStream, writerStream } = createTransportPair()
     const protocol = new NamedPipeProtocol(reader, writer)
     const written: Buffer[] = []
@@ -430,8 +549,7 @@ describe('NamedPipeProtocol edge cases', () => {
     const bodyStreamId = '11111111-1111-1111-1111-111111111111'
     const attachmentStreamId = '22222222-2222-2222-2222-222222222222'
     const attachmentLen = 262144
-    const framedAttachmentLen = 4096
-    const trailingLen = attachmentLen - framedAttachmentLen
+    const chunkSize = 65536
 
     const requestPayload = Buffer.from(JSON.stringify({
       verb: 'POST',
@@ -442,35 +560,76 @@ describe('NamedPipeProtocol edge cases', () => {
       ]
     }), 'utf8')
 
-    // Request envelope + JSON body stream (complete in one frame)
     readerStream.push(serializeHeader({ type: PayloadTypes.Request, payloadLength: requestPayload.length, id: '33333333-3333-3333-3333-333333333333', end: true }))
     readerStream.push(requestPayload)
     readerStream.push(serializeHeader({ type: PayloadTypes.Stream, payloadLength: 4, id: bodyStreamId, end: true }))
     readerStream.push(Buffer.from('null', 'utf8'))
 
-    // Attachment frame declares 4KB end=true, then the remaining 252KB stream
-    // out as raw bytes after several ticks (simulates real DL ASE behavior).
-    readerStream.push(serializeHeader({ type: PayloadTypes.Stream, payloadLength: framedAttachmentLen, id: attachmentStreamId, end: true }))
-    readerStream.push(Buffer.alloc(framedAttachmentLen, 0xab))
-
-    // Trickle the trailing bytes in 32KB chunks across ~6 ticks — comfortably
-    // exceeds the old 200ms timeout window when each tick is delay(50).
-    const chunkSize = 32 * 1024
-    ;(async () => {
-      for (let offset = 0; offset < trailingLen; offset += chunkSize) {
-        await delay(40)
-        readerStream.push(Buffer.alloc(Math.min(chunkSize, trailingLen - offset), 0xcd))
-      }
-    })().catch(() => {})
+    for (let offset = 0; offset < attachmentLen; offset += chunkSize) {
+      const isLast = offset + chunkSize >= attachmentLen
+      readerStream.push(serializeHeader({ type: PayloadTypes.Stream, payloadLength: chunkSize, id: attachmentStreamId, end: isLast }))
+      readerStream.push(Buffer.alloc(chunkSize, 0xab))
+    }
 
     const got = await waitFor(() => received ?? undefined, 5000)
     assert.strictEqual(got.attachments.length, 1)
-    assert.strictEqual(got.attachments[0].body.length, attachmentLen, 'full attachment must be reassembled even when trailing bytes are slow')
-    // First 4KB should be 0xab (the framed chunk), the rest 0xcd (the trailing bytes)
+    assert.strictEqual(got.attachments[0].body.length, attachmentLen)
     assert.strictEqual(got.attachments[0].body[0], 0xab)
-    assert.strictEqual(got.attachments[0].body[framedAttachmentLen - 1], 0xab)
-    assert.strictEqual(got.attachments[0].body[framedAttachmentLen], 0xcd)
-    assert.strictEqual(got.attachments[0].body[attachmentLen - 1], 0xcd)
+    assert.strictEqual(got.attachments[0].body[attachmentLen - 1], 0xab)
+
+    await protocol.dispose()
+  })
+
+  it('does NOT hang on an empty Stream frame (payloadLength=0) — regression for readExact(0)', async () => {
+    // Latent bug: an empty Stream frame (payloadLength=0, end=true) causes
+    // readExact(0) to be invoked for the payload. The pre-guard implementation
+    // attached a data listener and waited forever because 0 bytes never
+    // triggers the data event. This was the actual root cause of the earlier
+    // "pipe blocking after large attachment" symptom: after the trailing-
+    // bytes drain succeeded, the very next frame was an empty Stream frame
+    // and the read loop wedged on readExact(0).
+    const { reader, writer, readerStream, writerStream } = createTransportPair()
+    const protocol = new NamedPipeProtocol(reader, writer)
+    const written: Buffer[] = []
+    writerStream.on('data', (chunk: Buffer) => written.push(Buffer.from(chunk)))
+
+    const dispatched: NamedPipeRequest[] = []
+    protocol.onRequestReceived = async (req) => {
+      dispatched.push(req)
+      return { statusCode: 200, body: null }
+    }
+    protocol.start()
+
+    const bodyStreamId = '44444444-4444-4444-4444-444444444444'
+    const followUpId = '55555555-5555-5555-5555-555555555555'
+
+    const reqPayload = Buffer.from(JSON.stringify({
+      verb: 'POST',
+      path: '/empty-frame',
+      streams: [{ id: bodyStreamId, type: 'application/json', length: 0 }]
+    }), 'utf8')
+
+    readerStream.push(serializeHeader({ type: PayloadTypes.Request, payloadLength: reqPayload.length, id: '66666666-6666-6666-6666-666666666666', end: true }))
+    readerStream.push(reqPayload)
+    // Empty Stream frame — payloadLength=0, end=true. No payload bytes follow.
+    readerStream.push(serializeHeader({ type: PayloadTypes.Stream, payloadLength: 0, id: bodyStreamId, end: true }))
+
+    // A follow-up request to prove the read loop didn't wedge on the empty frame.
+    const followUpPayload = Buffer.from(JSON.stringify({
+      verb: 'POST',
+      path: '/after-empty',
+      streams: [{ id: followUpId, type: 'application/json', length: 2 }]
+    }), 'utf8')
+    readerStream.push(serializeHeader({ type: PayloadTypes.Request, payloadLength: followUpPayload.length, id: '77777777-7777-7777-7777-777777777777', end: true }))
+    readerStream.push(followUpPayload)
+    readerStream.push(serializeHeader({ type: PayloadTypes.Stream, payloadLength: 2, id: followUpId, end: true }))
+    readerStream.push(Buffer.from('{}', 'utf8'))
+
+    await waitFor(() => dispatched.length >= 2 ? dispatched : undefined, 2000)
+
+    assert.strictEqual(dispatched.length, 2, 'second request must dispatch — proves readExact(0) returned immediately rather than hanging')
+    assert.strictEqual(dispatched[0].path, '/empty-frame')
+    assert.strictEqual(dispatched[1].path, '/after-empty')
 
     await protocol.dispose()
   })
