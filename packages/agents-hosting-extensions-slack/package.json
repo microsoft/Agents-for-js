@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "name": "@microsoft/agents-hosting-express",
+  "name": "@microsoft/agents-hosting-extensions-slack",
   "version": "0.1.0",
   "homepage": "https://github.com/microsoft/Agents-for-js",
   "repository": {
@@ -12,7 +12,7 @@
     "email": "agentssdk@microsoft.com",
     "url": "https://aka.ms/Agents"
   },
-  "description": "Microsoft 365 Agents SDK for JavaScript",
+  "description": "Microsoft 365 Agents SDK for JavaScript. Slack extensions",
   "keywords": [
     "Agents"
   ],
@@ -20,20 +20,16 @@
   "types": "dist/src/index.d.ts",
   "dependencies": {
     "@microsoft/agents-hosting": "file:../agents-hosting",
-    "@microsoft/agents-telemetry": "file:../agents-telemetry",
-    "express": "5.2.1",
-    "express-rate-limit": "8.3.2"
+    "@microsoft/agents-activity": "file:../agents-activity"
   },
   "license": "MIT",
   "files": [
     "README.md",
     "dist/src",
-    "src",
-    "package.json"
+    "src"
   ],
   "exports": {
     ".": {
-      "types": "./dist/src/index.d.ts",
       "import": "./dist/src/index.js",
       "require": "./dist/src/index.js"
     },
