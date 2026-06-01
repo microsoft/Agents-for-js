@@ -68,7 +68,6 @@ export interface StartServerOptions {
   beforeListen?: (app: express.Express) => void
 }
 
-
 /**
  * Starts an Express server for handling Agent requests.
  *
