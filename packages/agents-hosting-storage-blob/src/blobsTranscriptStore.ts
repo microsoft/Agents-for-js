@@ -12,6 +12,9 @@ import {
   StorageSharedKeyCredential,
 } from '@azure/storage-blob'
 import { TranscriptStore, PagedResult, TranscriptInfo } from '@microsoft/agents-hosting'
+import { debug } from '@microsoft/agents-telemetry'
+
+const logger = debug('agents:blob-transcript-store')
 
 /**
  * Formats a Date object into a hexadecimal string representing ticks.
@@ -212,6 +215,16 @@ export class BlobsTranscriptStore implements TranscriptStore {
     }
 
     this._isDecodeTranscriptKey = options?.decodeTranscriptKey
+
+    logger.info('BlobsTranscriptStore settings loaded', {
+      container: containerName,
+      connection: {
+        mode: tokenCredential !== undefined ? 'tokenCredential' : 'connectionString',
+        type: (blobServiceUri || connectionString).trim() === 'UseDevelopmentStorage=true;' ? 'development' : 'production',
+      },
+      pipeline: options?.storagePipelineOptions !== undefined ? 'custom' : 'default',
+      transcriptKey: this._isDecodeTranscriptKey ? 'decoded' : 'encoded',
+    })
   }
 
   private _initialize (): Promise<unknown> {
@@ -241,7 +254,7 @@ export class BlobsTranscriptStore implements TranscriptStore {
     await this._initialize()
 
     const prefix = getConversationPrefix(channelId, conversationId)
-    console.log(`Using prefix: ${prefix}`)
+    logger.debug('Using conversation prefix', { prefix })
 
     const iter = this._containerClient
       .listBlobsByHierarchy('/', {
@@ -256,7 +269,7 @@ export class BlobsTranscriptStore implements TranscriptStore {
       response = maybeCast<ContainerListBlobHierarchySegmentResponse>(page?.value ?? {})
       const blobItems = response?.segment?.blobItems ?? []
 
-      console.log(`Fetched ${blobItems.length} blob items.`)
+      logger.debug('Fetched blob items', { blobCount: blobItems.length })
 
       const fromIdx =
                 startDate != null
@@ -265,7 +278,7 @@ export class BlobsTranscriptStore implements TranscriptStore {
                   )
                   : 0
 
-      console.log(`fromIdx: ${fromIdx}`)
+      logger.debug('Transcript page start index', { fromIdx })
 
       if (fromIdx !== -1) {
         const activities = await Promise.all(
@@ -290,7 +303,7 @@ export class BlobsTranscriptStore implements TranscriptStore {
       page = await iter.next()
     }
 
-    console.log(`Total activities fetched: ${result.length}`)
+    logger.debug('Total transcript activities fetched', { activityCount: result.length })
 
     return {
       continuationToken: response?.continuationToken ?? '',
