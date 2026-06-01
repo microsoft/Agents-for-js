@@ -30,8 +30,7 @@
     "@microsoft/agents-activity": "file:../agents-activity",
     "@microsoft/agents-telemetry": "file:../agents-telemetry",
     "eventsource-client": "1.2.0",
-    "rxjs": "7.8.2",
-    "uuid": "11.1.0"
+    "rxjs": "7.8.2"
   },
   "license": "MIT",
   "files": [

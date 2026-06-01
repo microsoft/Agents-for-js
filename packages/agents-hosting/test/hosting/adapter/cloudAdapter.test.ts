@@ -329,6 +329,37 @@ describe('CloudAdapter', function () {
       )
     })
   })
+
+  describe('createCreateActivity', () => {
+    it('sets from to members[0] when members are present', () => {
+      const params = {
+        members: [{ id: 'user-123', name: 'Test User' }],
+        agent: { id: 'bot-456', role: 'bot' },
+        tenantId: 'tenant-1',
+      }
+      const activity = (cloudAdapter as any).createCreateActivity('conv-1', 'msteams', 'https://svc/', params)
+      assert.equal(activity.from?.id, 'user-123')
+    })
+
+    it('falls back to agent when members is absent', () => {
+      const params = {
+        agent: { id: 'bot-456', role: 'bot' },
+        isGroup: true,
+        channelData: { channel: { id: '19:abc@thread.tacv2' } },
+      }
+      const activity = (cloudAdapter as any).createCreateActivity('conv-1', 'msteams', 'https://svc/', params)
+      assert.equal(activity.from?.id, 'bot-456')
+    })
+
+    it('sets recipient to agent', () => {
+      const params = {
+        members: [{ id: 'user-123' }],
+        agent: { id: 'bot-456', role: 'bot' },
+      }
+      const activity = (cloudAdapter as any).createCreateActivity('conv-1', 'msteams', 'https://svc/', params)
+      assert.equal(activity.recipient?.id, 'bot-456')
+    })
+  })
 })
 
 function createActivity (type: ActivityTypes) {

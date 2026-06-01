@@ -1,0 +1,18 @@
+{
+  "name": "slack-agent",
+  "version": "1.0.0",
+  "private": true,
+  "author": "Microsoft",
+  "license": "MIT",
+  "main": "./dist/agent.js",
+  "scripts": {
+    "build": "tsc --build",
+    "prestart": "npm run build",
+    "start": "node --env-file .env ./dist/agent.js"
+  },
+  "dependencies": {
+    "@microsoft/agents-hosting-express": "file:../../packages/agents-hosting-express",
+    "@microsoft/agents-hosting": "file:../../packages/agents-hosting",
+    "@microsoft/agents-hosting-extensions-slack": "file:../../packages/agents-hosting-extensions-slack"
+  }
+}

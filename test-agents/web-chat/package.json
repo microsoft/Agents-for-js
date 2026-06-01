@@ -15,11 +15,11 @@
     "docker": "docker build -t \"$npm_package_name:$npm_package_version\" ."
   },
   "dependencies": {
-    "@microsoft/agents-hosting": "file:../../packages/agents-hosting",
     "@microsoft/agents-activity": "file:../../packages/agents-activity",
+    "@microsoft/agents-hosting": "file:../../packages/agents-hosting",
     "@microsoft/microsoft-graph-client": "3.0.7",
     "adaptivecards-templating": "2.3.1",
-    "axios": "1.15.0",
+    "axios": "1.16.0",
     "express": "5.2.1",
     "express-rate-limit": "8.3.2"
   }
