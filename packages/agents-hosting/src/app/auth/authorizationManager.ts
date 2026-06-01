@@ -4,7 +4,7 @@
  */
 
 import { Activity, ExceptionHelper } from '@microsoft/agents-activity'
-import { debug } from '@microsoft/agents-telemetry'
+import { debug, redactScopes } from '@microsoft/agents-telemetry'
 import { AgentApplication } from '../agentApplication'
 import { AgenticAuthorization, AzureBotAuthorization } from './handlers'
 import { TurnContext } from '../../turnContext'
@@ -14,6 +14,7 @@ import { ActiveAuthorizationHandler, AuthorizationHandlerStatus, AuthorizationHa
 import { Connections } from '../../auth/connections'
 import { sendInvokeResponse } from './utils'
 import { envParser, envParserUtils } from '../../auth'
+import { prune } from '../../utils'
 
 const logger = debug('agents:authorization:manager')
 
@@ -154,10 +155,6 @@ export class AuthorizationManager {
 
     if (this.handlers.length === 0 && app.options.authorization !== undefined) {
       throw ExceptionHelper.generateException(Error, Errors.NoAuthHandlersConfigured)
-    }
-
-    for (const [id, handler] of Object.entries(this._handlers)) {
-      logger.debug('auth handler "%s" type=%s scopes=%o', id, handler.type, handler.scopes)
     }
   }
 
@@ -320,7 +317,7 @@ export class AuthorizationManager {
   private createHandlers () {
     let legacyMessage = ''
     const settings: AuthorizationHandlerSettings = { storage: this.app.options.storage!, connections: this.connections }
-    let runtimeEntries = Object.entries(this.app.options.authorization ?? {})
+    const runtimeOptionEntries = Object.entries(this.app.options.authorization ?? {})
     const result = { latest: {}, legacy: {} } as {
       latest: Record<string, Record<string, any> | undefined>;
       legacy: Record<string, Record<string, any> | undefined>;
@@ -335,7 +332,7 @@ export class AuthorizationManager {
 
       // Legacy: extract handler ID, handler options key and its value, and assign it to the correct runtime handler ID.
       if (!upperEnvKey.startsWith(this._envLatest.key.prefix.toUpperCase())) {
-        const [id] = runtimeEntries.find(([id]) => upperEnvKey.startsWith(`${id.toUpperCase()}${this._envLegacy.key.separator}`)) ?? []
+        const [id] = runtimeOptionEntries.find(([id]) => upperEnvKey.startsWith(`${id.toUpperCase()}${this._envLegacy.key.separator}`)) ?? []
         if (!id) {
           continue
         }
@@ -386,7 +383,7 @@ export class AuthorizationManager {
     const fixTypes = (entries: [string, any][]) => entries
       .map(([id, options]) => [id, { ...options, type: this.fixType(id, options?.type) }] as [string, AuthorizationOptions[string]])
 
-    runtimeEntries = fixTypes(runtimeEntries)
+    const runtimeEntries = fixTypes(runtimeOptionEntries)
     const latestEntries = fixTypes(Object.entries(result.latest))
     const legacyEntries = fixTypes(Object.entries(result.legacy))
 
@@ -396,39 +393,27 @@ export class AuthorizationManager {
         continue
       }
 
-      // Find entries case-insensitively for later processing
-      const [, runtime] = runtimeEntries.find(([key]) => key.toLowerCase() === id.toLowerCase()) ?? []
-      const [, latest] = latestEntries.find(([key]) => key.toLowerCase() === id.toLowerCase()) ?? []
-      const [, legacy] = legacyEntries.find(([key]) => key.toLowerCase() === id.toLowerCase()) ?? []
+      const { options, format } = this.resolveHandlerConfiguration(id, runtimeEntries, latestEntries, legacyEntries)
 
-      if (runtime !== undefined && latest !== undefined) {
-        logger.warn(this.prefix(id, 'Both runtime and latest environment variable configurations detected. Runtime configuration will take precedence over latest environment variables.'))
+      if (options.type === AZURE_BOT) {
+        // Set default values if not provided
+        options.title ||= 'Sign-in'
+        options.text ||= 'Please sign-in to continue'
+        options.oboScopes ??= []
+        options.enableSso = options.enableSso !== false // default value is true if undefined.
       }
 
-      // Normalize runtime legacy options to latest format
-      if (runtime?.type === AZURE_BOT) {
-        runtime.azureBotOAuthConnectionName ??= runtime.name
-        runtime.invalidSignInRetryMax ??= runtime.maxAttempts
-        runtime.invalidSignInRetryMessage ??= runtime.messages?.invalidCode
-        runtime.invalidSignInRetryMessageFormat ??= runtime.messages?.invalidCodeFormat
-        runtime.invalidSignInRetryMaxExceededMessage ??= runtime.messages?.maxAttemptsExceeded
-        runtime.oboConnectionName ??= runtime.obo?.connection
-        runtime.oboScopes ??= runtime.obo?.scopes
-        delete runtime.name
-        delete runtime.maxAttempts
-        delete runtime.messages
-        delete runtime.obo
+      const maskedOptions: any = {}
+
+      if ('oboScopes' in options && options.oboScopes && options.oboScopes.length > 0) {
+        maskedOptions.oboScopes = redactScopes(options.oboScopes)
       }
 
-      // Helper to remove undefined options
-      const prune = <T extends Record<string, any>>(obj: T) => {
-        const entries = Object.entries(obj).filter(([, e]) => e !== undefined)
-        return Object.fromEntries(entries) as T
+      if ('scopes' in options && options.scopes && options.scopes.length > 0) {
+        maskedOptions.scopes = redactScopes(options.scopes)
       }
 
-      // Priority: runtime > latest > legacy
-      // Pruning done individually to avoid overwriting with undefined when merging.
-      const options: AuthorizationOptions[string] = runtime ? { ...prune(legacy || {}), ...prune(runtime) } : prune(latest || {})
+      logger.info(this.prefix(id, 'settings loaded from \'%s\''), format, { ...options, ...maskedOptions })
 
       if (!settings.storage) {
         throw ExceptionHelper.generateException(Error, Errors.StorageRequiredForAuthorization)
@@ -437,12 +422,6 @@ export class AuthorizationManager {
       if (options.type === AGENTIC) {
         this._handlers[id] = new AgenticAuthorization(id, options, settings)
       } else if (options.type === AZURE_BOT) {
-        // Set default values if not provided
-        options.title ||= 'Sign-in'
-        options.text ||= 'Please sign-in to continue'
-        options.oboScopes ??= []
-        options.enableSso = options.enableSso !== false // default value is true if undefined.
-
         this._handlers[id] = new AzureBotAuthorization(id, options, settings)
       }
 
@@ -472,5 +451,69 @@ export class AuthorizationManager {
     }
 
     throw ExceptionHelper.generateException(Error, Errors.UnsupportedAuthHandlerType, undefined, { handlerType: type })
+  }
+
+  /**
+   * Resolves the effective handler configuration for a given handler ID.
+   */
+  private resolveHandlerConfiguration (
+    id: string,
+    runtimeEntries: Array<[string, AuthorizationOptions[string]]>,
+    latestEntries: Array<[string, AuthorizationOptions[string]]>,
+    legacyEntries: Array<[string, AuthorizationOptions[string]]>
+  ): {
+      options: AuthorizationOptions[string];
+      format: string;
+    } {
+    const matchesId = ([_id]: [string, AuthorizationOptions[string]]) => _id.toLowerCase() === id.toLowerCase()
+
+    // Find entries case-insensitively for later processing
+    const [, runtime] = runtimeEntries.find(matchesId) ?? []
+    const [, latest] = latestEntries.find(matchesId) ?? []
+    const [, legacy] = legacyEntries.find(matchesId) ?? []
+
+    if (runtime !== undefined && latest !== undefined) {
+      logger.warn(this.prefix(id, 'Both runtime options and latest environment variable configurations detected. Runtime configuration will take precedence over latest environment variables.'))
+    }
+
+    const runtimeLegacyKeys = ['name', 'maxAttempts', 'messages', 'obo']
+    const isRuntimeLegacy = runtime !== undefined && Object.keys(runtime).some(key => runtimeLegacyKeys.includes(key))
+
+    let runtimeLegacyFormat = ''
+    if (isRuntimeLegacy && runtime.type === AZURE_BOT) {
+      runtime.azureBotOAuthConnectionName ??= runtime.name
+      runtime.invalidSignInRetryMax ??= runtime.maxAttempts
+      runtime.invalidSignInRetryMessage ??= runtime.messages?.invalidCode
+      runtime.invalidSignInRetryMessageFormat ??= runtime.messages?.invalidCodeFormat
+      runtime.invalidSignInRetryMaxExceededMessage ??= runtime.messages?.maxAttemptsExceeded
+      runtime.oboConnectionName ??= runtime.obo?.connection
+      runtime.oboScopes ??= runtime.obo?.scopes
+      delete runtime.name
+      delete runtime.maxAttempts
+      delete runtime.messages
+      delete runtime.obo
+      runtimeLegacyFormat = 'runtime options (legacy)'
+    }
+
+    if (runtime !== undefined && legacy !== undefined) {
+      return { format: `${runtimeLegacyFormat || 'runtime options'} + .env variables (legacy)`, options: { ...prune(legacy), ...prune(runtime) } }
+    }
+
+    if (runtime !== undefined) {
+      return { format: runtimeLegacyFormat || 'runtime options', options: prune(runtime) }
+    }
+
+    if (latest !== undefined) {
+      return { format: '.env variables', options: prune(latest) }
+    }
+
+    if (legacy !== undefined) {
+      // Note: this should never happen, as legacy requires runtime to be present.
+      // However, we show a warning just in case to detect if something goes wrong.
+      logger.warn(this.prefix(id, 'Legacy environment variable configuration detected without a corresponding runtime options configuration.'))
+      return { format: '.env variables (legacy)', options: prune(legacy) }
+    }
+
+    return { format: 'empty options', options: {} }
   }
 }
