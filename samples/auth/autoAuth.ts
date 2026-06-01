@@ -6,6 +6,12 @@ import { AgentApplication, CardFactory, MemoryStorage, MessageFactory, TurnConte
 import { getUserInfo } from '../_shared/userGraphClient.js'
 import { getCurrentProfile, getPullRequests } from '../_shared/githubApiClient.js'
 
+// make sure we don't insert broken JSON into the templates,
+// since the template is like {"type":"TextBlock","text":"${displayName}"}
+// so the value itself has to be escaped use INSIDE the existing quotes.
+// So this...escapes it, then trims off the quotes that stringify adds
+const escapeJson = (str: string) => JSON.stringify(str).slice(1, -1)
+
 class OneProvider extends AgentApplication<TurnState> {
   constructor () {
     super({
@@ -67,12 +73,12 @@ class OneProvider extends AgentApplication<TurnState> {
     const userInfo = await getUserInfo(userTokenResponse?.token!)
     /* eslint-disable no-template-curly-in-string */
     const card = JSON.parse(JSON.stringify(userTemplate)
-      .replaceAll('${displayName}', userInfo.$root.displayName)
-      .replaceAll('${mail}', userInfo.$root.mail)
-      .replaceAll('${jobTitle}', (userInfo.$root.jobTitle ?? '').toUpperCase())
-      .replaceAll('${givenName}', userInfo.$root.givenName)
-      .replaceAll('${surname}', userInfo.$root.surname)
-      .replaceAll('${imageUri}', userInfo.$root.imageUri))
+      .replaceAll('${displayName}', escapeJson(userInfo.$root.displayName))
+      .replaceAll('${mail}', escapeJson(userInfo.$root.mail))
+      .replaceAll('${jobTitle}', escapeJson((userInfo.$root.jobTitle ?? '').toUpperCase()))
+      .replaceAll('${givenName}', escapeJson(userInfo.$root.givenName))
+      .replaceAll('${surname}', escapeJson(userInfo.$root.surname))
+      .replaceAll('${imageUri}', escapeJson(userInfo.$root.imageUri)))
     /* eslint-enable no-template-curly-in-string */
     const activity = MessageFactory.attachment(CardFactory.adaptiveCard(card))
     await context.sendActivity(activity)
@@ -89,12 +95,12 @@ class OneProvider extends AgentApplication<TurnState> {
     const userTemplate = (await import('./../_resources/UserProfileCard.json'))
     /* eslint-disable no-template-curly-in-string */
     const card = JSON.parse(JSON.stringify(userTemplate)
-      .replaceAll('${displayName}', ghProf.$root.displayName)
-      .replaceAll('${mail}', ghProf.$root.mail)
-      .replaceAll('${jobTitle}', (ghProf.$root.jobTitle ?? '').toUpperCase())
-      .replaceAll('${givenName}', ghProf.$root.givenName)
-      .replaceAll('${surname}', ghProf.$root.surname)
-      .replaceAll('${imageUri}', ghProf.$root.imageUri))
+      .replaceAll('${displayName}', escapeJson(ghProf.$root.displayName))
+      .replaceAll('${mail}', escapeJson(ghProf.$root.mail))
+      .replaceAll('${jobTitle}', escapeJson((ghProf.$root.jobTitle ?? '').toUpperCase()))
+      .replaceAll('${givenName}', escapeJson(ghProf.$root.givenName))
+      .replaceAll('${surname}', escapeJson(ghProf.$root.surname))
+      .replaceAll('${imageUri}', escapeJson(ghProf.$root.imageUri)))
     /* eslint-enable no-template-curly-in-string */
     const activity = MessageFactory.attachment(CardFactory.adaptiveCard(card))
     await context.sendActivity(activity)
@@ -104,8 +110,8 @@ class OneProvider extends AgentApplication<TurnState> {
       const prCard = (await import('./../_resources/PullRequestCard.json'))
       /* eslint-disable no-template-curly-in-string */
       const card = JSON.parse(JSON.stringify(prCard)
-        .replaceAll('${title}', pr.title)
-        .replaceAll('${url}', pr.url))
+        .replaceAll('${title}', escapeJson(pr.title))
+        .replaceAll('${url}', escapeJson(pr.url)))
       /* eslint-enable no-template-curly-in-string */
       await context.sendActivity(MessageFactory.attachment(CardFactory.adaptiveCard(card)))
     }
