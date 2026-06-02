@@ -21,7 +21,7 @@ import { CloudAdapter } from '../cloudAdapter'
 import { Authorization, UserAuthorization, AuthorizationManager } from './auth'
 import { Proactive } from './proactive'
 import { JwtPayload } from 'jsonwebtoken'
-import { trace, debug } from '@microsoft/agents-telemetry'
+import { trace, debug, redactString } from '@microsoft/agents-telemetry'
 import { AgentApplicationTraceDefinitions } from '../observability'
 import { Errors } from '../errorHelper'
 
@@ -164,10 +164,35 @@ export class AgentApplication<TState extends TurnState> {
       }
     }
 
-    logger.debug('AgentApplication created with options:', this._options)
-
     this._authorizationManager = new AuthorizationManager(this, this._adapter.connectionManager)
     this._authorization = new UserAuthorization(this._authorizationManager)
+
+    const className = (obj: any) => obj?.constructor?.name ?? (obj ? 'custom' : undefined)
+    logger.info('AgentApplication settings loaded', {
+      agentAppId: redactString(this._options.agentAppId, true),
+      adapter: {
+        className: className(this._adapter),
+        source: this._options.adapter ? 'consumed' : 'created',
+      },
+      storage: className(this._options.storage),
+      authorization: this._authorizationManager.handlers.map(e => e.id),
+      proactive: {
+        ...this.options.proactive,
+        storage: className(this._options.proactive?.storage ?? this._options.storage),
+        source: this._options.proactive ? 'options' : 'storage',
+      },
+      transcriptLogger: className(this._options.transcriptLogger),
+      typing: {
+        startTimer: this._options.startTypingTimer,
+        options: this._options.typing,
+      },
+      longRunningMessages: this._options.longRunningMessages,
+      removeRecipientMention: this._options.removeRecipientMention,
+      normalizeMentions: this._options.normalizeMentions,
+      fileDownloaders: this._options.fileDownloaders ? 'configured' : undefined,
+      turnStateFactory: options?.turnStateFactory ? 'custom' : 'default',
+      adaptiveCardsOptions: this._options.adaptiveCardsOptions,
+    })
   }
 
   /**
