@@ -21,6 +21,6 @@
     "adaptivecards-templating": "2.3.1",
     "axios": "1.16.0",
     "express": "5.2.1",
-    "express-rate-limit": "8.3.2"
+    "express-rate-limit": "8.5.2"
   }
 }

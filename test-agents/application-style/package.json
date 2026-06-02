@@ -25,6 +25,6 @@
         "@microsoft/agents-activity": "file:../../packages/agents-activity",
         "@microsoft/microsoft-graph-client": "3.0.7",
         "express": "5.2.1",
-        "express-rate-limit": "8.3.2"
+        "express-rate-limit": "8.5.2"
     }
 }
