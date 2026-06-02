@@ -123,12 +123,22 @@ Handle Teams task modules:
 
 ```typescript
 app.registerExtension<TeamsAgentExtension>(teamsExt, (tae) => {
-  tae.taskModule
-    .onFetch(async (context, state) => {
-      // Return task module card
+  tae.taskModules
+    .onFetch('simple_form', async (context, state, request) => {
+      return {
+        task: {
+          type: 'message',
+          value: 'Open task module'
+        }
+      }
     })
-    .onSubmit(async (context, state) => {
-      // Handle task module submission
+    .onSubmit('simple_form', async (context, state, request) => {
+      return {
+        task: {
+          type: 'message',
+          value: 'Task module submitted'
+        }
+      }
     })
 })
 ```

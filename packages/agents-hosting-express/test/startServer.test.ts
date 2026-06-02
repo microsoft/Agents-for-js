@@ -3,13 +3,16 @@
  * Licensed under the MIT License.
  */
 
-import { describe, it, before, after } from 'node:test'
+import { describe, it, before, after, beforeEach, afterEach } from 'node:test'
 import assert from 'assert'
 import { createServer, type Server } from 'node:http'
 import express, { type Express, type Request, type Response } from 'express'
 import rateLimit from 'express-rate-limit'
-import { ActivityHandler, authorizeJWT } from '@microsoft/agents-hosting'
+import { ActivityHandler, AgentApplication, authorizeJWT, CloudAdapter } from '@microsoft/agents-hosting'
 import { startServer, StartServerOptions } from '../src/startServer'
+import sinon from 'sinon'
+
+class TestActivityHandler extends ActivityHandler {}
 
 // Using a clientId ensures JWT is enforced (non-empty clientId prevents anonymous fallback)
 const TEST_AUTH_CONFIG = { clientId: 'test-app-id' }
@@ -214,6 +217,62 @@ describe('StartServerOptions', () => {
       } finally {
         ;(express.application as any).listen = originalListen
       }
+    })
+  })
+  describe('configureAdapter callback', () => {
+    let listenStub: sinon.SinonStub
+    let consoleLogStub: sinon.SinonStub
+
+    beforeEach(() => {
+      listenStub = sinon.stub(express.application, 'listen').callsFake(function (_port: any, callback?: () => void) {
+        callback?.()
+        return {
+          on: sinon.stub().returnsThis()
+        } as any
+      })
+      consoleLogStub = sinon.stub(console, 'log')
+    })
+
+    afterEach(() => {
+      listenStub.restore()
+      consoleLogStub.restore()
+    })
+    it('configures the created adapter for ActivityHandler instances', () => {
+      const handler = new TestActivityHandler()
+      let configuredAdapter: CloudAdapter | undefined
+
+      startServer(handler, {
+        authConfig: {},
+        configureAdapter: (adapter) => {
+          configuredAdapter = adapter
+        }
+      })
+
+      assert.ok(configuredAdapter instanceof CloudAdapter)
+      assert.strictEqual(listenStub.calledOnce, true)
+    })
+
+    it('configures the existing application adapter when provided', () => {
+      const adapter = new CloudAdapter()
+      const app = new AgentApplication({ adapter })
+      let configuredAdapter: CloudAdapter | undefined
+
+      startServer(app, {
+        configureAdapter: (value) => {
+          configuredAdapter = value
+        }
+      })
+
+      assert.strictEqual(configuredAdapter, adapter)
+      assert.strictEqual(listenStub.calledOnce, true)
+    })
+
+    it('accepts the legacy auth configuration argument', () => {
+      const handler = new TestActivityHandler()
+
+      startServer(handler, {})
+
+      assert.strictEqual(listenStub.calledOnce, true)
     })
   })
 })

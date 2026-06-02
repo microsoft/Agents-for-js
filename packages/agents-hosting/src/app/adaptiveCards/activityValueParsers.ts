@@ -5,7 +5,6 @@
 
 import { z } from 'zod'
 import { activityZodSchema, AdaptiveCardInvokeAction, adaptiveCardInvokeActionZodSchema } from '@microsoft/agents-activity'
-// import { MessagingExtensionQuery, messagingExtensionQueryZodSchema } from '../messageExtension/messagingExtensionQuery'
 import { adaptiveCardsSearchParamsZodSchema } from './adaptiveCardsSearchParams'
 
 /**

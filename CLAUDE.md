@@ -114,6 +114,30 @@ The package dependency hierarchy (simplified):
 
 **Storage**: Abstraction for persisting state (conversation, user, private). Implementations exist for Memory, Blob, and Cosmos.
 
+### Teams Extension (Teams SDK Migration)
+
+The `agents-hosting-extensions-teams` package has been updated to align with the Teams SDK-based architecture used in .NET.
+
+- **Teams SDK dependency**: Uses `@microsoft/teams.api` (`2.0.8`) for Teams models and client operations.
+- **Removed legacy wrapper**: `TeamsConnectorClient` and most Teams-specific local model wrappers were removed from the JS extension layer.
+- **Shared Teams client setup**: Teams client setup/retrieval is centralized in `packages/agents-hosting-extensions-teams/src/teamsApiClient.ts`:
+  - `TeamsApiClientKey`
+  - `setTeamsApiClient(context, channelId?)`
+  - `getTeamsClient(context)`
+- **Turn setup requirements**:
+  - `TeamsAgentExtension` registers `beforeTurn` and calls `setTeamsApiClient(...)` for `AgentApplication` scenarios.
+  - `TeamsActivityHandler` scenarios require middleware: `SetTeamsApiClientMiddleware`.
+  - `startServer` supports `configureAdapter` to wire middleware for compat handlers.
+- **TeamsInfo behavior**:
+  - `TeamsInfo` uses `getTeamsClient(context)` and Teams SDK methods (`teams`, `meetings`, `conversations.members`).
+  - Member paging methods (`getPagedMembers`, `getPagedTeamMembers`) return a single page result and honor continuation tokens.
+- **Error handling**:
+  - Missing client access throws `TeamsApiClientNotAvailable`.
+  - Teams client setup prerequisites throw `TeamsApiClientSetupFailed` (for easier misconfiguration diagnosis).
+- **Parsing simplification**:
+  - Teams channel data parsing was simplified to root-object validation/pass-through (`activity-extensions/teamsChannelData.ts`).
+  - Messaging extension query parsing remains validated via Zod schema (`messageExtension/messagingExtensionQuery.ts`).
+
 ### Authentication
 
 Authentication configuration is loaded from environment variables using `loadAuthConfigFromEnv()`. The SDK supports:

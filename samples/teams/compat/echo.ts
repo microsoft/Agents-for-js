@@ -1,5 +1,5 @@
+import { TeamsActivityHandler, SetTeamsApiClientMiddleware } from '@microsoft/agents-hosting-extensions-teams'
 import { startServer } from '@microsoft/agents-hosting-express'
-import { TeamsActivityHandler } from '@microsoft/agents-hosting-extensions-teams'
 
 class TeamsEchoBot extends TeamsActivityHandler {
   constructor () {
@@ -20,4 +20,10 @@ class TeamsEchoBot extends TeamsActivityHandler {
     })
   }
 }
-startServer(new TeamsEchoBot())
+startServer(
+  new TeamsEchoBot(),
+  {
+    configureAdapter: (adapter) => {
+      adapter.use(new SetTeamsApiClientMiddleware())
+    }
+  })

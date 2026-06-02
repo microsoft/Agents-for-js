@@ -5,7 +5,7 @@
 
 import express, { Response } from 'express'
 import rateLimit from 'express-rate-limit'
-import { ActivityHandler, AgentApplication, AuthConfiguration, authorizeJWT, getAuthConfigWithDefaults, Request, TurnState } from '@microsoft/agents-hosting'
+import { ActivityHandler, AgentApplication, AuthConfiguration, authorizeJWT, CloudAdapter, getAuthConfigWithDefaults, Request, TurnState } from '@microsoft/agents-hosting'
 import { version } from '@microsoft/agents-hosting/package.json'
 import { debug } from '@microsoft/agents-telemetry'
 import { createCloudAdapter } from './createCloudAdapter'
@@ -66,6 +66,14 @@ export interface StartServerOptions {
    * ```
    */
   beforeListen?: (app: express.Express) => void
+
+  /**
+   * A callback invoked with the CloudAdapter instance before it is used by the server.
+   * Use this to add custom middleware, error handling, or other adapter-level configurations.
+   *
+   * @param adapter - The CloudAdapter instance to configure.
+   */
+  configureAdapter?: (adapter: CloudAdapter) => void
 }
 
 /**
@@ -80,6 +88,7 @@ export interface StartServerOptions {
  * This function sets up an Express server with the necessary middleware and routes for handling
  * agent requests. It configures JWT authorization middleware on the messages route and sets up the endpoint.
  * The server will listen on the port specified in options, the PORT environment variable, or 3978 by default.
+ * adapter created for an `ActivityHandler` or reused from an `AgentApplication`.
  *
  * @example
  * ```typescript
@@ -103,6 +112,9 @@ export interface StartServerOptions {
  *   routePath: '/bot/messages',
  *   beforeListen: (server) => {
  *     server.get('/health', (req, res) => res.json({ status: 'ok' }));
+ *   },
+ *   configureAdapter: (adapter) => {
+ *     // Example: add custom middleware
  *   }
  * });
  * ```
@@ -111,12 +123,14 @@ export function startServer (agent: AgentApplication<TurnState<any, any>> | Acti
 export function startServer (agent: AgentApplication<TurnState<any, any>> | ActivityHandler, authConfiguration?: AuthConfiguration): express.Express
 export function startServer (agent: AgentApplication<TurnState<any, any>> | ActivityHandler, optionsOrAuth?: StartServerOptions | AuthConfiguration): express.Express {
   const isOptions = typeof optionsOrAuth === 'object' && optionsOrAuth !== null &&
-    ('authConfig' in optionsOrAuth || 'port' in optionsOrAuth || 'routePath' in optionsOrAuth || 'rateLimitOptions' in optionsOrAuth || 'beforeListen' in optionsOrAuth)
+    ('authConfig' in optionsOrAuth || 'port' in optionsOrAuth || 'routePath' in optionsOrAuth || 'rateLimitOptions' in optionsOrAuth || 'beforeListen' in optionsOrAuth || 'configureAdapter' in optionsOrAuth)
 
   const opts: StartServerOptions = isOptions ? optionsOrAuth as StartServerOptions : { authConfig: optionsOrAuth as AuthConfiguration | undefined }
   const authConfig: AuthConfiguration = getAuthConfigWithDefaults(opts.authConfig)
   const routePath = opts.routePath ?? '/api/messages'
   const { adapter, headerPropagation } = createCloudAdapter(agent, authConfig)
+
+  opts.configureAdapter?.(adapter)
 
   const server = express()
   server.use(express.json())

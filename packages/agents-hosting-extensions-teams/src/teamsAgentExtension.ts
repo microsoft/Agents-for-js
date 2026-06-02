@@ -1,239 +1,89 @@
-import { Meeting } from './meeting/meeting'
-import { ActivityTypes } from '@microsoft/agents-activity'
-import { AgentApplication, AgentExtension, RouteHandler, RouteSelector, TurnContext, TurnState } from '@microsoft/agents-hosting'
-import { parseTeamsChannelData } from './activity-extensions/teamsChannelDataParser'
-import { MessageExtension } from './messageExtension/messageExtension'
-import { TaskModule } from './taskModule/taskModule'
-import { FeedbackLoopData } from './feedbackLoopData'
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+import { AgentApplication, AgentExtension, TurnState } from '@microsoft/agents-hosting'
+import { parseTeamsChannelData } from './activity-extensions'
+import { Configuration } from './configurations/configuration'
+import { FileConsent } from './fileConsents/fileConsent'
+import { Meeting } from './meetings/meeting'
+import { Message } from './messages/message'
+import { MessageExtension } from './messageExtensions/messageExtension'
+import { TaskModule } from './taskModules/taskModule'
+import { TeamsChannel } from './channels/teamsChannel'
+import { TeamsTeam } from './teams/teamsTeam'
+import { Client as TeamsClient } from '@microsoft/teams.api'
+import { getTeamsClient, setTeamsApiClient, TeamsApiClientKey } from './teamsApiClient'
 
 export class TeamsAgentExtension<TState extends TurnState = TurnState> extends AgentExtension<TState> {
+  static readonly TeamsApiClientKey = TeamsApiClientKey
+
   private _app: AgentApplication<TState>
-  private _meeting: Meeting<TState>
-  private _messageExtension: MessageExtension<TState>
-  private _taskModule: TaskModule<TState>
+  private _meetings: Meeting<TState>
+  private _messageExtensions: MessageExtension<TState>
+  private _taskModules: TaskModule<TState>
+  private _channels: TeamsChannel<TState>
+  private _teams: TeamsTeam<TState>
+  private _messages: Message<TState>
+  private _fileConsent: FileConsent<TState>
+  private _configuration: Configuration<TState>
+
   constructor (app: AgentApplication<TState>) {
     super('msteams')
     this._app = app
-    this._meeting = new Meeting(app)
-    this._messageExtension = new MessageExtension(app)
-    this._taskModule = new TaskModule(app)
+    this._meetings = new Meeting(app)
+    this._messageExtensions = new MessageExtension(app)
+    this._taskModules = new TaskModule(app)
+    this._channels = new TeamsChannel(app)
+    this._teams = new TeamsTeam(app)
+    this._messages = new Message(app)
+    this._fileConsent = new FileConsent(app)
+    this._configuration = new Configuration(app)
+    this._app.onTurn('beforeTurn', async (context) => {
+      if (context.activity.channelId === this.channelId) {
+        setTeamsApiClient(context, this.channelId)
+        try {
+          context.activity.channelData = parseTeamsChannelData(context.activity.channelData)
+        } catch {
+          // ignore parse errors for non-Teams channel data
+        }
+      }
+      return true
+    })
   }
 
-  public get meeting (): Meeting<TState> {
-    return this._meeting
+  public get meetings (): Meeting<TState> {
+    return this._meetings
   }
 
-  public get messageExtension (): MessageExtension<TState> {
-    return this._messageExtension
+  public get messageExtensions (): MessageExtension<TState> {
+    return this._messageExtensions
   }
 
-  public get taskModule (): TaskModule<TState> {
-    return this._taskModule
+  public get taskModules (): TaskModule<TState> {
+    return this._taskModules
   }
 
-  onFeedback (handler: RouteHandler<TurnState>) {
-    const routeSel: RouteSelector = (context: TurnContext) => {
-      return Promise.resolve(
-        context.activity.type === ActivityTypes.Invoke &&
-        context.activity.channelId === 'msteams' &&
-        context.activity.name === 'message/submitAction' &&
-        (context.activity.value as FeedbackLoopData).actionName === 'feedback'
-      )
-    }
-    this._app.addRoute(routeSel, handler, true) // Invoke requires true
-    return this
+  public get channels (): TeamsChannel<TState> {
+    return this._channels
   }
 
-  onMessageEdit (handler: RouteHandler<TurnState>) {
-    const routeSel: RouteSelector = (context: TurnContext) => {
-      const channelData = parseTeamsChannelData(context.activity.channelData)
-      return Promise.resolve(!!(context.activity.type === ActivityTypes.MessageUpdate && channelData?.eventType === 'editMessage'))
-    }
-    this.addRoute(this._app, routeSel, handler, false)
-    return this
+  public get teams (): TeamsTeam<TState> {
+    return this._teams
   }
 
-  onMessageDelete (handler: RouteHandler<TurnState>) {
-    const routeSel: RouteSelector = (context: TurnContext) => {
-      const channelData = parseTeamsChannelData(context.activity.channelData)
-      return Promise.resolve(context.activity.type === ActivityTypes.MessageDelete && channelData && channelData.eventType === 'softDeleteMessage')
-    }
-    this.addRoute(this._app, routeSel, handler, false)
-    return this
+  public get messages (): Message<TState> {
+    return this._messages
   }
 
-  onMessageUndelete (handler: RouteHandler<TurnState>) {
-    const routeSel: RouteSelector = (context: TurnContext) => {
-      const channelData = parseTeamsChannelData(context.activity.channelData)
-      return Promise.resolve(context.activity.type === ActivityTypes.MessageUpdate && channelData && channelData.eventType === 'undeleteMessage')
-    }
-    this.addRoute(this._app, routeSel, handler, false)
-    return this
+  public get fileConsent (): FileConsent<TState> {
+    return this._fileConsent
   }
 
-  onTeamsMembersAdded (handler: RouteHandler<TurnState>) {
-    const routeSel: RouteSelector = (context: TurnContext) => {
-      return Promise.resolve(!!(context.activity.type === ActivityTypes.ConversationUpdate &&
-                context.activity.channelId === 'msteams' &&
-                context.activity.membersAdded &&
-                context.activity.membersAdded.length > 0))
-    }
-    this.addRoute(this._app, routeSel, handler, false)
-    return this
+  public get configuration (): Configuration<TState> {
+    return this._configuration
   }
 
-  onTeamsMembersRemoved (handler: RouteHandler<TurnState>) {
-    const routeSel: RouteSelector = (context: TurnContext) => {
-      return Promise.resolve(!!(context.activity.type === ActivityTypes.ConversationUpdate &&
-                context.activity.channelId === 'msteams' &&
-                context.activity.membersRemoved &&
-                context.activity.membersRemoved.length > 0))
-    }
-    this.addRoute(this._app, routeSel, handler, false)
-    return this
-  }
-
-  onTeamsChannelCreated (handler: RouteHandler<TurnState>) {
-    const routeSel: RouteSelector = (context: TurnContext) => {
-      const channelData = parseTeamsChannelData(context.activity.channelData)
-      return Promise.resolve(context.activity.type === ActivityTypes.ConversationUpdate &&
-                context.activity.channelId === 'msteams' &&
-                channelData &&
-                channelData.eventType === 'channelCreated')
-    }
-    this.addRoute(this._app, routeSel, handler, false)
-    return this
-  }
-
-  onTeamsChannelDeleted (handler: RouteHandler<TurnState>) {
-    const routeSel: RouteSelector = (context: TurnContext) => {
-      const channelData = parseTeamsChannelData(context.activity.channelData)
-      return Promise.resolve(context.activity.type === ActivityTypes.ConversationUpdate &&
-                context.activity.channelId === 'msteams' &&
-                channelData &&
-                channelData.eventType === 'channelDeleted')
-    }
-    this.addRoute(this._app, routeSel, handler, false)
-    return this
-  }
-
-  onTeamsChannelRenamed (handler: RouteHandler<TurnState>) {
-    const routeSel: RouteSelector = (context: TurnContext) => {
-      const channelData = parseTeamsChannelData(context.activity.channelData)
-      return Promise.resolve(context.activity.type === ActivityTypes.ConversationUpdate &&
-                context.activity.channelId === 'msteams' &&
-                channelData &&
-                channelData.eventType === 'channelRenamed')
-    }
-    this.addRoute(this._app, routeSel, handler, false)
-    return this
-  }
-
-  onTeamsChannelRestored (handler: RouteHandler<TurnState>) {
-    const routeSel: RouteSelector = (context: TurnContext) => {
-      const channelData = parseTeamsChannelData(context.activity.channelData)
-      return Promise.resolve(context.activity.type === ActivityTypes.ConversationUpdate &&
-                context.activity.channelId === 'msteams' &&
-                channelData &&
-                channelData.eventType === 'channelRestored')
-    }
-    this.addRoute(this._app, routeSel, handler, false)
-    return this
-  }
-
-  onTeamsChannelShared (handler: RouteHandler<TurnState>) {
-    const routeSel: RouteSelector = (context: TurnContext) => {
-      const channelData = parseTeamsChannelData(context.activity.channelData)
-      return Promise.resolve(context.activity.type === ActivityTypes.ConversationUpdate &&
-                context.activity.channelId === 'msteams' &&
-                channelData &&
-                channelData.eventType === 'channelShared')
-    }
-    this.addRoute(this._app, routeSel, handler, false)
-    return this
-  }
-
-  onTeamsChannelUnshared (handler: RouteHandler<TurnState>) {
-    const routeSel: RouteSelector = (context: TurnContext) => {
-      const channelData = parseTeamsChannelData(context.activity.channelData)
-      return Promise.resolve(context.activity.type === ActivityTypes.ConversationUpdate &&
-                context.activity.channelId === 'msteams' &&
-                channelData &&
-                channelData.eventType === 'channelUnshared')
-    }
-    this.addRoute(this._app, routeSel, handler, false)
-    return this
-  }
-
-  onTeamsTeamRenamed (handler: RouteHandler<TurnState>) {
-    const routeSel: RouteSelector = (context: TurnContext) => {
-      const channelData = parseTeamsChannelData(context.activity.channelData)
-      return Promise.resolve(context.activity.type === ActivityTypes.ConversationUpdate &&
-                context.activity.channelId === 'msteams' &&
-                channelData &&
-                channelData.eventType === 'teamRenamed')
-    }
-    this.addRoute(this._app, routeSel, handler, false)
-    return this
-  }
-
-  onTeamsTeamArchived (handler: RouteHandler<TurnState>) {
-    const routeSel: RouteSelector = (context: TurnContext) => {
-      const channelData = parseTeamsChannelData(context.activity.channelData)
-      return Promise.resolve(context.activity.type === ActivityTypes.ConversationUpdate &&
-                context.activity.channelId === 'msteams' &&
-                channelData &&
-                channelData.eventType === 'teamArchived')
-    }
-    this.addRoute(this._app, routeSel, handler, false)
-    return this
-  }
-
-  onTeamsTeamUnarchived (handler: RouteHandler<TurnState>) {
-    const routeSel: RouteSelector = (context: TurnContext) => {
-      const channelData = parseTeamsChannelData(context.activity.channelData)
-      return Promise.resolve(context.activity.type === ActivityTypes.ConversationUpdate &&
-                context.activity.channelId === 'msteams' &&
-                channelData &&
-                channelData.eventType === 'teamUnarchived')
-    }
-    this.addRoute(this._app, routeSel, handler, false)
-    return this
-  }
-
-  onTeamsTeamDeleted (handler: RouteHandler<TurnState>) {
-    const routeSel: RouteSelector = (context: TurnContext) => {
-      const channelData = parseTeamsChannelData(context.activity.channelData)
-      return Promise.resolve(context.activity.type === ActivityTypes.ConversationUpdate &&
-                context.activity.channelId === 'msteams' &&
-                channelData &&
-                channelData.eventType === 'teamDeleted')
-    }
-    this.addRoute(this._app, routeSel, handler, false)
-    return this
-  }
-
-  onTeamsTeamHardDeleted (handler: RouteHandler<TurnState>) {
-    const routeSel: RouteSelector = (context: TurnContext) => {
-      const channelData = parseTeamsChannelData(context.activity.channelData)
-      return Promise.resolve(context.activity.type === ActivityTypes.ConversationUpdate &&
-                context.activity.channelId === 'msteams' &&
-                channelData &&
-                channelData.eventType === 'teamHardDeleted')
-    }
-    this.addRoute(this._app, routeSel, handler, false)
-    return this
-  }
-
-  onTeamsTeamRestored (handler: RouteHandler<TurnState>) {
-    const routeSel: RouteSelector = (context: TurnContext) => {
-      const channelData = parseTeamsChannelData(context.activity.channelData)
-      return Promise.resolve(context.activity.type === ActivityTypes.ConversationUpdate &&
-                context.activity.channelId === 'msteams' &&
-                channelData &&
-                channelData.eventType === 'teamRestored')
-    }
-    this.addRoute(this._app, routeSel, handler, false)
-    return this
+  public static getTeamsClient (context: import('@microsoft/agents-hosting').TurnContext): TeamsClient {
+    return getTeamsClient(context)
   }
 }
