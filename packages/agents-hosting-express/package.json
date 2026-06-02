@@ -20,7 +20,9 @@
   "types": "dist/src/index.d.ts",
   "dependencies": {
     "@microsoft/agents-hosting": "file:../agents-hosting",
-    "express": "5.2.1"
+    "@microsoft/agents-telemetry": "file:../agents-telemetry",
+    "express": "5.2.1",
+    "express-rate-limit": "8.5.2"
   },
   "license": "MIT",
   "files": [

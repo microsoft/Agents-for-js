@@ -49,6 +49,11 @@ export function index<TLoader extends Loader> (loader: TLoader): LoaderReturn<TL
  * - Trace and metric helpers fall back to no-op implementations when the OTel API is not installed.
  */
 function factory (otel?: OTel, logs?: OTelLogs): Factory {
+  logger.info('Telemetry settings loaded', {
+    traceEnabled: otel !== undefined,
+    logsEnabled: logs !== undefined,
+  })
+
   return {
     SpanNames,
     MetricNames,
