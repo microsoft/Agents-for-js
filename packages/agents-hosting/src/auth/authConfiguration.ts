@@ -3,12 +3,32 @@
  * Licensed under the MIT License.
  */
 
-import { debug } from '@microsoft/agents-telemetry'
+import { debug, redactString, redactScopes, redactUrl } from '@microsoft/agents-telemetry'
 import { ConnectionMapItem } from './msalConnectionManager'
 import objectPath from 'object-path'
+import { prune } from '../utils'
 
 const logger = debug('agents:authConfiguration')
 const DEFAULT_CONNECTION = 'serviceConnection'
+
+function summarizeAuthConfiguration (authConfig: AuthConfiguration): Record<string, unknown> {
+  return [...authConfig.connections?.entries() ?? []].reduce((summary, [name, config]) => {
+    summary[name] = prune({
+      ...config,
+      clientId: redactString(config.clientId, true),
+      tenantId: redactString(config.tenantId, true),
+      clientSecret: redactString(config.clientSecret),
+      authority: config.authority ? redactUrl(config.authority) : undefined,
+      scope: config.scope ? redactScopes([config.scope]) : undefined,
+      issuers: config.issuers?.map(redactUrl).filter(e => e !== undefined),
+      FICClientId: redactString(config.FICClientId, true),
+      certPemFile: redactString(config.certPemFile),
+      certKeyFile: redactString(config.certKeyFile),
+      WIDAssertionFile: redactString(config.WIDAssertionFile),
+    } satisfies AuthConfiguration)
+    return summary
+  }, {} as Record<string, AuthConfiguration>)
+}
 
 /**
  * Represents the authentication configuration.
@@ -90,6 +110,13 @@ export interface AuthConfiguration {
    * The path to K8s provided token.
    */
   WIDAssertionFile?: string
+
+  /**
+   * The Azure region for ESTS-R regional token acquisition (e.g. 'westus', 'eastus').
+   * When set, MSAL routes token requests to the specified regional endpoint.
+   * See https://learn.microsoft.com/en-us/entra/msal/javascript/node/regional-authorities for details.
+   */
+  azureRegion?: string
 }
 
 /**
@@ -152,10 +179,14 @@ export const loadAuthConfigFromEnv = (cnxName?: string): AuthConfiguration => {
     authConfig.issuers ??= getDefaultIssuers(authConfig.tenantId ?? '', authConfig.authority)
   }
 
-  return {
-    ...authConfig,
-    ...envConnections,
-  }
+  const result = { ...authConfig, ...envConnections }
+
+  logger.info('Auth settings loaded from environment', {
+    connections: summarizeAuthConfiguration(result),
+    connectionsMap: result.connectionsMap.map(e => ({ ...e, serviceUrl: e.serviceUrl !== '*' ? redactUrl(e.serviceUrl) : e.serviceUrl })),
+  })
+
+  return result
 }
 
 /**
@@ -196,6 +227,7 @@ export const loadPrevAuthConfigFromEnv: () => AuthConfiguration = () => {
       issuers: getDefaultIssuers(process.env.MicrosoftAppTenantId ?? '', authority),
       altBlueprintConnectionName: process.env.altBlueprintConnectionName,
       WIDAssertionFile: process.env.WIDAssertionFile,
+      azureRegion: process.env.azureRegion,
     }
     envConnections.connections.set(DEFAULT_CONNECTION, authConfig)
     envConnections.connectionsMap.push({
@@ -215,7 +247,10 @@ export const loadPrevAuthConfigFromEnv: () => AuthConfiguration = () => {
   authConfig.authority ??= 'https://login.microsoftonline.com'
   authConfig.issuers ??= getDefaultIssuers(authConfig.tenantId ?? '', authConfig.authority)
 
-  return { ...authConfig, ...envConnections }
+  const result = { ...authConfig, ...envConnections }
+  logger.info('Legacy auth settings loaded from environment', summarizeAuthConfiguration(result), result.connectionsMap)
+
+  return result
 }
 
 function loadConnectionsMapFromEnv () {
@@ -318,10 +353,10 @@ export function getAuthConfigWithDefaults (config?: AuthConfiguration): AuthConf
     mergedConfig = buildLegacyAuthConfig(undefined, defaultConn)
   }
 
-  return {
-    ...mergedConfig,
-    ...connections,
-  }
+  const result = { ...mergedConfig, ...connections }
+  logger.info('Auth settings loaded from runtime configuration', summarizeAuthConfiguration(result), result.connectionsMap)
+
+  return result
 }
 
 function buildLegacyAuthConfig (envPrefix: string = '', customConfig?: AuthConfiguration): AuthConfiguration {
@@ -352,7 +387,8 @@ function buildLegacyAuthConfig (envPrefix: string = '', customConfig?: AuthConfi
     scope: customConfig?.scope ?? process.env[`${prefix}scope`],
     issuers: customConfig?.issuers ?? getDefaultIssuers(tenantId as string, authority),
     altBlueprintConnectionName: customConfig?.altBlueprintConnectionName ?? process.env[`${prefix}altBlueprintConnectionName`],
-    WIDAssertionFile: customConfig?.WIDAssertionFile ?? process.env[`${prefix}WIDAssertionFile`]
+    WIDAssertionFile: customConfig?.WIDAssertionFile ?? process.env[`${prefix}WIDAssertionFile`],
+    azureRegion: customConfig?.azureRegion ?? process.env[`${prefix}azureRegion`]
   }
 }
 

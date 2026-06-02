@@ -595,6 +595,27 @@ describe('MsalTokenProvider', () => {
     }
   })
 
+  it('should pass azureRegion to acquireTokenByClientCredential when configured', async () => {
+    const acquireTokenStub = sinon.stub(ConfidentialClientApplication.prototype, 'acquireTokenByClientCredential').resolves({ accessToken: 'regional-token' })
+
+    const provider = new MsalTokenProvider({
+      clientId: 'client-id',
+      clientSecret: 'secret',
+      tenantId: 'tenant-id',
+      azureRegion: 'westus',
+    })
+
+    try {
+      const token = await provider.getAccessToken('https://graph.microsoft.com')
+      assert.strictEqual(token, 'regional-token')
+      assert.strictEqual(acquireTokenStub.called, true)
+      const requestArg = acquireTokenStub.getCall(0).args[0] as any
+      assert.strictEqual(requestArg.azureRegion, 'westus', 'azureRegion must be forwarded to acquireTokenByClientCredential')
+    } finally {
+      sinon.restore()
+    }
+  })
+
   it('should pass x5c as the client_assertion in the token request when sendX5C is true', async () => {
     sinon.restore()
     const fakePem = '-----BEGIN CERTIFICATE-----\nMIIFakeCert\n-----END CERTIFICATE-----'

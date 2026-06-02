@@ -6,7 +6,6 @@ import { Activity, ExceptionHelper } from '@microsoft/agents-activity'
 import { Errors } from './errorHelper'
 import { Configurable } from './configurable'
 import { DialogContext } from './dialogContext'
-import omit from 'lodash/omit'
 import { RecognizerResult, getTopScoringIntent } from './recognizerResult'
 
 /**
@@ -133,9 +132,7 @@ export class Recognizer extends Configurable implements RecognizerConfiguration 
       TopIntentScore: intents.length > 0 ? score.toString() : '',
       Intents: intents.length > 0 ? JSON.stringify(recognizerResult.intents) : '',
       Entities: recognizerResult.entities ? JSON.stringify(recognizerResult.entities) : '',
-      AdditionalProperties: JSON.stringify(
-        omit(recognizerResult, ['text', 'alteredText', 'intents', 'entities'])
-      ),
+      AdditionalProperties: this.stringifyAdditionalPropertiesOfRecognizerResult(recognizerResult) || '{}',
     }
 
     if (telemetryProperties) {
@@ -148,11 +145,10 @@ export class Recognizer extends Configurable implements RecognizerConfiguration 
   protected stringifyAdditionalPropertiesOfRecognizerResult (recognizerResult: RecognizerResult): string {
     const generalProperties = new Set(['text', 'alteredText', 'intents', 'entities'])
     const additionalProperties: { [key: string]: string } = {}
-    for (const key in recognizerResult) {
-      if (!generalProperties.has(key)) {
-        additionalProperties[key] = recognizerResult[key]
-      }
-    }
+    Object.keys(recognizerResult).filter(key => !generalProperties.has(key)).forEach(key => {
+      additionalProperties[key] = recognizerResult[key]
+    })
+
     return Object.keys(additionalProperties).length > 0 ? JSON.stringify(additionalProperties) : ''
   }
 }

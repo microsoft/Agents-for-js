@@ -3,13 +3,13 @@
  * Licensed under the MIT License.
  */
 
-import { v4 as uuid } from 'uuid'
+import { randomUUID } from 'crypto'
 
 import { Activity, Attachment, ConversationAccount } from '@microsoft/agents-activity'
 import { Observable, BehaviorSubject, type Subscriber } from 'rxjs'
 
 import { CopilotStudioClient } from './copilotStudioClient'
-import { debug, trace } from '@microsoft/agents-telemetry'
+import { debug, trace, redactString } from '@microsoft/agents-telemetry'
 import { CopilotStudioClientTraceDefinitions } from './observability'
 
 const logger = debug('copilot-studio:webchat')
@@ -269,6 +269,14 @@ export class CopilotStudioWebChat {
         : undefined
       const shouldStart = settings?.startConversation ?? !normalizedConversationId
 
+      logger.info('Copilot Studio WebChat settings loaded', {
+        showTyping: settings?.showTyping,
+        conversationId: redactString(normalizedConversationId, true),
+        startConversation: settings?.startConversation,
+        connectionMode: normalizedConversationId ? 'resume' : 'new',
+        acknowledgementMode: shouldStart ? 'startConversationStreaming' : 'resumeWithoutStart',
+      })
+
       let sequence = 0
       let activitySubscriber: Subscriber<Partial<Activity>> | undefined
       let conversation: ConversationAccount | undefined
@@ -371,7 +379,7 @@ export class CopilotStudioWebChat {
                 logger.info('--> Sending activity to Copilot Studio ...')
                 const newActivity = Activity.fromObject({
                   ...activity,
-                  id: uuid(),
+                  id: randomUUID(),
                   attachments: await processAttachments(activity)
                 })
 

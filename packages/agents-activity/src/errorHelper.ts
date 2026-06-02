@@ -81,5 +81,13 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   ActivityChannelIdUndefined: {
     code: -110007,
     description: 'Activity ChannelId undefined'
+  },
+
+  /**
+   * Error thrown when makeTargetedActivity is called on a non-group
+   */
+  TargetedActivityIsGroupOnly: {
+    code: -110008,
+    description: 'Targeted activities can only be sent in a group chat or channel.'
   }
 }
