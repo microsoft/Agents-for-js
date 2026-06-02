@@ -59,7 +59,7 @@ describe('SlackApi', () => {
     await assert.rejects(
       () => api.call('chat.postMessage', {}),
       (err: Error) => {
-        assert.ok(err.message.includes('-160001'))
+        assert.ok(err.message.includes('-170001'))
         return true
       }
     )
@@ -72,7 +72,7 @@ describe('SlackApi', () => {
     await assert.rejects(
       () => api.call('chat.postMessage', {}),
       (err: Error) => {
-        assert.ok(err.message.includes('-160000'))
+        assert.ok(err.message.includes('-170000'))
         return true
       }
     )

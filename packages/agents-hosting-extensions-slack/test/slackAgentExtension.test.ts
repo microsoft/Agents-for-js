@@ -158,7 +158,7 @@ describe('SlackAgentExtension', () => {
       assert.throws(
         () => ext.createStream(ctx),
         (err: Error) => {
-          assert.ok(err.message.includes('-160002'))
+          assert.ok(err.message.includes('-170002'))
           return true
         }
       )
