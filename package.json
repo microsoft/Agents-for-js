@@ -40,7 +40,7 @@
     "test-agents/*"
   ],
   "devDependencies": {
-    "@microsoft/api-extractor": "7.58.2",
+    "@microsoft/api-extractor": "7.58.7",
     "@microsoft/m365agentsplayground": "0.2.23",
     "@microsoft/microsoft-graph-client": "3.0.7",
     "@microsoft/microsoft-graph-types": "2.43.1",
@@ -48,7 +48,7 @@
     "@types/express": "5.0.6",
     "@types/node": "25.6.0",
     "@types/sinon": "21.0.0",
-    "axios": "1.16.0",
+    "axios": "1.16.1",
     "esbuild": "0.27.3",
     "eslint": "9.39.2",
     "knip": "5.86.0",
