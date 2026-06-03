@@ -134,16 +134,8 @@ const cloudAdapterOptionsParser = (() => {
  * `new CloudAdapter()` re-scans `process.env` and re-emits warnings for any
  * typo'd `CloudAdapterOptions__*` key (or unparseable value), which spams
  * stderr in multi-adapter scenarios (tests, proactive flows, DI containers).
- *
- * Exported for tests only (`__resetCloudAdapterEnvWarnings`); not part of
- * the package public API.
  */
 const warnedConfigKeys = new Set<string>()
-
-/** @internal Test helper — resets the per-process warning de-dup set. */
-function __resetCloudAdapterEnvWarnings (): void {
-  warnedConfigKeys.clear()
-}
 
 function emitConfigWarning (envKey: string, message: string): void {
   if (warnedConfigKeys.has(envKey)) return

@@ -18,8 +18,9 @@ export * from './transcript'
 
 export * from './activityHandler'
 export * from './baseAdapter'
-// Note: `__resetCloudAdapterEnvWarnings` is intentionally NOT re-exported.
-// It is a test-only helper accessible via direct file import.
+// Note: re-export the public surface of `cloudAdapter` explicitly so the
+// test-only internals (e.g., the per-process warning dedup set) do not leak
+// into the package's public API.
 export { CloudAdapter, type CloudAdapterOptions } from './cloudAdapter'
 export * from './middlewareSet'
 export * from './messageFactory'

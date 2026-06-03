@@ -433,9 +433,6 @@ describe('CloudAdapter options (PR #838 parity)', () => {
 
   describe('unknown env var diagnostics', () => {
     async function captureLogDuring (fn: () => void | Promise<void>): Promise<string> {
-      // Each test gets a fresh dedup set so warnings always fire.
-      const mod = await import('../../../src/cloudAdapter')
-      ;(mod as any).__resetCloudAdapterEnvWarnings?.()
       const debugModule = await import('debug')
       const prev = (debugModule.default as any).disable()
       ;(debugModule.default as any).enable('agents:cloud-adapter:*')
@@ -455,6 +452,16 @@ describe('CloudAdapter options (PR #838 parity)', () => {
         if (prev) (debugModule.default as any).enable(prev)
       }
       return calls.join('')
+    }
+
+    // Each test that exercises the "warn once" dedup uses a unique env var
+    // name so it is immune to prior warnings accumulated in the per-process
+    // dedup set. This avoids needing a module-level reset hook in production
+    // source (which knip/etc. would flag as unused public API).
+    let uniqueCounter = 0
+    function uniqueEnvKey (base: string): string {
+      uniqueCounter += 1
+      return `CloudAdapterOptions__${base}_${process.pid}_${Date.now()}_${uniqueCounter}`
     }
 
     it('warns with a "did you mean" suggestion for a near-miss CloudAdapterOptions__ env var', async () => {
@@ -527,19 +534,22 @@ describe('CloudAdapter options (PR #838 parity)', () => {
     })
 
     it('dedups repeated unknown-env warnings across multiple CloudAdapter instances', async () => {
-      const prev = process.env.CloudAdapterOptions__dedupCheck
-      process.env.CloudAdapterOptions__dedupCheck = 'true'
+      // Use a unique env key so the per-process dedup set doesn't already
+      // contain a prior warning for this key from an earlier test run.
+      const key = uniqueEnvKey('dedupCheck')
+      process.env[key] = 'true'
       try {
         const out = await captureLogDuring(() => {
           buildAdapter()
           buildAdapter()
           buildAdapter()
         })
-        const matches = out.match(/\[agents:cloud-adapter\] Unknown CloudAdapterOptions env var: CloudAdapterOptions__dedupCheck/g) ?? []
+        const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        const re = new RegExp(`\\[agents:cloud-adapter\\] Unknown CloudAdapterOptions env var: ${escapedKey}`, 'g')
+        const matches = out.match(re) ?? []
         assert.equal(matches.length, 1, `expected exactly 1 warning across 3 adapters, got ${matches.length}: ${out}`)
       } finally {
-        if (prev === undefined) delete process.env.CloudAdapterOptions__dedupCheck
-        else process.env.CloudAdapterOptions__dedupCheck = prev
+        delete process.env[key]
       }
     })
   })
