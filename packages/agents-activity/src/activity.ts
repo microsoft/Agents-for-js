@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { v4 as uuid } from 'uuid'
+import { randomUUID } from 'crypto'
 import { z } from 'zod'
 import { SemanticAction, semanticActionZodSchema } from './action/semanticAction'
 import { SuggestedActions, suggestedActionsZodSchema } from './action/suggestedActions'
@@ -28,6 +28,7 @@ import { TextHighlight, textHighlightZodSchema } from './textHighlight'
 import { RoleTypes } from './conversation/roleTypes'
 import { ExceptionHelper } from './exceptionHelper'
 import { Errors } from './errorHelper'
+import { ActivityTreatments } from './activityTreatments'
 
 /**
  * Zod schema for validating an Activity object.
@@ -452,7 +453,7 @@ export class Activity {
     const continuationActivityObj = {
       type: ActivityTypes.Event,
       name: ActivityEventNames.ContinueConversation,
-      id: reference.activityId ?? uuid(),
+      id: reference.activityId ?? randomUUID(),
       channelId: reference.channelId,
       locale: reference.locale,
       serviceUrl: reference.serviceUrl,
@@ -482,10 +483,13 @@ export class Activity {
 
   /**
    * Gets the conversation reference for the activity.
+   * @param options Optional conversation reference options. Set `forceBaseChannel` to `true`
+   * to use the primary channel ID instead of the composite `channelId` value when the
+   * activity includes a sub-channel such as `m365:copilot`.
    * @returns The conversation reference.
    * @throws Will throw an error if required properties are undefined.
    */
-  public getConversationReference (): ConversationReference {
+  public getConversationReference (options?: { forceBaseChannel?: boolean }): ConversationReference {
     if (this.recipient === null || this.recipient === undefined) {
       throw ExceptionHelper.generateException(
         Error,
@@ -504,13 +508,14 @@ export class Activity {
         Errors.ActivityChannelIdUndefined
       )
     }
+    const channelId = options?.forceBaseChannel ? (this.channelIdChannel ?? this.channelId) : this.channelId
 
     return {
       activityId: this.getAppropriateReplyToId(),
       user: this.from,
       agent: this.recipient,
       conversation: this.conversation,
-      channelId: this.channelId,
+      channelId,
       locale: this.locale,
       serviceUrl: this.serviceUrl
     }
@@ -691,6 +696,36 @@ export class Activity {
       return this.removeMentionText(this.recipient.id)
     }
     return ''
+  }
+
+  /**
+   * Determines whether this activity is a targeted activity treatment.
+   * A targeted activity is visible only to the recipient, even in a group conversation.
+   * @returns true if the activity contains an activityTreatment entity with treatment 'targeted'.
+   */
+  public isTargetedActivity (): boolean {
+    if (!this.entities?.length) return false
+    return this.entities.some(
+      e => e.type === 'activityTreatment' && e.treatment === ActivityTreatments.Targeted
+    )
+  }
+
+  /**
+   * Marks this activity as a targeted activity treatment.
+   * Idempotent — has no effect if the activity is already targeted.
+   */
+  public makeTargetedActivity (): void {
+    // only available in group contexts
+    if (!this.conversation?.isGroup) {
+      throw ExceptionHelper.generateException(
+        Error,
+        Errors.TargetedActivityIsGroupOnly
+      )
+    }
+
+    if (this.isTargetedActivity()) return
+    this.entities ??= []
+    this.entities.push({ type: 'activityTreatment', treatment: ActivityTreatments.Targeted })
   }
 
   /**

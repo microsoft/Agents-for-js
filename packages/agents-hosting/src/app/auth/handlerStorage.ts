@@ -6,6 +6,8 @@
 import { ActiveAuthorizationHandler } from './types'
 import { TurnContext } from '../../turnContext'
 import { Storage } from '../../storage'
+import { ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from '../../errorHelper'
 
 /**
  * Storage manager for handler state.
@@ -25,7 +27,7 @@ export class HandlerStorage<TActiveHandler extends ActiveAuthorizationHandler = 
     const channelId = this.context.activity.channelId?.trim()
     const userId = this.context.activity.from?.id?.trim()
     if (!channelId || !userId) {
-      throw new Error(`Both 'activity.channelId' and 'activity.from.id' are required to generate the ${HandlerStorage.name} key.`)
+      throw ExceptionHelper.generateException(Error, Errors.ChannelIdAndFromIdRequired)
     }
     return `auth/${channelId}/${userId}`
   }

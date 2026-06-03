@@ -40,6 +40,8 @@ describe('CloudAdapter', function () {
       body: {}
     }
     res = {
+      headersSent: false,
+      writableEnded: false,
       status: sinon.stub().returnsThis(),
       send: sinon.stub().returnsThis(),
       end: sinon.stub().returnsThis(),
@@ -164,6 +166,30 @@ describe('CloudAdapter', function () {
       sinon.assert.notCalled((res as any).setHeader)
       sinon.assert.notCalled((res as any).send)
       sinon.assert.calledOnce(createConnectorClientWithIdentitySpy)
+
+      stubfromObject.restore()
+    })
+
+    it('Should not touch the response after logic already committed it', async function () {
+      const activity = createActivity(ActivityTypes.Message)
+      activity.deliveryMode = DeliveryModes.ExpectReplies
+      activity.text = 'test-message'
+      activity.serviceUrl = undefined
+
+      const stubfromObject = sinon.stub(Activity, 'fromObject').returns(activity)
+
+      const logic = async (_context: TurnContext) => {
+        ;(res as any).headersSent = true
+        ;(res as any).writableEnded = true
+      }
+
+      await cloudAdapter.process(req as Request, res as Response, logic)
+
+      sinon.assert.notCalled((res as any).status)
+      sinon.assert.notCalled((res as any).setHeader)
+      sinon.assert.notCalled((res as any).send)
+      sinon.assert.notCalled((res as any).end)
+      sinon.assert.notCalled(createConnectorClientWithIdentitySpy)
 
       stubfromObject.restore()
     })
@@ -301,6 +327,37 @@ describe('CloudAdapter', function () {
         }),
         error
       )
+    })
+  })
+
+  describe('createCreateActivity', () => {
+    it('sets from to members[0] when members are present', () => {
+      const params = {
+        members: [{ id: 'user-123', name: 'Test User' }],
+        agent: { id: 'bot-456', role: 'bot' },
+        tenantId: 'tenant-1',
+      }
+      const activity = (cloudAdapter as any).createCreateActivity('conv-1', 'msteams', 'https://svc/', params)
+      assert.equal(activity.from?.id, 'user-123')
+    })
+
+    it('falls back to agent when members is absent', () => {
+      const params = {
+        agent: { id: 'bot-456', role: 'bot' },
+        isGroup: true,
+        channelData: { channel: { id: '19:abc@thread.tacv2' } },
+      }
+      const activity = (cloudAdapter as any).createCreateActivity('conv-1', 'msteams', 'https://svc/', params)
+      assert.equal(activity.from?.id, 'bot-456')
+    })
+
+    it('sets recipient to agent', () => {
+      const params = {
+        members: [{ id: 'user-123' }],
+        agent: { id: 'bot-456', role: 'bot' },
+      }
+      const activity = (cloudAdapter as any).createCreateActivity('conv-1', 'msteams', 'https://svc/', params)
+      assert.equal(activity.recipient?.id, 'bot-456')
     })
   })
 })

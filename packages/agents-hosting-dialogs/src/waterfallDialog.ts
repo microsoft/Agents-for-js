@@ -2,7 +2,7 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
-import { v4 as uuidv4 } from 'uuid'
+import { randomUUID } from 'crypto'
 import { ActivityTypes, ExceptionHelper } from '@microsoft/agents-activity'
 import { Errors } from './errorHelper'
 import { Dialog } from './dialog'
@@ -83,7 +83,7 @@ export class WaterfallDialog<O extends object = {}> extends Dialog<O> {
     const state: WaterfallDialogState = dialogContext.activeDialog.state as WaterfallDialogState
     state.options = options || {}
     state.values = {
-      instanceId: uuidv4(),
+      instanceId: randomUUID(),
     }
 
     // Run the first step

@@ -3,9 +3,9 @@ import { ActivityHandler } from '../activityHandler'
 import { CloudAdapter } from '../cloudAdapter'
 import { Request, Response, Application } from 'express'
 import { TurnContext } from '../turnContext'
-import { v4 } from 'uuid'
+import { randomUUID } from 'crypto'
 import { normalizeIncomingActivity } from '../activityWireCompat'
-import { debug } from '@microsoft/agents-activity/logger'
+import { debug } from '@microsoft/agents-telemetry'
 import { ConversationState } from '../state'
 
 const logger = debug('agents:agent-client')
@@ -78,7 +78,7 @@ const handleResponse = (adapter: CloudAdapter, handler: ActivityHandler, convers
       applyActivityToTurnContext(turnContext, activity)
       await handler.run(turnContext)
 
-      response = v4().replace(/-/g, '')
+      response = randomUUID().replace(/-/g, '')
     } else {
       response = await turnContext.sendActivity(activity)
     }

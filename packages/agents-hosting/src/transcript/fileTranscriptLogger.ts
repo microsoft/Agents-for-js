@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { debug } from '@microsoft/agents-activity/logger'
+import { debug } from '@microsoft/agents-telemetry'
 import { PagedResult, TranscriptInfo } from './transcriptLogger'
 import { TranscriptStore } from './transcriptStore'
 import * as fs from 'fs/promises'

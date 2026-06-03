@@ -5,7 +5,7 @@
 import { findChoices, FindChoicesOptions, FoundChoice } from './findChoices'
 import { ModelResult } from './modelResult'
 import { Choice } from './choice'
-import { debug } from '@microsoft/agents-activity/logger'
+import { debug } from '@microsoft/agents-telemetry'
 import * as Recognizers from '@microsoft/recognizers-text-number'
 
 const logger = debug('dialogs:recognizeChoices')

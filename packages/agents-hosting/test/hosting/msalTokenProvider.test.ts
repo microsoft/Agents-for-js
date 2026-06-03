@@ -1,8 +1,8 @@
 import { strict as assert } from 'assert'
 import { describe, it, beforeEach } from 'node:test'
 import sinon from 'sinon'
-import { ConfidentialClientApplication, ManagedIdentityApplication } from '@azure/msal-node'
-import { MsalTokenProvider, ConnectorClient, AuthConfiguration, CloudAdapter } from '../../src'
+import { AuthenticationResult, ConfidentialClientApplication, ManagedIdentityApplication } from '@azure/msal-node'
+import { MsalTokenProvider, ConnectorClient, AuthConfiguration, CloudAdapter, AuthType } from '../../src'
 import fs from 'fs'
 import crypto from 'crypto'
 import axios from 'axios'
@@ -595,6 +595,27 @@ describe('MsalTokenProvider', () => {
     }
   })
 
+  it('should pass azureRegion to acquireTokenByClientCredential when configured', async () => {
+    const acquireTokenStub = sinon.stub(ConfidentialClientApplication.prototype, 'acquireTokenByClientCredential').resolves({ accessToken: 'regional-token' })
+
+    const provider = new MsalTokenProvider({
+      clientId: 'client-id',
+      clientSecret: 'secret',
+      tenantId: 'tenant-id',
+      azureRegion: 'westus',
+    })
+
+    try {
+      const token = await provider.getAccessToken('https://graph.microsoft.com')
+      assert.strictEqual(token, 'regional-token')
+      assert.strictEqual(acquireTokenStub.called, true)
+      const requestArg = acquireTokenStub.getCall(0).args[0] as any
+      assert.strictEqual(requestArg.azureRegion, 'westus', 'azureRegion must be forwarded to acquireTokenByClientCredential')
+    } finally {
+      sinon.restore()
+    }
+  })
+
   it('should pass x5c as the client_assertion in the token request when sendX5C is true', async () => {
     sinon.restore()
     const fakePem = '-----BEGIN CERTIFICATE-----\nMIIFakeCert\n-----END CERTIFICATE-----'
@@ -635,6 +656,86 @@ describe('MsalTokenProvider', () => {
     } finally {
       // @ts-ignore
       tokenProvider._agenticTokenCache.destroy()
+      sinon.restore()
+    }
+  })
+
+  it('should acquire agentic application token via IdentityProxyManager with custom resource', async () => {
+    sinon.restore()
+    const tokenProvider = new MsalTokenProvider({
+      clientId: 'client-id',
+      authType: AuthType.IdentityProxyManager,
+      idpmResource: 'https://custom-resource/.default',
+    })
+
+    const acquireTokenStub = sinon.stub(ManagedIdentityApplication.prototype, 'acquireToken').resolves({ accessToken: 'idpm-custom-token' } as AuthenticationResult)
+
+    try {
+      const token = await tokenProvider.getAgenticApplicationToken('agentic-tenant-id', 'agent-app-instance-id')
+
+      assert.strictEqual(token, 'idpm-custom-token')
+      assert.strictEqual(acquireTokenStub.called, true)
+      const requestArg = acquireTokenStub.getCall(0).args[0] as any
+      assert.strictEqual(requestArg.resource, 'https://custom-resource/.default', 'should use custom idpmResource')
+    } finally {
+      sinon.restore()
+    }
+  })
+
+  it('should acquire agentic application token via IdentityProxyManager with default resource', async () => {
+    sinon.restore()
+    const tokenProvider = new MsalTokenProvider({
+      clientId: 'client-id',
+      authType: AuthType.IdentityProxyManager,
+    })
+
+    const acquireTokenStub = sinon.stub(ManagedIdentityApplication.prototype, 'acquireToken').resolves({ accessToken: 'idpm-custom-token' } as AuthenticationResult)
+
+    try {
+      const token = await tokenProvider.getAgenticApplicationToken('agentic-tenant-id', 'agent-app-instance-id')
+
+      assert.strictEqual(token, 'idpm-custom-token')
+      assert.strictEqual(acquireTokenStub.called, true)
+      const requestArg = acquireTokenStub.getCall(0).args[0] as any
+      assert.strictEqual(requestArg.resource, 'api://AzureAdTokenExchange/.default', 'should use default idpmResource')
+    } finally {
+      sinon.restore()
+    }
+  })
+
+  it('should throw when IdentityProxyManager fails to acquire token', async () => {
+    sinon.restore()
+    const tokenProvider = new MsalTokenProvider({
+      clientId: 'client-id',
+      authType: AuthType.IdentityProxyManager,
+      idpmResource: 'api://AzureAdTokenExchange/.default',
+    })
+
+    sinon.stub(ManagedIdentityApplication.prototype, 'acquireToken').resolves(undefined)
+
+    try {
+      await assert.rejects(
+        tokenProvider.getAgenticApplicationToken('agentic-tenant-id', 'agent-app-instance-id'),
+        /Failed to acquire token via IdentityProxyManager/
+      )
+    } finally {
+      sinon.restore()
+    }
+  })
+  it('should throw when idpmResource is not a valid absolute URI', async () => {
+    sinon.restore()
+    const tokenProvider = new MsalTokenProvider({
+      clientId: 'client-id',
+      authType: AuthType.IdentityProxyManager,
+      idpmResource: 'not-a-valid-uri',
+    })
+
+    try {
+      await assert.rejects(
+        tokenProvider.getAgenticApplicationToken('agentic-tenant-id', 'agent-app-instance-id'),
+        /idpmResource must be a valid absolute URI/
+      )
+    } finally {
       sinon.restore()
     }
   })

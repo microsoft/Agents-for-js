@@ -9,7 +9,7 @@ import { TurnState } from './turnState'
 import { TurnContext } from '../turnContext'
 import { Attachment } from '@microsoft/agents-activity'
 import { AuthProvider } from '../auth/authProvider'
-import { debug } from '@microsoft/agents-activity/logger'
+import { debug } from '@microsoft/agents-telemetry'
 import { loadAuthConfigFromEnv, MsalTokenProvider } from '../auth'
 
 const logger = debug('agents:attachmentDownloader')

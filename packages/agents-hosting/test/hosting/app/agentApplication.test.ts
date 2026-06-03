@@ -1,9 +1,10 @@
 import { strict as assert } from 'assert'
-import { describe, it, beforeEach } from 'node:test'
+import { describe, it, beforeEach, afterEach } from 'node:test'
+import * as sinon from 'sinon'
 
 import { AgentApplication } from './../../../src/app'
 import { TestAdapter } from '../testStubs'
-import { Activity, ActivityTypes } from '@microsoft/agents-activity'
+import { Activity, ActivityTypes, Channels } from '@microsoft/agents-activity'
 import { MessageFactory } from '../../../src/messageFactory'
 import { TurnContext } from '../../../src/turnContext'
 import { RouteList } from './../../../src/app/routeList'
@@ -13,7 +14,16 @@ import { CloudAdapter } from '../../../src/cloudAdapter'
 import { createStubInstance, SinonStub } from 'sinon'
 import { ConsoleTranscriptLogger } from '../../../src/transcript/consoleTranscriptLogger'
 
-const createTestActivity = () => Activity.fromObject({
+class RecordingTestAdapter extends TestAdapter {
+  public readonly sentActivities: Activity[] = []
+
+  async sendActivities (context: TurnContext, activities: Activity[]): Promise<any[]> {
+    this.sentActivities.push(...activities.map(activity => Activity.fromObject(activity)))
+    return await super.sendActivities(context, activities)
+  }
+}
+
+const createTestActivity = (channelId: string = 'test') => Activity.fromObject({
   type: 'message',
   from: {
     id: 'test',
@@ -22,7 +32,7 @@ const createTestActivity = () => Activity.fromObject({
   conversation: {
     id: 'test'
   },
-  channelId: 'test',
+  channelId,
   recipient: {
     id: 'test'
   },
@@ -244,6 +254,199 @@ describe('Application', () => {
     const logger = new ConsoleTranscriptLogger()
 
     assert.throws(() => new AgentApplication({ transcriptLogger: logger }))
+  })
+
+  describe('typing timer', () => {
+    let clock: sinon.SinonFakeTimers
+
+    beforeEach(() => {
+      clock = sinon.useFakeTimers()
+    })
+
+    afterEach(() => {
+      clock.restore()
+      sinon.restore()
+    })
+
+    it('should start a separate typing timer for each turn context', async () => {
+      const adapter = new RecordingTestAdapter()
+      const app = new AgentApplication({ startTypingTimer: true })
+      const firstContext = new TurnContext(adapter, createTestActivity())
+      const secondContext = new TurnContext(adapter, createTestActivity())
+
+      app.startTypingTimer(firstContext)
+      app.startTypingTimer(secondContext)
+
+      await clock.tickAsync(1000)
+
+      const typingActivities = adapter.sentActivities.filter(activity => activity.type === ActivityTypes.Typing)
+
+      assert.equal(typingActivities.length, 2)
+    })
+
+    it('should send the first typing indicator immediately', async () => {
+      const adapter = new RecordingTestAdapter()
+      const app = new AgentApplication({ startTypingTimer: true })
+      const context = new TurnContext(adapter, createTestActivity())
+
+      app.startTypingTimer(context)
+
+      await clock.tickAsync(0)
+
+      const typingActivities = adapter.sentActivities.filter(activity => activity.type === ActivityTypes.Typing)
+
+      assert.equal(typingActivities.length, 1)
+    })
+
+    it('should honor a configured initial delay before the first typing indicator', async () => {
+      const adapter = new RecordingTestAdapter()
+      const app = new AgentApplication({
+        startTypingTimer: true,
+        typing: {
+          initialDelayMs: 250,
+          intervalMs: 1000
+        }
+      })
+      const context = new TurnContext(adapter, createTestActivity())
+
+      app.startTypingTimer(context)
+
+      await clock.tickAsync(249)
+      assert.equal(adapter.sentActivities.filter(activity => activity.type === ActivityTypes.Typing).length, 0)
+
+      await clock.tickAsync(1)
+      assert.equal(adapter.sentActivities.filter(activity => activity.type === ActivityTypes.Typing).length, 1)
+    })
+
+    it('should not mark the turn as responded when automatic typing is sent', async () => {
+      const adapter = new RecordingTestAdapter()
+      const app = new AgentApplication({ startTypingTimer: true })
+      const context = new TurnContext(adapter, createTestActivity())
+
+      app.startTypingTimer(context)
+
+      await clock.tickAsync(0)
+
+      assert.equal(context.responded, false)
+    })
+
+    it('should not start the timer for non-message activities', async () => {
+      const adapter = new RecordingTestAdapter()
+      const app = new AgentApplication({ startTypingTimer: true })
+      const invokeActivity = Activity.fromObject({
+        type: ActivityTypes.Invoke,
+        name: 'testInvoke',
+        from: { id: 'test', name: 'test' },
+        conversation: { id: 'test' },
+        recipient: { id: 'test' },
+        channelId: 'test',
+        serviceUrl: 'test'
+      })
+      const context = new TurnContext(adapter, invokeActivity)
+
+      app.startTypingTimer(context)
+
+      await clock.tickAsync(0)
+      await clock.tickAsync(5000)
+
+      const typingActivities = adapter.sentActivities.filter(activity => activity.type === ActivityTypes.Typing)
+
+      assert.equal(typingActivities.length, 0)
+    })
+
+    it('should stop the timer when context is provided', async () => {
+      const adapter = new RecordingTestAdapter()
+      const app = new AgentApplication({ startTypingTimer: true })
+      const context = new TurnContext(adapter, createTestActivity())
+
+      app.startTypingTimer(context)
+      app.stopTypingTimer(context)
+
+      await clock.tickAsync(1000)
+
+      const typingActivities = adapter.sentActivities.filter(activity => activity.type === ActivityTypes.Typing)
+
+      assert.equal(typingActivities.length, 0)
+    })
+
+    it('should keep the timer running when stopTypingTimer is called without context', async () => {
+      const adapter = new RecordingTestAdapter()
+      const app = new AgentApplication({ startTypingTimer: true })
+      const context = new TurnContext(adapter, createTestActivity())
+
+      app.startTypingTimer(context)
+      app.stopTypingTimer()
+
+      await clock.tickAsync(1000)
+
+      const typingActivities = adapter.sentActivities.filter(activity => activity.type === ActivityTypes.Typing)
+
+      assert.equal(typingActivities.length, 1)
+    })
+
+    it('should stop future typing sends after a real message is sent', async () => {
+      const adapter = new RecordingTestAdapter()
+      const app = new AgentApplication({ startTypingTimer: true })
+      const context = new TurnContext(adapter, createTestActivity())
+
+      app.startTypingTimer(context)
+
+      await clock.tickAsync(0)
+      await context.sendActivity('done')
+      await clock.tickAsync(5000)
+
+      const typingActivities = adapter.sentActivities.filter(activity => activity.type === ActivityTypes.Typing)
+
+      assert.equal(typingActivities.length, 1)
+    })
+
+    it('should stop future automatic typing sends after a streamed typing activity is sent', async () => {
+      const adapter = new RecordingTestAdapter()
+      const app = new AgentApplication({ startTypingTimer: true })
+      const context = new TurnContext(adapter, createTestActivity())
+
+      app.startTypingTimer(context)
+
+      await clock.tickAsync(0)
+      await context.sendActivity(Activity.fromObject({
+        type: ActivityTypes.Typing,
+        entities: [{
+          type: 'streaminfo',
+          streamType: 'streaming'
+        }]
+      }))
+      await clock.tickAsync(5000)
+
+      const automaticTypingActivities = adapter.sentActivities.filter(activity => activity.type === ActivityTypes.Typing && !activity.entities?.some(entity => entity.type === 'streaminfo'))
+
+      assert.equal(automaticTypingActivities.length, 1)
+    })
+
+    it('should honor channel-specific typing overrides', async () => {
+      const adapter = new RecordingTestAdapter()
+      const app = new AgentApplication({
+        startTypingTimer: true,
+        typing: {
+          initialDelayMs: 500,
+          intervalMs: 4000,
+          channelStrategies: {
+            [Channels.M365Copilot]: {
+              initialDelayMs: 50,
+              intervalMs: 1000
+            }
+          }
+        }
+      })
+      const context = new TurnContext(adapter, createTestActivity(Channels.M365Copilot))
+
+      app.startTypingTimer(context)
+
+      await clock.tickAsync(49)
+      assert.equal(adapter.sentActivities.filter(activity => activity.type === ActivityTypes.Typing).length, 0)
+
+      await clock.tickAsync(1)
+      assert.equal(adapter.sentActivities.filter(activity => activity.type === ActivityTypes.Typing).length, 1)
+    })
   })
 
   describe('signin/tokenExchange detaching', () => {

@@ -2,6 +2,9 @@
     "files": [],
     "references": [
       {
+        "path": "packages/agents-telemetry"
+      },
+      {
         "path": "packages/agents-activity"
       },
       {
@@ -24,6 +27,9 @@
       },
       {
         "path": "packages/agents-hosting-extensions-teams"
+      },
+      {
+        "path": "packages/agents-hosting-extensions-slack"
       },
       {
         "path": "test-agents/application-style"

@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.json",
+  "include": [
+    "src/**/*",
+    "package.json"
+  ],
+  "exclude": [
+    "src/**/*.mts"
+  ],
+  "compilerOptions": {
+    "types": ["node"],
+    "outDir": "dist/cjs",
+    "rootDirs": [ "src/" ],
+    "lib": ["ES2022", "DOM"]
+  }
+}

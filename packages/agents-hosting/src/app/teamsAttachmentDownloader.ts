@@ -4,7 +4,7 @@
  */
 
 import { Attachment, Channels } from '@microsoft/agents-activity'
-import { debug } from '@microsoft/agents-activity/logger'
+import { debug } from '@microsoft/agents-telemetry'
 import { ConnectorClient } from '../connector-client'
 import { InputFile, InputFileDownloader } from './inputFileDownloader'
 import { TurnContext } from '../turnContext'
@@ -72,7 +72,12 @@ export class M365AttachmentDownloader<TState extends TurnState = TurnState> impl
         const response = await this._httpClient.get(downloadUrl, { responseType: 'arraybuffer' })
 
         const content = Buffer.from(response.data, 'binary')
-        const contentType = response.headers['content-type'] || 'application/octet-stream'
+        const contentTypeHeader = typeof response.headers.get === 'function'
+          ? response.headers.get('content-type')
+          : response.headers['content-type']
+        const contentType = Array.isArray(contentTypeHeader)
+          ? (contentTypeHeader[0] ?? 'application/octet-stream')
+          : (typeof contentTypeHeader === 'string' ? contentTypeHeader : 'application/octet-stream')
         inputFile = { content, contentType, contentUrl: attachment.contentUrl }
       } catch (error) {
         logger.error(`Failed to download Teams attachment: ${error}`)

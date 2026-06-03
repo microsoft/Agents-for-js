@@ -5,7 +5,7 @@
 
 import { Middleware, MiddlewareHandler, MiddlewareSet } from './middlewareSet'
 import { TurnContext } from './turnContext'
-import { debug } from '@microsoft/agents-activity/logger'
+import { debug } from '@microsoft/agents-telemetry'
 import { Activity, ConversationReference } from '@microsoft/agents-activity'
 import { ResourceResponse } from './connector-client/resourceResponse'
 import { AttachmentData } from './connector-client/attachmentData'

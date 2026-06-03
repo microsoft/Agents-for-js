@@ -2,7 +2,7 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
 import { AuthConfiguration } from '../auth/authConfiguration'
 import { AuthProvider } from '../auth/authProvider'
-import { debug } from '@microsoft/agents-activity/logger'
+import { debug } from '@microsoft/agents-telemetry'
 import { Activity, ChannelAccount, ConversationParameters, RoleTypes, Channels, ExceptionHelper } from '@microsoft/agents-activity'
 import { Errors } from '../errorHelper'
 import { ConversationsResult } from './conversationsResult'
@@ -13,6 +13,9 @@ import { AttachmentData } from './attachmentData'
 import { normalizeOutgoingActivity } from '../activityWireCompat'
 import { getProductInfo } from '../getProductInfo'
 import { HeaderPropagation, HeaderPropagationCollection } from '../headerPropagation'
+import { trace } from '@microsoft/agents-telemetry'
+import { ConnectorClientTraceDefinitions } from '../observability'
+
 const logger = debug('agents:connector-client')
 
 export { getProductInfo }
@@ -139,28 +142,34 @@ export class ConnectorClient {
    * @returns A list of conversations.
    */
   public async getConversations (continuationToken?: string): Promise<ConversationsResult> {
-    const config: AxiosRequestConfig = {
-      method: 'get',
-      url: '/v3/conversations',
-      params: continuationToken ? { continuationToken } : undefined
-    }
-    const response = await this._axiosInstance(config)
-    return response.data
+    return trace(ConnectorClientTraceDefinitions.getConversations, async ({ record }) => {
+      const config: AxiosRequestConfig = {
+        method: 'get',
+        url: '/v3/conversations',
+        params: continuationToken ? { continuationToken } : undefined
+      }
+      const response = await this._axiosInstance(config)
+      record({ httpStatusCode: response.status?.toString() })
+      return response.data
+    })
   }
 
   public async getConversationMember (userId: string, conversationId: string): Promise<ChannelAccount> {
-    if (!userId || !conversationId) {
-      throw ExceptionHelper.generateException(Error, Errors.UserIdAndConversationIdRequired)
-    }
-    const config: AxiosRequestConfig = {
-      method: 'get',
-      url: `v3/conversations/${conversationId}/members/${userId}`,
-      headers: {
-        'Content-Type': 'application/json'
+    return trace(ConnectorClientTraceDefinitions.getConversationMember, async ({ record }) => {
+      if (!userId || !conversationId) {
+        throw ExceptionHelper.generateException(Error, Errors.UserIdAndConversationIdRequired)
       }
-    }
-    const response = await this._axiosInstance(config)
-    return response.data
+      const config: AxiosRequestConfig = {
+        method: 'get',
+        url: `v3/conversations/${conversationId}/members/${userId}`,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+      const response = await this._axiosInstance(config)
+      record({ httpStatusCode: response.status?.toString() })
+      return response.data
+    })
   }
 
   /**
@@ -169,20 +178,23 @@ export class ConnectorClient {
    * @returns The conversation resource response.
    */
   public async createConversation (body: ConversationParameters): Promise<ConversationResourceResponse> {
-    const payload = {
-      ...body,
-      activity: normalizeOutgoingActivity(body.activity)
-    }
-    const config: AxiosRequestConfig = {
-      method: 'post',
-      url: '/v3/conversations',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      data: payload
-    }
-    const response: AxiosResponse = await this._axiosInstance(config)
-    return response.data
+    return trace(ConnectorClientTraceDefinitions.createConversation, async ({ record }) => {
+      const payload = {
+        ...body,
+        activity: normalizeOutgoingActivity(body.activity)
+      }
+      const config: AxiosRequestConfig = {
+        method: 'post',
+        url: '/v3/conversations',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        data: payload
+      }
+      const response: AxiosResponse = await this._axiosInstance(config)
+      record({ httpStatusCode: response.status?.toString() })
+      return response.data
+    })
   }
 
   /**
@@ -197,41 +209,49 @@ export class ConnectorClient {
     activityId: string,
     body: Activity
   ): Promise<ResourceResponse> {
-    logger.debug(`Replying to activity: ${activityId} in conversation: ${conversationId}`)
-    if (!conversationId || !activityId) {
-      throw ExceptionHelper.generateException(Error, Errors.ConversationIdAndActivityIdRequired)
-    }
+    return trace(ConnectorClientTraceDefinitions.replyToActivity, async ({ record }) => {
+      logger.debug(`Replying to activity: ${activityId} in conversation: ${conversationId}`)
+      record({ conversationId, activityId })
 
-    const trimmedConversationId: string = this.conditionallyTruncateConversationId(conversationId, body)
+      if (!conversationId || !activityId) {
+        throw ExceptionHelper.generateException(Error, Errors.ConversationIdAndActivityIdRequired)
+      }
 
-    const config: AxiosRequestConfig = {
-      method: 'post',
-      url: `v3/conversations/${trimmedConversationId}/activities/${encodeURIComponent(activityId)}`,
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      data: normalizeOutgoingActivity(body)
-    }
-    const response = await this._axiosInstance(config)
-    logger.info('Reply to conversation/activity: ', response.data.id!, activityId)
-    return response.data
+      const trimmedConversationId: string = this.conditionallyTruncateConversationId(conversationId, body)
+
+      const config: AxiosRequestConfig = {
+        method: 'post',
+        url: `v3/conversations/${trimmedConversationId}/activities/${encodeURIComponent(activityId)}`,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        data: normalizeOutgoingActivity(body),
+        ...(body.channelId === Channels.Msteams && body.isTargetedActivity() ? { params: { isTargetedActivity: 'true' } } : {})
+      }
+      const response = await this._axiosInstance(config)
+      record({ httpStatusCode: response.status?.toString() })
+      logger.info('Reply to conversation/activity: ', response.data.id!, activityId)
+      return response.data
+    })
   }
 
   /**
-   * Trim the conversationId to a fixed length when creating the URL. This is applied only in specific API calls for agentic calls.
+   * Trim and sanitize the conversationId when creating the URL for agentic calls in agents channels.
    * @param conversationId The ID of the conversation to potentially truncate.
    * @param activity The activity object used to determine if truncation is necessary.
-   * @returns The original or truncated conversationId, depending on the channel and activity role.
+   * @returns The original conversationId for non-agents channels/non-agentic roles, otherwise a trimmed and sanitized value.
    */
   private conditionallyTruncateConversationId (conversationId: string, activity: Activity): string {
     if (
-      (activity.channelIdChannel === Channels.Msteams || activity.channelIdChannel === Channels.Agents) &&
+      activity.channelIdChannel === Channels.Agents &&
       (activity.from?.role === RoleTypes.AgenticIdentity || activity.from?.role === RoleTypes.AgenticUser)) {
       let maxLength = 150
       if (process.env.MAX_APX_CONVERSATION_ID_LENGTH && !isNaN(parseInt(process.env.MAX_APX_CONVERSATION_ID_LENGTH, 10))) {
         maxLength = parseInt(process.env.MAX_APX_CONVERSATION_ID_LENGTH, 10)
       }
-      return conversationId.length > maxLength ? conversationId.substring(0, maxLength) : conversationId
+      const trimmedConversationId = conversationId.length > maxLength ? conversationId.substring(0, maxLength) : conversationId
+
+      return trimmedConversationId.replace(/[/\\#?]/g, '_')
     } else {
       return conversationId
     }
@@ -247,23 +267,30 @@ export class ConnectorClient {
     conversationId: string,
     body: Activity
   ): Promise<ResourceResponse> {
-    logger.debug(`Send to conversation: ${conversationId} activity: ${body.id}`)
-    if (!conversationId) {
-      throw ExceptionHelper.generateException(Error, Errors.ConversationIdRequired)
-    }
+    return trace(ConnectorClientTraceDefinitions.sendToConversation, async ({ record }) => {
+      logger.debug(`Send to conversation: ${conversationId} activity: ${body.id}`)
+      if (!conversationId) {
+        throw ExceptionHelper.generateException(Error, Errors.ConversationIdRequired)
+      }
 
-    const trimmedConversationId: string = this.conditionallyTruncateConversationId(conversationId, body)
+      record({ conversationId })
 
-    const config: AxiosRequestConfig = {
-      method: 'post',
-      url: `v3/conversations/${trimmedConversationId}/activities`,
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      data: normalizeOutgoingActivity(body)
-    }
-    const response = await this._axiosInstance(config)
-    return response.data
+      const trimmedConversationId: string = this.conditionallyTruncateConversationId(conversationId, body)
+
+      const config: AxiosRequestConfig = {
+        method: 'post',
+        url: `v3/conversations/${trimmedConversationId}/activities`,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        data: normalizeOutgoingActivity(body),
+        ...(body.channelId === Channels.Msteams && body.isTargetedActivity() ? { params: { isTargetedActivity: 'true' } } : {})
+
+      }
+      const response = await this._axiosInstance(config)
+      record({ httpStatusCode: response.status?.toString() })
+      return response.data
+    })
   }
 
   /**
@@ -278,43 +305,56 @@ export class ConnectorClient {
     activityId: string,
     body: Activity
   ): Promise<ResourceResponse> {
-    if (!conversationId || !activityId) {
-      throw ExceptionHelper.generateException(Error, Errors.ConversationIdAndActivityIdRequired)
-    }
-    const config: AxiosRequestConfig = {
-      method: 'put',
-      url: `v3/conversations/${conversationId}/activities/${activityId}`,
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      data: normalizeOutgoingActivity(body)
-    }
-    const response = await this._axiosInstance(config)
-    return response.data
+    return trace(ConnectorClientTraceDefinitions.updateActivity, async ({ record }) => {
+      if (!conversationId || !activityId) {
+        throw ExceptionHelper.generateException(Error, Errors.ConversationIdAndActivityIdRequired)
+      }
+      record({ conversationId, activityId })
+      const config: AxiosRequestConfig = {
+        method: 'put',
+        url: `v3/conversations/${conversationId}/activities/${activityId}`,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        data: normalizeOutgoingActivity(body),
+        ...(body.channelId === Channels.Msteams && body.isTargetedActivity() ? { params: { isTargetedActivity: 'true' } } : {})
+      }
+      const response = await this._axiosInstance(config)
+      record({ httpStatusCode: response.status?.toString() })
+      return response.data
+    })
   }
 
   /**
    * Deletes an activity from a conversation.
    * @param conversationId - The ID of the conversation.
    * @param activityId - The ID of the activity.
+   * @param isTargetedActivity - When true, appends ?isTargetedActivity=true to the request URL.
    * @returns A promise that resolves when the activity is deleted.
    */
   public async deleteActivity (
     conversationId: string,
-    activityId: string
+    activityId: string,
+    isTargetedActivity?: boolean
   ): Promise<void> {
-    if (!conversationId || !activityId) {
-      throw ExceptionHelper.generateException(Error, Errors.ConversationIdAndActivityIdRequired)
-    }
-    const config: AxiosRequestConfig = {
-      method: 'delete',
-      url: `v3/conversations/${conversationId}/activities/${activityId}`,
-      headers: {
-        'Content-Type': 'application/json'
+    return trace(ConnectorClientTraceDefinitions.deleteActivity, async ({ record }) => {
+      record({ conversationId, activityId })
+
+      if (!conversationId || !activityId) {
+        throw ExceptionHelper.generateException(Error, Errors.ConversationIdAndActivityIdRequired)
       }
-    }
-    const response = await this._axiosInstance(config)
-    return response.data
+      const config: AxiosRequestConfig = {
+        method: 'delete',
+        url: `v3/conversations/${conversationId}/activities/${activityId}`,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        ...(isTargetedActivity ? { params: { isTargetedActivity: 'true' } } : {})
+      }
+      const response = await this._axiosInstance(config)
+      record({ httpStatusCode: response.status?.toString() })
+      return response.data
+    })
   }
 
   /**
@@ -327,19 +367,23 @@ export class ConnectorClient {
     conversationId: string,
     body: AttachmentData
   ): Promise<ResourceResponse> {
-    if (conversationId === undefined) {
-      throw ExceptionHelper.generateException(Error, Errors.ConversationIdRequired)
-    }
-    const config: AxiosRequestConfig = {
-      method: 'post',
-      url: `v3/conversations/${conversationId}/attachments`,
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      data: body
-    }
-    const response = await this._axiosInstance(config)
-    return response.data
+    return trace(ConnectorClientTraceDefinitions.uploadAttachment, async ({ record }) => {
+      record({ conversationId })
+      if (conversationId === undefined) {
+        throw ExceptionHelper.generateException(Error, Errors.ConversationIdRequired)
+      }
+      const config: AxiosRequestConfig = {
+        method: 'post',
+        url: `v3/conversations/${conversationId}/attachments`,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        data: body
+      }
+      const response = await this._axiosInstance(config)
+      record({ httpStatusCode: response.status?.toString() })
+      return response.data
+    })
   }
 
   /**
@@ -350,18 +394,22 @@ export class ConnectorClient {
   public async getAttachmentInfo (
     attachmentId: string
   ): Promise<AttachmentInfo> {
-    if (attachmentId === undefined) {
-      throw ExceptionHelper.generateException(Error, Errors.AttachmentIdRequired)
-    }
-    const config: AxiosRequestConfig = {
-      method: 'get',
-      url: `v3/attachments/${attachmentId}`,
-      headers: {
-        'Content-Type': 'application/json'
+    return trace(ConnectorClientTraceDefinitions.getAttachmentInfo, async ({ record }) => {
+      record({ attachmentId })
+      if (attachmentId === undefined) {
+        throw ExceptionHelper.generateException(Error, Errors.AttachmentIdRequired)
       }
-    }
-    const response = await this._axiosInstance(config)
-    return response.data
+      const config: AxiosRequestConfig = {
+        method: 'get',
+        url: `v3/attachments/${attachmentId}`,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+      const response = await this._axiosInstance(config)
+      record({ httpStatusCode: response.status?.toString() })
+      return response.data
+    })
   }
 
   /**
@@ -374,20 +422,24 @@ export class ConnectorClient {
     attachmentId: string,
     viewId: string
   ): Promise<NodeJS.ReadableStream> {
-    if (attachmentId === undefined) {
-      throw ExceptionHelper.generateException(Error, Errors.AttachmentIdRequired)
-    }
-    if (viewId === undefined) {
-      throw ExceptionHelper.generateException(Error, Errors.ViewIdRequired)
-    }
-    const config: AxiosRequestConfig = {
-      method: 'get',
-      url: `v3/attachments/${attachmentId}/views/${viewId}`,
-      headers: {
-        'Content-Type': 'application/json'
+    return trace(ConnectorClientTraceDefinitions.getAttachment, async ({ record }) => {
+      record({ attachmentId, viewId })
+      if (attachmentId === undefined) {
+        throw ExceptionHelper.generateException(Error, Errors.AttachmentIdRequired)
       }
-    }
-    const response = await this._axiosInstance(config)
-    return response.data
+      if (viewId === undefined) {
+        throw ExceptionHelper.generateException(Error, Errors.ViewIdRequired)
+      }
+      const config: AxiosRequestConfig = {
+        method: 'get',
+        url: `v3/attachments/${attachmentId}/views/${viewId}`,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+      const response = await this._axiosInstance(config)
+      record({ httpStatusCode: response.status?.toString() })
+      return response.data
+    })
   }
 }
