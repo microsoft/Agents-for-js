@@ -42,6 +42,7 @@
   "devDependencies": {
     "@microsoft/api-extractor": "7.58.7",
     "@microsoft/m365agentsplayground": "0.2.23",
+    "@microsoft/microsoft-graph-client": "3.0.7",
     "@microsoft/microsoft-graph-types": "2.43.1",
     "@types/debug": "4.1.13",
     "@types/express": "5.0.6",
@@ -64,17 +65,5 @@
   },
   "engines": {
     "node": ">=20.0.0"
-  },
-  "overrides": {
-    "adaptivecards-templating": {
-      "adaptive-expressions": {
-        "fast-xml-parser": "5.7.0",
-        "uuid": "11.1.1"
-      }
-    }
-  },
-  "overridesComments": {
-    "adaptivecards-templating/adaptive-expressions/fast-xml-parser": "Override to 5.7.0 because adaptive-expressions pulls vulnerable 4.5.3 (test-agents/web-chat)",
-    "adaptivecards-templating/adaptive-expressions/uuid": "Override to 11.1.1 to address vulnerabilities in older versions (test-agents/web-chat)"
   }
 }

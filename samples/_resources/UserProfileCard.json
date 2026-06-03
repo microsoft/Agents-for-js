@@ -34,7 +34,7 @@
                             "items": [
                                 {
                                     "type": "TextBlock",
-                                    "text": "${toUpper(jobTitle)}",
+                                    "text": "${jobTitle}",
                                     "spacing": "Small"
                                 },
                                 {
