@@ -20,6 +20,6 @@
     "@microsoft/agents-hosting-storage-blob": "file:../../packages/agents-hosting-storage-blob",
     "@microsoft/agents-hosting-storage-cosmos": "file:../../packages/agents-hosting-storage-cosmos",
     "express": "5.2.1",
-    "express-rate-limit": "8.3.2"
+    "express-rate-limit": "8.5.2"
   }
 }
