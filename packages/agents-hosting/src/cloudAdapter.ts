@@ -141,7 +141,7 @@ const cloudAdapterOptionsParser = (() => {
 const warnedConfigKeys = new Set<string>()
 
 /** @internal Test helper — resets the per-process warning de-dup set. */
-export function __resetCloudAdapterEnvWarnings (): void {
+function __resetCloudAdapterEnvWarnings (): void {
   warnedConfigKeys.clear()
 }
 
