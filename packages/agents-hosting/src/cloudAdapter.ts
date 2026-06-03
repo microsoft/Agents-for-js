@@ -173,10 +173,12 @@ function loadCloudAdapterOptionsFromEnv (): CloudAdapterOptions {
     const parsed = cloudAdapterOptionsParser.schema[canonical](rawValue) as any
     if (parsed !== undefined) {
       (result as any)[canonical] = parsed
-    } else if (rawValue !== undefined && rawValue !== '') {
+    } else if (rawValue !== undefined && rawValue.trim() !== '') {
       // Known key, recognized but unparseable value (e.g. `yes`, `on`, `enabled`).
       // For a security-relevant flag like `validateServiceUrl`, silent
       // fallthrough is the dangerous failure mode — surface it.
+      // Note: parseBooleanEnv treats whitespace-only as unset, so don't warn
+      // on `'   '`; only warn when the user actually typed something.
       emitConfigWarning(
         `${envKey}=${rawValue}`,
         `Ignored ${envKey}=${rawValue}; expected one of true/false/1/0.`
@@ -205,11 +207,12 @@ function resolveCloudAdapterOptions (options?: CloudAdapterOptions): Required<Cl
  * / log injection (OWASP A09). Truncates excessively long values.
  */
 function sanitizeForLog (value: string, max = 256): string {
-  // Strip C0/C1 controls plus U+2028 LINE SEPARATOR / U+2029 PARAGRAPH
-  // SEPARATOR — some log viewers and terminals treat them as line breaks,
-  // which would re-open the log-injection vector that the ASCII strip closes.
+  // Strip C0 (\x00-\x1f) + DEL (\x7f) + C1 (\x80-\x9f) controls plus U+2028
+  // LINE SEPARATOR / U+2029 PARAGRAPH SEPARATOR — some log viewers and
+  // terminals treat them as line breaks, which would re-open the log-
+  // injection vector that the ASCII strip closes.
   // eslint-disable-next-line no-control-regex
-  const cleaned = value.replace(/[\x00-\x1f\x7f\u2028\u2029]/g, '?')
+  const cleaned = value.replace(/[\x00-\x1f\x7f-\x9f\u2028\u2029]/g, '?')
   return cleaned.length > max ? cleaned.slice(0, max) + '…' : cleaned
 }
 
@@ -221,10 +224,10 @@ function truncateActivityForLog (activity: unknown, max = 1024): string {
   try {
     const json = JSON.stringify(activity)
     if (!json) return '<unserializable>'
-    // Strip control chars + U+2028/U+2029 from the serialized form so
+    // Strip C0/DEL/C1 controls + U+2028/U+2029 from the serialized form so
     // attacker-controlled fields (e.g. activity.text) can't forge log lines.
     // eslint-disable-next-line no-control-regex
-    const sanitized = json.replace(/[\x00-\x1f\x7f\u2028\u2029]/g, '?')
+    const sanitized = json.replace(/[\x00-\x1f\x7f-\x9f\u2028\u2029]/g, '?')
     return sanitized.length > max ? `${sanitized.slice(0, max)}…(truncated)` : sanitized
   } catch {
     return '<unserializable>'

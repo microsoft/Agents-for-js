@@ -40,11 +40,12 @@ describe('CloudAdapter options (PR #838 parity)', () => {
     const mockConnectionManager = sinon.createStubInstance(MsalConnectionManager)
     const mockUserTokenClient = sinon.createStubInstance(UserTokenClient)
 
-    const adapter = new CloudAdapter(authentication, undefined, undefined, options);
-    (adapter as any).connectionManager = mockConnectionManager
-    sinon.stub(adapter as any, 'createConnectorClient').returns(mockConnectorClient)
-    sinon.stub(adapter as any, 'createUserTokenClient').returns(mockUserTokenClient)
-    sinon.stub(adapter as any, 'createConnectorClientWithIdentity').returns(mockConnectorClient)
+    const adapter = new CloudAdapter(authentication, undefined, undefined, options)
+    const adapterAny = adapter as any
+    adapterAny.connectionManager = mockConnectionManager
+    sinon.stub(adapterAny, 'createConnectorClient').returns(mockConnectorClient)
+    sinon.stub(adapterAny, 'createUserTokenClient').returns(mockUserTokenClient)
+    sinon.stub(adapterAny, 'createConnectorClientWithIdentity').returns(mockConnectorClient)
     return adapter
   }
 
@@ -79,7 +80,10 @@ describe('CloudAdapter options (PR #838 parity)', () => {
 
   let stubFromObject: sinon.SinonStub | undefined
   afterEach(() => {
-    if (stubFromObject) { stubFromObject.restore(); stubFromObject = undefined }
+    if (stubFromObject) {
+      stubFromObject.restore()
+      stubFromObject = undefined
+    }
     sinon.restore()
   })
 
@@ -527,6 +531,19 @@ describe('CloudAdapter options (PR #838 parity)', () => {
           `should warn on unparseable boolean value, got: ${out}`)
         assert.ok(out.includes('expected one of true/false/1/0'),
           `should describe expected values, got: ${out}`)
+      } finally {
+        if (prev === undefined) delete process.env.CloudAdapterOptions__validateServiceUrl
+        else process.env.CloudAdapterOptions__validateServiceUrl = prev
+      }
+    })
+
+    it('does NOT warn for a whitespace-only value on a known CloudAdapterOptions__ key (parseBooleanEnv treats it as unset)', async () => {
+      const prev = process.env.CloudAdapterOptions__validateServiceUrl
+      process.env.CloudAdapterOptions__validateServiceUrl = '   '
+      try {
+        const out = await captureLogDuring(() => { buildAdapter() })
+        assert.ok(!out.includes('Ignored CloudAdapterOptions__validateServiceUrl'),
+          `whitespace-only value should not produce an "Ignored" warning, got: ${out}`)
       } finally {
         if (prev === undefined) delete process.env.CloudAdapterOptions__validateServiceUrl
         else process.env.CloudAdapterOptions__validateServiceUrl = prev
