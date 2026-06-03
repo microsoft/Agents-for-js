@@ -15,6 +15,7 @@ import { getProductInfo } from '../getProductInfo'
 import { HeaderPropagation, HeaderPropagationCollection } from '../headerPropagation'
 import { trace } from '@microsoft/agents-telemetry'
 import { ConnectorClientTraceDefinitions } from '../observability'
+import { parseIntEnv } from '../utils/env'
 
 const logger = debug('agents:connector-client')
 
@@ -245,10 +246,7 @@ export class ConnectorClient {
     if (
       activity.channelIdChannel === Channels.Agents &&
       (activity.from?.role === RoleTypes.AgenticIdentity || activity.from?.role === RoleTypes.AgenticUser)) {
-      let maxLength = 150
-      if (process.env.MAX_APX_CONVERSATION_ID_LENGTH && !isNaN(parseInt(process.env.MAX_APX_CONVERSATION_ID_LENGTH, 10))) {
-        maxLength = parseInt(process.env.MAX_APX_CONVERSATION_ID_LENGTH, 10)
-      }
+      const maxLength = parseIntEnv(process.env.MAX_APX_CONVERSATION_ID_LENGTH, 150)
       const trimmedConversationId = conversationId.length > maxLength ? conversationId.substring(0, maxLength) : conversationId
 
       return trimmedConversationId.replace(/[/\\#?]/g, '_')
