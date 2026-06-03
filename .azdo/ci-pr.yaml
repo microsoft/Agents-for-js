@@ -18,16 +18,10 @@ steps:
   inputs:
     workingFile: .npmrc
 
-# The @microsoft/agents-hosting-directline-namedpipes workspace declares
-# "os": ["win32"] because the named-pipe transport only works on Windows.
-# On this Linux pool `npm ci` would fail with EBADPLATFORM for that workspace,
-# so we pass --force to install it anyway. The package's runtime guard
-# (assertWindowsPlatform) still prevents execution on non-Windows hosts, and
-# its tests are platform-skipped accordingly.
 - task: Npm@1
   inputs:
     command: custom
-    customCommand: 'ci --force'
+    customCommand: 'ci'
     customRegistry: useFeed
     customFeed: OneCRM/DPX-Tools-Upstream
     verbose: true

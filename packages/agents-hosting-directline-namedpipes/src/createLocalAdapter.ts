@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 import { Activity, ExceptionHelper } from '@microsoft/agents-activity'
+import type { ConversationReference } from '@microsoft/agents-activity'
 import { CloudAdapter, ConnectorClient, HeaderPropagationCollection, INVOKE_RESPONSE_KEY, ResourceResponse, TurnContext } from '@microsoft/agents-hosting'
 import { debug, trace } from '@microsoft/agents-telemetry'
 import { JwtPayload } from 'jsonwebtoken'
@@ -225,6 +226,68 @@ class LocalPipeAdapter extends CloudAdapter {
     if (activity.type === 'trace' && activity.channelId !== 'emulator') return false
     if (activity.type === 'invokeResponse') return false
     return !!activity.conversation?.id
+  }
+
+  /**
+   * Override: for pipe serviceUrls, route activity updates through the named
+   * pipe protocol (`PUT /v3/conversations/{conversationId}/activities/{activityId}`).
+   * For non-pipe serviceUrls, delegate to the base CloudAdapter implementation,
+   * which uses ConnectorClient over HTTP.
+   *
+   * Without this override the base implementation would try to use the
+   * ConnectorClient (axios) against a `urn:botframework:namedpipe:` baseURL
+   * and fail with a confusing "Invalid URL" / `ECONNREFUSED`.
+   */
+  override async updateActivity (context: TurnContext, activity: Activity): Promise<ResourceResponse | void> {
+    const serviceUrl = activity?.serviceUrl ?? ''
+    if (!serviceUrl.startsWith(PIPE_URL_PREFIX) || !this._messageHandler) {
+      return super.updateActivity(context, activity)
+    }
+
+    if (!activity.conversation?.id || !activity.id) {
+      throw ExceptionHelper.generateException(Error, Errors.PipeProtocolError, undefined, {
+        reason: 'updateActivity requires activity.id and activity.conversation.id'
+      })
+    }
+
+    const path = `${PIPE_URL_PREFIX}v3/conversations/${activity.conversation.id}/activities/${activity.id}`
+    const body = Buffer.from(JSON.stringify(activity), 'utf8')
+    logger.info(`[updateActivity] PUT ${path} (${body.length} bytes)`)
+
+    const pipeResponse = await this._messageHandler.sendViaPipe('PUT', path, body, null, 'application/json')
+    if (pipeResponse.body && pipeResponse.body.length > 0) {
+      try {
+        const parsed = JSON.parse(pipeResponse.body.toString('utf8')) as { id?: string }
+        if (parsed.id) return { id: parsed.id }
+      } catch {
+        // Non-JSON response body; treat as no resource id.
+      }
+    }
+    return undefined
+  }
+
+  /**
+   * Override: for pipe serviceUrls, route activity deletes through the named
+   * pipe protocol (`DELETE /v3/conversations/{conversationId}/activities/{activityId}`).
+   * For non-pipe serviceUrls, delegate to the base CloudAdapter implementation.
+   *
+   * See {@link updateActivity} for the rationale.
+   */
+  override async deleteActivity (context: TurnContext, reference: Partial<ConversationReference>): Promise<void> {
+    const serviceUrl = reference?.serviceUrl ?? ''
+    if (!serviceUrl.startsWith(PIPE_URL_PREFIX) || !this._messageHandler) {
+      return super.deleteActivity(context, reference)
+    }
+
+    if (!reference.conversation?.id || !reference.activityId) {
+      throw ExceptionHelper.generateException(Error, Errors.PipeProtocolError, undefined, {
+        reason: 'deleteActivity requires reference.activityId and reference.conversation.id'
+      })
+    }
+
+    const path = `${PIPE_URL_PREFIX}v3/conversations/${reference.conversation.id}/activities/${reference.activityId}`
+    logger.info(`[deleteActivity] DELETE ${path}`)
+    await this._messageHandler.sendViaPipe('DELETE', path, null, null, null)
   }
 }
 

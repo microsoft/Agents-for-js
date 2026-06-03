@@ -56,9 +56,22 @@ service.ready.then(() => {
 
 console.log(`Named pipe agent started, waiting for connection on '${PIPE_NAME}'...`)
 
-// Graceful shutdown
-process.on('SIGINT', async () => {
-  console.log('Shutting down...')
-  await service.stop()
+// Graceful shutdown — handle both SIGINT (Ctrl-C) and SIGTERM (App Service / container).
+// `process.once` ensures a repeat signal during a slow stop() doesn't double-trigger;
+// the try/catch contains any rejection so it doesn't surface as an unhandled rejection
+// during exit (EventEmitter does not await async listeners).
+let shuttingDown = false
+const shutdown = async (signal: string) => {
+  if (shuttingDown) return
+  shuttingDown = true
+  console.log(`Received ${signal}, shutting down...`)
+  try {
+    await service.stop()
+  } catch (err) {
+    console.error('Error during shutdown:', err)
+  }
   process.exit(0)
-})
+}
+
+process.once('SIGINT', () => { shutdown('SIGINT').catch(() => {}) })
+process.once('SIGTERM', () => { shutdown('SIGTERM').catch(() => {}) })

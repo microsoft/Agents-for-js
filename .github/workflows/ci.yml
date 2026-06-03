@@ -28,15 +28,8 @@ jobs:
         with:
           node-version: 24
 
-      # The @microsoft/agents-hosting-directline-namedpipes workspace declares
-      # "os": ["win32"] because the named-pipe transport only works on Windows.
-      # On Linux runners `npm ci` would fail with EBADPLATFORM for that workspace,
-      # so we pass --force to install it anyway. The package's runtime guard
-      # (assertWindowsPlatform) still prevents execution on non-Windows hosts, and
-      # its tests are platform-skipped accordingly. The windows-latest matrix leg
-      # exercises the Windows-only code paths end-to-end.
-      - name: Install dependencies with CI
-        run: npm ci --force
+      - name: Install dependencies
+        run: npm ci
 
       - name: Lint codebase
         run: npm run lint

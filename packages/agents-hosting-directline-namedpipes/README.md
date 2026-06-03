@@ -12,7 +12,7 @@ Enables agents to communicate over Windows named pipes, used in Azure App Servic
 npm install @microsoft/agents-hosting-directline-namedpipes
 ```
 
-The package manifest declares `"os": ["win32"]`, so `npm install` will warn or refuse on macOS and Linux depending on the installer's `--os` enforcement.
+The package installs on any platform, but calling its API on a non-Windows host throws `PipePlatformNotSupported` at runtime. See [Platform Support](#platform-support).
 
 ## Usage
 
@@ -60,7 +60,7 @@ Pipe names are validated before any OS path is created. Names containing path se
 
 ## Platform Support
 
-This package is **Windows-only**. Named pipe paths use the Win32 `\\.\pipe\{pipeName}.incoming` / `\\.\pipe\{pipeName}.outgoing` convention. Calling `startNamedPipeServer`, constructing `NamedPipeService.start()`, or instantiating `NamedPipeConnection` on macOS or Linux throws `PipePlatformNotSupported` (-180019). The package manifest declares `"os": ["win32"]`, so `npm install` will warn (or refuse, depending on the installer) on non-Windows platforms.
+This package is **Windows-only**. Named pipe paths use the Win32 `\\.\pipe\{pipeName}.incoming` / `\\.\pipe\{pipeName}.outgoing` convention. Calling `startNamedPipeServer`, constructing `NamedPipeService.start()`, or instantiating `NamedPipeConnection` on macOS or Linux throws `PipePlatformNotSupported` (-180019). The package installs cleanly on any OS so that monorepos and CI runners can build/test without `--force`, but the API only functions on Windows.
 
 If you need local IPC on macOS or Linux, use a different transport (HTTP or a Unix-domain socket adapter outside of this package).
 

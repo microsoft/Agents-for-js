@@ -193,6 +193,91 @@ describe('createLocalAdapter', () => {
     assert.strictEqual(calls, 0)
   })
 
+  it('routes updateActivity through pipe for pipe serviceUrl', async () => {
+    const adapter = createLocalAdapter()
+    const { handler, calls } = createMockMessageHandler()
+    adapter.setMessageHandler(handler)
+
+    const context = createMockContext(PIPE_URL)
+    const activity = createActivity({ id: 'act-42', text: 'updated' })
+    const response = await adapter.updateActivity(context, activity)
+
+    assert.strictEqual(calls.length, 1)
+    assert.strictEqual(calls[0].verb, 'PUT')
+    assert.ok(calls[0].path.endsWith('/v3/conversations/conv1/activities/act-42'), `unexpected path: ${calls[0].path}`)
+    assert.strictEqual(calls[0].contentType, 'application/json')
+    assert.deepStrictEqual(response, { id: 'resp1' })
+  })
+
+  it('routes deleteActivity through pipe for pipe serviceUrl', async () => {
+    const adapter = createLocalAdapter()
+    const { handler, calls } = createMockMessageHandler()
+    adapter.setMessageHandler(handler)
+
+    const context = createMockContext(PIPE_URL)
+    await adapter.deleteActivity(context, {
+      serviceUrl: PIPE_URL,
+      activityId: 'act-99',
+      conversation: { id: 'conv1' } as any
+    })
+
+    assert.strictEqual(calls.length, 1)
+    assert.strictEqual(calls[0].verb, 'DELETE')
+    assert.ok(calls[0].path.endsWith('/v3/conversations/conv1/activities/act-99'), `unexpected path: ${calls[0].path}`)
+    assert.strictEqual(calls[0].body, null)
+  })
+
+  it('delegates updateActivity to super for non-pipe serviceUrl', async () => {
+    const adapter = createLocalAdapter()
+    const { handler, calls } = createMockMessageHandler()
+    adapter.setMessageHandler(handler)
+
+    const original = CloudAdapter.prototype.updateActivity
+    const superCalls: Array<{ context: unknown, activity: unknown }> = []
+    CloudAdapter.prototype.updateActivity = async function (context, activity) {
+      superCalls.push({ context, activity })
+      return { id: 'super-update' }
+    }
+
+    try {
+      const context = createMockContext('https://example.com')
+      const activity = createActivity({ id: 'act-1', serviceUrl: 'https://example.com' })
+      const response = await adapter.updateActivity(context, activity)
+
+      assert.strictEqual(calls.length, 0)
+      assert.strictEqual(superCalls.length, 1)
+      assert.deepStrictEqual(response, { id: 'super-update' })
+    } finally {
+      CloudAdapter.prototype.updateActivity = original
+    }
+  })
+
+  it('delegates deleteActivity to super for non-pipe serviceUrl', async () => {
+    const adapter = createLocalAdapter()
+    const { handler, calls } = createMockMessageHandler()
+    adapter.setMessageHandler(handler)
+
+    const original = CloudAdapter.prototype.deleteActivity
+    const superCalls: Array<{ context: unknown, reference: unknown }> = []
+    CloudAdapter.prototype.deleteActivity = async function (context, reference) {
+      superCalls.push({ context, reference })
+    }
+
+    try {
+      const context = createMockContext('https://example.com')
+      await adapter.deleteActivity(context, {
+        serviceUrl: 'https://example.com',
+        activityId: 'act-1',
+        conversation: { id: 'conv1' } as any
+      })
+
+      assert.strictEqual(calls.length, 0)
+      assert.strictEqual(superCalls.length, 1)
+    } finally {
+      CloudAdapter.prototype.deleteActivity = original
+    }
+  })
+
   it('caps in-flight pipe sends at MAX_CONCURRENT_SENDS even when many activities are scheduled in one tick', async () => {
     // Regression: _pendingSends was previously incremented inside setImmediate,
     // so the synchronous loop in sendActivities scheduled every activity past
