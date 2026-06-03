@@ -396,6 +396,37 @@ describe('CloudAdapter options (PR #838 parity)', () => {
       assert.ok(joined.includes('invalid activity body'), `should log the invalid-activity warning, got: ${joined}`)
       assert.ok(joined.includes('identifiable-activity-id'), 'should include serialized activity body in log')
     })
+
+    it('sanitizes control characters and U+2028/U+2029 from logged activity body (log-forging defense)', async () => {
+      const adapter = buildAdapter()
+      const activity = new Activity('message' as ActivityTypes)
+      ;(activity as any).type = undefined
+      activity.conversation = { id: 'cv1' }
+      activity.id = 'forge-attempt'
+      // Attacker-controlled field with newlines, NULs, and U+2028.
+      ;(activity as any).text = 'first\nFAKE_LINE\x00\u2028INJECTED\r\nALSO'
+      stubFromObject = sinon.stub(Activity, 'fromObject').returns(activity)
+
+      const debugModule = await import('debug')
+      const prev = (debugModule.default as any).disable()
+      ;(debugModule.default as any).enable('agents:cloud-adapter:*')
+      const calls: string[] = []
+      const origStderr = process.stderr.write.bind(process.stderr)
+      ;(process.stderr.write as any) = (chunk: any) => { calls.push(String(chunk)); return true }
+      try {
+        await adapter.process(buildReq(), buildRes() as Response, async () => {})
+      } finally {
+        ;(process.stderr.write as any) = origStderr
+        ;(debugModule.default as any).disable()
+        if (prev) (debugModule.default as any).enable(prev)
+      }
+
+      const joined = calls.join('')
+      assert.ok(joined.includes('invalid activity body'), 'should log the invalid-activity warning')
+      // JSON.stringify escapes \n/\r/\x00 but leaves U+2028 untouched on Node.
+      // sanitizeForLog in truncateActivityForLog must replace U+2028 with '?'.
+      assert.ok(!joined.includes('\u2028'), 'U+2028 must not appear in the log output')
+    })
   })
 
   // --- Unknown env var diagnostics ----------------------------------------

@@ -18,7 +18,9 @@ export * from './transcript'
 
 export * from './activityHandler'
 export * from './baseAdapter'
-export * from './cloudAdapter'
+// Note: `__resetCloudAdapterEnvWarnings` is intentionally NOT re-exported.
+// It is a test-only helper accessible via direct file import.
+export { CloudAdapter, type CloudAdapterOptions } from './cloudAdapter'
 export * from './middlewareSet'
 export * from './messageFactory'
 export * from './statusCodes'

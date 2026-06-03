@@ -159,10 +159,11 @@ function emitConfigWarning (envKey: string, message: string): void {
 /**
  * Scans `process.env` for keys with the `CloudAdapterOptions__` prefix
  * (case-insensitive) and returns the parsed partial options. Unknown keys
- * and values that fail to parse are warned about once per process, both via
- * `process.emitWarning` (visible by default, interceptable via
- * `process.on('warning', …)`) and through the `agents:cloud-adapter:warn`
- * debug channel.
+ * and values that fail to parse are warned about once per process via
+ * `console.warn` (so they are visible by default without enabling debug)
+ * and through the `agents:cloud-adapter:warn` debug channel for log
+ * aggregators. Hosts that want to route or suppress these diagnostics can
+ * intercept `console.warn` or filter the debug namespace.
  */
 function loadCloudAdapterOptionsFromEnv (): CloudAdapterOptions {
   const result: CloudAdapterOptions = {}
@@ -228,7 +229,11 @@ function truncateActivityForLog (activity: unknown, max = 1024): string {
   try {
     const json = JSON.stringify(activity)
     if (!json) return '<unserializable>'
-    return json.length > max ? `${json.slice(0, max)}…(truncated)` : json
+    // Strip control chars + U+2028/U+2029 from the serialized form so
+    // attacker-controlled fields (e.g. activity.text) can't forge log lines.
+    // eslint-disable-next-line no-control-regex
+    const sanitized = json.replace(/[\x00-\x1f\x7f\u2028\u2029]/g, '?')
+    return sanitized.length > max ? `${sanitized.slice(0, max)}…(truncated)` : sanitized
   } catch {
     return '<unserializable>'
   }
