@@ -17,9 +17,11 @@ import { AGENT_RESPONSE_ROUTE_PATH, createAgentResponseHandler } from './createA
  * call {@link createAgentResponseHandler} directly and register the route
  * themselves rather than passing a synthetic `WebApp`.
  *
- * Kept intentionally local (not exported from `@microsoft/agents-hosting`) so
- * that the public surface is not committed to a one-method route-registrar
- * abstraction.
+ * `WebApp` is intentionally a minimal structural shape rather than a named,
+ * separately-exported abstraction. It is not exported on its own, but because
+ * it appears in the exported {@link configureResponseController} signature it is
+ * still part of the package's public type surface (and the API report). Keeping
+ * it structural avoids committing to a richer, named route-registrar contract.
  */
 interface WebApp {
   post (

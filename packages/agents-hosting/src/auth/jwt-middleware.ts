@@ -92,6 +92,50 @@ const verifyToken = async (raw: string, config: AuthConfiguration): Promise<JwtP
 }
 
 /**
+ * Determines whether an `Authorization` header value is present (non-empty).
+ *
+ * The {@link Request} contract allows `string | string[] | undefined` because
+ * different web frameworks surface headers differently. This treats an empty
+ * string or empty array as "absent" so callers can distinguish a missing header
+ * (anonymous / 401) from a present-but-malformed one (always 401).
+ * @param authorization The raw `Authorization` header value.
+ * @returns `true` when a non-empty header value is present.
+ */
+function hasAuthorizationHeader (authorization: string | string[] | undefined): boolean {
+  if (Array.isArray(authorization)) {
+    return authorization.some((value) => typeof value === 'string' && value.trim().length > 0)
+  }
+  return typeof authorization === 'string' && authorization.trim().length > 0
+}
+
+/**
+ * Extracts the bearer token from a raw `Authorization` header value.
+ *
+ * Node's HTTP stack usually collapses duplicate headers into a single
+ * comma-joined string, but the {@link Request} contract (and frameworks such as
+ * Fastify) allow `string | string[] | undefined`. This normalizes those shapes
+ * and validates the `Bearer <token>` scheme, returning `undefined` for anything
+ * malformed so the caller can emit a consistent 401 instead of throwing.
+ * @param authorization The raw `Authorization` header value.
+ * @returns The bearer token, or `undefined` if the header is absent or malformed.
+ */
+function extractBearerToken (authorization: string | string[] | undefined): string | undefined {
+  const headerValue = Array.isArray(authorization) ? authorization[0] : authorization
+  if (typeof headerValue !== 'string') {
+    return undefined
+  }
+  const parts = headerValue.trim().split(/\s+/)
+  if (parts.length !== 2) {
+    return undefined
+  }
+  const [scheme, token] = parts
+  if (scheme.toLowerCase() !== 'bearer' || !token) {
+    return undefined
+  }
+  return token
+}
+
+/**
  * Middleware to authorize JWT tokens.
  * @param authConfig The authentication configuration.
  * @returns An Express middleware function.
@@ -105,9 +149,8 @@ export const authorizeJWT = (authConfig: AuthConfiguration) => {
       logger.warn('Method not allowed', req.method)
       res.status(405).send({ 'jwt-auth-error': 'Method not allowed' })
     } else {
-      const authHeader = req.headers.authorization as string
-      if (authHeader) {
-        const token: string = authHeader.split(' ')[1] // Extract the token from the Bearer string
+      const token = extractBearerToken(req.headers.authorization)
+      if (token) {
         try {
           const user = await verifyToken(token, authConfig)
           logger.debug('token verified for ', user)
@@ -121,6 +164,13 @@ export const authorizeJWT = (authConfig: AuthConfiguration) => {
           const wireMessage: string | undefined = err?.description ?? err?.message
           res.status(401).send({ 'jwt-auth-error': wireMessage })
         }
+      } else if (hasAuthorizationHeader(req.headers.authorization)) {
+        // Header is present but not a well-formed `Bearer <token>` (e.g. wrong
+        // scheme, missing token, or an array value). Respond with a consistent
+        // 401 rather than letting malformed input throw before authorization.
+        failed = true
+        logger.warn('malformed authorization header')
+        res.status(401).send({ 'jwt-auth-error': 'invalid authorization header' })
       } else {
         if (!authConfig.clientId && process.env.NODE_ENV !== 'production') {
           logger.info('using anonymous auth')

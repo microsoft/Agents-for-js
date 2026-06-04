@@ -93,4 +93,73 @@ describe('authorizeJWT (WebResponse contract)', () => {
       process.env.NODE_ENV = prev
     }
   })
+
+  it('rejects an array-valued malformed Authorization header with 401 (no throw)', async () => {
+    const middleware = authorizeJWT(authConfig)
+    // A non-Bearer array value previously reached `(value as string).split(...)`
+    // and threw a TypeError before any 401 could be produced.
+    const req: Request = { method: 'POST', headers: { authorization: ['Basic abc', 'Negotiate xyz'] } }
+    const res = makeRes()
+    let nextCalled = false
+    const next: NextFunction = () => { nextCalled = true }
+
+    await middleware(req, res, next)
+
+    assert.strictEqual(res._status, 401)
+    assert.strictEqual(nextCalled, false)
+    assert.deepStrictEqual(res._body, { 'jwt-auth-error': 'invalid authorization header' })
+  })
+
+  it('rejects a non-Bearer scheme with 401 without attempting verification', async () => {
+    const middleware = authorizeJWT(authConfig)
+    const req: Request = { method: 'POST', headers: { authorization: 'Basic dXNlcjpwYXNz' } }
+    const res = makeRes()
+    let nextCalled = false
+    const next: NextFunction = () => { nextCalled = true }
+
+    await middleware(req, res, next)
+
+    assert.strictEqual(res._status, 401)
+    assert.strictEqual(nextCalled, false)
+    assert.deepStrictEqual(res._body, { 'jwt-auth-error': 'invalid authorization header' })
+  })
+
+  it('rejects a Bearer header with no token as malformed (401)', async () => {
+    const middleware = authorizeJWT(authConfig)
+    const req: Request = { method: 'POST', headers: { authorization: 'Bearer' } }
+    const res = makeRes()
+    let nextCalled = false
+    const next: NextFunction = () => { nextCalled = true }
+
+    await middleware(req, res, next)
+
+    assert.strictEqual(res._status, 401)
+    assert.strictEqual(nextCalled, false)
+    assert.deepStrictEqual(res._body, { 'jwt-auth-error': 'invalid authorization header' })
+  })
+
+  it('treats an empty-string Authorization header as absent (anonymous in dev)', async () => {
+    const prev = process.env.NODE_ENV
+    process.env.NODE_ENV = 'development'
+    try {
+      const middleware = authorizeJWT({
+        tenantId: 't',
+        clientId: '',
+        issuers: [],
+        connections: new Map()
+      } as AuthConfiguration)
+      const req: Request = { method: 'POST', headers: { authorization: '' } }
+      const res = makeRes()
+      let nextCalled = false
+      const next: NextFunction = () => { nextCalled = true }
+
+      await middleware(req, res, next)
+
+      assert.strictEqual(nextCalled, true, 'empty header should fall through to anonymous')
+      assert.strictEqual(res._status, undefined)
+      assert.deepStrictEqual(req.user, { name: 'anonymous' })
+    } finally {
+      process.env.NODE_ENV = prev
+    }
+  })
 })
