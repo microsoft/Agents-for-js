@@ -40,6 +40,10 @@ export enum PowerPlatformCloud {
    */
   Gov = 'Gov',
   /**
+   * Government cloud environment (GCC). Accepted alongside {@link Gov} for compatibility.
+   */
+  GCC = 'GCC',
+  /**
    * High security cloud environment.
    */
   High = 'High',
