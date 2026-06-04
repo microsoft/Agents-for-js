@@ -107,6 +107,11 @@ export const SpanNames = {
   COPILOT_CREATE_CONNECTION: 'agents.copilot_client.webchat.create_connection',
   COPILOT_EXECUTE_STREAMING: 'agents.copilot_client.execute_streaming',
   COPILOT_SUBSCRIBE_ASYNC: 'agents.copilot_client.subscribe_async',
+
+  // Named Pipe
+  NAMED_PIPE_CONNECT: 'agents.named_pipe.connect',
+  NAMED_PIPE_DISPATCH: 'agents.named_pipe.dispatch',
+  NAMED_PIPE_SEND: 'agents.named_pipe.send',
 } as const
 
 /**
@@ -166,4 +171,12 @@ export const MetricNames = {
   CSC_EXECUTE_STREAMING: 'agents.copilot_client.execute_streaming.count',
   CSC_SUBSCRIBE_ASYNC: 'agents.copilot_client.subscribe_async.count',
   CSC_SUBSCRIBE_EVENT: 'agents.copilot_client.subscribe_event.count',
+
+  // Named Pipe
+  NAMED_PIPE_CONNECTIONS: 'agents.named_pipe.connection.count',
+  NAMED_PIPE_DISPATCHES: 'agents.named_pipe.dispatch.count',
+  NAMED_PIPE_DISPATCH_DURATION: 'agents.named_pipe.dispatch.duration',
+  NAMED_PIPE_DISPATCH_ERRORS: 'agents.named_pipe.dispatch.error.count',
+  NAMED_PIPE_SENDS: 'agents.named_pipe.send.count',
+  NAMED_PIPE_SEND_DURATION: 'agents.named_pipe.send.duration',
 } as const

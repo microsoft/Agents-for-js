@@ -2,12 +2,8 @@
 // Licensed under the MIT License.
 
 import { startServer } from '@microsoft/agents-hosting-express'
-
-import { Attachment } from '@microsoft/agents-activity'
-import { ActivityHandler, MessageFactory, TurnContext } from '@microsoft/agents-hosting'
-import * as AdaptiveCardsTemplating from 'adaptivecards-templating'
+import { ActivityHandler, CardFactory, MessageFactory, TurnContext } from '@microsoft/agents-hosting'
 import AdaptiveCardActions from '../_resources/AdaptiveCardActions.json'
-import SuggestedActions from '../_resources/SuggestedActions.json'
 import ToggleVisible from '../_resources/ToggleVisibleCard.json'
 
 const commandString = 'Please use one of these commands: **Card Actions** for Adaptive Card actions, **Suggested Actions** for suggested actions, and **ToggleVisibility** for toggling the visibility of the card.'
@@ -25,17 +21,12 @@ export class AdaptiveCardHandler extends ActivityHandler {
         const text = context.activity.text?.toLowerCase() ?? ''
 
         if (text.includes('card actions')) {
-          const adaptiveCardForPersonalScope = AdaptiveCardHandler.getFirstOptionsAdaptiveCard(AdaptiveCardActions, context.activity.from?.name)
-          await context.sendActivity(MessageFactory.attachment(adaptiveCardForPersonalScope))
+          await context.sendActivity(MessageFactory.attachment(CardFactory.adaptiveCard(AdaptiveCardActions)))
         } else if (text.includes('suggested actions')) {
           await context.sendActivity('Please select a color from the suggested action choices.')
-          const adaptiveCardForPersonalScope = AdaptiveCardHandler.getFirstOptionsAdaptiveCard(SuggestedActions, context.activity.from?.name)
-          await context.sendActivity(MessageFactory.attachment(adaptiveCardForPersonalScope))
-
           await AdaptiveCardHandler.sendSuggestedActionsAsync(context)
         } else if (text.includes('togglevisibility')) {
-          const adaptiveCardForPersonalScope = AdaptiveCardHandler.getFirstOptionsAdaptiveCard(ToggleVisible, context.activity.from?.name)
-          await context.sendActivity(MessageFactory.attachment(adaptiveCardForPersonalScope))
+          await context.sendActivity(MessageFactory.attachment(CardFactory.adaptiveCard(ToggleVisible)))
         } else if (text.includes('red') || text.includes('blue') || text.includes('green')) {
           const responseText = AdaptiveCardHandler.processInput(text)
           await context.sendActivity(responseText)
@@ -47,22 +38,6 @@ export class AdaptiveCardHandler extends ActivityHandler {
 
       await this.sendDataOnCardActions(context)
     })
-  }
-
-  private static getFirstOptionsAdaptiveCard (adaptiveCardJson: any, name: string | undefined = undefined, userMRI = undefined): Attachment {
-    const template: AdaptiveCardsTemplating.Template = new AdaptiveCardsTemplating.Template(adaptiveCardJson)
-    const payloadData = {
-      createdById: userMRI,
-      createdBy: name
-    }
-
-    const cardJsonString = template.expand({ $root: payloadData })
-    const adaptiveCardAttachment: Attachment = {
-      contentType: 'application/vnd.microsoft.card.adaptive',
-      content: cardJsonString
-    }
-
-    return adaptiveCardAttachment
   }
 
   private static processInput (text: string): string {

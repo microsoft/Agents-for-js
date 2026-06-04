@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "name": "@microsoft/agents-hosting-storage-cosmos",
+  "name": "@microsoft/agents-hosting-directline-namedpipes",
   "version": "0.1.0",
   "homepage": "https://github.com/microsoft/Agents-for-js",
   "repository": {
@@ -12,21 +12,25 @@
     "email": "agentssdk@microsoft.com",
     "url": "https://aka.ms/Agents"
   },
-  "description": "Microsoft 365 Agents SDK State Cosmos Storage support.",
-  "main": "dist/index.js",
+  "description": "Microsoft 365 Agents SDK for JavaScript. DirectLine Named Pipes transport.",
+  "keywords": [
+    "Agents",
+    "NamedPipes",
+    "DirectLine"
+  ],
+  "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
   "dependencies": {
-    "@azure/cosmos": "4.9.3",
-    "@microsoft/agents-hosting": "file:../../packages/agents-hosting",
-    "@microsoft/agents-activity": "file:../../packages/agents-activity",
-    "@microsoft/agents-telemetry": "file:../agents-telemetry"
+    "@microsoft/agents-hosting": "file:../agents-hosting",
+    "@microsoft/agents-activity": "file:../agents-activity",
+    "@microsoft/agents-telemetry": "file:../agents-telemetry",
+    "jsonwebtoken": "9.0.3"
   },
   "license": "MIT",
   "files": [
     "README.md",
     "dist/src",
-    "src",
-    "package.json"
+    "src"
   ],
   "exports": {
     ".": {
