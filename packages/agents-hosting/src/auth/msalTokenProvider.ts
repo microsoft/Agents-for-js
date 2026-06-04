@@ -139,10 +139,10 @@ export class MsalTokenProvider implements AuthProvider {
         logger.debug('getAccessToken via method=%s clientId=%s scope=%s', AuthType.UserManagedIdentity, authConfig.clientId, actualScope)
         token = await this.acquireTokenWithUserAssignedIdentity(authConfig, actualScope)
       } else {
-        throw new Error('Invalid authConfig. ')
+        throw ExceptionHelper.generateException(Error, Errors.InvalidAuthConfig)
       }
       if (token === undefined) {
-        throw new Error('Failed to acquire token')
+        throw ExceptionHelper.generateException(Error, Errors.FailedToAcquireToken)
       }
 
       return token

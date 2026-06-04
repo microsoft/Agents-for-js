@@ -25,6 +25,9 @@ function summarizeAuthConfiguration (authConfig: AuthConfiguration): Record<stri
       certPemFile: redactString(config.certPemFile),
       certKeyFile: redactString(config.certKeyFile),
       WIDAssertionFile: redactString(config.WIDAssertionFile),
+      federatedTokenFile: config.federatedTokenFile ? redactString(config.federatedTokenFile) : undefined,
+      authType: config.authType ?? undefined,
+      idpmResource: config.idpmResource ? redactUrl(config.idpmResource) : undefined,
     } satisfies AuthConfiguration)
     return summary
   }, {} as Record<string, AuthConfiguration>)
