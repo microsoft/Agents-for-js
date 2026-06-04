@@ -25,6 +25,9 @@ function summarizeAuthConfiguration (authConfig: AuthConfiguration): Record<stri
       certPemFile: redactString(config.certPemFile),
       certKeyFile: redactString(config.certKeyFile),
       WIDAssertionFile: redactString(config.WIDAssertionFile),
+      federatedTokenFile: config.federatedTokenFile ? redactString(config.federatedTokenFile) : undefined,
+      authType: config.authType ?? undefined,
+      idpmResource: config.idpmResource ? redactUrl(config.idpmResource) : undefined,
     } satisfies AuthConfiguration)
     return summary
   }, {} as Record<string, AuthConfiguration>)
@@ -122,6 +125,7 @@ export interface AuthConfiguration {
 
   /**
    * The path to K8s provided token.
+   * @deprecated Use `authType` set to `'WorkloadIdentity'` and `federatedTokenFile` instead.
    */
   WIDAssertionFile?: string
 
@@ -129,6 +133,11 @@ export interface AuthConfiguration {
    * The authentication type for the connection.
    */
   authType?: AuthType | string
+
+  /**
+   * The path to the federated token file used for Workload Identity authentication.
+   */
+  federatedTokenFile?: string
 
   /**
    * Sets the resource URL for Identity Proxy Manager (IDPM).
@@ -257,6 +266,7 @@ export const loadPrevAuthConfigFromEnv: () => AuthConfiguration = () => {
       altBlueprintConnectionName: process.env.altBlueprintConnectionName,
       WIDAssertionFile: process.env.WIDAssertionFile,
       authType: process.env.authType,
+      federatedTokenFile: process.env.federatedTokenFile,
       idpmResource: process.env.idpmResource,
       azureRegion: process.env.azureRegion,
     }
@@ -420,6 +430,7 @@ function buildLegacyAuthConfig (envPrefix: string = '', customConfig?: AuthConfi
     altBlueprintConnectionName: customConfig?.altBlueprintConnectionName ?? process.env[`${prefix}altBlueprintConnectionName`],
     WIDAssertionFile: customConfig?.WIDAssertionFile ?? process.env[`${prefix}WIDAssertionFile`],
     authType: customConfig?.authType ?? process.env[`${prefix}authType`],
+    federatedTokenFile: customConfig?.federatedTokenFile ?? process.env[`${prefix}federatedTokenFile`],
     idpmResource: customConfig?.idpmResource ?? process.env[`${prefix}idpmResource`],
     azureRegion: customConfig?.azureRegion ?? process.env[`${prefix}azureRegion`]
   }
