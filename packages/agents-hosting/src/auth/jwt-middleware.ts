@@ -4,8 +4,10 @@
  */
 
 import { AuthConfiguration, resolveAuthority } from './authConfiguration'
-import { Response, NextFunction } from 'express'
 import { Request } from './request'
+import { WebResponse, NextFunction } from '../interfaces/webResponse'
+import { Errors } from '../errorHelper'
+import { ExceptionHelper } from '@microsoft/agents-activity'
 import jwksRsa, { JwksClient, SigningKey } from 'jwks-rsa'
 import jwt, { JwtHeader, JwtPayload, SignCallback, GetPublicKeyOrSecret } from 'jsonwebtoken'
 import { debug } from '@microsoft/agents-telemetry'
@@ -35,7 +37,7 @@ const verifyToken = async (raw: string, config: AuthConfiguration): Promise<JwtP
   logger.debug('jwt.decode ', JSON.stringify(payload))
 
   if (!payload) {
-    throw new Error('invalid token')
+    throw ExceptionHelper.generateException(Error, Errors.InvalidJwtToken)
   }
   const audience = payload.aud
 
@@ -44,7 +46,7 @@ const verifyToken = async (raw: string, config: AuthConfiguration): Promise<JwtP
     : undefined
 
   if (!matchingEntry) {
-    const err = new Error('Audience mismatch')
+    const err = ExceptionHelper.generateException(Error, Errors.JwtAudienceMismatch)
     logger.error(err.message, audience)
     throw err
   }
@@ -95,7 +97,7 @@ const verifyToken = async (raw: string, config: AuthConfiguration): Promise<JwtP
  * @returns An Express middleware function.
  */
 export const authorizeJWT = (authConfig: AuthConfiguration) => {
-  return async function (req: Request, res: Response, next: NextFunction) {
+  return async function (req: Request, res: WebResponse, next: NextFunction) {
     let failed = false
     logger.debug('authorizing jwt')
     if (req.method !== 'POST' && req.method !== 'GET') {
@@ -113,7 +115,11 @@ export const authorizeJWT = (authConfig: AuthConfiguration) => {
         } catch (err: Error | any) {
           failed = true
           logger.error(err)
-          res.status(401).send({ 'jwt-auth-error': err.message })
+          // Emit only the human-readable description rather than the
+          // ExceptionHelper-formatted "[code] - description - helplink" string,
+          // so the wire format does not leak internal error codes or help links.
+          const wireMessage: string | undefined = err?.description ?? err?.message
+          res.status(401).send({ 'jwt-auth-error': wireMessage })
         }
       } else {
         if (!authConfig.clientId && process.env.NODE_ENV !== 'production') {
