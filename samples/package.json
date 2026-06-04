@@ -1,0 +1,12 @@
+{
+  "name": "agents-samples",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "authorization:absGraphLatest": "tsx --env-file ./authorization/absGraphLatest.env ./authorization/absGraphLatest.ts",
+    "authorization:absGraphLegacy": "tsx --env-file ./authorization/absGraphLegacy.env ./authorization/absGraphLegacy.ts"
+  },
+  "devDependencies": {
+    "tsx": "4.21.0"
+  }
+}

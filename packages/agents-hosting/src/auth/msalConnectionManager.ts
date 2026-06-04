@@ -44,7 +44,7 @@ export class MsalConnectionManager implements Connections {
 
     for (const [name, provider] of this._connections.entries()) {
       const cfg = provider.connectionSettings
-      const authType = cfg?.authtype ??
+      const authType = cfg?.authType ??
         (cfg?.certPemFile
           ? AuthType.Certificate
           : cfg?.clientSecret

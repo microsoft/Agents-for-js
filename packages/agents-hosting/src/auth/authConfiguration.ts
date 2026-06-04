@@ -3,12 +3,32 @@
  * Licensed under the MIT License.
  */
 
-import { debug } from '@microsoft/agents-telemetry'
+import { debug, redactString, redactScopes, redactUrl } from '@microsoft/agents-telemetry'
 import { ConnectionMapItem } from './msalConnectionManager'
 import objectPath from 'object-path'
+import { prune } from '../utils'
 
 const logger = debug('agents:authConfiguration')
 const DEFAULT_CONNECTION = 'serviceConnection'
+
+function summarizeAuthConfiguration (authConfig: AuthConfiguration): Record<string, unknown> {
+  return [...authConfig.connections?.entries() ?? []].reduce((summary, [name, config]) => {
+    summary[name] = prune({
+      ...config,
+      clientId: redactString(config.clientId, true),
+      tenantId: redactString(config.tenantId, true),
+      clientSecret: redactString(config.clientSecret),
+      authority: config.authority ? redactUrl(config.authority) : undefined,
+      scope: config.scope ? redactScopes([config.scope]) : undefined,
+      issuers: config.issuers?.map(redactUrl).filter(e => e !== undefined),
+      FICClientId: redactString(config.FICClientId, true),
+      certPemFile: redactString(config.certPemFile),
+      certKeyFile: redactString(config.certKeyFile),
+      WIDAssertionFile: redactString(config.WIDAssertionFile),
+    } satisfies AuthConfiguration)
+    return summary
+  }, {} as Record<string, AuthConfiguration>)
+}
 
 /**
  * Supported authentication types for agent connections.
@@ -20,7 +40,8 @@ export enum AuthType {
   UserManagedIdentity = 'UserManagedIdentity',
   SystemManagedIdentity = 'SystemManagedIdentity',
   FederatedCredentials = 'FederatedCredentials',
-  WorkloadIdentity = 'WorkloadIdentity'
+  WorkloadIdentity = 'WorkloadIdentity',
+  IdentityProxyManager = 'IdentityProxyManager'
 }
 
 /**
@@ -101,19 +122,29 @@ export interface AuthConfiguration {
 
   /**
    * The path to K8s provided token.
-   * @deprecated Use `authtype` set to `'WorkloadIdentity'` and `federatedtokenfile` instead.
+   * @deprecated Use `authType` set to `'WorkloadIdentity'` and `federatedTokenFile` instead.
    */
   WIDAssertionFile?: string
 
   /**
    * The authentication type for the connection.
    */
-  authtype?: AuthType | string
+  authType?: AuthType | string
 
   /**
    * The path to the federated token file used for Workload Identity authentication.
    */
-  federatedtokenfile?: string
+  federatedTokenFile?: string
+
+  /**
+   * Sets the resource URL for Identity Proxy Manager (IDPM).
+   *
+   * @remarks
+   * Set this to the appropriate resource identifier when the application is running in an environment,
+   * such as a Foundry container, that exposes Managed Identity through a container-specific IMDS endpoint.
+   * This setting is only meaningful when using Identity Proxy Manager (AuthType.IdentityProxyManager) for authentication.
+   */
+  idpmResource?: string
 
   /**
    * The Azure region for ESTS-R regional token acquisition (e.g. 'westus', 'eastus').
@@ -183,10 +214,14 @@ export const loadAuthConfigFromEnv = (cnxName?: string): AuthConfiguration => {
     authConfig.issuers ??= getDefaultIssuers(authConfig.tenantId ?? '', authConfig.authority)
   }
 
-  return {
-    ...authConfig,
-    ...envConnections,
-  }
+  const result = { ...authConfig, ...envConnections }
+
+  logger.info('Auth settings loaded from environment', {
+    connections: summarizeAuthConfiguration(result),
+    connectionsMap: result.connectionsMap.map(e => ({ ...e, serviceUrl: e.serviceUrl !== '*' ? redactUrl(e.serviceUrl) : e.serviceUrl })),
+  })
+
+  return result
 }
 
 /**
@@ -227,8 +262,9 @@ export const loadPrevAuthConfigFromEnv: () => AuthConfiguration = () => {
       issuers: getDefaultIssuers(process.env.MicrosoftAppTenantId ?? '', authority),
       altBlueprintConnectionName: process.env.altBlueprintConnectionName,
       WIDAssertionFile: process.env.WIDAssertionFile,
-      authtype: process.env.authtype,
-      federatedtokenfile: process.env.federatedtokenfile,
+      authType: process.env.authType,
+      federatedTokenFile: process.env.federatedTokenFile,
+      idpmResource: process.env.idpmResource,
       azureRegion: process.env.azureRegion,
     }
     envConnections.connections.set(DEFAULT_CONNECTION, authConfig)
@@ -249,7 +285,10 @@ export const loadPrevAuthConfigFromEnv: () => AuthConfiguration = () => {
   authConfig.authority ??= 'https://login.microsoftonline.com'
   authConfig.issuers ??= getDefaultIssuers(authConfig.tenantId ?? '', authConfig.authority)
 
-  return { ...authConfig, ...envConnections }
+  const result = { ...authConfig, ...envConnections }
+  logger.info('Legacy auth settings loaded from environment', summarizeAuthConfiguration(result), result.connectionsMap)
+
+  return result
 }
 
 function loadConnectionsMapFromEnv () {
@@ -352,10 +391,10 @@ export function getAuthConfigWithDefaults (config?: AuthConfiguration): AuthConf
     mergedConfig = buildLegacyAuthConfig(undefined, defaultConn)
   }
 
-  return {
-    ...mergedConfig,
-    ...connections,
-  }
+  const result = { ...mergedConfig, ...connections }
+  logger.info('Auth settings loaded from runtime configuration', summarizeAuthConfiguration(result), result.connectionsMap)
+
+  return result
 }
 
 function buildLegacyAuthConfig (envPrefix: string = '', customConfig?: AuthConfiguration): AuthConfiguration {
@@ -387,8 +426,9 @@ function buildLegacyAuthConfig (envPrefix: string = '', customConfig?: AuthConfi
     issuers: customConfig?.issuers ?? getDefaultIssuers(tenantId as string, authority),
     altBlueprintConnectionName: customConfig?.altBlueprintConnectionName ?? process.env[`${prefix}altBlueprintConnectionName`],
     WIDAssertionFile: customConfig?.WIDAssertionFile ?? process.env[`${prefix}WIDAssertionFile`],
-    authtype: customConfig?.authtype ?? process.env[`${prefix}authtype`],
-    federatedtokenfile: customConfig?.federatedtokenfile ?? process.env[`${prefix}federatedtokenfile`],
+    authType: customConfig?.authType ?? process.env[`${prefix}authType`],
+    federatedTokenFile: customConfig?.federatedTokenFile ?? process.env[`${prefix}federatedTokenFile`],
+    idpmResource: customConfig?.idpmResource ?? process.env[`${prefix}idpmResource`],
     azureRegion: customConfig?.azureRegion ?? process.env[`${prefix}azureRegion`]
   }
 }

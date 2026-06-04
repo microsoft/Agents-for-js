@@ -243,7 +243,7 @@ export class UserTokenClient {
       const state = Buffer.from(JSON.stringify({ conversation, relatesTo, connectionName, msAppId: this.msAppId })).toString('base64')
       const params = { userId, connectionName, channelId, state, code, finalRedirect, fwdUrl }
       const response = await this.client.get('/api/usertoken/GetTokenOrSignInResource', { params })
-      record({ userId, connectionName, channelId, httpStatusCode: response.status?.toString() })
+      record({ userId, connectionName, channelId, httpStatusCode: response?.status?.toString() })
       return response.data as TokenOrSinginResourceResponse
     })
   }

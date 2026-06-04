@@ -72,12 +72,12 @@ export class MsalTokenProvider implements AuthProvider {
       }
 
       let token
-      if (authConfig.authtype) {
-        record({ method: authConfig.authtype })
-        logger.debug(`getAccessToken via ${authConfig.authtype} clientId=${authConfig.clientId} scope=${actualScope}`)
-        switch (authConfig.authtype) {
+      if (authConfig.authType) {
+        record({ method: authConfig.authType })
+        logger.debug(`getAccessToken via ${authConfig.authType} clientId=${authConfig.clientId} scope=${actualScope}`)
+        switch (authConfig.authType) {
           case AuthType.WorkloadIdentity: {
-            const tokenFilePath = authConfig.federatedtokenfile ?? authConfig.WIDAssertionFile
+            const tokenFilePath = authConfig.federatedTokenFile ?? authConfig.WIDAssertionFile
             if (!tokenFilePath) {
               throw ExceptionHelper.generateException(Error, Errors.WorkloadIdentityTokenFileRequired)
             }
@@ -113,7 +113,7 @@ export class MsalTokenProvider implements AuthProvider {
             token = await this.acquireTokenWithSystemAssignedIdentity(authConfig, actualScope)
             break
           default:
-            throw ExceptionHelper.generateException(Error, Errors.UnsupportedAuthType, undefined, { authType: authConfig.authtype })
+            throw ExceptionHelper.generateException(Error, Errors.UnsupportedAuthType, undefined, { authType: authConfig.authType })
         }
       } else if (authConfig.WIDAssertionFile !== undefined) {
         record({ method: AuthType.WorkloadIdentity })
@@ -348,12 +348,35 @@ export class MsalTokenProvider implements AuthProvider {
     }
     logger.debug('getAgenticApplicationToken clientId=%s tenantId=%s agentAppInstanceId=%s', this.connectionSettings.clientId, tenantId, agentAppInstanceId)
 
+    if (this.connectionSettings.authType === AuthType.IdentityProxyManager) {
+      let resource: string
+      if (!this.connectionSettings.idpmResource) {
+        resource = 'api://AzureAdTokenExchange/.default'
+      } else if (!URL.canParse(this.connectionSettings.idpmResource)) {
+        throw new Error('idpmResource must be a valid absolute URI')
+      } else {
+        resource = this.connectionSettings.idpmResource
+      }
+      const msiApp = new ManagedIdentityApplication({
+        managedIdentityIdParams: {
+          userAssignedClientId: this.connectionSettings.clientId
+        },
+        system: this.sysOptions
+      })
+      const tokenResult = await msiApp.acquireToken({ resource })
+      if (!tokenResult?.accessToken) {
+        throw new Error(`Failed to acquire token via IdentityProxyManager for agent instance: ${agentAppInstanceId}`)
+      }
+      logger.debug('getAgenticApplicationToken via IdentityProxyManager clientId=%s resource=%s', this.connectionSettings.clientId, resource)
+      return tokenResult.accessToken
+    }
+
     let clientAssertion
 
-    if (this.connectionSettings.authtype) {
-      switch (this.connectionSettings.authtype) {
+    if (this.connectionSettings.authType) {
+      switch (this.connectionSettings.authType) {
         case AuthType.WorkloadIdentity: {
-          const tokenFilePath = this.connectionSettings.federatedtokenfile ?? this.connectionSettings.WIDAssertionFile
+          const tokenFilePath = this.connectionSettings.federatedTokenFile ?? this.connectionSettings.WIDAssertionFile
           if (tokenFilePath === undefined) {
             throw ExceptionHelper.generateException(Error, Errors.WorkloadIdentityTokenFileRequired)
           }
@@ -375,7 +398,7 @@ export class MsalTokenProvider implements AuthProvider {
           break
       }
     } else if (this.connectionSettings.WIDAssertionFile !== undefined) {
-      const tokenFilePath = this.connectionSettings.federatedtokenfile ?? this.connectionSettings.WIDAssertionFile
+      const tokenFilePath = this.connectionSettings.federatedTokenFile ?? this.connectionSettings.WIDAssertionFile
       clientAssertion = fs.readFileSync(tokenFilePath as string, 'utf8')
     } else if (this.connectionSettings.FICClientId !== undefined) {
       clientAssertion = await this.fetchExternalToken(this.connectionSettings.FICClientId as string)
@@ -605,7 +628,7 @@ export class MsalTokenProvider implements AuthProvider {
    */
   private async acquireAccessTokenViaWID (authConfig: AuthConfiguration, scope: string) : Promise<string> {
     const scopes = [`${scope}/.default`]
-    const tokenFilePath = authConfig.federatedtokenfile ?? authConfig.WIDAssertionFile
+    const tokenFilePath = authConfig.federatedTokenFile ?? authConfig.WIDAssertionFile
     const clientAssertion = fs.readFileSync(tokenFilePath as string, 'utf8')
     const cca = new ConfidentialClientApplication({
       auth: {

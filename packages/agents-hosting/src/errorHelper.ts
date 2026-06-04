@@ -525,11 +525,11 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   },
 
   /**
-     * Error thrown when WorkloadIdentity authentication requires `federatedtokenfile` or the deprecated `WIDAssertionFile` to be configured.
+     * Error thrown when WorkloadIdentity authentication requires `federatedTokenFile` or the deprecated `WIDAssertionFile` to be configured.
      */
   WorkloadIdentityTokenFileRequired: {
     code: -120594,
-    description: 'WorkloadIdentity authentication requires `federatedtokenfile` or the deprecated `WIDAssertionFile` to be configured'
+    description: 'WorkloadIdentity authentication requires `federatedTokenFile` or the deprecated `WIDAssertionFile` to be configured'
   },
 
   /**

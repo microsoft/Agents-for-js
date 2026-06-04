@@ -28,7 +28,7 @@ jobs:
         with:
           node-version: 24
 
-      - name: Install dependencies with CI
+      - name: Install dependencies
         run: npm ci
 
       - name: Lint codebase
@@ -45,7 +45,7 @@ jobs:
 
       - name: Build samples
         run: npm run build:samples
-      
+
       - name: Set Version
         run: node setVersion.js
 
