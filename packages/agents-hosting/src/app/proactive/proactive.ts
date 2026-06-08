@@ -251,7 +251,10 @@ export class Proactive<TState extends TurnState> {
         channelId: conv.reference.channelId,
         activityType: activityToSend.type ?? 'message',
       })
-      await actions.link(this.requireStorage(), this._storageKey(id))
+
+      if (this._storage) {
+        await actions.link(this._storage, this._storageKey(id))
+      }
 
       logger.info('sendActivity: conversation=%s channel=%s serviceUrl=%s',
         id, conv.reference.channelId, conv.reference.serviceUrl)
@@ -365,7 +368,10 @@ export class Proactive<TState extends TurnState> {
         channelId: conv.reference.channelId,
         hasAutoSignIn: !!autoSignInHandlers?.length,
       })
-      await actions.link(this.requireStorage(), this._storageKey(id))
+
+      if (this._storage) {
+        await actions.link(this._storage, this._storageKey(id))
+      }
 
       logger.info('continueConversation: conversation=%s channel=%s serviceUrl=%s',
         id, conv.reference.channelId, conv.reference.serviceUrl)
