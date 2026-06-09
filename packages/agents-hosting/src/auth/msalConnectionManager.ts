@@ -44,15 +44,16 @@ export class MsalConnectionManager implements Connections {
 
     for (const [name, provider] of this._connections.entries()) {
       const cfg = provider.connectionSettings
-      const authType = cfg?.certPemFile
-        ? 'certificate'
-        : cfg?.clientSecret
-          ? 'clientSecret'
-          : cfg?.WIDAssertionFile || cfg?.FICClientId
-            ? 'workloadIdentity'
-            : cfg?.authType === AuthType.IdentityProxyManager
-              ? 'IdentityProxyManager'
-              : 'none'
+      const authType = cfg?.authType ??
+        (cfg?.certPemFile
+          ? AuthType.Certificate
+          : cfg?.clientSecret
+            ? AuthType.ClientSecret
+            : cfg?.WIDAssertionFile
+              ? AuthType.WorkloadIdentity
+              : cfg?.FICClientId
+                ? AuthType.FederatedCredentials
+                : 'none')
       logger.debug('connection "%s" clientId=%s tenantId=%s authType=%s', name, cfg?.clientId ?? '<none>', cfg?.tenantId ?? '<none>', authType)
     }
 
