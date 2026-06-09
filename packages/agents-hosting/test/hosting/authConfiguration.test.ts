@@ -320,6 +320,22 @@ describe('AuthConfiguration', () => {
       assert.strictEqual(config.connectionsMap[0].connection, 'test-conn')
     })
 
+    it('should use US Government default issuers when the authority is a gov endpoint', () => {
+      delete process.env.idpmResource
+
+      const config: AuthConfiguration = getAuthConfigWithDefaults({
+        clientId: 'gov-client',
+        tenantId: 'gov-tenant-id',
+        authority: 'https://login.microsoftonline.us'
+      })
+      assert.deepStrictEqual(config.issuers, [
+        'https://api.botframework.us',
+        'https://sts.windows.net/gov-tenant-id/',
+        'https://login.microsoftonline.us/gov-tenant-id/v2.0'
+      ])
+      assert.strictEqual(config.authority, 'https://login.microsoftonline.us')
+    })
+
     it('should load from env with defaults', () => {
       delete process.env.authorityEndpoint
       delete process.env.idpmResource

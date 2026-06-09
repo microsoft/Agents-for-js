@@ -1040,6 +1040,23 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
     description: 'Audience mismatch'
   },
 
+  /**
+   * Error thrown by verifyToken when the token issuer is not in the connection's allowed issuer list.
+   */
+  JwtIssuerMismatch: {
+    code: -120830,
+    description: 'Issuer mismatch'
+  },
+
+  /**
+   * Error thrown by verifyToken when an Entra token's tenant id (`tid`) claim does not match the
+   * tenant GUID embedded in its issuer (`iss`) claim.
+   */
+  JwtTenantMismatch: {
+    code: -120840,
+    description: 'Tenant mismatch'
+  },
+
   // ============================================================================
   // Application Configuration Errors (-120850 to -120902)
   // ============================================================================
