@@ -109,18 +109,14 @@ function hasAuthorizationHeader (authorization: string | string[] | undefined): 
 }
 
 /**
- * Extracts the bearer token from a raw `Authorization` header value.
+ * Parses a single `Authorization` header value and returns its bearer token.
  *
- * Node's HTTP stack usually collapses duplicate headers into a single
- * comma-joined string, but the {@link Request} contract (and frameworks such as
- * Fastify) allow `string | string[] | undefined`. This normalizes those shapes
- * and validates the `Bearer <token>` scheme, returning `undefined` for anything
- * malformed so the caller can emit a consistent 401 instead of throwing.
- * @param authorization The raw `Authorization` header value.
- * @returns The bearer token, or `undefined` if the header is absent or malformed.
+ * Validates the `Bearer <token>` scheme, returning `undefined` for anything
+ * malformed (wrong scheme, missing token, or extra whitespace-delimited parts).
+ * @param headerValue A single `Authorization` header value.
+ * @returns The bearer token, or `undefined` if the value is absent or malformed.
  */
-function extractBearerToken (authorization: string | string[] | undefined): string | undefined {
-  const headerValue = Array.isArray(authorization) ? authorization[0] : authorization
+function parseBearerValue (headerValue: string | undefined): string | undefined {
   if (typeof headerValue !== 'string') {
     return undefined
   }
@@ -133,6 +129,30 @@ function extractBearerToken (authorization: string | string[] | undefined): stri
     return undefined
   }
   return token
+}
+
+/**
+ * Extracts the bearer token from a raw `Authorization` header value.
+ *
+ * Node's HTTP stack usually collapses duplicate headers into a single
+ * comma-joined string, but the {@link Request} contract (and frameworks such as
+ * Fastify) allow `string | string[] | undefined`. When the value is an array
+ * (duplicate headers preserved), every entry is inspected and the first valid
+ * `Bearer <token>` is returned — the bearer value is not assumed to be first.
+ * Returns `undefined` for anything malformed so the caller can emit a consistent
+ * 401 instead of throwing.
+ * @param authorization The raw `Authorization` header value.
+ * @returns The bearer token, or `undefined` if the header is absent or malformed.
+ */
+function extractBearerToken (authorization: string | string[] | undefined): string | undefined {
+  const values = Array.isArray(authorization) ? authorization : [authorization]
+  for (const value of values) {
+    const token = parseBearerValue(value)
+    if (token) {
+      return token
+    }
+  }
+  return undefined
 }
 
 /**

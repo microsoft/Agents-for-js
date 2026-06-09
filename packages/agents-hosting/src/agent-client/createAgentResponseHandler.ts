@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { Activity, ActivityTypes, ConversationReference } from '@microsoft/agents-activity'
+import { Activity, ActivityTypes, ConversationReference, ExceptionHelper } from '@microsoft/agents-activity'
 import { ActivityHandler } from '../activityHandler'
 import { CloudAdapter } from '../cloudAdapter'
 import { Request } from '../auth/request'
@@ -11,6 +11,7 @@ import { WebResponse } from '../interfaces/webResponse'
 import { TurnContext } from '../turnContext'
 import { randomUUID } from 'crypto'
 import { normalizeIncomingActivity } from '../activityWireCompat'
+import { Errors } from '../errorHelper'
 import { debug } from '@microsoft/agents-telemetry'
 import { ConversationState } from '../state'
 
@@ -65,7 +66,10 @@ export const createAgentResponseHandler = (
   conversationState: ConversationState
 ): AgentResponseHandler => {
   return async (req: Request, res: WebResponse, params: AgentResponseHandlerParams) => {
-    const incoming = normalizeIncomingActivity(req.body!)
+    if (!req.body) {
+      throw ExceptionHelper.generateException(TypeError, Errors.MissingRequestBody)
+    }
+    const incoming = normalizeIncomingActivity(req.body)
     const activity = Activity.fromObject(incoming)
 
     logger.debug('received response: ', activity)

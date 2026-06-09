@@ -33,6 +33,9 @@ export interface StartServerOptions {
 
   /**
    * The port to listen on. Defaults to `process.env.PORT` or `3978`.
+   *
+   * A non-numeric string is treated as a listen target path (Unix domain socket
+   * or Windows named pipe) and passed to Fastify via `path` rather than `port`.
    */
   port?: number | string
 
@@ -212,10 +215,19 @@ export async function startServer (
     headerPropagation: headerPropagation !== undefined ? 'enabled' : 'disabled'
   })
 
-  const listenTarget = typeof port === 'string' && /^\d+$/.test(port) ? Number(port) : port
-  await fastify.listen({ port: listenTarget as number, host: '0.0.0.0' })
+  // Fastify listens on a numeric TCP port, but `PORT` (or opts.port) may be a
+  // non-numeric string such as a Unix domain socket path or a Windows named
+  // pipe. Those must be passed to Fastify via `path`, not `port`.
+  const numericPort = typeof port === 'number'
+    ? port
+    : /^\d+$/.test(port) ? Number(port) : undefined
+  if (numericPort !== undefined) {
+    await fastify.listen({ port: numericPort, host: '0.0.0.0' })
+  } else {
+    await fastify.listen({ path: port as string })
+  }
   console.log(
-    `\nServer listening to port ${port} on sdk ${version} for appId ${authConfig.clientId} debug ${process.env.DEBUG}`
+    `\nServer listening to ${numericPort !== undefined ? `port ${numericPort}` : `path ${port}`} on sdk ${version} for appId ${authConfig.clientId} debug ${process.env.DEBUG}`
   )
   return fastify
 }

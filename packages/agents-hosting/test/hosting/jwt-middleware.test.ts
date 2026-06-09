@@ -100,6 +100,39 @@ describe('authorizeJWT', () => {
     assert((next as sinon.SinonStub).notCalled)
   })
 
+  it('should authenticate when a valid Bearer token is not the first array entry', async () => {
+    const token = 'valid-token'
+    // Duplicate Authorization headers preserved as an array, Bearer is second.
+    req.headers.authorization = ['Basic dXNlcjpwYXNz', `Bearer ${token}`]
+    req.user = { aud: config.clientId }
+
+    const decodeStub = sinon.stub(jwt, 'decode').returns({ aud: config.clientId })
+    const verifyStub = sinon.stub(jwt, 'verify').callsFake((token, secretOrPublicKey, options, callback) => {
+      if (callback) {
+        callback(null, { aud: config.clientId })
+      }
+    })
+
+    await authorizeJWT(config)(req as Request, res as Response, next)
+
+    assert((next as sinon.SinonStub).calledOnce)
+    assert((next as sinon.SinonStub).calledWith())
+    assert((res.status as sinon.SinonStub).notCalled)
+
+    decodeStub.restore()
+    verifyStub.restore()
+  })
+
+  it('should respond with 401 when an array Authorization header has no valid Bearer entry', async () => {
+    req.headers.authorization = ['Basic dXNlcjpwYXNz', 'NotBearer abc']
+
+    await authorizeJWT(config)(req as Request, res as Response, next)
+
+    assert((res.status as sinon.SinonStub).calledOnceWith(401))
+    assert((res.send as sinon.SinonStub).calledOnceWith({ 'jwt-auth-error': 'invalid authorization header' }))
+    assert((next as sinon.SinonStub).notCalled)
+  })
+
   describe('buildJwksUri', () => {
     it('should use botframework keys URI for botframework issuer', () => {
       const authConfig: AuthConfiguration = { clientId: 'client-id', tenantId: 'tenant-id' }

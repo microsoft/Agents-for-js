@@ -6,6 +6,9 @@
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
 import type { AddressInfo } from 'node:net'
+import os from 'node:os'
+import path from 'node:path'
+import fs from 'node:fs'
 import { ActivityHandler } from '@microsoft/agents-hosting'
 import { startServer } from '../src/startServer'
 import type { FastifyInstance } from 'fastify'
@@ -107,5 +110,34 @@ describe('startServer with rate limit', () => {
     for (const res of responses) {
       assert.strictEqual(res.status, 200, '/health must not be throttled by the messages rate limit')
     }
+  })
+})
+
+describe('startServer with non-numeric PORT (socket / named pipe path)', () => {
+  let fastify: FastifyInstance | undefined
+  // A non-numeric PORT represents a Unix domain socket path or a Windows named
+  // pipe; Fastify must receive it via `path`, not `port`.
+  const socketPath = process.platform === 'win32'
+    ? `\\\\.\\pipe\\afj-test-${process.pid}-${Date.now()}`
+    : path.join(os.tmpdir(), `afj-test-${process.pid}-${Date.now()}.sock`)
+
+  after(async () => {
+    if (fastify) await fastify.close()
+    if (process.platform !== 'win32') {
+      try { fs.unlinkSync(socketPath) } catch { /* socket already removed */ }
+    }
+  })
+
+  it('listens on a path (not a TCP port) when port is a non-numeric string', async () => {
+    fastify = await startServer(new ActivityHandler(), {
+      authConfig: TEST_AUTH_CONFIG,
+      port: socketPath
+    })
+    const addr = fastify.server.address()
+    // A Unix socket / named pipe is reported by Node as a string equal to the
+    // path; a TCP port would instead be reported as an AddressInfo object. If
+    // the path had been passed as `port`, listen() would have failed outright.
+    assert.strictEqual(typeof addr, 'string')
+    assert.strictEqual(addr, socketPath)
   })
 })
