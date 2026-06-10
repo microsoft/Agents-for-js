@@ -134,13 +134,14 @@ function parseBearerValue (headerValue: string | undefined): string | undefined 
 /**
  * Extracts the bearer token from a raw `Authorization` header value.
  *
- * Node's HTTP stack usually collapses duplicate headers into a single
- * comma-joined string, but the {@link Request} contract (and frameworks such as
- * Fastify) allow `string | string[] | undefined`. When the value is an array
- * (duplicate headers preserved), every entry is inspected and the first valid
- * `Bearer <token>` is returned — the bearer value is not assumed to be first.
- * Returns `undefined` for anything malformed so the caller can emit a consistent
- * 401 instead of throwing.
+ * On Node's core HTTP parser (which both Express and Fastify use) `Authorization`
+ * is always surfaced as a single string holding the *first* header line —
+ * duplicate `Authorization` headers are discarded, not comma-joined. The
+ * `string[]` case is handled only because the {@link Request} contract permits
+ * it for non-Node frameworks; when an array is supplied, every entry is inspected
+ * and the first valid `Bearer <token>` is returned (the bearer value is not
+ * assumed to be first). Returns `undefined` for anything malformed so the caller
+ * can emit a consistent 401 instead of throwing.
  * @param authorization The raw `Authorization` header value.
  * @returns The bearer token, or `undefined` if the header is absent or malformed.
  */
@@ -181,7 +182,9 @@ export const authorizeJWT = (authConfig: AuthConfiguration) => {
           // Emit only the human-readable description rather than the
           // ExceptionHelper-formatted "[code] - description - helplink" string,
           // so the wire format does not leak internal error codes or help links.
-          const wireMessage: string | undefined = err?.description ?? err?.message
+          // Fall back to a stable string so a thrown non-Error (no description/
+          // message) never serializes to an empty `{}` and drops the detail.
+          const wireMessage: string = err?.description ?? err?.message ?? 'unauthorized'
           res.status(401).send({ 'jwt-auth-error': wireMessage })
         }
       } else if (hasAuthorizationHeader(req.headers.authorization)) {

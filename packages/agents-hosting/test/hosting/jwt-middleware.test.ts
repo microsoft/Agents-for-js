@@ -133,6 +133,21 @@ describe('authorizeJWT', () => {
     assert((next as sinon.SinonStub).notCalled)
   })
 
+  it('should respond with 401 and a stable message when a non-Error is thrown', async () => {
+    req.headers.authorization = 'Bearer some-token'
+    // A thrown value without `.description` or `.message` must not serialize to {}.
+    const thrown: any = { kind: 'not-an-error' }
+    const decodeStub = sinon.stub(jwt, 'decode').callsFake(() => { throw thrown })
+
+    await authorizeJWT(config)(req as Request, res as Response, next)
+
+    assert((res.status as sinon.SinonStub).calledOnceWith(401))
+    assert((res.send as sinon.SinonStub).calledOnceWith({ 'jwt-auth-error': 'unauthorized' }))
+    assert((next as sinon.SinonStub).notCalled)
+
+    decodeStub.restore()
+  })
+
   describe('buildJwksUri', () => {
     it('should use botframework keys URI for botframework issuer', () => {
       const authConfig: AuthConfiguration = { clientId: 'client-id', tenantId: 'tenant-id' }

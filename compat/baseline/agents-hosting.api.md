@@ -1487,6 +1487,12 @@ export interface VideoCard {
 }
 
 // @public
+export interface WebApp {
+    // (undocumented)
+    post(path: string, handler: (req: any, res: any) => unknown | Promise<unknown>): unknown;
+}
+
+// @public
 export interface WebRequestParamsCarrier {
     // (undocumented)
     params?: Record<string, string | undefined>;
