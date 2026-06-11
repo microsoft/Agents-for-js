@@ -13,7 +13,7 @@ import { Errors } from '../../errorHelper'
 import { ActiveAuthorizationHandler, AuthorizationHandlerStatus, AuthorizationHandler, AuthorizationHandlerSettings, AuthorizationOptions } from './types'
 import { Connections } from '../../auth/connections'
 import { sendInvokeResponse } from './utils'
-import { envParser, envParserUtils } from '../../auth'
+import { envParser, envParserUtils } from '../../auth/settings'
 import { prune } from '../../utils'
 
 const logger = debug('agents:authorization:manager')

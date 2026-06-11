@@ -85,7 +85,7 @@ export class MsalTokenProvider implements AuthProvider {
             break
           }
           case AuthType.FederatedCredentials:
-            if (!authConfig.FICClientId) {
+            if (!authConfig.federatedClientId && !authConfig.FICClientId) {
               throw ExceptionHelper.generateException(Error, Errors.FICClientIdRequired)
             }
             token = await this.acquireAccessTokenViaFIC(authConfig, actualScope)
@@ -119,7 +119,7 @@ export class MsalTokenProvider implements AuthProvider {
         record({ method: AuthType.WorkloadIdentity })
         logger.debug('getAccessToken via method=%s clientId=%s scope=%s', AuthType.WorkloadIdentity, authConfig.clientId, actualScope)
         token = await this.acquireAccessTokenViaWID(authConfig, actualScope)
-      } else if (authConfig.FICClientId !== undefined) {
+      } else if (authConfig.federatedClientId !== undefined || authConfig.FICClientId !== undefined) {
         record({ method: AuthType.FederatedCredentials })
         logger.debug('getAccessToken via method=%s clientId=%s scope=%s', AuthType.FederatedCredentials, authConfig.clientId, actualScope)
         token = await this.acquireAccessTokenViaFIC(authConfig, actualScope)
@@ -182,7 +182,7 @@ export class MsalTokenProvider implements AuthProvider {
       const cca = new ConfidentialClientApplication({
         auth: {
           clientId: authConfig.clientId as string,
-          authority: `${authConfig.authority}/${authConfig.tenantId || 'botframework.com'}`,
+          authority: `${authConfig.authorityEndpoint ?? authConfig.authority}/${authConfig.tenantId || 'botframework.com'}`,
           clientSecret: authConfig.clientSecret
         },
         system: this.sysOptions
@@ -238,16 +238,16 @@ export class MsalTokenProvider implements AuthProvider {
    * @returns
    */
   private resolveAuthority (tenantId?: string) : string {
-    const { authority: configuredAuth, tenantId: configuredTenantId } = this.connectionSettings ?? {}
+    const { authorityEndpoint: configuredAuth, authority, tenantId: configuredTenantId } = this.connectionSettings ?? {}
 
     if (!tenantId) {
       // No agentic tenant override — delegate to shared utility
-      return resolveAuthorityUtil(configuredAuth, configuredTenantId)
+      return resolveAuthorityUtil(configuredAuth ?? authority, configuredTenantId)
     }
 
     // Agentic override: build a clean base using the override tenant, then replace any
     // /common or GUID placeholder left in the authority (e.g. from a multi-tenant config)
-    const base = resolveAuthorityUtil(configuredAuth, tenantId)
+    const base = resolveAuthorityUtil(configuredAuth ?? authority, tenantId)
     const guidPattern = /\/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
 
     if (base.endsWith('/common') || guidPattern.test(base)) {
@@ -384,10 +384,10 @@ export class MsalTokenProvider implements AuthProvider {
           break
         }
         case AuthType.FederatedCredentials:
-          if (!this.connectionSettings.FICClientId) {
+          if (!this.connectionSettings.federatedClientId && !this.connectionSettings.FICClientId) {
             throw ExceptionHelper.generateException(Error, Errors.FICClientIdRequired)
           }
-          clientAssertion = await this.fetchExternalToken(this.connectionSettings.FICClientId as string)
+          clientAssertion = await this.fetchExternalToken(this.connectionSettings.federatedClientId as string || this.connectionSettings.FICClientId as string)
           break
         case AuthType.Certificate:
         case AuthType.CertificateSubjectName:
@@ -400,8 +400,8 @@ export class MsalTokenProvider implements AuthProvider {
     } else if (this.connectionSettings.WIDAssertionFile !== undefined) {
       const tokenFilePath = this.connectionSettings.federatedTokenFile ?? this.connectionSettings.WIDAssertionFile
       clientAssertion = fs.readFileSync(tokenFilePath as string, 'utf8')
-    } else if (this.connectionSettings.FICClientId !== undefined) {
-      clientAssertion = await this.fetchExternalToken(this.connectionSettings.FICClientId as string)
+    } else if (this.connectionSettings.federatedClientId !== undefined || this.connectionSettings.FICClientId !== undefined) {
+      clientAssertion = await this.fetchExternalToken(this.connectionSettings.federatedClientId as string || this.connectionSettings.FICClientId as string)
     } else if (this.connectionSettings.certPemFile !== undefined &&
       this.connectionSettings.certKeyFile !== undefined) {
       clientAssertion = this.getAssertionFromCert(this.connectionSettings)
@@ -549,7 +549,7 @@ export class MsalTokenProvider implements AuthProvider {
     const cca = new ConfidentialClientApplication({
       auth: {
         clientId: authConfig.clientId || '',
-        authority: `${authConfig.authority}/${authConfig.tenantId || 'botframework.com'}`,
+        authority: `${authConfig.authorityEndpoint ?? authConfig.authority}/${authConfig.tenantId || 'botframework.com'}`,
         clientCertificate: {
           privateKey: privateKey as string,
           thumbprint: pubKeyObject.fingerprint.replaceAll(':', ''),
@@ -579,7 +579,7 @@ export class MsalTokenProvider implements AuthProvider {
     const cca = new ConfidentialClientApplication({
       auth: {
         clientId: authConfig.clientId as string,
-        authority: `${authConfig.authority}/${authConfig.tenantId || 'botframework.com'}`,
+        authority: `${authConfig.authorityEndpoint ?? authConfig.authority}/${authConfig.tenantId || 'botframework.com'}`,
         clientSecret: authConfig.clientSecret
       },
       system: this.sysOptions
@@ -603,11 +603,11 @@ export class MsalTokenProvider implements AuthProvider {
    */
   private async acquireAccessTokenViaFIC (authConfig: AuthConfiguration, scope: string) : Promise<string> {
     const scopes = [`${scope}/.default`]
-    const clientAssertion = await this.fetchExternalToken(authConfig.FICClientId as string)
+    const clientAssertion = await this.fetchExternalToken(authConfig.federatedClientId as string || authConfig.FICClientId as string)
     const cca = new ConfidentialClientApplication({
       auth: {
         clientId: authConfig.clientId as string,
-        authority: `${authConfig.authority}/${authConfig.tenantId}`,
+        authority: `${authConfig.authorityEndpoint ?? authConfig.authority}/${authConfig.tenantId}`,
         clientAssertion
       },
       system: this.sysOptions

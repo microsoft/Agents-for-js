@@ -23,7 +23,7 @@ const logger = debug('agents:jwt-middleware')
 export function buildJwksUri (iss: string, authConfig: AuthConfiguration): string {
   return iss === 'https://api.botframework.com'
     ? 'https://login.botframework.com/v1/.well-known/keys'
-    : `${resolveAuthority(authConfig.authority, authConfig.tenantId)}/discovery/v2.0/keys`
+    : `${resolveAuthority(authConfig.authorityEndpoint ?? authConfig.authority, authConfig.tenantId)}/discovery/v2.0/keys`
 }
 
 /**
