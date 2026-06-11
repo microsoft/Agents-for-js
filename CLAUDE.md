@@ -15,6 +15,7 @@ The repository is a **monorepo** using npm workspaces with multiple interconnect
 - **agents-activity**: Activity protocol types, validators, and schema definitions using Zod. Replaces `botframework-schema`.
 - **agents-hosting**: Core hosting components including ActivityHandler, TurnContext, CloudAdapter, authentication, and state management. Replaces `botbuilder`.
 - **agents-hosting-express**: Express.js integration for hosting agents.
+- **agents-hosting-fastify**: Fastify integration for hosting agents.
 - **agents-hosting-dialogs**: Dialog system for building conversational flows. Replaces `botbuilder-dialogs`.
 - **agents-hosting-extensions-teams**: Teams-specific features (TaskModules, Messaging Extensions).
 - **agents-hosting-storage-blob**: Azure Blob Storage adapter. Replaces `botbuilder-azure`.
