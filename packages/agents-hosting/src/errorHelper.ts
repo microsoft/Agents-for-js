@@ -549,11 +549,11 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   },
 
   /**
-   * Error thrown when FederatedCredentials authentication is specified but `FICClientId` is not configured.
+   * Error thrown when FederatedCredentials authentication is specified but `federatedClientId` or the deprecated `FICClientId` is not configured.
    */
   FICClientIdRequired: {
     code: -120597,
-    description: 'FederatedCredentials authentication requires `FICClientId` to be configured'
+    description: 'FederatedCredentials authentication requires `federatedClientId` or the deprecated `FICClientId` to be configured'
   },
 
   /**

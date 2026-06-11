@@ -103,7 +103,7 @@ export class CloudAdapter extends BaseAdapter {
     headers?: HeaderPropagationCollection
   ): Promise<ConnectorClient> {
     return trace(AdapterTraceDefinitions.createConnectorClient, async ({ record }) => {
-      record({ serviceUrl, scope })
+      record({ serviceUrl, scopes: [scope] })
 
       // get the correct token provider
       const tokenProvider = this.connectionManager.getTokenProvider(identity, serviceUrl)
@@ -144,7 +144,7 @@ export class CloudAdapter extends BaseAdapter {
       let connectorClient
       const tokenProvider = this.connectionManager.getTokenProviderFromActivity(identity, activity)
       const isAgentic = activity.isAgenticRequest()
-      let scope
+      const scopes: string[] = []
       if (isAgentic) {
         logger.debug('Activity is from an agentic source, using special scope', activity.recipient)
         const agenticInstanceId = activity.getAgenticInstanceId()
@@ -159,8 +159,13 @@ export class CloudAdapter extends BaseAdapter {
             headers
           )
         } else if (activity.recipient?.role?.toLowerCase() === RoleTypes.AgenticUser.toLowerCase() && agenticInstanceId && agenticUserId) {
-          scope = tokenProvider.connectionSettings?.scope ?? ApxProductionScope
-          const token = await tokenProvider.getAgenticUserToken(activity.getAgenticTenantId() ?? '', agenticInstanceId, agenticUserId, [scope])
+          const configuredScopes = tokenProvider.connectionSettings?.scopes
+          if (configuredScopes?.length) {
+            scopes.push(...configuredScopes)
+          } else {
+            scopes.push(tokenProvider.connectionSettings?.scope ?? ApxProductionScope)
+          }
+          const token = await tokenProvider.getAgenticUserToken(activity.getAgenticTenantId() ?? '', agenticInstanceId, agenticUserId, scopes)
 
           connectorClient = ConnectorClient.createClientWithToken(
             activity.serviceUrl!,
@@ -173,8 +178,8 @@ export class CloudAdapter extends BaseAdapter {
       } else {
         // ABS tokens will not have an azp/appid so use the botframework scope.
         // Otherwise use the appId.  This will happen when communicating back to another agent.
-        scope = identity.azp ?? identity.appid ?? 'https://api.botframework.com'
-        const token = await tokenProvider.getAccessToken(scope)
+        scopes.push(identity.azp ?? identity.appid ?? 'https://api.botframework.com')
+        const token = await tokenProvider.getAccessToken(scopes[0])
         connectorClient = ConnectorClient.createClientWithToken(
           activity.serviceUrl!,
           token,
@@ -183,7 +188,7 @@ export class CloudAdapter extends BaseAdapter {
       }
       record({
         serviceUrl: activity.serviceUrl,
-        scope,
+        scopes,
         activityIsAgentic: isAgentic
       })
       return connectorClient

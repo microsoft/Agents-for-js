@@ -26,7 +26,6 @@
     "axios": "1.17.0",
     "jsonwebtoken": "9.0.3",
     "jwks-rsa": "4.0.1",
-    "object-path": "0.11.8",
     "zod": "3.25.75"
   },
   "license": "MIT",
@@ -46,8 +45,5 @@
   },
   "engines": {
     "node": ">=20.0.0"
-  },
-  "devDependencies": {
-    "@types/object-path": "0.11.4"
   }
 }
