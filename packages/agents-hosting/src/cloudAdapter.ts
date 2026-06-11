@@ -30,6 +30,8 @@ import { getTokenServiceEndpoint } from './oauth/customUserTokenAPI'
 import { Connections } from './auth/connections'
 import { trace } from '@microsoft/agents-telemetry'
 import { AdapterTraceDefinitions } from './observability'
+import { applyAgenticHeaders } from './getProductInfo'
+
 const logger = debug('agents:cloud-adapter')
 
 /**
@@ -42,6 +44,9 @@ const logger = debug('agents:cloud-adapter')
  * and conversation continuations.
  */
 export class CloudAdapter extends BaseAdapter {
+  protected readonly authConfig: AuthConfiguration
+  protected _agentName?: string
+
   /**
    * Client for connecting to the Azure Bot Service
    */
@@ -55,7 +60,7 @@ export class CloudAdapter extends BaseAdapter {
    */
   constructor (authConfig?: AuthConfiguration, authProvider?: AuthProvider, userTokenClient?: UserTokenClient) {
     super()
-    authConfig = getAuthConfigWithDefaults(authConfig)
+    this.authConfig = authConfig = getAuthConfigWithDefaults(authConfig)
     this.connectionManager = new MsalConnectionManager(undefined, undefined, authConfig)
   }
 
@@ -204,6 +209,14 @@ export class CloudAdapter extends BaseAdapter {
     return {
       aud: appId
     } as JwtPayload
+  }
+
+  /**
+   * Sets the agent name for M365 agent header propagation.
+   * @param agentName The human-friendly agent name to set for header propagation.
+   */
+  public setAgentName (agentName?: string): void {
+    this._agentName = agentName
   }
 
   /**
@@ -360,7 +373,7 @@ export class CloudAdapter extends BaseAdapter {
       const headers = new HeaderPropagation(request.headers)
       if (headerPropagation && typeof headerPropagation === 'function') {
         headerPropagation(headers)
-        logger.debug('Headers to propagate: ', headers)
+        logger.debug('Headers to propagate: ', { keys: Object.keys(headers.outgoing) })
       }
 
       const end = (status: StatusCodes, body?: unknown, isInvokeResponseOrExpectReplies: boolean = false) => {
@@ -397,6 +410,10 @@ export class CloudAdapter extends BaseAdapter {
       }
 
       logger.debug('Received activity: ', activity)
+
+      if (isAgentic) {
+        applyAgenticHeaders(headers, activity, this._agentName)
+      }
 
       const context = new TurnContext(this, activity, request.user!)
       // if Delivery Mode == ExpectReplies, we don't need a connector client.

@@ -1,6 +1,5 @@
 import assert from 'assert'
 import { describe, it } from 'node:test'
-import { ZodError } from 'zod'
 import { parseAdaptiveCardInvokeAction } from '../../src/app/adaptiveCards/activityValueParsers'
 
 describe('parseAdaptiveCardInvokeAction test', () => {
@@ -23,7 +22,7 @@ describe('parseAdaptiveCardInvokeAction test', () => {
     }
     assert.throws(() => {
       parseAdaptiveCardInvokeAction(adaptiveCardInvokeActionObject)
-    }, ZodError)
+    }, { name: 'ZodError' })
   })
 
   it('Should throw with not string type', () => {
@@ -35,7 +34,7 @@ describe('parseAdaptiveCardInvokeAction test', () => {
     }
     assert.throws(() => {
       parseAdaptiveCardInvokeAction(adaptiveCardInvokeActionObject)
-    }, ZodError)
+    }, { name: 'ZodError' })
   })
 
   it('Should not throw without id', () => {
@@ -60,7 +59,7 @@ describe('parseAdaptiveCardInvokeAction test', () => {
     }
     assert.throws(() => {
       parseAdaptiveCardInvokeAction(adaptiveCardInvokeActionObject)
-    }, ZodError)
+    }, { name: 'ZodError' })
   })
 
   it('Should throw with no verb', () => {
@@ -71,7 +70,7 @@ describe('parseAdaptiveCardInvokeAction test', () => {
     }
     assert.throws(() => {
       parseAdaptiveCardInvokeAction(adaptiveCardInvokeActionObject)
-    }, ZodError)
+    }, { name: 'ZodError' })
   })
 
   it('Should throw with no string verb', () => {
@@ -83,7 +82,7 @@ describe('parseAdaptiveCardInvokeAction test', () => {
     }
     assert.throws(() => {
       parseAdaptiveCardInvokeAction(adaptiveCardInvokeActionObject)
-    }, ZodError)
+    }, { name: 'ZodError' })
   })
 
   it('Should throw with no data', () => {
@@ -94,7 +93,7 @@ describe('parseAdaptiveCardInvokeAction test', () => {
     }
     assert.throws(() => {
       parseAdaptiveCardInvokeAction(adaptiveCardInvokeActionObject)
-    }, ZodError)
+    }, { name: 'ZodError' })
   })
 
   it('Should throw with no record data', () => {
@@ -106,6 +105,6 @@ describe('parseAdaptiveCardInvokeAction test', () => {
     }
     assert.throws(() => {
       parseAdaptiveCardInvokeAction(adaptiveCardInvokeActionObject)
-    }, ZodError)
+    }, { name: 'ZodError' })
   })
 })
