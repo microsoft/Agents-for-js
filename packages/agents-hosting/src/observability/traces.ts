@@ -121,13 +121,13 @@ export const AdapterTraceDefinitions = {
     name: SpanNames.ADAPTER_CREATE_CONNECTOR_CLIENT,
     record: {
       serviceUrl: '',
-      scope: '',
+      scopes: [] as string[],
       activityIsAgentic: false,
     },
     end ({ span, record }) {
       span.setAttributes({
         service_url: record.serviceUrl ?? 'unknown',
-        'auth.scope': record.scope ?? 'unknown',
+        'auth.scopes': record.scopes ?? 'unknown',
       })
 
       if (record.activityIsAgentic !== undefined) {
