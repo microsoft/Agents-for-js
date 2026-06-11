@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import axios, { AxiosInstance } from 'axios'
+import { HttpClient } from '../httpClient'
 import { InputFile, InputFileDownloader } from './inputFileDownloader'
 import { TurnState } from './turnState'
 import { TurnContext } from '../turnContext'
@@ -25,7 +25,7 @@ const logger = debug('agents:attachmentDownloader')
  *
  */
 export class AttachmentDownloader<TState extends TurnState = TurnState> implements InputFileDownloader<TState> {
-  private _httpClient: AxiosInstance
+  private _httpClient: HttpClient
   private _stateKey: string
 
   /**
@@ -35,7 +35,7 @@ export class AttachmentDownloader<TState extends TurnState = TurnState> implemen
    * @param stateKey The key to store files in state. Defaults to 'inputFiles'.
    */
   public constructor (stateKey: string = 'inputFiles') {
-    this._httpClient = axios.create()
+    this._httpClient = new HttpClient()
     this._stateKey = stateKey
   }
 
@@ -86,18 +86,16 @@ export class AttachmentDownloader<TState extends TurnState = TurnState> implemen
       (attachment.contentUrl && attachment.contentUrl.startsWith('https://')) ||
             (attachment.contentUrl && attachment.contentUrl.startsWith('http://localhost'))
     ) {
-      let headers
+      const headers: Record<string, string> = {}
       if (accessToken.length > 0) {
-        headers = {
-          Authorization: `Bearer ${accessToken}`
-        }
+        headers.Authorization = `Bearer ${accessToken}`
       }
       const response = await this._httpClient.get(attachment.contentUrl, {
         headers,
         responseType: 'arraybuffer'
       })
 
-      const content = Buffer.from(response.data, 'binary')
+      const content = Buffer.from(response.data as ArrayBuffer)
 
       let contentType = attachment.contentType
       if (contentType === 'image/*') {
