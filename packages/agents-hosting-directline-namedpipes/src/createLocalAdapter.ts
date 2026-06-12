@@ -235,7 +235,7 @@ class LocalPipeAdapter extends CloudAdapter {
    * which uses ConnectorClient over HTTP.
    *
    * Without this override the base implementation would try to use the
-   * ConnectorClient (axios) against a `urn:botframework:namedpipe:` baseURL
+   * ConnectorClient against a `urn:botframework:namedpipe:` baseURL
    * and fail with a confusing "Invalid URL" / `ECONNREFUSED`.
    */
   override async updateActivity (context: TurnContext, activity: Activity): Promise<ResourceResponse | void> {

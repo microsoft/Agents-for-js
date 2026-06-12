@@ -9,7 +9,6 @@ import { AdaptiveCardInvokeAction } from '@microsoft/agents-activity';
 import { AgentErrorDefinition } from '@microsoft/agents-activity';
 import { Application } from 'express';
 import { Attachment } from '@microsoft/agents-activity';
-import { AxiosInstance } from 'axios';
 import { CardAction } from '@microsoft/agents-activity';
 import { ChannelAccount } from '@microsoft/agents-activity';
 import { ClientCitation } from '@microsoft/agents-activity';
@@ -400,6 +399,7 @@ export interface AuthConfiguration {
     connectionName?: string;
     connections?: Map<string, AuthConfiguration>;
     connectionsMap?: ConnectionMapItem[];
+    federatedTokenFile?: string;
     FICClientId?: string;
     idpmResource?: string;
     issuers?: string[];
@@ -407,6 +407,7 @@ export interface AuthConfiguration {
     scope?: string;
     sendX5C?: boolean;
     tenantId?: string;
+    // @deprecated
     WIDAssertionFile?: string;
 }
 
@@ -580,11 +581,7 @@ export interface ConnectionMapItem {
 
 // @public
 export class ConnectorClient {
-    protected constructor(axInstance: AxiosInstance);
-    // (undocumented)
-    get axiosInstance(): AxiosInstance;
-    // (undocumented)
-    protected readonly _axiosInstance: AxiosInstance;
+    protected constructor(httpClient: HttpClient);
     static createClientWithAuth(baseURL: string, authConfig: AuthConfiguration, authProvider: AuthProvider, scope: string, headers?: HeaderPropagationCollection): Promise<ConnectorClient>;
     static createClientWithToken(baseURL: string, token: string, headers?: HeaderPropagationCollection): ConnectorClient;
     createConversation(body: ConversationParameters): Promise<ConversationResourceResponse>;
@@ -594,6 +591,10 @@ export class ConnectorClient {
     // (undocumented)
     getConversationMember(userId: string, conversationId: string): Promise<ChannelAccount>;
     getConversations(continuationToken?: string): Promise<ConversationsResult>;
+    // (undocumented)
+    get httpClient(): HttpClient;
+    // (undocumented)
+    protected readonly _httpClient: HttpClient;
     replyToActivity(conversationId: string, activityId: string, body: Activity): Promise<ResourceResponse>;
     sendToConversation(conversationId: string, body: Activity): Promise<ResourceResponse>;
     updateActivity(conversationId: string, activityId: string, body: Activity): Promise<ResourceResponse>;
@@ -829,6 +830,81 @@ export interface HeroCard {
 export const HostingErrors: {
     [key: string]: AgentErrorDefinition;
 };
+
+// @public
+export class HttpClient {
+    constructor(options?: HttpClientOptions);
+    // (undocumented)
+    get baseURL(): string;
+    // (undocumented)
+    get defaultHeaders(): Record<string, string>;
+    set defaultHeaders(headers: Record<string, string>);
+    // (undocumented)
+    delete<T = unknown>(url: string, options?: Partial<HttpRequestConfig>): Promise<HttpResponse<T>>;
+    // (undocumented)
+    get<T = unknown>(url: string, options?: Partial<HttpRequestConfig>): Promise<HttpResponse<T>>;
+    // (undocumented)
+    post<T = unknown>(url: string, data?: unknown, options?: Partial<HttpRequestConfig>): Promise<HttpResponse<T>>;
+    // (undocumented)
+    put<T = unknown>(url: string, data?: unknown, options?: Partial<HttpRequestConfig>): Promise<HttpResponse<T>>;
+    // (undocumented)
+    removeHeader(name: string): void;
+    // (undocumented)
+    request<T = unknown>(config: HttpRequestConfig): Promise<HttpResponse<T>>;
+    // (undocumented)
+    setHeader(name: string, value: string): void;
+}
+
+// @public
+export interface HttpClientOptions {
+    // (undocumented)
+    baseURL?: string;
+    // (undocumented)
+    headers?: Record<string, string>;
+}
+
+// @public
+export class HttpError extends Error {
+    constructor(message: string, response: HttpResponse, config: HttpRequestConfig);
+    // (undocumented)
+    readonly config: HttpRequestConfig;
+    // (undocumented)
+    readonly response: HttpResponse;
+    // (undocumented)
+    readonly status: number;
+    // (undocumented)
+    toJSON(): Record<string, unknown>;
+}
+
+// @public
+export interface HttpRequestConfig {
+    // (undocumented)
+    data?: unknown;
+    // (undocumented)
+    headers?: Record<string, string>;
+    // (undocumented)
+    method: string;
+    // (undocumented)
+    params?: Record<string, string | undefined>;
+    // (undocumented)
+    responseType?: 'json' | 'arraybuffer' | 'stream';
+    // (undocumented)
+    url: string;
+}
+
+// @public
+export interface HttpResponse<T = unknown> {
+    // (undocumented)
+    config: HttpRequestConfig;
+    // (undocumented)
+    data: T;
+    // (undocumented)
+    headers: Headers;
+    // (undocumented)
+    status: number;
+    // (undocumented)
+    statusText: string;
+}
 
 // @public
 export interface InputFile {
@@ -1427,9 +1503,9 @@ export class UserState extends AgentState {
 // @public
 export class UserTokenClient {
     constructor(msAppId: string);
-    constructor(axiosInstance: AxiosInstance);
+    constructor(httpClient: HttpClient);
     // (undocumented)
-    client: AxiosInstance;
+    client: HttpClient;
     static createClientWithScope(baseURL: string, authProvider: AuthProvider, scope: string, headers?: HeaderPropagationCollection): Promise<UserTokenClient>;
     exchangeTokenAsync(userId: string, connectionName: string, channelIdComposite: string, tokenExchangeRequest: TokenExchangeRequest): Promise<TokenResponse>;
     getAadTokens(userId: string, connectionName: string, channelIdComposite: string, resourceUrls: AadResourceUrls): Promise<Record<string, TokenResponse>>;

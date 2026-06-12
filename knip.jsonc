@@ -24,8 +24,6 @@
     ".": {
       "project": ["*.{js,mjs,ts}"],
       "ignoreDependencies": [
-        // Samples are built from the root tsconfig, but knip does not model them as a root package.
-        "axios",
         "@microsoft/microsoft-graph-client",
         "@microsoft/microsoft-graph-types"
       ]
