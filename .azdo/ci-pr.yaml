@@ -20,7 +20,8 @@ steps:
 
 - task: Npm@1
   inputs:
-    command: ci
+    command: custom
+    customCommand: 'ci'
     customRegistry: useFeed
     customFeed: OneCRM/DPX-Tools-Upstream
     verbose: true

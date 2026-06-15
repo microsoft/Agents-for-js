@@ -2,7 +2,7 @@ import { strict as assert, strict } from 'assert'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 import { AuthConfiguration, CloudAdapter, INVOKE_RESPONSE_KEY, MsalConnectionManager, Request, UserTokenClient, TurnContext } from '../../../src'
 import sinon, { SinonSandbox } from 'sinon'
-import { Activity, ActivityTypes, ConversationReference, DeliveryModes } from '@microsoft/agents-activity'
+import { Activity, ActivityTypes, ConversationReference, DeliveryModes, RoleTypes } from '@microsoft/agents-activity'
 import { ConnectorClient } from '../../../src/connector-client/connectorClient'
 import { Response } from 'express'
 
@@ -59,6 +59,37 @@ describe('CloudAdapter', function () {
     it('succeeds', function () {
       const ca = new CloudAdapter(authentication)
       strict.notEqual(ca, undefined)
+    })
+
+    it('passes a single legacy scope string to agentic user token acquisition', async function () {
+      createConnectorClientWithIdentitySpy.restore()
+
+      const connectorClient = {} as ConnectorClient
+      const createClientStub = sinon.stub(ConnectorClient, 'createClientWithToken').returns(connectorClient)
+      const tokenProvider = {
+        connectionSettings: {
+          scope: 'https://api.botframework.com/.default'
+        },
+        getAgenticUserToken: sinon.stub().resolves('agentic-token'),
+        getAgenticInstanceToken: sinon.stub()
+      }
+      mockConnectionManager.getTokenProviderFromActivity.returns(tokenProvider as any)
+
+      const activity = {
+        serviceUrl: 'https://service.example',
+        recipient: { role: RoleTypes.AgenticUser },
+        isAgenticRequest: () => true,
+        getAgenticInstanceId: () => 'instance-id',
+        getAgenticUser: () => 'user-id',
+        getAgenticTenantId: () => 'tenant-id'
+      } as any
+
+      const result = await (cloudAdapter as any).createConnectorClientWithIdentity({ aud: 'app-id' }, activity)
+
+      assert.strictEqual(result, connectorClient)
+      sinon.assert.calledOnceWithExactly(tokenProvider.getAgenticUserToken, 'tenant-id', 'instance-id', 'user-id', ['https://api.botframework.com/.default'])
+      sinon.assert.calledOnceWithExactly(createClientStub, 'https://service.example', 'agentic-token', undefined)
+      createClientStub.restore()
     })
   })
 

@@ -9,7 +9,7 @@ import { Activity, Attachment, ConversationAccount } from '@microsoft/agents-act
 import { Observable, BehaviorSubject, type Subscriber } from 'rxjs'
 
 import { CopilotStudioClient } from './copilotStudioClient'
-import { debug, trace } from '@microsoft/agents-telemetry'
+import { debug, trace, redactString } from '@microsoft/agents-telemetry'
 import { CopilotStudioClientTraceDefinitions } from './observability'
 
 const logger = debug('copilot-studio:webchat')
@@ -268,6 +268,14 @@ export class CopilotStudioWebChat {
         ? settings.conversationId.trim()
         : undefined
       const shouldStart = settings?.startConversation ?? !normalizedConversationId
+
+      logger.info('Copilot Studio WebChat settings loaded', {
+        showTyping: settings?.showTyping,
+        conversationId: redactString(normalizedConversationId, true),
+        startConversation: settings?.startConversation,
+        connectionMode: normalizedConversationId ? 'resume' : 'new',
+        acknowledgementMode: shouldStart ? 'startConversationStreaming' : 'resumeWithoutStart',
+      })
 
       let sequence = 0
       let activitySubscriber: Subscriber<Partial<Activity>> | undefined

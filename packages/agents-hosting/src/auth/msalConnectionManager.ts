@@ -5,7 +5,7 @@
 
 import { Activity, RoleTypes } from '@microsoft/agents-activity'
 import { debug } from '@microsoft/agents-telemetry'
-import { AuthConfiguration, resolveAuthority } from './authConfiguration'
+import { AuthConfiguration, AuthType, resolveAuthority } from './authConfiguration'
 import { Connections } from './connections'
 import { MsalTokenProvider } from './msalTokenProvider'
 import { JwtPayload } from 'jsonwebtoken'
@@ -44,13 +44,16 @@ export class MsalConnectionManager implements Connections {
 
     for (const [name, provider] of this._connections.entries()) {
       const cfg = provider.connectionSettings
-      const authType = cfg?.certPemFile
-        ? 'certificate'
-        : cfg?.clientSecret
-          ? 'clientSecret'
-          : cfg?.WIDAssertionFile || cfg?.FICClientId
-            ? 'workloadIdentity'
-            : 'none'
+      const authType = cfg?.authType ??
+        (cfg?.certPemFile
+          ? AuthType.Certificate
+          : cfg?.clientSecret
+            ? AuthType.ClientSecret
+            : cfg?.WIDAssertionFile
+              ? AuthType.WorkloadIdentity
+              : cfg?.federatedClientId || cfg?.FICClientId
+                ? AuthType.FederatedCredentials
+                : 'none')
       logger.debug('connection "%s" clientId=%s tenantId=%s authType=%s', name, cfg?.clientId ?? '<none>', cfg?.tenantId ?? '<none>', authType)
     }
 
@@ -185,13 +188,27 @@ export class MsalConnectionManager implements Connections {
 
   private applyConnectionDefaults (conn: MsalTokenProvider): MsalTokenProvider {
     if (conn.connectionSettings) {
-      conn.connectionSettings.authority ??= 'https://login.microsoftonline.com'
+      conn.connectionSettings.authorityEndpoint ??= conn.connectionSettings.authority || 'https://login.microsoftonline.com'
+      conn.connectionSettings.authority ??= conn.connectionSettings.authorityEndpoint
       conn.connectionSettings.issuers ??= [
         'https://api.botframework.com',
         `${resolveAuthority('https://sts.windows.net', conn.connectionSettings.tenantId)}/`,
-        `${resolveAuthority(conn.connectionSettings.authority, conn.connectionSettings.tenantId)}/v2.0`
+        `${resolveAuthority(conn.connectionSettings.authorityEndpoint, conn.connectionSettings.tenantId)}/v2.0`
       ]
+      // For backward compatibility
+      if (conn.connectionSettings.federatedClientId) {
+        conn.connectionSettings.FICClientId = conn.connectionSettings.federatedClientId
+      }
+
+      if (conn.connectionSettings.scopes?.length) {
+        conn.connectionSettings.scope = conn.connectionSettings.scopes?.[0]
+      }
+
+      if (conn.connectionSettings.authorityEndpoint) {
+        conn.connectionSettings.authority = conn.connectionSettings.authorityEndpoint
+      }
     }
+
     return conn
   }
 }

@@ -18,17 +18,18 @@ export class UserAgentHelper {
    */
   static getProductInfo (): string {
     const versionString = `CopilotStudioClient.agents-sdk-js/${version}`
-    let userAgent: string
-
-    if (typeof window !== 'undefined' && window.navigator) {
-      // Browser environment
-      userAgent = `${versionString} ${navigator.userAgent}`
-    } else {
-      // Node.js environment
-      userAgent = `${versionString} nodejs/${process.version} ${os.platform()}-${os.arch()}/${os.release()}`
+    const browserGlobal = globalThis as typeof globalThis & {
+      document?: object
+      navigator?: {
+        userAgent?: string
+      }
     }
 
-    return userAgent
+    if (typeof browserGlobal.document !== 'undefined' && typeof browserGlobal.navigator?.userAgent === 'string') {
+      return `${versionString} ${browserGlobal.navigator.userAgent}`
+    }
+
+    return `${versionString} nodejs/${process.version} ${os.platform()}-${os.arch()}/${os.release()}`
   }
 
   /**
