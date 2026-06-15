@@ -842,6 +842,35 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   },
 
   // ============================================================================
+  // Hosting / Web layer errors (-120800 to -120840)
+  // ============================================================================
+
+  /**
+   * Error thrown by CloudAdapter.process when the incoming request lacks a parsed body.
+   * Indicates the hosting layer (e.g. express.json() or Fastify's JSON parser) was not configured.
+   */
+  MissingRequestBody: {
+    code: -120800,
+    description: '`request.body` parameter required; ensure your hosting layer parses JSON request bodies before invoking the adapter (e.g., express.json() with Express or Fastify\'s built-in JSON parser).'
+  },
+
+  /**
+   * Error thrown by verifyToken when the provided JWT cannot be decoded.
+   */
+  InvalidJwtToken: {
+    code: -120810,
+    description: 'invalid token'
+  },
+
+  /**
+   * Error thrown by verifyToken when the token audience does not match any configured connection clientId.
+   */
+  JwtAudienceMismatch: {
+    code: -120820,
+    description: 'Audience mismatch'
+  },
+
+  // ============================================================================
   // General Errors (-120990)
   // ============================================================================
 
