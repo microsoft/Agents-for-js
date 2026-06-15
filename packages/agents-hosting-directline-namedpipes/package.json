@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "name": "@microsoft/agents-hosting-directline-namedpipes",
+  "version": "0.1.0",
+  "homepage": "https://github.com/microsoft/Agents-for-js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/microsoft/Agents-for-js.git"
+  },
+  "author": {
+    "name": "Microsoft",
+    "email": "agentssdk@microsoft.com",
+    "url": "https://aka.ms/Agents"
+  },
+  "description": "Microsoft 365 Agents SDK for JavaScript. DirectLine Named Pipes transport.",
+  "keywords": [
+    "Agents",
+    "NamedPipes",
+    "DirectLine"
+  ],
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "dependencies": {
+    "@microsoft/agents-hosting": "file:../agents-hosting",
+    "@microsoft/agents-activity": "file:../agents-activity",
+    "@microsoft/agents-telemetry": "file:../agents-telemetry",
+    "jsonwebtoken": "9.0.3"
+  },
+  "license": "MIT",
+  "files": [
+    "README.md",
+    "dist/src",
+    "src"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js",
+      "require": "./dist/src/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

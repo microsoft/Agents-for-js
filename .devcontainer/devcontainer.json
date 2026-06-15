@@ -6,8 +6,8 @@
 	"image": "mcr.microsoft.com/devcontainers/javascript-node:1-22-bookworm",
 	"features": {
 		"ghcr.io/devcontainers/features/azure-cli:1": {},
-		"ghcr.io/devcontainers/features/powershell:1": {},
-		"ghcr.io/devcontainers/features/docker-in-docker:2": {},
+		"ghcr.io/devcontainers/features/powershell:2": {},
+		"ghcr.io/devcontainers/features/docker-in-docker:3": {},
 		"ghcr.io/stuartleeks/dev-container-features/dev-tunnels:0": {},
 		"ghcr.io/devcontainers/features/dotnet:2": {
 			"version": "8.0",

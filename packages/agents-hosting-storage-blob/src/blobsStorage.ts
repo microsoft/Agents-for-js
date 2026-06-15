@@ -78,7 +78,14 @@ export class BlobsStorage implements Storage {
         this._concurrency = 1
       }
     }
-    logger.info(`BlobsStorage initialized with container: ${containerName}, url: ${url}, credential: ${isTokenCredential(credential) ? 'TokenCredential' : 'SharedKey/Anonymous'}`)
+    logger.info('BlobsStorage settings loaded', {
+      container: containerName,
+      connection: {
+        mode: isTokenCredential(credential) ? 'tokenCredential' : 'connectionString',
+        type: (url.trim() !== '' ? url : connectionString!).trim() === 'UseDevelopmentStorage=true;' ? 'development' : 'production',
+      },
+      pipeline: options?.storagePipelineOptions !== undefined ? 'custom' : 'default',
+    })
   }
 
   private toJSON (): unknown {
