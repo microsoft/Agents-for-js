@@ -6,7 +6,7 @@ import { Activity, ConversationReference } from '@microsoft/agents-activity'
 import { debug } from '@microsoft/agents-telemetry'
 import { normalizeTokenExchangeState } from '../activityWireCompat'
 import { AadResourceUrls, SignInResource, TokenExchangeRequest, TokenOrSinginResourceResponse, TokenResponse, TokenStatus } from './userTokenClient.types'
-import { getProductInfo } from '../getProductInfo'
+import { applyUserAgentHeader, getProductInfo } from '../getProductInfo'
 import { AuthProvider } from '../auth'
 import { HeaderPropagation, HeaderPropagationCollection } from '../headerPropagation'
 import { getTokenServiceEndpoint } from './customUserTokenAPI'
@@ -112,13 +112,7 @@ export class UserTokenClient {
     headers?: HeaderPropagationCollection
   ): Promise<UserTokenClient> {
     const headerPropagation = headers ?? new HeaderPropagation({})
-    const userAgent = headerPropagation.outgoing['user-agent']
-    const productInfo = getProductInfo()
-    if (!userAgent) {
-      headerPropagation.add({ 'User-Agent': productInfo })
-    } else if (!userAgent.includes(productInfo)) {
-      headerPropagation.concat({ 'User-Agent': productInfo })
-    }
+    applyUserAgentHeader(headerPropagation)
     headerPropagation.override({
       Accept: 'application/json',
       'Content-Type': 'application/json', // Required by transformRequest

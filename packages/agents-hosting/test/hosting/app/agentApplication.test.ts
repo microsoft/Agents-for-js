@@ -59,6 +59,33 @@ describe('Application', () => {
     assert.equal(app.options.transcriptLogger, undefined)
   })
 
+  it('should preserve configured agent name on options', () => {
+    const localApp = new AgentApplication({
+      agentName: 'Valid Agent_1'
+    })
+
+    assert.equal(localApp.options.agentName, 'Valid Agent_1')
+  })
+
+  it('should leave agent name undefined when not provided', () => {
+    const localApp = new AgentApplication()
+
+    assert.equal(localApp.options.agentName, undefined)
+  })
+
+  it('should forward agent name config to the adapter', () => {
+    const adapter = createStubInstance(CloudAdapter)
+
+    const app = new AgentApplication({
+      adapter: adapter as unknown as CloudAdapter,
+      agentAppId: 'app-level-agent-id',
+      agentName: 'Valid Agent_1'
+    })
+
+    assert.ok(app)
+    sinon.assert.calledOnceWithExactly(adapter.setAgentName, 'Valid Agent_1')
+  })
+
   it('should route to an activity handler', async () => {
     let called = false
 
@@ -453,6 +480,9 @@ describe('Application', () => {
     class TrackingAdapter extends TestAdapter {
       continueConversationCalled = false
       continueConversationCallback: ((ctx: TurnContext) => Promise<void>) | undefined
+
+      setAgentName (_agentName?: string): void {
+      }
 
       override continueConversation (_identity: any, _reference: any, logic: (ctx: TurnContext) => Promise<void>): Promise<void> {
         this.continueConversationCalled = true

@@ -11,7 +11,7 @@ import { ResourceResponse } from './resourceResponse'
 import { AttachmentInfo } from './attachmentInfo'
 import { AttachmentData } from './attachmentData'
 import { normalizeOutgoingActivity } from '../activityWireCompat'
-import { getProductInfo } from '../getProductInfo'
+import { applyUserAgentHeader, getProductInfo } from '../getProductInfo'
 import { HeaderPropagation, HeaderPropagationCollection } from '../headerPropagation'
 import { trace } from '@microsoft/agents-telemetry'
 import { ConnectorClientTraceDefinitions } from '../observability'
@@ -113,13 +113,7 @@ export class ConnectorClient {
     headers?: HeaderPropagationCollection
   ): ConnectorClient {
     const headerPropagation = headers ?? new HeaderPropagation({})
-    const userAgent = headerPropagation.outgoing['user-agent']
-    const productInfo = getProductInfo()
-    if (!userAgent) {
-      headerPropagation.add({ 'User-Agent': productInfo })
-    } else if (!userAgent.includes(productInfo)) {
-      headerPropagation.concat({ 'User-Agent': productInfo })
-    }
+    applyUserAgentHeader(headerPropagation)
     headerPropagation.override({
       Accept: 'application/json',
       'Content-Type': 'application/json', // Required by transformRequest
