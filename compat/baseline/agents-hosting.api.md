@@ -215,6 +215,7 @@ export interface AgentApplicationOptions<TState extends TurnState> {
     adapter?: CloudAdapter;
     adaptiveCardsOptions?: AdaptiveCardsOptions;
     agentAppId?: string;
+    agentName?: string;
     authorization?: AuthorizationOptions;
     connections?: Connections;
     fileDownloaders?: InputFileDownloader<TState>[];
@@ -389,7 +390,9 @@ export interface AudioCard {
 // @public
 export interface AuthConfiguration {
     altBlueprintConnectionName?: string;
+    // @deprecated (undocumented)
     authority?: string;
+    authorityEndpoint?: string;
     authType?: AuthType | string;
     azureRegion?: string;
     certKeyFile?: string;
@@ -399,15 +402,18 @@ export interface AuthConfiguration {
     connectionName?: string;
     connections?: Map<string, AuthConfiguration>;
     connectionsMap?: ConnectionMapItem[];
+    federatedClientId?: string;
     federatedTokenFile?: string;
+    // @deprecated (undocumented)
     FICClientId?: string;
     idpmResource?: string;
     issuers?: string[];
-    // (undocumented)
+    // @deprecated (undocumented)
     scope?: string;
+    scopes?: string[];
     sendX5C?: boolean;
     tenantId?: string;
-    // @deprecated
+    // @deprecated (undocumented)
     WIDAssertionFile?: string;
 }
 
@@ -537,9 +543,13 @@ export interface Citation {
     url: string | null;
 }
 
-// @public
+// @public (undocumented)
 export class CloudAdapter extends BaseAdapter {
-    constructor(authConfig?: AuthConfiguration, authProvider?: AuthProvider, userTokenClient?: UserTokenClient);
+    constructor(authConfig?: AuthConfiguration, authProvider?: AuthProvider, userTokenClient?: UserTokenClient, options?: CloudAdapterOptions);
+    // (undocumented)
+    protected _agentName?: string;
+    // (undocumented)
+    protected readonly authConfig: AuthConfiguration;
     connectionManager: Connections;
     continueConversation(botAppIdOrIdentity: string | JwtPayload, reference: ConversationReference, logic: (revocableContext: TurnContext) => Promise<void>, isResponse?: Boolean): Promise<void>;
     protected createConnectorClient(serviceUrl: string, scope: string, identity: JwtPayload, headers?: HeaderPropagationCollection): Promise<ConnectorClient>;
@@ -559,11 +569,18 @@ export class CloudAdapter extends BaseAdapter {
     protected processTurnResults(context: TurnContext): InvokeResponse | undefined;
     protected resolveIfConnectorClientIsNeeded(activity: Activity): boolean;
     sendActivities(context: TurnContext, activities: Activity[]): Promise<ResourceResponse[]>;
+    setAgentName(agentName?: string): void;
     protected setConnectorClient(context: TurnContext, connectorClient?: ConnectorClient): void;
     protected setUserTokenClient(context: TurnContext, userTokenClient?: UserTokenClient): void;
     updateActivity(context: TurnContext, activity: Activity): Promise<ResourceResponse | void>;
     // @deprecated (undocumented)
     uploadAttachment(context: TurnContext, conversationId: string, attachmentData: AttachmentData): Promise<ResourceResponse>;
+}
+
+// @public
+export interface CloudAdapterOptions {
+    emitStackTrace?: boolean;
+    validateServiceUrl?: boolean;
 }
 
 // @public
@@ -739,31 +756,6 @@ export interface DefaultUserState {
 export type DeleteActivityHandler = (context: TurnContext, reference: ConversationReference, next: () => Promise<void>) => Promise<void>;
 
 // @public
-export function envParser<K extends string>(settings: ParserSettings<K> & ThisType<ParserSettings<K>>): {
-    parse(key: K, value: string): {
-        key?: undefined;
-        value?: undefined;
-    } | {
-        key: string;
-        value: any;
-    };
-};
-
-// @public
-export const envParserUtils: {
-    bypass: (value: string) => {
-        value: string;
-    };
-    redirect: <Parser extends ReturnType<typeof envParser>>(parser: Parser, key: Parameters<Parser["parse"]>[0]) => (value: string) => {
-        key?: undefined;
-        value?: undefined;
-    } | {
-        key: string;
-        value: any;
-    };
-};
-
-// @public
 export interface Fact {
     key: string;
     value: string;
@@ -793,6 +785,8 @@ export class HeaderPropagation implements HeaderPropagationCollection {
     // (undocumented)
     get incoming(): Record<string, string>;
     // (undocumented)
+    key(key: string): string | undefined;
+    // (undocumented)
     get outgoing(): Record<string, string>;
     // (undocumented)
     override(headers: Record<string, string>): void;
@@ -805,6 +799,7 @@ export interface HeaderPropagationCollection {
     add(headers: Record<string, string>): void;
     concat(headers: Record<string, string>): void;
     incoming: Record<string, string>;
+    key?(key: string): string | undefined;
     outgoing: Record<string, string>;
     override(headers: Record<string, string>): void;
     propagate(headers: string[]): void;
@@ -840,15 +835,7 @@ export class HttpClient {
     get defaultHeaders(): Record<string, string>;
     set defaultHeaders(headers: Record<string, string>);
     // (undocumented)
-    delete<T = unknown>(url: string, options?: Partial<HttpRequestConfig>): Promise<HttpResponse<T>>;
-    // (undocumented)
     get<T = unknown>(url: string, options?: Partial<HttpRequestConfig>): Promise<HttpResponse<T>>;
-    // (undocumented)
-    post<T = unknown>(url: string, data?: unknown, options?: Partial<HttpRequestConfig>): Promise<HttpResponse<T>>;
-    // (undocumented)
-    put<T = unknown>(url: string, data?: unknown, options?: Partial<HttpRequestConfig>): Promise<HttpResponse<T>>;
-    // (undocumented)
-    removeHeader(name: string): void;
     // (undocumented)
     request<T = unknown>(config: HttpRequestConfig): Promise<HttpResponse<T>>;
     // (undocumented)
@@ -888,6 +875,10 @@ export interface HttpRequestConfig {
     params?: Record<string, string | undefined>;
     // (undocumented)
     responseType?: 'json' | 'arraybuffer' | 'stream';
+    // (undocumented)
+    signal?: AbortSignal;
+    // (undocumented)
+    timeout?: number;
     // (undocumented)
     url: string;
 }
