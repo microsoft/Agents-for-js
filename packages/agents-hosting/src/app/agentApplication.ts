@@ -144,6 +144,8 @@ export class AgentApplication<TState extends TurnState> {
       this._adapter = new CloudAdapter()
     }
 
+    this._adapter.setAgentName(this._options.agentName)
+
     // Create Proactive whenever proactive options are explicitly configured or a storage
     // backend is available — no explicit `proactive` option is required.
     if (this._options.proactive !== undefined || this._options.storage !== undefined) {

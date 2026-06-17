@@ -4,7 +4,6 @@
  */
 
 import { ConfidentialClientApplication, LogLevel, ManagedIdentityApplication, NodeSystemOptions } from '@azure/msal-node'
-import axios from 'axios'
 import { AuthConfiguration, AuthType, resolveAuthority as resolveAuthorityUtil } from './authConfiguration'
 import { AuthProvider } from './authProvider'
 import { debug, trace } from '@microsoft/agents-telemetry'
@@ -20,6 +19,15 @@ import { Errors } from '../errorHelper'
 
 const audience = 'api://AzureADTokenExchange'
 const logger = debug('agents:msal')
+const agenticTokenRequestTimeoutMs = 30000
+
+function isAbortError (error: unknown): error is Error {
+  return error instanceof Error && error.name === 'AbortError'
+}
+
+function createTokenRequestTimeoutError (timeoutMs: number): Error {
+  return ExceptionHelper.generateException(Error, Errors.TokenRequestTimeout, undefined, { timeoutMs: timeoutMs.toString() })
+}
 
 /**
  * Provides tokens using MSAL.
@@ -85,7 +93,7 @@ export class MsalTokenProvider implements AuthProvider {
             break
           }
           case AuthType.FederatedCredentials:
-            if (!authConfig.FICClientId) {
+            if (!authConfig.federatedClientId && !authConfig.FICClientId) {
               throw ExceptionHelper.generateException(Error, Errors.FICClientIdRequired)
             }
             token = await this.acquireAccessTokenViaFIC(authConfig, actualScope)
@@ -119,7 +127,7 @@ export class MsalTokenProvider implements AuthProvider {
         record({ method: AuthType.WorkloadIdentity })
         logger.debug('getAccessToken via method=%s clientId=%s scope=%s', AuthType.WorkloadIdentity, authConfig.clientId, actualScope)
         token = await this.acquireAccessTokenViaWID(authConfig, actualScope)
-      } else if (authConfig.FICClientId !== undefined) {
+      } else if (authConfig.federatedClientId !== undefined || authConfig.FICClientId !== undefined) {
         record({ method: AuthType.FederatedCredentials })
         logger.debug('getAccessToken via method=%s clientId=%s scope=%s', AuthType.FederatedCredentials, authConfig.clientId, actualScope)
         token = await this.acquireAccessTokenViaFIC(authConfig, actualScope)
@@ -182,7 +190,7 @@ export class MsalTokenProvider implements AuthProvider {
       const cca = new ConfidentialClientApplication({
         auth: {
           clientId: authConfig.clientId as string,
-          authority: `${authConfig.authority}/${authConfig.tenantId || 'botframework.com'}`,
+          authority: `${authConfig.authorityEndpoint ?? authConfig.authority}/${authConfig.tenantId || 'botframework.com'}`,
           clientSecret: authConfig.clientSecret
         },
         system: this.sysOptions
@@ -238,16 +246,16 @@ export class MsalTokenProvider implements AuthProvider {
    * @returns
    */
   private resolveAuthority (tenantId?: string) : string {
-    const { authority: configuredAuth, tenantId: configuredTenantId } = this.connectionSettings ?? {}
+    const { authorityEndpoint: configuredAuth, authority, tenantId: configuredTenantId } = this.connectionSettings ?? {}
 
     if (!tenantId) {
       // No agentic tenant override — delegate to shared utility
-      return resolveAuthorityUtil(configuredAuth, configuredTenantId)
+      return resolveAuthorityUtil(configuredAuth ?? authority, configuredTenantId)
     }
 
     // Agentic override: build a clean base using the override tenant, then replace any
     // /common or GUID placeholder left in the authority (e.g. from a multi-tenant config)
-    const base = resolveAuthorityUtil(configuredAuth, tenantId)
+    const base = resolveAuthorityUtil(configuredAuth ?? authority, tenantId)
     const guidPattern = /\/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
 
     if (base.endsWith('/common') || guidPattern.test(base)) {
@@ -302,22 +310,42 @@ export class MsalTokenProvider implements AuthProvider {
       data.client_info = '2'
     }
 
-    const token = await axios.post(
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => {
+      controller.abort(createTokenRequestTimeoutError(agenticTokenRequestTimeoutMs))
+    }, agenticTokenRequestTimeoutMs)
+
+    const token = await fetch(
       url,
-      data,
       {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8'
-        }
+        },
+        body: new URLSearchParams(data as Record<string, string>).toString(),
+        signal: controller.signal
       }
-    ).catch((error) => {
-      logger.error('Error acquiring token: ', error.toJSON())
-      throw error
+    ).then(async (response) => {
+      if (!response.ok) {
+        const errorBody = await response.text()
+        const error = new Error(`Token request failed with status ${response.status}: ${errorBody}`)
+        ;(error as any).toJSON = () => ({ status: response.status, body: errorBody })
+        throw error
+      }
+      return response.json() as Promise<{ access_token: string, expires_in: number }>
+    }).catch((error) => {
+      const resolvedError = isAbortError(error)
+        ? (controller.signal.reason instanceof Error ? controller.signal.reason : createTokenRequestTimeoutError(agenticTokenRequestTimeoutMs))
+        : error
+      logger.error('Error acquiring token: ', resolvedError.toJSON ? resolvedError.toJSON() : resolvedError)
+      throw resolvedError
+    }).finally(() => {
+      clearTimeout(timeoutId)
     })
 
     // capture token, expire local cache 5 minutes early
-    this._agenticTokenCache.set(cacheKey, token.data.access_token, token.data.expires_in - 300)
-    return token.data.access_token
+    this._agenticTokenCache.set(cacheKey, token.access_token, token.expires_in - 300)
+    return token.access_token
   }
 
   public async getAgenticUserToken (tenantId: string, agentAppInstanceId: string, agenticUserId: string, scopes: string[]): Promise<string> {
@@ -384,10 +412,10 @@ export class MsalTokenProvider implements AuthProvider {
           break
         }
         case AuthType.FederatedCredentials:
-          if (!this.connectionSettings.FICClientId) {
+          if (!this.connectionSettings.federatedClientId && !this.connectionSettings.FICClientId) {
             throw ExceptionHelper.generateException(Error, Errors.FICClientIdRequired)
           }
-          clientAssertion = await this.fetchExternalToken(this.connectionSettings.FICClientId as string)
+          clientAssertion = await this.fetchExternalToken(this.connectionSettings.federatedClientId as string || this.connectionSettings.FICClientId as string)
           break
         case AuthType.Certificate:
         case AuthType.CertificateSubjectName:
@@ -400,8 +428,8 @@ export class MsalTokenProvider implements AuthProvider {
     } else if (this.connectionSettings.WIDAssertionFile !== undefined) {
       const tokenFilePath = this.connectionSettings.federatedTokenFile ?? this.connectionSettings.WIDAssertionFile
       clientAssertion = fs.readFileSync(tokenFilePath as string, 'utf8')
-    } else if (this.connectionSettings.FICClientId !== undefined) {
-      clientAssertion = await this.fetchExternalToken(this.connectionSettings.FICClientId as string)
+    } else if (this.connectionSettings.federatedClientId !== undefined || this.connectionSettings.FICClientId !== undefined) {
+      clientAssertion = await this.fetchExternalToken(this.connectionSettings.federatedClientId as string || this.connectionSettings.FICClientId as string)
     } else if (this.connectionSettings.certPemFile !== undefined &&
       this.connectionSettings.certKeyFile !== undefined) {
       clientAssertion = this.getAssertionFromCert(this.connectionSettings)
@@ -549,7 +577,7 @@ export class MsalTokenProvider implements AuthProvider {
     const cca = new ConfidentialClientApplication({
       auth: {
         clientId: authConfig.clientId || '',
-        authority: `${authConfig.authority}/${authConfig.tenantId || 'botframework.com'}`,
+        authority: `${authConfig.authorityEndpoint ?? authConfig.authority}/${authConfig.tenantId || 'botframework.com'}`,
         clientCertificate: {
           privateKey: privateKey as string,
           thumbprint: pubKeyObject.fingerprint.replaceAll(':', ''),
@@ -579,7 +607,7 @@ export class MsalTokenProvider implements AuthProvider {
     const cca = new ConfidentialClientApplication({
       auth: {
         clientId: authConfig.clientId as string,
-        authority: `${authConfig.authority}/${authConfig.tenantId || 'botframework.com'}`,
+        authority: `${authConfig.authorityEndpoint ?? authConfig.authority}/${authConfig.tenantId || 'botframework.com'}`,
         clientSecret: authConfig.clientSecret
       },
       system: this.sysOptions
@@ -603,11 +631,11 @@ export class MsalTokenProvider implements AuthProvider {
    */
   private async acquireAccessTokenViaFIC (authConfig: AuthConfiguration, scope: string) : Promise<string> {
     const scopes = [`${scope}/.default`]
-    const clientAssertion = await this.fetchExternalToken(authConfig.FICClientId as string)
+    const clientAssertion = await this.fetchExternalToken(authConfig.federatedClientId as string || authConfig.FICClientId as string)
     const cca = new ConfidentialClientApplication({
       auth: {
         clientId: authConfig.clientId as string,
-        authority: `${authConfig.authority}/${authConfig.tenantId}`,
+        authority: `${authConfig.authorityEndpoint ?? authConfig.authority}/${authConfig.tenantId}`,
         clientAssertion
       },
       system: this.sysOptions

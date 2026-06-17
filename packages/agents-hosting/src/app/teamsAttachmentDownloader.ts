@@ -9,7 +9,7 @@ import { ConnectorClient } from '../connector-client'
 import { InputFile, InputFileDownloader } from './inputFileDownloader'
 import { TurnContext } from '../turnContext'
 import { TurnState } from './turnState'
-import axios, { AxiosInstance } from 'axios'
+import { HttpClient } from '../httpClient'
 import { z } from 'zod'
 
 const logger = debug('agents:M365AttachmentDownloader')
@@ -18,11 +18,11 @@ const logger = debug('agents:M365AttachmentDownloader')
  * Downloads attachments from Teams and M365 using the bots access token.
  */
 export class M365AttachmentDownloader<TState extends TurnState = TurnState> implements InputFileDownloader<TState> {
-  private _httpClient: AxiosInstance
+  private _httpClient: HttpClient
   private _stateKey: string
 
   public constructor (stateKey: string = 'inputFiles') {
-    this._httpClient = axios.create()
+    this._httpClient = new HttpClient()
     this._stateKey = stateKey
   }
 
@@ -43,7 +43,7 @@ export class M365AttachmentDownloader<TState extends TurnState = TurnState> impl
     }
 
     const connectorClient : ConnectorClient = context.turnState.get<ConnectorClient>(context.adapter.ConnectorClientKey)
-    this._httpClient.defaults.headers = connectorClient.axiosInstance.defaults.headers
+    this._httpClient.defaultHeaders = { ...connectorClient.httpClient.defaultHeaders }
 
     const files: InputFile[] = []
     for (const attachment of attachments) {
@@ -71,13 +71,9 @@ export class M365AttachmentDownloader<TState extends TurnState = TurnState> impl
         const downloadUrl = parsed.success ? parsed.data.downloadUrl : attachment.contentUrl
         const response = await this._httpClient.get(downloadUrl, { responseType: 'arraybuffer' })
 
-        const content = Buffer.from(response.data, 'binary')
-        const contentTypeHeader = typeof response.headers.get === 'function'
-          ? response.headers.get('content-type')
-          : response.headers['content-type']
-        const contentType = Array.isArray(contentTypeHeader)
-          ? (contentTypeHeader[0] ?? 'application/octet-stream')
-          : (typeof contentTypeHeader === 'string' ? contentTypeHeader : 'application/octet-stream')
+        const content = Buffer.from(response.data as ArrayBuffer)
+        const contentTypeHeader = response.headers.get('content-type')
+        const contentType = typeof contentTypeHeader === 'string' ? contentTypeHeader : 'application/octet-stream'
         inputFile = { content, contentType, contentUrl: attachment.contentUrl }
       } catch (error) {
         logger.error(`Failed to download Teams attachment: ${error}`)

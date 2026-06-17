@@ -29,10 +29,10 @@ ${formatHeaders(incomingHeaders)}
 **📤 Outgoing Request Headers:**
 
 *ConnectorClient:*
-${formatHeaders(connectorClient.axiosInstance.defaults.headers)}
+${formatHeaders(connectorClient.httpClient.defaultHeaders)}
 
 *UserTokenClient:*
-${formatHeaders(userTokenClient.client.defaults.headers)}
+${formatHeaders(userTokenClient.client.defaultHeaders)}
   `)
 })
 

@@ -18,7 +18,10 @@ export * from './transcript'
 
 export * from './activityHandler'
 export * from './baseAdapter'
-export * from './cloudAdapter'
+// Note: re-export the public surface of `cloudAdapter` explicitly so the
+// test-only internals (e.g., the per-process warning dedup set) do not leak
+// into the package's public API.
+export { CloudAdapter, type CloudAdapterOptions } from './cloudAdapter'
 export * from './middlewareSet'
 export * from './messageFactory'
 export * from './statusCodes'
@@ -26,5 +29,6 @@ export * from './turnContext'
 export * from './turnContextStateCollection'
 export * from './storage/storage'
 export * from './headerPropagation'
+export * from './httpClient'
 
 export * from './agent-client'
