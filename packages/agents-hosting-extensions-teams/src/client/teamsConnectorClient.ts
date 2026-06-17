@@ -1,5 +1,4 @@
 /** * Copyright (c) Microsoft Corporation. All rights reserved. * Licensed under the MIT License. */
-import { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
 import { Activity, ChannelAccount, ExceptionHelper } from '@microsoft/agents-activity'
 import { Errors } from '../errorHelper'
 import { TeamsChannelAccount } from '../activity-extensions/teamsChannelAccount'
@@ -9,7 +8,24 @@ import { MeetingNotificationResponse } from '../meeting/meetingNotificationRespo
 import { ChannelInfo } from '../activity-extensions/channelInfo'
 import { TeamsChannelData } from '../activity-extensions'
 import { BatchFailedEntriesResponse, BatchOperationStateResponse, CancelOperationResponse, TeamDetails, TeamsBatchOperationResponse, TeamsMember, TeamsPagedMembersResult } from './teamsConnectorClient.types'
-import { ConnectorClient } from '@microsoft/agents-hosting'
+import { ConnectorClient, HttpClient, HttpError, HttpRequestConfig, HttpResponse } from '@microsoft/agents-hosting'
+import { debug } from '@microsoft/agents-telemetry'
+
+const logger = debug('agents:connector-client')
+
+function formatHttpErrorMessage (error: HttpError): string {
+  const responseData = error.response?.data
+  if (responseData === undefined) {
+    return error.message
+  }
+
+  try {
+    const serializedResponseData = JSON.stringify(responseData)
+    return serializedResponseData === undefined ? error.message : `${error.message}: ${serializedResponseData}`
+  } catch {
+    return error.message
+  }
+}
 
 interface ConversationList {
   conversations?: ChannelInfo[]
@@ -19,9 +35,9 @@ interface ConversationList {
  * Extends the ConnectorClient class to provide Teams-specific functionalities.
  */
 export class TeamsConnectorClient {
-  private axiosInstance: AxiosInstance
+  private _httpClient: HttpClient
   constructor (private client: ConnectorClient) {
-    this.axiosInstance = client.axiosInstance
+    this._httpClient = client.httpClient
   }
 
   /**
@@ -83,14 +99,14 @@ export class TeamsConnectorClient {
    * @returns A ChannelAccount representing the conversation member.
    */
   public async getConversationMember (conversationId: string, userId: string): Promise<ChannelAccount> {
-    const config: AxiosRequestConfig = {
+    const config: HttpRequestConfig = {
       method: 'get',
       url: `/v3/conversations/${conversationId}/members/${userId}`,
       headers: {
         'Content-Type': 'application/json'
       }
     }
-    const response: AxiosResponse = await this.axiosInstance(config)
+    const response: HttpResponse<ChannelAccount> = await this.executeRequest<ChannelAccount>(config)
     return response.data
   }
 
@@ -126,15 +142,15 @@ export class TeamsConnectorClient {
    * @returns A TeamsPagedMembersResult containing the paged members.
    */
   public async getConversationPagedMember (conversationId: string, pageSize: number, continuationToken: string): Promise<TeamsPagedMembersResult> {
-    const config: AxiosRequestConfig = {
+    const config: HttpRequestConfig = {
       method: 'get',
       url: `v3/conversations/${conversationId}/pagedMembers`,
       params: {
-        pageSize,
+        pageSize: String(pageSize),
         continuationToken
       }
     }
-    const response = await this.axiosInstance(config)
+    const response = await this.executeRequest<TeamsPagedMembersResult>(config)
     return response.data
   }
 
@@ -144,11 +160,11 @@ export class TeamsConnectorClient {
    * @returns An array of ChannelInfo objects representing the channels.
    */
   public async fetchChannelList (teamId: string): Promise<ChannelInfo[]> {
-    const config: AxiosRequestConfig = {
+    const config: HttpRequestConfig = {
       method: 'get',
       url: `v3/teams/${teamId}/conversations`
     }
-    const response = await this.axiosInstance(config)
+    const response = await this.executeRequest<ConversationList>(config)
     const convList: ConversationList = response.data
     return convList.conversations || []
   }
@@ -159,11 +175,11 @@ export class TeamsConnectorClient {
    * @returns A TeamDetails object containing the team details.
    */
   public async fetchTeamDetails (teamId: string): Promise<TeamDetails> {
-    const config: AxiosRequestConfig = {
+    const config: HttpRequestConfig = {
       method: 'get',
       url: `v3/teams/${teamId}`
     }
-    const response = await this.axiosInstance(config)
+    const response = await this.executeRequest<TeamDetails>(config)
     return response.data
   }
 
@@ -175,12 +191,12 @@ export class TeamsConnectorClient {
    * @returns A string containing participant information.
    */
   public async fetchMeetingParticipant (meetingId: string, participantId: string, tenantId: string): Promise<string> {
-    const config: AxiosRequestConfig = {
+    const config: HttpRequestConfig = {
       method: 'get',
       url: `v1/meetings/${meetingId}/participants/${participantId}`,
       params: { tenantId }
     }
-    const response = await this.axiosInstance(config)
+    const response = await this.executeRequest<string>(config)
     return response.data
   }
 
@@ -190,11 +206,11 @@ export class TeamsConnectorClient {
    * @returns A MeetingInfo object containing the meeting information.
    */
   public async fetchMeetingInfo (meetingId: string): Promise<MeetingInfo> {
-    const config: AxiosRequestConfig = {
+    const config: HttpRequestConfig = {
       method: 'get',
       url: `v1/meetings/${meetingId}`
     }
-    const response = await this.axiosInstance(config)
+    const response = await this.executeRequest<MeetingInfo>(config)
     return response.data
   }
 
@@ -205,12 +221,12 @@ export class TeamsConnectorClient {
    * @returns A MeetingNotificationResponse object containing the response.
    */
   public async sendMeetingNotification (meetingId: string, notification: MeetingNotification): Promise<MeetingNotificationResponse> {
-    const config: AxiosRequestConfig = {
+    const config: HttpRequestConfig = {
       method: 'post',
       url: `v1/meetings/${meetingId}/notification`,
       data: notification
     }
-    const response = await this.axiosInstance(config)
+    const response = await this.executeRequest<MeetingNotificationResponse>(config)
     return response.data
   }
 
@@ -227,12 +243,12 @@ export class TeamsConnectorClient {
       members,
       tenantId
     }
-    const config: AxiosRequestConfig = {
+    const config: HttpRequestConfig = {
       method: 'post',
       url: 'v3/batch/conversation/users',
       data: content
     }
-    const response = await this.axiosInstance(config)
+    const response = await this.executeRequest<TeamsBatchOperationResponse>(config)
     return response.data
   }
 
@@ -247,12 +263,12 @@ export class TeamsConnectorClient {
       activity,
       tenantId
     }
-    const config: AxiosRequestConfig = {
+    const config: HttpRequestConfig = {
       method: 'post',
       url: 'v3/batch/conversation/tenant',
       data: content
     }
-    const response = await this.axiosInstance(config)
+    const response = await this.executeRequest<TeamsBatchOperationResponse>(config)
     return response.data
   }
 
@@ -269,12 +285,12 @@ export class TeamsConnectorClient {
       tenantId,
       teamId
     }
-    const config: AxiosRequestConfig = {
+    const config: HttpRequestConfig = {
       method: 'post',
       url: 'v3/batch/conversation/team',
       data: content
     }
-    const response = await this.axiosInstance(config)
+    const response = await this.executeRequest<TeamsBatchOperationResponse>(config)
     return response.data
   }
 
@@ -291,12 +307,12 @@ export class TeamsConnectorClient {
       tenantId,
       members
     }
-    const config: AxiosRequestConfig = {
+    const config: HttpRequestConfig = {
       method: 'post',
       url: 'v3/batch/conversation/channels',
       data: content
     }
-    const response = await this.axiosInstance(config)
+    const response = await this.executeRequest<TeamsBatchOperationResponse>(config)
     return response.data
   }
 
@@ -306,11 +322,11 @@ export class TeamsConnectorClient {
    * @returns A BatchOperationStateResponse object containing the operation state.
    */
   public async getOperationState (operationId: string): Promise<BatchOperationStateResponse> {
-    const config: AxiosRequestConfig = {
+    const config: HttpRequestConfig = {
       method: 'get',
       url: `v3/batch/conversation/${operationId}`
     }
-    const response = await this.axiosInstance(config)
+    const response = await this.executeRequest<BatchOperationStateResponse>(config)
     return response.data
   }
 
@@ -320,11 +336,11 @@ export class TeamsConnectorClient {
    * @returns A BatchFailedEntriesResponse object containing the failed entries.
    */
   public async getFailedEntries (operationId: string): Promise<BatchFailedEntriesResponse> {
-    const config: AxiosRequestConfig = {
+    const config: HttpRequestConfig = {
       method: 'get',
       url: `v3/batch/conversation/failedentries/${operationId}`
     }
-    const response = await this.axiosInstance(config)
+    const response = await this.executeRequest<BatchFailedEntriesResponse>(config)
     return response.data
   }
 
@@ -334,12 +350,61 @@ export class TeamsConnectorClient {
    * @returns A CancelOperationResponse object containing the response.
    */
   public async cancelOperation (operationId: string): Promise<CancelOperationResponse> {
-    const config: AxiosRequestConfig = {
+    const config: HttpRequestConfig = {
       method: 'delete',
       url: `v3/batch/conversation/${operationId}`
     }
 
-    const response = await this.axiosInstance(config)
+    const response = await this.executeRequest<CancelOperationResponse>(config)
     return response.data
+  }
+
+  private async executeRequest<T = unknown> (config: HttpRequestConfig): Promise<HttpResponse<T>> {
+    const { method, url, data, headers, params } = config
+    const { Authorization, authorization, ...headersToLog } = { ...this._httpClient.defaultHeaders, ...headers } as Record<string, string>
+    logger.debug('Request: ', {
+      host: this._httpClient.baseURL,
+      url,
+      data,
+      method,
+      params,
+      headers: headersToLog
+    })
+
+    try {
+      const response = await this._httpClient.request<T>(config)
+      logger.debug('Response: ', {
+        status: response.status,
+        statusText: response.statusText,
+        host: this._httpClient.baseURL,
+        url: response.config?.url,
+        data: response.config?.data,
+        method: response.config?.method,
+      })
+      return response
+    } catch (error) {
+      if (error instanceof HttpError) {
+        const message = formatHttpErrorMessage(error)
+        logger.debug('Response error: ', {
+          host: this._httpClient.baseURL,
+          url: error.config.url,
+          method: error.config.method,
+          data: error.config.data,
+          message,
+          stack: error.stack,
+        })
+
+        Object.assign(error, {
+          host: this._httpClient.baseURL,
+          url: error.config.url,
+          method: error.config.method,
+          data: error.config.data,
+          message,
+        })
+
+        throw error
+      }
+      throw error
+    }
   }
 }

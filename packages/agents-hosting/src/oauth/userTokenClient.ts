@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import axios, { AxiosInstance } from 'axios'
+import { HttpClient, HttpError } from '../httpClient'
 import { Activity, ConversationReference } from '@microsoft/agents-activity'
 import { debug } from '@microsoft/agents-telemetry'
 import { normalizeTokenExchangeState } from '../activityWireCompat'
@@ -15,11 +15,25 @@ import { UserTokenClientTraceDefinitions } from '../observability'
 
 const logger = debug('agents:user-token-client')
 
+function formatHttpErrorMessage (error: HttpError): string {
+  const responseData = error.response?.data
+  if (responseData === undefined) {
+    return error.message
+  }
+
+  try {
+    const serializedResponseData = JSON.stringify(responseData)
+    return serializedResponseData === undefined ? error.message : `${error.message}: ${serializedResponseData}`
+  } catch {
+    return error.message
+  }
+}
+
 /**
  * Client for managing user tokens.
  */
 export class UserTokenClient {
-  client: AxiosInstance
+  client: HttpClient
   private msAppId: string = ''
   /**
    * Creates a new instance of UserTokenClient.
@@ -28,14 +42,14 @@ export class UserTokenClient {
   constructor (msAppId: string)
   /**
    * Creates a new instance of UserTokenClient.
-   * @param axiosInstance The axios instance.
+   * @param httpClient The HttpClient instance.
    */
-  constructor (axiosInstance: AxiosInstance)
+  constructor (httpClient: HttpClient)
 
-  constructor (param: string | AxiosInstance) {
+  constructor (param: string | HttpClient) {
     if (typeof param === 'string') {
       const baseURL = getTokenServiceEndpoint()
-      this.client = axios.create({
+      this.client = new HttpClient({
         baseURL,
         headers: {
           Accept: 'application/json',
@@ -45,55 +59,6 @@ export class UserTokenClient {
     } else {
       this.client = param
     }
-
-    this.client.interceptors.request.use((config) => {
-      const { method, url, data, headers, params } = config
-      const { Authorization, authorization, ...headersToLog } = headers || {}
-      logger.debug('Request: ', {
-        host: this.client.getUri(),
-        url,
-        data,
-        method,
-        params,
-        headers: headersToLog
-      })
-      return config
-    })
-
-    this.client.interceptors.response.use(
-      (config) => {
-        const { status, statusText, config: requestConfig, headers } = config
-        const { Authorization, authorization, ...headersToLog } = headers || {}
-        const { token, ...redactedData } = requestConfig?.data || {}
-        logger.debug('Response: ', {
-          status,
-          statusText,
-          host: this.client.getUri(),
-          url: requestConfig?.url,
-          data: redactedData,
-          method: requestConfig?.method,
-          headers: headersToLog
-        })
-        return config
-      },
-      (error) => {
-        const { code, status, message, stack, response } = error
-        const { headers } = response || {}
-        const errorDetails = {
-          code,
-          host: this.client.getUri(),
-          url: error.config.url,
-          method: error.config.method,
-          data: error.config.data,
-          message: message + JSON.stringify(response?.data),
-          headers,
-          stack,
-        }
-        logger.debug('Response error: ', errorDetails)
-        if (errorDetails.url === '/api/usertoken/GetToken' && status !== 404) {
-          return Promise.reject(errorDetails)
-        }
-      })
   }
 
   /**
@@ -115,20 +80,21 @@ export class UserTokenClient {
     applyUserAgentHeader(headerPropagation)
     headerPropagation.override({
       Accept: 'application/json',
-      'Content-Type': 'application/json', // Required by transformRequest
+      'Content-Type': 'application/json',
     })
 
-    const axiosInstance = axios.create({
-      baseURL,
-      headers: headerPropagation.outgoing,
-    })
-
+    const clientHeaders: Record<string, string> = { ...headerPropagation.outgoing }
     const token = await authProvider?.getAccessToken(scope)
     if (token && token.length > 1) {
-      axiosInstance.defaults.headers.common.Authorization = `Bearer ${token}`
+      clientHeaders.Authorization = `Bearer ${token}`
     }
 
-    return new UserTokenClient(axiosInstance)
+    const httpClient = new HttpClient({
+      baseURL,
+      headers: clientHeaders,
+    })
+
+    return new UserTokenClient(httpClient)
   }
 
   /**
@@ -143,13 +109,21 @@ export class UserTokenClient {
     return trace(UserTokenClientTraceDefinitions.getUserToken, async ({ record }) => {
       const [channelId] = Activity.parseChannelId(channelIdComposite)
       const params = { connectionName, channelId, userId, code }
-      const response = await this.client.get('/api/usertoken/GetToken', { params })
-      record({ connectionName, channelId, userId, httpStatusCode: response.status?.toString() })
+      try {
+        const response = await this.executeRequest('get', '/api/usertoken/GetToken', undefined, { params })
+        record({ connectionName, channelId, userId, httpStatusCode: response.status?.toString() })
 
-      if (response?.data) {
-        return response.data as TokenResponse
+        if (response?.data) {
+          return response.data as TokenResponse
+        }
+        return { token: undefined }
+      } catch (error: any) {
+        if (error instanceof HttpError && error.status === 404) {
+          record({ connectionName, channelId, userId, httpStatusCode: '404' })
+          return { token: undefined }
+        }
+        throw error
       }
-      return { token: undefined }
     })
   }
 
@@ -164,7 +138,7 @@ export class UserTokenClient {
     return trace(UserTokenClientTraceDefinitions.signOut, async ({ record }) => {
       const [channelId] = Activity.parseChannelId(channelIdComposite)
       const params = { userId, connectionName, channelId }
-      const response = await this.client.delete('/api/usertoken/SignOut', { params })
+      const response = await this.executeRequest('delete', '/api/usertoken/SignOut', undefined, { params })
       record({ userId, connectionName, channelId, httpStatusCode: response.status?.toString() })
       if (response.status !== 200) {
         throw new Error('Failed to sign out')
@@ -191,7 +165,7 @@ export class UserTokenClient {
       const tokenExchangeStateNormalized = normalizeTokenExchangeState(tokenExchangeState)
       const state = Buffer.from(JSON.stringify(tokenExchangeStateNormalized)).toString('base64')
       const params = { state }
-      const response = await this.client.get('/api/botsignin/GetSignInResource', { params })
+      const response = await this.executeRequest('get', '/api/botsignin/GetSignInResource', undefined, { params })
       record({ connectionName, httpStatusCode: response.status?.toString() })
       return response.data as SignInResource
     })
@@ -209,7 +183,7 @@ export class UserTokenClient {
     return trace(UserTokenClientTraceDefinitions.exchangeToken, async ({ record }) => {
       const [channelId] = Activity.parseChannelId(channelIdComposite)
       const params = { userId, connectionName, channelId }
-      const response = await this.client.post('/api/usertoken/exchange', tokenExchangeRequest, { params })
+      const response = await this.executeRequest('post', '/api/usertoken/exchange', tokenExchangeRequest, { params })
       record({ userId, connectionName, channelId, httpStatusCode: response.status?.toString() })
       if (response?.data) {
         return response.data as TokenResponse
@@ -236,7 +210,7 @@ export class UserTokenClient {
       const [channelId] = Activity.parseChannelId(channelIdComposite)
       const state = Buffer.from(JSON.stringify({ conversation, relatesTo, connectionName, msAppId: this.msAppId })).toString('base64')
       const params = { userId, connectionName, channelId, state, code, finalRedirect, fwdUrl }
-      const response = await this.client.get('/api/usertoken/GetTokenOrSignInResource', { params })
+      const response = await this.executeRequest('get', '/api/usertoken/GetTokenOrSignInResource', undefined, { params })
       record({ userId, connectionName, channelId, httpStatusCode: response?.status?.toString() })
       return response.data as TokenOrSinginResourceResponse
     })
@@ -253,7 +227,7 @@ export class UserTokenClient {
     return trace(UserTokenClientTraceDefinitions.getTokenStatus, async ({ record }) => {
       const [channelId] = Activity.parseChannelId(channelIdComposite)
       const params = { userId, channelId, include }
-      const response = await this.client.get('/api/usertoken/GetTokenStatus', { params })
+      const response = await this.executeRequest('get', '/api/usertoken/GetTokenStatus', undefined, { params })
       record({ userId, channelId, httpStatusCode: response.status?.toString() })
       return response.data as TokenStatus[]
     })
@@ -271,13 +245,64 @@ export class UserTokenClient {
     return trace(UserTokenClientTraceDefinitions.getAadTokens, async ({ record }) => {
       const [channelId] = Activity.parseChannelId(channelIdComposite)
       const params = { userId, connectionName, channelId }
-      const response = await this.client.post('/api/usertoken/GetAadTokens', resourceUrls, { params })
+      const response = await this.executeRequest('post', '/api/usertoken/GetAadTokens', resourceUrls, { params })
       record({ userId, connectionName, channelId, httpStatusCode: response.status?.toString() })
       return response.data as Record<string, TokenResponse>
     })
   }
 
   public updateAuthToken (token: string): void {
-    this.client.defaults.headers.common.Authorization = `Bearer ${token}`
+    this.client.setHeader('Authorization', `Bearer ${token}`)
+  }
+
+  private async executeRequest<T = unknown> (method: string, url: string, data?: unknown, options?: { params?: Record<string, string | undefined> }): Promise<{ data: T, status: number, statusText: string }> {
+    const { params } = options ?? {}
+    const { Authorization, authorization, ...headersToLog } = this.client.defaultHeaders
+    logger.debug('Request: ', {
+      host: this.client.baseURL,
+      url,
+      data,
+      method,
+      params,
+      headers: headersToLog
+    })
+
+    try {
+      const response = await this.client.request<T>({ method, url, data, params })
+      const { token: _token, ...redactedData } = (response.config?.data ?? {}) as Record<string, unknown>
+      logger.debug('Response: ', {
+        status: response.status,
+        statusText: response.statusText,
+        host: this.client.baseURL,
+        url: response.config?.url,
+        data: redactedData,
+        method: response.config?.method,
+      })
+      return response
+    } catch (error: any) {
+      if (error instanceof HttpError) {
+        const message = formatHttpErrorMessage(error)
+        const errorDetails = {
+          host: this.client.baseURL,
+          url: error.config.url,
+          method: error.config.method,
+          data: error.config.data,
+          message,
+          headers: error.response?.headers,
+          stack: error.stack,
+        }
+        logger.debug('Response error: ', errorDetails)
+
+        Object.assign(error, {
+          host: this.client.baseURL,
+          url: error.config.url,
+          method: error.config.method,
+          data: error.config.data,
+          headers: error.response?.headers,
+          message,
+        })
+      }
+      throw error
+    }
   }
 }

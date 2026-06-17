@@ -256,6 +256,14 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
     description: 'request.body parameter required'
   },
 
+  /**
+   * Error thrown when HttpClient is given a relative URL without a configured base URL.
+   */
+  HttpClientRelativeUrlRequiresBaseUrl: {
+    code: -120291,
+    description: 'HttpClient requires baseURL when using a relative URL: {url}'
+  },
+
   // ============================================================================
   // Connection and Authentication Errors (-120300 to -120590)
   // ============================================================================
@@ -562,6 +570,14 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   ClientIdRequiredForUserManagedIdentity: {
     code: -120598,
     description: 'UserManagedIdentity authentication requires `clientId` to be configured'
+  },
+
+  /**
+   * Error thrown when there's a timeout during a token request.
+   */
+  TokenRequestTimeout: {
+    code: -120599,
+    description: 'Token request timed out after {timeoutMs} ms'
   },
 
   // ============================================================================

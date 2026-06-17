@@ -375,7 +375,7 @@ describe('CloudAdapter', function () {
         message: '[-120620] - Agent ID is required to apply outbound agent headers - https://aka.ms/M365AgentsErrorCodesJS/#-120620'
       })
 
-      sinon.assert.calledOnce(localCreateConnectorClientSpy)
+      sinon.assert.notCalled(localCreateConnectorClientSpy)
       sinon.assert.notCalled(localCreateUserTokenClientSpy)
       stubfromObject.restore()
     })
