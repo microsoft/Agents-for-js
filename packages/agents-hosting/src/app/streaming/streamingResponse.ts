@@ -3,8 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { Activity, addAIToActivity, Attachment, Entity, ClientCitation, SensitivityUsageInfo, DeliveryModes, Channels } from '@microsoft/agents-activity'
-import { ExceptionHelper } from '@microsoft/agents-activity'
+import { Activity, addAIToActivity, Attachment, Entity, ClientCitation, SensitivityUsageInfo, DeliveryModes, Channels, ExceptionHelper } from '@microsoft/agents-activity'
 import { TurnContext } from '../../turnContext'
 import { Citation } from './citation'
 import { CitationUtil } from './citationUtil'
