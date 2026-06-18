@@ -205,6 +205,46 @@ describe('StreamingResponse', () => {
     assert.deepEqual(activity.attachments, attachments)
   })
 
+  it('addAttachment - should include attachment in final message', () => {
+    const attachment: Attachment = { contentType: 'text/plain', name: 'test.txt', content: 'hello' }
+
+    streamingResponse.addAttachment(attachment)
+    streamingResponse.endStream()
+
+    const activity = mockContext.sendActivity.firstCall.args[0] as Activity
+    assert.ok(activity.attachments)
+    assert.equal(activity.attachments!.length, 1)
+    assert.strictEqual(activity.attachments![0], attachment)
+  })
+
+  it('addAttachment - should throw when attachment is null', () => {
+    assert.throws(() => streamingResponse.addAttachment(null as any))
+  })
+
+  it('addAttachment - should throw when attachment is undefined', () => {
+    assert.throws(() => streamingResponse.addAttachment(undefined as any))
+  })
+
+  it('addAttachment - should accumulate multiple attachments', () => {
+    streamingResponse.addAttachment({ contentType: 'text/plain', content: 'one' })
+    streamingResponse.addAttachment({ contentType: 'image/png', content: 'two' })
+    streamingResponse.endStream()
+
+    const activity = mockContext.sendActivity.firstCall.args[0] as Activity
+    assert.equal(activity.attachments!.length, 2)
+  })
+
+  it('addAttachment - should clear attachments on reset', async () => {
+    streamingResponse.addAttachment({ contentType: 'text/plain', content: 'data' })
+    // Queue is empty so reset() resolves immediately (next microtask)
+    await streamingResponse.reset()
+
+    streamingResponse.endStream()
+
+    const activity = mockContext.sendActivity.firstCall.args[0] as Activity
+    assert.equal(activity.attachments, undefined)
+  })
+
   it('should store sensitivity label', () => {
     const sensitivityLabel: SensitivityUsageInfo = { type: 'https://schema.org/Message', '@type': 'CreativeWork', name: 'test' }
     streamingResponse.setSensitivityLabel(sensitivityLabel)

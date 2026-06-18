@@ -22,7 +22,6 @@ import { NextFunction } from 'express';
 import { Response as Response_2 } from 'express';
 import { SensitivityUsageInfo } from '@microsoft/agents-activity';
 import { TokenCredential } from '@azure/core-auth';
-import { z } from 'zod';
 
 // @public
 export interface AadResourceUrls {
@@ -143,16 +142,7 @@ export interface AdaptiveCardsSearchParams {
 }
 
 // @public
-export const adaptiveCardsSearchParamsZodSchema: z.ZodObject<{
-    queryText: z.ZodString;
-    dataset: z.ZodString;
-}, "strip", z.ZodTypeAny, {
-    queryText: string;
-    dataset: string;
-}, {
-    queryText: string;
-    dataset: string;
-}>;
+export const adaptiveCardsSearchParamsZodSchema: any;
 
 // @public
 export class AgentApplication<TState extends TurnState> {
@@ -553,7 +543,7 @@ export class CloudAdapter extends BaseAdapter {
     connectionManager: Connections;
     continueConversation(botAppIdOrIdentity: string | JwtPayload, reference: ConversationReference, logic: (revocableContext: TurnContext) => Promise<void>, isResponse?: Boolean): Promise<void>;
     protected createConnectorClient(serviceUrl: string, scope: string, identity: JwtPayload, headers?: HeaderPropagationCollection): Promise<ConnectorClient>;
-    protected createConnectorClientWithIdentity(identity: JwtPayload, activity: Activity, headers?: HeaderPropagationCollection): Promise<ConnectorClient>;
+    protected createConnectorClientWithIdentity(identity: JwtPayload, activity: Activity, headers?: HeaderPropagationCollection): Promise<any>;
     createConversationAsync(agentAppId: string, channelId: string, serviceUrl: string, audience: string, conversationParameters: ConversationParameters, logic: (context: TurnContext) => Promise<void>): Promise<void>;
     protected createCreateActivity(createdConversationId: string | undefined, channelId: string, serviceUrl: string, conversationParameters: ConversationParameters): Activity;
     static createIdentity(appId: string): JwtPayload;
@@ -1253,6 +1243,7 @@ export interface StoreItems {
 // @public
 export class StreamingResponse {
     constructor(context: TurnContext);
+    addAttachment(attachment: Attachment): void;
     get citations(): ClientCitation[] | undefined;
     get delayInMs(): number;
     endStream(): Promise<StreamingResponseResult>;
