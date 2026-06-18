@@ -1253,6 +1253,7 @@ export interface StoreItems {
 // @public
 export class StreamingResponse {
     constructor(context: TurnContext);
+    addAttachment(attachment: Attachment): void;
     get citations(): ClientCitation[] | undefined;
     get delayInMs(): number;
     endStream(): Promise<StreamingResponseResult>;
