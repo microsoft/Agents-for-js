@@ -263,7 +263,7 @@ export class StreamingResponse {
    * They are not sent in intermediate typing activities.
    */
   public addAttachment (attachment: Attachment): void {
-    if (!attachment) {
+    if (attachment === null || attachment === undefined) {
       throw ExceptionHelper.generateException(Error, Errors.AttachmentNullOrUndefined)
     }
 
