@@ -621,7 +621,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    */
   SidecarBaseUrlNotLocal: {
     code: -120804,
-    description: 'The resolved sidecar base URL `{url}` points to a non-loopback, non-private address. The Entra ID Agent Container must be reachable only from within the agent\'s network boundary. Set `bypassLocalNetworkRestriction` to true in the connection configuration to override this safety check (UNSAFE: only for carefully validated private-network configurations)'
+    description: 'The resolved sidecar base URL `{url}` points to a non-loopback, non-private address. The Entra Agent ID sidecar (agent container) must be reachable only from within the agent\'s network boundary. Set `bypassLocalNetworkRestriction` to true in the connection configuration to override this safety check (UNSAFE: only for carefully validated private-network configurations)'
   },
 
   /**

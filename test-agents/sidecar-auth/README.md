@@ -3,7 +3,7 @@
 A minimal sample that authenticates using the **Microsoft Entra Agent ID sidecar** auth
 provider (`SidecarAuthProvider`) instead of MSAL. The agent is **credential-free**: it holds
 no client secret, certificate, or federated credential. All token acquisition is delegated
-over HTTP to the **Microsoft Entra ID Agent Container (sidecar)** that runs alongside the
+over HTTP to the **Microsoft Entra Agent ID sidecar (agent container)** that runs alongside the
 agent.
 
 ## How it works
@@ -35,7 +35,7 @@ Copy `env.TEMPLATE` to `.env` and fill in the values:
 
 ## Run
 
-The agent expects the Entra ID Agent Container (sidecar) to be reachable at the configured
+The agent expects the Entra Agent ID sidecar (agent container) to be reachable at the configured
 base URL.
 
 ```bash

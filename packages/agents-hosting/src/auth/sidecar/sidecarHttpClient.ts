@@ -21,7 +21,7 @@ const logger = debug('agents:sidecar')
 const DEFAULT_RETRY_BACKOFF_BASE_MS = 2000
 
 /**
- * Reusable HTTP client for communicating with the Microsoft Entra ID Agent Container (sidecar).
+ * Reusable HTTP client for communicating with the Microsoft Entra Agent ID sidecar (agent container).
  * Handles URL construction, query parameter building, response parsing, retry, and SSRF-safe base
  * URL validation. Uses the native `fetch` API (Node.js 20+).
  */
@@ -50,10 +50,25 @@ export class SidecarHttpClient {
     retryCount: number = SidecarHttpClient.DEFAULT_RETRY_COUNT,
     retryBackoffBaseMs: number = DEFAULT_RETRY_BACKOFF_BASE_MS
   ) {
-    this._baseUrl = (baseUrl ?? SidecarHttpClient.resolveBaseUrl()).replace(/\/+$/, '')
+    this._baseUrl = SidecarHttpClient.stripTrailingSlashes(baseUrl ?? SidecarHttpClient.resolveBaseUrl())
     this._timeoutMs = Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : SidecarHttpClient.DEFAULT_TIMEOUT_MS
     this._retryCount = Number.isFinite(retryCount) ? Math.max(0, Math.floor(retryCount)) : SidecarHttpClient.DEFAULT_RETRY_COUNT
     this._retryBackoffBaseMs = Number.isFinite(retryBackoffBaseMs) && retryBackoffBaseMs >= 0 ? retryBackoffBaseMs : DEFAULT_RETRY_BACKOFF_BASE_MS
+  }
+
+  /**
+   * Removes any trailing `/` characters from `value` using a linear scan. Avoids a regular
+   * expression so untrusted input with many `/` characters cannot trigger super-linear
+   * backtracking (ReDoS).
+   * @param value The string to trim.
+   * @returns `value` without trailing slashes.
+   */
+  private static stripTrailingSlashes (value: string): string {
+    let end = value.length
+    while (end > 0 && value.charCodeAt(end - 1) === 47 /* '/' */) {
+      end--
+    }
+    return end === value.length ? value : value.slice(0, end)
   }
 
   /**
@@ -357,17 +372,23 @@ export class SidecarHttpClient {
     // Resolve after the backoff delay, but reject immediately if the caller aborts so a pending
     // retry wait does not keep the caller blocked for the full (potentially several second) delay.
     await new Promise<void>((resolve, reject) => {
-      const timer = setTimeout(resolve, delay)
+      let onAbort: (() => void) | undefined
+      const timer = setTimeout(() => {
+        if (signal && onAbort) {
+          signal.removeEventListener('abort', onAbort)
+        }
+        resolve()
+      }, delay)
       if (signal) {
-        const abort = () => {
+        onAbort = () => {
           clearTimeout(timer)
           reject(signal.reason ?? new Error('Aborted'))
         }
         if (signal.aborted) {
-          abort()
+          onAbort()
           return
         }
-        signal.addEventListener('abort', abort, { once: true })
+        signal.addEventListener('abort', onAbort, { once: true })
       }
     })
   }

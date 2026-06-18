@@ -6,7 +6,7 @@
 import type { ConnectionSettingsBase } from '../settings'
 
 /**
- * Connection settings for the Entra ID Agent Container (sidecar) authentication provider, used when a
+ * Connection settings for the Entra Agent ID sidecar (agent container) authentication provider, used when a
  * connection's `authType` is `'EntraAuthSideCar'`.
  *
  * @remarks
@@ -16,7 +16,7 @@ import type { ConnectionSettingsBase } from '../settings'
  */
 export interface SidecarConnectionSettings extends ConnectionSettingsBase {
   /**
-   * Optional base URL of the Entra ID Agent Container (sidecar).
+   * Optional base URL of the Entra Agent ID sidecar (agent container).
    *
    * @remarks
    * Only used when `authType` is `'EntraAuthSideCar'`. Resolution order:

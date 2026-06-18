@@ -32,8 +32,8 @@ interface CachedToken {
 }
 
 /**
- * Authentication provider that delegates token acquisition to the Microsoft Entra ID Agent Container
- * (sidecar). This replaces MSAL at the connection layer, using the sidecar's
+ * Authentication provider that delegates token acquisition to the Microsoft Entra Agent ID
+ * sidecar (agent container). This replaces MSAL at the connection layer, using the sidecar's
  * `/AuthorizationHeaderUnauthenticated/{serviceName}` endpoint for app-only and agentic identity
  * flows. The sidecar performs the full Blueprint→Instance→User chain internally; no MSAL exchange is
  * performed in-process.

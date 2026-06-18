@@ -12,8 +12,8 @@ import {
 } from '@microsoft/agents-hosting'
 import { version } from '@microsoft/agents-hosting/package.json'
 
-// Credential-free provider: token acquisition is delegated to the Entra ID Agent
-// Container (sidecar). The connection is configured via env (authType=EntraAuthSideCar).
+// Credential-free provider: token acquisition is delegated to the Entra Agent ID
+// sidecar (agent container). The connection is configured via env (authType=EntraAuthSideCar).
 const sidecar = new SidecarAuthProvider(loadAuthConfigFromEnv())
 
 class SidecarAuthAgent extends AgentApplication<TurnState> {
@@ -37,7 +37,7 @@ class SidecarAuthAgent extends AgentApplication<TurnState> {
     state.setValue('conversation.counter', counter)
   }
 
-  // Reports whether the Entra ID Agent Container (sidecar) is reachable.
+  // Reports whether the Entra Agent ID sidecar (agent container) is reachable.
   health = async (ctx: TurnContext) => {
     const healthy = await sidecar.isHealthy()
     await ctx.sendActivity(healthy ? '✅ Sidecar is healthy' : '❌ Sidecar is not reachable')

@@ -16,7 +16,7 @@ const DEFAULT_SERVICE_NAME = 'default'
 const DEFAULT_BLUEPRINT_SERVICE_NAME = 'agenticblueprint'
 
 /**
- * Default base URL of the Entra ID Agent Container (sidecar).
+ * Default base URL of the Entra Agent ID sidecar (agent container).
  */
 export const DEFAULT_SIDECAR_BASE_URL = 'http://localhost:5178'
 
@@ -50,7 +50,7 @@ export interface ResolvedSidecarConnectionSettings {
   blueprintServiceName: string
 
   /**
-   * Optional base URL of the Entra ID Agent Container (sidecar). Resolution order:
+   * Optional base URL of the Entra Agent ID sidecar (agent container). Resolution order:
    * `SIDECAR_URL` environment variable > this setting > {@link DEFAULT_SIDECAR_BASE_URL}.
    */
   sidecarBaseUrl?: string

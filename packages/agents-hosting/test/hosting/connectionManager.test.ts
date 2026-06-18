@@ -105,7 +105,7 @@ describe('MsalConnectionManager', () => {
     const conn = mgr.getConnection('serviceConnection')
     assert.strictEqual(conn.connectionSettings?.authorityEndpoint, 'https://login.microsoftonline.com')
     assert.ok(Array.isArray(conn.connectionSettings?.issuers))
-    assert.ok(conn.connectionSettings?.issuers?.includes('https://api.botframework.com'))
+    assert.ok(conn.connectionSettings?.issuers?.some(issuer => issuer === 'https://api.botframework.com'))
   })
 
   it('dispatches EntraAuthSideCar connections to SidecarAuthProvider', () => {
