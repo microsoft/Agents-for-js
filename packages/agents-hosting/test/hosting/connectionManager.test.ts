@@ -6,7 +6,8 @@ import { MsalConnectionManager } from '../../src/auth/msal/msalConnectionManager
 import { SidecarAuthProvider } from '../../src/auth/sidecar/sidecarAuthProvider'
 import { MsalTokenProvider } from '../../src/auth/msal/msalTokenProvider'
 import { AuthProvider } from '../../src/auth/authProvider'
-import { AuthConfiguration, AuthType } from '../../src/auth/authConfiguration'
+import { AuthConfiguration, AuthType, getAuthConfigWithDefaults } from '../../src/auth/authConfiguration'
+import { applyDefaultSettings } from '../../src/auth/settings'
 
 function fakeProvider (config: AuthConfiguration): AuthProvider {
   return { connectionSettings: config } as unknown as AuthProvider
@@ -115,5 +116,29 @@ describe('MsalConnectionManager', () => {
     const mgr = new MsalConnectionManager(configs, [])
     const conn = mgr.getConnection('serviceConnection')
     assert.ok(conn instanceof SidecarAuthProvider)
+  })
+})
+
+describe('MsalConnectionManager legacy single-connection configuration', () => {
+  // The legacy shape supplies settings at the top level (clientId/tenantId/authType) with no
+  // `connections` Map. Production normalizes this via getAuthConfigWithDefaults/applyDefaultSettings
+  // (which synthesizes a `serviceConnection` entry) before constructing the manager, exactly as
+  // CloudAdapter does. These tests guard that end-to-end path against regression.
+  const legacy: AuthConfiguration = { clientId: 'svc', tenantId: 't1', authType: AuthType.ClientSecret }
+
+  it('resolves the default connection from a top-level config normalized by applyDefaultSettings', () => {
+    const normalized = applyDefaultSettings({ ...legacy })
+    assert.strictEqual(normalized.connections?.size, 1)
+    assert.ok(normalized.connections?.has('serviceConnection'))
+
+    const mgr = new MsalConnectionManager(undefined, undefined, normalized)
+    assert.strictEqual(mgr.getDefaultConnectionConfiguration().clientId, 'svc')
+    assert.strictEqual(mgr.getDefaultConnection().connectionSettings?.clientId, 'svc')
+  })
+
+  it('resolves the default connection from a top-level config normalized by getAuthConfigWithDefaults', () => {
+    const normalized = getAuthConfigWithDefaults({ ...legacy })
+    const mgr = new MsalConnectionManager(undefined, undefined, normalized)
+    assert.strictEqual(mgr.getDefaultConnection().connectionSettings?.clientId, 'svc')
   })
 })
