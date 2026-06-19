@@ -672,6 +672,16 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
     description: 'acquireTokenOnBehalfOf is not supported by the Entra sidecar auth provider in Phase 1'
   },
 
+  /**
+   * Error thrown when the sidecar returns a token with an authorization scheme other than Bearer.
+   * The hosting stack always transmits tokens as `Bearer {token}`, so a non-Bearer scheme cannot be
+   * honored and is rejected rather than silently sent as an invalid Authorization header.
+   */
+  SidecarUnsupportedAuthScheme: {
+    code: -120811,
+    description: 'The Entra Agent ID sidecar returned an unsupported authorization scheme `{scheme}`. Only the Bearer scheme is supported'
+  },
+
   // ============================================================================
   // Agent and Client Errors (-120600 to -120650)
   // ============================================================================

@@ -167,6 +167,11 @@ export class SidecarAuthProvider implements AuthProvider {
     }
 
     const result = await this._httpClient.getAuthorizationHeaderUnauthenticated(serviceName, options)
+    // The hosting stack always transmits the token as `Bearer {token}`. Reject any other scheme
+    // (e.g. PoP) rather than silently emitting an invalid Authorization header.
+    if (result.scheme && result.scheme.toLowerCase() !== 'bearer') {
+      throw ExceptionHelper.generateException(Error, Errors.SidecarUnsupportedAuthScheme, undefined, { scheme: result.scheme })
+    }
     this.cacheSet(cacheKey, { token: result.token, expiresOn: resolveTokenExpiry(result.token) })
     return result.token
   }

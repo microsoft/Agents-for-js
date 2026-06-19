@@ -129,6 +129,23 @@ describe('SidecarAuthProvider', () => {
     await assert.rejects(() => provider.acquireTokenOnBehalfOf(['scope'], 'assertion'), /not supported/i)
   })
 
+  it('agentic token requests require connection settings', async () => {
+    const provider = new SidecarAuthProvider()
+    await assert.rejects(() => provider.getAgenticApplicationToken('tenant', 'instance'), /connection settings must be provided/i)
+    await assert.rejects(() => provider.getAgenticInstanceToken('tenant', 'instance'), /connection settings must be provided/i)
+    await assert.rejects(() => provider.getAgenticUserToken('tenant', 'instance', 'user@contoso.com', ['scope']), /connection settings must be provided/i)
+  })
+
+  it('rejects a non-Bearer authorization scheme returned by the sidecar', async () => {
+    fetchStub.resolves({
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify({ authorizationHeader: `PoP ${signedToken(3600)}` })
+    } as FakeResponse)
+    const provider = new SidecarAuthProvider(baseConfig)
+    await assert.rejects(() => provider.getAccessToken('https://graph.microsoft.com/.default'), /unsupported authorization scheme/i)
+  })
+
   it('isHealthy delegates to the sidecar health endpoint', async () => {
     fetchStub.resolves({ ok: true, status: 200, text: async () => '' } as FakeResponse)
     const provider = new SidecarAuthProvider(baseConfig)

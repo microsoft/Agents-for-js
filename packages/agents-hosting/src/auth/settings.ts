@@ -4,6 +4,8 @@
  */
 
 import { debug } from '@microsoft/agents-telemetry'
+import { ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from '../errorHelper'
 import type { MsalConnectionSettings } from './msal/msalConnectionSettings'
 import type { SidecarConnectionSettings } from './sidecar/sidecarConnectionSettings'
 
@@ -74,7 +76,7 @@ export function applyDefaultSettings (config: AuthConfiguration) {
   }
 
   if (!settings.clientId && process.env.NODE_ENV?.toLowerCase() === 'production') {
-    throw new Error('ClientId required in production')
+    throw ExceptionHelper.generateException(Error, Errors.ClientIdRequiredInProduction)
   }
 
   const defaultConnections = settings.connections?.size

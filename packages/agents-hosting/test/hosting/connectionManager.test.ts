@@ -1,6 +1,7 @@
 import { strict as assert } from 'assert'
 import { describe, it } from 'node:test'
 import { JwtPayload } from 'jsonwebtoken'
+import { Activity, RoleTypes } from '@microsoft/agents-activity'
 import { ConnectionManager, defaultAuthProviderFactory, AuthProviderFactory } from '../../src/auth/connectionManager'
 import { MsalConnectionManager } from '../../src/auth/msal/msalConnectionManager'
 import { SidecarAuthProvider } from '../../src/auth/sidecar/sidecarAuthProvider'
@@ -94,6 +95,52 @@ describe('ConnectionManager', () => {
     const conn = mgr.getConnection('agentic')
     assert.strictEqual(conn.connectionSettings?.authorityEndpoint, undefined)
     assert.strictEqual(conn.connectionSettings?.issuers, undefined)
+  })
+})
+
+describe('ConnectionManager.getTokenProviderFromActivity', () => {
+  const identity = { aud: 'any' } as JwtPayload
+
+  // serviceConnection is the wildcard-matched connection and carries an alt blueprint pointer.
+  function buildAgenticManager (): ConnectionManager {
+    const configs = new Map<string, AuthConfiguration>([
+      ['serviceConnection', { clientId: 'svc', altBlueprintConnectionName: 'blueprint' }],
+      ['blueprint', { clientId: 'bp' }]
+    ])
+    return new ConnectionManager(fakeFactory, configs, [{ serviceUrl: '*', connection: 'serviceConnection' }])
+  }
+
+  function activityWithRole (role: string): Activity {
+    return { serviceUrl: 'https://x/', recipient: { role } } as unknown as Activity
+  }
+
+  it('redirects to altBlueprintConnectionName for an agentic identity activity', () => {
+    const conn = buildAgenticManager().getTokenProviderFromActivity(identity, activityWithRole(RoleTypes.AgenticIdentity))
+    assert.strictEqual(conn.connectionSettings?.clientId, 'bp')
+  })
+
+  it('redirects to altBlueprintConnectionName for an agentic user activity', () => {
+    const conn = buildAgenticManager().getTokenProviderFromActivity(identity, activityWithRole(RoleTypes.AgenticUser))
+    assert.strictEqual(conn.connectionSettings?.clientId, 'bp')
+  })
+
+  it('does not redirect for a non-agentic activity even when altBlueprintConnectionName is set', () => {
+    const conn = buildAgenticManager().getTokenProviderFromActivity(identity, activityWithRole('user'))
+    assert.strictEqual(conn.connectionSettings?.clientId, 'svc')
+  })
+
+  it('does not redirect when the matched connection has no altBlueprintConnectionName', () => {
+    const configs = new Map<string, AuthConfiguration>([['serviceConnection', { clientId: 'svc' }]])
+    const mgr = new ConnectionManager(fakeFactory, configs, [{ serviceUrl: '*', connection: 'serviceConnection' }])
+    const conn = mgr.getTokenProviderFromActivity(identity, activityWithRole(RoleTypes.AgenticIdentity))
+    assert.strictEqual(conn.connectionSettings?.clientId, 'svc')
+  })
+
+  it('ignores a whitespace-only altBlueprintConnectionName', () => {
+    const configs = new Map<string, AuthConfiguration>([['serviceConnection', { clientId: 'svc', altBlueprintConnectionName: '   ' }]])
+    const mgr = new ConnectionManager(fakeFactory, configs, [{ serviceUrl: '*', connection: 'serviceConnection' }])
+    const conn = mgr.getTokenProviderFromActivity(identity, activityWithRole(RoleTypes.AgenticIdentity))
+    assert.strictEqual(conn.connectionSettings?.clientId, 'svc')
   })
 })
 
