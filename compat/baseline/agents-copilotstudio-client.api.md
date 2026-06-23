@@ -25,10 +25,25 @@ export class ConnectionSettings extends ConnectionOptions {
 // @public
 export class CopilotStudioClient {
     constructor(settings: ConnectionSettings, token: string);
-    askQuestionAsync(question: string, conversationId?: string): AsyncGenerator<Activity>;
+    // @deprecated
+    askQuestionAsync(question: string, conversationId?: string): Promise<Activity[]>;
+    // @deprecated
+    execute(activity: Activity, conversationId: string): Promise<Activity[]>;
+    executeStreaming(activity: Activity, conversationId: string): AsyncGenerator<Activity>;
+    executeWithResponse(activity: Activity, conversationId: string): Promise<ExecuteTurnResponse>;
+    // @deprecated
     static scopeFromSettings: (settings: ConnectionSettings) => string;
-    sendActivity(activity: Activity, conversationId?: string): AsyncGenerator<Activity>;
-    startConversationAsync(emitStartConversationEvent?: boolean): AsyncGenerator<Activity>;
+    // @deprecated
+    sendActivity(activity: Activity, conversationId?: string): Promise<Activity[]>;
+    sendActivityStreaming(activity: Activity, conversationId?: string): AsyncGenerator<Activity>;
+    // @deprecated
+    startConversationAsync(request: StartRequest): Promise<Activity[]>;
+    // @deprecated
+    startConversationAsync(emitStartConversationEvent?: boolean): Promise<Activity[]>;
+    startConversationStreaming(request: StartRequest): AsyncGenerator<Activity>;
+    startConversationStreaming(emitStartConversationEvent?: boolean): AsyncGenerator<Activity>;
+    startConversationWithResponse(request?: StartRequest | boolean): Promise<StartResponse>;
+    subscribeAsync(conversationId: string, lastReceivedEventId?: string): AsyncGenerator<SubscribeEvent>;
 }
 
 // @public
@@ -41,6 +56,7 @@ export interface CopilotStudioConnectionSettings {
     copilotAgentType?: AgentType;
     customPowerPlatformCloud?: string;
     directConnectUrl?: string;
+    enableDiagnostics?: boolean;
     environmentId?: string;
     schemaName?: string;
     useExperimentalEndpoint?: boolean;
@@ -55,23 +71,44 @@ export class CopilotStudioWebChat {
 export interface CopilotStudioWebChatConnection {
     activity$: Observable<Partial<Activity>>;
     connectionStatus$: BehaviorSubject<number>;
+    readonly conversationId: string | undefined;
     end(): void;
     postActivity(activity: Activity): Observable<string>;
 }
 
 // @public
 export interface CopilotStudioWebChatSettings {
+    conversationId?: string;
     showTyping?: boolean;
+    startConversation?: boolean;
 }
 
 // @public
+export function createExecuteTurnResponse(activities: Activity[], conversationId: string): ExecuteTurnResponse;
+
+// @public
+export function createStartRequest(emitStartConversationEvent?: boolean, locale?: string, conversationId?: string): StartRequest;
+
+// @public
+export function createStartResponse(activities: Activity[], conversationId: string): StartResponse;
+
+// @public
 export class ExecuteTurnRequest {
-    constructor(activity?: Activity);
+    constructor(activity?: Activity, conversationId?: string);
     activity?: Activity;
+    conversationId?: string;
+}
+
+// @public
+export interface ExecuteTurnResponse extends ResponseBase {
+    activityCount: number;
 }
 
 // @public
 export function getCopilotStudioConnectionUrl(settings: ConnectionSettings, conversationId?: string): string;
+
+// @public
+export function getCopilotStudioSubscribeUrl(settings: ConnectionSettings, conversationId: string): string;
 
 // @public
 export function getTokenAudience(settings?: ConnectionSettings, cloud?: PowerPlatformCloud, cloudBaseAddress?: string, directConnectUrl?: string): string;
@@ -98,6 +135,48 @@ export enum PowerPlatformCloud {
     Rx = "Rx",
     Test = "Test",
     Unknown = "Unknown"
+}
+
+// @public
+export interface ResponseBase {
+    activities: Activity[];
+    conversationId: string;
+}
+
+// @public
+export class ScopeHelper {
+    static getScopeFromSettings(settings: ConnectionSettings): string;
+}
+
+// @public
+export interface StartRequest {
+    conversationId?: string;
+    emitStartConversationEvent?: boolean;
+    locale?: string;
+}
+
+// @public
+export interface StartResponse extends ResponseBase {
+    isNewConversation: boolean;
+}
+
+// @public
+export interface SubscribeEvent {
+    activity: Activity;
+    eventId?: string;
+}
+
+// @public
+export interface SubscribeRequest {
+    conversationId: string;
+    lastReceivedEventId?: string;
+}
+
+// @public
+export class UserAgentHelper {
+    static getProductInfo(): string;
+    static getVersion(): string;
+    static getVersionString(): string;
 }
 
 // (No @packageDocumentation comment for this package)

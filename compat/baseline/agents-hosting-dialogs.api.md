@@ -5,6 +5,7 @@
 ```ts
 
 import { Activity } from '@microsoft/agents-activity';
+import { AgentErrorDefinition } from '@microsoft/agents-activity';
 import { AgentState } from '@microsoft/agents-hosting';
 import { AgentStatePropertyAccessor } from '@microsoft/agents-hosting';
 import { Attachment } from '@microsoft/agents-activity';
@@ -90,11 +91,13 @@ export interface ChoiceDefaultsConfirmPrompt {
 
 // @public
 export class ChoiceFactory {
-    static forChannel(channelOrContext: string | TurnContext, choices: (string | Choice)[], text?: string, speak?: string, options?: ChoiceFactoryOptions): Activity;
+    static forChannel(channelOrContext: string | TurnContext, choices: (string | Choice)[], text?: string, speak?: string, options?: ChoiceFactoryOptions, conversationType?: string): Activity;
+    static heroCard(choices: (string | Choice)[], text?: string, speak?: string): Activity;
     static inline(choices: (string | Choice)[], text?: string, speak?: string, options?: ChoiceFactoryOptions): Activity;
     static list(choices: (string | Choice)[], text?: string, speak?: string, options?: ChoiceFactoryOptions): Activity;
     // (undocumented)
     static readonly MAX_ACTION_TITLE_LENGTH = 20;
+    static suggestedActions(choices: (string | Choice)[], text?: string, speak?: string): Activity;
     static toChoices(choices: (string | Choice)[] | undefined): Choice[];
 }
 
@@ -301,6 +304,11 @@ export class DialogContextMemoryScope extends MemoryScope {
 export interface DialogDependencies {
     getDependencies(): Dialog[];
 }
+
+// @public
+export const DialogErrors: {
+    [key: string]: AgentErrorDefinition;
+};
 
 // @public
 export interface DialogEvent {
@@ -563,7 +571,7 @@ export class PercentPathResolver extends AliasPathResolver {
 // @public
 export abstract class Prompt<T> extends Dialog {
     protected constructor(dialogId: string, validator?: PromptValidator<T>);
-    protected appendChoices(prompt: string | Activity, channelId: string, choices: (string | Choice)[], style: ListStyle, options?: ChoiceFactoryOptions): Activity;
+    protected appendChoices(prompt: string | Activity, channelId: string, choices: (string | Choice)[], style: ListStyle, options?: ChoiceFactoryOptions, conversationType?: string): Activity;
     beginDialog(dialogContext: DialogContext, options: PromptOptions): Promise<DialogTurnResult>;
     continueDialog(dialogContext: DialogContext): Promise<DialogTurnResult>;
     protected onPreBubbleEvent(dialogContext: DialogContext, event: DialogEvent): Promise<boolean>;
