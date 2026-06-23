@@ -5,12 +5,13 @@
 
 import { randomUUID } from 'crypto'
 
-import { Activity, Attachment, ConversationAccount } from '@microsoft/agents-activity'
+import { Activity, Attachment, ConversationAccount, ExceptionHelper } from '@microsoft/agents-activity'
 import { Observable, BehaviorSubject, type Subscriber } from 'rxjs'
 
 import { CopilotStudioClient } from './copilotStudioClient'
 import { debug, trace, redactString } from '@microsoft/agents-telemetry'
 import { CopilotStudioClientTraceDefinitions } from './observability'
+import { Errors } from './errorHelper'
 
 const logger = debug('copilot-studio:webchat')
 
@@ -363,15 +364,15 @@ export class CopilotStudioWebChat {
             logger.info('--> Preparing to send activity to Copilot Studio ...')
 
             if (!activity) {
-              throw new Error('Activity cannot be null.')
+              throw ExceptionHelper.generateException(Error, Errors.ActivityCannotBeNull)
             }
 
             if (ended) {
-              throw new Error('Connection has been ended.')
+              throw ExceptionHelper.generateException(Error, Errors.ConnectionAlreadyEnded)
             }
 
             if (!activitySubscriber) {
-              throw new Error('Activity subscriber is not initialized.')
+              throw ExceptionHelper.generateException(Error, Errors.ActivitySubscriberNotInitialized)
             }
 
             const result = createObservable<string>(async (subscriber) => {
@@ -471,7 +472,10 @@ async function processBlobAttachment (attachment: Attachment): Promise<Attachmen
   try {
     const response = await fetch(newContentUrl)
     if (!response.ok) {
-      throw new Error(`Failed to fetch blob URL: ${response.status} ${response.statusText}`)
+      throw ExceptionHelper.generateException(Error, Errors.FailedToFetchBlobUrl, undefined, {
+        status: String(response.status),
+        statusText: response.statusText
+      })
     }
 
     const blob = await response.blob()

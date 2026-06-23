@@ -243,7 +243,7 @@ export class TeamsActivityHandler extends ActivityHandler {
   //   _context: TurnContext,
   //   _query: O365ConnectorCardActionQuery
   // ): Promise<void> {
-  //   throw new Error('NotImplemented')
+  //   throw ExceptionHelper.generateException(Error, Errors.NotImplemented)
   // }
 
   // TODO: Uncomment when SigninStateVerificationQuery is available
@@ -257,7 +257,7 @@ export class TeamsActivityHandler extends ActivityHandler {
   //   _context: TurnContext,
   //   _query: SigninStateVerificationQuery
   // ): Promise<void> {
-  //   throw new Error('NotImplemented')
+  //   throw ExceptionHelper.generateException(Error, Errors.NotImplemented)
   // }
 
   // TODO: Uncomment when SigninStateVerificationQuery is available
@@ -271,7 +271,7 @@ export class TeamsActivityHandler extends ActivityHandler {
   //   _context: TurnContext,
   //   _query: SigninStateVerificationQuery
   // ): Promise<void> {
-  //   throw new Error('NotImplemented')
+  //   throw ExceptionHelper.generateException(Error, Errors.NotImplemented)
   // }
 
   /**
@@ -321,7 +321,7 @@ export class TeamsActivityHandler extends ActivityHandler {
   //  * @returns {Promise<TabResponse>} The tab response.
   //  */
   // protected async handleTeamsTabFetch (_context: TurnContext, _tabRequest: TabRequest): Promise<TabResponse> {
-  //   throw new Error('NotImplemented')
+  //   throw ExceptionHelper.generateException(Error, Errors.NotImplemented)
   // }
 
   // TODO: Uncomment when TabSubmit is available
@@ -332,7 +332,7 @@ export class TeamsActivityHandler extends ActivityHandler {
   //  * @returns {Promise<TabResponse>} The tab response.
   //  */
   // protected async handleTeamsTabSubmit (_context: TurnContext, _tabSubmit: TabSubmit): Promise<TabResponse> {
-  //   throw new Error('NotImplemented')
+  //   throw ExceptionHelper.generateException(Error, Errors.NotImplemented)
   // }
 
   /**

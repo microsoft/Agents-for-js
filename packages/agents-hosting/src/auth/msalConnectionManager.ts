@@ -3,12 +3,13 @@
  * Licensed under the MIT License.
  */
 
-import { Activity, RoleTypes } from '@microsoft/agents-activity'
+import { Activity, ExceptionHelper, RoleTypes } from '@microsoft/agents-activity'
 import { debug } from '@microsoft/agents-telemetry'
 import { AuthConfiguration, AuthType, resolveAuthority } from './authConfiguration'
 import { Connections } from './connections'
 import { MsalTokenProvider } from './msalTokenProvider'
 import { JwtPayload } from 'jsonwebtoken'
+import { Errors } from '../errorHelper'
 
 const logger = debug('agents:authorization:connections')
 
@@ -70,7 +71,7 @@ export class MsalConnectionManager implements Connections {
   getConnection (connectionName: string): MsalTokenProvider {
     const conn = this._connections.get(connectionName)
     if (!conn) {
-      throw new Error(`Connection not found: ${connectionName}`)
+      throw ExceptionHelper.generateException(Error, Errors.ConnectionNotFound, undefined, { connectionName })
     }
     return this.applyConnectionDefaults(conn)
   }
@@ -81,7 +82,7 @@ export class MsalConnectionManager implements Connections {
    */
   getDefaultConnection (): MsalTokenProvider {
     if (this._connections.size === 0) {
-      throw new Error('No connections found for this Agent in the Connections Configuration.')
+      throw ExceptionHelper.generateException(Error, Errors.NoConnectionsFoundInConfiguration)
     }
 
     // Return the wildcard map item instance.
@@ -116,7 +117,7 @@ export class MsalConnectionManager implements Connections {
    */
   getTokenProvider (identity: JwtPayload, serviceUrl: string): MsalTokenProvider {
     if (!identity) {
-      throw new Error('Identity is required to get the token provider.')
+      throw ExceptionHelper.generateException(Error, Errors.IdentityRequiredForTokenProvider)
     }
 
     let audience
@@ -126,7 +127,7 @@ export class MsalConnectionManager implements Connections {
       audience = identity.aud
     }
 
-    if (!audience || !serviceUrl) throw new Error('Audience and Service URL are required to get the token provider.')
+    if (!audience || !serviceUrl) throw ExceptionHelper.generateException(Error, Errors.AudienceAndServiceUrlRequiredForTokenProvider)
 
     if (this._connectionsMap.length === 0) {
       logger.debug('no connectionsMap, using default connection for serviceUrl=%s', serviceUrl)
@@ -154,7 +155,7 @@ export class MsalConnectionManager implements Connections {
         }
       }
     }
-    throw new Error(`No connection found for audience: ${audience} and serviceUrl: ${serviceUrl}`)
+    throw ExceptionHelper.generateException(Error, Errors.NoConnectionForAudienceAndServiceUrl, undefined, { audience, serviceUrl })
   }
 
   /**

@@ -1,11 +1,12 @@
 import { AuthConfiguration, MsalTokenProvider } from '../auth'
-import { Activity, ConversationReference, RoleTypes } from '@microsoft/agents-activity'
+import { Activity, ConversationReference, ExceptionHelper, RoleTypes } from '@microsoft/agents-activity'
 import { randomUUID } from 'crypto'
 import { debug } from '@microsoft/agents-telemetry'
 import { ConversationState } from '../state'
 import { TurnContext } from '../turnContext'
 import { trace } from '@microsoft/agents-telemetry'
 import { AgentClientTraceDefinitions } from '../observability'
+import { Errors } from '../errorHelper'
 
 const logger = debug('agents:agent-client')
 
@@ -125,7 +126,7 @@ export class AgentClient {
 
       if (!response.ok) {
         await conversationDataAccessor.delete(context, { channelId: activityCopy.channelId!, conversationId: activityCopy.conversation!.id })
-        throw new Error(`Failed to post activity to agent: ${response.statusText}`)
+        throw ExceptionHelper.generateException(Error, Errors.FailedToPostActivityToAgent, undefined, { statusText: response.statusText })
       }
       return response.statusText
     })
@@ -150,10 +151,10 @@ export class AgentClient {
           serviceUrl: process.env[`${agentName}_serviceUrl`]!
         }
       } else {
-        throw new Error(`Missing agent client config for agent ${agentName}`)
+        throw ExceptionHelper.generateException(Error, Errors.MissingAgentClientConfig, undefined, { agentName })
       }
     } else {
-      throw new Error('Agent name is required')
+      throw ExceptionHelper.generateException(Error, Errors.AgentNameRequired)
     }
   }
 }

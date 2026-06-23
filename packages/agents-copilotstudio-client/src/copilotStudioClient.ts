@@ -6,7 +6,7 @@
 import { createEventSource, EventSourceClient } from 'eventsource-client'
 import { ConnectionSettings } from './connectionSettings'
 import { getCopilotStudioConnectionUrl, getCopilotStudioSubscribeUrl } from './powerPlatformEnvironment'
-import { Activity, ActivityTypes, ConversationAccount } from '@microsoft/agents-activity'
+import { Activity, ActivityTypes, ConversationAccount, ExceptionHelper } from '@microsoft/agents-activity'
 import { ExecuteTurnRequest } from './executeTurnRequest'
 import { debug, trace } from '@microsoft/agents-telemetry'
 import { UserAgentHelper } from './userAgentHelper'
@@ -15,6 +15,7 @@ import { StartRequest } from './startRequest'
 import { StartResponse, ExecuteTurnResponse, createStartResponse, createExecuteTurnResponse } from './responses'
 import { SubscribeEvent } from './subscribeEvent'
 import { CopilotStudioClientTraceDefinitions } from './observability'
+import { Errors } from './errorHelper'
 
 const logger = debug('copilot-studio:client')
 
@@ -289,7 +290,7 @@ export class CopilotStudioClient {
     managed.record({ activity, conversationId })
     try {
       if (!conversationId || !conversationId.trim()) {
-        throw new Error('conversationId is required for executeStreaming')
+        throw ExceptionHelper.generateException(Error, Errors.ExecuteStreamingConversationIdRequired)
       }
 
       const uriExecute = getCopilotStudioConnectionUrl(this.settings, conversationId)
@@ -455,7 +456,7 @@ export class CopilotStudioClient {
     managed.record({ conversationId, lastReceivedEventId })
     try {
       if (!conversationId || !conversationId.trim()) {
-        throw new Error('conversationId is required for subscribeAsync')
+        throw ExceptionHelper.generateException(Error, Errors.SubscribeAsyncConversationIdRequired)
       }
 
       const url = getCopilotStudioSubscribeUrl(this.settings, conversationId)

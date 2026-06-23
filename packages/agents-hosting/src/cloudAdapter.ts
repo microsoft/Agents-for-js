@@ -289,7 +289,7 @@ export class CloudAdapter extends BaseAdapter {
    */
   protected resolveIfConnectorClientIsNeeded (activity: Activity): boolean {
     if (!activity) {
-      throw new TypeError('`activity` parameter required')
+      throw ExceptionHelper.generateException(TypeError, Errors.ActivityParameterRequired)
     }
 
     switch (activity.deliveryMode) {
@@ -392,7 +392,7 @@ export class CloudAdapter extends BaseAdapter {
             headers
           )
         } else {
-          throw new Error('Could not create connector client for agentic user')
+          throw ExceptionHelper.generateException(Error, Errors.CannotCreateConnectorClientForAgenticUser)
         }
       } else {
         // ABS tokens will not have an azp/appid so use the botframework scope.
@@ -609,7 +609,7 @@ export class CloudAdapter extends BaseAdapter {
         res.end()
       }
       if (!request.body) {
-        throw new TypeError('`request.body` parameter required, make sure express.json() is used as middleware')
+        throw ExceptionHelper.generateException(TypeError, Errors.RequestBodyParameterRequired)
       }
       const incoming = normalizeIncomingActivity(request.body!)
       const activity = Activity.fromObject(incoming)
@@ -726,11 +726,11 @@ export class CloudAdapter extends BaseAdapter {
   async updateActivity (context: TurnContext, activity: Activity): Promise<ResourceResponse | void> {
     return trace(AdapterTraceDefinitions.updateActivity, async ({ record }) => {
       if (!context) {
-        throw new TypeError('`context` parameter required')
+        throw ExceptionHelper.generateException(TypeError, Errors.ContextParameterRequired)
       }
 
       if (!activity) {
-        throw new TypeError('`activity` parameter required')
+        throw ExceptionHelper.generateException(TypeError, Errors.ActivityParameterRequired)
       }
 
       record({ activity })
@@ -758,7 +758,7 @@ export class CloudAdapter extends BaseAdapter {
   async deleteActivity (context: TurnContext, reference: Partial<ConversationReference>): Promise<void> {
     return trace(AdapterTraceDefinitions.deleteActivity, async ({ record }) => {
       if (!context) {
-        throw new TypeError('`context` parameter required')
+        throw ExceptionHelper.generateException(TypeError, Errors.ContextParameterRequired)
       }
 
       if (!reference || !reference.serviceUrl || (reference.conversation == null) || !reference.conversation.id || !reference.activityId) {
@@ -791,7 +791,7 @@ export class CloudAdapter extends BaseAdapter {
       }
 
       if (!botAppIdOrIdentity) {
-        throw new TypeError('continueConversation: botAppIdOrIdentity is required')
+        throw ExceptionHelper.generateException(TypeError, Errors.ContinueConversationBotAppIdOrIdentityRequired)
       }
       const botAppId = typeof botAppIdOrIdentity === 'string' ? botAppIdOrIdentity : botAppIdOrIdentity.aud as string
 
@@ -911,10 +911,10 @@ export class CloudAdapter extends BaseAdapter {
     logic: (context: TurnContext) => Promise<void>
   ): Promise<void> {
     if (typeof serviceUrl !== 'string' || !serviceUrl) {
-      throw new TypeError('`serviceUrl` must be a non-empty string')
+      throw ExceptionHelper.generateException(TypeError, Errors.ServiceUrlRequired)
     }
-    if (!conversationParameters) throw new TypeError('`conversationParameters` must be defined')
-    if (!logic) throw new TypeError('`logic` must be defined')
+    if (!conversationParameters) throw ExceptionHelper.generateException(TypeError, Errors.ConversationParametersRequired)
+    if (!logic) throw ExceptionHelper.generateException(TypeError, Errors.LogicParameterRequired)
 
     const identity = CloudAdapter.createIdentity(audience)
     const restClient = await this.createConnectorClient(serviceUrl, audience, identity)

@@ -15,7 +15,7 @@ describe('MemoryStorage', () => {
         async () => await memoryStorage.read([]),
         {
           name: 'ReferenceError',
-          message: 'Keys are required when reading.'
+          message: /Keys are required when reading\./
         }
       )
     })
@@ -26,7 +26,7 @@ describe('MemoryStorage', () => {
         async () => await memoryStorage.read(null),
         {
           name: 'ReferenceError',
-          message: 'Keys are required when reading.'
+          message: /Keys are required when reading\./
         }
       )
     })
@@ -49,7 +49,7 @@ describe('MemoryStorage', () => {
         async () => await memoryStorage.write([]),
         {
           name: 'ReferenceError',
-          message: 'Changes are required when writing.'
+          message: /Changes are required when writing\./
         }
       )
     })
@@ -60,7 +60,7 @@ describe('MemoryStorage', () => {
         async () => await memoryStorage.write(null),
         {
           name: 'ReferenceError',
-          message: 'Changes are required when writing.'
+          message: /Changes are required when writing\./
         }
       )
     })
@@ -86,7 +86,7 @@ describe('MemoryStorage', () => {
           await memoryStorage.write({ key1: { value: 'conflict', eTag: 'invalid' } }),
         {
           name: 'Error',
-          message: 'Storage: error writing "key1" due to eTag conflict.'
+          message: /Storage: error writing "key1" due to eTag conflict\./
         }
       )
     })

@@ -6,9 +6,11 @@
 import { AgentType } from './agentType'
 import { ConnectionSettings } from './connectionSettings'
 import { debug } from '@microsoft/agents-telemetry'
+import { ExceptionHelper } from '@microsoft/agents-activity'
 import { PowerPlatformCloud } from './powerPlatformCloud'
 import { PrebuiltBotStrategy } from './strategies/prebuiltBotStrategy'
 import { PublishedBotStrategy } from './strategies/publishedBotStrategy'
+import { Errors } from './errorHelper'
 
 const logger = debug('copilot-studio:power-platform')
 
@@ -25,13 +27,13 @@ export function getCopilotStudioConnectionUrl (
 ): string {
   const schemaName = settings.schemaName?.trim() || settings.agentIdentifier?.trim()
   if (!settings.directConnectUrl?.trim() && (!settings.environmentId?.trim() || !schemaName?.trim())) {
-    throw new Error('Either directConnectUrl OR both environmentId and schemaName/agentIdentifier must be provided')
+    throw ExceptionHelper.generateException(Error, Errors.MissingConnectionUrlSettings)
   }
 
   if (settings.directConnectUrl?.trim()) {
     logger.debug(`Using direct connection: ${settings.directConnectUrl}`)
     if (!isValidUri(settings.directConnectUrl)) {
-      throw new Error('directConnectUrl must be a valid URL')
+      throw ExceptionHelper.generateException(Error, Errors.InvalidDirectConnectUrl)
     }
 
     return createURL(settings.directConnectUrl, conversationId).href
@@ -45,13 +47,11 @@ export function getCopilotStudioConnectionUrl (
 
   if (cloudSetting === PowerPlatformCloud.Other) {
     if (!settings.customPowerPlatformCloud?.trim()) {
-      throw new Error('customPowerPlatformCloud must be provided when PowerPlatformCloud is Other')
+      throw ExceptionHelper.generateException(Error, Errors.CustomPowerPlatformCloudRequired)
     } else if (isValidUri(settings.customPowerPlatformCloud)) {
       logger.debug(`Using custom Power Platform cloud: ${settings.customPowerPlatformCloud}`)
     } else {
-      throw new Error(
-        'customPowerPlatformCloud must be a valid URL'
-      )
+      throw ExceptionHelper.generateException(Error, Errors.InvalidCustomPowerPlatformCloud)
     }
   }
 
@@ -85,7 +85,7 @@ export function getCopilotStudioSubscribeUrl (
   conversationId: string
 ): string {
   if (!conversationId || !conversationId.trim()) {
-    throw new Error('conversationId is required for subscribe URL')
+    throw ExceptionHelper.generateException(Error, Errors.SubscribeUrlConversationIdRequired)
   }
 
   const baseUrl = getCopilotStudioConnectionUrl(settings, conversationId)
@@ -115,10 +115,10 @@ export function getTokenAudience (
   directConnectUrl: string = ''): string {
   if (!directConnectUrl && !settings?.directConnectUrl) {
     if (cloud === PowerPlatformCloud.Other && !cloudBaseAddress) {
-      throw new Error('cloudBaseAddress must be provided when PowerPlatformCloudCategory is Other')
+      throw ExceptionHelper.generateException(Error, Errors.CloudBaseAddressRequiredForCategoryOther)
     }
     if (!settings && cloud === PowerPlatformCloud.Unknown) {
-      throw new Error('Either settings or cloud must be provided')
+      throw ExceptionHelper.generateException(Error, Errors.SettingsOrCloudRequired)
     }
     if (settings && settings.cloud && settings.cloud !== PowerPlatformCloud.Unknown) {
       cloud = settings.cloud
@@ -130,7 +130,7 @@ export function getTokenAudience (
         cloud = PowerPlatformCloud.Other
         cloudBaseAddress = settings.customPowerPlatformCloud
       } else {
-        throw new Error('Either CustomPowerPlatformCloud or cloudBaseAddress must be provided when PowerPlatformCloudCategory is Other')
+        throw ExceptionHelper.generateException(Error, Errors.CustomCloudOrBaseAddressRequired)
       }
     }
     cloudBaseAddress ??= 'api.unknown.powerplatform.com'
@@ -144,17 +144,17 @@ export function getTokenAudience (
         const cloudToTest: PowerPlatformCloud = settings?.cloud ?? cloud
 
         if (cloudToTest === PowerPlatformCloud.Other || cloudToTest === PowerPlatformCloud.Unknown) {
-          throw new Error('Unable to resolve the PowerPlatform Cloud from DirectConnectUrl. The Token Audience resolver requires a specific PowerPlatformCloudCategory.')
+          throw ExceptionHelper.generateException(Error, Errors.UnableToResolveCloudFromDirectConnectUrl)
         }
         if ((cloudToTest as PowerPlatformCloud) !== PowerPlatformCloud.Unknown) {
           return `https://${getEndpointSuffix(cloudToTest, '')}/.default`
         } else {
-          throw new Error('Unable to resolve the PowerPlatform Cloud from DirectConnectUrl. The Token Audience resolver requires a specific PowerPlatformCloudCategory.')
+          throw ExceptionHelper.generateException(Error, Errors.UnableToResolveCloudFromDirectConnectUrl)
         }
       }
       return `https://${getEndpointSuffix(decodeCloudFromURI(new URL(directConnectUrl)), '')}/.default`
     } else {
-      throw new Error('DirectConnectUrl must be provided when DirectConnectUrl is set')
+      throw ExceptionHelper.generateException(Error, Errors.DirectConnectUrlRequiredWhenSet)
     }
   }
 }
@@ -197,7 +197,7 @@ function getEnvironmentEndpoint (
   cloudBaseAddress?: string
 ): URL {
   if (cloud === PowerPlatformCloud.Other && (!cloudBaseAddress || !cloudBaseAddress.trim())) {
-    throw new Error('cloudBaseAddress must be provided when PowerPlatformCloud is Other')
+    throw ExceptionHelper.generateException(Error, Errors.CloudBaseAddressRequiredForCloudOther)
   }
 
   cloudBaseAddress = cloudBaseAddress ?? 'api.unknown.powerplatform.com'
@@ -247,7 +247,7 @@ function getEndpointSuffix (
     case PowerPlatformCloud.Other:
       return cloudBaseAddress
     default:
-      throw new Error(`Invalid cluster category value: ${category}`)
+      throw ExceptionHelper.generateException(Error, Errors.InvalidClusterCategory, undefined, { category })
   }
 }
 

@@ -12,6 +12,7 @@ import { attempt, isPromise } from './utils/attempt.js'
 
 import { SpanNames, MetricNames } from './observability/constants.js'
 import { noopMetric, noopTrace } from './utils/noop.js'
+export { Errors as TelemetryErrors } from './errorHelper.js'
 
 const logger = createDebugLogger('agents:telemetry')
 

@@ -3,11 +3,12 @@
  * Licensed under the MIT License.
  */
 
-import { Activity, addAIToActivity, Attachment, Entity, ClientCitation, SensitivityUsageInfo, DeliveryModes, Channels } from '@microsoft/agents-activity'
+import { Activity, addAIToActivity, Attachment, Entity, ClientCitation, SensitivityUsageInfo, DeliveryModes, Channels, ExceptionHelper } from '@microsoft/agents-activity'
 import { TurnContext } from '../../turnContext'
 import { Citation } from './citation'
 import { CitationUtil } from './citationUtil'
 import { debug } from '@microsoft/agents-telemetry'
+import { Errors } from '../../errorHelper'
 
 const logger = debug('agents:streamingResponse')
 
@@ -137,7 +138,7 @@ export class StreamingResponse {
     }
 
     if (this._ended) {
-      throw new Error('The stream has already ended.')
+      throw ExceptionHelper.generateException(Error, Errors.StreamAlreadyEnded)
     }
 
     // Queue a typing activity
@@ -169,7 +170,7 @@ export class StreamingResponse {
     }
 
     if (this._ended) {
-      throw new Error('The stream has already ended.')
+      throw ExceptionHelper.generateException(Error, Errors.StreamAlreadyEnded)
     }
 
     // Update full message text

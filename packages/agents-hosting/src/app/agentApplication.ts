@@ -155,12 +155,12 @@ export class AgentApplication<TState extends TurnState> {
     }
 
     if (this._options.longRunningMessages && !this._adapter && !this._options.agentAppId) {
-      throw new Error('The Application.longRunningMessages property is unavailable because no adapter was configured in the app.')
+      throw ExceptionHelper.generateException(Error, Errors.LongRunningMessagesPropertyUnavailable)
     }
 
     if (this._options.transcriptLogger) {
       if (!this._options.adapter) {
-        throw new Error('The Application.transcriptLogger property is unavailable because no adapter was configured in the app.')
+        throw ExceptionHelper.generateException(Error, Errors.TranscriptLoggerPropertyUnavailable)
       } else {
         this._adapter?.use(new TranscriptLoggerMiddleware(this._options.transcriptLogger))
       }
@@ -205,7 +205,7 @@ export class AgentApplication<TState extends TurnState> {
    */
   public get authorization (): Authorization {
     if (this._authorizationManager.handlers.length === 0) {
-      throw new Error('The Application.authorization property is unavailable because no authorization options were configured.')
+      throw ExceptionHelper.generateException(Error, Errors.AuthorizationOptionNotAvailable)
     }
     return this._authorization
   }
@@ -400,9 +400,7 @@ export class AgentApplication<TState extends TurnState> {
     isAgenticRoute: boolean = false
   ): this {
     if (typeof handler !== 'function') {
-      throw new Error(
-                `ConversationUpdate 'handler' for ${event} is ${typeof handler}. Type of 'handler' must be a function.`
-      )
+      throw ExceptionHelper.generateException(Error, Errors.ConversationUpdateHandlerMustBeFunction, undefined, { event, handlerType: typeof handler })
     }
 
     const selector = this.createConversationUpdateSelector(event, isAgenticRoute)
@@ -424,9 +422,7 @@ export class AgentApplication<TState extends TurnState> {
     logic: (context: TurnContext) => Promise<void>
   ): Promise<void> {
     if (!this._adapter) {
-      throw new Error(
-        "You must configure the Application with an 'adapter' before calling Application.continueConversationAsync()"
-      )
+      throw ExceptionHelper.generateException(Error, Errors.ContinueConversationAdapterRequired)
     }
 
     if (!this.options.agentAppId) {
@@ -510,9 +506,7 @@ export class AgentApplication<TState extends TurnState> {
     if (this.options.authorization) {
       this.authorization.onSignInSuccess(handler)
     } else {
-      throw new Error(
-        'The Application.authorization property is unavailable because no authorization options were configured.'
-      )
+      throw ExceptionHelper.generateException(Error, Errors.AuthorizationOptionNotAvailable)
     }
     return this
   }
@@ -540,9 +534,7 @@ export class AgentApplication<TState extends TurnState> {
     if (this.options.authorization) {
       this.authorization.onSignInFailure(handler)
     } else {
-      throw new Error(
-        'The Application.authorization property is unavailable because no authorization options were configured.'
-      )
+      throw ExceptionHelper.generateException(Error, Errors.AuthorizationOptionNotAvailable)
     }
     return this
   }
@@ -965,7 +957,7 @@ export class AgentApplication<TState extends TurnState> {
    */
   public registerExtension<T extends AgentExtension<TState>> (extension: T, regcb : (ext:T) => void): void {
     if (this._extensions.includes(extension)) {
-      throw new Error('Extension already registered')
+      throw ExceptionHelper.generateException(Error, Errors.ExtensionAlreadyRegistered)
     }
     this._extensions.push(extension)
     regcb(extension)

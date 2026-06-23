@@ -72,8 +72,13 @@ describe('authorizeJWT', () => {
   })
 
   it('should respond with 401 if token is invalid', async () => {
-    const token = 'invalid-token'
+    const token = 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjbGllbnQtaWQiLCJpc3MiOiJodHRwczovL2FwaS5ib3RmcmFtZXdvcmsuY29tIn0.signature'
     req.headers.authorization = `Bearer ${token}`
+
+    const decodeStub = sinon.stub(jwt, 'decode').returns({
+      aud: config.clientId,
+      iss: 'https://api.botframework.com'
+    })
 
     const verifyStub = sinon.stub(jwt, 'verify').callsFake((token, secretOrPublicKey, options, callback) => {
       if (callback) {
@@ -87,6 +92,7 @@ describe('authorizeJWT', () => {
     assert((res.send as sinon.SinonStub).calledOnceWith({ 'jwt-auth-error': 'invalid token' }))
     assert((next as sinon.SinonStub).notCalled)
 
+    decodeStub.restore()
     verifyStub.restore()
   })
 
