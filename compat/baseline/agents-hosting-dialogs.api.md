@@ -682,6 +682,17 @@ export class ThisMemoryScope extends MemoryScope {
     setMemory(dialogContext: DialogContext, memory: object): void;
 }
 
+// @public
+export interface Token {
+    end: number;
+    normalized: string;
+    start: number;
+    text: string;
+}
+
+// @public
+export type TokenizerFunction = (text: string, locale?: string) => Token[];
+
 export { TurnContext }
 
 // @public

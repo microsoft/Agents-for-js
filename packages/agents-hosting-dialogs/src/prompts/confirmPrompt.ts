@@ -76,7 +76,7 @@ export interface ChoiceDefaultsConfirmPrompt {
  */
 export class ConfirmPrompt extends Prompt<boolean> {
   /**
-     * A dictionary of Default Choices based on {@link PromptCultureModels.getSupportedCultures | PromptCultureModels.getSupportedCultures} method.
+     * A dictionary of default choices based on the supported prompt cultures.
      * Can be replaced by user using the constructor that contains choiceDefaults.
      * This is initially set in the constructor.
      */
@@ -112,7 +112,7 @@ export class ConfirmPrompt extends Prompt<boolean> {
      * @param dialogId Unique ID of the dialog within its parent {@link DialogSet} or {@link ComponentDialog}.
      * @param validator (Optional) validator that will be called each time the user responds to the prompt.
      * @param defaultLocale (Optional) locale to use if the `TurnContext.activity.locale` is not specified. Defaults to a value of `en-us`.
-     * @param choiceDefaults (Optional) Overrides the dictionary of Default Choices on {@link PromptCultureModels.getSupportedCultures | PromptCultureModels.getSupportedCultures} method.
+     * @param choiceDefaults (Optional) Overrides the dictionary of default choices for supported prompt cultures.
      */
   constructor (
     dialogId: string,

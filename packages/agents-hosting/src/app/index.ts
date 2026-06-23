@@ -3,6 +3,14 @@ export * from './agentApplicationBuilder'
 export * from './agentApplicationOptions'
 export * from './appRoute'
 export { Authorization } from './auth/authorization'
+export type { AgenticAuthorizationOptions, AzureBotAuthorizationOptions } from './auth/handlers'
+export type {
+  AuthorizationOptions,
+  AuthorizationHandlerTokenOptions,
+  AzureBotAuthorizationOptionsLegacy,
+  AzureBotAuthorizationOptionsMessages,
+  AzureBotAuthorizationOptionsOBO
+} from './auth/types'
 export * from './routeHandler'
 export * from './routeList'
 export * from './routeRank'

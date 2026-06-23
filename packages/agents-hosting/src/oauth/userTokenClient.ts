@@ -64,7 +64,6 @@ export class UserTokenClient {
   /**
    * Creates a new instance of UserTokenClient with authentication.
    * @param baseURL - The base URL for the API.
-   * @param authConfig - The authentication configuration.
    * @param authProvider - The authentication provider.
    * @param scope - The scope for the authentication token.
    * @param headers - Optional headers to propagate in the request.

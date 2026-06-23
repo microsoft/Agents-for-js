@@ -57,6 +57,9 @@ export interface BatchOperationStateResponse {
     totalEntriesCount: number;
 }
 
+// @public (undocumented)
+export type CardButtonClickedHandler<TState extends TurnState> = (context: TurnContext, state: TState, cardData: unknown) => Promise<void>;
+
 // @public
 export type CancelOperationResponse = {
     _response: Response & {
@@ -87,6 +90,12 @@ export const channelInfoZodSchema: z.ZodObject<{
     name?: string | undefined;
 }>;
 
+// @public (undocumented)
+export type ConfigureQuerySettingUrlHandler<TState extends TurnState> = (context: TurnContext, state: TState, settings: unknown) => Promise<MessagingExtensionResponse>;
+
+// @public (undocumented)
+export type ConfigureSettingsHandler<TState extends TurnState> = (context: TurnContext, state: TState, settings: unknown) => Promise<void>;
+
 // @public
 export type CommandContext = 'message' | 'compose' | 'commandbox';
 
@@ -98,6 +107,25 @@ export interface FeedbackLoopData {
         feedback: string | Record<string, any>;
     };
     replyToId: string;
+}
+
+// @public (undocumented)
+export type FetchTaskHandler<TState extends TurnState> = (context: TurnContext, state: TState) => Promise<TaskModuleResponse>;
+
+// @public
+export interface FileConsentCardResponse {
+    action?: Action;
+    context?: any;
+    uploadInfo?: FileUploadInfo;
+}
+
+// @public
+export interface FileUploadInfo {
+    contentUrl?: string;
+    fileType?: string;
+    name?: string;
+    uniqueId?: string;
+    uploadUrl?: string;
 }
 
 // @public
@@ -148,6 +176,13 @@ export interface MeetingEventDetails extends MeetingDetailsBase {
 }
 
 // @public
+export interface MeetingInfo {
+    conversation: ConversationAccount;
+    details: MeetingDetails;
+    organizer: TeamsChannelAccount;
+}
+
+// @public
 export type MeetingNotification = TargetedMeetingNotification;
 
 // @public
@@ -160,6 +195,11 @@ export interface MeetingNotificationRecipientFailureInfo {
     errorCode: string;
     failureReason: string;
     recipientMri: string;
+}
+
+// @public
+export interface MeetingNotificationResponse {
+    recipientsFailureInfo?: MeetingNotificationRecipientFailureInfo[];
 }
 
 // @public
@@ -189,10 +229,118 @@ export interface MeetingTabIconSurface {
 }
 
 // @public
+export interface MessageActionsPayload {
+    attachmentLayout?: string;
+    attachments?: MessageActionsPayloadAttachment[];
+    body?: MessageActionsPayloadBody;
+    createdDateTime?: string;
+    deleted?: boolean;
+    from?: MessageActionsPayloadFrom;
+    id?: string;
+    importance?: Importance;
+    lastModifiedDateTime?: string;
+    linkToMessage?: string;
+    locale?: string;
+    mentions?: MessageActionsPayloadMention[];
+    messageType?: MessageType;
+    reactions?: MessageActionsPayloadReaction[];
+    replyToId?: string;
+    subject?: string;
+    summary?: string;
+}
+
+// @public
+export interface MessageActionsPayloadApp {
+    applicationIdentityType?: ApplicationIdentityType;
+    displayName?: string;
+    id?: string;
+}
+
+// @public
+export interface MessageActionsPayloadAttachment {
+    content?: any;
+    contentType?: string;
+    contentUrl?: string;
+    id?: string;
+    name?: string;
+    thumbnailUrl?: string;
+}
+
+// @public
+export interface MessageActionsPayloadBody {
+    content?: string;
+    contentType?: ContentType;
+    textContent?: string;
+}
+
+// @public
+export interface MessageActionsPayloadConversation {
+    conversationIdentityType?: ConversationIdentityType;
+    displayName?: string;
+    id?: string;
+}
+
+// @public
+export interface MessageActionsPayloadFrom {
+    application?: MessageActionsPayloadApp;
+    conversation?: MessageActionsPayloadConversation;
+    user?: MessageActionsPayloadUser;
+}
+
+// @public
+export interface MessageActionsPayloadMention {
+    id?: number;
+    mentioned?: MessageActionsPayloadFrom;
+    mentionText?: string;
+}
+
+// @public
+export interface MessageActionsPayloadReaction {
+    createdDateTime?: string;
+    reactionType?: ReactionType;
+    user?: MessageActionsPayloadFrom;
+}
+
+// @public
+export interface MessageActionsPayloadUser {
+    displayName?: string;
+    id?: string;
+    userIdentityType?: UserIdentityType;
+}
+
+// @public
+export class MessageExtension<TState extends TurnState> {
+    constructor(app: AgentApplication<TState>);
+    // (undocumented)
+    _app: AgentApplication<TState>;
+    onAnonymousQueryLink(handler: QueryLinkHandler<TurnState>): this;
+    onCardButtonClicked(handler: CardButtonClickedHandler<TurnState>): this;
+    onConfigurationQuerySettingUrl(handler: ConfigureQuerySettingUrlHandler<TurnState>): this;
+    onConfigurationSetting(handler: ConfigureSettingsHandler<TurnState>): this;
+    onFetchTask(handler: FetchTaskHandler<TurnState>): this;
+    onMessagePreviewEdit(handler: MessagePreviewEditHandler<TurnState>): this;
+    onMessagePreviewSend(handler: MessagePreviewSendHandler<TurnState>): this;
+    onQuery(handler: RouteQueryHandler<TState>): this;
+    onQueryLink(handler: QueryLinkHandler<TurnState>): this;
+    // (undocumented)
+    onSelectItem(handler: SelectItemHandler<TurnState>): this;
+    onSubmitAction(handler: SubmitActionHandler<TurnState>): this;
+}
+
+// @public
 export type MessagePreviewActionType = 'edit' | 'send';
+
+// @public (undocumented)
+export type MessagePreviewEditHandler<TState extends TurnState> = (context: TurnContext, state: TState, activity: Activity) => Promise<MessagingExtensionActionResponse>;
+
+// @public (undocumented)
+export type MessagePreviewSendHandler<TState extends TurnState> = (context: TurnContext, state: TState, activity: Activity) => Promise<void>;
 
 // @public
 export type MessagePreviewType = 'message' | 'continue';
+
+// @public
+export type MessageType = 'message';
 
 // @public
 export interface MessagingExtensionAction extends TaskModuleRequest {
@@ -328,10 +476,33 @@ export function parseTeamsChannelData(o: object): TeamsChannelData;
 // @public
 export function parseValueMessagingExtensionQuery(value: unknown): MessagingExtensionQuery;
 
+// @public (undocumented)
+export type QueryLinkHandler<TState extends TurnState> = (context: TurnContext, state: TState, url: string) => Promise<MessagingExtensionResult>;
+
+// @public
+export type ReactionType = 'like' | 'heart' | 'laugh' | 'surprised' | 'sad' | 'angry';
+
+// @public
+export class ReadReceiptInfo {
+    constructor(lastReadMessageId?: string);
+    static isMessageRead(compareMessageId: string, lastReadMessageId: string): boolean;
+    isMessageRead(compareMessageId: string): boolean;
+    lastReadMessageId: string;
+}
+
 // @public
 export interface ResourceResponse {
     id: string;
 }
+
+// @public (undocumented)
+export type RouteQueryHandler<TState extends TurnState> = (context: TurnContext, state: TState, query: MessagingExtensionQuery) => Promise<MessagingExtensionResult>;
+
+// @public (undocumented)
+export type SelectItemHandler<TState extends TurnState> = (context: TurnContext, state: TState, item: unknown) => Promise<MessagingExtensionResult>;
+
+// @public (undocumented)
+export type SubmitActionHandler<TState extends TurnState> = (context: TurnContext, state: TState, data: unknown) => Promise<MessagingExtensionActionResponse>;
 
 // @public
 export interface TargetedMeetingNotification extends MeetingNotificationBase<TargetedMeetingNotificationValue> {
@@ -346,6 +517,21 @@ export interface TargetedMeetingNotificationValue {
 }
 
 // @public
+export class TaskModule<TState extends TurnState> {
+    constructor(app: AgentApplication<TState>, options?: TaskModuleOptions);
+    // (undocumented)
+    _app: AgentApplication<TState>;
+    onConfigurationFetch(handler: RouteHandler<TurnState>): this;
+    onConfigurationSubmit(handler: RouteHandler<TurnState>): this;
+    onFetch(handler: RouteHandler<TurnState>): this;
+    onFetchByVerb(verb: string, handler: RouteHandler<TurnState>): this;
+    onSubmitByVerb(verb: string, handler: RouteHandler<TurnState>): this;
+    // (undocumented)
+    _options: TaskModuleOptions;
+    submit<TData extends Record<string, any> = Record<string, any>>(verb: string | RegExp | RouteSelector | (string | RegExp | RouteSelector)[], handler: (context: TurnContext, state: TState, data: TData) => Promise<TaskModuleTaskInfo | string | null | undefined>): AgentApplication<TState>;
+}
+
+// @public
 export interface TaskModuleContinueResponse extends TaskModuleResponseBase {
     value?: TaskModuleTaskInfo;
 }
@@ -353,6 +539,12 @@ export interface TaskModuleContinueResponse extends TaskModuleResponseBase {
 // @public
 export interface TaskModuleMessageResponse extends TaskModuleResponseBase {
     value?: string;
+}
+
+// @public (undocumented)
+export interface TaskModuleOptions {
+    // (undocumented)
+    taskDataFilter?: string;
 }
 
 // @public
@@ -842,6 +1034,9 @@ export interface TeamsPagedMembersResult {
 export interface TenantInfo {
     id?: string;
 }
+
+// @public
+export type UserIdentityType = 'aadUser' | 'onPremiseAadUser' | 'anonymousGuest' | 'federatedUser';
 
 // @public
 export interface UserMeetingDetails {

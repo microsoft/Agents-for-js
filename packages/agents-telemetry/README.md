@@ -97,7 +97,7 @@ sdk.start()
 
 All built-in span categories are enabled by default. To disable one or more categories without changing code, set `AGENTS_TELEMETRY_DISABLED_SPAN_CATEGORIES` in your environment:
 
-```env
+```
 AGENTS_TELEMETRY_DISABLED_SPAN_CATEGORIES=STORAGE,AUTHORIZATION
 
 # or

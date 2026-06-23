@@ -259,6 +259,13 @@ export class AgentExtension<TState extends TurnState> {
 export type AgentHandler = (context: TurnContext, next: () => Promise<void>) => Promise<any>;
 
 // @public
+export interface AgenticAuthorizationOptions {
+    altBlueprintConnectionName?: string;
+    scopes?: string[];
+    type: 'AgenticUserAuthorization' | 'agentic';
+}
+
+// @public
 export class AgentState {
     constructor(storage: Storage_2, storageKey: StorageKeyFactory);
     clear(context: TurnContext): Promise<void>;
@@ -434,6 +441,15 @@ export interface Authorization {
 }
 
 // @public
+export interface AuthorizationHandlerTokenOptions {
+    connection?: string;
+    scopes?: string[];
+}
+
+// @public
+export type AuthorizationOptions = Record<string, (AzureBotAuthorizationOptions & AzureBotAuthorizationOptionsLegacy) | AgenticAuthorizationOptions>;
+
+// @public
 export const authorizeJWT: (authConfig: AuthConfiguration) => (req: Request_2, res: Response_2, next: NextFunction) => Promise<void>;
 
 // @public
@@ -473,6 +489,51 @@ export enum AuthType {
     UserManagedIdentity = "UserManagedIdentity",
     // (undocumented)
     WorkloadIdentity = "WorkloadIdentity"
+}
+
+// @public
+export interface AzureBotAuthorizationOptions {
+    azureBotOAuthConnectionName?: string;
+    enableSso?: boolean;
+    invalidSignInRetryMax?: number;
+    invalidSignInRetryMaxExceededMessage?: string;
+    invalidSignInRetryMessage?: string;
+    invalidSignInRetryMessageFormat?: string;
+    oboConnectionName?: string;
+    oboScopes?: string[];
+    text?: string;
+    title?: string;
+    type?: 'AzureBotUserAuthorization' | undefined;
+}
+
+// @public
+export interface AzureBotAuthorizationOptionsLegacy {
+    // @deprecated
+    maxAttempts?: number;
+    // @deprecated
+    messages?: AzureBotAuthorizationOptionsMessages;
+    // @deprecated
+    name?: string;
+    // @deprecated
+    obo?: AzureBotAuthorizationOptionsOBO;
+}
+
+// @public @deprecated (undocumented)
+export interface AzureBotAuthorizationOptionsMessages {
+    // @deprecated (undocumented)
+    invalidCode?: string;
+    // @deprecated (undocumented)
+    invalidCodeFormat?: string;
+    // @deprecated (undocumented)
+    maxAttemptsExceeded?: string;
+}
+
+// @public @deprecated (undocumented)
+export interface AzureBotAuthorizationOptionsOBO {
+    // @deprecated (undocumented)
+    connection?: string;
+    // @deprecated (undocumented)
+    scopes?: string[];
 }
 
 // @public
@@ -594,6 +655,15 @@ export interface ConnectionMapItem {
     connection: string;
     // (undocumented)
     serviceUrl: string;
+}
+
+// @public (undocumented)
+export interface Connections {
+    getConnection: (name: string) => AuthProvider;
+    getDefaultConnection: () => AuthProvider;
+    getDefaultConnectionConfiguration: () => AuthConfiguration;
+    getTokenProvider: (identity: JwtPayload, serviceUrl: string) => AuthProvider;
+    getTokenProviderFromActivity: (identity: JwtPayload, activity: Activity) => AuthProvider;
 }
 
 // @public
