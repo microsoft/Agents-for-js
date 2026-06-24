@@ -16,8 +16,28 @@ const packageName = '@microsoft/agents-telemetry'
 const tscPath = resolve(repoDir, 'node_modules', 'typescript', 'bin', 'tsc')
 const esmBuildScriptPath = resolve(packageDir, 'scripts', 'esm.mjs')
 
+interface AgentsTelemetryPackageJson {
+  main: string
+  module: string
+  browser: string
+  types: string
+  exports: {
+    '.': {
+      import: { types: string, browser: string, default: string }
+      require: { types: string, default: string }
+      default: string
+    }
+  }
+}
+
 async function assertFileExists (filePath: string): Promise<void> {
   await access(filePath, fsConstants.F_OK)
+}
+
+async function readPackageJson (): Promise<AgentsTelemetryPackageJson> {
+  const packageJsonPath = resolve(packageDir, 'package.json')
+
+  return JSON.parse(await readFile(packageJsonPath, 'utf8')) as AgentsTelemetryPackageJson
 }
 
 async function runNode (args: string[]) {
@@ -34,6 +54,10 @@ async function runCommand (command: string, args: string[], cwd = repoDir) {
   })
 }
 
+function normalizeDeclarationSignature (contents: string): string {
+  return contents.replace(/\r\n/g, '\n').trimEnd()
+}
+
 describe('agents-telemetry platform build validation', () => {
   before(async () => {
     await runCommand(process.execPath, [tscPath, '--project', 'packages/agents-telemetry/tsconfig.json'])
@@ -42,20 +66,7 @@ describe('agents-telemetry platform build validation', () => {
   })
 
   it('should expose package entry points that map to built artifacts', async () => {
-    const packageJsonPath = resolve(packageDir, 'package.json')
-    const packageJson = JSON.parse(await readFile(packageJsonPath, 'utf8')) as {
-      main: string
-      module: string
-      browser: string
-      types: string
-      exports: {
-        '.': {
-          import: { types: string, browser: string, default: string }
-          require: { types: string, default: string }
-          default: string
-        }
-      }
-    }
+    const packageJson = await readPackageJson()
 
     const expectedArtifacts = [
       packageJson.main,
@@ -79,6 +90,43 @@ describe('agents-telemetry platform build validation', () => {
     ) as { type?: string }
 
     assert.strictEqual(esmPackageJson.type, 'module')
+  })
+
+  it('should expose the same runtime exports from CommonJS and ESM entry points', async () => {
+    const expectedExports = [
+      'MetricNames',
+      'SpanNames',
+      'debug',
+      'metric',
+      'redactScopes',
+      'redactString',
+      'redactUrl',
+      'trace',
+    ]
+    const cjsExports = await runNode([
+      '-p',
+      `JSON.stringify(Object.keys(require('${packageName}')).sort())`
+    ])
+    const esmExports = await runNode([
+      '--input-type=module',
+      '-e',
+      `const mod = await import('${packageName}'); console.log(JSON.stringify(Object.keys(mod).sort()))`
+    ])
+
+    assert.deepStrictEqual(JSON.parse(cjsExports.stdout), JSON.parse(esmExports.stdout))
+    assert.deepStrictEqual(JSON.parse(cjsExports.stdout), expectedExports)
+  })
+
+  it('should expose the same declaration signature from CommonJS and ESM entry points', async () => {
+    const packageJson = await readPackageJson()
+    const cjsDeclaration = normalizeDeclarationSignature(
+      await readFile(resolve(packageDir, packageJson.exports['.'].require.types), 'utf8')
+    )
+    const esmDeclaration = normalizeDeclarationSignature(
+      await readFile(resolve(packageDir, packageJson.exports['.'].import.types), 'utf8')
+    )
+
+    assert.strictEqual(cjsDeclaration, esmDeclaration)
   })
 
   it('should resolve with Node CommonJS require', async () => {
