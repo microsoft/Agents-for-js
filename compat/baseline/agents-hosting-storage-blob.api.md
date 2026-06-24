@@ -5,6 +5,7 @@
 ```ts
 
 import { Activity } from '@microsoft/agents-activity';
+import { AgentErrorDefinition } from '@microsoft/agents-activity';
 import { AnonymousCredential } from '@azure/storage-blob';
 import { PagedResult } from '@microsoft/agents-hosting';
 import { Storage as Storage_2 } from '@microsoft/agents-hosting';
@@ -27,6 +28,11 @@ export class BlobsStorage implements Storage_2 {
 export interface BlobsStorageOptions {
     storagePipelineOptions?: StoragePipelineOptions;
 }
+
+// @public
+export const BlobStorageErrors: {
+    [key: string]: AgentErrorDefinition;
+};
 
 // @public
 export class BlobsTranscriptStore implements TranscriptStore {

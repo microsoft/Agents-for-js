@@ -7,11 +7,62 @@
 import { ActivityHandler } from '@microsoft/agents-hosting';
 import { AgentApplication } from '@microsoft/agents-hosting';
 import { AuthConfiguration } from '@microsoft/agents-hosting';
+import { CloudAdapter } from '@microsoft/agents-hosting';
 import express from 'express';
+import { HeaderPropagationDefinition } from '@microsoft/agents-hosting';
+import { Request as Request_2 } from '@microsoft/agents-hosting';
 import { TurnState } from '@microsoft/agents-hosting';
 
 // @public
-export const startServer: (agent: AgentApplication<TurnState<any, any>> | ActivityHandler, authConfiguration?: AuthConfiguration) => express.Express;
+export type AgentRequestHandler = (req: Request_2, res: WebResponse) => Promise<void>;
+
+// @public
+export interface CloudAdapterResult {
+    // (undocumented)
+    adapter: CloudAdapter;
+    // (undocumented)
+    headerPropagation: HeaderPropagationDefinition | undefined;
+}
+
+// @public
+export const createAgentRequestHandler: (agent: AgentApplication<TurnState<any, any>> | ActivityHandler, authConfiguration?: AuthConfiguration) => AgentRequestHandler;
+
+// @public
+export const createCloudAdapter: (agent: AgentApplication<TurnState<any, any>> | ActivityHandler, authConfig?: AuthConfiguration) => CloudAdapterResult;
+
+// @public
+export function startServer(agent: AgentApplication<TurnState<any, any>> | ActivityHandler, options?: StartServerOptions): express.Express;
+
+// @public (undocumented)
+export function startServer(agent: AgentApplication<TurnState<any, any>> | ActivityHandler, authConfiguration?: AuthConfiguration): express.Express;
+
+// @public
+export interface StartServerOptions {
+    authConfig?: AuthConfiguration;
+    beforeListen?: (app: express.Express) => void;
+    port?: number | string;
+    rateLimitOptions?: {
+        windowMs: number;
+        max: number;
+    };
+    routePath?: string;
+}
+
+// @public
+export interface WebResponse {
+    // (undocumented)
+    end(): this;
+    // (undocumented)
+    headersSent: boolean;
+    // (undocumented)
+    send(body?: unknown): this;
+    // (undocumented)
+    setHeader(name: string, value: string): this;
+    // (undocumented)
+    status(code: number): this;
+    // (undocumented)
+    writableEnded: boolean;
+}
 
 // (No @packageDocumentation comment for this package)
 
