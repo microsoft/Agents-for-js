@@ -168,7 +168,7 @@ export class SidecarHttpClient {
 
   private static isPrivateOrLoopbackIPv6 (host: string): boolean {
     const lower = host.toLowerCase()
-    if (lower === '::1') return true // loopback (`::` is the unspecified address, not loopback)
+    if (lower === '::1' || lower === '0:0:0:0:0:0:0:1') return true // loopback (`::` is the unspecified address, not loopback)
     // IPv4-mapped/-translated addresses in either dotted (::ffff:127.0.0.1)
     // or hex-compressed (::ffff:7f00:1) form.
     const mappedIPv4 = SidecarHttpClient.extractMappedIPv4(lower)

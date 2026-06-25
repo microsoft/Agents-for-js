@@ -72,6 +72,7 @@ describe('SidecarHttpClient', () => {
       assert.doesNotThrow(() => SidecarHttpClient.validateBaseUrl('http://localhost:5000', false))
       assert.doesNotThrow(() => SidecarHttpClient.validateBaseUrl('http://127.0.0.1:5000', false))
       assert.doesNotThrow(() => SidecarHttpClient.validateBaseUrl('http://[::1]:5000', false))
+      assert.doesNotThrow(() => SidecarHttpClient.validateBaseUrl('http://[0:0:0:0:0:0:0:1]:5000', false))
     })
 
     it('allows private network hosts', () => {
