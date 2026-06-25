@@ -1,0 +1,321 @@
+name: Error codes documentation reminder
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'packages/**/src/errorHelper.ts'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: error-codes-doc-issue
+  cancel-in-progress: false
+
+jobs:
+  create-doc-issue:
+    name: Create documentation issue
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Find changed error helper files
+        id: changes
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          event_name="${{ github.event_name }}"
+          base_sha="${{ github.event.before }}"
+          head_sha="${{ github.sha }}"
+          empty_tree="$(git hash-object -t tree /dev/null)"
+
+          if [[ "$event_name" == "workflow_dispatch" ]]; then
+            if git rev-parse HEAD^ >/dev/null 2>&1; then
+              base_ref="HEAD^"
+            else
+              base_ref="$empty_tree"
+            fi
+          elif [[ -z "$base_sha" || "$base_sha" == "0000000000000000000000000000000000000000" ]]; then
+            if git rev-parse HEAD^ >/dev/null 2>&1; then
+              base_ref="HEAD^"
+            else
+              base_ref="$empty_tree"
+            fi
+          else
+            base_ref="$base_sha"
+
+            if ! git cat-file -e "$base_ref^{commit}" 2>/dev/null; then
+              git fetch --no-tags --depth=1 origin "$base_ref" || true
+            fi
+
+            if ! git cat-file -e "$base_ref^{commit}" 2>/dev/null; then
+              echo "::warning::Base commit $base_ref is not available in the checkout. Falling back to HEAD^."
+
+              if git rev-parse HEAD^ >/dev/null 2>&1; then
+                base_ref="HEAD^"
+              else
+                base_ref="$empty_tree"
+              fi
+            fi
+          fi
+
+          if git cat-file -e "$head_sha^{commit}" 2>/dev/null; then
+            head_ref="$head_sha"
+          else
+            echo "::warning::Head commit $head_sha is not available in the checkout. Falling back to HEAD."
+            head_ref="HEAD"
+          fi
+
+          echo "Comparing $base_ref..$head_ref"
+          changed_files="$(git diff --name-only "$base_ref" "$head_ref" | grep -E '^packages/[^/]+/src/[Ee]rrorHelper\.ts$' || true)"
+          changed_count="$(printf '%s\n' "$changed_files" | grep -c . || true)"
+
+          echo "Changed error helper file count: $changed_count"
+
+          if [[ "$changed_count" != "0" ]]; then
+            echo "Changed error helper files:"
+            printf '%s\n' "$changed_files"
+          else
+            echo "No changed error helper files matched packages/**/src/[Ee]rrorHelper.ts."
+          fi
+
+          {
+            echo 'files<<EOF'
+            printf '%s\n' "$changed_files"
+            echo 'EOF'
+            echo "count=$changed_count"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Generate Agents repo app token
+        if: steps.changes.outputs.count != '0'
+        id: agents-app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.AGENTS_DOCS_APP_CLIENT_ID }}
+          private-key: ${{ secrets.AGENTS_DOCS_APP_PRIVATE_KEY }}
+          owner: microsoft
+          repositories: Agents
+          permission-issues: write
+
+      - name: Create or update Agents issue
+        if: steps.agents-app-token.outcome == 'success'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.agents-app-token.outputs.token }}
+          script: |
+            const targetOwner = 'microsoft';
+            const targetRepo = 'Agents';
+            const title = 'Update AgentErrorCodesJS.md for Agents-for-js error changes';
+            const documentationLabel = 'documentation';
+            const changedFiles = `${{ steps.changes.outputs.files }}`
+              .split('\n')
+              .map((file) => file.trim())
+              .filter(Boolean);
+
+            const sourceRepo = `${context.repo.owner}/${context.repo.repo}`;
+            const commitUrl = `${context.serverUrl}/${sourceRepo}/commit/${context.sha}`;
+            const runUrl = `${context.serverUrl}/${sourceRepo}/actions/runs/${context.runId}`;
+            const docUrl = `${context.serverUrl}/${targetOwner}/${targetRepo}/blob/main/AgentErrorCodesJS.md`;
+            const marker = '<!-- agents-for-js-error-codes-doc-reminder -->';
+            const pendingChangesStart = '<!-- pending-error-helper-changes';
+            const pendingChangesEnd = 'pending-error-helper-changes -->';
+            const currentChange = {
+              sha: context.sha,
+              sourceRepo,
+              commitUrl,
+              runUrl,
+              changedFiles,
+            };
+
+            function getPendingChanges(issueBody) {
+              const body = issueBody || '';
+              const startIndex = body.indexOf(pendingChangesStart);
+              const endIndex = body.indexOf(pendingChangesEnd);
+
+              if (startIndex === -1 || endIndex === -1 || endIndex <= startIndex) {
+                return [];
+              }
+
+              const jsonStart = startIndex + pendingChangesStart.length;
+              const pendingChangesJson = body.slice(jsonStart, endIndex).trim();
+
+              try {
+                const pendingChanges = JSON.parse(pendingChangesJson);
+                return Array.isArray(pendingChanges) ? pendingChanges : [];
+              } catch (error) {
+                core.warning(`Could not parse existing pending changes: ${error.message}`);
+                return [];
+              }
+            }
+
+            function mergePendingChanges(existingChanges, newChange) {
+              const changesBySha = new Map();
+
+              for (const change of existingChanges) {
+                if (change?.sha) {
+                  changesBySha.set(change.sha, {
+                    sha: change.sha,
+                    sourceRepo: change.sourceRepo || sourceRepo,
+                    commitUrl: change.commitUrl || '',
+                    runUrl: change.runUrl || '',
+                    changedFiles: Array.isArray(change.changedFiles) ? change.changedFiles : [],
+                  });
+                }
+              }
+
+              changesBySha.set(newChange.sha, newChange);
+              return [...changesBySha.values()];
+            }
+
+            function formatPendingChangeList(pendingChanges) {
+              return pendingChanges
+                .map((change) => {
+                  const files = change.changedFiles.map((file) => `  - \`${file}\``).join('\n');
+                  return [
+                    `- Source commit: ${change.commitUrl}`,
+                    `  Workflow run: ${change.runUrl}`,
+                    '  Changed error helper files:',
+                    files,
+                  ].join('\n');
+                })
+                .join('\n');
+            }
+
+            function formatAllChangedFiles(pendingChanges) {
+              const files = [...new Set(pendingChanges.flatMap((change) => change.changedFiles))].sort();
+              return files.map((file) => `- \`${file}\``).join('\n');
+            }
+
+            function buildIssueBody(pendingChanges) {
+              const pendingChangeList = formatPendingChangeList(pendingChanges);
+              const allChangedFiles = formatAllChangedFiles(pendingChanges);
+              const pendingChangesJson = JSON.stringify(pendingChanges, null, 2);
+
+              return [
+              marker,
+              pendingChangesStart,
+              pendingChangesJson,
+              pendingChangesEnd,
+              '## Summary',
+              `Implement documentation updates for pending JavaScript agent error code changes from \`${sourceRepo}\`.`,
+              '',
+              '## Goal',
+              'The goal is to:',
+              '- Keep `AgentErrorCodesJS.md` aligned with the current JavaScript `errorHelper.ts` definitions.',
+              '- Update any affected error code ranges, counts, descriptions, anchors, and troubleshooting guidance.',
+              '- Make the documentation accurate enough for users and contributors to understand each changed error.',
+              '',
+              '## Context',
+              'Relevant context:',
+              `- Source repository: \`${sourceRepo}\``,
+              `- Documentation file: [AgentErrorCodesJS.md](${docUrl})`,
+              `- Pending source commits: ${pendingChanges.length}`,
+              '',
+              'Pending changes:',
+              pendingChangeList,
+              '',
+              '- Affected area/package:',
+              allChangedFiles,
+              '- Current behavior: one or more JavaScript error helper definitions changed.',
+              '- Expected behavior: the error code documentation reflects those source changes.',
+              '',
+              '## Scope',
+              'This task should include:',
+              '- [ ] Review the changed JavaScript error helper definitions.',
+              '- [ ] Update `AgentErrorCodesJS.md` for any changed, added, or removed JavaScript error codes.',
+              '- [ ] Update error code ranges, counts, descriptions, anchors, and troubleshooting guidance as needed.',
+              '- [ ] Preserve the existing document style and structure.',
+              '',
+              'Out of scope:',
+              '- Runtime code changes in `Agents-for-js`.',
+              '- Unrelated documentation rewrites or formatting-only churn.',
+              '- Changes to non-JavaScript error code documentation.',
+              '',
+              '## Suggested Implementation Notes',
+              'Potentially relevant files or areas:',
+              '- `AgentErrorCodesJS.md`',
+              '',
+              'Changed source files:',
+              allChangedFiles,
+              '',
+              'Implementation guidance:',
+              '- Use the linked source commits to inspect the exact `errorHelper.ts` changes.',
+              '- Keep the documentation change minimal and focused on the affected error codes.',
+              '- Follow existing wording, heading, and table conventions in `AgentErrorCodesJS.md`.',
+              '- Do not invent new error codes; source definitions in `Agents-for-js` are authoritative.',
+              '',
+              '## Validation / Acceptance Criteria',
+              'This issue can be considered complete when:',
+              '- [ ] `AgentErrorCodesJS.md` reflects the changed JavaScript error definitions.',
+              '- [ ] Error code ranges and counts are accurate.',
+              '- [ ] Changed or new errors have useful descriptions and troubleshooting guidance.',
+              '- [ ] Existing links, anchors, and markdown formatting render correctly.',
+              '- [ ] No unrelated files or formatting changes are included.',
+              '',
+              '## Suggested Test Plan',
+              'Run or verify:',
+              '```bash',
+              '# Markdown-only change; run repository-specific docs validation if available.',
+              '# Otherwise, inspect the rendered markdown and verify changed codes against the source commit.',
+              '```',
+              ].join('\n');
+            }
+
+            async function addDocumentationLabel(issueNumber) {
+              try {
+                await github.rest.issues.addLabels({
+                  owner: targetOwner,
+                  repo: targetRepo,
+                  issue_number: issueNumber,
+                  labels: [documentationLabel],
+                });
+              } catch (error) {
+                core.warning(`Could not add '${documentationLabel}' label to issue #${issueNumber}: ${error.message}`);
+              }
+            }
+
+            const searchQuery = `repo:${targetOwner}/${targetRepo} is:issue is:open in:title "${title}"`;
+            const searchResult = await github.rest.search.issuesAndPullRequests({
+              q: searchQuery,
+              per_page: 10,
+            });
+
+            const existingIssue = searchResult.data.items.find((item) => item.title === title);
+
+            if (existingIssue) {
+              const existingIssueResponse = await github.rest.issues.get({
+                owner: targetOwner,
+                repo: targetRepo,
+                issue_number: existingIssue.number,
+              });
+              const pendingChanges = mergePendingChanges(getPendingChanges(existingIssueResponse.data.body), currentChange);
+
+              await github.rest.issues.update({
+                owner: targetOwner,
+                repo: targetRepo,
+                issue_number: existingIssue.number,
+                body: buildIssueBody(pendingChanges),
+              });
+
+              await addDocumentationLabel(existingIssue.number);
+              core.notice(`Updated existing issue: ${existingIssue.html_url}`);
+              return;
+            }
+
+            const createdIssue = await github.rest.issues.create({
+              owner: targetOwner,
+              repo: targetRepo,
+              title,
+              body: buildIssueBody([currentChange]),
+            });
+
+            await addDocumentationLabel(createdIssue.data.number);
+            core.notice(`Created issue: ${createdIssue.data.html_url}`);
