@@ -233,6 +233,14 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   },
 
   /**
+     * Error thrown when attachment is null or undefined.
+     */
+  AttachmentNullOrUndefined: {
+    code: -120265,
+    description: 'attachment cannot be null or undefined.'
+  },
+
+  /**
      * Error thrown when viewId is required but missing.
      */
   ViewIdRequired: {
