@@ -57,6 +57,13 @@ describe('scopeFromSettings', function () {
       shouldthrow: false
     },
     {
+      label: 'Should return scope for PowerPlatformCloud.GCC environment',
+      cloud: PowerPlatformCloud.GCC,
+      cloudBaseAddress: '',
+      expectedAuthority: 'https://api.gov.powerplatform.microsoft.us/.default',
+      shouldthrow: false
+    },
+    {
       label: 'Should throw when cloud is Unknown and no cloudBaseAddress is provided',
       cloud: PowerPlatformCloud.Unknown,
       cloudBaseAddress: '',
@@ -1588,6 +1595,34 @@ describe('ScopeHelper', function () {
 
     const scope = ScopeHelper.getScopeFromSettings(settings)
     assert.equal(scope, 'https://api.gov.powerplatform.microsoft.us/.default')
+  })
+
+  it('should return correct scope for GCC cloud', function () {
+    const settings = new ConnectionSettings({
+      environmentId: 'env-id',
+      agentIdentifier: 'agent',
+      cloud: PowerPlatformCloud.GCC
+    })
+
+    const scope = ScopeHelper.getScopeFromSettings(settings)
+    assert.equal(scope, 'https://api.gov.powerplatform.microsoft.us/.default')
+  })
+
+  it('should resolve identical scopes for Gov and GCC', function () {
+    const govSettings = new ConnectionSettings({
+      environmentId: 'env-id',
+      agentIdentifier: 'agent',
+      cloud: PowerPlatformCloud.Gov
+    })
+    const gccSettings = new ConnectionSettings({
+      environmentId: 'env-id',
+      agentIdentifier: 'agent',
+      cloud: PowerPlatformCloud.GCC
+    })
+
+    const govScope = ScopeHelper.getScopeFromSettings(govSettings)
+    const gccScope = ScopeHelper.getScopeFromSettings(gccSettings)
+    assert.equal(govScope, gccScope)
   })
 
   it('should match static method on CopilotStudioClient', function () {
