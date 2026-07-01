@@ -49,7 +49,7 @@
     "@types/node": "25.6.0",
     "@types/sinon": "21.0.0",
     "esbuild": "0.28.1",
-    "eslint": "9.39.2",
+    "eslint": "10.6.0",
     "knip": "5.86.0",
     "neostandard": "0.13.0",
     "nerdbank-gitversioning": "3.9.50",
