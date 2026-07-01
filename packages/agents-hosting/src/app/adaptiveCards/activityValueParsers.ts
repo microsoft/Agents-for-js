@@ -4,9 +4,10 @@
  */
 
 import { z } from 'zod'
-import { activityZodSchema, AdaptiveCardInvokeAction, adaptiveCardInvokeActionZodSchema } from '@microsoft/agents-activity'
+import { activityZodSchema, AdaptiveCardInvokeAction, adaptiveCardInvokeActionZodSchema, ExceptionHelper } from '@microsoft/agents-activity'
 // import { MessagingExtensionQuery, messagingExtensionQueryZodSchema } from '../messageExtension/messagingExtensionQuery'
 import { adaptiveCardsSearchParamsZodSchema } from './adaptiveCardsSearchParams'
+import { Errors } from '../../errorHelper'
 
 /**
  * Parses the given value as a value action.
@@ -51,10 +52,7 @@ export function parseValueContinuation (value: unknown): string {
 }
 
 interface ValueAction {
-  action: {
-    type: string;
-    verb: string;
-  }
+  action: AdaptiveCardInvokeAction
 }
 
 /**
@@ -70,20 +68,17 @@ export function parseValueActionExecuteSelector (value: unknown): ValueAction | 
   const actionZodSchema = z.object({
     type: z.string().min(1),
     verb: z.string().min(1)
-  })
+  }).passthrough()
   const actionValueExecuteSelector = z.object({
     action: actionZodSchema
   })
   const safeParsedValue = actionValueExecuteSelector.passthrough().safeParse(value)
   if (!safeParsedValue.success) {
-    throw new Error(`Invalid action value: ${safeParsedValue.error}`)
+    throw ExceptionHelper.generateException(Error, Errors.InvalidActionValue, undefined, { error: safeParsedValue.error.message })
   }
   const parsedValue = safeParsedValue.data
   return {
-    action: {
-      type: parsedValue.action.type,
-      verb: parsedValue.action.verb
-    }
+    action: parsedValue.action as unknown as AdaptiveCardInvokeAction
   }
 }
 

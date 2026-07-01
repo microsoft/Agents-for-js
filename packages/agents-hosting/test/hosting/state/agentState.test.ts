@@ -57,6 +57,62 @@ describe('AgentState', () => {
         eTag: '1',
       })
     })
+
+    test('saves custom key without namespace segment', async () => {
+      mockContext.turnState.set(botState['stateKey'], {
+        state: { newKey: 'newValue' },
+        hash: 'oldHash',
+      })
+
+      await botState.saveChanges(mockContext, true, { channelId: 'channel', conversationId: 'conversation' })
+
+      const storedItem = await storage.read(['channel/conversations/conversation'])
+      assert.deepStrictEqual(storedItem['channel/conversations/conversation'], {
+        newKey: 'newValue',
+        eTag: '1',
+      })
+    })
+
+    test('saves custom key with namespace', async () => {
+      mockContext.turnState.set(botState['stateKey'], {
+        state: { newKey: 'newValue' },
+        hash: 'oldHash',
+      })
+
+      await botState.saveChanges(mockContext, true, { channelId: 'channel', conversationId: 'conversation', namespace: 'namespace' })
+
+      const storedItem = await storage.read(['channel/conversations/conversation/namespace'])
+      assert.deepStrictEqual(storedItem['channel/conversations/conversation/namespace'], {
+        newKey: 'newValue',
+        eTag: '1',
+      })
+    })
+
+    test('does not save unchanged circular state', async () => {
+      const circularState: Record<string, any> = { newKey: 'newValue' }
+      circularState.self = circularState
+      const hash = botState['calculateChangeHash'](circularState)
+      mockContext.turnState.set(botState['stateKey'], {
+        state: circularState,
+        hash,
+      })
+
+      await botState.saveChanges(mockContext, false)
+
+      const storedItem = await storage.read(['mockKey'])
+      assert.strictEqual(Object.keys(storedItem).length, 0)
+    })
+
+    test('detects changed circular state', () => {
+      const circularState: Record<string, any> = { newKey: 'newValue' }
+      circularState.self = circularState
+      const hash = botState['calculateChangeHash'](circularState)
+
+      circularState.newKey = 'updatedValue'
+      const updatedHash = botState['calculateChangeHash'](circularState)
+
+      assert.notStrictEqual(updatedHash, hash)
+    })
   })
 
   describe('clear', () => {

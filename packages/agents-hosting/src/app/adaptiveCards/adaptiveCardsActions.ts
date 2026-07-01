@@ -3,18 +3,21 @@
  * Licensed under the MIT License.
  */
 
-import { Activity, ActivityTypes } from '@microsoft/agents-activity'
+import { Activity, ActivityTypes, ExceptionHelper } from '@microsoft/agents-activity'
+import { debug } from '@microsoft/agents-telemetry'
 import { AdaptiveCardInvokeResponse, AgentApplication, CardFactory, INVOKE_RESPONSE_KEY, InvokeResponse, MessageFactory, RouteSelector, TurnContext, TurnState } from '../../'
 import { AdaptiveCardActionExecuteResponseType } from './adaptiveCardActionExecuteResponseType'
 import { parseAdaptiveCardInvokeAction, parseValueActionExecuteSelector, parseValueDataset, parseValueSearchQuery } from './activityValueParsers'
 import { AdaptiveCardsSearchParams } from './adaptiveCardsSearchParams'
 import { AdaptiveCard } from '../../cards/adaptiveCard'
 import { Query } from './query'
+import { Errors } from '../../errorHelper'
 
 export const ACTION_INVOKE_NAME = 'adaptiveCard/action'
 const ACTION_EXECUTE_TYPE = 'Action.Execute'
 const DEFAULT_ACTION_SUBMIT_FILTER = 'verb'
 const SEARCH_INVOKE_NAME = 'application/search'
+const logger = debug('agents:adaptive-cards')
 
 enum AdaptiveCardInvokeResponseType {
   /**
@@ -117,17 +120,14 @@ export class AdaptiveCardsActions<TState extends TurnState> {
                         a?.name !== ACTION_INVOKE_NAME ||
                         (invokeAction?.action.type !== ACTION_EXECUTE_TYPE)
           ) {
-            throw new Error(`Unexpected AdaptiveCards.actionExecute() triggered for activity type: ${invokeAction?.action.type}`
-            )
+            throw ExceptionHelper.generateException(Error, Errors.UnexpectedActionExecute, undefined, { activityType: invokeAction?.action.type ?? 'unknown' })
           }
 
           if (invokeAction.action.verb !== v) {
-            // TODO: add logger to this class
-            console.log(`AdaptiveCards.actionExecute() triggered for verb: ${invokeAction.action.verb} does not match expected verb: ${v}`)
+            logger.warn(`AdaptiveCards.actionExecute() triggered for verb: ${invokeAction.action.verb} does not match expected verb: ${v}`)
           }
 
-          // TODO: review any, and check verb
-          const result = await handler(context, state, ((a.value as any).action as TData) ?? {} as TData)
+          const result = await handler(context, state, (invokeAction.action as unknown as TData) ?? {} as TData)
           if (!context.turnState.get(INVOKE_RESPONSE_KEY)) {
             let response: AdaptiveCardInvokeResponse
             if (typeof result === 'string') {
@@ -196,7 +196,7 @@ export class AdaptiveCardsActions<TState extends TurnState> {
       this._app.addRoute(selector, async (context, state) => {
         const a = context?.activity
         if (a?.type !== ActivityTypes.Message || a?.text || typeof a?.value !== 'object') {
-          throw new Error(`Unexpected AdaptiveCards.actionSubmit() triggered for activity type: ${a?.type}`)
+          throw ExceptionHelper.generateException(Error, Errors.UnexpectedActionSubmit, undefined, { activityType: a?.type ?? 'unknown' })
         }
 
         await handler(context, state as TState, (parseAdaptiveCardInvokeAction(a.value)) as TData ?? {} as TData)
@@ -227,7 +227,7 @@ export class AdaptiveCardsActions<TState extends TurnState> {
         async (context, state) => {
           const a = context?.activity
           if (a?.type !== 'invoke' || a?.name !== SEARCH_INVOKE_NAME) {
-            throw new Error(`Unexpected AdaptiveCards.search() triggered for activity type: ${a?.type}`)
+            throw ExceptionHelper.generateException(Error, Errors.UnexpectedSearchAction, undefined, { activityType: a?.type ?? 'unknown' })
           }
 
           const parsedQuery = parseValueSearchQuery(a.value)

@@ -742,6 +742,7 @@ export class CreateConversationOptionsBuilder {
 export interface CustomKey {
     channelId: string;
     conversationId: string;
+    namespace?: string;
 }
 
 // @public
