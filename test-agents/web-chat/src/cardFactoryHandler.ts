@@ -43,18 +43,15 @@ export class CardFactoryHandler extends ActivityHandler {
             await CardMessages.sendReceiptCard(context)
             break
           case '6':
-            await CardMessages.sendOauthCard(context)
-            break
-          case '7':
             await CardMessages.sendO365ConnectorCard(context)
             break
-          case '8':
+          case '7':
             await CardMessages.sendSigninCard(context)
             break
-          case '9':
+          case '8':
             await CardMessages.sendThumbnailCard(context)
             break
-          case '10':
+          case '9':
             await CardMessages.sendVideoCard(context)
             break
           default: {

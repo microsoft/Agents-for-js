@@ -13,15 +13,42 @@ function createMockSpan () {
   }
 }
 
-function createMockOTel (span?: ReturnType<typeof createMockSpan>) {
-  const mockSpan = span ?? createMockSpan()
+function createMockOTel (spanOrSpans?: ReturnType<typeof createMockSpan> | ReturnType<typeof createMockSpan>[]) {
+  const spans = Array.isArray(spanOrSpans) ? [...spanOrSpans] : [spanOrSpans ?? createMockSpan()]
+  const mockSpan = spans[0]
+  const startedContexts: any[] = []
+  let activeContext: any = {}
+
+  function nextSpan () {
+    return spans.shift() ?? mockSpan
+  }
+
   return {
     otel: {
       trace: {
         getTracer: () => ({
-          startSpan: () => mockSpan,
-          startActiveSpan: (_name: string, fn: (span: any) => any) => fn(mockSpan),
+          startSpan: () => {
+            startedContexts.push(activeContext)
+            return nextSpan()
+          },
+          startActiveSpan: (_name: string, fn: (span: any) => any) => {
+            startedContexts.push(activeContext)
+            return fn(nextSpan())
+          },
         }),
+        setSpan: (_context: any, span: any) => ({ span }),
+      },
+      context: {
+        active: () => activeContext,
+        with: (context: any, fn: Function) => {
+          const previousContext = activeContext
+          activeContext = context
+          try {
+            return fn()
+          } finally {
+            activeContext = previousContext
+          }
+        },
       },
       SpanStatusCode: {
         OK: 1,
@@ -29,6 +56,7 @@ function createMockOTel (span?: ReturnType<typeof createMockSpan>) {
       },
     } as any,
     span: mockSpan,
+    startedContexts,
   }
 }
 
@@ -64,6 +92,34 @@ describe('traceFactory', () => {
     assert.strictEqual(typeof result.record, 'function')
     assert.strictEqual(typeof result.end, 'function')
     assert.strictEqual(typeof result.fail, 'function')
+    assert.strictEqual(typeof result.child, 'function')
+  })
+
+  it('managed context starts child spans with the parent span active', () => {
+    const parentSpan = createMockSpan()
+    const childSpan = createMockSpan()
+    const { otel, startedContexts } = createMockOTel([parentSpan, childSpan])
+    const trace = traceFactory(otel)
+
+    const parent = trace({
+      name: SpanNames.ADAPTER_PROCESS,
+      record: {},
+      end: () => {},
+    })
+
+    const child = parent.child({
+      name: SpanNames.STORAGE_READ,
+      record: {},
+      end: () => {},
+    })
+
+    child.end()
+    parent.end()
+
+    assert.strictEqual(startedContexts.length, 2)
+    assert.strictEqual(startedContexts[1].span, parentSpan)
+    assert.strictEqual(childSpan.end.mock.callCount(), 1)
+    assert.strictEqual(parentSpan.end.mock.callCount(), 1)
   })
 
   it('managed context sets OK status and calls end on the span', () => {
@@ -198,6 +254,70 @@ describe('traceFactory', () => {
     )
 
     assert.deepStrictEqual(captured, { count: 5 })
+  })
+
+  it('record recursively merges objects and replaces arrays', () => {
+    const { otel } = createMockOTel()
+    const trace = traceFactory(otel)
+    let captured: any
+
+    trace(
+      {
+        name: SpanNames.ADAPTER_PROCESS,
+        record: {
+          metadata: { attempt: 1, nested: { before: true, after: false } },
+          tags: ['initial'],
+          status: 'pending',
+        },
+        end: (ctx) => { captured = ctx.record },
+      },
+      (ctx) => {
+        ctx.record({
+          metadata: { nested: { after: true }, source: 'test' },
+          tags: ['updated'],
+        } as any)
+      }
+    )
+
+    assert.deepStrictEqual(captured, {
+      metadata: { attempt: 1, nested: { before: true, after: true }, source: 'test' },
+      tags: ['updated'],
+      status: 'pending',
+    })
+  })
+
+  it('record preserves class instances by reference', () => {
+    class TraceValue {
+      constructor (public readonly value: string) {}
+
+      get displayValue () {
+        return `value:${this.value}`
+      }
+
+      isTraceValue () {
+        return true
+      }
+    }
+
+    const { otel } = createMockOTel()
+    const trace = traceFactory(otel)
+    const value = new TraceValue('test')
+    let captured: any
+
+    trace(
+      {
+        name: SpanNames.ADAPTER_PROCESS,
+        record: { value: new TraceValue('default') },
+        end: (ctx) => { captured = ctx.record },
+      },
+      (ctx) => {
+        ctx.record({ value })
+      }
+    )
+
+    assert.strictEqual(captured.value, value)
+    assert.strictEqual(captured.value.displayValue, 'value:test')
+    assert.strictEqual(captured.value.isTraceValue(), true)
   })
 
   it('record initializes with default values from definition', () => {

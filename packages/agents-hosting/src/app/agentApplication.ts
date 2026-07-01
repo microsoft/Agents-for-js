@@ -721,75 +721,75 @@ export class AgentApplication<TState extends TurnState> {
    * Executes the turn processing logic for the given context, including routing and handler execution.
    */
   private async runTurn (context: TurnContext): Promise<boolean> {
-    return trace(AgentApplicationTraceDefinitions.run, async ({ record }) => {
-      record({ authorized: true, activity: context.activity })
+    const managed = trace(AgentApplicationTraceDefinitions.run)
+    managed.record({ authorized: true, activity: context.activity })
 
-      try {
-        if (this._options.startTypingTimer) {
-          this.startTypingTimer(context)
-        }
-
-        if (this._options.removeRecipientMention && context.activity.type === ActivityTypes.Message) {
-          context.activity.removeRecipientMention()
-        }
-
-        if (this._options.normalizeMentions && context.activity.type === ActivityTypes.Message) {
-          context.activity.normalizeMentions()
-        }
-
-        const { storage, turnStateFactory } = this._options
-        const state = turnStateFactory()
-        await state.load(context, storage)
-
-        const route = await this.getRoute(context)
-
-        record({ routeMatched: route !== undefined })
-
-        if (!route) {
-          logger.debug('No matching route found for activity:', context.activity)
-          return false
-        }
-
-        const fileDownloaders = this._options.fileDownloaders
-        if (Array.isArray(fileDownloaders) && fileDownloaders.length > 0) {
-          await trace(AgentApplicationTraceDefinitions.downloadFiles, async ({ record }) => {
-            record({ attachmentsCount: context.activity.attachments?.length })
-            for (let i = 0; i < fileDownloaders.length; i++) {
-              await fileDownloaders[i].downloadAndStoreFiles(context, state)
-            }
-          })
-        }
-
-        if (this._beforeTurn.length > 0) {
-          await trace(AgentApplicationTraceDefinitions.beforeTurn, async () => {
-            if (!(await this.callEventHandlers(context, state, this._beforeTurn))) {
-              await state.save(context, storage)
-              return false
-            }
-          })
-        }
-
-        await trace(AgentApplicationTraceDefinitions.routeHandler, async ({ record }) => {
-          record({ isInvoke: route.isInvokeRoute, isAgentic: route.isAgenticRoute })
-          await route.handler(context, state)
-        })
-
-        if (this._afterTurn.length > 0) {
-          await trace(AgentApplicationTraceDefinitions.afterTurn, async () => {
-            if (await this.callEventHandlers(context, state, this._afterTurn)) {
-              await state.save(context, storage)
-            }
-          })
-        }
-
-        return true
-      } catch (err: any) {
-        logger.error(err)
-        throw err
-      } finally {
-        this.stopTypingTimer(context)
+    try {
+      if (this._options.startTypingTimer) {
+        this.startTypingTimer(context)
       }
-    })
+
+      if (this._options.removeRecipientMention && context.activity.type === ActivityTypes.Message) {
+        context.activity.removeRecipientMention()
+      }
+
+      if (this._options.normalizeMentions && context.activity.type === ActivityTypes.Message) {
+        context.activity.normalizeMentions()
+      }
+
+      const { storage, turnStateFactory } = this._options
+      const state = turnStateFactory()
+      await state.load(context, storage)
+
+      const route = await this.getRoute(context)
+
+      managed.record({ routeMatched: route !== undefined })
+
+      if (!route) {
+        logger.debug('No matching route found for activity:', context.activity)
+        return false
+      }
+
+      const fileDownloaders = this._options.fileDownloaders
+      if (Array.isArray(fileDownloaders) && fileDownloaders.length > 0) {
+        await managed.child(AgentApplicationTraceDefinitions.downloadFiles, async ({ record }) => {
+          record({ attachmentsCount: context.activity.attachments?.length })
+          for (let i = 0; i < fileDownloaders.length; i++) {
+            await fileDownloaders[i].downloadAndStoreFiles(context, state)
+          }
+        })
+      }
+
+      if (this._beforeTurn.length > 0) {
+        await managed.child(AgentApplicationTraceDefinitions.beforeTurn, async () => {
+          if (!(await this.callEventHandlers(context, state, this._beforeTurn))) {
+            await state.save(context, storage)
+            return false
+          }
+        })
+      }
+
+      await managed.child(AgentApplicationTraceDefinitions.routeHandler, async ({ record }) => {
+        record({ isInvoke: route.isInvokeRoute, isAgentic: route.isAgenticRoute })
+        await route.handler(context, state)
+      })
+
+      if (this._afterTurn.length > 0) {
+        await managed.child(AgentApplicationTraceDefinitions.afterTurn, async () => {
+          if (await this.callEventHandlers(context, state, this._afterTurn)) {
+            await state.save(context, storage)
+          }
+        })
+      }
+
+      return true
+    } catch (err: any) {
+      logger.error(err)
+      throw managed.fail(err)
+    } finally {
+      this.stopTypingTimer(context)
+      managed.end()
+    }
   }
 
   /**

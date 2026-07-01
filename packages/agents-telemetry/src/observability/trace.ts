@@ -9,11 +9,14 @@ import type {
   TraceDefinition,
   TraceFunction,
   TraceRecord,
+  TraceChildFunction,
+  TraceCallback,
 } from '../types.js'
 import { attempt } from '../utils/attempt.js'
 import { isSpanDisabled } from './category.js'
 import { SpanNames } from './constants.js'
 import { noopContext } from '../utils/noop.js'
+import { cloneRecordValue, mergeRecordValues } from '../utils/record.js'
 
 /**
  * Creates the trace helper bound to the package tracer.
@@ -27,6 +30,14 @@ export function traceFactory (otel: OTel) {
   const tracer = otel.trace.getTracer('@microsoft/agents-telemetry')
 
   const trace = function trace (target, callback) {
+    return runTrace(target, callback)
+  } as TraceFunction
+
+  function runTrace (
+    target: TraceDefinition<any, any> | undefined,
+    callback?: TraceCallback<any, any, unknown>,
+    parentSpan?: Span
+  ) {
     if (!target) {
       throw new Error('Trace definition is required')
     }
@@ -36,33 +47,44 @@ export function traceFactory (otel: OTel) {
     }
 
     if (isSpanDisabled(target.name)) {
-      return noopContext(callback)
+      return callback ? noopContext(callback) : noopContext()
     }
 
-    const record = createRecord(target)
+    const execute = () => {
+      const record = createRecord(target)
 
-    if (!callback) {
-      // TODO: if parent/child span connections are needed, we could expose a 'child' function that internally connects them.
-      const span = tracer.startSpan(target.name)
-      const flow = start(otel, target, span, record)
+      if (!callback) {
+        const span = tracer.startSpan(target.name)
+        const flow = start(otel, target, span, record)
+        const child = ((definition, childCallback) =>
+          runTrace(definition, childCallback, span)) as TraceChildFunction
 
-      return {
-        record: flow.record,
-        actions: flow.actions,
-        fail: flow.fail,
-        end: flow.end
+        return {
+          record: flow.record,
+          actions: flow.actions,
+          child,
+          fail: flow.fail,
+          end: flow.end
+        }
       }
+
+      return tracer.startActiveSpan(target.name, span => {
+        const flow = start(otel, target, span, record)
+        return attempt({
+          try: () => callback({ record: flow.record, actions: flow.actions }),
+          catch: (error) => { throw flow.fail(error) },
+          finally: flow.end
+        })
+      })
     }
 
-    return tracer.startActiveSpan(target.name, span => {
-      const flow = start(otel, target, span, record)
-      return attempt({
-        try: () => callback({ record: flow.record, actions: flow.actions }),
-        catch: (error) => { throw flow.fail(error) },
-        finally: flow.end
-      })
-    })
-  } as TraceFunction
+    if (!parentSpan) {
+      return execute()
+    }
+
+    const parentContext = otel.trace.setSpan(otel.context.active(), parentSpan)
+    return otel.context.with(parentContext, execute)
+  }
 
   trace.define = definition => definition
 
@@ -73,15 +95,15 @@ export function traceFactory (otel: OTel) {
  * Creates the mutable record stored for a trace execution.
  *
  * @remarks
- * - Updates use `Object.assign`, so nested objects are replaced rather than deeply merged.
+ * - Plain objects are recursively merged.
+ * - Arrays are copied and replaced.
  */
 function createRecord<TRecord extends object, TActions extends object> (target: TraceDefinition<TRecord, TActions>): TraceRecord<TRecord> {
-  const state: Partial<TRecord> = target.record ? { ...target.record } : {}
+  const state: Partial<TRecord> = target.record ? cloneRecordValue(target.record) : {}
 
   return {
     set (values) {
-      // TODO: use deep-merge strategy for Object and Array
-      Object.assign(state, values)
+      mergeRecordValues(state as Record<string, unknown>, values as Record<string, unknown>)
     },
     get () {
       return state as Readonly<TRecord>
