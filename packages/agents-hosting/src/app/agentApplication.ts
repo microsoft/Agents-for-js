@@ -1086,11 +1086,13 @@ export class AgentApplication<TState extends TurnState> {
     handler: (context: TurnContext) => Promise<any>
   ) {
     const activity = Activity.fromObject(context.activity)
-    const createErrorContext = () => new TurnContext(context.adapter, Activity.fromObject(activity), context.identity)
+    const adapter = context.adapter
+    const identity = context.identity
+    const createErrorContext = () => new TurnContext(adapter, Activity.fromObject(activity), identity)
 
     try {
       const reference = activity.getConversationReference()
-      this.continueConversationAsync(context.identity, reference, async (ctx) => {
+      this.continueConversationAsync(identity, reference, async (ctx) => {
         try {
           Object.assign(ctx.activity, activity)
           await handler(ctx)
