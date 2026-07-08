@@ -4,7 +4,6 @@
 import { ActivityHandler, CardFactory, MessageFactory, TurnContext } from '@microsoft/agents-hosting'
 import path from 'path'
 import fs from 'fs'
-import axios from 'axios'
 import { ActionTypes, Activity, ActivityTypes, Attachment, ConversationReference, EndOfConversationCodes } from '@microsoft/agents-activity'
 
 export class MultiFeatureHandler extends ActivityHandler {
@@ -206,15 +205,20 @@ export class MultiFeatureHandler extends ActivityHandler {
     const localFileName = path.join(__dirname, attachment.name)
 
     try {
-      // arraybuffer is necessary for images
-      const response = await axios.get(url, { responseType: 'arraybuffer' })
+      const response = await fetch(url)
+      let data: any
       // If user uploads JSON file, this prevents it from being written as "{"type":"Buffer","data":[123,13,10,32,32,34,108..."
-      if (response.headers['content-type'] === 'application/json') {
-        response.data = JSON.parse(response.data, (key, value) => {
+      if (response.headers.get('content-type') === 'application/json') {
+        const json = await response.json()
+        data = JSON.parse(JSON.stringify(json), (key, value) => {
           return value !== undefined && value.type === 'Buffer' ? Buffer.from(value.data) : value
         })
+      } else {
+        // arraybuffer is necessary for images
+        const arrayBuffer = await response.arrayBuffer()
+        data = Buffer.from(arrayBuffer)
       }
-      fs.writeFile(localFileName, response.data, (fsError) => {
+      fs.writeFile(localFileName, data, (fsError) => {
         if (fsError != null) {
           throw fsError
         }

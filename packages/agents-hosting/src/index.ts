@@ -31,5 +31,6 @@ export * from './turnContextStateCollection'
 export * from './storage/storage'
 export * from './headerPropagation'
 export * from './interfaces'
+export * from './httpClient'
 
 export * from './agent-client'

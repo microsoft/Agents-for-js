@@ -1,8 +1,7 @@
 const { CardFactory, MessageFactory } = require('@microsoft/agents-hosting')
 const { TeamsActivityHandler } = require('@microsoft/agents-hosting-extensions-teams')
-const axios = require('axios')
-const querystring = require('querystring')
 const { startServer } = require('@microsoft/agents-hosting-express')
+
 class TeamsBot extends TeamsActivityHandler {
   constructor () {
     super()
@@ -11,10 +10,10 @@ class TeamsBot extends TeamsActivityHandler {
   }
 
   /**
-     * Handles members added to the conversation.
-     * @param {TurnContext} context - The context object for the turn.
-     * @param {Function} next - The next middleware or handler to run.
-     */
+   * Handles members added to the conversation.
+   * @param {TurnContext} context - The context object for the turn.
+   * @param {Function} next - The next middleware or handler to run.
+   */
   async handleMembersAdded (context, next) {
     const membersAdded = context.activity.membersAdded
     for (const member of membersAdded) {
@@ -26,10 +25,10 @@ class TeamsBot extends TeamsActivityHandler {
   }
 
   /**
-     * Handles incoming messages.
-     * @param {TurnContext} context - The context object for the turn.
-     * @param {Function} next - The next middleware or handler to run.
-     */
+   * Handles incoming messages.
+   * @param {TurnContext} context - The context object for the turn.
+   * @param {Function} next - The next middleware or handler to run.
+   */
   async handleMessage (context, next) {
     const text = context.activity.text?.toLowerCase().trim()
     const value = context.activity.value
@@ -56,10 +55,10 @@ class TeamsBot extends TeamsActivityHandler {
   }
 
   /**
-     * Handles invoke activities.
-     * @param {TurnContext} context - The context object for the turn.
-     * @returns {Promise<Object>} The response object.
-     */
+   * Handles invoke activities.
+   * @param {TurnContext} context - The context object for the turn.
+   * @returns {Promise<Object>} The response object.
+   */
   async onInvokeActivity (context) {
     if (context._activity.name === 'application/search') {
       const dropdownCard = context._activity.value.data.choiceselect
@@ -70,12 +69,14 @@ class TeamsBot extends TeamsActivityHandler {
         if (searchQuery.length < 4) {
           return
         }
-        const response = await axios.get(`http://registry.npmjs.com/-/v1/search?${querystring.stringify({ text: searchQuery, size: 8 })}`)
-        const npmPackages = response.data.objects.map(obj => ({
-          title: obj.package.name,
-          value: `${obj.package.name} - ${obj.package.description}`
-        }))
+        const params = new URLSearchParams({ text: searchQuery, size: '8' })
+        const response = await fetch(`http://registry.npmjs.com/-/v1/search?${params.toString()}`)
         if (response.status === 200) {
+          const data = await response.json()
+          const npmPackages = data.objects.map(obj => ({
+            title: obj.package.name,
+            value: `${obj.package.name} - ${obj.package.description}`
+          }))
           return this.getSuccessResult(npmPackages)
         } else if (response.status === 400) {
           return this.getNoResultFound()
@@ -88,9 +89,9 @@ class TeamsBot extends TeamsActivityHandler {
   }
 
   /**
-     * Returns the adaptive card for static search.
-     * @returns {Object} The adaptive card JSON.
-     */
+   * Returns the adaptive card for static search.
+   * @returns {Object} The adaptive card JSON.
+   */
   getStaticSearchCard () {
     return {
       $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
@@ -160,9 +161,9 @@ class TeamsBot extends TeamsActivityHandler {
   }
 
   /**
-     * Returns the adaptive card for dynamic search.
-     * @returns {Object} The adaptive card JSON.
-     */
+   * Returns the adaptive card for dynamic search.
+   * @returns {Object} The adaptive card JSON.
+   */
   getDynamicSearchCard () {
     return {
       $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
@@ -229,9 +230,9 @@ class TeamsBot extends TeamsActivityHandler {
   }
 
   /**
-     * Returns the adaptive card for dependant search.
-     * @returns {Object} The adaptive card JSON.
-     */
+   * Returns the adaptive card for dependant search.
+   * @returns {Object} The adaptive card JSON.
+   */
   getDependantSearchCard () {
     return {
       type: 'AdaptiveCard',
@@ -286,10 +287,10 @@ class TeamsBot extends TeamsActivityHandler {
   }
 
   /**
-     * Returns the success result for npm package search.
-     * @param {Array} npmPackages - The list of npm packages.
-     * @returns {Object} The success result object.
-     */
+   * Returns the success result for npm package search.
+   * @param {Array} npmPackages - The list of npm packages.
+   * @returns {Object} The success result object.
+   */
   getSuccessResult (npmPackages) {
     return {
       status: 200,
@@ -303,10 +304,10 @@ class TeamsBot extends TeamsActivityHandler {
   }
 
   /**
-     * Returns the country-specific results.
-     * @param {string} country - The selected country.
-     * @returns {Object} The country-specific results object.
-     */
+   * Returns the country-specific results.
+   * @param {string} country - The selected country.
+   * @returns {Object} The country-specific results object.
+   */
   getCountrySpecificResults (country) {
     const results = {
       usa: [
@@ -338,9 +339,9 @@ class TeamsBot extends TeamsActivityHandler {
   }
 
   /**
-     * Returns the no result found response.
-     * @returns {Object} The no result found response object.
-     */
+   * Returns the no result found response.
+   * @returns {Object} The no result found response object.
+   */
   getNoResultFound () {
     return {
       status: 204,
@@ -351,9 +352,9 @@ class TeamsBot extends TeamsActivityHandler {
   }
 
   /**
-     * Returns the error result response.
-     * @returns {Object} The error result response object.
-     */
+   * Returns the error result response.
+   * @returns {Object} The error result response object.
+   */
   getErrorResult () {
     return {
       status: 500,

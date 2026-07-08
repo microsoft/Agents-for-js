@@ -4,7 +4,6 @@
  */
 
 import { ConfidentialClientApplication, LogLevel, ManagedIdentityApplication, NodeSystemOptions } from '@azure/msal-node'
-import axios from 'axios'
 import { AuthConfiguration, AuthType, resolveAuthority as resolveAuthorityUtil } from './authConfiguration'
 import { AuthProvider } from './authProvider'
 import { debug, trace } from '@microsoft/agents-telemetry'
@@ -20,6 +19,15 @@ import { Errors } from '../errorHelper'
 
 const audience = 'api://AzureADTokenExchange'
 const logger = debug('agents:msal')
+const agenticTokenRequestTimeoutMs = 30000
+
+function isAbortError (error: unknown): error is Error {
+  return error instanceof Error && error.name === 'AbortError'
+}
+
+function createTokenRequestTimeoutError (timeoutMs: number): Error {
+  return ExceptionHelper.generateException(Error, Errors.TokenRequestTimeout, undefined, { timeoutMs: timeoutMs.toString() })
+}
 
 /**
  * Provides tokens using MSAL.
@@ -302,22 +310,42 @@ export class MsalTokenProvider implements AuthProvider {
       data.client_info = '2'
     }
 
-    const token = await axios.post(
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => {
+      controller.abort(createTokenRequestTimeoutError(agenticTokenRequestTimeoutMs))
+    }, agenticTokenRequestTimeoutMs)
+
+    const token = await fetch(
       url,
-      data,
       {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8'
-        }
+        },
+        body: new URLSearchParams(data as Record<string, string>).toString(),
+        signal: controller.signal
       }
-    ).catch((error) => {
-      logger.error('Error acquiring token: ', error.toJSON())
-      throw error
+    ).then(async (response) => {
+      if (!response.ok) {
+        const errorBody = await response.text()
+        const error = new Error(`Token request failed with status ${response.status}: ${errorBody}`)
+        ;(error as any).toJSON = () => ({ status: response.status, body: errorBody })
+        throw error
+      }
+      return response.json() as Promise<{ access_token: string, expires_in: number }>
+    }).catch((error) => {
+      const resolvedError = isAbortError(error)
+        ? (controller.signal.reason instanceof Error ? controller.signal.reason : createTokenRequestTimeoutError(agenticTokenRequestTimeoutMs))
+        : error
+      logger.error('Error acquiring token: ', resolvedError.toJSON ? resolvedError.toJSON() : resolvedError)
+      throw resolvedError
+    }).finally(() => {
+      clearTimeout(timeoutId)
     })
 
     // capture token, expire local cache 5 minutes early
-    this._agenticTokenCache.set(cacheKey, token.data.access_token, token.data.expires_in - 300)
-    return token.data.access_token
+    this._agenticTokenCache.set(cacheKey, token.access_token, token.expires_in - 300)
+    return token.access_token
   }
 
   public async getAgenticUserToken (tenantId: string, agentAppInstanceId: string, agenticUserId: string, scopes: string[]): Promise<string> {

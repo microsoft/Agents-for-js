@@ -179,6 +179,17 @@ export interface AgentApplicationOptions<TState extends TurnState> {
   headerPropagation?: HeaderPropagationDefinition
 
   /**
+   * Optional. Human-friendly agent name sent in the `AgentName` header for
+   * SDK-managed outbound requests created during inbound turn processing.
+   *
+   * @remarks
+   * When omitted, the SDK uses the default value `Agent-SDK-JS`.
+   * The resolved value is trimmed and validated by the SDK. Only letters,
+   * numbers, spaces, hyphen, and underscore are allowed.
+   */
+  agentName?: string
+
+  /**
    * Optional. Configuration for managing multiple authentication connections within the agent.
    * This allows the agent to handle authentication across different services or
    * identity providers.
