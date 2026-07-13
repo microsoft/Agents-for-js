@@ -41,6 +41,9 @@
         "path": "test-agents/empty-agent"
       },
       {
+        "path": "test-agents/sidecar-auth"
+      },
+      {
         "path": "test-agents/web-chat"
       },
       {

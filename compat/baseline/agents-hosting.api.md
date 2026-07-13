@@ -147,11 +147,11 @@ export const adaptiveCardsSearchParamsZodSchema: z.ZodObject<{
     queryText: z.ZodString;
     dataset: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    queryText: string;
     dataset: string;
+    queryText: string;
 }, {
-    queryText: string;
     dataset: string;
+    queryText: string;
 }>;
 
 // @public
@@ -388,33 +388,9 @@ export interface AudioCard {
 }
 
 // @public
-export interface AuthConfiguration {
-    altBlueprintConnectionName?: string;
-    // @deprecated (undocumented)
-    authority?: string;
-    authorityEndpoint?: string;
-    authType?: AuthType | string;
-    azureRegion?: string;
-    certKeyFile?: string;
-    certPemFile?: string;
-    clientId?: string;
-    clientSecret?: string;
-    connectionName?: string;
+export interface AuthConfiguration extends ConnectionSettings {
     connections?: Map<string, AuthConfiguration>;
     connectionsMap?: ConnectionMapItem[];
-    federatedClientId?: string;
-    federatedTokenFile?: string;
-    // @deprecated (undocumented)
-    FICClientId?: string;
-    idpmResource?: string;
-    issuers?: string[];
-    // @deprecated (undocumented)
-    scope?: string;
-    scopes?: string[];
-    sendX5C?: boolean;
-    tenantId?: string;
-    // @deprecated (undocumented)
-    WIDAssertionFile?: string;
 }
 
 // @public (undocumented)
@@ -456,6 +432,9 @@ export interface AuthProvider {
 }
 
 // @public
+export type AuthProviderFactory = (config: AuthConfiguration) => AuthProvider;
+
+// @public
 export enum AuthType {
     // (undocumented)
     Certificate = "Certificate",
@@ -463,6 +442,8 @@ export enum AuthType {
     CertificateSubjectName = "CertificateSubjectName",
     // (undocumented)
     ClientSecret = "ClientSecret",
+    // (undocumented)
+    EntraAuthSideCar = "EntraAuthSideCar",
     // (undocumented)
     FederatedCredentials = "FederatedCredentials",
     // (undocumented)
@@ -586,7 +567,26 @@ export interface CloudAdapterOptions {
 // @public
 export const configureResponseController: (app: Application, adapter: CloudAdapter, agent: ActivityHandler, conversationState: ConversationState) => void;
 
-// @public (undocumented)
+// @public
+export class ConnectionManager implements Connections {
+    constructor(providerFactory?: AuthProviderFactory, connectionsConfigurations?: Map<string, AuthConfiguration>, connectionsMap?: ConnectionMapItem[], configuration?: AuthConfiguration);
+    protected applyConnectionDefaults(conn: AuthProvider): AuthProvider;
+    // (undocumented)
+    protected _connections: Map<string, AuthProvider>;
+    // (undocumented)
+    protected _connectionsMap: ConnectionMapItem[];
+    // (undocumented)
+    protected static readonly DEFAULT_CONNECTION = "serviceConnection";
+    getConnection(connectionName: string): AuthProvider;
+    getDefaultConnection(): AuthProvider;
+    getDefaultConnectionConfiguration(): AuthConfiguration;
+    getTokenProvider(identity: JwtPayload, serviceUrl: string): AuthProvider;
+    getTokenProviderFromActivity(identity: JwtPayload, activity: Activity): AuthProvider;
+    // (undocumented)
+    protected _serviceConnectionConfiguration: AuthConfiguration;
+}
+
+// @public
 export interface ConnectionMapItem {
     // (undocumented)
     audience?: string;
@@ -594,6 +594,27 @@ export interface ConnectionMapItem {
     connection: string;
     // (undocumented)
     serviceUrl: string;
+}
+
+// @public
+export interface ConnectionSettings extends MsalConnectionSettings, SidecarConnectionSettings {
+}
+
+// @public
+export interface ConnectionSettingsBase {
+    altBlueprintConnectionName?: string;
+    alternateBlueprintConnectionName?: string;
+    // @deprecated (undocumented)
+    authority?: string;
+    authorityEndpoint?: string;
+    authType?: AuthType | string;
+    clientId?: string;
+    connectionName?: string;
+    issuers?: string[];
+    // @deprecated (undocumented)
+    scope?: string;
+    scopes?: string[];
+    tenantId?: string;
 }
 
 // @public
@@ -743,6 +764,9 @@ export interface CustomKey {
     channelId: string;
     conversationId: string;
 }
+
+// @public
+export const defaultAuthProviderFactory: AuthProviderFactory;
 
 // @public
 export interface DefaultConversationState {
@@ -982,14 +1006,27 @@ export class MiddlewareSet implements Middleware {
     use(...middlewares: Array<MiddlewareHandler | Middleware>): this;
 }
 
-// @public (undocumented)
-export class MsalConnectionManager implements Connections {
+// @public
+export class MsalConnectionManager extends ConnectionManager {
     constructor(connectionsConfigurations?: Map<string, AuthConfiguration>, connectionsMap?: ConnectionMapItem[], configuration?: AuthConfiguration);
-    getConnection(connectionName: string): MsalTokenProvider;
-    getDefaultConnection(): MsalTokenProvider;
-    getDefaultConnectionConfiguration(): AuthConfiguration;
-    getTokenProvider(identity: JwtPayload, serviceUrl: string): MsalTokenProvider;
-    getTokenProviderFromActivity(identity: JwtPayload, activity: Activity): MsalTokenProvider;
+    // (undocumented)
+    protected applyConnectionDefaults(conn: AuthProvider): AuthProvider;
+}
+
+// @public
+export interface MsalConnectionSettings extends ConnectionSettingsBase {
+    azureRegion?: string;
+    certKeyFile?: string;
+    certPemFile?: string;
+    clientSecret?: string;
+    federatedClientId?: string;
+    federatedTokenFile?: string;
+    // @deprecated (undocumented)
+    FICClientId?: string;
+    idpmResource?: string;
+    sendX5C?: boolean;
+    // @deprecated (undocumented)
+    WIDAssertionFile?: string;
 }
 
 // @public
@@ -1195,6 +1232,32 @@ export type Selector = (context: TurnContext) => Promise<boolean>;
 
 // @public
 export type SendActivitiesHandler = (context: TurnContext, activities: Activity[], next: () => Promise<ResourceResponse[]>) => Promise<ResourceResponse[]>;
+
+// @public
+export class SidecarAuthProvider implements AuthProvider {
+    constructor(connectionSettings?: AuthConfiguration);
+    acquireTokenOnBehalfOf(scopes: string[], oboAssertion: string): Promise<string>;
+    // (undocumented)
+    acquireTokenOnBehalfOf(authConfig: AuthConfiguration, scopes: string[], oboAssertion: string): Promise<string>;
+    // (undocumented)
+    readonly connectionSettings?: AuthConfiguration;
+    getAccessToken(scope: string): Promise<string>;
+    getAccessToken(authConfig: AuthConfiguration, scope: string): Promise<string>;
+    getAgenticApplicationToken(tenantId: string, agentAppInstanceId: string): Promise<string>;
+    getAgenticInstanceToken(tenantId: string, agentAppInstanceId: string): Promise<string>;
+    getAgenticUserToken(tenantId: string, agentAppInstanceId: string, upn: string, scopes: string[]): Promise<string>;
+    isHealthy(): Promise<boolean>;
+}
+
+// @public
+export interface SidecarConnectionSettings extends ConnectionSettingsBase {
+    blueprintServiceName?: string;
+    bypassLocalNetworkRestriction?: boolean;
+    requestTimeout?: number;
+    retryCount?: number;
+    serviceName?: string;
+    sidecarBaseUrl?: string;
+}
 
 // @public
 export interface SignInResource {
