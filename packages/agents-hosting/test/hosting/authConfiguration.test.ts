@@ -221,6 +221,48 @@ describe('AuthConfiguration', () => {
   })
 
   describe('getAuthConfigWithDefaults', () => {
+    it('should populate altBlueprintConnectionName from the alternateBlueprintConnectionName alias', () => {
+      delete process.env.authorityEndpoint
+      delete process.env.idpmResource
+
+      const customConfig: AuthConfiguration = {
+        clientId: 'custom-test-client',
+        clientSecret: 'custom-test-secret',
+        tenantId: 'custom-test-tenant',
+        issuers: ['https://example.com'],
+        alternateBlueprintConnectionName: 'alt-alias-connection'
+      }
+      const config: AuthConfiguration = getAuthConfigWithDefaults(customConfig)
+      assert.strictEqual(config.altBlueprintConnectionName, 'alt-alias-connection')
+      assert.strictEqual(config.alternateBlueprintConnectionName, 'alt-alias-connection')
+    })
+
+    it('should prefer altBlueprintConnectionName over the alternateBlueprintConnectionName alias when both are set', () => {
+      delete process.env.authorityEndpoint
+      delete process.env.idpmResource
+
+      const customConfig: AuthConfiguration = {
+        clientId: 'custom-test-client',
+        clientSecret: 'custom-test-secret',
+        tenantId: 'custom-test-tenant',
+        issuers: ['https://example.com'],
+        altBlueprintConnectionName: 'canonical-connection',
+        alternateBlueprintConnectionName: 'alias-connection'
+      }
+      const config: AuthConfiguration = getAuthConfigWithDefaults(customConfig)
+      assert.strictEqual(config.altBlueprintConnectionName, 'canonical-connection')
+      assert.strictEqual(config.alternateBlueprintConnectionName, 'canonical-connection')
+    })
+
+    it('should load altBlueprintConnectionName from the alternateBlueprintConnectionName env alias', () => {
+      delete process.env.authorityEndpoint
+      delete process.env.idpmResource
+      process.env.alternateBlueprintConnectionName = 'env-alias-connection'
+
+      const config: AuthConfiguration = loadAuthConfigFromEnv()
+      assert.strictEqual(config.altBlueprintConnectionName, 'env-alias-connection')
+    })
+
     it('should load configuration with defaults', () => {
       delete process.env.authorityEndpoint
       delete process.env.idpmResource

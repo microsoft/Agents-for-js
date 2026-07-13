@@ -589,6 +589,108 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   },
 
   // ============================================================================
+  // Entra Agent ID Sidecar Authentication Errors (-120800 to -120849)
+  // ============================================================================
+
+  /**
+   * Error thrown when the Entra sidecar auth provider is used without connection settings.
+   */
+  SidecarConnectionSettingsRequired: {
+    code: -120800,
+    description: 'Connection settings must be provided when using the Entra sidecar auth provider'
+  },
+
+  /**
+   * Error thrown when the resolved sidecar base URL is not a valid absolute URL.
+   */
+  SidecarBaseUrlInvalid: {
+    code: -120801,
+    description: 'The resolved sidecar base URL `{url}` is not a valid absolute URL'
+  },
+
+  /**
+   * Error thrown when the resolved sidecar base URL does not use the http or https scheme.
+   */
+  SidecarBaseUrlInsecureScheme: {
+    code: -120802,
+    description: 'The resolved sidecar base URL `{url}` must use the http or https scheme'
+  },
+
+  /**
+   * Error thrown when the resolved sidecar base URL contains userinfo (credentials).
+   */
+  SidecarBaseUrlUserInfo: {
+    code: -120803,
+    description: 'The resolved sidecar base URL `{url}` must not contain userinfo (credentials)'
+  },
+
+  /**
+   * Error thrown when the resolved sidecar base URL points to a non-loopback, non-private address.
+   */
+  SidecarBaseUrlNotLocal: {
+    code: -120804,
+    description: 'The resolved sidecar base URL `{url}` points to a non-loopback, non-private address. The Entra Agent ID sidecar (agent container) must be reachable only from within the agent\'s network boundary. Set `bypassLocalNetworkRestriction` to true in the connection configuration to override this safety check (UNSAFE: only for carefully validated private-network configurations)'
+  },
+
+  /**
+   * Error thrown when both AgentUsername and AgentUserId are supplied on a sidecar request (mutually exclusive).
+   */
+  SidecarUserIdentityMutuallyExclusive: {
+    code: -120805,
+    description: 'AgentUsername and AgentUserId are mutually exclusive; set only one on the sidecar request options'
+  },
+
+  /**
+   * Error thrown when a sidecar request fails after exhausting all retry attempts.
+   */
+  SidecarRequestFailed: {
+    code: -120806,
+    description: 'Sidecar request failed after {attempts} attempt(s): {message}'
+  },
+
+  /**
+   * Error thrown when the sidecar responds with a non-success status code.
+   */
+  SidecarErrorResponse: {
+    code: -120807,
+    description: 'Sidecar returned error status {status}: {message}'
+  },
+
+  /**
+   * Error thrown when the sidecar response is missing the authorizationHeader field.
+   */
+  SidecarResponseMissingAuthorizationHeader: {
+    code: -120808,
+    description: 'Sidecar response missing `authorizationHeader` field'
+  },
+
+  /**
+   * Error thrown when the sidecar response body cannot be parsed.
+   */
+  SidecarResponseUnparsable: {
+    code: -120809,
+    description: 'Sidecar returned an unparsable response body'
+  },
+
+  /**
+   * Error thrown when acquireTokenOnBehalfOf is called on the sidecar provider, which does not support OBO in Phase 1.
+   */
+  OnBehalfOfNotSupportedBySidecar: {
+    code: -120810,
+    description: 'acquireTokenOnBehalfOf is not supported by the Entra sidecar auth provider in Phase 1'
+  },
+
+  /**
+   * Error thrown when the sidecar returns a token with an authorization scheme other than Bearer.
+   * The hosting stack always transmits tokens as `Bearer {token}`, so a non-Bearer scheme cannot be
+   * honored and is rejected rather than silently sent as an invalid Authorization header.
+   */
+  SidecarUnsupportedAuthScheme: {
+    code: -120811,
+    description: 'The Entra Agent ID sidecar returned an unsupported authorization scheme `{scheme}`. Only the Bearer scheme is supported'
+  },
+
+  // ============================================================================
   // Agent and Client Errors (-120600 to -120650)
   // ============================================================================
 
