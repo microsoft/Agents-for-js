@@ -47,6 +47,9 @@
         "path": "test-agents/fastify-empty-agent"
       },
       {
+        "path": "test-agents/sidecar-auth"
+      },
+      {
         "path": "test-agents/web-chat"
       },
       {

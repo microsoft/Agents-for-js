@@ -4,18 +4,17 @@
  */
 
 import { ConfidentialClientApplication, LogLevel, ManagedIdentityApplication, NodeSystemOptions } from '@azure/msal-node'
-import { AuthConfiguration, AuthType, resolveAuthority as resolveAuthorityUtil } from './authConfiguration'
-import { AuthProvider } from './authProvider'
+import { AuthConfiguration, AuthType, resolveAuthority as resolveAuthorityUtil } from '../authConfiguration'
+import { AuthProvider } from '../authProvider'
 import { debug, trace } from '@microsoft/agents-telemetry'
 import { randomUUID } from 'crypto'
-import { MemoryCache } from './MemoryCache'
+import { MemoryCache } from '../MemoryCache'
 import jwt from 'jsonwebtoken'
-
 import fs from 'fs'
 import crypto from 'crypto'
-import { AuthenticationTraceDefinitions } from '../observability'
+import { AuthenticationTraceDefinitions } from '../../observability'
 import { ExceptionHelper } from '@microsoft/agents-activity'
-import { Errors } from '../errorHelper'
+import { Errors } from '../../errorHelper'
 
 const audience = 'api://AzureADTokenExchange'
 const logger = debug('agents:msal')
