@@ -1,13 +1,5 @@
-import axios from 'axios'
 import { startServer } from '@microsoft/agents-hosting-express'
 import { AdaptiveCardSearchResult, AgentApplication, CardFactory, MemoryStorage, MessageFactory, TurnContext, TurnState } from '@microsoft/agents-hosting'
-
-interface packageResult {
-  package: {
-    name: string
-    description: string
-  }
-}
 
 const app = new AgentApplication<TurnState>({ storage: new MemoryStorage() })
 app.onConversationUpdate('membersAdded', async (context: TurnContext) => {
@@ -26,14 +18,15 @@ app.adaptiveCards.search('', async (context: TurnContext, state: TurnState) => {
     if (searchQuery.lengh < 4) {
       return []
     }
-    const params = { text: searchQuery, size: 8 }
-    const response = await axios.get('http://registry.npmjs.com/-/v1/search?', { params })
+    const params = new URLSearchParams({ text: searchQuery, size: '8' })
+    const response = await fetch(`http://registry.npmjs.com/-/v1/search?${params.toString()}`)
 
-    const npmPackages: AdaptiveCardSearchResult[] = response.data.objects.map((obj: packageResult) => ({
-      title: obj.package.name,
-      value: `${obj.package.name} - ${obj.package.description}`
-    }))
     if (response.status === 200) {
+      const data = await response.json() as any
+      const npmPackages = data.objects.map((obj: any) => ({
+        title: obj.package.name,
+        value: `${obj.package.name} - ${obj.package.description}`
+      }))
       return Promise.resolve(npmPackages)
     } else if (response.status === 204) {
       return Promise.resolve([{ title: 'No results found', value: 'No results found' }])

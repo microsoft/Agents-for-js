@@ -6,7 +6,6 @@ import { ActivityHandler, CardFactory, MessageFactory, TurnContext } from '@micr
 import { ActionTypes, Activity, ActivityTypes, Attachment, EndOfConversationCodes } from '@microsoft/agents-activity'
 import path from 'path'
 import fs from 'fs'
-import axios from 'axios'
 
 export class MultiFeatureHandler extends ActivityHandler {
   // conversationReferences: { [key: string]: ConversationReference }
@@ -201,18 +200,26 @@ export class MultiFeatureHandler extends ActivityHandler {
     }
 
     // Local file path for the agent to save the attachment.
-    const localFileName = path.join(__dirname, attachment.name)
+    const localFileName = path.join(import.meta.dirname, attachment.name)
 
     try {
-      // arraybuffer is necessary for images
-      const response = await axios.get(attachment.contentUrl!, { responseType: 'arraybuffer' })
+      const response = await fetch(attachment.contentUrl!)
+      let data: any
       // If user uploads JSON file, this prevents it from being written as "{"type":"Buffer","data":[123,13,10,32,32,34,108..."
-      if (response.headers['content-type'] === 'application/json') {
-        response.data = JSON.parse(response.data, (key, value) => {
-          return value !== undefined && value.type === 'Buffer' ? Buffer.from(value.data) : value
+      if (response.headers.get('content-type') === 'application/json') {
+        const json = await response.json()
+        data = JSON.parse(JSON.stringify(json), (key, value) => {
+          return value !== undefined && value.type === 'Buffer'
+            ? Buffer.from(value.data)
+            : value
         })
+      } else {
+        // arraybuffer is necessary for images
+        const arrayBuffer = await response.arrayBuffer()
+        data = Buffer.from(arrayBuffer)
       }
-      fs.writeFile(localFileName, response.data, (fsError) => {
+
+      fs.writeFile(localFileName, data, (fsError) => {
         if (fsError != null) {
           throw fsError
         }
@@ -274,7 +281,7 @@ export class MultiFeatureHandler extends ActivityHandler {
   }
 
   getInlineAttachment (): Attachment {
-    const imageData = fs.readFileSync(path.join(__dirname, './../_resources/multi-agents.jpg'))
+    const imageData = fs.readFileSync(path.join(import.meta.dirname, './../_resources/multi-agents.jpg'))
     const base64Image = Buffer.from(imageData).toString('base64')
 
     return {

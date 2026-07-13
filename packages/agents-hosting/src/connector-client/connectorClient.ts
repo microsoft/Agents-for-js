@@ -1,5 +1,8 @@
-/** * Copyright (c) Microsoft Corporation. All rights reserved. * Licensed under the MIT License. */
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
+/**
+ * Copyright (c) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License.
+ */
+
 import { AuthConfiguration } from '../auth/authConfiguration'
 import { AuthProvider } from '../auth/authProvider'
 import { debug } from '@microsoft/agents-telemetry'
@@ -11,13 +14,28 @@ import { ResourceResponse } from './resourceResponse'
 import { AttachmentInfo } from './attachmentInfo'
 import { AttachmentData } from './attachmentData'
 import { normalizeOutgoingActivity } from '../activityWireCompat'
-import { getProductInfo } from '../getProductInfo'
+import { applyUserAgentHeader, getProductInfo } from '../getProductInfo'
 import { HeaderPropagation, HeaderPropagationCollection } from '../headerPropagation'
 import { trace } from '@microsoft/agents-telemetry'
 import { ConnectorClientTraceDefinitions } from '../observability'
 import { parseIntEnv } from '../utils/env'
+import { HttpClient, HttpRequestConfig, HttpResponse, HttpError } from '../httpClient'
 
 const logger = debug('agents:connector-client')
+
+function formatHttpErrorMessage (error: HttpError): string {
+  const responseData = error.response?.data
+  if (responseData === undefined) {
+    return error.message
+  }
+
+  try {
+    const serializedResponseData = JSON.stringify(responseData)
+    return serializedResponseData === undefined ? error.message : `${error.message}: ${serializedResponseData}`
+  } catch {
+    return error.message
+  }
+}
 
 export { getProductInfo }
 
@@ -25,59 +43,18 @@ export { getProductInfo }
  * ConnectorClient is a client for interacting with the Microsoft Connector API.
  */
 export class ConnectorClient {
-  protected readonly _axiosInstance: AxiosInstance
+  protected readonly _httpClient: HttpClient
 
   /**
    * Private constructor for the ConnectorClient.
-   * @param axInstance - The AxiosInstance to use for HTTP requests.
+   * @param httpClient - The HttpClient instance to use for HTTP requests.
    */
-  protected constructor (axInstance: AxiosInstance) {
-    this._axiosInstance = axInstance
-    this._axiosInstance.interceptors.request.use((config) => {
-      const { method, url, data, headers, params } = config
-      // Clone headers and remove Authorization before logging
-      const { Authorization, authorization, ...headersToLog } = headers || {}
-      logger.debug('Request: ', {
-        host: this._axiosInstance.getUri(),
-        url,
-        data,
-        method,
-        params,
-        headers: headersToLog
-      })
-      return config
-    })
-    this._axiosInstance.interceptors.response.use(
-      (config) => {
-        const { status, statusText, config: requestConfig } = config
-        logger.debug('Response: ', {
-          status,
-          statusText,
-          host: this._axiosInstance.getUri(),
-          url: requestConfig?.url,
-          data: config.config.data,
-          method: requestConfig?.method,
-        })
-        return config
-      },
-      (error) => {
-        const { code, message, stack, response } = error
-        const errorDetails = {
-          code,
-          host: this._axiosInstance.getUri(),
-          url: error.config.url,
-          method: error.config.method,
-          data: error.config.data,
-          message: message + JSON.stringify(response?.data),
-          stack,
-        }
-        return Promise.reject(errorDetails)
-      }
-    )
+  protected constructor (httpClient: HttpClient) {
+    this._httpClient = httpClient
   }
 
-  public get axiosInstance (): AxiosInstance {
-    return this._axiosInstance
+  public get httpClient (): HttpClient {
+    return this._httpClient
   }
 
   /**
@@ -113,28 +90,23 @@ export class ConnectorClient {
     headers?: HeaderPropagationCollection
   ): ConnectorClient {
     const headerPropagation = headers ?? new HeaderPropagation({})
-    const userAgent = headerPropagation.outgoing['user-agent']
-    const productInfo = getProductInfo()
-    if (!userAgent) {
-      headerPropagation.add({ 'User-Agent': productInfo })
-    } else if (!userAgent.includes(productInfo)) {
-      headerPropagation.concat({ 'User-Agent': productInfo })
-    }
+    applyUserAgentHeader(headerPropagation)
     headerPropagation.override({
       Accept: 'application/json',
-      'Content-Type': 'application/json', // Required by transformRequest
+      'Content-Type': 'application/json',
     })
 
-    const axiosInstance = axios.create({
-      baseURL,
-      headers: headerPropagation.outgoing,
-    })
-
+    const clientHeaders: Record<string, string> = { ...headerPropagation.outgoing }
     if (token && token.length > 1) {
-      axiosInstance.defaults.headers.common.Authorization = `Bearer ${token}`
+      clientHeaders.Authorization = `Bearer ${token}`
     }
 
-    return new ConnectorClient(axiosInstance)
+    const httpClient = new HttpClient({
+      baseURL,
+      headers: clientHeaders,
+    })
+
+    return new ConnectorClient(httpClient)
   }
 
   /**
@@ -144,12 +116,12 @@ export class ConnectorClient {
    */
   public async getConversations (continuationToken?: string): Promise<ConversationsResult> {
     return trace(ConnectorClientTraceDefinitions.getConversations, async ({ record }) => {
-      const config: AxiosRequestConfig = {
+      const config: HttpRequestConfig = {
         method: 'get',
         url: '/v3/conversations',
         params: continuationToken ? { continuationToken } : undefined
       }
-      const response = await this._axiosInstance(config)
+      const response = await this.executeRequest<ConversationsResult>(config)
       record({ httpStatusCode: response.status?.toString() })
       return response.data
     })
@@ -160,14 +132,14 @@ export class ConnectorClient {
       if (!userId || !conversationId) {
         throw ExceptionHelper.generateException(Error, Errors.UserIdAndConversationIdRequired)
       }
-      const config: AxiosRequestConfig = {
+      const config: HttpRequestConfig = {
         method: 'get',
         url: `v3/conversations/${conversationId}/members/${userId}`,
         headers: {
           'Content-Type': 'application/json'
         }
       }
-      const response = await this._axiosInstance(config)
+      const response = await this.executeRequest<ChannelAccount>(config)
       record({ httpStatusCode: response.status?.toString() })
       return response.data
     })
@@ -184,7 +156,7 @@ export class ConnectorClient {
         ...body,
         activity: normalizeOutgoingActivity(body.activity)
       }
-      const config: AxiosRequestConfig = {
+      const config: HttpRequestConfig = {
         method: 'post',
         url: '/v3/conversations',
         headers: {
@@ -192,7 +164,7 @@ export class ConnectorClient {
         },
         data: payload
       }
-      const response: AxiosResponse = await this._axiosInstance(config)
+      const response = await this.executeRequest<ConversationResourceResponse>(config)
       record({ httpStatusCode: response.status?.toString() })
       return response.data
     })
@@ -220,7 +192,7 @@ export class ConnectorClient {
 
       const trimmedConversationId: string = this.conditionallyTruncateConversationId(conversationId, body)
 
-      const config: AxiosRequestConfig = {
+      const config: HttpRequestConfig = {
         method: 'post',
         url: `v3/conversations/${trimmedConversationId}/activities/${encodeURIComponent(activityId)}`,
         headers: {
@@ -229,7 +201,7 @@ export class ConnectorClient {
         data: normalizeOutgoingActivity(body),
         ...(body.channelId === Channels.Msteams && body.isTargetedActivity() ? { params: { isTargetedActivity: 'true' } } : {})
       }
-      const response = await this._axiosInstance(config)
+      const response = await this.executeRequest<ResourceResponse>(config)
       record({ httpStatusCode: response.status?.toString() })
       logger.info('Reply to conversation/activity: ', response.data.id!, activityId)
       return response.data
@@ -275,7 +247,7 @@ export class ConnectorClient {
 
       const trimmedConversationId: string = this.conditionallyTruncateConversationId(conversationId, body)
 
-      const config: AxiosRequestConfig = {
+      const config: HttpRequestConfig = {
         method: 'post',
         url: `v3/conversations/${trimmedConversationId}/activities`,
         headers: {
@@ -285,7 +257,7 @@ export class ConnectorClient {
         ...(body.channelId === Channels.Msteams && body.isTargetedActivity() ? { params: { isTargetedActivity: 'true' } } : {})
 
       }
-      const response = await this._axiosInstance(config)
+      const response = await this.executeRequest<ResourceResponse>(config)
       record({ httpStatusCode: response.status?.toString() })
       return response.data
     })
@@ -308,7 +280,7 @@ export class ConnectorClient {
         throw ExceptionHelper.generateException(Error, Errors.ConversationIdAndActivityIdRequired)
       }
       record({ conversationId, activityId })
-      const config: AxiosRequestConfig = {
+      const config: HttpRequestConfig = {
         method: 'put',
         url: `v3/conversations/${conversationId}/activities/${activityId}`,
         headers: {
@@ -317,7 +289,7 @@ export class ConnectorClient {
         data: normalizeOutgoingActivity(body),
         ...(body.channelId === Channels.Msteams && body.isTargetedActivity() ? { params: { isTargetedActivity: 'true' } } : {})
       }
-      const response = await this._axiosInstance(config)
+      const response = await this.executeRequest<ResourceResponse>(config)
       record({ httpStatusCode: response.status?.toString() })
       return response.data
     })
@@ -341,7 +313,7 @@ export class ConnectorClient {
       if (!conversationId || !activityId) {
         throw ExceptionHelper.generateException(Error, Errors.ConversationIdAndActivityIdRequired)
       }
-      const config: AxiosRequestConfig = {
+      const config: HttpRequestConfig = {
         method: 'delete',
         url: `v3/conversations/${conversationId}/activities/${activityId}`,
         headers: {
@@ -349,7 +321,7 @@ export class ConnectorClient {
         },
         ...(isTargetedActivity ? { params: { isTargetedActivity: 'true' } } : {})
       }
-      const response = await this._axiosInstance(config)
+      const response = await this.executeRequest<void>(config)
       record({ httpStatusCode: response.status?.toString() })
       return response.data
     })
@@ -370,7 +342,7 @@ export class ConnectorClient {
       if (conversationId === undefined) {
         throw ExceptionHelper.generateException(Error, Errors.ConversationIdRequired)
       }
-      const config: AxiosRequestConfig = {
+      const config: HttpRequestConfig = {
         method: 'post',
         url: `v3/conversations/${conversationId}/attachments`,
         headers: {
@@ -378,7 +350,7 @@ export class ConnectorClient {
         },
         data: body
       }
-      const response = await this._axiosInstance(config)
+      const response = await this.executeRequest<ResourceResponse>(config)
       record({ httpStatusCode: response.status?.toString() })
       return response.data
     })
@@ -397,14 +369,14 @@ export class ConnectorClient {
       if (attachmentId === undefined) {
         throw ExceptionHelper.generateException(Error, Errors.AttachmentIdRequired)
       }
-      const config: AxiosRequestConfig = {
+      const config: HttpRequestConfig = {
         method: 'get',
         url: `v3/attachments/${attachmentId}`,
         headers: {
           'Content-Type': 'application/json'
         }
       }
-      const response = await this._axiosInstance(config)
+      const response = await this.executeRequest<AttachmentInfo>(config)
       record({ httpStatusCode: response.status?.toString() })
       return response.data
     })
@@ -428,16 +400,66 @@ export class ConnectorClient {
       if (viewId === undefined) {
         throw ExceptionHelper.generateException(Error, Errors.ViewIdRequired)
       }
-      const config: AxiosRequestConfig = {
+      const config: HttpRequestConfig = {
         method: 'get',
         url: `v3/attachments/${attachmentId}/views/${viewId}`,
         headers: {
           'Content-Type': 'application/json'
-        }
+        },
+        responseType: 'stream'
       }
-      const response = await this._axiosInstance(config)
+      const response = await this.executeRequest<NodeJS.ReadableStream>(config)
       record({ httpStatusCode: response.status?.toString() })
       return response.data
     })
+  }
+
+  private async executeRequest<T = unknown> (config: HttpRequestConfig): Promise<HttpResponse<T>> {
+    const { method, url, data, headers, params } = config
+    const { Authorization, authorization, ...headersToLog } = { ...this._httpClient.defaultHeaders, ...headers } as Record<string, string>
+    logger.debug('Request: ', {
+      host: this._httpClient.baseURL,
+      url,
+      data,
+      method,
+      params,
+      headers: headersToLog
+    })
+
+    try {
+      const response = await this._httpClient.request<T>(config)
+      logger.debug('Response: ', {
+        status: response.status,
+        statusText: response.statusText,
+        host: this._httpClient.baseURL,
+        url: response.config?.url,
+        data: response.config?.data,
+        method: response.config?.method,
+      })
+      return response
+    } catch (error) {
+      if (error instanceof HttpError) {
+        const message = formatHttpErrorMessage(error)
+        logger.debug('Response error: ', {
+          host: this._httpClient.baseURL,
+          url: error.config.url,
+          method: error.config.method,
+          data: error.config.data,
+          message,
+          stack: error.stack,
+        })
+
+        Object.assign(error, {
+          host: this._httpClient.baseURL,
+          url: error.config.url,
+          method: error.config.method,
+          data: error.config.data,
+          message,
+        })
+
+        throw error
+      }
+      throw error
+    }
   }
 }
