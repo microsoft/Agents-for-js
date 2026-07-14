@@ -340,3 +340,39 @@ export enum AuthType {
   IdentityProxyManager = 'IdentityProxyManager',
   EntraAuthSideCar = 'EntraAuthSideCar'
 }
+
+/**
+ * Resolves the authentication type for a given authentication configuration.
+ * @remarks
+ * The function checks various properties of the `authConfig` object to determine the appropriate authentication type.
+ * It returns a string representing the resolved authentication type or 'unknown' if it cannot be determined.
+ * @param authConfig The authentication configuration object.
+ * @returns The resolved authentication type as a string or 'unknown' if it cannot be determined.
+ */
+export function resolveAuthType (authConfig?: AuthConfiguration): AuthType | string {
+  if (!authConfig) {
+    return 'none'
+  }
+  if (authConfig.authType) {
+    return authConfig.authType
+  }
+  if (authConfig.WIDAssertionFile !== undefined) {
+    return AuthType.WorkloadIdentity
+  }
+  if (authConfig.federatedClientId !== undefined || authConfig.FICClientId !== undefined) {
+    return AuthType.FederatedCredentials
+  }
+  if (authConfig.clientSecret !== undefined) {
+    return AuthType.ClientSecret
+  }
+  if (authConfig.certPemFile !== undefined && authConfig.certKeyFile !== undefined) {
+    return AuthType.Certificate
+  }
+  if (authConfig.clientSecret === undefined && authConfig.certPemFile === undefined && authConfig.certKeyFile === undefined) {
+    return AuthType.UserManagedIdentity
+  }
+  if (authConfig.idpmResource !== undefined) {
+    return AuthType.IdentityProxyManager
+  }
+  return 'unknown'
+}

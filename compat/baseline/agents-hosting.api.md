@@ -535,6 +535,9 @@ export interface Citation {
     url: string | null;
 }
 
+// @public
+export function clearJwksClients(): void;
+
 // @public (undocumented)
 export class CloudAdapter extends BaseAdapter {
     constructor(authConfig?: AuthConfiguration, authProvider?: AuthProvider, userTokenClient?: UserTokenClient, options?: CloudAdapterOptions);
@@ -1070,6 +1073,7 @@ export class MsalTokenProvider implements AuthProvider {
     acquireTokenOnBehalfOf(scopes: string[], oboAssertion: string): Promise<string>;
     // (undocumented)
     acquireTokenOnBehalfOf(authConfig: AuthConfiguration, scopes: string[], oboAssertion: string): Promise<string>;
+    static clearSharedCaches(): void;
     // (undocumented)
     readonly connectionSettings?: AuthConfiguration;
     getAccessToken(scope: string): Promise<string>;
@@ -1210,6 +1214,9 @@ export { Request_2 as Request }
 
 // @public
 export function resolveAuthority(authority?: string, tenantId?: string): string;
+
+// @public
+export function resolveAuthType(authConfig?: AuthConfiguration): AuthType | string;
 
 // @public
 export interface ResourceResponse {
@@ -1587,6 +1594,7 @@ export class UserState extends AgentState {
 export class UserTokenClient {
     constructor(msAppId: string);
     constructor(httpClient: HttpClient);
+    constructor(httpClient: HttpClient, authProvider?: AuthProvider, authScope?: string);
     // (undocumented)
     client: HttpClient;
     static createClientWithScope(baseURL: string, authProvider: AuthProvider, scope: string, headers?: HeaderPropagationCollection): Promise<UserTokenClient>;

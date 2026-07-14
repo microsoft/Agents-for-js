@@ -5,7 +5,7 @@
 
 import { Activity, ExceptionHelper, RoleTypes } from '@microsoft/agents-activity'
 import { debug, redactString } from '@microsoft/agents-telemetry'
-import { AuthConfiguration, AuthType } from './authConfiguration'
+import { AuthConfiguration, AuthType, resolveAuthType } from './authConfiguration'
 import { Connections } from './connections'
 import { AuthProvider } from './authProvider'
 import { MsalTokenProvider } from './msal/msalTokenProvider'
@@ -73,16 +73,7 @@ export class ConnectionManager implements Connections {
 
     for (const [name, provider] of this._connections.entries()) {
       const cfg = provider.connectionSettings
-      const authType = cfg?.authType ??
-        (cfg?.certPemFile
-          ? AuthType.Certificate
-          : cfg?.clientSecret
-            ? AuthType.ClientSecret
-            : cfg?.WIDAssertionFile
-              ? AuthType.WorkloadIdentity
-              : cfg?.federatedClientId || cfg?.FICClientId
-                ? AuthType.FederatedCredentials
-                : 'none')
+      const authType = resolveAuthType(cfg)
       logger.debug('connection "%s" clientId=%s tenantId=%s authType=%s', name, redactString(cfg?.clientId, true) ?? '<none>', redactString(cfg?.tenantId, true) ?? '<none>', authType)
     }
 

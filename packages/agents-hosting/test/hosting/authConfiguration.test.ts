@@ -1,7 +1,7 @@
 import { strict as assert } from 'assert'
 import { describe, it, beforeEach, afterEach } from 'node:test'
 import { AuthConfiguration, getAuthConfigWithDefaults, loadAuthConfigFromEnv, loadPrevAuthConfigFromEnv, resolveAuthority } from '../../src'
-import { envParser, envParserUtils } from '../../src/auth/settings'
+import { AuthType, envParser, envParserUtils, resolveAuthType } from '../../src/auth/settings'
 
 describe('AuthConfiguration', () => {
   let originalEnv: NodeJS.ProcessEnv
@@ -386,6 +386,16 @@ describe('AuthConfiguration', () => {
         resolveAuthority(),
         'https://login.microsoftonline.com/botframework.com'
       )
+    })
+  })
+
+  describe('resolveAuthType', () => {
+    it('should resolve auth type through the shared MSAL auth type helper', () => {
+      assert.strictEqual(resolveAuthType(undefined), 'none')
+      assert.strictEqual(resolveAuthType({ clientSecret: 'secret' }), AuthType.ClientSecret)
+      assert.strictEqual(resolveAuthType({ WIDAssertionFile: 'token-file', clientSecret: 'secret' }), AuthType.WorkloadIdentity)
+      assert.strictEqual(resolveAuthType({ certPemFile: 'cert.pem', certKeyFile: 'key.pem' }), AuthType.Certificate)
+      assert.strictEqual(resolveAuthType({ authType: 'Certificate' }), AuthType.Certificate)
     })
   })
 
