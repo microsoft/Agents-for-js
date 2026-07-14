@@ -35,6 +35,10 @@ function formatHttpErrorMessage (error: HttpError): string {
 export class UserTokenClient {
   client: HttpClient
   private msAppId: string = ''
+  private authProvider?: AuthProvider
+  private authScope?: string
+  private authInitialized = false
+  private authInitialization?: Promise<void>
   /**
    * Creates a new instance of UserTokenClient.
    * @param msAppId The Microsoft application ID.
@@ -45,8 +49,15 @@ export class UserTokenClient {
    * @param httpClient The HttpClient instance.
    */
   constructor (httpClient: HttpClient)
+  /**
+   * Creates a new instance of UserTokenClient with lazy authentication.
+   * @param httpClient The HttpClient instance.
+   * @param authProvider The authentication provider.
+   * @param authScope The authentication scope.
+   */
+  constructor (httpClient: HttpClient, authProvider?: AuthProvider, authScope?: string)
 
-  constructor (param: string | HttpClient) {
+  constructor (param: string | HttpClient, authProvider?: AuthProvider, authScope?: string) {
     if (typeof param === 'string') {
       const baseURL = getTokenServiceEndpoint()
       this.client = new HttpClient({
@@ -59,6 +70,10 @@ export class UserTokenClient {
     } else {
       this.client = param
     }
+
+    this.authProvider = authProvider
+    this.authScope = authScope
+    this.authInitialized = Boolean(this.client.defaultHeaders.authorization)
   }
 
   /**
@@ -83,18 +98,12 @@ export class UserTokenClient {
       'Content-Type': 'application/json',
     })
 
-    const clientHeaders: Record<string, string> = { ...headerPropagation.outgoing }
-    const token = await authProvider?.getAccessToken(scope)
-    if (token && token.length > 1) {
-      clientHeaders.Authorization = `Bearer ${token}`
-    }
-
     const httpClient = new HttpClient({
       baseURL,
-      headers: clientHeaders,
+      headers: { ...headerPropagation.outgoing },
     })
 
-    return new UserTokenClient(httpClient)
+    return new UserTokenClient(httpClient, authProvider, scope)
   }
 
   /**
@@ -253,9 +262,13 @@ export class UserTokenClient {
 
   public updateAuthToken (token: string): void {
     this.client.setHeader('Authorization', `Bearer ${token}`)
+    this.authInitialized = true
+    this.authInitialization = undefined
   }
 
   private async executeRequest<T = unknown> (method: string, url: string, data?: unknown, options?: { params?: Record<string, string | undefined> }): Promise<{ data: T, status: number, statusText: string }> {
+    await this.ensureAuthorizationHeader()
+
     const { params } = options ?? {}
     const { Authorization, authorization, ...headersToLog } = this.client.defaultHeaders
     logger.debug('Request: ', {
@@ -304,5 +317,26 @@ export class UserTokenClient {
       }
       throw error
     }
+  }
+
+  private async ensureAuthorizationHeader (): Promise<void> {
+    if (this.authInitialized || !this.authProvider || !this.authScope) {
+      return
+    }
+
+    if (!this.authInitialization) {
+      this.authInitialization = this.authProvider.getAccessToken(this.authScope)
+        .then((token) => {
+          if (!this.authInitialized && token && token.length > 1) {
+            this.client.setHeader('Authorization', `Bearer ${token}`)
+            this.authInitialized = true
+          }
+        })
+        .finally(() => {
+          this.authInitialization = undefined
+        })
+    }
+
+    await this.authInitialization
   }
 }

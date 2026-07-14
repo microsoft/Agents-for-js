@@ -1,9 +1,10 @@
 import { strict as assert } from 'assert'
-import { describe, it, beforeEach } from 'node:test'
+import { describe, it, beforeEach, afterEach } from 'node:test'
 import sinon from 'sinon'
 import jwt from 'jsonwebtoken'
 import { Response, NextFunction } from 'express'
-import { authorizeJWT, buildJwksUri, AuthConfiguration, Request } from '../../src'
+import { authorizeJWT, buildJwksUri, clearJwksClients, AuthConfiguration, Request } from '../../src'
+import { getJwksClient } from '../../src/auth/jwt-middleware'
 
 describe('authorizeJWT', () => {
   let req: Request
@@ -13,6 +14,7 @@ describe('authorizeJWT', () => {
   let connections: Map<string, AuthConfiguration>
 
   beforeEach(() => {
+    clearJwksClients()
     req = {
       headers: {},
       method: 'POST',
@@ -39,6 +41,11 @@ describe('authorizeJWT', () => {
       issuers: ['issuer'],
       connections
     }
+  })
+
+  afterEach(() => {
+    clearJwksClients()
+    sinon.restore()
   })
 
   it('should call next with no error if token is valid', async () => {
@@ -98,6 +105,25 @@ describe('authorizeJWT', () => {
     assert((res.status as sinon.SinonStub).calledOnceWith(405))
     assert((res.send as sinon.SinonStub).calledOnceWith({ 'jwt-auth-error': 'Method not allowed' }))
     assert((next as sinon.SinonStub).notCalled)
+  })
+
+  it('should evict least-recently-used JWKS clients after the cache size limit is reached', async () => {
+    const firstClient = getJwksClient('https://login.microsoftonline.com/tenant-0/discovery/v2.0/keys')
+    let secondClient
+
+    for (let i = 1; i < 100; i++) {
+      const client = getJwksClient(`https://login.microsoftonline.com/tenant-${i}/discovery/v2.0/keys`)
+      if (i === 1) {
+        secondClient = client
+      }
+    }
+
+    assert.strictEqual(getJwksClient('https://login.microsoftonline.com/tenant-0/discovery/v2.0/keys'), firstClient)
+
+    getJwksClient('https://login.microsoftonline.com/tenant-100/discovery/v2.0/keys')
+    assert.strictEqual(getJwksClient('https://login.microsoftonline.com/tenant-0/discovery/v2.0/keys'), firstClient)
+
+    assert.notStrictEqual(getJwksClient('https://login.microsoftonline.com/tenant-1/discovery/v2.0/keys'), secondClient)
   })
 
   describe('buildJwksUri', () => {

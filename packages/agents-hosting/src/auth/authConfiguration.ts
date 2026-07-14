@@ -6,7 +6,7 @@
 import { debug, redactString, redactScopes, redactUrl } from '@microsoft/agents-telemetry'
 import { loadEnvSettings, AuthConfiguration, envParser, envParserUtils, LoadEnv, applyDefaultSettings, DEFAULT_CONNECTION_MAP, ConnectionKeys, ConnectionMapKeys, ConnectionMapItem } from './settings'
 
-export { type AuthConfiguration, type ConnectionSettings, type ConnectionSettingsBase, type MsalConnectionSettings, type SidecarConnectionSettings, AuthType, resolveAuthority, type ConnectionMapItem } from './settings'
+export { type AuthConfiguration, type ConnectionSettings, type ConnectionSettingsBase, type MsalConnectionSettings, type SidecarConnectionSettings, AuthType, resolveAuthority, type ConnectionMapItem, resolveAuthType } from './settings'
 import { prune } from '../utils'
 
 const logger = debug('agents:authConfiguration')

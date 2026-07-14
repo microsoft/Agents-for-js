@@ -11,6 +11,15 @@ import jwt, { JwtHeader, JwtPayload, SignCallback, GetPublicKeyOrSecret } from '
 import { debug } from '@microsoft/agents-telemetry'
 
 const logger = debug('agents:jwt-middleware')
+const jwksClients = new Map<string, JwksClient>()
+const maxJwksClients = 100
+
+/**
+ * Clears process-wide JWKS clients.
+ */
+export function clearJwksClients (): void {
+  jwksClients.clear()
+}
 
 /**
  * Builds the JWKS URI for the given token issuer and auth configuration.
@@ -22,6 +31,26 @@ export function buildJwksUri (iss: string, authConfig: AuthConfiguration): strin
   return iss === 'https://api.botframework.com'
     ? 'https://login.botframework.com/v1/.well-known/keys'
     : `${resolveAuthority(authConfig.authorityEndpoint ?? authConfig.authority, authConfig.tenantId)}/discovery/v2.0/keys`
+}
+
+export function getJwksClient (jwksUri: string): JwksClient {
+  // Check if a client for this JWKS URI already exists in the cache.
+  let client = jwksClients.get(jwksUri)
+  if (!client) {
+    client = jwksRsa({ jwksUri })
+    jwksClients.set(jwksUri, client)
+    while (jwksClients.size > maxJwksClients) {
+      const oldestKey = jwksClients.keys().next().value
+      if (oldestKey === undefined) {
+        break
+      }
+      jwksClients.delete(oldestKey)
+    }
+  } else {
+    jwksClients.delete(jwksUri)
+    jwksClients.set(jwksUri, client)
+  }
+  return client
 }
 
 /**
@@ -55,9 +84,10 @@ const verifyToken = async (raw: string, config: AuthConfiguration): Promise<JwtP
   const jwksUri = buildJwksUri(payload.iss as string, authConfig)
 
   logger.debug(`fetching keys from ${jwksUri}`)
-  const jwksClient: JwksClient = jwksRsa({ jwksUri })
+  const jwksClient = getJwksClient(jwksUri)
 
   const getKey: GetPublicKeyOrSecret = (header: JwtHeader, callback: SignCallback) => {
+    // Retrieve the public, issuer-wide signing key from the JWKS endpoint using the kid from the token header.
     jwksClient.getSigningKey(header.kid, (err: Error | null, key: SigningKey | undefined): void => {
       if (err) {
         logger.error('jwksClient.getSigningKey ', JSON.stringify(err))
