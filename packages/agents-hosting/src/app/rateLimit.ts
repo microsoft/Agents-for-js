@@ -256,13 +256,13 @@ export interface RateLimitRule {
   storageErrorBehavior?: RateLimitStorageErrorBehavior
 
   /**
-   * Number of times to retry storage writes. Defaults to 3.
+   * Number of times to retry storage operations. Defaults to 3.
    *
-   * When provided, failed window writes are retried up to this many times before
+   * When provided, failed window evaluations and writes are retried up to this many times before
    * applying `storageErrorBehavior`.
    *
-   * When omitted, failed window writes are retried up to 3 times. Retries help
-   * when shared storage reports transient write conflicts.
+   * When omitted, failed window evaluations and writes are retried up to 3 times.
+   * Retries help when shared storage reports transient read or write failures.
    */
   maxStorageRetries?: number
 }
@@ -473,7 +473,7 @@ export class AgentApplicationRateLimiter {
     }
 
     try {
-      await context.sendActivity(message as Activity)
+      await context.sendActivity(message)
     } catch (err) {
       logger.warn('Failed to send rate limit message:', err)
     }
