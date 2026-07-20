@@ -25,11 +25,16 @@ function getFetchOptions (fetchStub: sinon.SinonStub): RequestInit {
   return fetchStub.getCall(0).args[1] as RequestInit
 }
 
+function createExpiringJwtToken (expiresInSeconds = 3600): string {
+  return jwt.sign({ exp: Math.floor(Date.now() / 1000) + expiresInSeconds }, 'secret')
+}
+
 describe('MsalTokenProvider', () => {
   let msalTokenProvider: MsalTokenProvider
   let authConfig: AuthConfiguration
 
   beforeEach(() => {
+    MsalTokenProvider.clearSharedCaches()
     msalTokenProvider = new MsalTokenProvider()
     authConfig = {
       clientId: 'test-client-id',
@@ -42,6 +47,7 @@ describe('MsalTokenProvider', () => {
   })
 
   afterEach(() => {
+    MsalTokenProvider.clearSharedCaches()
     sinon.restore()
   })
 
@@ -56,6 +62,107 @@ describe('MsalTokenProvider', () => {
     sinon.stub(ConfidentialClientApplication.prototype, 'acquireTokenByClientCredential').resolves({ accessToken: 'test-token' })
     const token = await msalTokenProvider.getAccessToken(authConfig, 'scope')
     assert.strictEqual(token, 'test-token')
+  })
+
+  it('should share cached access tokens across token provider instances', async () => {
+    const accessToken = createExpiringJwtToken()
+    const acquireTokenStub = sinon.stub(ConfidentialClientApplication.prototype, 'acquireTokenByClientCredential').resolves({ accessToken } as any)
+    const connectionSettings: AuthConfiguration = {
+      clientId: 'shared-client-id',
+      clientSecret: 'shared-secret',
+      tenantId: 'shared-tenant-id'
+    }
+
+    const firstProvider = new MsalTokenProvider(connectionSettings)
+    const secondProvider = new MsalTokenProvider({ ...connectionSettings })
+
+    assert.strictEqual(await firstProvider.getAccessToken('scope'), accessToken)
+    assert.strictEqual(await secondProvider.getAccessToken('scope'), accessToken)
+    assert.strictEqual(acquireTokenStub.calledOnce, true)
+  })
+
+  it('should reacquire shared access tokens after the JWT-derived cache TTL expires', async () => {
+    const clock = sinon.useFakeTimers({ now: new Date('2026-01-01T00:00:00.000Z').getTime(), toFake: ['Date'] })
+    const firstAccessToken = createExpiringJwtToken(301)
+    const secondAccessToken = createExpiringJwtToken(3600)
+    const acquireTokenStub = sinon.stub(ConfidentialClientApplication.prototype, 'acquireTokenByClientCredential')
+    acquireTokenStub.onFirstCall().resolves({ accessToken: firstAccessToken } as any)
+    acquireTokenStub.onSecondCall().resolves({ accessToken: secondAccessToken } as any)
+
+    try {
+      const connectionSettings: AuthConfiguration = {
+        clientId: 'shared-client-id',
+        clientSecret: 'shared-secret',
+        tenantId: 'shared-tenant-id'
+      }
+
+      const firstProvider = new MsalTokenProvider(connectionSettings)
+      const secondProvider = new MsalTokenProvider({ ...connectionSettings })
+
+      assert.strictEqual(await firstProvider.getAccessToken('scope'), firstAccessToken)
+      assert.strictEqual(await secondProvider.getAccessToken('scope'), firstAccessToken)
+      assert.strictEqual(acquireTokenStub.calledOnce, true)
+
+      clock.tick(1001)
+
+      assert.strictEqual(await secondProvider.getAccessToken('scope'), secondAccessToken)
+      assert.strictEqual(acquireTokenStub.calledTwice, true)
+    } finally {
+      clock.restore()
+    }
+  })
+
+  it('should reuse confidential clients across token provider instances', async () => {
+    const clientInstances = new Set<unknown>()
+    const acquireTokenStub = sinon.stub(ConfidentialClientApplication.prototype, 'acquireTokenByClientCredential').callsFake(async function (this: unknown) {
+      clientInstances.add(this)
+      return { accessToken: 'opaque-token' } as any
+    })
+    const connectionSettings: AuthConfiguration = {
+      clientId: 'shared-client-id',
+      clientSecret: 'shared-secret',
+      tenantId: 'shared-tenant-id'
+    }
+
+    await new MsalTokenProvider(connectionSettings).getAccessToken('scope-one')
+    await new MsalTokenProvider({ ...connectionSettings }).getAccessToken('scope-two')
+
+    assert.strictEqual(acquireTokenStub.calledTwice, true)
+    assert.strictEqual(clientInstances.size, 1)
+  })
+
+  it('should evict least-recently-used confidential clients after the cache size limit is reached', async () => {
+    const clientInstances: unknown[] = []
+    sinon.stub(ConfidentialClientApplication.prototype, 'acquireTokenByClientCredential').callsFake(async function (this: unknown) {
+      clientInstances.push(this)
+      return { accessToken: 'opaque-token' } as any
+    })
+
+    const getToken = async (clientId: string) => {
+      await new MsalTokenProvider({
+        clientId,
+        clientSecret: `secret-for-${clientId}`,
+        tenantId: 'shared-tenant-id'
+      }).getAccessToken('scope')
+    }
+
+    await getToken('client-0')
+    const firstClient = clientInstances[0]
+
+    for (let i = 1; i < 100; i++) {
+      await getToken(`client-${i}`)
+    }
+    const secondClient = clientInstances[1]
+
+    await getToken('client-0')
+    assert.strictEqual(clientInstances[100], firstClient)
+
+    await getToken('client-100')
+    await getToken('client-0')
+    assert.strictEqual(clientInstances[102], firstClient)
+
+    await getToken('client-1')
+    assert.notStrictEqual(clientInstances[103], secondClient)
   })
 
   it('should acquire token with certificate', async () => {
@@ -167,9 +274,7 @@ describe('MsalTokenProvider', () => {
       assert.ok(url === 'https://foo.bar.com/agentic-tenant-id/oauth2/v2.0/token', `Expected URL to contain 'tenant-id', got: ${url}`)
       assert.ok(!url.includes('common'), `Expected URL to NOT contain 'common', got: ${url}`)
     } finally {
-      // stop caching
-      // @ts-ignore
-      tokenProvider._agenticTokenCache.destroy()
+      MsalTokenProvider.clearSharedCaches()
       fetchStub.restore()
     }
   })
@@ -190,8 +295,7 @@ describe('MsalTokenProvider', () => {
       const options = getFetchOptions(fetchStub)
       assert.ok(options.signal instanceof AbortSignal)
     } finally {
-      // @ts-ignore
-      tokenProvider._agenticTokenCache.destroy()
+      MsalTokenProvider.clearSharedCaches()
       fetchStub.restore()
     }
   })
@@ -228,8 +332,7 @@ describe('MsalTokenProvider', () => {
       await rejection
       assert.strictEqual(fetchStub.called, true)
     } finally {
-      // @ts-ignore
-      tokenProvider._agenticTokenCache.destroy()
+      MsalTokenProvider.clearSharedCaches()
       fetchStub.restore()
       clock.restore()
     }
@@ -255,9 +358,7 @@ describe('MsalTokenProvider', () => {
       assert.ok(url === 'https://login.microsoftonline.com/A0000009-0000-0000-0000-0000000000AF/oauth2/v2.0/token', `Expected URL to contain 'A0000009-0000-0000-0000-0000000000AF', got: ${url}`)
       assert.ok(!url.includes('common'), `Expected URL to NOT contain 'common', got: ${url}`)
     } finally {
-      // stop caching
-      // @ts-ignore
-      tokenProvider._agenticTokenCache.destroy()
+      MsalTokenProvider.clearSharedCaches()
       fetchStub.restore()
     }
   })
@@ -282,9 +383,7 @@ describe('MsalTokenProvider', () => {
       const url = getFetchUrl(fetchStub)
       assert.ok(url === 'http://foo.bar/original-tenant-id/oauth2/v2.0/token', `Expected URL to contain 'foo.bar', got: ${url}`)
     } finally {
-      // stop caching
-      // @ts-ignore
-      tokenProvider._agenticTokenCache.destroy()
+      MsalTokenProvider.clearSharedCaches()
       fetchStub.restore()
     }
   })
@@ -308,11 +407,84 @@ describe('MsalTokenProvider', () => {
       const url = getFetchUrl(fetchStub)
       assert.ok(url === 'https://login.microsoftonline.com/original-tenant-id/oauth2/v2.0/token', `Expected URL to contain 'https://login.microsoftonline.com/original-tenant-id/oauth2/v2.0/token', got: ${url}`)
     } finally {
-      // stop caching
-      // @ts-ignore
-      tokenProvider._agenticTokenCache.destroy()
+      MsalTokenProvider.clearSharedCaches()
       fetchStub.restore()
     }
+  })
+
+  it('should isolate agentic application token cache by tenant authority', async () => {
+    const tokenProvider = new MsalTokenProvider({
+      clientId: 'client-id',
+      clientSecret: 'client-secret',
+      authority: 'https://login.microsoftonline.com',
+      tenantId: 'common',
+    })
+
+    const fetchStub = sinon.stub(global, 'fetch')
+    fetchStub.onFirstCall().resolves(new Response(JSON.stringify({ access_token: 'tenant-a-token', expires_in: 3600 }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+    fetchStub.onSecondCall().resolves(new Response(JSON.stringify({ access_token: 'tenant-b-token', expires_in: 3600 }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+
+    const tenantAToken = await tokenProvider.getAgenticApplicationToken('tenant-a', 'agent-app-instance-id')
+    const tenantBToken = await tokenProvider.getAgenticApplicationToken('tenant-b', 'agent-app-instance-id')
+
+    assert.strictEqual(tenantAToken, 'tenant-a-token')
+    assert.strictEqual(tenantBToken, 'tenant-b-token')
+    assert.strictEqual(fetchStub.calledTwice, true)
+    assert.strictEqual(getFetchUrl(fetchStub), 'https://login.microsoftonline.com/tenant-a/oauth2/v2.0/token')
+    assert.strictEqual(fetchStub.getCall(1).args[0], 'https://login.microsoftonline.com/tenant-b/oauth2/v2.0/token')
+  })
+
+  it('should refetch agentic application tokens after the cache TTL expires', async () => {
+    const clock = sinon.useFakeTimers({ now: new Date('2026-01-01T00:00:00.000Z').getTime(), toFake: ['Date'] })
+    const tokenProvider = new MsalTokenProvider({
+      clientId: 'client-id',
+      clientSecret: 'client-secret',
+      tenantId: 'common',
+    })
+
+    const fetchStub = sinon.stub(global, 'fetch')
+    fetchStub.onFirstCall().resolves(new Response(JSON.stringify({ access_token: 'agent-app-token-one', expires_in: 301 }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+    fetchStub.onSecondCall().resolves(new Response(JSON.stringify({ access_token: 'agent-app-token-two', expires_in: 3600 }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+
+    try {
+      assert.strictEqual(await tokenProvider.getAgenticApplicationToken('tenant-id', 'agent-app-instance-id'), 'agent-app-token-one')
+      assert.strictEqual(await tokenProvider.getAgenticApplicationToken('tenant-id', 'agent-app-instance-id'), 'agent-app-token-one')
+      assert.strictEqual(fetchStub.calledOnce, true)
+
+      clock.tick(1001)
+
+      assert.strictEqual(await tokenProvider.getAgenticApplicationToken('tenant-id', 'agent-app-instance-id'), 'agent-app-token-two')
+      assert.strictEqual(fetchStub.calledTwice, true)
+    } finally {
+      MsalTokenProvider.clearSharedCaches()
+      fetchStub.restore()
+      clock.restore()
+    }
+  })
+
+  it('should return cached agentic user token before reacquiring prerequisite tokens', async () => {
+    const tokenProvider = new MsalTokenProvider({
+      clientId: 'client-id',
+      clientSecret: 'client-secret',
+      tenantId: 'common',
+    })
+
+    const fetchStub = sinon.stub(global, 'fetch')
+    fetchStub.onFirstCall().resolves(new Response(JSON.stringify({ access_token: 'agent-app-token', expires_in: 3600 }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+    fetchStub.onSecondCall().resolves(new Response(JSON.stringify({ access_token: 'agentic-user-token', expires_in: 3600 }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+
+    const acquireTokenStub = sinon.stub(ConfidentialClientApplication.prototype, 'acquireTokenByClientCredential').resolves({
+      accessToken: 'agentic-instance-token',
+      expiresOn: new Date(Date.now() + 3600 * 1000)
+    } as any)
+
+    const firstToken = await tokenProvider.getAgenticUserToken('tenant-id', 'agent-app-instance-id', 'agentic-user-id', ['scope.read'])
+    const secondToken = await tokenProvider.getAgenticUserToken('tenant-id', 'agent-app-instance-id', 'agentic-user-id', ['scope.read'])
+
+    assert.strictEqual(firstToken, 'agentic-user-token')
+    assert.strictEqual(secondToken, 'agentic-user-token')
+    assert.strictEqual(fetchStub.calledTwice, true)
+    assert.strictEqual(acquireTokenStub.calledOnce, true)
   })
 
   it('should call the right authority for multi-tenant setups based on incoming message', async () => {
@@ -550,8 +722,7 @@ describe('MsalTokenProvider', () => {
       assert.strictEqual(signOptions.header.typ, 'JWT')
       assert.ok(signOptions.header['x5t#S256'], 'x5t#S256 thumbprint should be present')
     } finally {
-      // @ts-ignore
-      tokenProvider._agenticTokenCache.destroy()
+      MsalTokenProvider.clearSharedCaches()
     }
   })
 
@@ -589,8 +760,7 @@ describe('MsalTokenProvider', () => {
       const signOptions = jwtSignStub.getCall(0).args[2] as jwt.SignOptions & { header: any }
       assert.strictEqual(signOptions.header.x5c, undefined, 'x5c header should not be set when sendX5C is false')
     } finally {
-      // @ts-ignore
-      tokenProvider._agenticTokenCache.destroy()
+      MsalTokenProvider.clearSharedCaches()
     }
   })
 
@@ -627,8 +797,7 @@ describe('MsalTokenProvider', () => {
       const signOptions = jwtSignStub.getCall(0).args[2] as jwt.SignOptions & { header: any }
       assert.strictEqual(signOptions.header.x5c, undefined, 'x5c header should not be set when sendX5C is not provided')
     } finally {
-      // @ts-ignore
-      tokenProvider._agenticTokenCache.destroy()
+      MsalTokenProvider.clearSharedCaches()
     }
   })
 
@@ -684,8 +853,7 @@ describe('MsalTokenProvider', () => {
       assert.strictEqual(postData.client_assertion, 'fake-jwt-with-x5c', 'client_assertion should be the JWT signed with x5c')
       assert.strictEqual(postData.client_assertion_type, 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer')
     } finally {
-      // @ts-ignore
-      tokenProvider._agenticTokenCache.destroy()
+      MsalTokenProvider.clearSharedCaches()
     }
   })
 

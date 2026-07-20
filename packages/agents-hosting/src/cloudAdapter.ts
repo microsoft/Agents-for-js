@@ -6,13 +6,13 @@
 import { AgentHandler, INVOKE_RESPONSE_KEY } from './activityHandler'
 import { BaseAdapter } from './baseAdapter'
 import { TurnContext } from './turnContext'
-import { Response } from 'express'
 import { Request } from './auth/request'
+import { WebResponse } from './interfaces/webResponse'
 import { ConnectorClient } from './connector-client/connectorClient'
 import { AuthConfiguration, getAuthConfigWithDefaults } from './auth/authConfiguration'
 import { AuthProvider } from './auth/authProvider'
 import { ApxProductionScope } from './auth/authConstants'
-import { MsalConnectionManager } from './auth/msalConnectionManager'
+import { MsalConnectionManager } from './auth/msal/msalConnectionManager'
 import { Activity, ActivityEventNames, ActivityTypes, Channels, ConversationReference, DeliveryModes, ConversationParameters, RoleTypes, ExceptionHelper } from '@microsoft/agents-activity'
 import { Errors } from './errorHelper'
 import { ResourceResponse } from './connector-client/resourceResponse'
@@ -392,7 +392,7 @@ export class CloudAdapter extends BaseAdapter {
             headers
           )
         } else {
-          throw new Error('Could not create connector client for agentic user')
+          throw ExceptionHelper.generateException(Error, Errors.CannotCreateConnectorClientForAgenticUser)
         }
       } else {
         // ABS tokens will not have an azp/appid so use the botframework scope.
@@ -580,7 +580,7 @@ export class CloudAdapter extends BaseAdapter {
    */
   public async process (
     request: Request,
-    res: Response,
+    res: WebResponse,
     logic: (context: TurnContext) => Promise<void>,
     headerPropagation?: HeaderPropagationDefinition): Promise<void> {
     return trace(AdapterTraceDefinitions.process, async ({ record }) => {
@@ -609,7 +609,7 @@ export class CloudAdapter extends BaseAdapter {
         res.end()
       }
       if (!request.body) {
-        throw new TypeError('`request.body` parameter required, make sure express.json() is used as middleware')
+        throw ExceptionHelper.generateException(TypeError, Errors.MissingRequestBody)
       }
       const incoming = normalizeIncomingActivity(request.body!)
       const activity = Activity.fromObject(incoming)
@@ -726,11 +726,11 @@ export class CloudAdapter extends BaseAdapter {
   async updateActivity (context: TurnContext, activity: Activity): Promise<ResourceResponse | void> {
     return trace(AdapterTraceDefinitions.updateActivity, async ({ record }) => {
       if (!context) {
-        throw new TypeError('`context` parameter required')
+        throw ExceptionHelper.generateException(TypeError, Errors.ContextParameterRequired)
       }
 
       if (!activity) {
-        throw new TypeError('`activity` parameter required')
+        throw ExceptionHelper.generateException(TypeError, Errors.ActivityParameterRequired)
       }
 
       record({ activity })
