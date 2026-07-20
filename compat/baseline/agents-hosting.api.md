@@ -7,7 +7,6 @@
 import { Activity } from '@microsoft/agents-activity';
 import { AdaptiveCardInvokeAction } from '@microsoft/agents-activity';
 import { AgentErrorDefinition } from '@microsoft/agents-activity';
-import { Application } from 'express';
 import { Attachment } from '@microsoft/agents-activity';
 import { CardAction } from '@microsoft/agents-activity';
 import { ChannelAccount } from '@microsoft/agents-activity';
@@ -18,8 +17,6 @@ import { ConversationReference } from '@microsoft/agents-activity';
 import { GetTokenOptions } from '@azure/core-auth';
 import { InputHints } from '@microsoft/agents-activity';
 import { JwtPayload } from 'jsonwebtoken';
-import { NextFunction } from 'express';
-import { Response as Response_2 } from 'express';
 import { SensitivityUsageInfo } from '@microsoft/agents-activity';
 import { TokenCredential } from '@azure/core-auth';
 import { z } from 'zod';
@@ -155,6 +152,9 @@ export const adaptiveCardsSearchParamsZodSchema: z.ZodObject<{
 }>;
 
 // @public
+export const AGENT_RESPONSE_ROUTE_PATH = "/api/agentresponse/v3/conversations/:conversationId/activities/:activityId";
+
+// @public
 export class AgentApplication<TState extends TurnState> {
     constructor(options?: Partial<AgentApplicationOptions<TState>>);
     get adapter(): CloudAdapter;
@@ -257,6 +257,17 @@ export class AgentExtension<TState extends TurnState> {
 
 // @public
 export type AgentHandler = (context: TurnContext, next: () => Promise<void>) => Promise<any>;
+
+// @public
+export type AgentResponseHandler = (req: Request_2, res: WebResponse, params: AgentResponseHandlerParams) => Promise<void>;
+
+// @public
+export interface AgentResponseHandlerParams {
+    // (undocumented)
+    activityId: string;
+    // (undocumented)
+    conversationId: string;
+}
 
 // @public
 export class AgentState {
@@ -410,7 +421,7 @@ export interface Authorization {
 }
 
 // @public
-export const authorizeJWT: (authConfig: AuthConfiguration) => (req: Request_2, res: Response_2, next: NextFunction) => Promise<void>;
+export const authorizeJWT: (authConfig: AuthConfiguration) => (req: Request_2, res: WebResponse, next: NextFunction) => Promise<void>;
 
 // @public
 export interface AuthProvider {
@@ -549,7 +560,7 @@ export class CloudAdapter extends BaseAdapter {
     getAttachment(context: TurnContext, attachmentId: string, viewId: string): Promise<NodeJS.ReadableStream>;
     // @deprecated (undocumented)
     getAttachmentInfo(context: TurnContext, attachmentId: string): Promise<AttachmentInfo>;
-    process(request: Request_2, res: Response_2, logic: (context: TurnContext) => Promise<void>, headerPropagation?: HeaderPropagationDefinition): Promise<void>;
+    process(request: Request_2, res: WebResponse, logic: (context: TurnContext) => Promise<void>, headerPropagation?: HeaderPropagationDefinition): Promise<void>;
     protected processTurnResults(context: TurnContext): InvokeResponse | undefined;
     protected resolveIfConnectorClientIsNeeded(activity: Activity): boolean;
     sendActivities(context: TurnContext, activities: Activity[]): Promise<ResourceResponse[]>;
@@ -568,7 +579,15 @@ export interface CloudAdapterOptions {
 }
 
 // @public
-export const configureResponseController: (app: Application, adapter: CloudAdapter, agent: ActivityHandler, conversationState: ConversationState) => void;
+export interface CloudAdapterResult {
+    // (undocumented)
+    adapter: CloudAdapter;
+    // (undocumented)
+    headerPropagation: HeaderPropagationDefinition | undefined;
+}
+
+// @public
+export const configureResponseController: (app: WebApp, adapter: CloudAdapter, agent: ActivityHandler, conversationState: ConversationState) => void;
 
 // @public
 export class ConnectionManager implements Connections {
@@ -733,6 +752,12 @@ export class ConversationState extends AgentState {
 
 // @public
 export type ConversationUpdateEvents = 'membersAdded' | 'membersRemoved';
+
+// @public
+export const createAgentResponseHandler: (adapter: CloudAdapter, agent: ActivityHandler, conversationState: ConversationState) => AgentResponseHandler;
+
+// @public
+export const createCloudAdapter: (agent: AgentApplication<TurnState<any, any>> | ActivityHandler, authConfig?: AuthConfiguration) => CloudAdapterResult;
 
 // @public
 export interface CreateConversationOptions {
@@ -1060,6 +1085,9 @@ export class MsalTokenProvider implements AuthProvider {
     // (undocumented)
     getAgenticUserToken(tenantId: string, agentAppInstanceId: string, agenticUserId: string, scopes: string[]): Promise<string>;
 }
+
+// @public
+export type NextFunction = (err?: any) => void;
 
 // @public
 export interface O365ConnectorCard {
@@ -1595,6 +1623,34 @@ export interface VideoCard {
     text: string;
     title: string;
     value: any;
+}
+
+// @public
+export interface WebApp {
+    // (undocumented)
+    post(path: string, handler: (req: any, res: any) => unknown | Promise<unknown>): unknown;
+}
+
+// @public
+export interface WebRequestParamsCarrier {
+    // (undocumented)
+    params?: Record<string, string | undefined>;
+}
+
+// @public
+export interface WebResponse {
+    // (undocumented)
+    end(): this;
+    // (undocumented)
+    headersSent: boolean;
+    // (undocumented)
+    send(body?: unknown): this;
+    // (undocumented)
+    setHeader(name: string, value: string): this;
+    // (undocumented)
+    status(code: number): this;
+    // (undocumented)
+    writableEnded: boolean;
 }
 
 // (No @packageDocumentation comment for this package)

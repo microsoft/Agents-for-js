@@ -6,8 +6,8 @@
 import { AgentHandler, INVOKE_RESPONSE_KEY } from './activityHandler'
 import { BaseAdapter } from './baseAdapter'
 import { TurnContext } from './turnContext'
-import { Response } from 'express'
 import { Request } from './auth/request'
+import { WebResponse } from './interfaces/webResponse'
 import { ConnectorClient } from './connector-client/connectorClient'
 import { AuthConfiguration, getAuthConfigWithDefaults } from './auth/authConfiguration'
 import { AuthProvider } from './auth/authProvider'
@@ -580,7 +580,7 @@ export class CloudAdapter extends BaseAdapter {
    */
   public async process (
     request: Request,
-    res: Response,
+    res: WebResponse,
     logic: (context: TurnContext) => Promise<void>,
     headerPropagation?: HeaderPropagationDefinition): Promise<void> {
     return trace(AdapterTraceDefinitions.process, async ({ record }) => {
@@ -609,7 +609,7 @@ export class CloudAdapter extends BaseAdapter {
         res.end()
       }
       if (!request.body) {
-        throw ExceptionHelper.generateException(TypeError, Errors.RequestBodyParameterRequired)
+        throw ExceptionHelper.generateException(TypeError, Errors.MissingRequestBody)
       }
       const incoming = normalizeIncomingActivity(request.body!)
       const activity = Activity.fromObject(incoming)
