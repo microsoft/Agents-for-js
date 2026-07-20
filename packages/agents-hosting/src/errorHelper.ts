@@ -196,6 +196,21 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
     description: 'missing context.activity.channelId'
   },
 
+  MissingContextActivityRecipientId: {
+    code: -120221,
+    description: 'missing context.activity.recipient.id'
+  },
+
+  MissingContextActivityConversationId: {
+    code: -120222,
+    description: 'missing context.activity.conversation.id'
+  },
+
+  MissingContextActivityFromId: {
+    code: -120223,
+    description: 'missing context.activity.from.id'
+  },
+
   /**
      * Error thrown when both channelId and from.id are required for operation.
      */
@@ -213,7 +228,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   },
 
   // ============================================================================
-  // Attachment Errors (-120250 to -120290)
+  // Attachment Errors (-120250 to -120291)
   // ============================================================================
 
   /**
@@ -230,6 +245,14 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   AttachmentIdRequired: {
     code: -120260,
     description: 'attachmentId is required'
+  },
+
+  /**
+     * Error thrown when attachment is null or undefined.
+     */
+  AttachmentNullOrUndefined: {
+    code: -120265,
+    description: 'attachment cannot be null or undefined.'
   },
 
   /**
@@ -265,7 +288,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   },
 
   // ============================================================================
-  // Connection and Authentication Errors (-120300 to -120590)
+  // Connection and Authentication Errors (-120300 to -120599)
   // ============================================================================
 
   /**
@@ -273,7 +296,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
      */
   ConnectionNotFoundInEnvironment: {
     code: -120300,
-    description: 'Connection "{connectionName}" not found in environment.'
+    description: 'Connection "{connectionName}" not found in environment connections.'
   },
 
   /**
@@ -340,12 +363,82 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
     description: 'Connection settings must be provided for this operation.'
   },
 
+  ConnectionSettingsRequiredForGetAccessTokenScope: {
+    code: -120381,
+    description: 'Connection settings must be provided to constructor when calling getAccessToken(scope)'
+  },
+
+  ConnectionSettingsRequiredForAcquireTokenOnBehalfOf: {
+    code: -120382,
+    description: 'Connection settings must be provided to constructor when calling acquireTokenOnBehalfOf(scopes, oboAssertion)'
+  },
+
+  FailedToAcquireTokenOnBehalfOf: {
+    code: -120383,
+    description: 'Failed to acquire token on behalf of user'
+  },
+
+  ConnectionSettingsRequiredForGetAgenticInstanceToken: {
+    code: -120384,
+    description: 'Connection settings must be provided when calling getAgenticInstanceToken'
+  },
+
+  FailedToAcquireInstanceTokenForAgentInstance: {
+    code: -120385,
+    description: 'Failed to acquire instance token for agent instance: {agentAppInstanceId}'
+  },
+
+  FailedToAcquireInstanceTokenForUserToken: {
+    code: -120386,
+    description: 'Failed to acquire instance token for user token: {agentAppInstanceId}'
+  },
+
+  ConnectionSettingsRequiredForGetAgenticApplicationToken: {
+    code: -120387,
+    description: 'Connection settings must be provided when calling getAgenticApplicationToken'
+  },
+
+  IdpmResourceAbsoluteUriRequired: {
+    code: -120388,
+    description: 'idpmResource must be a valid absolute URI'
+  },
+
+  FailedToAcquireTokenViaIdentityProxyManagerForAgentInstance: {
+    code: -120389,
+    description: 'Failed to acquire token via IdentityProxyManager for agent instance: {agentAppInstanceId}'
+  },
+
   /**
      * Error thrown when identity is required to get token provider.
      */
   IdentityRequiredForTokenProvider: {
     code: -120390,
     description: 'Identity is required to get the token provider.'
+  },
+
+  FailedToAcquireTokenUsingCertificate: {
+    code: -120395,
+    description: 'Failed to acquire token using certificate'
+  },
+
+  FailedToAcquireTokenUsingClientSecret: {
+    code: -120396,
+    description: 'Failed to acquire token using client secret'
+  },
+
+  FailedToAcquireTokenUsingFICClientAssertion: {
+    code: -120397,
+    description: 'Failed to acquire token using FIC client assertion'
+  },
+
+  FailedToAcquireTokenUsingWIDClientAssertion: {
+    code: -120398,
+    description: 'Failed to acquire token using WID client assertion'
+  },
+
+  FailedToAcquireExternalTokenForFICClientAssertion: {
+    code: -120399,
+    description: 'Failed to acquire external token for FIC client assertion'
   },
 
   /**
@@ -581,6 +674,108 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   },
 
   // ============================================================================
+  // Entra Agent ID Sidecar Authentication Errors (-120800 to -120849)
+  // ============================================================================
+
+  /**
+   * Error thrown when the Entra sidecar auth provider is used without connection settings.
+   */
+  SidecarConnectionSettingsRequired: {
+    code: -120800,
+    description: 'Connection settings must be provided when using the Entra sidecar auth provider'
+  },
+
+  /**
+   * Error thrown when the resolved sidecar base URL is not a valid absolute URL.
+   */
+  SidecarBaseUrlInvalid: {
+    code: -120801,
+    description: 'The resolved sidecar base URL `{url}` is not a valid absolute URL'
+  },
+
+  /**
+   * Error thrown when the resolved sidecar base URL does not use the http or https scheme.
+   */
+  SidecarBaseUrlInsecureScheme: {
+    code: -120802,
+    description: 'The resolved sidecar base URL `{url}` must use the http or https scheme'
+  },
+
+  /**
+   * Error thrown when the resolved sidecar base URL contains userinfo (credentials).
+   */
+  SidecarBaseUrlUserInfo: {
+    code: -120803,
+    description: 'The resolved sidecar base URL `{url}` must not contain userinfo (credentials)'
+  },
+
+  /**
+   * Error thrown when the resolved sidecar base URL points to a non-loopback, non-private address.
+   */
+  SidecarBaseUrlNotLocal: {
+    code: -120804,
+    description: 'The resolved sidecar base URL `{url}` points to a non-loopback, non-private address. The Entra Agent ID sidecar (agent container) must be reachable only from within the agent\'s network boundary. Set `bypassLocalNetworkRestriction` to true in the connection configuration to override this safety check (UNSAFE: only for carefully validated private-network configurations)'
+  },
+
+  /**
+   * Error thrown when both AgentUsername and AgentUserId are supplied on a sidecar request (mutually exclusive).
+   */
+  SidecarUserIdentityMutuallyExclusive: {
+    code: -120805,
+    description: 'AgentUsername and AgentUserId are mutually exclusive; set only one on the sidecar request options'
+  },
+
+  /**
+   * Error thrown when a sidecar request fails after exhausting all retry attempts.
+   */
+  SidecarRequestFailed: {
+    code: -120806,
+    description: 'Sidecar request failed after {attempts} attempt(s): {message}'
+  },
+
+  /**
+   * Error thrown when the sidecar responds with a non-success status code.
+   */
+  SidecarErrorResponse: {
+    code: -120807,
+    description: 'Sidecar returned error status {status}: {message}'
+  },
+
+  /**
+   * Error thrown when the sidecar response is missing the authorizationHeader field.
+   */
+  SidecarResponseMissingAuthorizationHeader: {
+    code: -120808,
+    description: 'Sidecar response missing `authorizationHeader` field'
+  },
+
+  /**
+   * Error thrown when the sidecar response body cannot be parsed.
+   */
+  SidecarResponseUnparsable: {
+    code: -120809,
+    description: 'Sidecar returned an unparsable response body'
+  },
+
+  /**
+   * Error thrown when acquireTokenOnBehalfOf is called on the sidecar provider, which does not support OBO in Phase 1.
+   */
+  OnBehalfOfNotSupportedBySidecar: {
+    code: -120810,
+    description: 'acquireTokenOnBehalfOf is not supported by the Entra sidecar auth provider in Phase 1'
+  },
+
+  /**
+   * Error thrown when the sidecar returns a token with an authorization scheme other than Bearer.
+   * The hosting stack always transmits tokens as `Bearer {token}`, so a non-Bearer scheme cannot be
+   * honored and is rejected rather than silently sent as an invalid Authorization header.
+   */
+  SidecarUnsupportedAuthScheme: {
+    code: -120811,
+    description: 'The Entra Agent ID sidecar returned an unsupported authorization scheme `{scheme}`. Only the Bearer scheme is supported'
+  },
+
+  // ============================================================================
   // Agent and Client Errors (-120600 to -120650)
   // ============================================================================
 
@@ -616,6 +811,11 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
     description: 'Agent name contains invalid characters: {agentName}'
   },
 
+  ContinueConversationBotAppIdOrIdentityRequired: {
+    code: -120631,
+    description: 'continueConversation: botAppIdOrIdentity is required'
+  },
+
   /**
    * Error thrown when failed to post activity to agent.
    */
@@ -633,7 +833,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   },
 
   // ============================================================================
-  // Storage and State Errors (-120700 to -120730)
+  // Storage and State Errors (-120700 to -120732)
   // ============================================================================
 
   /**
@@ -642,6 +842,22 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   StorageETagConflict: {
     code: -120700,
     description: 'Storage: error writing "{key}" due to eTag conflict.'
+  },
+
+  /**
+     * Error thrown when keys are required for storage read operations.
+     */
+  StorageReadKeysRequired: {
+    code: -120701,
+    description: 'Keys are required when reading.'
+  },
+
+  /**
+     * Error thrown when changes are required for storage write operations.
+     */
+  StorageWriteChangesRequired: {
+    code: -120702,
+    description: 'Changes are required when writing.'
   },
 
   /**
@@ -668,96 +884,18 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
     description: 'Invalid state scope: {scope}'
   },
 
-  // ============================================================================
-  // Application Configuration Errors (-120850 to -120900)
-  // ============================================================================
-
-  /**
-     * Error thrown when longRunningMessages property is unavailable.
-     */
-  LongRunningMessagesPropertyUnavailable: {
-    code: -120850,
-    description: 'The Application.longRunningMessages property is unavailable because no adapter was configured in the app.'
+  InvalidStatePath: {
+    code: -120731,
+    description: 'Invalid state path: {path}'
   },
 
-  /**
-     * Error thrown when transcriptLogger property is unavailable.
-     */
-  TranscriptLoggerPropertyUnavailable: {
-    code: -120860,
-    description: 'The Application.transcriptLogger property is unavailable because no adapter was configured in the app.'
-  },
-
-  /**
-     * Error thrown when TranscriptLoggerMiddleware requires a TranscriptLogger instance.
-     */
-  TranscriptLoggerInstanceRequired: {
-    code: -120870,
-    description: 'TranscriptLoggerMiddleware requires a TranscriptLogger instance.'
-  },
-
-  /**
-     * Error thrown when extension is already registered.
-     */
-  ExtensionAlreadyRegistered: {
-    code: -120880,
-    description: 'Extension already registered'
-  },
-
-  /**
-     * Error thrown when invalid plugin type is added to MiddlewareSet.
-     */
-  InvalidMiddlewarePluginType: {
-    code: -120890,
-    description: 'MiddlewareSet.use(): invalid plugin type being added.'
-  },
-
-  /**
-     * Error thrown when the stream has already ended.
-     */
-  StreamAlreadyEnded: {
-    code: -120900,
-    description: 'The stream has already ended.'
+  TurnStateMissingStateScope: {
+    code: -120732,
+    description: 'TurnState missing state scope named "{scope}".'
   },
 
   // ============================================================================
-  // Adaptive Cards Errors (-120950 to -120980)
-  // ============================================================================
-
-  /**
-     * Error thrown when unexpected AdaptiveCards.actionExecute() is triggered.
-     */
-  UnexpectedActionExecute: {
-    code: -120950,
-    description: 'Unexpected AdaptiveCards.actionExecute() triggered for activity type: {activityType}'
-  },
-
-  /**
-     * Error thrown when unexpected AdaptiveCards.actionSubmit() is triggered.
-     */
-  UnexpectedActionSubmit: {
-    code: -120960,
-    description: 'Unexpected AdaptiveCards.actionSubmit() triggered for activity type: {activityType}'
-  },
-
-  /**
-     * Error thrown when unexpected AdaptiveCards.search() is triggered.
-     */
-  UnexpectedSearchAction: {
-    code: -120970,
-    description: 'Unexpected AdaptiveCards.search() triggered for activity type: {activityType}'
-  },
-
-  /**
-     * Error thrown when invalid action value is provided.
-     */
-  InvalidActionValue: {
-    code: -120980,
-    description: 'Invalid action value: {error}'
-  },
-
-  // ============================================================================
-  // Proactive Messaging Errors (-120740 to -120799)
+  // Proactive Messaging Errors (-120740 to -120753)
   // ============================================================================
 
   /**
@@ -871,6 +1009,133 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   CreateConversationBuilderChannelActivityRequired: {
     code: -120753,
     description: 'CreateConversationOptionsBuilder: Teams channel conversations require an initial activity. Call withActivity() before build().'
+  },
+
+  // ============================================================================
+  // Hosting / Web layer errors (-120800 to -120840)
+  // ============================================================================
+
+  /**
+   * Error thrown by CloudAdapter.process when the incoming request lacks a parsed body.
+   * Indicates the hosting layer (e.g. express.json() or Fastify's JSON parser) was not configured.
+   */
+  MissingRequestBody: {
+    code: -120800,
+    description: '`request.body` parameter required; ensure your hosting layer parses JSON request bodies before invoking the adapter (e.g., express.json() with Express or Fastify\'s built-in JSON parser).'
+  },
+
+  /**
+   * Error thrown by verifyToken when the provided JWT cannot be decoded.
+   */
+  InvalidJwtToken: {
+    code: -120810,
+    description: 'invalid token'
+  },
+
+  /**
+   * Error thrown by verifyToken when the token audience does not match any configured connection clientId.
+   */
+  JwtAudienceMismatch: {
+    code: -120820,
+    description: 'Audience mismatch'
+  },
+
+  // ============================================================================
+  // Application Configuration Errors (-120850 to -120902)
+  // ============================================================================
+
+  /**
+     * Error thrown when longRunningMessages property is unavailable.
+     */
+  LongRunningMessagesPropertyUnavailable: {
+    code: -120850,
+    description: 'The Application.longRunningMessages property is unavailable because no adapter was configured in the app.'
+  },
+
+  /**
+     * Error thrown when transcriptLogger property is unavailable.
+     */
+  TranscriptLoggerPropertyUnavailable: {
+    code: -120860,
+    description: 'The Application.transcriptLogger property is unavailable because no adapter was configured in the app.'
+  },
+
+  /**
+     * Error thrown when TranscriptLoggerMiddleware requires a TranscriptLogger instance.
+     */
+  TranscriptLoggerInstanceRequired: {
+    code: -120870,
+    description: 'TranscriptLoggerMiddleware requires a TranscriptLogger instance.'
+  },
+
+  /**
+     * Error thrown when extension is already registered.
+     */
+  ExtensionAlreadyRegistered: {
+    code: -120880,
+    description: 'Extension already registered'
+  },
+
+  /**
+     * Error thrown when invalid plugin type is added to MiddlewareSet.
+     */
+  InvalidMiddlewarePluginType: {
+    code: -120890,
+    description: 'MiddlewareSet.use(): invalid plugin type being added.'
+  },
+
+  /**
+     * Error thrown when the stream has already ended.
+     */
+  StreamAlreadyEnded: {
+    code: -120900,
+    description: 'The stream has already ended.'
+  },
+
+  ConversationUpdateHandlerMustBeFunction: {
+    code: -120901,
+    description: "ConversationUpdate 'handler' for {event} is {handlerType}. Type of 'handler' must be a function."
+  },
+
+  ContinueConversationAdapterRequired: {
+    code: -120902,
+    description: "You must configure the Application with an 'adapter' before calling Application.continueConversationAsync()"
+  },
+
+  // ============================================================================
+  // Adaptive Cards Errors (-120950 to -120980)
+  // ============================================================================
+
+  /**
+     * Error thrown when unexpected AdaptiveCards.actionExecute() is triggered.
+     */
+  UnexpectedActionExecute: {
+    code: -120950,
+    description: 'Unexpected AdaptiveCards.actionExecute() triggered for activity type: {activityType}'
+  },
+
+  /**
+     * Error thrown when unexpected AdaptiveCards.actionSubmit() is triggered.
+     */
+  UnexpectedActionSubmit: {
+    code: -120960,
+    description: 'Unexpected AdaptiveCards.actionSubmit() triggered for activity type: {activityType}'
+  },
+
+  /**
+     * Error thrown when unexpected AdaptiveCards.search() is triggered.
+     */
+  UnexpectedSearchAction: {
+    code: -120970,
+    description: 'Unexpected AdaptiveCards.search() triggered for activity type: {activityType}'
+  },
+
+  /**
+     * Error thrown when invalid action value is provided.
+     */
+  InvalidActionValue: {
+    code: -120980,
+    description: 'Invalid action value: {error}'
   },
 
   // ============================================================================

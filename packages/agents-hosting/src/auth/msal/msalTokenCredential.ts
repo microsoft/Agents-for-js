@@ -1,5 +1,6 @@
 import { GetTokenOptions, TokenCredential } from '@azure/core-auth'
-import { AuthConfiguration, MsalTokenProvider } from './'
+import { AuthConfiguration } from '../authConfiguration'
+import { MsalTokenProvider } from './msalTokenProvider'
 import { debug } from '@microsoft/agents-telemetry'
 
 const logger = debug('agents:msal')

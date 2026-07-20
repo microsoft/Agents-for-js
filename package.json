@@ -57,7 +57,7 @@
     "sinon": "21.0.3",
     "tsx": "4.22.4",
     "typedoc": "0.28.18",
-    "typescript": "5.9.3"
+    "typescript": "6.0.3"
   },
   "peerDependencies": {
     "@rushstack/terminal": "*"

@@ -7,28 +7,22 @@
 import { ActivityHandler } from '@microsoft/agents-hosting';
 import { AgentApplication } from '@microsoft/agents-hosting';
 import { AuthConfiguration } from '@microsoft/agents-hosting';
-import { CloudAdapter } from '@microsoft/agents-hosting';
+import { CloudAdapterResult } from '@microsoft/agents-hosting';
+import { createCloudAdapter } from '@microsoft/agents-hosting';
 import express from 'express';
-import { HeaderPropagationDefinition } from '@microsoft/agents-hosting';
 import { Request as Request_2 } from '@microsoft/agents-hosting';
 import { TurnState } from '@microsoft/agents-hosting';
+import { WebResponse } from '@microsoft/agents-hosting';
 
 // @public
 export type AgentRequestHandler = (req: Request_2, res: WebResponse) => Promise<void>;
 
-// @public
-export interface CloudAdapterResult {
-    // (undocumented)
-    adapter: CloudAdapter;
-    // (undocumented)
-    headerPropagation: HeaderPropagationDefinition | undefined;
-}
+export { CloudAdapterResult }
 
 // @public
 export const createAgentRequestHandler: (agent: AgentApplication<TurnState<any, any>> | ActivityHandler, authConfiguration?: AuthConfiguration) => AgentRequestHandler;
 
-// @public
-export const createCloudAdapter: (agent: AgentApplication<TurnState<any, any>> | ActivityHandler, authConfig?: AuthConfiguration) => CloudAdapterResult;
+export { createCloudAdapter }
 
 // @public
 export function startServer(agent: AgentApplication<TurnState<any, any>> | ActivityHandler, options?: StartServerOptions): express.Express;
@@ -48,21 +42,7 @@ export interface StartServerOptions {
     routePath?: string;
 }
 
-// @public
-export interface WebResponse {
-    // (undocumented)
-    end(): this;
-    // (undocumented)
-    headersSent: boolean;
-    // (undocumented)
-    send(body?: unknown): this;
-    // (undocumented)
-    setHeader(name: string, value: string): this;
-    // (undocumented)
-    status(code: number): this;
-    // (undocumented)
-    writableEnded: boolean;
-}
+export { WebResponse }
 
 // (No @packageDocumentation comment for this package)
 
