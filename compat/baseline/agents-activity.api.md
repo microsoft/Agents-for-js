@@ -984,6 +984,7 @@ export const addAIToActivity: (activity: Activity, citations?: ClientCitation[],
 // @public
 export interface AgentError extends Error {
     code: number;
+    description: string;
     helpLink: string;
     innerException?: Error;
 }

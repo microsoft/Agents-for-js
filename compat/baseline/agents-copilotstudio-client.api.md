@@ -5,6 +5,7 @@
 ```ts
 
 import { Activity } from '@microsoft/agents-activity';
+import { AgentErrorDefinition } from '@microsoft/agents-activity';
 import { BehaviorSubject } from 'rxjs';
 import { Observable } from 'rxjs';
 
@@ -45,6 +46,11 @@ export class CopilotStudioClient {
     startConversationWithResponse(request?: StartRequest | boolean): Promise<StartResponse>;
     subscribeAsync(conversationId: string, lastReceivedEventId?: string): AsyncGenerator<SubscribeEvent>;
 }
+
+// @public (undocumented)
+export const CopilotStudioClientErrors: {
+    [key: string]: AgentErrorDefinition;
+};
 
 // @public
 export interface CopilotStudioConnectionSettings {

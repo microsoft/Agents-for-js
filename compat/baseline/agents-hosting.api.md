@@ -144,11 +144,11 @@ export const adaptiveCardsSearchParamsZodSchema: z.ZodObject<{
     queryText: z.ZodString;
     dataset: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    dataset: string;
     queryText: string;
+    dataset: string;
 }, {
-    dataset: string;
     queryText: string;
+    dataset: string;
 }>;
 
 // @public
