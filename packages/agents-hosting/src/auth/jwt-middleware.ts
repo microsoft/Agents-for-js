@@ -11,8 +11,6 @@ import { ExceptionHelper } from '@microsoft/agents-activity'
 import jwksRsa, { JwksClient, SigningKey } from 'jwks-rsa'
 import jwt, { JwtHeader, JwtPayload, SignCallback, GetPublicKeyOrSecret } from 'jsonwebtoken'
 import { debug } from '@microsoft/agents-telemetry'
-import { ExceptionHelper } from '@microsoft/agents-activity'
-import { Errors } from '../errorHelper'
 
 const logger = debug('agents:jwt-middleware')
 const jwksClients = new Map<string, JwksClient>()
