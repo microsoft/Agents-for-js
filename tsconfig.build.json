@@ -2,16 +2,19 @@
     "files": [],
     "references": [
       {
-        "path": "packages/agents-telemetry"
+        "path": "packages/agents-activity"
       },
       {
-        "path": "packages/agents-activity"
+        "path": "packages/agents-telemetry"
       },
       {
         "path": "packages/agents-hosting"
       },
       {
         "path": "packages/agents-hosting-express"
+      },
+      {
+        "path": "packages/agents-hosting-fastify"
       },
       {
         "path": "packages/agents-copilotstudio-client"
@@ -39,6 +42,9 @@
       },
       {
         "path": "test-agents/empty-agent"
+      },
+      {
+        "path": "test-agents/fastify-empty-agent"
       },
       {
         "path": "test-agents/sidecar-auth"

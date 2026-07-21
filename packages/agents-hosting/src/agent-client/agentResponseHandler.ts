@@ -1,17 +1,33 @@
-import { Activity, ActivityTypes, ConversationReference } from '@microsoft/agents-activity'
+/**
+ * Copyright (c) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License.
+ */
+
 import { ActivityHandler } from '../activityHandler'
 import { CloudAdapter } from '../cloudAdapter'
-import { Request, Response, Application } from 'express'
-import { TurnContext } from '../turnContext'
-import { randomUUID } from 'crypto'
-import { normalizeIncomingActivity } from '../activityWireCompat'
-import { debug } from '@microsoft/agents-telemetry'
 import { ConversationState } from '../state'
+import { WebRequestParamsCarrier, WebResponse } from '../interfaces/webResponse'
+import { Request } from '../auth/request'
+import { AGENT_RESPONSE_ROUTE_PATH, createAgentResponseHandler } from './createAgentResponseHandler'
 
-const logger = debug('agents:agent-client')
-
-interface ConversationReferenceState {
-  conversationReference: ConversationReference
+/**
+ * Minimal application surface needed by {@link configureResponseController} to
+ * register the agent-to-agent response POST route. Express's `Application`
+ * structurally satisfies this; frameworks that do not (e.g., Fastify) should
+ * call {@link createAgentResponseHandler} directly and register the route
+ * themselves rather than passing a synthetic `WebApp`.
+ *
+ * `WebApp` is a minimal structural shape rather than a richer, named
+ * route-registrar contract. It is exported so it has a stable name in the
+ * generated type declarations and API report (it appears in the exported
+ * {@link configureResponseController} signature). Any framework `app` whose
+ * `post(path, handler)` method structurally matches satisfies it.
+ */
+export interface WebApp {
+  post (
+    path: string,
+    handler: (req: any, res: any) => unknown | Promise<unknown>
+  ): unknown
 }
 
 /**
@@ -33,10 +49,10 @@ interface ConversationReferenceState {
  * - Processing EndOfConversation activities by cleaning up conversation state
  * - Sending activities through the turn context and returning responses
  *
- * @param app - The Express application instance to configure the route on
- * @param adapter - The CloudAdapter instance used for processing bot framework activities and managing conversations
- * @param agent - The ActivityHandler instance that contains the bot's logic for processing different types of activities
- * @param conversationState - The ConversationState instance used for managing conversation-specific state and conversation references
+ * @param app - The application instance (Express `Application` or any framework that satisfies {@link WebApp}) to configure the route on.
+ * @param adapter - The CloudAdapter instance used for processing bot framework activities and managing conversations.
+ * @param agent - The ActivityHandler instance that contains the bot's logic for processing different types of activities.
+ * @param conversationState - The ConversationState instance used for managing conversation-specific state and conversation references.
  *
  * @example
  * ```typescript
@@ -48,57 +64,17 @@ interface ConversationReferenceState {
  * configureResponseController(app, adapter, agent, conversationState);
  * ```
  */
-export const configureResponseController = (app: Application, adapter: CloudAdapter, agent: ActivityHandler, conversationState: ConversationState) => {
-  app.post('/api/agentresponse/v3/conversations/:conversationId/activities/:activityId', handleResponse(adapter, agent, conversationState))
-}
-
-const handleResponse = (adapter: CloudAdapter, handler: ActivityHandler, conversationState: ConversationState) => async (req: Request, res: Response) => {
-  const incoming = normalizeIncomingActivity(req.body!)
-  const activity = Activity.fromObject(incoming)
-
-  logger.debug('received response: ', activity)
-
-  const connection = adapter.connectionManager.getDefaultConnection()
-  const appId = connection?.connectionSettings?.clientId ?? ''
-
-  const myTurnContext = new TurnContext(adapter, activity, CloudAdapter.createIdentity(appId))
-  const conversationDataAccessor = conversationState.createProperty<ConversationReferenceState>(req.params!.conversationId as string)
-  const conversationRefState = await conversationDataAccessor.get(myTurnContext, undefined, { channelId: activity.channelId!, conversationId: req.params!.conversationId as string })
-
-  const conversationRef = JSON.stringify(conversationRefState.conversationReference)
-  console.log('conversationRef', conversationRef)
-  const callback = async (turnContext: TurnContext) => {
-    activity.applyConversationReference(conversationRefState.conversationReference)
-    turnContext.activity.id = req.params!.activityId as string
-
-    let response
-    if (activity.type === ActivityTypes.EndOfConversation) {
-      await conversationDataAccessor.delete(turnContext, { channelId: activity.channelId!, conversationId: activity.conversation!.id })
-
-      applyActivityToTurnContext(turnContext, activity)
-      await handler.run(turnContext)
-
-      response = randomUUID().replace(/-/g, '')
-    } else {
-      response = await turnContext.sendActivity(activity)
-    }
-    res.status(200).send(response)
-  }
-
-  await adapter.continueConversation(myTurnContext.identity, conversationRefState.conversationReference, callback)
-}
-
-const applyActivityToTurnContext = (turnContext : TurnContext, activity : Activity) => {
-  turnContext.activity.channelData = activity.channelData
-  turnContext.activity.code = activity.code
-  turnContext.activity.entities = activity.entities
-  turnContext.activity.locale = activity.locale
-  turnContext.activity.localTimestamp = activity.localTimestamp
-  turnContext.activity.name = activity.name
-  turnContext.activity.relatesTo = activity.relatesTo
-  turnContext.activity.replyToId = activity.replyToId
-  turnContext.activity.timestamp = activity.timestamp
-  turnContext.activity.text = activity.text
-  turnContext.activity.type = activity.type
-  turnContext.activity.value = activity.value
+export const configureResponseController = (
+  app: WebApp,
+  adapter: CloudAdapter,
+  agent: ActivityHandler,
+  conversationState: ConversationState
+) => {
+  const handler = createAgentResponseHandler(adapter, agent, conversationState)
+  app.post(AGENT_RESPONSE_ROUTE_PATH, async (req: Request & WebRequestParamsCarrier, res: WebResponse) => {
+    await handler(req, res, {
+      conversationId: req.params!.conversationId as string,
+      activityId: req.params!.activityId as string
+    })
+  })
 }

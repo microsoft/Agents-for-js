@@ -79,8 +79,13 @@ describe('authorizeJWT', () => {
   })
 
   it('should respond with 401 if token is invalid', async () => {
-    const token = 'invalid-token'
+    const token = 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjbGllbnQtaWQiLCJpc3MiOiJodHRwczovL2FwaS5ib3RmcmFtZXdvcmsuY29tIn0.signature'
     req.headers.authorization = `Bearer ${token}`
+
+    const decodeStub = sinon.stub(jwt, 'decode').returns({
+      aud: config.clientId,
+      iss: 'https://api.botframework.com'
+    })
 
     const verifyStub = sinon.stub(jwt, 'verify').callsFake((token, secretOrPublicKey, options, callback) => {
       if (callback) {
@@ -94,6 +99,7 @@ describe('authorizeJWT', () => {
     assert((res.send as sinon.SinonStub).calledOnceWith({ 'jwt-auth-error': 'invalid token' }))
     assert((next as sinon.SinonStub).notCalled)
 
+    decodeStub.restore()
     verifyStub.restore()
   })
 
@@ -105,6 +111,54 @@ describe('authorizeJWT', () => {
     assert((res.status as sinon.SinonStub).calledOnceWith(405))
     assert((res.send as sinon.SinonStub).calledOnceWith({ 'jwt-auth-error': 'Method not allowed' }))
     assert((next as sinon.SinonStub).notCalled)
+  })
+
+  it('should authenticate when a valid Bearer token is not the first array entry', async () => {
+    const token = 'valid-token'
+    // Duplicate Authorization headers preserved as an array, Bearer is second.
+    req.headers.authorization = ['Basic dXNlcjpwYXNz', `Bearer ${token}`]
+    req.user = { aud: config.clientId }
+
+    const decodeStub = sinon.stub(jwt, 'decode').returns({ aud: config.clientId })
+    const verifyStub = sinon.stub(jwt, 'verify').callsFake((token, secretOrPublicKey, options, callback) => {
+      if (callback) {
+        callback(null, { aud: config.clientId })
+      }
+    })
+
+    await authorizeJWT(config)(req as Request, res as Response, next)
+
+    assert((next as sinon.SinonStub).calledOnce)
+    assert((next as sinon.SinonStub).calledWith())
+    assert((res.status as sinon.SinonStub).notCalled)
+
+    decodeStub.restore()
+    verifyStub.restore()
+  })
+
+  it('should respond with 401 when an array Authorization header has no valid Bearer entry', async () => {
+    req.headers.authorization = ['Basic dXNlcjpwYXNz', 'NotBearer abc']
+
+    await authorizeJWT(config)(req as Request, res as Response, next)
+
+    assert((res.status as sinon.SinonStub).calledOnceWith(401))
+    assert((res.send as sinon.SinonStub).calledOnceWith({ 'jwt-auth-error': 'invalid authorization header' }))
+    assert((next as sinon.SinonStub).notCalled)
+  })
+
+  it('should respond with 401 and a stable message when a non-Error is thrown', async () => {
+    req.headers.authorization = 'Bearer some-token'
+    // A thrown value without `.description` or `.message` must not serialize to {}.
+    const thrown: any = { kind: 'not-an-error' }
+    const decodeStub = sinon.stub(jwt, 'decode').callsFake(() => { throw thrown })
+
+    await authorizeJWT(config)(req as Request, res as Response, next)
+
+    assert((res.status as sinon.SinonStub).calledOnceWith(401))
+    assert((res.send as sinon.SinonStub).calledOnceWith({ 'jwt-auth-error': 'unauthorized' }))
+    assert((next as sinon.SinonStub).notCalled)
+
+    decodeStub.restore()
   })
 
   it('should evict least-recently-used JWKS clients after the cache size limit is reached', async () => {
@@ -122,7 +176,7 @@ describe('authorizeJWT', () => {
 
     getJwksClient('https://login.microsoftonline.com/tenant-100/discovery/v2.0/keys')
     assert.strictEqual(getJwksClient('https://login.microsoftonline.com/tenant-0/discovery/v2.0/keys'), firstClient)
-
+    assert.notStrictEqual(getJwksClient('https://login.microsoftonline.com/tenant-1/discovery/v2.0/keys'), secondClient)
     assert.notStrictEqual(getJwksClient('https://login.microsoftonline.com/tenant-1/discovery/v2.0/keys'), secondClient)
   })
 

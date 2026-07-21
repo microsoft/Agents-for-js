@@ -4,9 +4,10 @@
  */
 
 import { z } from 'zod'
-import { activityZodSchema, AdaptiveCardInvokeAction, adaptiveCardInvokeActionZodSchema } from '@microsoft/agents-activity'
+import { activityZodSchema, AdaptiveCardInvokeAction, adaptiveCardInvokeActionZodSchema, ExceptionHelper } from '@microsoft/agents-activity'
 // import { MessagingExtensionQuery, messagingExtensionQueryZodSchema } from '../messageExtension/messagingExtensionQuery'
 import { adaptiveCardsSearchParamsZodSchema } from './adaptiveCardsSearchParams'
+import { Errors } from '../../errorHelper'
 
 /**
  * Parses the given value as a value action.
@@ -76,7 +77,7 @@ export function parseValueActionExecuteSelector (value: unknown): ValueAction | 
   })
   const safeParsedValue = actionValueExecuteSelector.passthrough().safeParse(value)
   if (!safeParsedValue.success) {
-    throw new Error(`Invalid action value: ${safeParsedValue.error}`)
+    throw ExceptionHelper.generateException(Error, Errors.InvalidActionValue, undefined, { error: String(safeParsedValue.error) })
   }
   const parsedValue = safeParsedValue.data
   return {

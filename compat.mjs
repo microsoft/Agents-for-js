@@ -85,63 +85,31 @@ const { _console, restore } = stubConsole()
 
 for (const projectFolder of packages) {
   _console.log(`\n┌─ [${Colorize.blue(projectFolder)}] analyzing compatibility...`)
-  const packageJsonFullPath = path.resolve(paths._, projectFolder, 'package.json')
-
-  const extractorConfig = ExtractorConfig.prepare({
-    packageJsonFullPath,
-    configObjectFullPath: undefined,
-    configObject: {
+  try {
+    const packageCompat = resolvePackageCompat(projectFolder)
+    const reportResult = runCompatibilityReport({
+      packageCompat,
       projectFolder,
-      mainEntryPointFilePath: 'dist/src/index.d.ts',
-      compiler: {
-        tsconfigFilePath: 'tsconfig.json'
-      },
-      apiReport: {
-        enabled: true,
-        reportFolder: paths.reports.baseline,
-        reportTempFolder: paths.reports.generated,
-      },
-      docModel: {
-        enabled: false
-      },
-      dtsRollup: {
-        enabled: false
-      },
-      tsdocMetadata: {
-        enabled: false
-      },
+      settings,
+    })
+
+    if (reportResult.updated) {
+      _console.log(`└─ ${Colorize.green('updated')}`)
+      continue
     }
-  })
 
-  console.log('\r')
-
-  let updated = false
-  const extractorResult = Extractor.invoke(extractorConfig, {
-    localBuild: settings.local,
-    showVerboseMessages: settings.verbose,
-    showDiagnostics: settings.diagnostics,
-    messageCallback (message) {
-      if (message.logLevel === 'warning' && message.text.includes('Updating ')) {
-        updated = true
-      }
+    if (reportResult.succeeded) {
+      _console.log(`└─ ${Colorize.green('passed')}`)
+      continue
     }
-  })
 
-  console.log('\r')
-
-  if (updated) {
-    _console.log(`└─ ${Colorize.green('updated')}`)
-    continue
+    _console.log(`└─ ${Colorize.red(`${reportResult.errorCount} error(s)`)} ── ${Colorize.yellow(`${reportResult.warningCount} warning(s)`)}`)
+    packagesWithFailures.push(projectFolder)
+  } catch (error) {
+    _console.error(Colorize.red(error.message))
+    _console.log(`└─ ${Colorize.red('failed')}`)
+    packagesWithFailures.push(projectFolder)
   }
-
-  if (extractorResult.succeeded) {
-    _console.log(`└─ ${Colorize.green('passed')}`)
-    continue
-  }
-
-  _console.log(`└─ ${Colorize.red(`${extractorResult.errorCount} error(s)`)} ── ${Colorize.yellow(`${extractorResult.warningCount} warning(s)`)}`)
-
-  packagesWithFailures.push(projectFolder)
 }
 
 restore()
@@ -201,5 +169,159 @@ function loadSettings () {
     local: args.includes('--local') || args.includes('-l'),
     diagnostics: args.includes('--diagnostics') || args.includes('-d'),
     help: args.includes('--help') || args.includes('-h'),
+  }
+}
+
+/**
+ * Resolve the canonical public declaration entrypoint for a package.
+ *
+ * @param {string} projectFolder
+ */
+function resolvePackageCompat (projectFolder) {
+  const packageRoot = path.resolve(paths._, projectFolder)
+  const packageJsonFullPath = path.join(packageRoot, 'package.json')
+  const packageJson = JSON.parse(fs.readFileSync(packageJsonFullPath, 'utf-8'))
+  const packageName = packageJson.name ?? projectFolder
+  const importTypes = packageJson.exports?.['.']?.import?.types
+  const requireTypes = packageJson.exports?.['.']?.require?.types
+  const topLevelTypes = packageJson.types
+
+  if (typeof importTypes === 'string' || typeof requireTypes === 'string') {
+    return {
+      packageJsonFullPath,
+      mainEntryPointFilePath: resolveCanonicalTypesPath({
+        packageRoot,
+        packageName,
+        topLevelTypes,
+        importTypes,
+        requireTypes,
+      }),
+    }
+  }
+
+  return {
+    packageJsonFullPath,
+    mainEntryPointFilePath: resolveDeclaredTypesPath(
+      packageRoot,
+      topLevelTypes,
+      packageName,
+      'types',
+      'package.json must declare either exports["."].import.types / exports["."].require.types, or a top-level "types" entry.'
+    ),
+  }
+}
+
+/**
+ * Resolve the canonical public types entrypoint for packages that declare module-specific types.
+ *
+ * @param {{
+ *   packageRoot: string,
+ *   packageName: string,
+ *   topLevelTypes: string | undefined,
+ *   importTypes: string | undefined,
+ *   requireTypes: string | undefined,
+ * }} options
+ */
+function resolveCanonicalTypesPath ({ packageRoot, packageName, topLevelTypes, importTypes, requireTypes }) {
+  if (typeof topLevelTypes === 'string') {
+    return resolveDeclaredTypesPath(packageRoot, topLevelTypes, packageName, 'types')
+  }
+
+  if (typeof importTypes === 'string') {
+    return resolveDeclaredTypesPath(packageRoot, importTypes, packageName, 'exports["."].import.types')
+  }
+
+  if (typeof requireTypes === 'string') {
+    return resolveDeclaredTypesPath(packageRoot, requireTypes, packageName, 'exports["."].require.types')
+  }
+
+  throw new Error(`Compat config error for "${packageName}": could not resolve a canonical public types entrypoint.`)
+}
+
+/**
+ * Resolve and validate a public types declaration path from package metadata.
+ *
+ * @param {string} packageRoot
+ * @param {string | undefined} declaredPath
+ * @param {string} packageName
+ * @param {string} fieldName
+ * @param {string} [missingFieldMessage]
+ */
+function resolveDeclaredTypesPath (packageRoot, declaredPath, packageName, fieldName, missingFieldMessage) {
+  if (typeof declaredPath !== 'string') {
+    throw new Error(`Compat config error for "${packageName}": ${missingFieldMessage ?? `package.json ${fieldName} must be a string.`}`)
+  }
+
+  const resolvedPath = path.resolve(packageRoot, declaredPath)
+  if (!fs.existsSync(resolvedPath)) {
+    throw new Error(`Compat config error for "${packageName}": package.json ${fieldName} points to a file that does not exist: ${resolvedPath}`)
+  }
+  return resolvedPath
+}
+
+/**
+ * Run API Extractor for a resolved report target.
+ *
+ * @param {{
+ *   packageCompat: {
+ *     packageJsonFullPath: string,
+ *     mainEntryPointFilePath: string,
+ *   },
+ *   projectFolder: string,
+ *   settings: {
+ *     diagnostics: boolean,
+ *     local: boolean,
+ *     verbose: boolean,
+ *   },
+ * }} options
+ */
+function runCompatibilityReport ({ packageCompat, projectFolder, settings }) {
+  const extractorConfig = ExtractorConfig.prepare({
+    packageJsonFullPath: packageCompat.packageJsonFullPath,
+    configObjectFullPath: undefined,
+    configObject: {
+      projectFolder,
+      mainEntryPointFilePath: packageCompat.mainEntryPointFilePath,
+      compiler: {
+        tsconfigFilePath: 'tsconfig.json'
+      },
+      apiReport: {
+        enabled: true,
+        reportFolder: paths.reports.baseline,
+        reportTempFolder: paths.reports.generated,
+      },
+      docModel: {
+        enabled: false
+      },
+      dtsRollup: {
+        enabled: false
+      },
+      tsdocMetadata: {
+        enabled: false
+      },
+    }
+  })
+
+  console.log('\r')
+
+  let updated = false
+  const extractorResult = Extractor.invoke(extractorConfig, {
+    localBuild: settings.local,
+    showVerboseMessages: settings.verbose,
+    showDiagnostics: settings.diagnostics,
+    messageCallback (message) {
+      if (message.logLevel === 'warning' && message.text.includes('Updating ')) {
+        updated = true
+      }
+    }
+  })
+
+  console.log('\r')
+
+  return {
+    updated: updated || extractorResult.apiReportChanged,
+    succeeded: extractorResult.succeeded,
+    errorCount: extractorResult.errorCount,
+    warningCount: extractorResult.warningCount,
   }
 }

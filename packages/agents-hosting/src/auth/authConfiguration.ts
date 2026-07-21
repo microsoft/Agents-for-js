@@ -8,6 +8,8 @@ import { loadEnvSettings, AuthConfiguration, envParser, envParserUtils, LoadEnv,
 
 export { type AuthConfiguration, type ConnectionSettings, type ConnectionSettingsBase, type MsalConnectionSettings, type SidecarConnectionSettings, AuthType, resolveAuthority, type ConnectionMapItem, resolveAuthType } from './settings'
 import { prune } from '../utils'
+import { ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from '../errorHelper'
 
 const logger = debug('agents:authConfiguration')
 
@@ -118,12 +120,12 @@ const connectionsEnv = {
     const map = connectionsMap ?? connectionsMapEnv.connectionsMap
     const name = map?.find((item) => item.serviceUrl === '*')?.connection
     if (!name) {
-      throw new Error('No default connection found in environment connections.')
+      throw ExceptionHelper.generateException(Error, Errors.NoDefaultConnectionFound)
     }
 
     const connection = conn?.get(name ?? '')
     if (!connection) {
-      throw new Error(`Connection "${name}" not found in environment connections.`)
+      throw ExceptionHelper.generateException(Error, Errors.ConnectionNotFoundInEnvironment, undefined, { connectionName: name })
     }
 
     return applyDefaultSettings({ ...connection, connections: conn, connectionsMap: map })
@@ -359,7 +361,7 @@ export const loadAuthConfigFromEnv = (cnxName?: string): AuthConfiguration => {
   // No connections provided, we need to populate the connections map with the old config settings
   const result = applyDefaultSettings(cnxName?.trim() ? legacyPrefixEnv.process(globalEnv.env, cnxName) : globalEnv.legacyPrefixSettings)
   if (cnxName && !result.clientId) {
-    throw new Error(`ClientId not found for connection: ${cnxName}`)
+    throw ExceptionHelper.generateException(Error, Errors.ClientIdNotFoundForConnection, undefined, { connectionName: cnxName })
   }
 
   logger.info('Auth settings loaded from environment', {
