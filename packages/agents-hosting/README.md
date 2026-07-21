@@ -12,6 +12,22 @@ To install the package:
 npm install @microsoft/agents-hosting
 ```
 
+## Hosting integration APIs
+
+To make hosting an agent independent of any single web framework, this package
+exposes framework-agnostic primitives that the
+[`@microsoft/agents-hosting-express`](../agents-hosting-express) and
+[`@microsoft/agents-hosting-fastify`](../agents-hosting-fastify) packages build on:
+
+- `createCloudAdapter(agent, authConfig)` — returns `{ adapter, headerPropagation }` for processing incoming activities. Use this from any web framework.
+- `CloudAdapterResult` — return type of `createCloudAdapter`.
+- `createAgentResponseHandler(adapter, agent, conversationState)` — framework-agnostic handler `(req, res, params) => Promise<void>` for the agent-to-agent response route.
+- `AgentResponseHandler`, `AgentResponseHandlerParams`, `AGENT_RESPONSE_ROUTE_PATH` — supporting types and the canonical route path.
+- `WebResponse`, `NextFunction`, `WebRequestParamsCarrier` — minimal structural interfaces (no Express/Fastify imports) used by the cross-framework helpers above.
+
+Most consumers should keep using `startServer`/`createAgentRequestHandler` from the
+Express or Fastify packages; reach for these APIs when adapting another framework.
+
 ## Example Usage based on the AgentApplication object
 
 ```ts

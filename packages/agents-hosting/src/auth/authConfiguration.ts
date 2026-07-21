@@ -3,12 +3,13 @@
  * Licensed under the MIT License.
  */
 
-import type { ConnectionMapItem } from './msalConnectionManager'
 import { debug, redactString, redactScopes, redactUrl } from '@microsoft/agents-telemetry'
-import { loadEnvSettings, AuthConfiguration, envParser, envParserUtils, LoadEnv, applyDefaultSettings, DEFAULT_CONNECTION_MAP, ConnectionKeys, ConnectionMapKeys } from './settings'
+import { loadEnvSettings, AuthConfiguration, envParser, envParserUtils, LoadEnv, applyDefaultSettings, DEFAULT_CONNECTION_MAP, ConnectionKeys, ConnectionMapKeys, ConnectionMapItem } from './settings'
 
-export { type AuthConfiguration, AuthType, resolveAuthority } from './settings'
+export { type AuthConfiguration, type ConnectionSettings, type ConnectionSettingsBase, type MsalConnectionSettings, type SidecarConnectionSettings, AuthType, resolveAuthority, type ConnectionMapItem, resolveAuthType } from './settings'
 import { prune } from '../utils'
+import { ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from '../errorHelper'
 
 const logger = debug('agents:authConfiguration')
 
@@ -36,8 +37,15 @@ function summarizeAuthConfiguration (authConfig: AuthConfiguration) {
       idpmResource: config.idpmResource ? redactUrl(config.idpmResource) : undefined,
       connectionName: config.connectionName,
       altBlueprintConnectionName: config.altBlueprintConnectionName,
+      alternateBlueprintConnectionName: undefined, // Alias of altBlueprintConnectionName, avoid logging duplicate info
       azureRegion: config.azureRegion,
       sendX5C: config.sendX5C,
+      sidecarBaseUrl: config.sidecarBaseUrl ? redactUrl(config.sidecarBaseUrl) : undefined,
+      serviceName: config.serviceName,
+      blueprintServiceName: config.blueprintServiceName,
+      bypassLocalNetworkRestriction: config.bypassLocalNetworkRestriction,
+      requestTimeout: config.requestTimeout,
+      retryCount: config.retryCount,
       // Don't log the following properties
       authority: undefined, // Deprecated, same as authorityEndpoint, avoid logging duplicate info
       FICClientId: undefined, // Deprecated, same as federatedClientId, avoid logging duplicate info
@@ -82,11 +90,24 @@ const connectionsEnv = {
       return { key: 'scopes', value: this.scopes(value)?.value } // redirect with single scope
     },
     altBlueprintConnectionName: envParserUtils.bypass,
+    alternateBlueprintConnectionName: (value) => ({ key: 'altBlueprintConnectionName', value }), // .NET parity alias
     WIDAssertionFile: envParserUtils.bypass,
     federatedTokenFile: envParserUtils.bypass,
     idpmResource: envParserUtils.bypass,
     azureRegion: envParserUtils.bypass,
     sendX5C: (value) => ({ value: value === 'true' }),
+    sidecarBaseUrl: envParserUtils.bypass,
+    serviceName: envParserUtils.bypass,
+    blueprintServiceName: envParserUtils.bypass,
+    bypassLocalNetworkRestriction: (value) => ({ value: value === 'true' }),
+    requestTimeout: (value) => {
+      const n = parseInt(value, 10)
+      return { value: Number.isFinite(n) && n > 0 ? n : undefined }
+    },
+    retryCount: (value) => {
+      const n = parseInt(value, 10)
+      return { value: Number.isFinite(n) && n >= 0 ? n : undefined }
+    },
     issuers (value) {
       if (value.includes(',')) {
         return { value: value.split(',').map(s => s.trim()).filter(Boolean) }
@@ -99,12 +120,12 @@ const connectionsEnv = {
     const map = connectionsMap ?? connectionsMapEnv.connectionsMap
     const name = map?.find((item) => item.serviceUrl === '*')?.connection
     if (!name) {
-      throw new Error('No default connection found in environment connections.')
+      throw ExceptionHelper.generateException(Error, Errors.NoDefaultConnectionFound)
     }
 
     const connection = conn?.get(name ?? '')
     if (!connection) {
-      throw new Error(`Connection "${name}" not found in environment connections.`)
+      throw ExceptionHelper.generateException(Error, Errors.ConnectionNotFoundInEnvironment, undefined, { connectionName: name })
     }
 
     return applyDefaultSettings({ ...connection, connections: conn, connectionsMap: map })
@@ -205,12 +226,19 @@ const legacyBotFrameworkEnv = {
     authorityEndpoint: envParserUtils.redirect(connectionsEnv.parser, 'authorityEndpoint'),
     scope: envParserUtils.redirect(connectionsEnv.parser, 'scopes'),
     altBlueprintConnectionName: envParserUtils.redirect(connectionsEnv.parser, 'altBlueprintConnectionName'),
+    alternateBlueprintConnectionName: envParserUtils.redirect(connectionsEnv.parser, 'altBlueprintConnectionName'),
     WIDAssertionFile: envParserUtils.redirect(connectionsEnv.parser, 'WIDAssertionFile'),
     azureRegion: envParserUtils.redirect(connectionsEnv.parser, 'azureRegion'),
     sendX5C: envParserUtils.redirect(connectionsEnv.parser, 'sendX5C'),
     authType: envParserUtils.redirect(connectionsEnv.parser, 'authType'),
     federatedTokenFile: envParserUtils.redirect(connectionsEnv.parser, 'federatedTokenFile'),
     idpmResource: envParserUtils.redirect(connectionsEnv.parser, 'idpmResource'),
+    sidecarBaseUrl: envParserUtils.redirect(connectionsEnv.parser, 'sidecarBaseUrl'),
+    serviceName: envParserUtils.redirect(connectionsEnv.parser, 'serviceName'),
+    blueprintServiceName: envParserUtils.redirect(connectionsEnv.parser, 'blueprintServiceName'),
+    bypassLocalNetworkRestriction: envParserUtils.redirect(connectionsEnv.parser, 'bypassLocalNetworkRestriction'),
+    requestTimeout: envParserUtils.redirect(connectionsEnv.parser, 'requestTimeout'),
+    retryCount: envParserUtils.redirect(connectionsEnv.parser, 'retryCount'),
   }),
   process (env: LoadEnv) {
     return legacyPrefixEnv.process.call(this, env)
@@ -233,12 +261,19 @@ const legacyPrefixEnv = {
     authorityEndpoint: envParserUtils.redirect(connectionsEnv.parser, 'authorityEndpoint'),
     scope: envParserUtils.redirect(connectionsEnv.parser, 'scopes'),
     altBlueprintConnectionName: envParserUtils.redirect(connectionsEnv.parser, 'altBlueprintConnectionName'),
+    alternateBlueprintConnectionName: envParserUtils.redirect(connectionsEnv.parser, 'altBlueprintConnectionName'),
     WIDAssertionFile: envParserUtils.redirect(connectionsEnv.parser, 'WIDAssertionFile'),
     azureRegion: envParserUtils.redirect(connectionsEnv.parser, 'azureRegion'),
     sendX5C: envParserUtils.redirect(connectionsEnv.parser, 'sendX5C'),
     authType: envParserUtils.redirect(connectionsEnv.parser, 'authType'),
     federatedTokenFile: envParserUtils.redirect(connectionsEnv.parser, 'federatedTokenFile'),
     idpmResource: envParserUtils.redirect(connectionsEnv.parser, 'idpmResource'),
+    sidecarBaseUrl: envParserUtils.redirect(connectionsEnv.parser, 'sidecarBaseUrl'),
+    serviceName: envParserUtils.redirect(connectionsEnv.parser, 'serviceName'),
+    blueprintServiceName: envParserUtils.redirect(connectionsEnv.parser, 'blueprintServiceName'),
+    bypassLocalNetworkRestriction: envParserUtils.redirect(connectionsEnv.parser, 'bypassLocalNetworkRestriction'),
+    requestTimeout: envParserUtils.redirect(connectionsEnv.parser, 'requestTimeout'),
+    retryCount: envParserUtils.redirect(connectionsEnv.parser, 'retryCount'),
   }),
   process (env: LoadEnv, prefix?: string) {
     const settings: Partial<AuthConfiguration> = {}
@@ -326,7 +361,7 @@ export const loadAuthConfigFromEnv = (cnxName?: string): AuthConfiguration => {
   // No connections provided, we need to populate the connections map with the old config settings
   const result = applyDefaultSettings(cnxName?.trim() ? legacyPrefixEnv.process(globalEnv.env, cnxName) : globalEnv.legacyPrefixSettings)
   if (cnxName && !result.clientId) {
-    throw new Error(`ClientId not found for connection: ${cnxName}`)
+    throw ExceptionHelper.generateException(Error, Errors.ClientIdNotFoundForConnection, undefined, { connectionName: cnxName })
   }
 
   logger.info('Auth settings loaded from environment', {

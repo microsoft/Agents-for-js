@@ -1458,7 +1458,7 @@ describe('CopilotStudioClient', function () {
         }
         assert.fail('Should have thrown an error')
       } catch (error: any) {
-        assert.equal(error.message, 'conversationId is required for executeStreaming')
+        assert.match(error.message, /conversationId is required for executeStreaming/)
       }
     })
 
@@ -1703,7 +1703,7 @@ describe('subscribeAsync', function () {
       }
       assert.fail('Should have thrown an error')
     } catch (error: any) {
-      assert.equal(error.message, 'conversationId is required for subscribeAsync')
+      assert.match(error.message, /conversationId is required for subscribeAsync/)
     }
   })
 

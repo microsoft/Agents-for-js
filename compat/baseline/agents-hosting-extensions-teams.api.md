@@ -7,6 +7,7 @@
 import { Activity } from '@microsoft/agents-activity';
 import { ActivityHandler } from '@microsoft/agents-hosting';
 import { AgentApplication } from '@microsoft/agents-hosting';
+import { AgentErrorDefinition } from '@microsoft/agents-activity';
 import { AgentExtension } from '@microsoft/agents-hosting';
 import { Attachment } from '@microsoft/agents-activity';
 import { CardAction } from '@microsoft/agents-activity';
@@ -14,9 +15,9 @@ import { ChannelAccount } from '@microsoft/agents-activity';
 import { ConversationAccount } from '@microsoft/agents-activity';
 import { ConversationReference } from '@microsoft/agents-activity';
 import { ConversationUpdateEvents } from '@microsoft/agents-hosting';
-import { InputFile } from '@microsoft/agents-hosting';
-import { InputFileDownloader } from '@microsoft/agents-hosting';
 import { InvokeResponse } from '@microsoft/agents-hosting';
+import { M365AttachmentDownloader } from '@microsoft/agents-hosting';
+import { MembershipSource } from '@microsoft/agents-activity';
 import { RouteHandler } from '@microsoft/agents-hosting';
 import { RouteSelector } from '@microsoft/agents-hosting';
 import { TurnContext } from '@microsoft/agents-hosting';
@@ -72,23 +73,15 @@ export type CancelOperationResponse = {
 export interface ChannelInfo {
     id?: string;
     name?: string;
-    type?: string;
+    type?: ChannelTypes;
 }
 
 // @public
-export const channelInfoZodSchema: z.ZodObject<{
-    id: z.ZodOptional<z.ZodString>;
-    name: z.ZodOptional<z.ZodString>;
-    type: z.ZodOptional<z.ZodString>;
-}, "strip", z.ZodTypeAny, {
-    type?: string | undefined;
-    id?: string | undefined;
-    name?: string | undefined;
-}, {
-    type?: string | undefined;
-    id?: string | undefined;
-    name?: string | undefined;
-}>;
+export enum ChannelTypes {
+    Private = "private",
+    Shared = "shared",
+    Standard = "standard"
+}
 
 // @public (undocumented)
 export type ConfigureQuerySettingUrlHandler<TState extends TurnState> = (context: TurnContext, state: TState, settings: unknown) => Promise<MessagingExtensionResponse>;
@@ -390,11 +383,11 @@ export const messagingExtensionQueryZodSchema: z.ZodObject<{
         name: z.ZodOptional<z.ZodString>;
         value: z.ZodOptional<z.ZodAny>;
     }, "strip", z.ZodTypeAny, {
-        value?: any;
         name?: string | undefined;
+        value?: any;
     }, {
-        value?: any;
         name?: string | undefined;
+        value?: any;
     }>, "many">>;
     queryOptions: z.ZodOptional<z.ZodObject<{
         skip: z.ZodOptional<z.ZodNumber>;
@@ -410,8 +403,8 @@ export const messagingExtensionQueryZodSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     commandId?: string | undefined;
     parameters?: {
-        value?: any;
         name?: string | undefined;
+        value?: any;
     }[] | undefined;
     queryOptions?: {
         skip?: number | undefined;
@@ -421,8 +414,8 @@ export const messagingExtensionQueryZodSchema: z.ZodObject<{
 }, {
     commandId?: string | undefined;
     parameters?: {
-        value?: any;
         name?: string | undefined;
+        value?: any;
     }[] | undefined;
     queryOptions?: {
         skip?: number | undefined;
@@ -596,6 +589,7 @@ export interface TeamInfo {
     aadGroupId?: string;
     id?: string;
     name?: string;
+    tenantId?: string;
 }
 
 // @public
@@ -691,6 +685,10 @@ export class TeamsAgentExtension<TState extends TurnState = TurnState> extends A
     // (undocumented)
     onTeamsChannelRestored(handler: RouteHandler<TurnState>): this;
     // (undocumented)
+    onTeamsChannelShared(handler: RouteHandler<TurnState>): this;
+    // (undocumented)
+    onTeamsChannelUnshared(handler: RouteHandler<TurnState>): this;
+    // (undocumented)
     onTeamsMembersAdded(handler: RouteHandler<TurnState>): this;
     // (undocumented)
     onTeamsMembersRemoved(handler: RouteHandler<TurnState>): this;
@@ -710,11 +708,8 @@ export class TeamsAgentExtension<TState extends TurnState = TurnState> extends A
     get taskModule(): TaskModule<TState>;
 }
 
-// @public
-export class TeamsAttachmentDownloader<TState extends TurnState = TurnState> implements InputFileDownloader<TState> {
-    constructor(stateKey?: string);
-    downloadAndStoreFiles(context: TurnContext, state: TState): Promise<void>;
-    downloadFiles(context: TurnContext): Promise<InputFile[]>;
+// @public @deprecated (undocumented)
+export class TeamsAttachmentDownloader extends M365AttachmentDownloader {
 }
 
 // @public
@@ -730,7 +725,6 @@ export interface TeamsChannelAccount extends ChannelAccount {
     email?: string;
     givenName?: string;
     surname?: string;
-    tenantId?: string;
     userPrincipalName?: string;
     userRole?: string;
 }
@@ -740,11 +734,14 @@ export interface TeamsChannelData {
     channel?: ChannelInfo;
     eventType?: string;
     meeting?: TeamsMeetingInfo;
+    membershipSource?: MembershipSource;
     notification?: NotificationInfo;
     onBehalfOf?: OnBehalfOf[];
     settings?: TeamsChannelDataSettings;
+    sharedWithTeams?: TeamInfo[];
     team?: TeamInfo;
     tenant?: TenantInfo;
+    unsharedFromTeams?: TeamInfo[];
 }
 
 // @public
@@ -752,179 +749,6 @@ export interface TeamsChannelDataSettings {
     [properties: string]: unknown;
     selectedChannel?: ChannelInfo;
 }
-
-// @public
-export const teamsChannelDataZodSchema: z.ZodObject<{
-    channel: z.ZodOptional<z.ZodObject<{
-        id: z.ZodOptional<z.ZodString>;
-        name: z.ZodOptional<z.ZodString>;
-        type: z.ZodOptional<z.ZodString>;
-    }, "strip", z.ZodTypeAny, {
-        type?: string | undefined;
-        id?: string | undefined;
-        name?: string | undefined;
-    }, {
-        type?: string | undefined;
-        id?: string | undefined;
-        name?: string | undefined;
-    }>>;
-    eventType: z.ZodOptional<z.ZodString>;
-    team: z.ZodOptional<z.ZodObject<{
-        id: z.ZodOptional<z.ZodString>;
-        name: z.ZodOptional<z.ZodString>;
-        aadGroupId: z.ZodOptional<z.ZodString>;
-    }, "strip", z.ZodTypeAny, {
-        id?: string | undefined;
-        name?: string | undefined;
-        aadGroupId?: string | undefined;
-    }, {
-        id?: string | undefined;
-        name?: string | undefined;
-        aadGroupId?: string | undefined;
-    }>>;
-    notification: z.ZodOptional<z.ZodObject<{
-        alert: z.ZodOptional<z.ZodBoolean>;
-        alertInMeeting: z.ZodOptional<z.ZodBoolean>;
-        externalResourceUrl: z.ZodOptional<z.ZodString>;
-    }, "strip", z.ZodTypeAny, {
-        alert?: boolean | undefined;
-        alertInMeeting?: boolean | undefined;
-        externalResourceUrl?: string | undefined;
-    }, {
-        alert?: boolean | undefined;
-        alertInMeeting?: boolean | undefined;
-        externalResourceUrl?: string | undefined;
-    }>>;
-    tenant: z.ZodOptional<z.ZodObject<{
-        id: z.ZodOptional<z.ZodString>;
-    }, "strip", z.ZodTypeAny, {
-        id?: string | undefined;
-    }, {
-        id?: string | undefined;
-    }>>;
-    meeting: z.ZodOptional<z.ZodObject<{
-        id: z.ZodOptional<z.ZodString>;
-    }, "strip", z.ZodTypeAny, {
-        id?: string | undefined;
-    }, {
-        id?: string | undefined;
-    }>>;
-    settings: z.ZodOptional<z.ZodObject<{
-        selectedChannel: z.ZodOptional<z.ZodObject<{
-            id: z.ZodOptional<z.ZodString>;
-            name: z.ZodOptional<z.ZodString>;
-            type: z.ZodOptional<z.ZodString>;
-        }, "strip", z.ZodTypeAny, {
-            type?: string | undefined;
-            id?: string | undefined;
-            name?: string | undefined;
-        }, {
-            type?: string | undefined;
-            id?: string | undefined;
-            name?: string | undefined;
-        }>>;
-    }, "strip", z.ZodTypeAny, {
-        selectedChannel?: {
-            type?: string | undefined;
-            id?: string | undefined;
-            name?: string | undefined;
-        } | undefined;
-    }, {
-        selectedChannel?: {
-            type?: string | undefined;
-            id?: string | undefined;
-            name?: string | undefined;
-        } | undefined;
-    }>>;
-    onBehalfOf: z.ZodOptional<z.ZodArray<z.ZodObject<{
-        itemid: z.ZodUnion<[z.ZodLiteral<0>, z.ZodNumber]>;
-        mentionType: z.ZodUnion<[z.ZodString, z.ZodLiteral<"person">]>;
-        mri: z.ZodString;
-        displayName: z.ZodOptional<z.ZodString>;
-    }, "strip", z.ZodTypeAny, {
-        itemid: number;
-        mentionType: string;
-        mri: string;
-        displayName?: string | undefined;
-    }, {
-        itemid: number;
-        mentionType: string;
-        mri: string;
-        displayName?: string | undefined;
-    }>, "many">>;
-}, "strip", z.ZodTypeAny, {
-    channel?: {
-        type?: string | undefined;
-        id?: string | undefined;
-        name?: string | undefined;
-    } | undefined;
-    eventType?: string | undefined;
-    team?: {
-        id?: string | undefined;
-        name?: string | undefined;
-        aadGroupId?: string | undefined;
-    } | undefined;
-    notification?: {
-        alert?: boolean | undefined;
-        alertInMeeting?: boolean | undefined;
-        externalResourceUrl?: string | undefined;
-    } | undefined;
-    tenant?: {
-        id?: string | undefined;
-    } | undefined;
-    meeting?: {
-        id?: string | undefined;
-    } | undefined;
-    settings?: {
-        selectedChannel?: {
-            type?: string | undefined;
-            id?: string | undefined;
-            name?: string | undefined;
-        } | undefined;
-    } | undefined;
-    onBehalfOf?: {
-        itemid: number;
-        mentionType: string;
-        mri: string;
-        displayName?: string | undefined;
-    }[] | undefined;
-}, {
-    channel?: {
-        type?: string | undefined;
-        id?: string | undefined;
-        name?: string | undefined;
-    } | undefined;
-    eventType?: string | undefined;
-    team?: {
-        id?: string | undefined;
-        name?: string | undefined;
-        aadGroupId?: string | undefined;
-    } | undefined;
-    notification?: {
-        alert?: boolean | undefined;
-        alertInMeeting?: boolean | undefined;
-        externalResourceUrl?: string | undefined;
-    } | undefined;
-    tenant?: {
-        id?: string | undefined;
-    } | undefined;
-    meeting?: {
-        id?: string | undefined;
-    } | undefined;
-    settings?: {
-        selectedChannel?: {
-            type?: string | undefined;
-            id?: string | undefined;
-            name?: string | undefined;
-        } | undefined;
-    } | undefined;
-    onBehalfOf?: {
-        itemid: number;
-        mentionType: string;
-        mri: string;
-        displayName?: string | undefined;
-    }[] | undefined;
-}>;
 
 // @public
 export type TeamsConversationUpdateEvents = ConversationUpdateEvents |
@@ -976,6 +800,11 @@ export type TeamsConversationUpdateEvents = ConversationUpdateEvents |
 * Event triggered when the conversation history is disclosed.
 */
 | 'historyDisclosed';
+
+// @public
+export const TeamsExtensionErrors: {
+    [key: string]: AgentErrorDefinition;
+};
 
 // @public
 export class TeamsInfo {

@@ -1,3 +1,3 @@
-# emtpy-agent
+# empty-agent
 
 The simplest agent, used to validate different authentication options

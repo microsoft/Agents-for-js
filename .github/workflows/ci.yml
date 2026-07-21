@@ -43,6 +43,9 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Run compat
+        run: npm run compat
+
       - name: Build samples
         run: npm run build:samples
 
