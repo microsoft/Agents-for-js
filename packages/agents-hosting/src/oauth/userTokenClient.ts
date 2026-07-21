@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 import { HttpClient, HttpError } from '../httpClient'
-import { Activity, ConversationReference } from '@microsoft/agents-activity'
+import { Activity, ConversationReference, ExceptionHelper } from '@microsoft/agents-activity'
 import { debug } from '@microsoft/agents-telemetry'
 import { normalizeTokenExchangeState } from '../activityWireCompat'
 import { AadResourceUrls, SignInResource, TokenExchangeRequest, TokenOrSinginResourceResponse, TokenResponse, TokenStatus } from './userTokenClient.types'
@@ -12,6 +12,7 @@ import { HeaderPropagation, HeaderPropagationCollection } from '../headerPropaga
 import { getTokenServiceEndpoint } from './customUserTokenAPI'
 import { trace } from '@microsoft/agents-telemetry'
 import { UserTokenClientTraceDefinitions } from '../observability'
+import { Errors } from '../errorHelper'
 
 const logger = debug('agents:user-token-client')
 
@@ -150,7 +151,7 @@ export class UserTokenClient {
       const response = await this.executeRequest('delete', '/api/usertoken/SignOut', undefined, { params })
       record({ userId, connectionName, channelId, httpStatusCode: response.status?.toString() })
       if (response.status !== 200) {
-        throw new Error('Failed to sign out')
+        throw ExceptionHelper.generateException(Error, Errors.FailedToSignOut)
       }
     })
   }

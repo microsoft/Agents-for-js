@@ -22,6 +22,7 @@ export * from './baseAdapter'
 // test-only internals (e.g., the per-process warning dedup set) do not leak
 // into the package's public API.
 export { CloudAdapter, type CloudAdapterOptions } from './cloudAdapter'
+export * from './createCloudAdapter'
 export * from './middlewareSet'
 export * from './messageFactory'
 export * from './statusCodes'
@@ -29,6 +30,7 @@ export * from './turnContext'
 export * from './turnContextStateCollection'
 export * from './storage/storage'
 export * from './headerPropagation'
+export * from './interfaces'
 export * from './httpClient'
 
 export * from './agent-client'

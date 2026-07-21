@@ -40,6 +40,14 @@ export interface AgentError extends Error {
   helpLink: string
 
   /**
+   * Human-readable description text for the error (without the bracketed code prefix
+   * or trailing help link). Mirrors `AgentErrorDefinition.description`, with any
+   * `{param}` placeholders substituted. Use this when emitting an error to a wire
+   * format that should not leak the internal error code or help link.
+   */
+  description: string
+
+  /**
    * Optional inner exception
    */
   innerException?: Error
@@ -93,6 +101,7 @@ export class ExceptionHelper {
     // Set error code and help link as custom properties
     exception.code = errorDefinition.code
     exception.helpLink = helplink
+    exception.description = description
 
     // Store inner exception as a custom property if provided
     if (innerException) {

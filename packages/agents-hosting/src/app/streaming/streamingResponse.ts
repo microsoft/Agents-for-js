@@ -138,7 +138,7 @@ export class StreamingResponse {
     }
 
     if (this._ended) {
-      throw new Error('The stream has already ended.')
+      throw ExceptionHelper.generateException(Error, Errors.StreamAlreadyEnded)
     }
 
     // Queue a typing activity
@@ -170,7 +170,7 @@ export class StreamingResponse {
     }
 
     if (this._ended) {
-      throw new Error('The stream has already ended.')
+      throw ExceptionHelper.generateException(Error, Errors.StreamAlreadyEnded)
     }
 
     // Update full message text
