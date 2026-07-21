@@ -79,7 +79,7 @@ describe('CloudAdapter.process (WebResponse contract)', () => {
       adapter.process(req, res, async () => {}),
       (err: any) => {
         assert.ok(err instanceof TypeError, 'should be a TypeError')
-        assert.strictEqual(err.code, -120800, 'should expose MissingRequestBody AgentError code')
+        assert.strictEqual(err.code, -120830, 'should expose MissingRequestBody AgentError code')
         assert.ok(typeof err.helpLink === 'string' && err.helpLink.length > 0, 'should expose helpLink')
         assert.ok(/request\.body/.test(err.message), 'message should reference request.body')
         return true
