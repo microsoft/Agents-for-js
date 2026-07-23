@@ -194,6 +194,21 @@ describe('Application', () => {
     assert.equal(handled, true)
   })
 
+  it('should stop processing when a beforeTurn handler returns false', async () => {
+    let routeCalled = false
+
+    app.onTurn('beforeTurn', async (_context, _state) => false)
+    app.onMessage('/yo', async (_context, _state) => {
+      routeCalled = true
+    })
+
+    const context = new TurnContext(testAdapter, testActivity)
+    const handled = await app.runInternal(context)
+
+    assert.equal(routeCalled, false)
+    assert.equal(handled, false)
+  })
+
   it('should route to a act handler with regex', async () => {
     let called = false
 

@@ -183,7 +183,7 @@ For long-lived operations where you need manual control over the span lifecycle:
 ```ts
 import { SpanNames, trace } from '@microsoft/agents-telemetry'
 
-const { record, actions, end, fail } = trace({
+const { record, actions, child, end, fail } = trace({
   name: SpanNames.ADAPTER_PROCESS,
   record: { status: 'pending' },
   end: ({ span, record, duration }) => {
@@ -193,7 +193,20 @@ const { record, actions, end, fail } = trace({
 
 try {
   record({ status: 'processing' })
-  await doWork()
+  const keys = ['conversation']
+  await child(
+    {
+      name: SpanNames.STORAGE_READ,
+      record: { keys: 0 },
+      end: ({ span, record }) => {
+        span.setAttribute('storage.keys', record.keys)
+      },
+    },
+    async ({ record }) => {
+      record({ keys: 5 })
+      await storage.read(keys)
+    }
+  )
   record({ status: 'done' })
   end()
 } catch (error) {
@@ -230,6 +243,8 @@ trace(storageReadTrace, ({ record }) => {
 - Non-Error thrown values are recorded with their type name and string representation.
 - Unrecognized span names throw immediately.
 - Disabled span categories run the callback with a noop context — no telemetry is emitted.
+- Managed spans can start parented spans with `child(definition)` or `child(definition, callback)`.
+- Record updates recursively merge plain objects; arrays are copied and replaced.
 - The `end` hook receives `{ span, record, duration, error? }`.
 
 ### Using debug
@@ -268,6 +283,7 @@ When `@opentelemetry/api` is not available, the instruments are safe noops.
 - **Error recording**: Exceptions are recorded on the span with `ERROR` status
 - **Span name validation**: Unknown span names are rejected early
 - **Record tracking**: Accumulate structured data during a trace and access it in the `end` hook
+- **Managed child spans**: Start child spans from a managed trace context when a manual parent span stays open
 - **Custom actions**: Define span-scoped helper functions via the `actions` factory
 - **Category-based disabling**: Disable groups of spans via environment configuration
 - **Noop fallback**: All instrumentation calls are safe no-ops when OpenTelemetry APIs are not installed
@@ -278,13 +294,17 @@ When `@opentelemetry/api` is not available, the instruments are safe noops.
 
 ### `trace(definition)` — Managed mode
 
-Starts a span and returns a managed context with `record`, `actions`, `end`, and `fail` methods.
+Starts a span and returns a managed context with `record`, `actions`, `child`, `end`, and `fail` methods.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `definition` | `TraceDefinition` | Trace definition object (see below). |
 
-Returns: `{ record, actions, end, fail }`
+Returns: `{ record, actions, child, end, fail }`
+
+### `managed.child(definition[, callback])`
+
+Starts a span parented to an open managed span. Without a callback, it returns another managed context. With a callback, the child span follows callback-mode lifecycle behavior.
 
 ### `trace(definition, callback)` — Callback mode
 
