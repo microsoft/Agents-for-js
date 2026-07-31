@@ -1,14 +1,11 @@
-# @microsoft/agents-hosting-extensions-teams
+# @microsoft/agents-hosting-extensions-msteams
 
 Microsoft Teams extension for the Microsoft 365 Agents SDK for JavaScript.
-
-> [!WARNING]
-> This package is deprecated and is retained for backward compatibility. For new development, use [`@microsoft/agents-hosting-extensions-msteams`](../agents-hosting-extensions-msteams), which uses the Microsoft Teams SDK models and client.
 
 ## Installation
 
 ```bash
-npm install @microsoft/agents-hosting-extensions-teams
+npm install @microsoft/agents-hosting-extensions-msteams
 ```
 
 ## Overview
@@ -28,7 +25,7 @@ This package provides Teams-specific functionality for building agents in Micros
 ```typescript
 import { AgentApplication, MemoryStorage, TurnContext, TurnState } from '@microsoft/agents-hosting'
 import { startServer } from '@microsoft/agents-hosting-express'
-import { TeamsAgentExtension } from '@microsoft/agents-hosting-extensions-teams'
+import { TeamsAgentExtension } from '@microsoft/agents-hosting-extensions-msteams'
 
 // Create the agent application
 const app = new AgentApplication<TurnState>({ storage: new MemoryStorage() })
@@ -126,12 +123,22 @@ Handle Teams task modules:
 
 ```typescript
 app.registerExtension<TeamsAgentExtension>(teamsExt, (tae) => {
-  tae.taskModule
-    .onFetch(async (context, state) => {
-      // Return task module card
+  tae.taskModules
+    .onFetch('simple_form', async (context, state, request) => {
+      return {
+        task: {
+          type: 'message',
+          value: 'Open task module'
+        }
+      }
     })
-    .onSubmit(async (context, state) => {
-      // Handle task module submission
+    .onSubmit('simple_form', async (context, state, request) => {
+      return {
+        task: {
+          type: 'message',
+          value: 'Task module submitted'
+        }
+      }
     })
 })
 ```
@@ -139,3 +146,4 @@ app.registerExtension<TeamsAgentExtension>(teamsExt, (tae) => {
 ## License
 
 MIT
+
