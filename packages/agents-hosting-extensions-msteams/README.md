@@ -53,7 +53,7 @@ Handle various meeting events in Teams:
 
 ```typescript
 app.registerExtension<TeamsAgentExtension>(teamsExt, (tae) => {
-  tae.meeting
+  tae.meetings
     .onStart(async (context, state) => {
       await context.sendActivity('Meeting started! I\'m here to assist.')
     })
@@ -63,7 +63,7 @@ app.registerExtension<TeamsAgentExtension>(teamsExt, (tae) => {
     .onParticipantsJoin(async (context, state) => {
       await context.sendActivity('Welcome to the meeting!')
     })
-    .ononParticipantsLeave(async (context, state) => {
+    .onParticipantsLeave(async (context, state) => {
       await context.sendActivity('Goodbye from the meeting!')
     })
 })
@@ -75,7 +75,8 @@ Handle message events in Teams:
 
 ```typescript
 app.registerExtension<TeamsAgentExtension>(teamsExt, (tae) => {
-  tae.onMessageEdit(async (context, state) => {
+  tae.messages
+  .onMessageEdit(async (context, state) => {
     await context.sendActivity('I noticed you edited your message.')
   })
 
@@ -95,7 +96,7 @@ Work with Teams message extensions:
 
 ```typescript
 app.registerExtension<TeamsAgentExtension>(teamsExt, (tae) => {
-  tae.messageExtension
+  tae.messageExtensions
     .onQuery(async (context, state) => {
       // Handle message extension query
       return {
