@@ -14,7 +14,7 @@ This package provides Teams-specific functionality for building agents in Micros
 
 - Message handling (edit, delete, undelete)
 - Meeting events (start, end, participant join/leave)
-- Reactions and screen sharing events
+- Message reactions (added/removed)
 - Message extensions and task modules
 - Teams information access
 
@@ -54,20 +54,17 @@ Handle various meeting events in Teams:
 ```typescript
 app.registerExtension<TeamsAgentExtension>(teamsExt, (tae) => {
   tae.meeting
-    .onMeetingStart(async (context, state) => {
+    .onStart(async (context, state) => {
       await context.sendActivity('Meeting started! I\'m here to assist.')
     })
-    .onMeetingEnd(async (context, state) => {
+    .onEnd(async (context, state) => {
       await context.sendActivity('The meeting has ended. Thanks for participating!')
     })
     .onParticipantsJoin(async (context, state) => {
       await context.sendActivity('Welcome to the meeting!')
     })
-    .onScreenShareStart(async (context, state) => {
-      await context.sendActivity('Screen sharing has started.')
-    })
-    .onRecordingStarted(async (context, state) => {
-      await context.sendActivity('Recording has started.')
+    .ononParticipantsLeave(async (context, state) => {
+      await context.sendActivity('Goodbye from the meeting!')
     })
 })
 ```

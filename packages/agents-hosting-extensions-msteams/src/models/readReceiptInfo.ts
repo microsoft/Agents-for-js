@@ -25,20 +25,18 @@ export class ReadReceiptInfo {
    * @returns {boolean} True if the message has been read, false otherwise.
    */
   static isMessageRead (compareMessageId: string, lastReadMessageId: string): boolean {
-    if (
-      compareMessageId &&
-            compareMessageId.trim().length > 0 &&
-            lastReadMessageId &&
-            lastReadMessageId.trim().length > 0
-    ) {
-      const compareMessageIdNum = Number(compareMessageId)
-      const lastReadMessageIdNum = Number(lastReadMessageId)
-
-      if (compareMessageIdNum && lastReadMessageIdNum) {
-        return compareMessageIdNum <= lastReadMessageIdNum
-      }
+    if (compareMessageId.trim().length === 0 || lastReadMessageId.trim().length === 0) {
+      return false
     }
-    return false
+
+    const compareMessageIdNum = Number(compareMessageId)
+    const lastReadMessageIdNum = Number(lastReadMessageId)
+
+    if (!Number.isFinite(compareMessageIdNum) || !Number.isFinite(lastReadMessageIdNum)) {
+      return false
+    }
+
+    return compareMessageIdNum <= lastReadMessageIdNum
   }
 
   /**

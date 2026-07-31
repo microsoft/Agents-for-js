@@ -146,6 +146,7 @@ Add `authorization` to the base manifest:
       }
     ]
   }
+}
 ```
 
 > **Note:** Meeting events require the bot to be added to the meeting and the meeting must be a scheduled Teams meeting (not an ad-hoc call).
@@ -235,7 +236,7 @@ Demonstrates task module fetch/submit flows using `TeamsAgentExtension.taskModul
 
 **How to test:**
 1. Start the sample and sideload the app.
-2. Send any message — the bot replies with an Adaptive Card with buttons: **Simple Form**, **Multi-Step Form***.
+2. Send any message — the bot replies with an Adaptive Card with buttons: **Simple Form**, **Multi-Step Form**.
 3. Click **"Simple Form"** — a task module dialog opens with a name input. Enter a name and click Submit. The bot sends a confirmation message.
 4. Click **"Multi-Step Form"** — Step 1 asks for your name. After submitting, Step 2 asks for your email. After the second submit, the bot confirms both values.
 

@@ -73,7 +73,7 @@ export class TeamsAgentExtension<TState extends TurnState = TurnState> extends A
         try {
           context.activity.channelData = parseTeamsChannelData(context.activity.channelData)
         } catch {
-          // ignore parse errors for non-Teams channel data
+          // ignore parse errors for unexpected channelData payloads
         }
       }
       return true
