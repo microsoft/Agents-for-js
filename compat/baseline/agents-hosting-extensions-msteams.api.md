@@ -224,6 +224,11 @@ export class TaskModule<TState extends TurnState> {
 }
 
 // @public
+export interface TeamsActivity extends Activity {
+    channelData?: ChannelData;
+}
+
+// @public
 export class TeamsAgentExtension<TState extends TurnState = TurnState> extends AgentExtension<TState> {
     constructor(app: AgentApplication<TState>);
     get channels(): TeamsChannel<TState>;
@@ -324,6 +329,7 @@ export class TeamsTeam<TState extends TurnState = TurnState> {
 
 // @public
 export class TeamsTurnContext extends TurnContext {
+    get activity(): TeamsActivity;
     get client(): Client;
     getAppGraphClient(graphBaseUrl?: string): Client_2;
     getAppGraphClientForConnection(connectionName: string, graphBaseUrl?: string): Client_2;

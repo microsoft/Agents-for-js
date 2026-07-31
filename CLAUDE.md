@@ -120,7 +120,7 @@ The package dependency hierarchy (simplified):
 
 The `agents-hosting-extensions-msteams` package aligns with the Teams SDK-based architecture used in .NET. The legacy `agents-hosting-extensions-teams` package remains in the workspace for backward compatibility, but is deprecated and should not be used for new development.
 
-- **Teams SDK dependency**: Uses `@microsoft/teams.api` (`2.0.13`) for Teams models and client operations.
+- **Teams SDK dependency**: Uses `@microsoft/teams.api` (`2.0.14`) for Teams models and client operations.
 - **Legacy API isolation**: `TeamsConnectorClient`, `TeamsActivityHandler`, `TeamsInfo`, and the local Teams-specific model wrappers remain available only from the deprecated `agents-hosting-extensions-teams` package.
 - **Shared Teams client setup**: Teams client setup/retrieval for the new package is implemented in `packages/agents-hosting-extensions-msteams/src/teamsApiClientExtensions.ts`.
 - **Turn setup requirements**:

@@ -3,6 +3,7 @@ import { describe, it } from 'node:test'
 import { Activity } from '@microsoft/agents-activity'
 import { AgentApplication, type AuthProvider, type Authorization, type Connections, TurnContext } from '@microsoft/agents-hosting'
 import { Client as GraphClient, type ClientOptions } from '@microsoft/microsoft-graph-client'
+import type { ChannelData } from '@microsoft/teams.api'
 import { setTeamsApiClient } from '../src/teamsApiClientExtensions'
 import { TeamsTurnContext } from '../src/teamsTurnContext'
 
@@ -113,6 +114,28 @@ describe('TeamsTurnContext', () => {
     setTeamsApiClient(context)
 
     assert.strictEqual(new TeamsTurnContext(context).client, new TeamsTurnContext(context).client)
+  })
+
+  it('should expose the original activity with typed Teams channel data', () => {
+    const context = createContext()
+    context.activity.channelData = { eventType: 'channelCreated', team: { id: 'team-id' } }
+    const teamsContext = new TeamsTurnContext(context)
+
+    const channelData: ChannelData | undefined = teamsContext.activity.channelData
+
+    assert.strictEqual(teamsContext.activity, context.activity)
+    assert.strictEqual(channelData?.eventType, 'channelCreated')
+    assert.strictEqual(channelData?.team?.id, 'team-id')
+  })
+
+  it('should keep activity mutations synchronized with the wrapped context', () => {
+    const context = createContext()
+    const teamsContext = new TeamsTurnContext(context)
+
+    teamsContext.activity.channelData = { eventType: 'teamRenamed' }
+
+    assert.strictEqual(context.activity.channelData, teamsContext.activity.channelData)
+    assert.strictEqual(context.activity.channelData.eventType, 'teamRenamed')
   })
 
   it('should override the parent TurnContext responded property', () => {

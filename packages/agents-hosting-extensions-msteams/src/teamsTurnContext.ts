@@ -6,6 +6,7 @@ import { Client as GraphClient } from '@microsoft/microsoft-graph-client'
 import { AgentApplication, type Authorization, type Connections, ResourceResponse, TurnContext } from '@microsoft/agents-hosting'
 import { Client as TeamsClient } from '@microsoft/teams.api'
 import { Errors } from './errorHelper'
+import type { TeamsActivity } from './teamsActivity'
 import { TeamsClientKey } from './teamsApiClientExtensions'
 import { createAppGraphClient, createUserGraphClient } from './graphClientFactory'
 
@@ -15,6 +16,17 @@ const DEFAULT_GRAPH_BASE_URL = 'https://graph.microsoft.com/v1.0'
  * Turn context wrapper that exposes Teams-specific helpers for a Teams activity turn.
  */
 export class TeamsTurnContext extends TurnContext {
+  /**
+   * Gets the incoming activity with strongly typed Teams channel data.
+   *
+   * @remarks
+   * The returned object is the original turn activity. This getter only narrows
+   * its TypeScript type and does not convert or clone the activity.
+   */
+  override get activity (): TeamsActivity {
+    return super.activity as TeamsActivity
+  }
+
   /**
    * Gets the Teams API client for the current turn.
    *
