@@ -238,11 +238,11 @@ describe('authorizeJWT', () => {
         authority: 'https://login.microsoftonline.com'
       }
       assert.strictEqual(
-        buildJwksUri(undefined, authConfig),
+        buildJwksUri(undefined as unknown as string, authConfig),
         'https://login.microsoftonline.com/my-tenant/discovery/v2.0/keys'
       )
       assert.strictEqual(
-        buildJwksUri({ malformed: true }, authConfig),
+        buildJwksUri({ malformed: true } as unknown as string, authConfig),
         'https://login.microsoftonline.com/my-tenant/discovery/v2.0/keys'
       )
     })

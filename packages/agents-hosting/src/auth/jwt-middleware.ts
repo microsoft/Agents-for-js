@@ -139,7 +139,7 @@ function isMultiTenant (authConfig: AuthConfiguration): boolean {
  * connection. The issuer must carry a concrete tenant GUID and, for cloud-specific v2 issuers,
  * belong to the same cloud as the configured authority (public vs US Government). The cloud-
  * agnostic v1 `sts.windows.net` host is accepted in either cloud.
- * @param iss The potentially absent or malformed token issuer claim.
+ * @param iss The token issuer claim.
  * @param authConfig The matched connection configuration.
  * @returns `true` when the issuer is an acceptable Entra tenant issuer for the configured cloud.
  */
@@ -272,7 +272,7 @@ function validateTenantBinding (iss: unknown, tid: unknown): void {
  * @param authConfig The authentication configuration for the matched audience.
  * @returns The JWKS URI string.
  */
-export function buildJwksUri (iss: unknown, authConfig: AuthConfiguration): string {
+export function buildJwksUri (iss: string, authConfig: AuthConfiguration): string {
   switch (typeof iss === 'string' ? iss.toLowerCase() : '') {
     case 'https://api.botframework.com':
       return 'https://login.botframework.com/v1/.well-known/keys'
@@ -331,7 +331,8 @@ const verifyToken = async (raw: string, config: AuthConfiguration): Promise<JwtP
   const [key, authConfig] = matchingEntry
   logger.debug(`Audience found at key: ${key}`)
 
-  const jwksUri = buildJwksUri(payload.iss, authConfig)
+  const issuer = typeof payload.iss === 'string' ? payload.iss : ''
+  const jwksUri = buildJwksUri(issuer, authConfig)
 
   logger.debug(`fetching keys from ${jwksUri}`)
   const jwksClient = getJwksClient(jwksUri)
