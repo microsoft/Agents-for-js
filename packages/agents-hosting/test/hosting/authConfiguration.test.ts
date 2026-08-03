@@ -76,6 +76,12 @@ describe('AuthConfiguration', () => {
       assert.strictEqual(config.validateIssuer, true)
     })
 
+    it('should parse supported boolean forms for issuer validation', () => {
+      process.env.validateIssuer = ' 1 '
+      const config = loadAuthConfigFromEnv()
+      assert.strictEqual(config.validateIssuer, true)
+    })
+
     it('should handle missing optional environment variables', () => {
       delete process.env.tenantId
       delete process.env.clientSecret
@@ -297,6 +303,20 @@ describe('AuthConfiguration', () => {
       assert.strictEqual(config.connectionsMap?.length, 1)
       assert.notStrictEqual(config.connections?.get('serviceConnection'), config)
       assert.strictEqual(config.connections?.get('serviceConnection')?.clientId, 'custom-test-client')
+    })
+
+    it('should use the authority-embedded tenant for all default issuers', () => {
+      const config = getAuthConfigWithDefaults({
+        clientId: 'custom-test-client',
+        tenantId: 'stale-tenant',
+        authorityEndpoint: 'https://login.microsoftonline.com/embedded-tenant'
+      })
+
+      assert.deepStrictEqual(config.issuers, [
+        'https://api.botframework.com',
+        'https://sts.windows.net/embedded-tenant/',
+        'https://login.microsoftonline.com/embedded-tenant/v2.0'
+      ])
     })
 
     it('should load configuration with connections', () => {

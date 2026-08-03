@@ -231,14 +231,18 @@ describe('authorizeJWT', () => {
       assert.ok(!uri.includes('my-tenant/my-tenant'), 'URI should not contain double tenant')
     })
 
-    it('should preserve the configured authority route when the issuer claim is missing', () => {
+    it('should preserve the configured authority route when the issuer claim is missing or malformed', () => {
       const authConfig: AuthConfiguration = {
         clientId: 'client-id',
         tenantId: 'my-tenant',
         authority: 'https://login.microsoftonline.com'
       }
       assert.strictEqual(
-        buildJwksUri(undefined as unknown as string, authConfig),
+        buildJwksUri(undefined, authConfig),
+        'https://login.microsoftonline.com/my-tenant/discovery/v2.0/keys'
+      )
+      assert.strictEqual(
+        buildJwksUri({ malformed: true }, authConfig),
         'https://login.microsoftonline.com/my-tenant/discovery/v2.0/keys'
       )
     })

@@ -3,7 +3,8 @@
  * Licensed under the MIT License.
  */
 
-import { AuthConfiguration, resolveAuthority } from './authConfiguration'
+import { AuthConfiguration } from './authConfiguration'
+import { getDefaultIssuers, resolveAuthority } from './settings'
 import { Request } from './request'
 import { WebResponse, NextFunction } from '../interfaces/webResponse'
 import { Errors } from '../errorHelper'
@@ -53,25 +54,6 @@ function getAuthority (authConfig: AuthConfiguration): string | undefined {
 }
 
 /**
- * Builds the default issuer allow-list for a connection whose `issuers` were not explicitly
- * configured. Mirrors `getDefaultIssuers` in authConfiguration.ts so that connections loaded
- * through paths that do not populate `issuers` (e.g. the `connections__*` env path) still get
- * a sensible, tenant-scoped default.
- * @param tenantId The connection tenant ID.
- * @param authority The connection authority.
- * @returns The default issuer list.
- */
-function getDefaultConnectionIssuers (tenantId?: string, authority?: string): string[] {
-  const tenant = tenantId || undefined
-  const baseAuthority = authority ?? 'https://login.microsoftonline.com'
-  return [
-    isGovAuthority(authority) ? 'https://api.botframework.us' : 'https://api.botframework.com',
-    `${resolveAuthority('https://sts.windows.net', tenant)}/`,
-    `${resolveAuthority(baseAuthority, tenant)}/v2.0`
-  ]
-}
-
-/**
  * Returns the well-known Microsoft first-party issuers that are always trusted for the
  * cloud implied by `authority` (public by default, US Government when the authority is gov).
  * @param authority The configured Entra authority.
@@ -107,7 +89,7 @@ function getValidIssuers (authConfig: AuthConfiguration): string[] {
   const authority = getAuthority(authConfig)
   const configured = authConfig.issuers && authConfig.issuers.length > 0
     ? authConfig.issuers
-    : getDefaultConnectionIssuers(authConfig.tenantId, authority)
+    : getDefaultIssuers(authConfig.tenantId ?? '', authority ?? 'https://login.microsoftonline.com')
   const accepted = new Set<string>()
   for (const issuer of [...configured, ...getWellKnownFirstPartyIssuers(authority)]) {
     accepted.add(issuer.toLowerCase())
@@ -157,7 +139,7 @@ function isMultiTenant (authConfig: AuthConfiguration): boolean {
  * connection. The issuer must carry a concrete tenant GUID and, for cloud-specific v2 issuers,
  * belong to the same cloud as the configured authority (public vs US Government). The cloud-
  * agnostic v1 `sts.windows.net` host is accepted in either cloud.
- * @param iss The token issuer claim.
+ * @param iss The potentially absent or malformed token issuer claim.
  * @param authConfig The matched connection configuration.
  * @returns `true` when the issuer is an acceptable Entra tenant issuer for the configured cloud.
  */
@@ -290,7 +272,7 @@ function validateTenantBinding (iss: unknown, tid: unknown): void {
  * @param authConfig The authentication configuration for the matched audience.
  * @returns The JWKS URI string.
  */
-export function buildJwksUri (iss: string, authConfig: AuthConfiguration): string {
+export function buildJwksUri (iss: unknown, authConfig: AuthConfiguration): string {
   switch (typeof iss === 'string' ? iss.toLowerCase() : '') {
     case 'https://api.botframework.com':
       return 'https://login.botframework.com/v1/.well-known/keys'
@@ -349,7 +331,7 @@ const verifyToken = async (raw: string, config: AuthConfiguration): Promise<JwtP
   const [key, authConfig] = matchingEntry
   logger.debug(`Audience found at key: ${key}`)
 
-  const jwksUri = buildJwksUri(payload.iss as string, authConfig)
+  const jwksUri = buildJwksUri(payload.iss, authConfig)
 
   logger.debug(`fetching keys from ${jwksUri}`)
   const jwksClient = getJwksClient(jwksUri)

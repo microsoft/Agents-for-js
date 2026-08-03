@@ -8,6 +8,7 @@ import { loadEnvSettings, AuthConfiguration, envParser, envParserUtils, LoadEnv,
 
 export { type AuthConfiguration, type ConnectionSettings, type ConnectionSettingsBase, type MsalConnectionSettings, type SidecarConnectionSettings, AuthType, resolveAuthority, type ConnectionMapItem, resolveAuthType } from './settings'
 import { prune } from '../utils'
+import { parseBooleanEnv } from '../utils/env'
 import { ExceptionHelper } from '@microsoft/agents-activity'
 import { Errors } from '../errorHelper'
 
@@ -115,7 +116,7 @@ const connectionsEnv = {
       }
       return { value: value.split(/\s+/).filter(Boolean) }
     },
-    validateIssuer: (value) => ({ value: value.toLowerCase() === 'true' }),
+    validateIssuer: (value) => ({ value: parseBooleanEnv(value) }),
   }),
   default (connections?: AuthConfiguration['connections'], connectionsMap?: AuthConfiguration['connectionsMap']) {
     const conn = connections ?? this.connections

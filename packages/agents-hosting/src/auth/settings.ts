@@ -170,6 +170,12 @@ export function resolveAuthority (authority?: string, tenantId?: string): string
   return `${base}/${tenantId ?? 'botframework.com'}`
 }
 
+function getEffectiveTenant (tenantId: string | undefined, authority: string): string | undefined {
+  const resolvedAuthority = new URL(trimTrailingSlashes(authority))
+  const embeddedTenant = resolvedAuthority.pathname.split('/').filter(Boolean).pop()
+  return embeddedTenant ?? tenantId
+}
+
 function trimTrailingSlashes (value: string): string {
   let end = value.length
   while (end > 0 && value.charCodeAt(end - 1) === 47) {
@@ -179,9 +185,9 @@ function trimTrailingSlashes (value: string): string {
   return end === value.length ? value : value.slice(0, end)
 }
 
-function getDefaultIssuers (tenantId: string, authority: string) : string[] {
+export function getDefaultIssuers (tenantId: string, authority: string) : string[] {
   // Convert empty string to undefined so resolveAuthority applies its 'botframework.com' default
-  const t = tenantId || undefined
+  const t = getEffectiveTenant(tenantId || undefined, authority)
   if (!t) {
     logger.warn('tenantId is not configured, defaulting to botframework.com')
   }
