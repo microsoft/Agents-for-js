@@ -400,7 +400,7 @@ export interface TeamInfo {
     tenantId?: string;
 }
 
-// @public
+// @public @deprecated (undocumented)
 export class TeamsActivityHandler extends ActivityHandler {
     protected dispatchConversationUpdateActivity(context: TurnContext): Promise<void>;
     protected dispatchEventActivity(context: TurnContext): Promise<void>;
