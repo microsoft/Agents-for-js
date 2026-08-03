@@ -166,6 +166,7 @@ export class AgentApplication<TState extends TurnState> {
     // (undocumented)
     protected readonly _beforeTurn: ApplicationEventHandler<TState>[];
     protected callEventHandlers(context: TurnContext, state: TState, handlers: ApplicationEventHandler<TState>[]): Promise<boolean>;
+    static readonly ConnectionsKey: unique symbol;
     protected continueConversationAsync(botAppIdOrIdentity: string | JwtPayload, conversationReferenceOrContext: ConversationReference | TurnContext, logic: (context: TurnContext) => Promise<void>): Promise<void>;
     // (undocumented)
     protected readonly _extensions: AgentExtension<TState>[];
@@ -194,6 +195,7 @@ export class AgentApplication<TState extends TurnState> {
     // @deprecated
     stopTypingTimer(): void;
     stopTypingTimer(context: TurnContext): void;
+    static readonly UserAuthorizationKey: unique symbol;
 }
 
 // @public
@@ -616,6 +618,15 @@ export interface ConnectionMapItem {
     connection: string;
     // (undocumented)
     serviceUrl: string;
+}
+
+// @public (undocumented)
+export interface Connections {
+    getConnection: (name: string) => AuthProvider;
+    getDefaultConnection: () => AuthProvider;
+    getDefaultConnectionConfiguration: () => AuthConfiguration;
+    getTokenProvider: (identity: JwtPayload, serviceUrl: string) => AuthProvider;
+    getTokenProviderFromActivity: (identity: JwtPayload, activity: Activity) => AuthProvider;
 }
 
 // @public
