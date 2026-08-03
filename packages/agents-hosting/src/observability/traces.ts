@@ -27,7 +27,7 @@ export const AgentApplicationTraceDefinitions = {
         'route.authorized': record.authorized,
         'route.matched': record.routeMatched,
         ...attributes,
-        ...{ 'activity.name': activity.name ?? 'unknown' }
+        'activity.name': activity.name ?? 'unknown'
       })
 
       HostingMetrics.turnsTotalCounter.add(1, attributes)
