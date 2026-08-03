@@ -230,6 +230,18 @@ describe('authorizeJWT', () => {
       assert.strictEqual(uri, 'https://login.microsoftonline.com/my-tenant/discovery/v2.0/keys')
       assert.ok(!uri.includes('my-tenant/my-tenant'), 'URI should not contain double tenant')
     })
+
+    it('should preserve the configured authority route when the issuer claim is missing', () => {
+      const authConfig: AuthConfiguration = {
+        clientId: 'client-id',
+        tenantId: 'my-tenant',
+        authority: 'https://login.microsoftonline.com'
+      }
+      assert.strictEqual(
+        buildJwksUri(undefined as unknown as string, authConfig),
+        'https://login.microsoftonline.com/my-tenant/discovery/v2.0/keys'
+      )
+    })
   })
 })
 
@@ -258,11 +270,12 @@ describe('authorizeJWT issuer validation', () => {
   // the provided value and whose `tid` is the optional provided value. jwt.verify is stubbed to
   // succeed so the only gates exercised are the issuer allow-list and tenant-binding checks.
   const run = async (connection: AuthConfiguration, iss: unknown, tid?: unknown) => {
-    const config = makeConfig(connection)
+    const effectiveConnection = { validateIssuer: true, ...connection }
+    const config = makeConfig(effectiveConnection)
     const req = { headers: { authorization: 'Bearer token' }, method: 'POST', user: {} } as unknown as Request
-    sinon.stub(jwt, 'decode').returns({ aud: connection.clientId, iss, tid } as unknown as Record<string, unknown>)
+    sinon.stub(jwt, 'decode').returns({ aud: effectiveConnection.clientId, iss, tid } as unknown as Record<string, unknown>)
     sinon.stub(jwt, 'verify').callsFake((_t, _k, _o, cb) => {
-      if (typeof cb === 'function') cb(null, { aud: connection.clientId, iss, tid })
+      if (typeof cb === 'function') cb(null, { aud: effectiveConnection.clientId, iss, tid })
     })
     await authorizeJWT(config)(req, res as Response, next)
     return req
@@ -279,6 +292,19 @@ describe('authorizeJWT issuer validation', () => {
     assert((res.status as sinon.SinonStub).notCalled, 'status should not be set on success')
     assert.ok(req.user, 'req.user should be populated')
   }
+
+  it('does not validate the issuer unless explicitly enabled', async () => {
+    const req = await run(
+      {
+        clientId: 'client-id',
+        tenantId: 'home-tenant',
+        issuers: ['https://login.microsoftonline.com/home-tenant/v2.0'],
+        validateIssuer: false
+      },
+      'https://unrelated.example.com/token'
+    )
+    assertAccepted(req)
+  })
 
   it('rejects a signature-valid token from an unrelated tenant (cross-tenant bypass)', async () => {
     await run(
@@ -399,12 +425,18 @@ describe('authorizeJWT tenant binding (signing key issuer validation)', () => {
     return { clientId: connection.clientId, tenantId: connection.tenantId, connections }
   }
 
-  const run = async (connection: AuthConfiguration, iss: unknown, tid: unknown) => {
+  const run = async (
+    connection: AuthConfiguration,
+    iss: unknown,
+    tid: unknown,
+    verifiedIss: unknown = iss,
+    verifiedTid: unknown = tid
+  ) => {
     const config = makeConfig(connection)
     const req = { headers: { authorization: 'Bearer token' }, method: 'POST', user: {} } as unknown as Request
     sinon.stub(jwt, 'decode').returns({ aud: connection.clientId, iss, tid } as unknown as Record<string, unknown>)
     sinon.stub(jwt, 'verify').callsFake((_t, _k, _o, cb) => {
-      if (typeof cb === 'function') cb(null, { aud: connection.clientId, iss, tid })
+      if (typeof cb === 'function') cb(null, { aud: connection.clientId, iss: verifiedIss, tid: verifiedTid })
     })
     await authorizeJWT(config)(req, res as Response, next)
     return req
@@ -440,11 +472,31 @@ describe('authorizeJWT tenant binding (signing key issuer validation)', () => {
     assertTenantRejected()
   })
 
-  it('rejects an Entra token that is missing the tid claim', async () => {
-    await run(
+  it('accepts an Entra token that is missing the tid claim', async () => {
+    const req = await run(
       { clientId: 'client-id', tenantId: TENANT_A, issuers: [`https://login.microsoftonline.com/${TENANT_A}/v2.0`] },
       `https://login.microsoftonline.com/${TENANT_A}/v2.0`,
       undefined
+    )
+    assertAccepted(req)
+  })
+
+  it('accepts an Entra token whose tid claim is not a string', async () => {
+    const req = await run(
+      { clientId: 'client-id', tenantId: TENANT_A },
+      `https://login.microsoftonline.com/${TENANT_A}/v2.0`,
+      42
+    )
+    assertAccepted(req)
+  })
+
+  it('validates the signed payload rather than the unverified decoded claims', async () => {
+    await run(
+      { clientId: 'client-id', tenantId: TENANT_A },
+      `https://login.microsoftonline.com/${TENANT_A}/v2.0`,
+      TENANT_A,
+      `https://login.microsoftonline.com/${TENANT_A}/v2.0`,
+      TENANT_B
     )
     assertTenantRejected()
   })
@@ -463,6 +515,33 @@ describe('authorizeJWT tenant binding (signing key issuer validation)', () => {
       { clientId: 'client-id', tenantId: 'contoso', issuers: ['https://login.microsoftonline.com/contoso.onmicrosoft.com/v2.0'] },
       'https://login.microsoftonline.com/contoso.onmicrosoft.com/v2.0',
       TENANT_A
+    )
+    assertAccepted(req)
+  })
+
+  it('does not bind a v1 issuer without its canonical trailing slash', async () => {
+    const req = await run(
+      { clientId: 'client-id', tenantId: TENANT_A },
+      `https://sts.windows.net/${TENANT_A}`,
+      TENANT_B
+    )
+    assertAccepted(req)
+  })
+
+  it('does not bind a v2 issuer with a noncanonical trailing slash', async () => {
+    const req = await run(
+      { clientId: 'client-id', tenantId: TENANT_A },
+      `https://login.microsoftonline.com/${TENANT_A}/v2.0/`,
+      TENANT_B
+    )
+    assertAccepted(req)
+  })
+
+  it('does not bind a v2 issuer with noncanonical path casing', async () => {
+    const req = await run(
+      { clientId: 'client-id', tenantId: TENANT_A },
+      `https://login.microsoftonline.com/${TENANT_A}/V2.0`,
+      TENANT_B
     )
     assertAccepted(req)
   })
@@ -502,11 +581,12 @@ describe('authorizeJWT multi-tenant (blueprint) issuer validation', () => {
   }
 
   const run = async (connection: AuthConfiguration, iss: unknown, tid: unknown) => {
-    const config = makeConfig(connection)
+    const effectiveConnection = { validateIssuer: true, ...connection }
+    const config = makeConfig(effectiveConnection)
     const req = { headers: { authorization: 'Bearer token' }, method: 'POST', user: {} } as unknown as Request
-    sinon.stub(jwt, 'decode').returns({ aud: connection.clientId, iss, tid } as unknown as Record<string, unknown>)
+    sinon.stub(jwt, 'decode').returns({ aud: effectiveConnection.clientId, iss, tid } as unknown as Record<string, unknown>)
     sinon.stub(jwt, 'verify').callsFake((_t, _k, _o, cb) => {
-      if (typeof cb === 'function') cb(null, { aud: connection.clientId, iss, tid })
+      if (typeof cb === 'function') cb(null, { aud: effectiveConnection.clientId, iss, tid })
     })
     await authorizeJWT(config)(req, res as Response, next)
     return req

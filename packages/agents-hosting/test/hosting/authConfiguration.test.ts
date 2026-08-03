@@ -52,6 +52,7 @@ describe('AuthConfiguration', () => {
         'https://sts.windows.net/test-tenant-id/',
         'https://login.microsoftonline.com/test-tenant-id/v2.0'
       ])
+      assert.strictEqual(config.validateIssuer, undefined)
       assert.strictEqual(config.authorityEndpoint, 'https://login.microsoftonline.com')
       assert.strictEqual(config.idpmResource, 'https://test.uri.com')
     })
@@ -67,6 +68,12 @@ describe('AuthConfiguration', () => {
       delete process.env.clientId
       const config = loadAuthConfigFromEnv()
       assert.strictEqual(config.clientId, undefined)
+    })
+
+    it('should enable issuer validation explicitly from the environment', () => {
+      process.env.validateIssuer = 'true'
+      const config = loadAuthConfigFromEnv()
+      assert.strictEqual(config.validateIssuer, true)
     })
 
     it('should handle missing optional environment variables', () => {
@@ -326,7 +333,7 @@ describe('AuthConfiguration', () => {
       const config: AuthConfiguration = getAuthConfigWithDefaults({
         clientId: 'gov-client',
         tenantId: 'gov-tenant-id',
-        authority: 'https://login.microsoftonline.us'
+        authorityEndpoint: 'https://login.microsoftonline.us'
       })
       assert.deepStrictEqual(config.issuers, [
         'https://api.botframework.us',

@@ -48,6 +48,10 @@ function isGovAuthority (authority?: string): boolean {
   return !!authority && /login\.microsoftonline\.us/i.test(authority)
 }
 
+function getAuthority (authConfig: AuthConfiguration): string | undefined {
+  return authConfig.authorityEndpoint ?? authConfig.authority
+}
+
 /**
  * Builds the default issuer allow-list for a connection whose `issuers` were not explicitly
  * configured. Mirrors `getDefaultIssuers` in authConfiguration.ts so that connections loaded
@@ -100,11 +104,12 @@ function getWellKnownFirstPartyIssuers (authority?: string): string[] {
  * @returns A de-duplicated, lowercased list of accepted issuers.
  */
 function getValidIssuers (authConfig: AuthConfiguration): string[] {
+  const authority = getAuthority(authConfig)
   const configured = authConfig.issuers && authConfig.issuers.length > 0
     ? authConfig.issuers
-    : getDefaultConnectionIssuers(authConfig.tenantId, authConfig.authority)
+    : getDefaultConnectionIssuers(authConfig.tenantId, authority)
   const accepted = new Set<string>()
-  for (const issuer of [...configured, ...getWellKnownFirstPartyIssuers(authConfig.authority)]) {
+  for (const issuer of [...configured, ...getWellKnownFirstPartyIssuers(authority)]) {
     accepted.add(issuer.toLowerCase())
   }
   return [...accepted]
@@ -118,9 +123,10 @@ function getValidIssuers (authConfig: AuthConfiguration): string[] {
  * @returns The effective tenant identifier, or `undefined` when none is configured.
  */
 function getEffectiveTenant (authConfig: AuthConfiguration): string | undefined {
-  if (authConfig.authority) {
+  const authority = getAuthority(authConfig)
+  if (authority) {
     try {
-      const segment = new URL(authConfig.authority.replace(/\/+$/, '')).pathname.split('/').filter(Boolean).pop()
+      const segment = new URL(authority.replace(/\/+$/, '')).pathname.split('/').filter(Boolean).pop()
       if (segment) {
         return segment
       }
@@ -160,7 +166,7 @@ function isAcceptableTenantIssuer (iss: string, authConfig: AuthConfiguration): 
   if (!info) {
     return false
   }
-  return info.gov === undefined || info.gov === isGovAuthority(authConfig.authority)
+  return info.gov === undefined || info.gov === isGovAuthority(getAuthority(authConfig))
 }
 
 /**
@@ -226,13 +232,14 @@ interface EntraIssuerInfo {
  * @returns The issuer's tenant and cloud affinity, or `undefined` when not a recognised Entra issuer.
  */
 function getEntraIssuerInfo (iss: string): EntraIssuerInfo | undefined {
-  const v1 = /^https:\/\/sts\.windows\.net\/([^/]+)\/?$/i.exec(iss)
+  const v1 = /^https:\/\/sts\.windows\.net\/([^/]+)\/$/i.exec(iss)
   if (v1) {
     return ENTRA_TENANT_GUID.test(v1[1]) ? { tenant: v1[1].toLowerCase() } : undefined
   }
-  const v2 = /^https:\/\/login\.microsoftonline\.(com|us)\/([^/]+)\/v2\.0\/?$/i.exec(iss)
-  if (v2 && ENTRA_TENANT_GUID.test(v2[2])) {
-    return { tenant: v2[2].toLowerCase(), gov: v2[1].toLowerCase() === 'us' }
+  const v2 = /^([^:]+):\/\/([^/]+)\/([^/]+)\/v2\.0$/.exec(iss)
+  const v2Host = v2 ? /^login\.microsoftonline\.(com|us)$/i.exec(v2[2]) : undefined
+  if (v2 && v2Host && v2[1].toLowerCase() === 'https' && ENTRA_TENANT_GUID.test(v2[3])) {
+    return { tenant: v2[3].toLowerCase(), gov: v2Host[1].toLowerCase() === 'us' }
   }
   return undefined
 }
@@ -249,26 +256,28 @@ function getIssuerTenant (iss: string): string | undefined {
 
 /**
  * Validates that an Entra token's `tid` (tenant id) claim matches the tenant GUID embedded in its
- * `iss` claim. This mirrors the .NET SDK's `EnableAadSigningKeyIssuerValidation` /
- * `AadIssuerValidator` behaviour, which binds the accepted issuer to the token's tenant. Because
+ * `iss` claim. This binds the accepted issuer to the token's tenant. Because
  * Entra signing keys are shared across tenants within a cloud, requiring the issuer's tenant and
  * the `tid` claim to agree prevents a token whose `iss` was allow-listed (for example one of the
  * always-trusted Microsoft first-party tenants) from being accepted on behalf of a different
  * tenant.
  *
- * The binding only applies to recognised Entra issuers carrying a GUID tenant; Azure Bot Service
- * issuers (which have no `tid` claim) and alias-based issuers are skipped.
+ * The binding only applies when both claims are strings and the issuer is a recognised Entra
+ * issuer carrying a GUID tenant. Missing/non-string claims, Azure Bot Service issuers, and
+ * alias-based issuers are skipped for backward compatibility.
  * @param iss The token issuer claim.
  * @param tid The token tenant id claim.
- * @throws When the issuer embeds a tenant GUID that does not match the `tid` claim (or `tid` is
- * missing/non-string).
+ * @throws When both claims are strings and the issuer embeds a tenant GUID different from `tid`.
  */
-function validateTenantBinding (iss: string, tid: unknown): void {
+function validateTenantBinding (iss: unknown, tid: unknown): void {
+  if (typeof iss !== 'string' || typeof tid !== 'string') {
+    return
+  }
   const issuerTenant = getIssuerTenant(iss)
   if (!issuerTenant) {
     return
   }
-  if (typeof tid !== 'string' || tid.toLowerCase() !== issuerTenant) {
+  if (tid.toLowerCase() !== issuerTenant) {
     const err = ExceptionHelper.generateException(Error, Errors.JwtTenantMismatch)
     logger.error(err.message, tid)
     throw err
@@ -282,7 +291,7 @@ function validateTenantBinding (iss: string, tid: unknown): void {
  * @returns The JWKS URI string.
  */
 export function buildJwksUri (iss: string, authConfig: AuthConfiguration): string {
-  switch (iss.toLowerCase()) {
+  switch (typeof iss === 'string' ? iss.toLowerCase() : '') {
     case 'https://api.botframework.com':
       return 'https://login.botframework.com/v1/.well-known/keys'
     case 'https://api.botframework.us':
@@ -340,9 +349,6 @@ const verifyToken = async (raw: string, config: AuthConfiguration): Promise<JwtP
   const [key, authConfig] = matchingEntry
   logger.debug(`Audience found at key: ${key}`)
 
-  validateIssuer(payload.iss, authConfig)
-  validateTenantBinding(payload.iss as string, payload.tid)
-
   const jwksUri = buildJwksUri(payload.iss as string, authConfig)
 
   logger.debug(`fetching keys from ${jwksUri}`)
@@ -369,7 +375,7 @@ const verifyToken = async (raw: string, config: AuthConfiguration): Promise<JwtP
     clockTolerance: 300
   }
 
-  return await new Promise((resolve, reject) => {
+  const verifiedPayload = await new Promise<JwtPayload>((resolve, reject) => {
     jwt.verify(raw, getKey, verifyOptions, (err, user) => {
       if (err) {
         logger.error('jwt.verify ', JSON.stringify(err))
@@ -379,6 +385,12 @@ const verifyToken = async (raw: string, config: AuthConfiguration): Promise<JwtP
       resolve(user as JwtPayload)
     })
   })
+
+  if (authConfig.validateIssuer) {
+    validateIssuer(verifiedPayload.iss, authConfig)
+  }
+  validateTenantBinding(verifiedPayload.iss, verifiedPayload.tid)
+  return verifiedPayload
 }
 
 /**

@@ -186,7 +186,7 @@ function getDefaultIssuers (tenantId: string, authority: string) : string[] {
     logger.warn('tenantId is not configured, defaulting to botframework.com')
   }
   return [
-    'https://api.botframework.com',
+    /login\.microsoftonline\.us/i.test(authority) ? 'https://api.botframework.us' : 'https://api.botframework.com',
     `${resolveAuthority('https://sts.windows.net', t)}/`,
     `${resolveAuthority(authority, t)}/v2.0`
   ]
@@ -222,6 +222,15 @@ export interface ConnectionSettingsBase {
    * A list of valid issuers for the authentication configuration.
    */
   issuers?: string[]
+
+  /**
+   * Whether to validate the token issuer against {@link issuers}.
+   *
+   * @remarks
+   * Disabled by default for backward compatibility. Tenant-to-issuer binding is always applied
+   * independently when both claims contain comparable tenant GUIDs.
+   */
+  validateIssuer?: boolean
 
   /**
    * The connection name for the authentication configuration.

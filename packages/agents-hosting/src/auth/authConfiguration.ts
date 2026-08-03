@@ -28,6 +28,7 @@ function summarizeAuthConfiguration (authConfig: AuthConfiguration) {
       authorityEndpoint: config.authorityEndpoint ? redactUrl(config.authorityEndpoint) : undefined,
       scopes: (config.scopes ? redactScopes(config.scopes) : undefined) as any,
       issuers: config.issuers?.map(redactUrl).filter(e => e !== undefined),
+      validateIssuer: config.validateIssuer,
       federatedClientId: redactString(config.federatedClientId, true),
       certPemFile: redactString(config.certPemFile),
       certKeyFile: redactString(config.certKeyFile),
@@ -114,6 +115,7 @@ const connectionsEnv = {
       }
       return { value: value.split(/\s+/).filter(Boolean) }
     },
+    validateIssuer: (value) => ({ value: value.toLowerCase() === 'true' }),
   }),
   default (connections?: AuthConfiguration['connections'], connectionsMap?: AuthConfiguration['connectionsMap']) {
     const conn = connections ?? this.connections
@@ -239,6 +241,7 @@ const legacyBotFrameworkEnv = {
     bypassLocalNetworkRestriction: envParserUtils.redirect(connectionsEnv.parser, 'bypassLocalNetworkRestriction'),
     requestTimeout: envParserUtils.redirect(connectionsEnv.parser, 'requestTimeout'),
     retryCount: envParserUtils.redirect(connectionsEnv.parser, 'retryCount'),
+    validateIssuer: envParserUtils.redirect(connectionsEnv.parser, 'validateIssuer'),
   }),
   process (env: LoadEnv) {
     return legacyPrefixEnv.process.call(this, env)
@@ -274,6 +277,7 @@ const legacyPrefixEnv = {
     bypassLocalNetworkRestriction: envParserUtils.redirect(connectionsEnv.parser, 'bypassLocalNetworkRestriction'),
     requestTimeout: envParserUtils.redirect(connectionsEnv.parser, 'requestTimeout'),
     retryCount: envParserUtils.redirect(connectionsEnv.parser, 'retryCount'),
+    validateIssuer: envParserUtils.redirect(connectionsEnv.parser, 'validateIssuer'),
   }),
   process (env: LoadEnv, prefix?: string) {
     const settings: Partial<AuthConfiguration> = {}
