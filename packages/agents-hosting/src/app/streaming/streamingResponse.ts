@@ -57,6 +57,21 @@ export class StreamingResponse {
   private _finalMessage?: Activity
   private _canceled = false
   private _userCanceled = false
+  private _channelId?: string
+
+  // Timeout / keep-alive tracking
+  private _streamTimedOut = false
+  private _streamStartTime?: number
+  private _lastPassTime?: number
+  private _lastInformativeMessageSent: string = ''
+  private _streamingTakingTooLongMessage: string = 'The response is taking longer than expected. Please wait while we continue to generate the response.'
+
+  // BizChat (M365 Copilot) requires an update roughly every 45s or the client will visually
+  // error the stream. We proactively send a keep-alive informative update if idle beyond this.
+  private static readonly BizChatWorkingNoticeIntervalMs = 35 * 1000
+  // Overall M365 streaming time limit. If exceeded, the stream is stopped and the channel is
+  // switched to non-streaming (async) mode for the remainder of the turn.
+  private static readonly M365StreamingTimeoutMs = 105 * 1000
 
   // Queue for outgoing activities
   private _queue: Array<() => Activity> = []
