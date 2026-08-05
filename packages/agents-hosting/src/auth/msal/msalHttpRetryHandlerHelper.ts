@@ -113,7 +113,7 @@ class MsalHttpClient implements INetworkModule {
       response = await fetch(url, {
         method,
         headers: options?.headers,
-        body: method === 'POST' ? options?.body ?? '' : undefined,
+        body: method === 'POST' ? options?.body : undefined,
         signal: controller.signal
       })
     } catch (error) {
