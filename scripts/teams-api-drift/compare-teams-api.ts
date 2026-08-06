@@ -178,6 +178,23 @@ function readPackageJson (packageRoot: string): { name: string, version: string,
   return JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8')) as { name: string, version: string, types?: string }
 }
 
+function resolveInstalledPackageRoot (): string | undefined {
+  const resolutionRoots = [
+    process.cwd(),
+    resolve(process.cwd(), 'packages/agents-hosting-extensions-msteams')
+  ]
+
+  for (const resolutionRoot of resolutionRoots) {
+    try {
+      return dirname(require.resolve(`${dependency}/package.json`, { paths: [resolutionRoot] }))
+    } catch {
+      // npm may install workspace dependencies below the consuming workspace instead of the repository root.
+    }
+  }
+
+  return undefined
+}
+
 function resolveTypesEntryPoint (packageRoot: string, packageJson: { name: string, types?: string }): string {
   if (!packageJson.types) throw new Error(`${packageJson.name} does not declare a public types entry point.`)
   const entryPoint = resolve(packageRoot, packageJson.types)
@@ -486,17 +503,18 @@ function main (): void {
     return
   }
 
-  const installedPackageRoot = dirname(require.resolve(`${dependency}/package.json`))
-  const installedVersion = readPackageJson(installedPackageRoot).version
+  const installedPackageRoot = resolveInstalledPackageRoot()
+  const installedVersion = installedPackageRoot ? readPackageJson(installedPackageRoot).version : undefined
   const fromVersion = settings.from ?? installedVersion
   const toVersion = settings.to ?? getLatestStableVersion()
+  if (!fromVersion) throw new Error(`Cannot determine the baseline version because ${dependency} is not installed. Supply --from explicitly.`)
   if (!isVersion(fromVersion) || !isVersion(toVersion)) throw new Error('--from and --to must be complete versions, optionally with a prerelease suffix.')
 
   const workRoot = mkdtempSync(join(tmpdir(), 'teams-api-compare-'))
   try {
     console.log(`Comparing ${dependency}@${fromVersion} with ${dependency}@${toVersion}...`)
-    const currentPackageRoot = fromVersion === installedVersion ? installedPackageRoot : installPackage(`${dependency}@${fromVersion}`, workRoot, 'baseline')
-    const candidatePackageRoot = toVersion === installedVersion ? installedPackageRoot : installPackage(`${dependency}@${toVersion}`, workRoot, 'candidate')
+    const currentPackageRoot = installedPackageRoot && fromVersion === installedVersion ? installedPackageRoot : installPackage(`${dependency}@${fromVersion}`, workRoot, 'baseline')
+    const candidatePackageRoot = installedPackageRoot && toVersion === installedVersion ? installedPackageRoot : installPackage(`${dependency}@${toVersion}`, workRoot, 'candidate')
     const current = generateApiReport(currentPackageRoot, workRoot)
     const candidate = generateApiReport(candidatePackageRoot, workRoot)
     const comparison = createComparison(current, candidate, toVersion)
