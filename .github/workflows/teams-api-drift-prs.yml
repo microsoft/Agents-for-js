@@ -36,7 +36,7 @@ jobs:
       candidate_version: ${{ steps.resolve-versions.outputs.candidate_version }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -88,11 +88,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
@@ -212,12 +212,12 @@ jobs:
       # Upload all evidence before the final policy turns collected failures into a failed workflow.
       - name: Upload compatibility artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: teams-api-drift-${{ github.run_id }}
           path: artifacts/teams-api-drift
           if-no-files-found: warn
-          retention-days: 14
+          retention-days: 21
       # Upsert one marker-based summary comment only for trusted pull requests.
       - name: Publish pull-request comment
         if: always() && (github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false) && steps.render-deterministic-report.outcome == 'success'

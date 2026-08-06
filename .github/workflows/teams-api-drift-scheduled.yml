@@ -4,6 +4,7 @@ name: Scheduled Teams API Drift Detector
 # When the public API changes, it publishes deterministic artifacts and upserts an advisory issue.
 on:
   schedule:
+    # Runs at 08:00 UTC every Monday (~1am PST)
     - cron: '0 8 * * 1'
   workflow_dispatch:
 
@@ -22,11 +23,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
@@ -154,15 +155,15 @@ jobs:
       # Upload evidence before the policy gate or issue update can fail the run.
       - name: Upload scheduled drift artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: scheduled-teams-api-drift-${{ github.run_id }}
           path: artifacts/teams-api-drift
           if-no-files-found: warn
-          retention-days: 30
+          retention-days: 21
       - name: Create or update drift issue
         if: always() && steps.comparison-result.outputs.changed == 'true' && steps.validate-advisory-report.outcome == 'success'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           BASELINE_VERSION: ${{ steps.resolve-baseline-version.outputs.version }}
           CANDIDATE_VERSION: ${{ steps.comparison-result.outputs.candidate_version }}
@@ -170,14 +171,16 @@ jobs:
         with:
           script: |
             const fs = require('fs')
-            const marker = `<!-- scheduled-teams-api-drift:${process.env.CANDIDATE_VERSION} -->`
+            const marker = '<!-- scheduled-teams-api-drift -->'
             const title = `teams.api drift detected: ${process.env.BASELINE_VERSION} → ${process.env.CANDIDATE_VERSION}`
             const advisoryReport = fs.readFileSync('artifacts/teams-api-drift/agent-report.md', 'utf8').trim()
             const body = [
-              marker,
-              `Scheduled comparison of \`@microsoft/teams.api\` **${process.env.BASELINE_VERSION}** to **${process.env.CANDIDATE_VERSION}** found API differences.`,
-              '',
-              advisoryReport,
+               marker,
+               `Scheduled comparison of \`@microsoft/teams.api\` **${process.env.BASELINE_VERSION}** to **${process.env.CANDIDATE_VERSION}** found API differences.`,
+               '',
+               'Maintainers should review this advisory report and its deterministic evidence. Some findings may require follow-up before adopting the candidate version.',
+               '',
+               advisoryReport,
               '',
               `Deterministic artifacts: ${process.env.ARTIFACT_URL}`
             ].join('\n')

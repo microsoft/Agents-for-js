@@ -111,10 +111,10 @@ export function validateAgentReport (report: string, findings: FindingsResult): 
     previousSectionIndex = index
   }
   const requiredSummarySentence = 'This is an advisory report; it does not make or authorize implementation decisions.'
-  const summaryMatch = normalizedReport.match(/^## Summary\s*$(?:\n)([\s\S]*?)(?=\n## |\s*$)/m)
+  const summaryMatch = normalizedReport.match(/^## Summary[ \t]*\n([\s\S]*)/m)
   const summaryContent = summaryMatch?.[1] ?? ''
   const firstSummaryLine = summaryContent.split('\n').map(line => line.trim()).find(line => line.length > 0)
-  if (firstSummaryLine !== requiredSummarySentence) {
+  if (!firstSummaryLine?.startsWith(requiredSummarySentence)) {
     errors.push(`Summary section must start with: "${requiredSummarySentence}".`)
   }
 

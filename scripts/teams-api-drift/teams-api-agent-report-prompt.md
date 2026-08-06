@@ -33,6 +33,12 @@ Use each of these level-two headings exactly once and in this order:
 
 ## Validation checklist
 
+Formatting is validated mechanically:
+
+- Write the title and every listed heading on its own line exactly as shown.
+- Put a blank line after each heading and start its content on the following line.
+- Do not append narrative text to a heading or combine multiple sections into one line.
+
 Follow these rules:
 
 - Treat `authoritativeArtifacts.findings` as the source of truth for finding
