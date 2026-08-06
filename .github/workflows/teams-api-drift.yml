@@ -159,7 +159,7 @@ jobs:
         if: >-
           always() &&
           steps.render-deterministic-report.outcome == 'success' &&
-          (github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request')
+          (github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false))
         run: >-
           npm run prepare:teams-api-agent-report --
           --findings artifacts/teams-api-drift/findings.json
@@ -220,7 +220,7 @@ jobs:
           retention-days: 14
       # Upsert one marker-based summary comment only for trusted pull requests.
       - name: Publish pull-request comment
-        if: always() && github.event_name == 'pull_request' && steps.render-deterministic-report.outcome == 'success'
+        if: always() && (github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false) && steps.render-deterministic-report.outcome == 'success'
         uses: actions/github-script@v7
         env:
           ARTIFACT_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
@@ -268,7 +268,7 @@ jobs:
           IMPACT_CLASSIFICATION_OUTCOME: ${{ steps.classify-usage-impact.outcome }}
           VERIFICATION_SUMMARY_OUTCOME: ${{ steps.write-verification-summary.outcome }}
           DETERMINISTIC_REPORT_OUTCOME: ${{ steps.render-deterministic-report.outcome }}
-          RUN_AI_AGENT: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request' }}
+          RUN_AI_AGENT: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false) }}
           AGENT_CONTEXT_OUTCOME: ${{ steps.prepare-agent-context.outcome }}
           COPILOT_INSTALL_OUTCOME: ${{ steps.install-copilot-cli.outcome }}
           AGENT_REPORT_OUTCOME: ${{ steps.generate-advisory-report.outcome }}

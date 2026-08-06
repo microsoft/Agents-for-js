@@ -392,6 +392,9 @@ function main (): void {
   if (comparison.schemaVersion !== 1 || !Array.isArray(comparison.changes)) {
     throw new Error('Comparison result must be a schemaVersion 1 raw API delta. Re-run compare:teams-api with --output <directory>.')
   }
+  if (!Array.isArray(manifest.usages)) {
+    throw new Error('Usage manifest must include a usages array.')
+  }
   if (comparison.dependency !== dependency || manifest.dependency !== dependency) {
     throw new Error(`Both input files must describe ${dependency}.`)
   }

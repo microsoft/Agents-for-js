@@ -83,7 +83,7 @@ function readText (filePath: string): string {
 }
 
 function actionSections (report: string): string[] {
-  const names = ['Compatibility breaks', 'Required adaptations', 'Feature-review candidates', 'Internal implementation opportunities', 'Maintainer decisions', 'Suggested implementation issues']
+  const names = ['Compatibility breaks', 'Required adaptations', 'Feature-review candidates', 'Internal implementation opportunities', 'Maintainer decisions', 'No action', 'Suggested implementation issues']
   const normalized = report.replace(/\r\n/g, '\n')
   return names.flatMap(name => {
     const start = normalized.indexOf(`## ${name}\n`)
@@ -98,8 +98,17 @@ export function validateAgentReport (report: string, findings: FindingsResult): 
   const errors: string[] = []
   const normalizedReport = report.replace(/\r\n/g, '\n')
   if (!normalizedReport.startsWith('# teams.api Impact Report\n')) errors.push('Report must start with "# teams.api Impact Report".')
+  let previousSectionIndex = -1
   for (const section of requiredSections) {
-    if (!new RegExp(`^## ${section}$`, 'm').test(normalizedReport)) errors.push(`Missing required section: ${section}.`)
+    const heading = `## ${section}\n`
+    const index = normalizedReport.indexOf(heading)
+    if (index < 0) {
+      errors.push(`Missing required section: ${section}.`)
+      continue
+    }
+    if (normalizedReport.indexOf(heading, index + heading.length) >= 0) errors.push(`Section must appear exactly once: ${section}.`)
+    if (index < previousSectionIndex) errors.push('Sections must appear in the required order.')
+    previousSectionIndex = index
   }
   const requiredSummarySentence = 'This is an advisory report; it does not make or authorize implementation decisions.'
   const summaryMatch = normalizedReport.match(/^## Summary\s*$(?:\n)([\s\S]*?)(?=\n## |\s*$)/m)

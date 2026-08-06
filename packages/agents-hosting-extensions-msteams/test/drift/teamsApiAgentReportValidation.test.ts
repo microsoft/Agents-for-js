@@ -49,7 +49,7 @@ describe('teams.api agent report validation', () => {
     assert.ok(validation.errors.includes('Missing required section: Required adaptations.'))
   })
 
-  it('should require recommendations to be labeled advisory', () => {
+  it('should require the Summary section to start with the advisory disclaimer sentence', () => {
     const validation = validateAgentReport(report({ Summary: 'This report contains recommendations.' }), findings())
 
     assert.ok(validation.errors.includes('Summary section must start with: "This is an advisory report; it does not make or authorize implementation decisions.".'))
