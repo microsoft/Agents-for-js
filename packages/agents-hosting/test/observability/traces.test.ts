@@ -781,7 +781,7 @@ describe('trace definitions', () => {
         ProactiveTraceDefinitions.continueConversation,
         ProactiveTraceDefinitions.continueConversation.record
       )
-      const createSpan = endTrace(
+      const createConversationSpan = endTrace(
         ProactiveTraceDefinitions.createConversation,
         ProactiveTraceDefinitions.createConversation.record
       )
@@ -803,7 +803,7 @@ describe('trace definitions', () => {
         'proactive.has_auto_sign_in': false,
         'activity.conversation_id': '',
       })
-      assert.deepEqual(createSpan.attributes, {
+      assert.deepEqual(createConversationSpan.attributes, {
         'activity.channel_id': '',
         'proactive.store_conversation': false,
         'proactive.has_handler': false,
