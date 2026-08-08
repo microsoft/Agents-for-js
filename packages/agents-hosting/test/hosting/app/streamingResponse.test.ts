@@ -26,7 +26,9 @@ describe('StreamingResponse', () => {
   beforeEach(() => {
     mockContext = createContext({ channelId: Channels.Webchat })
     streamingResponse = new StreamingResponse(mockContext)
-    clock = sinon.useFakeTimers()
+    clock = sinon.useFakeTimers({
+      toFake: ['setTimeout', 'clearTimeout'],
+    })
   })
 
   afterEach(() => {

@@ -86,7 +86,8 @@ describe('Conversation', () => {
 
     it('returns object with tid from claims', () => {
       const conv = new Conversation(makeClaims(), makeReference())
-      assert.equal((conv.identity as any).tid, 'tenant-1')
+      const identity = conv.identity as { tid?: string }
+      assert.equal(identity.tid, 'tenant-1')
     })
   })
 
