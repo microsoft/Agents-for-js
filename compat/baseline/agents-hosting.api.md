@@ -648,6 +648,7 @@ export interface ConnectionSettingsBase {
     scope?: string;
     scopes?: string[];
     tenantId?: string;
+    validateIssuer?: boolean;
 }
 
 // @public
