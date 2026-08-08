@@ -416,6 +416,22 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
     description: 'Identity is required to get the token provider.'
   },
 
+  /**
+   * Error thrown when an MSAL HTTP request cannot be completed.
+   */
+  MsalHttpRequestFailed: {
+    code: -120391,
+    description: 'MSAL HTTP request failed: {message}'
+  },
+
+  /**
+   * Error thrown when an MSAL HTTP response body cannot be parsed as JSON.
+   */
+  MsalResponseUnparsable: {
+    code: -120392,
+    description: 'MSAL returned an unparsable response body'
+  },
+
   FailedToAcquireTokenUsingCertificate: {
     code: -120395,
     description: 'Failed to acquire token using certificate'

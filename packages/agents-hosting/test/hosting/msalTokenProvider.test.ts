@@ -131,6 +131,59 @@ describe('MsalTokenProvider', () => {
     assert.strictEqual(clientInstances.size, 1)
   })
 
+  it('should configure the MSAL network client with msalRetryCount', async () => {
+    let maxRetryCount: number | undefined
+    sinon.stub(ConfidentialClientApplication.prototype, 'acquireTokenByClientCredential').callsFake(async function (this: any) {
+      maxRetryCount = this.config.system.networkClient.maxRetryCount
+      return { accessToken: 'opaque-token' } as any
+    })
+
+    await new MsalTokenProvider({
+      clientId: 'retry-client-id',
+      clientSecret: 'retry-secret',
+      tenantId: 'retry-tenant-id',
+      msalRetryCount: 5
+    }).getAccessToken('scope')
+
+    assert.strictEqual(maxRetryCount, 5)
+  })
+
+  it('should not share confidential clients with different msalRetryCount settings', async () => {
+    const clientInstances = new Set<unknown>()
+    sinon.stub(ConfidentialClientApplication.prototype, 'acquireTokenByClientCredential').callsFake(async function (this: unknown) {
+      clientInstances.add(this)
+      return { accessToken: 'opaque-token' } as any
+    })
+    const connectionSettings: AuthConfiguration = {
+      clientId: 'retry-client-id',
+      clientSecret: 'retry-secret',
+      tenantId: 'retry-tenant-id'
+    }
+
+    await new MsalTokenProvider({ ...connectionSettings, msalRetryCount: 2 }).getAccessToken('scope-one')
+    await new MsalTokenProvider({ ...connectionSettings, msalRetryCount: 5 }).getAccessToken('scope-two')
+
+    assert.strictEqual(clientInstances.size, 2)
+  })
+
+  it('should share confidential clients with equivalent normalized msalRetryCount settings', async () => {
+    const clientInstances = new Set<unknown>()
+    sinon.stub(ConfidentialClientApplication.prototype, 'acquireTokenByClientCredential').callsFake(async function (this: unknown) {
+      clientInstances.add(this)
+      return { accessToken: 'opaque-token' } as any
+    })
+    const connectionSettings: AuthConfiguration = {
+      clientId: 'retry-client-id',
+      clientSecret: 'retry-secret',
+      tenantId: 'retry-tenant-id'
+    }
+
+    await new MsalTokenProvider({ ...connectionSettings, msalRetryCount: 1.7 }).getAccessToken('scope-one')
+    await new MsalTokenProvider({ ...connectionSettings, msalRetryCount: 1 }).getAccessToken('scope-two')
+
+    assert.strictEqual(clientInstances.size, 1)
+  })
+
   it('should evict least-recently-used confidential clients after the cache size limit is reached', async () => {
     const clientInstances: unknown[] = []
     sinon.stub(ConfidentialClientApplication.prototype, 'acquireTokenByClientCredential').callsFake(async function (this: unknown) {
