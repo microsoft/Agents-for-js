@@ -397,6 +397,94 @@ describe('StreamingResponse', () => {
     })
   })
 
+  it('should update the streamed activity when the channel streaming timeout is reported', async () => {
+    mockContext.sendActivity.onSecondCall().rejects(
+      new Error('ContentStreamNotAllowed: Content stream finished due to exceeded streaming time.')
+    )
+
+    streamingResponse.queueInformativeUpdate('Starting...')
+    await clock.tickAsync(500)
+    streamingResponse.queueTextChunk('Completed response text.')
+    await clock.tickAsync(500)
+
+    assert.equal(streamingResponse.isStreamingChannel, false)
+    sinon.assert.calledOnce(mockContext.updateActivity)
+    const checkpoint = mockContext.updateActivity.firstCall.args[0] as Activity
+    assert.equal(checkpoint.id, 'test-stream-id')
+    assert.match(checkpoint.text!, /taking longer than expected/)
+
+    const result = await streamingResponse.endStream()
+
+    assert.equal(result, StreamingResponseResult.Success)
+    sinon.assert.calledTwice(mockContext.updateActivity)
+    const finalActivity = mockContext.updateActivity.secondCall.args[0] as Activity
+    assert.equal(finalActivity.id, 'test-stream-id')
+    assert.equal(finalActivity.text, 'Completed response text.')
+  })
+
+  it('should stop streaming after a timeout notification and send the completed response normally', async () => {
+    streamingResponse.queueInformativeUpdate('Starting...')
+    await clock.tickAsync(500)
+
+    const timeoutPromise = streamingResponse.sendStreamTimedOutNotification('Streaming timed out.')
+    await clock.tickAsync(500)
+    assert.equal(await timeoutPromise, true)
+    assert.equal(streamingResponse.isStreamingChannel, false)
+
+    streamingResponse.queueTextChunk('Completed response text.')
+    const endPromise = streamingResponse.endStream()
+    await clock.tickAsync(500)
+    assert.equal(await endPromise, StreamingResponseResult.Success)
+
+    const timeoutActivity = mockContext.sendActivity.secondCall.args[0] as Activity
+    assert.equal(timeoutActivity.text, 'Streaming timed out.')
+    assert.equal(timeoutActivity.entities?.[0].streamType, 'final')
+
+    const finalActivity = mockContext.sendActivity.thirdCall.args[0] as Activity
+    assert.equal(finalActivity.text, 'Completed response text.')
+    assert.equal(finalActivity.entities?.some(entity => entity.type === 'streaminfo'), false)
+  })
+
+  it('should send a keep-alive informative update for an idle M365 Copilot stream', async () => {
+    mockContext = createContext({ channelId: Channels.M365Copilot })
+    streamingResponse = new StreamingResponse(mockContext)
+    streamingResponse.streamingTakingTooLongMessage = 'Still working...'
+
+    streamingResponse.queueInformativeUpdate('Starting...')
+    await clock.tickAsync(36000)
+
+    sinon.assert.calledTwice(mockContext.sendActivity)
+    const keepAlive = mockContext.sendActivity.secondCall.args[0] as Activity
+    assert.equal(keepAlive.type, 'typing')
+    assert.equal(keepAlive.text, 'Starting...')
+    assert.equal(keepAlive.entities?.[0].streamType, 'informative')
+  })
+
+  it('should finalize an M365 Copilot stream at the channel timeout and fall back to non-streaming', async () => {
+    mockContext = createContext({ channelId: Channels.M365Copilot })
+    streamingResponse = new StreamingResponse(mockContext)
+    streamingResponse.streamingTakingTooLongMessage = 'Still working...'
+
+    streamingResponse.queueTextChunk('Buffered response')
+    await clock.tickAsync(108000)
+
+    assert.equal(streamingResponse.isStreamingChannel, false)
+    const timeoutFinal = mockContext.sendActivity.args
+      .map(args => args[0] as Activity)
+      .find(activity => activity.entities?.some(entity => entity.streamType === 'final'))
+    assert.ok(timeoutFinal)
+    assert.match(timeoutFinal.text!, /Still working/)
+
+    streamingResponse.queueTextChunk(' complete.')
+    const endPromise = streamingResponse.endStream()
+    await clock.tickAsync(1000)
+    assert.equal(await endPromise, StreamingResponseResult.Success)
+
+    const finalActivity = mockContext.sendActivity.lastCall.args[0] as Activity
+    assert.equal(finalActivity.text, 'Buffered response complete.')
+    assert.equal(finalActivity.entities?.some(entity => entity.type === 'streaminfo'), false)
+  })
+
   it('should send one activity for non-streaming channels', async () => {
     mockContext = createContext({ channelId: Channels.Facebook })
     streamingResponse = new StreamingResponse(mockContext)
