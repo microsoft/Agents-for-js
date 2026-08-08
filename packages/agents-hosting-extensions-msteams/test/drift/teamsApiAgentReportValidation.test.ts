@@ -55,6 +55,14 @@ describe('teams.api agent report validation', () => {
     assert.ok(validation.errors.includes('Summary section must start with: "This is an advisory report; it does not make or authorize implementation decisions.".'))
   })
 
+  it('should allow a summary to continue after the required advisory sentence', () => {
+    const validation = validateAgentReport(report({
+      Summary: 'This is an advisory report; it does not make or authorize implementation decisions. This upgrade has no mandatory adaptations.'
+    }), findings())
+
+    assert.deepEqual(validation.errors, [])
+  })
+
   it('should require blocking and required finding IDs', () => {
     const validation = validateAgentReport(report(), findings(
       { id: 'TSAPI-0001', classification: 'blocking' },
