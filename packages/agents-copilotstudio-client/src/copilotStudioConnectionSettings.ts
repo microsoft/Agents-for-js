@@ -48,4 +48,9 @@ export interface CopilotStudioConnectionSettings {
    * @deprecated This property will not be supported in future versions. Handle the auth properties in the agent.
    **/
   authority?: string
+
+  /**
+   * Key used to pseudonymize conversation IDs in the diagnostics logs. Default value is an empty string.
+   **/
+  diagnosticsPseudonymKey?: string
 }

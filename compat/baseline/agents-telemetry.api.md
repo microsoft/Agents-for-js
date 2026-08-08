@@ -56,6 +56,12 @@ export const MetricNames: {
 };
 
 // @public
+export function pseudonymizeConversationId(conversationId: string | undefined, key?: string): string | undefined;
+
+// @public
+export function redactDiagnosticObject(value: unknown, diagnosticsPseudonymKey?: string): unknown;
+
+// @public
 export function redactScopes(scopes: string[] | undefined): string | undefined;
 
 // @public

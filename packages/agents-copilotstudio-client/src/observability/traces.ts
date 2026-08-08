@@ -1,4 +1,3 @@
-import { Activity } from '@microsoft/agents-activity'
 import { trace, SpanNames } from '@microsoft/agents-telemetry'
 import { CopilotStudioClientMetrics } from './metrics'
 import { SubscribeEvent } from '../subscribeEvent'
@@ -10,16 +9,16 @@ export const CopilotStudioClientTraceDefinitions = {
       showTyping: false,
     },
     actions: ({ span }) => ({
-      receivedFromCopilot (activity: Activity) {
+      receivedFromCopilot (activityType: string | undefined, conversationId: string | undefined) {
         span.addEvent('activity.received.from.copilot.studio', {
-          'copilot.webchat.activity.type': activity.type ?? 'unknown',
-          'copilot.webchat.activity.conversation_id': activity.conversation?.id ?? 'unknown'
+          'copilot.webchat.activity.type': activityType ?? 'unknown',
+          'copilot.webchat.activity.conversation_id': conversationId ?? 'unknown'
         })
       },
-      sentToWebChat (activity: Activity) {
+      sentToWebChat (activityType: string | undefined, conversationId: string | undefined) {
         span.addEvent('activity.sent.to.webchat', {
-          'copilot.webchat.activity.type': activity.type ?? 'unknown',
-          'copilot.webchat.activity.conversation_id': activity.conversation?.id ?? 'unknown'
+          'copilot.webchat.activity.type': activityType ?? 'unknown',
+          'copilot.webchat.activity.conversation_id': conversationId ?? 'unknown'
         })
       },
     }),
@@ -39,17 +38,19 @@ export const CopilotStudioClientTraceDefinitions = {
       method: ''
     },
     actions: ({ span }) => ({
-      receivedFromCopilot (activity: Activity) {
+      receivedFromCopilot (activityType: string | undefined, conversationId: string | undefined) {
         const attributes = {
-          'copilot.activity.type': activity.type ?? 'unknown',
-          'copilot.activity.conversation_id': activity.conversation?.id ?? 'unknown'
+          'copilot.activity.type': activityType ?? 'unknown',
+          'copilot.activity.conversation_id': conversationId ?? 'unknown'
         }
 
         span.addEvent('activity.received', {
           'copilot.post_request.activity.type': attributes['copilot.activity.type'],
           'copilot.post_request.activity.conversation_id': attributes['copilot.activity.conversation_id']
         })
-        CopilotStudioClientMetrics.activitiesReceivedCounter.add(1, attributes)
+        CopilotStudioClientMetrics.activitiesReceivedCounter.add(1, {
+          'copilot.activity.type': attributes['copilot.activity.type']
+        })
       }
     }),
     end ({ span, record, duration, error }) {
@@ -97,41 +98,46 @@ export const CopilotStudioClientTraceDefinitions = {
   sendActivity: trace.define({
     name: SpanNames.COPILOT_SEND_ACTIVITY,
     record: {
-      activity: Activity.fromObject({ type: 'unknown' }),
+      activityType: 'unknown',
+      conversationId: 'unknown'
     },
     end ({ span, record, duration }) {
       const attributes = {
-        'copilot.activity.type': record.activity.type ?? 'unknown',
-        'copilot.activity.conversation_id': record.activity.conversation?.id ?? 'unknown'
+        'copilot.activity.type': record.activityType ?? 'unknown',
+        'copilot.activity.conversation_id': record.conversationId ?? 'unknown'
       }
       const metricAttributes = {
         operation: 'sendActivityStreaming',
-        ...attributes,
+        'copilot.activity.type': attributes['copilot.activity.type'],
       }
 
       span.setAttributes(attributes)
-      CopilotStudioClientMetrics.activitiesSentCounter.add(1, attributes)
+      CopilotStudioClientMetrics.activitiesSentCounter.add(1, {
+        'copilot.activity.type': attributes['copilot.activity.type']
+      })
       CopilotStudioClientMetrics.requestDuration.record(duration, metricAttributes)
     }
   }),
   executeStreaming: trace.define({
     name: SpanNames.COPILOT_EXECUTE_STREAMING,
     record: {
-      activity: Activity.fromObject({ type: 'unknown' }),
+      activityType: 'unknown',
       conversationId: 'unknown'
     },
     end ({ span, record, duration }) {
       const attributes = {
-        'copilot.activity.type': record.activity.type ?? 'unknown',
+        'copilot.activity.type': record.activityType ?? 'unknown',
         'copilot.activity.conversation_id': record.conversationId ?? 'unknown'
       }
       const metricAttributes = {
         operation: 'executeStreaming',
-        ...attributes,
+        'copilot.activity.type': attributes['copilot.activity.type'],
       }
 
       span.setAttributes(attributes)
-      CopilotStudioClientMetrics.executeStreamingCounter.add(1, attributes)
+      CopilotStudioClientMetrics.executeStreamingCounter.add(1, {
+        'copilot.activity.type': attributes['copilot.activity.type']
+      })
       CopilotStudioClientMetrics.requestDuration.record(duration, metricAttributes)
     }
   }),
@@ -159,8 +165,6 @@ export const CopilotStudioClientTraceDefinitions = {
       }
       const metricAttributes = {
         operation: 'subscribeAsync',
-        'copilot.conversation_id': attributes['copilot.subscribe_async.conversation_id'],
-        'copilot.last_received_event_id': attributes['copilot.subscribe_async.last_received_event_id']
       }
 
       span.setAttributes(attributes)

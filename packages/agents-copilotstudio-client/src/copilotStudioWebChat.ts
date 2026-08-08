@@ -9,7 +9,7 @@ import { Activity, Attachment, ConversationAccount, ExceptionHelper } from '@mic
 import { Observable, BehaviorSubject, type Subscriber } from 'rxjs'
 
 import { CopilotStudioClient } from './copilotStudioClient'
-import { debug, trace, redactString } from '@microsoft/agents-telemetry'
+import { debug, pseudonymizeConversationId, redactDiagnosticObject, redactUrl, trace } from '@microsoft/agents-telemetry'
 import { CopilotStudioClientTraceDefinitions } from './observability'
 import { Errors } from './errorHelper'
 
@@ -272,7 +272,7 @@ export class CopilotStudioWebChat {
 
       logger.info('Copilot Studio WebChat settings loaded', {
         showTyping: settings?.showTyping,
-        conversationId: redactString(normalizedConversationId, true),
+        conversationId: pseudonymizeConversationId(normalizedConversationId, client.diagnosticsPseudonymKey),
         startConversation: settings?.startConversation,
         connectionMode: normalizedConversationId ? 'resume' : 'new',
         acknowledgementMode: shouldStart ? 'startConversationStreaming' : 'resumeWithoutStart',
@@ -315,7 +315,7 @@ export class CopilotStudioWebChat {
             }
             await handleAcknowledgementOnce()
             notifyActivity(activity)
-            managed.actions.receivedFromCopilot(activity)
+            managed.actions.receivedFromCopilot(activity.type, pseudonymizeConversationId(activity.conversation?.id, client.diagnosticsPseudonymKey))
           }
           // If no activities received from bot, we should still acknowledge.
           await handleAcknowledgementOnce()
@@ -336,7 +336,7 @@ export class CopilotStudioWebChat {
           },
         }
         sequence++
-        logger.debug(`Notify '${newActivity.type}' activity to WebChat:`, newActivity)
+        logger.debug(`Notify '${newActivity.type}' activity to WebChat:`, redactDiagnosticObject(newActivity, client.diagnosticsPseudonymKey))
         activitySubscriber?.next(newActivity)
       }
 
@@ -385,7 +385,7 @@ export class CopilotStudioWebChat {
                 })
 
                 notifyActivity(newActivity)
-                managed.actions.sentToWebChat(newActivity)
+                managed.actions.sentToWebChat(newActivity.type, pseudonymizeConversationId(newActivity.conversation?.id, client.diagnosticsPseudonymKey))
                 notifyTyping()
 
                 // Notify WebChat immediately that the message was sent
@@ -397,7 +397,7 @@ export class CopilotStudioWebChat {
                     activeConversationId = responseActivity.conversation.id
                   }
                   notifyActivity(responseActivity)
-                  managed.actions.receivedFromCopilot(responseActivity)
+                  managed.actions.receivedFromCopilot(responseActivity.type, pseudonymizeConversationId(responseActivity.conversation?.id, client.diagnosticsPseudonymKey))
                   logger.info('<-- Activity received correctly from Copilot Studio.')
                 }
 
@@ -484,7 +484,7 @@ async function processBlobAttachment (attachment: Attachment): Promise<Attachmen
     newContentUrl = `data:${blob.type};base64,${base64}`
   } catch (error) {
     newContentUrl = attachment.contentUrl
-    logger.error('Error processing blob attachment:', newContentUrl, error)
+    logger.error('Error processing blob attachment:', redactUrl(newContentUrl), error)
   }
 
   return { ...attachment, contentUrl: newContentUrl }
