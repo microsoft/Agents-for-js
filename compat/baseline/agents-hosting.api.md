@@ -111,6 +111,7 @@ export interface AdaptiveCardInvokeValue {
     action: AdaptiveCardInvokeAction;
     authentication: AdaptiveCardAuthentication;
     state: string;
+    trigger?: 'automatic' | 'manual';
 }
 
 // @public
