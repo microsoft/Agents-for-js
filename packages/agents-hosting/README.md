@@ -1,4 +1,4 @@
-# microsoft/agents-hosting
+# @microsoft/agents-hosting
 
 ## Overview
 
