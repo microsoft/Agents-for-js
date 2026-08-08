@@ -51,10 +51,7 @@ export function parseValueContinuation (value: unknown): string {
 }
 
 interface ValueAction {
-  action: {
-    type: string;
-    verb: string;
-  }
+  action: AdaptiveCardInvokeAction
 }
 
 /**
@@ -70,7 +67,7 @@ export function parseValueActionExecuteSelector (value: unknown): ValueAction | 
   const actionZodSchema = z.object({
     type: z.string().min(1),
     verb: z.string().min(1)
-  })
+  }).passthrough()
   const actionValueExecuteSelector = z.object({
     action: actionZodSchema
   })
@@ -80,10 +77,7 @@ export function parseValueActionExecuteSelector (value: unknown): ValueAction | 
   }
   const parsedValue = safeParsedValue.data
   return {
-    action: {
-      type: parsedValue.action.type,
-      verb: parsedValue.action.verb
-    }
+    action: parsedValue.action as unknown as AdaptiveCardInvokeAction
   }
 }
 
