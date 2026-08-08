@@ -7,15 +7,16 @@ import {
   StoragePipelineOptions,
   StorageSharedKeyCredential,
 } from '@azure/storage-blob'
-import { Storage, StoreItems } from '@microsoft/agents-hosting'
+import { getStorageWriteExpiry, Storage, StorageWriteOptions, StoreItems } from '@microsoft/agents-hosting'
 import { ExceptionHelper } from '@microsoft/agents-activity'
 import { Errors } from './errorHelper'
 import { sanitizeBlobKey } from './blobsTranscriptStore'
 import { ignoreError, isStatusCodeError } from './ignoreError'
-import { trace, debug } from '@microsoft/agents-telemetry'
+import { trace, debug, redactString } from '@microsoft/agents-telemetry'
 import { BlobsStorageTraceDefinitions } from './observability'
 
 const logger = debug('agents:blob-storage')
+const expirationMetadataKey = 'agentsstorageexpiresat'
 
 /**
  * Options for configuring the BlobsStorage.
@@ -125,8 +126,22 @@ export class BlobsStorage implements Storage {
           return result
         }
 
-        const { etag: eTag, readableStreamBody } = blob
+        const { etag: eTag, metadata, readableStreamBody } = blob
         if (!readableStreamBody) {
+          return result
+        }
+
+        if (this.isExpired(metadata?.[expirationMetadataKey])) {
+          readableStreamBody.destroy()
+          logger.info('Blob expired, deleting from storage', {
+            key: redactString(key, true),
+            eTag: redactString(eTag, true),
+            expiresAt: metadata?.[expirationMetadataKey],
+          })
+          await ignoreError(
+            this._containerClient.deleteBlob(sanitizeBlobKey(key), { conditions: { ifMatch: eTag } }),
+            isStatusCodeError(404, 412)
+          )
           return result
         }
 
@@ -147,9 +162,10 @@ export class BlobsStorage implements Storage {
    * @returns A promise that resolves when the write operation is complete
    * @throws Will throw if there's a validation error, eTag conflict, or other storage error
    */
-  async write (changes: StoreItems): Promise<void> {
+  async write (changes: StoreItems, options?: StorageWriteOptions): Promise<void> {
     return trace(BlobsStorageTraceDefinitions.write, async ({ record }) => {
       z.record(z.unknown()).parse(changes)
+      const expiresAt = getStorageWriteExpiry(options)
       record({ keyCount: Object.keys(changes).length })
 
       await this._initialize()
@@ -163,6 +179,7 @@ export class BlobsStorage implements Storage {
             return await blob.upload(serialized, serialized.length, {
               conditions: typeof eTag === 'string' && eTag !== '*' ? { ifMatch: eTag } : {},
               blobHTTPHeaders: { blobContentType: 'application/json' },
+              metadata: expiresAt === undefined ? {} : { [expirationMetadataKey]: expiresAt.toString() },
             })
           } catch (err: any) {
             if (err.statusCode === 412) {
@@ -194,5 +211,14 @@ export class BlobsStorage implements Storage {
         keys.map((key) => ignoreError(this._containerClient.deleteBlob(sanitizeBlobKey(key)), isStatusCodeError(404)))
       )
     })
+  }
+
+  private isExpired (expiresAt?: string): boolean {
+    if (expiresAt === undefined) {
+      return false
+    }
+
+    const timestamp = Number(expiresAt)
+    return Number.isFinite(timestamp) && timestamp <= Date.now()
   }
 }

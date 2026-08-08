@@ -5,7 +5,7 @@ import { Container, CosmosClient } from '@azure/cosmos'
 import { escapeKey } from './cosmosDbKeyEscape'
 import { DocumentStoreItem } from './documentStoreItem'
 import { CosmosDbPartitionedStorageOptions } from './cosmosDbPartitionedStorageOptions'
-import { Storage, StoreItems } from '@microsoft/agents-hosting'
+import { getStorageWriteExpiry, Storage, StorageWriteOptions, StoreItems } from '@microsoft/agents-hosting'
 import { ExceptionHelper } from '@microsoft/agents-activity'
 import { Errors } from './errorHelper'
 import { trace, redactString } from '@microsoft/agents-telemetry'
@@ -41,6 +41,17 @@ class DoOnce<T> {
 const _doOnce: DoOnce<Container> = new DoOnce<Container>()
 
 const maxDepthAllowed = 127
+
+async function ignoreCosmosErrors (operation: Promise<unknown>, ...ignoredCodes: number[]): Promise<void> {
+  const ignored = new Set(ignoredCodes)
+  try {
+    await operation
+  } catch (err: any) {
+    if (!ignored.has(err.code)) {
+      throw err
+    }
+  }
+}
 
 /**
  * Implements storage using Cosmos DB partitioned storage.
@@ -163,6 +174,22 @@ export class CosmosDbPartitionedStorage implements Storage {
               .read<DocumentStoreItem>()
             const documentStoreItem = readItemResponse.resource
             if (documentStoreItem) {
+              if (this.isExpired(documentStoreItem)) {
+                logger.info('Document expired, deleting from storage', {
+                  key: redactString(k, true),
+                  documentId: redactString(documentStoreItem.id, true),
+                  eTag: redactString(documentStoreItem._etag, true),
+                  expiresAt: documentStoreItem.expiresAt,
+                })
+                await ignoreCosmosErrors(
+                  this.container.item(escapedKey, this.getPartitionKey(escapedKey)).delete({
+                    accessCondition: { type: 'IfMatch', condition: documentStoreItem._etag }
+                  }),
+                  404,
+                  412
+                )
+                return
+              }
               storeItems[documentStoreItem.realId] = documentStoreItem.document
               storeItems[documentStoreItem.realId].eTag = documentStoreItem._etag
             }
@@ -194,17 +221,18 @@ export class CosmosDbPartitionedStorage implements Storage {
    * Writes items to storage.
    * @param changes The items to write.
    */
-  async write (changes: StoreItems): Promise<void> {
+  async write (changes: StoreItems, options?: StorageWriteOptions): Promise<void> {
     return trace(CosmosStorageTraceDefinitions.write, async ({ record }) => {
       if (!changes) {
         throw ExceptionHelper.generateException(
           ReferenceError,
           Errors.MissingWriteChanges
         )
-      } else if (changes.length === 0) {
+      } else if (Object.keys(changes).length === 0) {
         return
       }
 
+      const expiresAt = getStorageWriteExpiry(options)
       record({ keyCount: Object.keys(changes).length })
 
       await this.initialize()
@@ -219,6 +247,8 @@ export class CosmosDbPartitionedStorage implements Storage {
             ),
             realId: key,
             document: change,
+            ttl: options?.ttl === undefined ? undefined : Math.ceil(options.ttl),
+            expiresAt,
           })
 
           const accessCondition =
@@ -335,6 +365,7 @@ export class CosmosDbPartitionedStorage implements Storage {
           partitionKey: {
             paths: [DocumentStoreItem.partitionKeyPath],
           },
+          defaultTtl: -1,
           throughput: this.cosmosDbStorageOptions.containerThroughput,
         })
         return result.container
@@ -364,6 +395,10 @@ export class CosmosDbPartitionedStorage implements Storage {
 
   private getPartitionKey (key: string) {
     return this.compatibilityModePartitionKey ? undefined : key
+  }
+
+  private isExpired (item: DocumentStoreItem): boolean {
+    return item.expiresAt !== undefined && item.expiresAt <= Date.now()
   }
 
   private checkForNestingError (json: object, err: Error | Record<'message', string> | string): void {

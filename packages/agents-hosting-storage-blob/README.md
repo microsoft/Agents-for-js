@@ -24,3 +24,13 @@ const echo = new AgentApplication<TurnState>({
     new MsalTokenCredential(loadAuthConfigFromEnv()))
 })
 ```
+
+## TTL writes
+
+`BlobsStorage` supports the shared storage TTL option:
+
+```ts
+await blobStorage.write({ 'session/123': { value: 'temporary' } }, { ttl: 3600 })
+```
+
+Expired blobs are omitted from reads and deleted on a best-effort basis when encountered. Physical auto-eviction still depends on Azure Blob lifecycle policies.

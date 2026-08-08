@@ -44,6 +44,17 @@ echo.onActivity('message', async (context: TurnContext, state: TurnState) => {
 })
 ```
 
+## Storage TTL
+
+Storage providers support optional write TTL, in seconds, for short-lived state:
+
+```ts
+const storage = new MemoryStorage()
+await storage.write({ 'session/123': { value: 'temporary' } }, { ttl: 3600 })
+```
+
+Expired items are omitted from subsequent reads. Providers without native expiry enforce this logically and may clean up expired data opportunistically.
+
 ## Example Usage based on bot framework Activity Handler
 
 Create an Echo bot using the ActivityHandler

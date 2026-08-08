@@ -5,9 +5,12 @@
 
 import path from 'path'
 import fs from 'fs'
-import { Storage, StoreItem } from './storage'
-import { trace } from '@microsoft/agents-telemetry'
+import { Storage, StoreItem, StorageWriteOptions } from './storage'
+import { getStorageWriteExpiry } from './storageExpiry'
+import { debug, redactString, trace } from '@microsoft/agents-telemetry'
 import { StorageTraceDefinitions } from '../observability'
+
+const logger = debug('agents:file-storage')
 
 /**
  * A file-based storage implementation that persists data to the local filesystem.
@@ -53,6 +56,7 @@ import { StorageTraceDefinitions } from '../observability'
 export class FileStorage implements Storage {
   private _folder: string
   private _stateFile: Record<string, string>
+  private _metadataFile: { expirations?: Record<string, number> }
 
   /**
    * Creates a new FileStorage instance that stores data in the specified folder.
@@ -75,8 +79,14 @@ export class FileStorage implements Storage {
     if (!fs.existsSync(path.join(folder, 'state.json'))) {
       fs.writeFileSync(path.join(folder, 'state.json'), '{}')
     }
+    if (!fs.existsSync(path.join(folder, 'state.metadata.json'))) {
+      fs.writeFileSync(path.join(folder, 'state.metadata.json'), '{}')
+    }
     const data = fs.readFileSync(path.join(folder, 'state.json'), 'utf8')
     this._stateFile = JSON.parse(data)
+    const metadata = fs.readFileSync(path.join(folder, 'state.metadata.json'), 'utf8')
+    this._metadataFile = JSON.parse(metadata)
+    this._metadataFile.expirations ??= {}
   }
 
   /**
@@ -100,11 +110,22 @@ export class FileStorage implements Storage {
           reject(new ReferenceError('Keys are required when reading.'))
         } else {
           const data: StoreItem = {}
+          let storageChanged = false
           for (const key of keys) {
+            if (this.isExpired(key)) {
+              logger.info('Item expired, deleting from storage', { key: redactString(key, true) })
+              delete this._stateFile[key]
+              delete this._metadataFile.expirations![key]
+              storageChanged = true
+              continue
+            }
             const item = this._stateFile[key]
             if (item) {
               data[key] = item
             }
+          }
+          if (storageChanged) {
+            this.writeFiles()
           }
           resolve(data)
         }
@@ -128,14 +149,20 @@ export class FileStorage implements Storage {
    * > Any eTag values in the changes object are ignored.
    *
    */
-  write (changes: StoreItem) : Promise<void> {
+  write (changes: StoreItem, options?: StorageWriteOptions) : Promise<void> {
     return trace(StorageTraceDefinitions.write, async ({ record }) => {
+      const expiresAt = getStorageWriteExpiry(options)
       const keys = Object.keys(changes)
       record({ keyCount: keys?.length })
       for (const key of keys) {
         this._stateFile[key] = changes[key]
+        if (expiresAt === undefined) {
+          delete this._metadataFile.expirations![key]
+        } else {
+          this._metadataFile.expirations![key] = expiresAt
+        }
       }
-      fs.writeFileSync(this._folder + '/state.json', JSON.stringify(this._stateFile, null, 2))
+      this.writeFiles()
     })
   }
 
@@ -162,11 +189,22 @@ export class FileStorage implements Storage {
         } else {
           for (const key of keys) {
             delete this._stateFile[key]
+            delete this._metadataFile.expirations![key]
           }
-          fs.writeFileSync(this._folder + '/state.json', JSON.stringify(this._stateFile, null, 2))
+          this.writeFiles()
           resolve(undefined)
         }
       })
     })
+  }
+
+  private isExpired (key: string): boolean {
+    const expiresAt = this._metadataFile.expirations?.[key]
+    return expiresAt !== undefined && expiresAt <= Date.now()
+  }
+
+  private writeFiles (): void {
+    fs.writeFileSync(path.join(this._folder, 'state.json'), JSON.stringify(this._stateFile, null, 2))
+    fs.writeFileSync(path.join(this._folder, 'state.metadata.json'), JSON.stringify(this._metadataFile, null, 2))
   }
 }
