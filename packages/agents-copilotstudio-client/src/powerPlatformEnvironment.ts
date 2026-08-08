@@ -234,6 +234,8 @@ function getEndpointSuffix (
       return 'api.gov.powerplatform.microsoft.us'
     case PowerPlatformCloud.Gov:
       return 'api.gov.powerplatform.microsoft.us'
+    case PowerPlatformCloud.GCC:
+      return 'api.gov.powerplatform.microsoft.us'
     case PowerPlatformCloud.High:
       return 'api.high.powerplatform.microsoft.us'
     case PowerPlatformCloud.DoD:

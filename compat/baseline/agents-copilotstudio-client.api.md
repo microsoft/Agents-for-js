@@ -131,6 +131,7 @@ export enum PowerPlatformCloud {
     FirstRelease = "FirstRelease",
     Gov = "Gov",
     GovFR = "GovFR",
+    GCC = "GCC",
     High = "High",
     Local = "Local",
     Mooncake = "Mooncake",
