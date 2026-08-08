@@ -20,3 +20,10 @@ export * from './streaming/streamingResponse'
 export * from './streaming/citation'
 export * from './teamsAttachmentDownloader'
 export * from './proactive'
+export type {
+  RateLimitMessageFactory,
+  RateLimitResult,
+  RateLimitRule,
+  RateLimitScope,
+  RateLimitStorageErrorBehavior
+} from './rateLimit'

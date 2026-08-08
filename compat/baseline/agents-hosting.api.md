@@ -5,6 +5,7 @@
 ```ts
 
 import { Activity } from '@microsoft/agents-activity';
+import { ActivityTypes } from '@microsoft/agents-activity';
 import { AdaptiveCardInvokeAction } from '@microsoft/agents-activity';
 import { AgentErrorDefinition } from '@microsoft/agents-activity';
 import { Attachment } from '@microsoft/agents-activity';
@@ -144,11 +145,11 @@ export const adaptiveCardsSearchParamsZodSchema: z.ZodObject<{
     queryText: z.ZodString;
     dataset: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    queryText: string;
     dataset: string;
+    queryText: string;
 }, {
-    queryText: string;
     dataset: string;
+    queryText: string;
 }>;
 
 // @public
@@ -207,6 +208,7 @@ export class AgentApplicationBuilder<TState extends TurnState = TurnState> {
     setStartTypingTimer(startTypingTimer: boolean): this;
     withAuthorization(authHandlers: AuthorizationOptions): this;
     withProactive(options: ProactiveOptions): this;
+    withRateLimit(rules: RateLimitRule[]): this;
     withStorage(storage: Storage_2): this;
     withTurnStateFactory(turnStateFactory: () => TState): this;
     withTyping(typing: TypingOptions): this;
@@ -225,6 +227,7 @@ export interface AgentApplicationOptions<TState extends TurnState> {
     longRunningMessages: boolean;
     normalizeMentions?: boolean;
     proactive?: ProactiveOptions;
+    rateLimit?: RateLimitRule[];
     removeRecipientMention?: boolean;
     startTypingTimer: boolean;
     storage?: Storage_2;
@@ -1192,6 +1195,35 @@ export interface Query<TParams extends Record<string, any>> {
 }
 
 // @public
+export type RateLimitMessageFactory = (context: TurnContext, result: RateLimitResult) => string | Activity | Promise<string | Activity>;
+
+// @public
+export interface RateLimitResult {
+    key?: string;
+    retryAfterMs: number;
+    ruleIndex: number;
+}
+
+// @public
+export interface RateLimitRule {
+    activityTypes?: ActivityTypes[];
+    limit: number;
+    maxStorageRetries?: number;
+    message?: string | Activity | RateLimitMessageFactory;
+    scope: RateLimitScope;
+    appliesTo?: (context: TurnContext) => boolean | Promise<boolean>;
+    storage?: Storage_2;
+    storageErrorBehavior?: RateLimitStorageErrorBehavior;
+    windowMs: number;
+}
+
+// @public
+export type RateLimitScope = (context: TurnContext) => string | undefined | Promise<string | undefined>;
+
+// @public
+export type RateLimitStorageErrorBehavior = 'throttle' | 'allow' | 'throw';
+
+// @public
 export interface ReceiptCard {
     buttons: CardAction[];
     facts: Fact[];
@@ -1333,6 +1365,7 @@ export enum StatusCodes {
     NOT_IMPLEMENTED = 501,
     OK = 200,
     PRECONDITION_FAILED = 412,
+    TOO_MANY_REQUESTS = 429,
     UNAUTHORIZED = 401,
     UPGRADE_REQUIRED = 426
 }

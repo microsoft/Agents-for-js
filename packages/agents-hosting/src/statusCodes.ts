@@ -79,6 +79,12 @@ export enum StatusCodes {
   UPGRADE_REQUIRED = 426,
 
   /**
+   * The user has sent too many requests in a given amount of time.
+   * Used when rate limiting or throttling prevents a turn from being processed.
+   */
+  TOO_MANY_REQUESTS = 429,
+
+  /**
    * The server encountered an unexpected condition that prevented it from fulfilling the request.
    * Generic error message when an unexpected agent hosting error occurs
    * and no more specific message is suitable.
