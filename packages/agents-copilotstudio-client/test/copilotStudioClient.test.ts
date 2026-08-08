@@ -13,6 +13,29 @@ import {
 } from '../src'
 import { Activity, ActivityTypes } from '@microsoft/agents-activity'
 
+const mockFailedFetchResponse = (status: number, statusText: string, bodyText: string) => {
+  return {
+    ok: false,
+    status,
+    statusText,
+    headers: new Headers(),
+    text: async () => bodyText
+  } as unknown as Response
+}
+
+const captureRejection = async (action: () => Promise<unknown>): Promise<Error> => {
+  try {
+    await action()
+  } catch (error) {
+    if (error instanceof Error) {
+      return error
+    }
+    return new Error(String(error))
+  }
+
+  assert.fail('Expected promise to reject, but it did not.')
+}
+
 describe('scopeFromSettings', function () {
   const testCases: Array<{
     label: string
@@ -249,6 +272,19 @@ describe('CopilotStudioClient', function () {
       assert.equal(activities[0].conversation?.id, 'not-expected-conversation-id')
       assert.equal(client['conversationId'], expectedConversationId)
     })
+
+    it('should throw sanitized error for non-2xx start response', async function () {
+      const settings = createTestSettings()
+      const client = new CopilotStudioClient(settings, 'test-token')
+
+      const fetchMock = mock.fn(() => Promise.resolve(mockFailedFetchResponse(401, 'Unauthorized', 'sensitive-response-body test-token')))
+      global.fetch = fetchMock as any
+
+      const error = await captureRejection(() => client.startConversationAsync())
+      assert.match(error.message, /Copilot Studio request failed with status 401 Unauthorized/)
+      assert.doesNotMatch(error.message, /test-token/)
+      assert.doesNotMatch(error.message, /sensitive-response-body/)
+    })
   })
 
   describe('sendActivity', function () {
@@ -358,6 +394,24 @@ describe('CopilotStudioClient', function () {
       const activities = await client.sendActivity(userActivity)
 
       assert.equal(activities.length, 0)
+    })
+
+    it('should throw sanitized error for non-2xx send response', async function () {
+      const settings = createTestSettings()
+      const client = new CopilotStudioClient(settings, 'test-token')
+      const userActivity = Activity.fromObject({
+        type: ActivityTypes.Message,
+        text: 'Hello bot',
+        conversation: { id: 'test-conversation-id' }
+      })
+
+      const fetchMock = mock.fn(() => Promise.resolve(mockFailedFetchResponse(403, 'Forbidden', 'sensitive-response-body test-token')))
+      global.fetch = fetchMock as any
+
+      const error = await captureRejection(() => client.sendActivity(userActivity))
+      assert.match(error.message, /Copilot Studio request failed with status 403 Forbidden/)
+      assert.doesNotMatch(error.message, /test-token/)
+      assert.doesNotMatch(error.message, /sensitive-response-body/)
     })
 
     it('should use conversation ID from activity if provided', async function () {
@@ -1451,15 +1505,15 @@ describe('CopilotStudioClient', function () {
         text: 'Hello'
       })
 
-      try {
+      const error = await captureRejection(async () => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         for await (const _activity of client.executeStreaming(userActivity, '')) {
-          // Should not reach here
+        // Should not reach here
         }
         assert.fail('Should have thrown an error')
-      } catch (error: any) {
-        assert.match(error.message, /conversationId is required for executeStreaming/)
-      }
+      })
+
+      assert.match(error.message, /conversationId is required for executeStreaming/)
     })
 
     it('should use deprecated execute method', async function () {
@@ -1696,15 +1750,15 @@ describe('subscribeAsync', function () {
     const settings = createTestSettings()
     const client = new CopilotStudioClient(settings, 'test-token')
 
-    try {
+    const error = await captureRejection(async () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       for await (const _event of client.subscribeAsync('')) {
         // Should not reach here
       }
       assert.fail('Should have thrown an error')
-    } catch (error: any) {
-      assert.match(error.message, /conversationId is required for subscribeAsync/)
-    }
+    })
+
+    assert.match(error.message, /conversationId is required for subscribeAsync/)
   })
 
   it('should include Last-Event-ID header when resuming', async function () {
@@ -1769,5 +1823,23 @@ describe('subscribeAsync', function () {
     assert(fetchMock.mock.calls.length > 0)
     const callUrl = fetchMock.mock.calls[0].arguments[0]
     assert(callUrl.includes('/subscribe'), `URL should contain /subscribe: ${callUrl}`)
+  })
+
+  it('should throw sanitized error for non-2xx subscribe response', async function () {
+    const settings = createTestSettings()
+    const client = new CopilotStudioClient(settings, 'test-token')
+
+    const conversationId = 'test-conversation-id'
+    const fetchMock = mock.fn(() => Promise.resolve(mockFailedFetchResponse(500, 'Internal Server Error', 'sensitive-response-body test-token')))
+    global.fetch = fetchMock as any
+
+    const error = await captureRejection(async () => {
+      for await (const event of client.subscribeAsync(conversationId)) {
+        assert.fail(`Should not receive subscription event ${event.eventId}`)
+      }
+    })
+    assert.match(error.message, /Copilot Studio request failed with status 500 Internal Server Error/)
+    assert.doesNotMatch(error.message, /test-token/)
+    assert.doesNotMatch(error.message, /sensitive-response-body/)
   })
 })
