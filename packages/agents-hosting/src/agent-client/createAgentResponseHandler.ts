@@ -14,6 +14,7 @@ import { normalizeIncomingActivity } from '../activityWireCompat'
 import { Errors } from '../errorHelper'
 import { debug } from '@microsoft/agents-telemetry'
 import { ConversationState } from '../state'
+import { getAuthorizedAudience } from '../auth/jwt-middleware'
 
 const logger = debug('agents:agent-client')
 
@@ -101,7 +102,8 @@ export const createAgentResponseHandler = (
 
     logger.debug('received delegated agent response')
 
-    const myTurnContext = new TurnContext(adapter, activity, CloudAdapter.createIdentity(appId))
+    const continuationAudience = getAuthorizedAudience(req) ?? appId
+    const myTurnContext = new TurnContext(adapter, activity, CloudAdapter.createIdentity(continuationAudience))
     const conversationDataAccessor = conversationState.createProperty<ConversationReferenceState>(params.conversationId)
     const incomingChannelId = activity.channelId!
     const conversationRefState = await conversationDataAccessor.get(myTurnContext, undefined, { channelId: incomingChannelId, conversationId: params.conversationId })

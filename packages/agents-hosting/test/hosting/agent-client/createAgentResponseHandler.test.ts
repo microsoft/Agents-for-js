@@ -46,10 +46,21 @@ const makeAuthConfig = (): AuthConfiguration => {
     tenantId: 'tenant-id',
     issuers: ['https://api.botframework.com']
   }
+  const alternateConnection = {
+    clientId: 'alternate-host-client-id',
+    tenantId: 'tenant-id',
+    issuers: ['https://api.botframework.com']
+  }
   return {
     ...connection,
-    connections: new Map([['serviceConnection', connection]]),
-    connectionsMap: [{ connection: 'serviceConnection', serviceUrl: '*' }]
+    connections: new Map([
+      ['serviceConnection', connection],
+      ['alternateConnection', alternateConnection]
+    ]),
+    connectionsMap: [
+      { connection: 'serviceConnection', serviceUrl: '*' },
+      { connection: 'alternateConnection', serviceUrl: 'https://alternate.example.test' }
+    ]
   }
 }
 
@@ -147,19 +158,14 @@ describe('createAgentResponseHandler authentication', () => {
     assert.strictEqual((stored['test/conversations/c1'] as any).c1.expectedAgentClientId, 'delegated-agent-client-id')
   })
 
-  it('does not repeat audience validation after adapter authorization', async () => {
+  it('continues with the host audience selected during adapter authorization', async () => {
+    stubValidJwt('delegated-agent-client-id', ['unrelated-audience', 'alternate-host-client-id'])
     const storage = new MemoryStorage()
     await seedConversation(storage, 'delegated-agent-client-id')
     const { handler, adapter } = makeHandler(new ActivityHandler(), new ConversationState(storage))
-    sinon.stub(adapter, 'authorizeRequest').callsFake(async (req, _res, next) => {
-      req.user = {
-        aud: 'alternate-configured-host-client-id',
-        azp: 'delegated-agent-client-id'
-      }
-      next()
-    })
     const sendActivity = sinon.stub(TurnContext.prototype, 'sendActivity').resolves({ id: 'response' })
     sinon.stub(adapter, 'continueConversation').callsFake(async (...args: any[]) => {
+      assert.strictEqual(args[0].aud, 'alternate-host-client-id')
       const callback = args[2]
       const context = new TurnContext(adapter, Activity.fromObject({
         type: 'event',
