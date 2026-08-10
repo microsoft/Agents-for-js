@@ -23,5 +23,9 @@ const buildCatReply = (context: TurnContext): string => {
 }
 
 await startServer(new WiseCatAgent(), {
-  port: Number(process.env.PORT ?? 3979)
+  port: Number(process.env.PORT ?? 3979),
+  rateLimitOptions: {
+    windowMs: 15 * 60 * 1000,
+    max: 100
+  }
 })

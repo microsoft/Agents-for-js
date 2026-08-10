@@ -38,7 +38,8 @@ surfaces:
 The Cat is not anonymous or less protected; its setup is simply hidden behind
 the higher-level `startServer` helper. The Human agent uses lower-level hosting
 APIs because it must expose both the normal message endpoint and the additional
-agent-response endpoint.
+agent-response endpoint. Both agents limit authenticated requests to 100 per
+15-minute window.
 
 For the Human callback endpoint, the shared `CloudAdapter` validates the inbound
 JWT once against its configured host connections. The callback handler then

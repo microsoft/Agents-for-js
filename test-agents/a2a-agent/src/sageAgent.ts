@@ -4,6 +4,7 @@
  */
 
 import express, { Response } from 'express'
+import rateLimit from 'express-rate-limit'
 import {
   ActivityHandler,
   AgentClient,
@@ -44,11 +45,16 @@ const adapter = new CloudAdapter(authConfig)
 const authorizeRequest = adapter.authorizeRequest.bind(adapter)
 const agent = new AskMyCatAgent(authConfig, conversationState)
 const app = express()
+const requestRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100
+})
 
 app.use(express.json())
-app.post('/api/messages', authorizeRequest, async (req: Request, res: Response) => {
+app.post('/api/messages', requestRateLimiter, authorizeRequest, async (req: Request, res: Response) => {
   await adapter.process(req, res, async (context) => await agent.run(context))
 })
+app.use('/api/agentresponse', requestRateLimiter)
 // The response controller applies the same adapter-owned authorization internally.
 configureResponseController(app, adapter, agent, conversationState)
 
