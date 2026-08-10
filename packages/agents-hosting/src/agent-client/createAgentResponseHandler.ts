@@ -19,6 +19,12 @@ const logger = debug('agents:agent-client')
 
 interface ConversationReferenceState {
   conversationReference: ConversationReference
+  expectedAgentClientId?: string
+}
+
+interface DelegatedConversationState {
+  conversationReference: ConversationReference
+  expectedAgentClientId: string
 }
 
 /**
@@ -65,21 +71,56 @@ export const createAgentResponseHandler = (
   agent: ActivityHandler,
   conversationState: ConversationState
 ): AgentResponseHandler => {
+  const appId = adapter.getClientId() ?? ''
+  const anonymousDevelopment = appId.length === 0 && process.env.NODE_ENV !== 'production'
+  if (anonymousDevelopment) {
+    emitAgentResponseWarning(
+      'The agent-response endpoint is using anonymous authentication outside production. Callback ownership cannot be cryptographically verified; configure a client ID before deployment.'
+    )
+  }
+
   return async (req: Request, res: WebResponse, params: AgentResponseHandlerParams) => {
+    let middlewareError: any
+    let nextCalled = false
+    await adapter.authorizeRequest(req, res, (err?: any) => {
+      nextCalled = true
+      middlewareError = err
+    })
+    if (middlewareError) {
+      throw middlewareError
+    }
+    if (!nextCalled || res.headersSent) {
+      return
+    }
+
     if (!req.body) {
       throw ExceptionHelper.generateException(TypeError, Errors.MissingRequestBody)
     }
     const incoming = normalizeIncomingActivity(req.body)
     const activity = Activity.fromObject(incoming)
 
-    logger.debug('received response: ', activity)
-
-    const connection = adapter.connectionManager.getDefaultConnection()
-    const appId = connection?.connectionSettings?.clientId ?? ''
+    logger.debug('received delegated agent response')
 
     const myTurnContext = new TurnContext(adapter, activity, CloudAdapter.createIdentity(appId))
     const conversationDataAccessor = conversationState.createProperty<ConversationReferenceState>(params.conversationId)
-    const conversationRefState = await conversationDataAccessor.get(myTurnContext, undefined, { channelId: activity.channelId!, conversationId: params.conversationId })
+    const incomingChannelId = activity.channelId!
+    const conversationRefState = await conversationDataAccessor.get(myTurnContext, undefined, { channelId: incomingChannelId, conversationId: params.conversationId })
+    if (!isDelegatedConversationState(conversationRefState)) {
+      res.status(403).send({ 'agent-response-auth-error': 'caller is not authorized for this conversation' })
+      return
+    }
+
+    const callerClientId = req.user?.azp ?? req.user?.appid
+    const anonymousCaller = anonymousDevelopment && req.user?.name === 'anonymous'
+    const delegatedAgentMatches = anonymousCaller || (
+      typeof callerClientId === 'string' &&
+      callerClientId.length > 0 &&
+      callerClientId.toLowerCase() === conversationRefState.expectedAgentClientId.toLowerCase()
+    )
+    if (!delegatedAgentMatches) {
+      res.status(403).send({ 'agent-response-auth-error': 'caller is not authorized for this conversation' })
+      return
+    }
 
     const callback = async (turnContext: TurnContext) => {
       activity.applyConversationReference(conversationRefState.conversationReference)
@@ -88,7 +129,7 @@ export const createAgentResponseHandler = (
       let response: unknown
       let responseContentType: string | undefined
       if (activity.type === ActivityTypes.EndOfConversation) {
-        await conversationDataAccessor.delete(turnContext, { channelId: activity.channelId!, conversationId: activity.conversation!.id })
+        await conversationState.delete(myTurnContext, { channelId: incomingChannelId, conversationId: params.conversationId })
 
         applyActivityToTurnContext(turnContext, activity)
         await agent.run(turnContext)
@@ -101,6 +142,7 @@ export const createAgentResponseHandler = (
       } else {
         response = await turnContext.sendActivity(activity)
       }
+
       if (responseContentType !== undefined) {
         res.setHeader('content-type', responseContentType)
       }
@@ -109,6 +151,18 @@ export const createAgentResponseHandler = (
 
     await adapter.continueConversation(myTurnContext.identity, conversationRefState.conversationReference, callback)
   }
+}
+
+function isDelegatedConversationState (state: ConversationReferenceState | undefined): state is DelegatedConversationState {
+  return typeof state?.conversationReference === 'object' &&
+    state.conversationReference !== null &&
+    typeof state.expectedAgentClientId === 'string' &&
+    state.expectedAgentClientId.trim().length > 0
+}
+
+function emitAgentResponseWarning (message: string): void {
+  console.warn(`[agents:agent-client] ${message}`)
+  logger.warn(message)
 }
 
 const applyActivityToTurnContext = (turnContext: TurnContext, activity: Activity) => {

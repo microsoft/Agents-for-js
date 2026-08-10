@@ -68,15 +68,21 @@ const verifyToken = async (raw: string, config: AuthConfiguration): Promise<JwtP
   if (!payload) {
     throw ExceptionHelper.generateException(Error, Errors.InvalidJwtToken)
   }
-  const audience = payload.aud
+  const audiences = Array.isArray(payload.aud)
+    ? payload.aud
+    : typeof payload.aud === 'string'
+      ? [payload.aud]
+      : []
 
   const matchingEntry = config.connections && config.connections.size > 0
-    ? [...config.connections.entries()].find(([_, configuration]) => configuration.clientId === audience)
+    ? [...config.connections.entries()].find(([_, configuration]) =>
+        typeof configuration.clientId === 'string' && audiences.includes(configuration.clientId)
+      )
     : undefined
 
   if (!matchingEntry) {
     const err = ExceptionHelper.generateException(Error, Errors.JwtAudienceMismatch)
-    logger.error(err.message, audience)
+    logger.error(err.message, audiences)
     throw err
   }
 
