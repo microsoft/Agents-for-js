@@ -1,0 +1,6 @@
+{
+  "intentionallyNotExported": [
+    "src/types.ts:Loader",
+    "src/types.ts:LoaderReturn"
+  ]
+}

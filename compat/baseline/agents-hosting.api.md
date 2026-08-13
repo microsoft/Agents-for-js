@@ -261,6 +261,12 @@ export class AgentExtension<TState extends TurnState> {
 export type AgentHandler = (context: TurnContext, next: () => Promise<void>) => Promise<any>;
 
 // @public
+export interface AgenticAuthorizationOptions {
+    altBlueprintConnectionName?: string;
+    scopes?: string[];
+    type: 'AgenticUserAuthorization' | 'agentic';
+
+// @public
 export type AgentResponseHandler = (req: Request_2, res: WebResponse, params: AgentResponseHandlerParams) => Promise<void>;
 
 // @public
@@ -423,6 +429,15 @@ export interface Authorization {
 }
 
 // @public
+export interface AuthorizationHandlerTokenOptions {
+    connection?: string;
+    scopes?: string[];
+}
+
+// @public
+export type AuthorizationOptions = Record<string, (AzureBotAuthorizationOptions & AzureBotAuthorizationOptionsLegacy) | AgenticAuthorizationOptions>;
+
+// @public
 export const authorizeJWT: (authConfig: AuthConfiguration) => (req: Request_2, res: WebResponse, next: NextFunction) => Promise<void>;
 
 // @public
@@ -467,6 +482,51 @@ export enum AuthType {
     UserManagedIdentity = "UserManagedIdentity",
     // (undocumented)
     WorkloadIdentity = "WorkloadIdentity"
+}
+
+// @public
+export interface AzureBotAuthorizationOptions {
+    azureBotOAuthConnectionName?: string;
+    enableSso?: boolean;
+    invalidSignInRetryMax?: number;
+    invalidSignInRetryMaxExceededMessage?: string;
+    invalidSignInRetryMessage?: string;
+    invalidSignInRetryMessageFormat?: string;
+    oboConnectionName?: string;
+    oboScopes?: string[];
+    text?: string;
+    title?: string;
+    type?: 'AzureBotUserAuthorization' | undefined;
+}
+
+// @public
+export interface AzureBotAuthorizationOptionsLegacy {
+    // @deprecated
+    maxAttempts?: number;
+    // @deprecated
+    messages?: AzureBotAuthorizationOptionsMessages;
+    // @deprecated
+    name?: string;
+    // @deprecated
+    obo?: AzureBotAuthorizationOptionsOBO;
+}
+
+// @public @deprecated (undocumented)
+export interface AzureBotAuthorizationOptionsMessages {
+    // @deprecated (undocumented)
+    invalidCode?: string;
+    // @deprecated (undocumented)
+    invalidCodeFormat?: string;
+    // @deprecated (undocumented)
+    maxAttemptsExceeded?: string;
+}
+
+// @public @deprecated (undocumented)
+export interface AzureBotAuthorizationOptionsOBO {
+    // @deprecated (undocumented)
+    connection?: string;
+    // @deprecated (undocumented)
+    scopes?: string[];
 }
 
 // @public
@@ -805,6 +865,7 @@ export class CreateConversationOptionsBuilder {
 export interface CustomKey {
     channelId: string;
     conversationId: string;
+    namespace?: string;
 }
 
 // @public
