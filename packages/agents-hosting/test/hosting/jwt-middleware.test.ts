@@ -70,6 +70,27 @@ describe('authorizeJWT', () => {
     verifyStub.restore()
   })
 
+  it('should authenticate when the configured client ID is one of multiple token audiences', async () => {
+    const token = 'valid-token'
+    const audiences = ['secondary-audience', config.clientId!]
+    req.headers.authorization = ['Bear', 'er ', token].join('')
+
+    const decodeStub = sinon.stub(jwt, 'decode').returns({ aud: audiences })
+    const verifyStub = sinon.stub(jwt, 'verify').callsFake((token, secretOrPublicKey, options, callback) => {
+      if (callback) {
+        callback(null, { aud: audiences })
+      }
+    })
+
+    await authorizeJWT(config)(req as Request, res as Response, next)
+
+    assert((next as sinon.SinonStub).calledOnce)
+    assert((res.status as sinon.SinonStub).notCalled)
+
+    decodeStub.restore()
+    verifyStub.restore()
+  })
+
   it('should respond with 401 if token is missing', async () => {
     await authorizeJWT(config)(req as Request, res as Response, next)
 

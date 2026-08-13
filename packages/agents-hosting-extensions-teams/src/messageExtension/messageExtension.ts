@@ -19,6 +19,8 @@ export type ConfigureQuerySettingUrlHandler<TState extends TurnState> = (context
 export type ConfigureSettingsHandler<TState extends TurnState> = (context: TurnContext, state: TState, settings: unknown) => Promise<void>
 export type CardButtonClickedHandler<TState extends TurnState> = (context: TurnContext, state: TState, cardData: unknown) => Promise<void>
 /**
+ * @deprecated Use the new agents-hosting-extensions-msteams package instead.
+ *
  * Class that exposes Teams messaging extension-related events.
  * Provides an organized way to handle messaging extension operations in Microsoft Teams.
  */

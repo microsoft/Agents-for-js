@@ -40,6 +40,7 @@ function summarizeAuthConfiguration (authConfig: AuthConfiguration) {
       alternateBlueprintConnectionName: undefined, // Alias of altBlueprintConnectionName, avoid logging duplicate info
       azureRegion: config.azureRegion,
       sendX5C: config.sendX5C,
+      msalRetryCount: config.msalRetryCount,
       sidecarBaseUrl: config.sidecarBaseUrl ? redactUrl(config.sidecarBaseUrl) : undefined,
       serviceName: config.serviceName,
       blueprintServiceName: config.blueprintServiceName,
@@ -96,6 +97,10 @@ const connectionsEnv = {
     idpmResource: envParserUtils.bypass,
     azureRegion: envParserUtils.bypass,
     sendX5C: (value) => ({ value: value === 'true' }),
+    msalRetryCount: (value) => {
+      const n = parseInt(value, 10)
+      return { value: Number.isFinite(n) && n >= 0 ? n : undefined }
+    },
     sidecarBaseUrl: envParserUtils.bypass,
     serviceName: envParserUtils.bypass,
     blueprintServiceName: envParserUtils.bypass,
@@ -230,6 +235,7 @@ const legacyBotFrameworkEnv = {
     WIDAssertionFile: envParserUtils.redirect(connectionsEnv.parser, 'WIDAssertionFile'),
     azureRegion: envParserUtils.redirect(connectionsEnv.parser, 'azureRegion'),
     sendX5C: envParserUtils.redirect(connectionsEnv.parser, 'sendX5C'),
+    msalRetryCount: envParserUtils.redirect(connectionsEnv.parser, 'msalRetryCount'),
     authType: envParserUtils.redirect(connectionsEnv.parser, 'authType'),
     federatedTokenFile: envParserUtils.redirect(connectionsEnv.parser, 'federatedTokenFile'),
     idpmResource: envParserUtils.redirect(connectionsEnv.parser, 'idpmResource'),
@@ -265,6 +271,7 @@ const legacyPrefixEnv = {
     WIDAssertionFile: envParserUtils.redirect(connectionsEnv.parser, 'WIDAssertionFile'),
     azureRegion: envParserUtils.redirect(connectionsEnv.parser, 'azureRegion'),
     sendX5C: envParserUtils.redirect(connectionsEnv.parser, 'sendX5C'),
+    msalRetryCount: envParserUtils.redirect(connectionsEnv.parser, 'msalRetryCount'),
     authType: envParserUtils.redirect(connectionsEnv.parser, 'authType'),
     federatedTokenFile: envParserUtils.redirect(connectionsEnv.parser, 'federatedTokenFile'),
     idpmResource: envParserUtils.redirect(connectionsEnv.parser, 'idpmResource'),

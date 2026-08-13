@@ -1,49 +1,139 @@
 /**
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
- *
- * Smoke test for the Fastify configureResponseController wrapper. Verifies the
- * canonical route is registered and that path parameters are forwarded to the
- * framework-agnostic createAgentResponseHandler from core.
  */
 
-import { describe, it, before, after } from 'node:test'
+import { afterEach, describe, it } from 'node:test'
 import assert from 'node:assert'
+import sinon from 'sinon'
 import Fastify, { type FastifyInstance } from 'fastify'
-import { ActivityHandler, CloudAdapter, ConversationState, MemoryStorage } from '@microsoft/agents-hosting'
+import {
+  ActivityHandler,
+  AuthConfiguration,
+  CloudAdapter,
+  ConversationState,
+  MemoryStorage,
+  TurnContext
+} from '@microsoft/agents-hosting'
 import { configureResponseController } from '../src/configureResponseController'
 
+const makeAuthConfig = (): AuthConfiguration => {
+  const connection = {
+    clientId: 'host-client-id',
+    tenantId: 'tenant-id',
+    issuers: ['https://api.botframework.com']
+  }
+  return {
+    ...connection,
+    connections: new Map([['serviceConnection', connection]]),
+    connectionsMap: [{ connection: 'serviceConnection', serviceUrl: '*' }]
+  }
+}
+
+const seedConversation = async (storage: MemoryStorage) => {
+  await storage.write({
+    'test/conversations/c1': {
+      c1: {
+        conversationReference: {
+          activityId: 'root-activity',
+          user: { id: 'user' },
+          bot: { id: 'host' },
+          conversation: { id: 'root-conversation' },
+          channelId: 'test',
+          serviceUrl: 'https://example.test'
+        },
+        nameRequested: false,
+        expectedAgentClientId: 'delegated-agent-client-id'
+      }
+    }
+  })
+}
+
+const createServer = async (
+  callerClientId?: string
+): Promise<{ fastify: FastifyInstance, adapter: CloudAdapter, storage: MemoryStorage, agent: ActivityHandler }> => {
+  const fastify = Fastify()
+  const adapter = new CloudAdapter(makeAuthConfig())
+  const agent = new ActivityHandler()
+  const storage = new MemoryStorage()
+  await seedConversation(storage)
+  sinon.stub(adapter, 'authorizeRequest').callsFake(async (req, res, next) => {
+    if (!callerClientId) {
+      res.status(401).send({ 'jwt-auth-error': 'authorization header not found' })
+      return
+    }
+    req.user = { aud: 'host-client-id', azp: callerClientId }
+    next()
+  })
+  configureResponseController(fastify, adapter, agent, new ConversationState(storage))
+  await fastify.ready()
+  return { fastify, adapter, storage, agent }
+}
+
 describe('configureResponseController (Fastify)', () => {
-  let fastify: FastifyInstance
+  let fastify: FastifyInstance | undefined
 
-  before(async () => {
-    fastify = Fastify()
-    const adapter = new CloudAdapter({ clientId: 'test', tenantId: 't', issuers: [], connections: new Map() })
-    const conversationState = new ConversationState(new MemoryStorage())
-    configureResponseController(fastify, adapter, new ActivityHandler(), conversationState)
-    await fastify.ready()
+  afterEach(async () => {
+    sinon.restore()
+    if (fastify) {
+      await fastify.close()
+      fastify = undefined
+    }
   })
 
-  after(async () => {
-    if (fastify) await fastify.close()
+  it('registers the canonical response route', async () => {
+    ;({ fastify } = await createServer())
+    assert.match(fastify.printRoutes({ commonPrefix: false }), /agentresponse/)
   })
 
-  it('registers POST /api/agentresponse/v3/conversations/:conversationId/activities/:activityId', async () => {
-    const routes = fastify.printRoutes({ commonPrefix: false })
-    assert.ok(/agentresponse/.test(routes), 'route tree should include /agentresponse/...')
-  })
+  it('returns 401 when adapter authentication rejects the request', async () => {
+    ;({ fastify } = await createServer())
 
-  it('returns 404 for unrelated paths and accepts POST on the response route', async () => {
-    const notFound = await fastify.inject({ method: 'GET', url: '/nope' })
-    assert.strictEqual(notFound.statusCode, 404)
-    // We intentionally don't drive a full conversation here — that requires real
-    // adapter/state plumbing; the goal is to prove the route is reachable.
-    const accepted = await fastify.inject({
+    const response = await fastify.inject({
       method: 'POST',
       url: '/api/agentresponse/v3/conversations/c1/activities/a1',
-      payload: { type: 'message', text: 'x' }
+      payload: { type: 'message', channelId: 'test', conversation: { id: 'c1' } }
     })
-    // The handler will fail downstream (no real conversation reference), but routing succeeded.
-    assert.notStrictEqual(accepted.statusCode, 404, 'route should match and not 404')
+
+    assert.strictEqual(response.statusCode, 401, response.body)
+  })
+
+  it('returns 403 when the authenticated caller does not own the conversation', async () => {
+    ;({ fastify } = await createServer('different-agent-client-id'))
+
+    const response = await fastify.inject({
+      method: 'POST',
+      url: '/api/agentresponse/v3/conversations/c1/activities/a1',
+      payload: { type: 'message', channelId: 'test', conversation: { id: 'c1' } }
+    })
+
+    assert.strictEqual(response.statusCode, 403, response.body)
+  })
+
+  it('processes an authorized EndOfConversation response and removes delegated state', async () => {
+    let adapter: CloudAdapter
+    let storage: MemoryStorage
+    let agent: ActivityHandler
+    ;({ fastify, adapter, storage, agent } = await createServer('delegated-agent-client-id'))
+    sinon.stub(agent, 'run').resolves()
+    sinon.stub(adapter, 'continueConversation').callsFake(async (...args: any[]) => {
+      const callback = args[2]
+      const context = { activity: {} } as TurnContext
+      await callback(context)
+    })
+
+    const response = await fastify.inject({
+      method: 'POST',
+      url: '/api/agentresponse/v3/conversations/c1/activities/a1',
+      payload: {
+        type: 'endOfConversation',
+        channelId: 'test',
+        conversation: { id: 'c1' }
+      }
+    })
+
+    assert.strictEqual(response.statusCode, 200, response.body)
+    assert.strictEqual(response.headers['content-type'], 'text/plain; charset=utf-8')
+    assert.deepStrictEqual(await storage.read(['test/conversations/c1']), {})
   })
 })
