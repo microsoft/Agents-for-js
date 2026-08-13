@@ -150,6 +150,7 @@ describe('SidecarAuthProvider', () => {
     fetchStub.resolves({ ok: true, status: 200, text: async () => '' } as FakeResponse)
     const provider = new SidecarAuthProvider(baseConfig)
     assert.strictEqual(await provider.isHealthy(), true)
-    assert.ok((fetchStub.lastCall.args[0] as string).endsWith('/healthz'))
+    const healthUrl = fetchStub.lastCall.args[0] as string
+    assert.ok(healthUrl.endsWith('/healthz'))
   })
 })

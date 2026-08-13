@@ -22,78 +22,42 @@ async function consumeStream (stream: AsyncIterable<unknown>): Promise<void> {
 }
 
 describe('scopeFromSettings', function () {
-  const testCases: Array<{
-    label: string
-    cloud: PowerPlatformCloud
-    cloudBaseAddress: string
-    expectedAuthority: string
-    shouldthrow: boolean
-  }> = [
-    {
-      label: 'Should return scope for PowerPlatformCloud.Prod environment',
-      cloud: PowerPlatformCloud.Prod,
-      cloudBaseAddress: '',
-      expectedAuthority: 'https://api.powerplatform.com/.default',
-      shouldthrow: false
-    },
-    {
-      label: 'Should return scope for PowerPlatformCloud.Preprod environment',
-      cloud: PowerPlatformCloud.Preprod,
-      cloudBaseAddress: '',
-      expectedAuthority: 'https://api.preprod.powerplatform.com/.default',
-      shouldthrow: false
-    },
-    {
-      label: 'Should return scope for PowerPlatformCloud.Mooncake environment',
-      cloud: PowerPlatformCloud.Mooncake,
-      cloudBaseAddress: '',
-      expectedAuthority: 'https://api.powerplatform.partner.microsoftonline.cn/.default',
-      shouldthrow: false
-    },
-    {
-      label: 'Should return scope for PowerPlatformCloud.FirstRelease environment',
-      cloud: PowerPlatformCloud.FirstRelease,
-      cloudBaseAddress: '',
-      expectedAuthority: 'https://api.powerplatform.com/.default',
-      shouldthrow: false
-    },
-    {
-      label: 'Should return scope for PowerPlatformCloud.Other environment',
-      cloud: PowerPlatformCloud.Other,
-      cloudBaseAddress: 'fido.com',
-      expectedAuthority: 'https://fido.com/.default',
-      shouldthrow: false
-    },
-    {
-      label: 'Should throw when cloud is Unknown and no cloudBaseAddress is provided',
-      cloud: PowerPlatformCloud.Unknown,
-      cloudBaseAddress: '',
-      expectedAuthority: '',
-      shouldthrow: true
+  function createSettings (cloud: PowerPlatformCloud, cloudBaseAddress = ''): ConnectionSettings {
+    return {
+      appClientId: '123',
+      tenantId: 'test-tenant',
+      environmentId: 'A47151CF-4F34-488F-B377-EBE84E17B478',
+      cloud,
+      agentIdentifier: 'Bot01',
+      copilotAgentType: AgentType.Published,
+      customPowerPlatformCloud: cloudBaseAddress
     }
-  ]
+  }
 
-  testCases.forEach((testCase) => {
-    it(testCase.label, function () {
-      const settings: ConnectionSettings = {
-        appClientId: '123',
-        tenantId: 'test-tenant',
-        environmentId: 'A47151CF-4F34-488F-B377-EBE84E17B478',
-        cloud: testCase.cloud,
-        agentIdentifier: 'Bot01',
-        copilotAgentType: AgentType.Published,
-        customPowerPlatformCloud: testCase.cloudBaseAddress
-      }
+  it('should return scope for PowerPlatformCloud.Prod environment', function () {
+    assert.equal(CopilotStudioClient.scopeFromSettings(createSettings(PowerPlatformCloud.Prod)), 'https://api.powerplatform.com/.default')
+  })
 
-      if (testCase.shouldthrow) {
-        assert.throws(() => {
-          CopilotStudioClient.scopeFromSettings(settings)
-        }, Error)
-      } else {
-        const scope = CopilotStudioClient.scopeFromSettings(settings)
-        assert(scope === testCase.expectedAuthority)
-      }
-    })
+  it('should return scope for PowerPlatformCloud.Preprod environment', function () {
+    assert.equal(CopilotStudioClient.scopeFromSettings(createSettings(PowerPlatformCloud.Preprod)), 'https://api.preprod.powerplatform.com/.default')
+  })
+
+  it('should return scope for PowerPlatformCloud.Mooncake environment', function () {
+    assert.equal(CopilotStudioClient.scopeFromSettings(createSettings(PowerPlatformCloud.Mooncake)), 'https://api.powerplatform.partner.microsoftonline.cn/.default')
+  })
+
+  it('should return scope for PowerPlatformCloud.FirstRelease environment', function () {
+    assert.equal(CopilotStudioClient.scopeFromSettings(createSettings(PowerPlatformCloud.FirstRelease)), 'https://api.powerplatform.com/.default')
+  })
+
+  it('should return scope for PowerPlatformCloud.Other environment', function () {
+    assert.equal(CopilotStudioClient.scopeFromSettings(createSettings(PowerPlatformCloud.Other, 'fido.com')), 'https://fido.com/.default')
+  })
+
+  it('should throw when cloud is Unknown and no cloudBaseAddress is provided', function () {
+    assert.throws(() => {
+      CopilotStudioClient.scopeFromSettings(createSettings(PowerPlatformCloud.Unknown))
+    }, Error)
   })
 })
 
@@ -267,7 +231,7 @@ describe('CopilotStudioClient', function () {
         mockFetchResponse([]),
         mockFetchResponse([]),
       ]
-      const fetchMock = mock.fn(() => Promise.resolve(responses.shift()!))
+      const fetchMock = mock.fn((..._args: Parameters<typeof fetch>) => Promise.resolve(responses.shift()!))
       global.fetch = fetchMock as any
 
       await consumeStream(client.startConversationStreaming())
@@ -294,7 +258,7 @@ describe('CopilotStudioClient', function () {
         mockFetchResponse([secondConversationActivity]),
         mockFetchResponse([])
       ]
-      const fetchMock = mock.fn(() => Promise.resolve(responses.shift()!))
+      const fetchMock = mock.fn((..._args: Parameters<typeof fetch>) => Promise.resolve(responses.shift()!))
       global.fetch = fetchMock as any
 
       await consumeStream(client.startConversationStreaming())
@@ -1508,7 +1472,7 @@ describe('CopilotStudioClient', function () {
         mockFetchResponse([]),
         mockFetchResponse([])
       ]
-      const fetchMock = mock.fn(() => Promise.resolve(responses.shift()!))
+      const fetchMock = mock.fn((..._args: Parameters<typeof fetch>) => Promise.resolve(responses.shift()!))
       global.fetch = fetchMock as any
 
       await consumeStream(client.startConversationStreaming())
@@ -1639,7 +1603,7 @@ describe('UserAgentHelper', function () {
 
   it('should include platform info in Node.js', function () {
     const productInfo = UserAgentHelper.getProductInfo()
-    if (typeof window === 'undefined') {
+    if (!('window' in globalThis)) {
       assert(productInfo.includes('nodejs/'))
     }
   })
@@ -1818,7 +1782,7 @@ describe('subscribeAsync', function () {
 
     const conversationId = 'test-conversation-id'
 
-    const fetchMock = mock.fn(() => Promise.resolve(mockSubscribeFetchResponse([])))
+    const fetchMock = mock.fn((url: string | URL | Request) => Promise.resolve(mockSubscribeFetchResponse([])))
     global.fetch = fetchMock as any
 
     const events: SubscribeEvent[] = []
@@ -1845,7 +1809,8 @@ describe('subscribeAsync', function () {
 
     // Verify that the fetch was called with a URL ending in /subscribe
     assert(fetchMock.mock.calls.length > 0)
-    const callUrl = fetchMock.mock.calls[0].arguments[0]
-    assert(callUrl.includes('/subscribe'), `URL should contain /subscribe: ${callUrl}`)
+    const calls = fetchMock.mock.calls as unknown as Array<{ arguments: [string | URL | Request] }>
+    const callUrl = calls[0]?.arguments[0]
+    assert(String(callUrl).includes('/subscribe'), `URL should contain /subscribe: ${String(callUrl)}`)
   })
 })

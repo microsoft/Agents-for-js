@@ -2,6 +2,7 @@
 
 import fs from 'fs'
 import path from 'path'
+import { fileURLToPath } from 'node:url'
 
 import { Extractor, ExtractorConfig } from '@microsoft/api-extractor'
 import { Colorize } from '@rushstack/terminal'
@@ -15,12 +16,13 @@ const folders = {
   packages: 'packages'
 }
 
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const paths = {
-  _: import.meta.dirname,
+  _: root,
   reports: {
-    _: path.join(import.meta.dirname, folders.reports._),
-    baseline: path.join(import.meta.dirname, folders.reports._, folders.reports.baseline),
-    generated: path.join(import.meta.dirname, folders.reports._, folders.reports.generated),
+    _: path.join(root, folders.reports._),
+    baseline: path.join(root, folders.reports._, folders.reports.baseline),
+    generated: path.join(root, folders.reports._, folders.reports.generated),
   },
 }
 
