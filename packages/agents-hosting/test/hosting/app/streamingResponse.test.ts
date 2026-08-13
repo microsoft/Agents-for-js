@@ -385,11 +385,11 @@ describe('StreamingResponse', () => {
     formatCitationsStub.restore()
   })
 
-  it('should handle queue draining errors gracefully', () => {
+  it('should handle queue draining errors gracefully', async () => {
     mockContext.sendActivity.rejects(new Error('Send failed'))
 
     streamingResponse.queueInformativeUpdate('test')
-    clock.tick(1500)
+    await clock.tickAsync(1500)
 
     // Should not throw, error is caught and logged
     assert.doesNotThrow(() => {
@@ -427,6 +427,17 @@ describe('StreamingResponse', () => {
     mockContext = createContext({ channelId: `${Channels.Msteams}:COPILOT` })
     streamingResponse = new StreamingResponse(mockContext)
 
+    assert.equal(streamingResponse.delayInMs, 1000)
+  })
+
+  it('should treat agentic Teams requests as a streaming channel with 1000ms delay', () => {
+    mockContext = createContext({
+      channelId: Channels.Msteams,
+      recipient: { id: 'recipientId', role: 'agenticUser' }
+    })
+    streamingResponse = new StreamingResponse(mockContext)
+
+    assert.equal(streamingResponse.isStreamingChannel, true)
     assert.equal(streamingResponse.delayInMs, 1000)
   })
 

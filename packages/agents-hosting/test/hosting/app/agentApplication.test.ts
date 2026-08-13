@@ -13,6 +13,7 @@ import { RouteRank } from './../../../src/app/routeRank'
 import { CloudAdapter } from '../../../src/cloudAdapter'
 import { createStubInstance, SinonStub } from 'sinon'
 import { ConsoleTranscriptLogger } from '../../../src/transcript/consoleTranscriptLogger'
+import type { Connections } from '../../../src/auth/connections'
 
 class RecordingTestAdapter extends TestAdapter {
   public readonly sentActivities: Activity[] = []
@@ -99,6 +100,18 @@ describe('Application', () => {
     await context.sendActivity('test')
     assert.equal(called, true)
     assert.equal(handled, true)
+  })
+
+  it('should register configured connections in turn state', async () => {
+    const connections = {} as Connections
+    const localApp = new AgentApplication({ connections })
+    const context = new TurnContext(testAdapter, testActivity)
+
+    localApp.onActivity(ActivityTypes.Message, async (turnContext) => {
+      assert.strictEqual(turnContext.turnState.get(AgentApplication.ConnectionsKey), connections)
+    })
+
+    assert.equal(await localApp.runInternal(context), true)
   })
 
   it('should route to an agentic activity handler', async () => {
@@ -480,6 +493,10 @@ describe('Application', () => {
     class TrackingAdapter extends TestAdapter {
       continueConversationCalled = false
       continueConversationCallback: ((ctx: TurnContext) => Promise<void>) | undefined
+      continueConversationError: unknown
+      rejectContinuationAfterTurn = false
+      runContinuationAsync = false
+      continuationPromise: Promise<void> | undefined
 
       setAgentName (_agentName?: string): void {
       }
@@ -487,7 +504,44 @@ describe('Application', () => {
       override continueConversation (_identity: any, _reference: any, logic: (ctx: TurnContext) => Promise<void>): Promise<void> {
         this.continueConversationCalled = true
         this.continueConversationCallback = logic
+        if (this.continueConversationError !== undefined) {
+          if (this.rejectContinuationAfterTurn) {
+            return new Promise((_resolve, reject) => setImmediate(() => reject(this.continueConversationError)))
+          }
+
+          return Promise.reject(this.continueConversationError)
+        }
+
+        if (this.runContinuationAsync) {
+          this.continuationPromise = Promise.resolve().then(() => logic(this.createContinuationContext()))
+          return this.continuationPromise
+        }
+
         return Promise.resolve()
+      }
+
+      async runWithRevocableContext (context: TurnContext, logic: (ctx: TurnContext) => Promise<void>): Promise<void> {
+        await this.runMiddleware(context, logic)
+      }
+
+      createContinuationContext (): TurnContext {
+        return new TurnContext(this, Activity.fromObject({
+          type: ActivityTypes.Message,
+          text: 'placeholder',
+          from: { id: 'user', name: 'user' },
+          conversation: { id: 'conv' },
+          channelId: 'test',
+          recipient: { id: 'bot' },
+          serviceUrl: 'https://test.example'
+        }))
+      }
+    }
+
+    class NonErrorThrownValue {
+      message: string
+
+      constructor (message: string) {
+        this.message = message
       }
     }
 
@@ -501,6 +555,28 @@ describe('Application', () => {
       serviceUrl: 'https://test.example',
       value: { token: 'mytoken', id: 'exchangeId' }
     })
+
+    const flushDetachedCall = async () => {
+      await new Promise(resolve => setImmediate(resolve))
+      await new Promise(resolve => setImmediate(resolve))
+    }
+
+    const assertNoUnhandledRejection = async (action: () => Promise<void>) => {
+      const unhandledRejections: unknown[] = []
+      const onUnhandledRejection = (reason: unknown) => {
+        unhandledRejections.push(reason)
+      }
+
+      process.on('unhandledRejection', onUnhandledRejection)
+      try {
+        await action()
+        await flushDetachedCall()
+      } finally {
+        process.off('unhandledRejection', onUnhandledRejection)
+      }
+
+      assert.deepEqual(unhandledRejections, [])
+    }
 
     it('should detach signin/tokenExchange and return true immediately', async () => {
       const trackingAdapter = new TrackingAdapter()
@@ -541,15 +617,7 @@ describe('Application', () => {
       // Execute the continuation synchronously to verify the handler is eventually called
       if (trackingAdapter.continueConversationCallback) {
         // The continuation context activity will be overwritten by the original tokenExchange activity
-        const continuationCtx = new TurnContext(trackingAdapter, Activity.fromObject({
-          type: ActivityTypes.Message,
-          text: 'placeholder',
-          from: { id: 'user', name: 'user' },
-          conversation: { id: 'conv' },
-          channelId: 'test',
-          recipient: { id: 'bot' },
-          serviceUrl: 'https://test.example'
-        }))
+        const continuationCtx = trackingAdapter.createContinuationContext()
         await trackingAdapter.continueConversationCallback(continuationCtx)
       }
       assert.equal(handlerCalled, true, 'invoke handler should be called in the continuation')
@@ -582,6 +650,119 @@ describe('Application', () => {
 
       assert.equal(handled, true)
       assert.equal(trackingAdapter.continueConversationCalled, true, 'continueConversation should be called for longRunningMessages')
+    })
+
+    it('should not emit unhandledRejection when detached handler throws', async () => {
+      const trackingAdapter = new TrackingAdapter()
+      trackingAdapter.runContinuationAsync = true
+      const localApp = new AgentApplication({ adapter: trackingAdapter as any })
+      const expectedError = new Error('handler failed')
+
+      localApp.onActivity(ActivityTypes.Invoke, async () => {
+        throw expectedError
+      })
+
+      await assertNoUnhandledRejection(async () => {
+        const context = new TurnContext(trackingAdapter, createTokenExchangeActivity())
+        const handled = await localApp.runInternal(context)
+
+        assert.equal(handled, true)
+      })
+    })
+
+    it('should not emit unhandledRejection when continueConversation rejects', async () => {
+      const trackingAdapter = new TrackingAdapter()
+      trackingAdapter.continueConversationError = new Error('continue failed')
+      const localApp = new AgentApplication({ adapter: trackingAdapter as any })
+
+      await assertNoUnhandledRejection(async () => {
+        const context = new TurnContext(trackingAdapter, createTokenExchangeActivity())
+        const handled = await localApp.runInternal(context)
+
+        assert.equal(handled, true)
+      })
+    })
+
+    it('should forward continueConversation rejections to onError', async () => {
+      const trackingAdapter = new TrackingAdapter()
+      const expectedError = new Error('continue failed')
+      trackingAdapter.continueConversationError = expectedError
+      const localApp = new AgentApplication({ adapter: trackingAdapter as any })
+      let actualError: Error | undefined
+      let actualActivityType: string | undefined
+      let actualActivityId: string | undefined
+
+      localApp.onError(async (context, error) => {
+        actualError = error
+        actualActivityType = context.activity.type
+        actualActivityId = context.activity.id
+      })
+
+      const activity = createTokenExchangeActivity()
+      activity.id = 'activity-1'
+      const context = new TurnContext(trackingAdapter, activity)
+      const handled = await localApp.runInternal(context)
+      await flushDetachedCall()
+
+      assert.equal(handled, true)
+      assert.equal(actualError, expectedError)
+      assert.equal(actualActivityType, ActivityTypes.Invoke)
+      assert.equal(actualActivityId, 'activity-1')
+    })
+
+    it('should not touch a revoked context when a detached continuation rejects after the turn', async () => {
+      const trackingAdapter = new TrackingAdapter()
+      const expectedError = new Error('continue failed after turn')
+      trackingAdapter.continueConversationError = expectedError
+      trackingAdapter.rejectContinuationAfterTurn = true
+      const localApp = new AgentApplication({ adapter: trackingAdapter as any })
+      let actualError: Error | undefined
+      let actualActivityId: string | undefined
+
+      localApp.onError(async (context, error) => {
+        actualError = error
+        actualActivityId = context.activity.id
+      })
+
+      const activity = createTokenExchangeActivity()
+      activity.id = 'activity-after-turn'
+      const context = new TurnContext(trackingAdapter, activity)
+
+      await assertNoUnhandledRejection(async () => {
+        await trackingAdapter.runWithRevocableContext(context, async (revocableContext) => {
+          const handled = await localApp.runInternal(revocableContext)
+
+          assert.equal(handled, true)
+        })
+      })
+
+      assert.equal(actualError, expectedError)
+      assert.equal(actualActivityId, 'activity-after-turn')
+    })
+
+    it('should normalize non-Error detached handler rejections before forwarding to onError', async () => {
+      const trackingAdapter = new TrackingAdapter()
+      trackingAdapter.runContinuationAsync = true
+      const localApp = new AgentApplication({ adapter: trackingAdapter as any })
+      let actualError: Error | undefined
+
+      localApp.onError(async (_context, error) => {
+        actualError = error
+      })
+
+      localApp.onActivity(ActivityTypes.Invoke, async () => {
+        throw new NonErrorThrownValue('handler failed')
+      })
+
+      await assertNoUnhandledRejection(async () => {
+        const context = new TurnContext(trackingAdapter, createTokenExchangeActivity())
+        const handled = await localApp.runInternal(context)
+
+        assert.equal(handled, true)
+      })
+
+      assert.ok(actualError instanceof Error)
+      assert.match(actualError.message, /handler failed/)
     })
   })
 })

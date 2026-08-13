@@ -416,6 +416,22 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
     description: 'Identity is required to get the token provider.'
   },
 
+  /**
+   * Error thrown when an MSAL HTTP request cannot be completed.
+   */
+  MsalHttpRequestFailed: {
+    code: -120391,
+    description: 'MSAL HTTP request failed: {message}'
+  },
+
+  /**
+   * Error thrown when an MSAL HTTP response body cannot be parsed as JSON.
+   */
+  MsalResponseUnparsable: {
+    code: -120392,
+    description: 'MSAL returned an unparsable response body'
+  },
+
   FailedToAcquireTokenUsingCertificate: {
     code: -120395,
     description: 'Failed to acquire token using certificate'
@@ -1012,7 +1028,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   },
 
   // ============================================================================
-  // Hosting / Web layer errors (-120800 to -120840)
+  // Hosting / Web layer errors (-120910 to -120940)
   // ============================================================================
 
   /**
@@ -1020,7 +1036,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    * Indicates the hosting layer (e.g. express.json() or Fastify's JSON parser) was not configured.
    */
   MissingRequestBody: {
-    code: -120800,
+    code: -120910,
     description: '`request.body` parameter required; ensure your hosting layer parses JSON request bodies before invoking the adapter (e.g., express.json() with Express or Fastify\'s built-in JSON parser).'
   },
 
@@ -1028,7 +1044,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    * Error thrown by verifyToken when the provided JWT cannot be decoded.
    */
   InvalidJwtToken: {
-    code: -120810,
+    code: -120920,
     description: 'invalid token'
   },
 
@@ -1036,7 +1052,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
    * Error thrown by verifyToken when the token audience does not match any configured connection clientId.
    */
   JwtAudienceMismatch: {
-    code: -120820,
+    code: -120930,
     description: 'Audience mismatch'
   },
 

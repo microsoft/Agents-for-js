@@ -185,7 +185,7 @@ function createURL (base: string, conversationId?: string): URL {
 
   url.pathname = `${url.pathname}/conversations`
   if (conversationId) {
-    url.pathname = `${url.pathname}/${conversationId}`
+    url.pathname = `${url.pathname}/${encodeURIComponent(conversationId)}`
   }
 
   return url
