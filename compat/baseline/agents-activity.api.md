@@ -31,7 +31,13 @@ export class Activity {
     attachments?: Attachment[];
     callerId?: string;
     channelData?: any;
-    channelId?: string;
+    get channelId(): string | undefined;
+    set channelId(value: string);
+    _channelId?: string;
+    set channelIdChannel(value: string | undefined);
+    get channelIdChannel(): string | undefined;
+    get channelIdSubChannel(): unknown;
+    set channelIdSubChannel(value: unknown);
     // (undocumented)
     clone(): Activity;
     code?: EndOfConversationCodes | string;
@@ -42,23 +48,32 @@ export class Activity {
     from?: ChannelAccount;
     static fromJson(json: string): Activity;
     static fromObject(o: object): Activity;
+    getAgenticInstanceId(): string | undefined;
+    getAgenticTenantId(): string | undefined;
+    getAgenticUser(): string | undefined;
     static getContinuationActivity(reference: ConversationReference): Activity;
-    getConversationReference(): ConversationReference;
+    getConversationReference(options?: {
+        forceBaseChannel?: boolean;
+    }): ConversationReference;
     getMentions(activity: Activity): Mention[];
     getReplyConversationReference(replyId: string): ConversationReference;
     historyDisclosed?: boolean;
     id?: string;
     importance?: ActivityImportance | string;
     inputHint?: InputHints | string;
+    isAgenticRequest(): boolean;
+    isTargetedActivity(): boolean;
     label?: string;
     listenFor?: string[];
     locale?: string;
     localTimestamp?: Date | string;
     localTimezone?: string;
+    makeTargetedActivity(): void;
     membersAdded?: ChannelAccount[];
     membersRemoved?: ChannelAccount[];
     name?: ActivityEventNames | string;
     normalizeMentions(removeMention?: boolean): void;
+    static parseChannelId(value: string): [string | undefined, string | undefined];
     rawExpiration?: string;
     rawLocalTimestamp?: string;
     rawTimestamp?: string;
@@ -78,13 +93,17 @@ export class Activity {
     textFormat?: TextFormatTypes | string;
     textHighlights?: TextHighlight[];
     timestamp?: Date | string;
-    // (undocumented)
-    toJsonString(): string;
+    toJsonString(replacer?: (this: any, key: string, value: any) => any, space?: string | number): string;
     topicName?: string;
     type: ActivityTypes | string;
     value?: unknown;
     valueType?: string;
 }
+
+// @public
+export const ActivityErrors: {
+    [key: string]: AgentErrorDefinition;
+};
 
 // @public
 export enum ActivityEventNames {
@@ -110,7 +129,6 @@ export enum ActivityTypes {
     CommandResult = "commandResult",
     ContactRelationUpdate = "contactRelationUpdate",
     ConversationUpdate = "conversationUpdate",
-    Delay = "delay",
     DeleteUserData = "deleteUserData",
     EndOfConversation = "endOfConversation",
     Event = "event",
@@ -129,7 +147,7 @@ export enum ActivityTypes {
 
 // @public
 export const activityZodSchema: z.ZodObject<{
-    type: z.ZodUnion<[z.ZodEnum<["message", "contactRelationUpdate", "conversationUpdate", "typing", "endOfConversation", "event", "invoke", "invokeResponse", "deleteUserData", "messageUpdate", "messageDelete", "installationUpdate", "messageReaction", "suggestion", "trace", "handoff", "command", "commandResult", "delay"]>, z.ZodString]>;
+    type: z.ZodUnion<[z.ZodEnum<["message", "contactRelationUpdate", "conversationUpdate", "typing", "endOfConversation", "event", "invoke", "invokeResponse", "deleteUserData", "messageUpdate", "messageDelete", "installationUpdate", "messageReaction", "suggestion", "trace", "handoff", "command", "commandResult"]>, z.ZodString]>;
     text: z.ZodOptional<z.ZodString>;
     id: z.ZodOptional<z.ZodString>;
     channelId: z.ZodOptional<z.ZodString>;
@@ -137,23 +155,35 @@ export const activityZodSchema: z.ZodObject<{
         id: z.ZodOptional<z.ZodString>;
         name: z.ZodOptional<z.ZodString>;
         aadObjectId: z.ZodOptional<z.ZodString>;
-        role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill"]>, z.ZodString]>>;
+        tenantId: z.ZodOptional<z.ZodString>;
+        agenticUserId: z.ZodOptional<z.ZodString>;
+        agenticAppId: z.ZodOptional<z.ZodString>;
+        agenticAppBlueprintId: z.ZodOptional<z.ZodString>;
+        role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
         properties: z.ZodOptional<z.ZodUnknown>;
     }, "strip", z.ZodTypeAny, {
         id?: string | undefined;
         name?: string | undefined;
         aadObjectId?: string | undefined;
+        tenantId?: string | undefined;
+        agenticUserId?: string | undefined;
+        agenticAppId?: string | undefined;
+        agenticAppBlueprintId?: string | undefined;
         role?: string | undefined;
         properties?: unknown;
     }, {
         id?: string | undefined;
         name?: string | undefined;
         aadObjectId?: string | undefined;
+        tenantId?: string | undefined;
+        agenticUserId?: string | undefined;
+        agenticAppId?: string | undefined;
+        agenticAppBlueprintId?: string | undefined;
         role?: string | undefined;
         properties?: unknown;
     }>>;
-    timestamp: z.ZodUnion<[z.ZodDate, z.ZodOptional<z.ZodString>, z.ZodOptional<z.ZodEffects<z.ZodString, Date, string>>]>;
-    localTimestamp: z.ZodOptional<z.ZodUnion<[z.ZodOptional<z.ZodEffects<z.ZodString, Date, string>>, z.ZodDate]>>;
+    timestamp: z.ZodOptional<z.ZodUnion<[z.ZodDate, z.ZodEffects<z.ZodString, Date, string>]>>;
+    localTimestamp: z.ZodOptional<z.ZodUnion<[z.ZodDate, z.ZodEffects<z.ZodString, Date, string>]>>;
     localTimezone: z.ZodOptional<z.ZodString>;
     callerId: z.ZodOptional<z.ZodString>;
     serviceUrl: z.ZodOptional<z.ZodString>;
@@ -164,43 +194,55 @@ export const activityZodSchema: z.ZodObject<{
         id: z.ZodString;
         name: z.ZodOptional<z.ZodString>;
         aadObjectId: z.ZodOptional<z.ZodString>;
-        role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill"]>, z.ZodString]>>;
+        role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
         properties: z.ZodOptional<z.ZodUnknown>;
     }, "strip", z.ZodTypeAny, {
         id: string;
         name?: string | undefined;
         aadObjectId?: string | undefined;
+        tenantId?: string | undefined;
         role?: string | undefined;
         properties?: unknown;
         isGroup?: boolean | undefined;
         conversationType?: string | undefined;
-        tenantId?: string | undefined;
     }, {
         id: string;
         name?: string | undefined;
         aadObjectId?: string | undefined;
+        tenantId?: string | undefined;
         role?: string | undefined;
         properties?: unknown;
         isGroup?: boolean | undefined;
         conversationType?: string | undefined;
-        tenantId?: string | undefined;
     }>>;
     recipient: z.ZodOptional<z.ZodObject<{
         id: z.ZodOptional<z.ZodString>;
         name: z.ZodOptional<z.ZodString>;
         aadObjectId: z.ZodOptional<z.ZodString>;
-        role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill"]>, z.ZodString]>>;
+        tenantId: z.ZodOptional<z.ZodString>;
+        agenticUserId: z.ZodOptional<z.ZodString>;
+        agenticAppId: z.ZodOptional<z.ZodString>;
+        agenticAppBlueprintId: z.ZodOptional<z.ZodString>;
+        role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
         properties: z.ZodOptional<z.ZodUnknown>;
     }, "strip", z.ZodTypeAny, {
         id?: string | undefined;
         name?: string | undefined;
         aadObjectId?: string | undefined;
+        tenantId?: string | undefined;
+        agenticUserId?: string | undefined;
+        agenticAppId?: string | undefined;
+        agenticAppBlueprintId?: string | undefined;
         role?: string | undefined;
         properties?: unknown;
     }, {
         id?: string | undefined;
         name?: string | undefined;
         aadObjectId?: string | undefined;
+        tenantId?: string | undefined;
+        agenticUserId?: string | undefined;
+        agenticAppId?: string | undefined;
+        agenticAppBlueprintId?: string | undefined;
         role?: string | undefined;
         properties?: unknown;
     }>>;
@@ -210,18 +252,30 @@ export const activityZodSchema: z.ZodObject<{
         id: z.ZodOptional<z.ZodString>;
         name: z.ZodOptional<z.ZodString>;
         aadObjectId: z.ZodOptional<z.ZodString>;
-        role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill"]>, z.ZodString]>>;
+        tenantId: z.ZodOptional<z.ZodString>;
+        agenticUserId: z.ZodOptional<z.ZodString>;
+        agenticAppId: z.ZodOptional<z.ZodString>;
+        agenticAppBlueprintId: z.ZodOptional<z.ZodString>;
+        role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
         properties: z.ZodOptional<z.ZodUnknown>;
     }, "strip", z.ZodTypeAny, {
         id?: string | undefined;
         name?: string | undefined;
         aadObjectId?: string | undefined;
+        tenantId?: string | undefined;
+        agenticUserId?: string | undefined;
+        agenticAppId?: string | undefined;
+        agenticAppBlueprintId?: string | undefined;
         role?: string | undefined;
         properties?: unknown;
     }, {
         id?: string | undefined;
         name?: string | undefined;
         aadObjectId?: string | undefined;
+        tenantId?: string | undefined;
+        agenticUserId?: string | undefined;
+        agenticAppId?: string | undefined;
+        agenticAppBlueprintId?: string | undefined;
         role?: string | undefined;
         properties?: unknown;
     }>, "many">>;
@@ -229,18 +283,30 @@ export const activityZodSchema: z.ZodObject<{
         id: z.ZodOptional<z.ZodString>;
         name: z.ZodOptional<z.ZodString>;
         aadObjectId: z.ZodOptional<z.ZodString>;
-        role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill"]>, z.ZodString]>>;
+        tenantId: z.ZodOptional<z.ZodString>;
+        agenticUserId: z.ZodOptional<z.ZodString>;
+        agenticAppId: z.ZodOptional<z.ZodString>;
+        agenticAppBlueprintId: z.ZodOptional<z.ZodString>;
+        role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
         properties: z.ZodOptional<z.ZodUnknown>;
     }, "strip", z.ZodTypeAny, {
         id?: string | undefined;
         name?: string | undefined;
         aadObjectId?: string | undefined;
+        tenantId?: string | undefined;
+        agenticUserId?: string | undefined;
+        agenticAppId?: string | undefined;
+        agenticAppBlueprintId?: string | undefined;
         role?: string | undefined;
         properties?: unknown;
     }, {
         id?: string | undefined;
         name?: string | undefined;
         aadObjectId?: string | undefined;
+        tenantId?: string | undefined;
+        agenticUserId?: string | undefined;
+        agenticAppId?: string | undefined;
+        agenticAppBlueprintId?: string | undefined;
         role?: string | undefined;
         properties?: unknown;
     }>, "many">>;
@@ -358,18 +424,30 @@ export const activityZodSchema: z.ZodObject<{
             id: z.ZodOptional<z.ZodString>;
             name: z.ZodOptional<z.ZodString>;
             aadObjectId: z.ZodOptional<z.ZodString>;
-            role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill"]>, z.ZodString]>>;
+            tenantId: z.ZodOptional<z.ZodString>;
+            agenticUserId: z.ZodOptional<z.ZodString>;
+            agenticAppId: z.ZodOptional<z.ZodString>;
+            agenticAppBlueprintId: z.ZodOptional<z.ZodString>;
+            role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
             properties: z.ZodOptional<z.ZodUnknown>;
         }, "strip", z.ZodTypeAny, {
             id?: string | undefined;
             name?: string | undefined;
             aadObjectId?: string | undefined;
+            tenantId?: string | undefined;
+            agenticUserId?: string | undefined;
+            agenticAppId?: string | undefined;
+            agenticAppBlueprintId?: string | undefined;
             role?: string | undefined;
             properties?: unknown;
         }, {
             id?: string | undefined;
             name?: string | undefined;
             aadObjectId?: string | undefined;
+            tenantId?: string | undefined;
+            agenticUserId?: string | undefined;
+            agenticAppId?: string | undefined;
+            agenticAppBlueprintId?: string | undefined;
             role?: string | undefined;
             properties?: unknown;
         }>>;
@@ -378,18 +456,30 @@ export const activityZodSchema: z.ZodObject<{
             id: z.ZodOptional<z.ZodString>;
             name: z.ZodOptional<z.ZodString>;
             aadObjectId: z.ZodOptional<z.ZodString>;
-            role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill"]>, z.ZodString]>>;
+            tenantId: z.ZodOptional<z.ZodString>;
+            agenticUserId: z.ZodOptional<z.ZodString>;
+            agenticAppId: z.ZodOptional<z.ZodString>;
+            agenticAppBlueprintId: z.ZodOptional<z.ZodString>;
+            role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
             properties: z.ZodOptional<z.ZodUnknown>;
         }, "strip", z.ZodTypeAny, {
             id?: string | undefined;
             name?: string | undefined;
             aadObjectId?: string | undefined;
+            tenantId?: string | undefined;
+            agenticUserId?: string | undefined;
+            agenticAppId?: string | undefined;
+            agenticAppBlueprintId?: string | undefined;
             role?: string | undefined;
             properties?: unknown;
         }, {
             id?: string | undefined;
             name?: string | undefined;
             aadObjectId?: string | undefined;
+            tenantId?: string | undefined;
+            agenticUserId?: string | undefined;
+            agenticAppId?: string | undefined;
+            agenticAppBlueprintId?: string | undefined;
             role?: string | undefined;
             properties?: unknown;
         }>>>;
@@ -400,26 +490,26 @@ export const activityZodSchema: z.ZodObject<{
             id: z.ZodString;
             name: z.ZodOptional<z.ZodString>;
             aadObjectId: z.ZodOptional<z.ZodString>;
-            role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill"]>, z.ZodString]>>;
+            role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
             properties: z.ZodOptional<z.ZodUnknown>;
         }, "strip", z.ZodTypeAny, {
             id: string;
             name?: string | undefined;
             aadObjectId?: string | undefined;
+            tenantId?: string | undefined;
             role?: string | undefined;
             properties?: unknown;
             isGroup?: boolean | undefined;
             conversationType?: string | undefined;
-            tenantId?: string | undefined;
         }, {
             id: string;
             name?: string | undefined;
             aadObjectId?: string | undefined;
+            tenantId?: string | undefined;
             role?: string | undefined;
             properties?: unknown;
             isGroup?: boolean | undefined;
             conversationType?: string | undefined;
-            tenantId?: string | undefined;
         }>;
         channelId: z.ZodString;
         serviceUrl: z.ZodOptional<z.ZodString>;
@@ -428,17 +518,21 @@ export const activityZodSchema: z.ZodObject<{
             id: string;
             name?: string | undefined;
             aadObjectId?: string | undefined;
+            tenantId?: string | undefined;
             role?: string | undefined;
             properties?: unknown;
             isGroup?: boolean | undefined;
             conversationType?: string | undefined;
-            tenantId?: string | undefined;
         };
         channelId: string;
         user?: {
             id?: string | undefined;
             name?: string | undefined;
             aadObjectId?: string | undefined;
+            tenantId?: string | undefined;
+            agenticUserId?: string | undefined;
+            agenticAppId?: string | undefined;
+            agenticAppBlueprintId?: string | undefined;
             role?: string | undefined;
             properties?: unknown;
         } | undefined;
@@ -448,6 +542,10 @@ export const activityZodSchema: z.ZodObject<{
             id?: string | undefined;
             name?: string | undefined;
             aadObjectId?: string | undefined;
+            tenantId?: string | undefined;
+            agenticUserId?: string | undefined;
+            agenticAppId?: string | undefined;
+            agenticAppBlueprintId?: string | undefined;
             role?: string | undefined;
             properties?: unknown;
         } | null | undefined;
@@ -457,17 +555,21 @@ export const activityZodSchema: z.ZodObject<{
             id: string;
             name?: string | undefined;
             aadObjectId?: string | undefined;
+            tenantId?: string | undefined;
             role?: string | undefined;
             properties?: unknown;
             isGroup?: boolean | undefined;
             conversationType?: string | undefined;
-            tenantId?: string | undefined;
         };
         channelId: string;
         user?: {
             id?: string | undefined;
             name?: string | undefined;
             aadObjectId?: string | undefined;
+            tenantId?: string | undefined;
+            agenticUserId?: string | undefined;
+            agenticAppId?: string | undefined;
+            agenticAppBlueprintId?: string | undefined;
             role?: string | undefined;
             properties?: unknown;
         } | undefined;
@@ -477,13 +579,17 @@ export const activityZodSchema: z.ZodObject<{
             id?: string | undefined;
             name?: string | undefined;
             aadObjectId?: string | undefined;
+            tenantId?: string | undefined;
+            agenticUserId?: string | undefined;
+            agenticAppId?: string | undefined;
+            agenticAppBlueprintId?: string | undefined;
             role?: string | undefined;
             properties?: unknown;
         } | null | undefined;
         serviceUrl?: string | undefined;
     }>>;
     code: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["unknown", "completedSuccessfully", "userCancelled", "agentTimedOut", "agentIssuedInvalidMessage", "channelFailed"]>, z.ZodString]>>;
-    expiration: z.ZodOptional<z.ZodString>;
+    expiration: z.ZodOptional<z.ZodUnion<[z.ZodDate, z.ZodEffects<z.ZodString, Date, string>]>>;
     importance: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["low", "normal", "high"]>, z.ZodString]>>;
     deliveryMode: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["normal", "notification", "expectReplies", "ephemeral"]>, z.ZodString]>>;
     listenFor: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
@@ -536,11 +642,11 @@ export const activityZodSchema: z.ZodObject<{
         id: string;
         name?: string | undefined;
         aadObjectId?: string | undefined;
+        tenantId?: string | undefined;
         role?: string | undefined;
         properties?: unknown;
         isGroup?: boolean | undefined;
         conversationType?: string | undefined;
-        tenantId?: string | undefined;
     } | undefined;
     channelId?: string | undefined;
     serviceUrl?: string | undefined;
@@ -548,10 +654,14 @@ export const activityZodSchema: z.ZodObject<{
         id?: string | undefined;
         name?: string | undefined;
         aadObjectId?: string | undefined;
+        tenantId?: string | undefined;
+        agenticUserId?: string | undefined;
+        agenticAppId?: string | undefined;
+        agenticAppBlueprintId?: string | undefined;
         role?: string | undefined;
         properties?: unknown;
     } | undefined;
-    timestamp?: string | Date | undefined;
+    timestamp?: Date | undefined;
     localTimestamp?: Date | undefined;
     localTimezone?: string | undefined;
     callerId?: string | undefined;
@@ -559,6 +669,10 @@ export const activityZodSchema: z.ZodObject<{
         id?: string | undefined;
         name?: string | undefined;
         aadObjectId?: string | undefined;
+        tenantId?: string | undefined;
+        agenticUserId?: string | undefined;
+        agenticAppId?: string | undefined;
+        agenticAppBlueprintId?: string | undefined;
         role?: string | undefined;
         properties?: unknown;
     } | undefined;
@@ -568,6 +682,10 @@ export const activityZodSchema: z.ZodObject<{
         id?: string | undefined;
         name?: string | undefined;
         aadObjectId?: string | undefined;
+        tenantId?: string | undefined;
+        agenticUserId?: string | undefined;
+        agenticAppId?: string | undefined;
+        agenticAppBlueprintId?: string | undefined;
         role?: string | undefined;
         properties?: unknown;
     }[] | undefined;
@@ -575,6 +693,10 @@ export const activityZodSchema: z.ZodObject<{
         id?: string | undefined;
         name?: string | undefined;
         aadObjectId?: string | undefined;
+        tenantId?: string | undefined;
+        agenticUserId?: string | undefined;
+        agenticAppId?: string | undefined;
+        agenticAppBlueprintId?: string | undefined;
         role?: string | undefined;
         properties?: unknown;
     }[] | undefined;
@@ -618,17 +740,21 @@ export const activityZodSchema: z.ZodObject<{
             id: string;
             name?: string | undefined;
             aadObjectId?: string | undefined;
+            tenantId?: string | undefined;
             role?: string | undefined;
             properties?: unknown;
             isGroup?: boolean | undefined;
             conversationType?: string | undefined;
-            tenantId?: string | undefined;
         };
         channelId: string;
         user?: {
             id?: string | undefined;
             name?: string | undefined;
             aadObjectId?: string | undefined;
+            tenantId?: string | undefined;
+            agenticUserId?: string | undefined;
+            agenticAppId?: string | undefined;
+            agenticAppBlueprintId?: string | undefined;
             role?: string | undefined;
             properties?: unknown;
         } | undefined;
@@ -638,12 +764,16 @@ export const activityZodSchema: z.ZodObject<{
             id?: string | undefined;
             name?: string | undefined;
             aadObjectId?: string | undefined;
+            tenantId?: string | undefined;
+            agenticUserId?: string | undefined;
+            agenticAppId?: string | undefined;
+            agenticAppBlueprintId?: string | undefined;
             role?: string | undefined;
             properties?: unknown;
         } | null | undefined;
         serviceUrl?: string | undefined;
     } | undefined;
-    expiration?: string | undefined;
+    expiration?: Date | undefined;
     importance?: string | undefined;
     deliveryMode?: string | undefined;
     listenFor?: string[] | undefined;
@@ -674,11 +804,11 @@ export const activityZodSchema: z.ZodObject<{
         id: string;
         name?: string | undefined;
         aadObjectId?: string | undefined;
+        tenantId?: string | undefined;
         role?: string | undefined;
         properties?: unknown;
         isGroup?: boolean | undefined;
         conversationType?: string | undefined;
-        tenantId?: string | undefined;
     } | undefined;
     channelId?: string | undefined;
     serviceUrl?: string | undefined;
@@ -686,6 +816,10 @@ export const activityZodSchema: z.ZodObject<{
         id?: string | undefined;
         name?: string | undefined;
         aadObjectId?: string | undefined;
+        tenantId?: string | undefined;
+        agenticUserId?: string | undefined;
+        agenticAppId?: string | undefined;
+        agenticAppBlueprintId?: string | undefined;
         role?: string | undefined;
         properties?: unknown;
     } | undefined;
@@ -697,6 +831,10 @@ export const activityZodSchema: z.ZodObject<{
         id?: string | undefined;
         name?: string | undefined;
         aadObjectId?: string | undefined;
+        tenantId?: string | undefined;
+        agenticUserId?: string | undefined;
+        agenticAppId?: string | undefined;
+        agenticAppBlueprintId?: string | undefined;
         role?: string | undefined;
         properties?: unknown;
     } | undefined;
@@ -706,6 +844,10 @@ export const activityZodSchema: z.ZodObject<{
         id?: string | undefined;
         name?: string | undefined;
         aadObjectId?: string | undefined;
+        tenantId?: string | undefined;
+        agenticUserId?: string | undefined;
+        agenticAppId?: string | undefined;
+        agenticAppBlueprintId?: string | undefined;
         role?: string | undefined;
         properties?: unknown;
     }[] | undefined;
@@ -713,6 +855,10 @@ export const activityZodSchema: z.ZodObject<{
         id?: string | undefined;
         name?: string | undefined;
         aadObjectId?: string | undefined;
+        tenantId?: string | undefined;
+        agenticUserId?: string | undefined;
+        agenticAppId?: string | undefined;
+        agenticAppBlueprintId?: string | undefined;
         role?: string | undefined;
         properties?: unknown;
     }[] | undefined;
@@ -756,17 +902,21 @@ export const activityZodSchema: z.ZodObject<{
             id: string;
             name?: string | undefined;
             aadObjectId?: string | undefined;
+            tenantId?: string | undefined;
             role?: string | undefined;
             properties?: unknown;
             isGroup?: boolean | undefined;
             conversationType?: string | undefined;
-            tenantId?: string | undefined;
         };
         channelId: string;
         user?: {
             id?: string | undefined;
             name?: string | undefined;
             aadObjectId?: string | undefined;
+            tenantId?: string | undefined;
+            agenticUserId?: string | undefined;
+            agenticAppId?: string | undefined;
+            agenticAppBlueprintId?: string | undefined;
             role?: string | undefined;
             properties?: unknown;
         } | undefined;
@@ -776,12 +926,16 @@ export const activityZodSchema: z.ZodObject<{
             id?: string | undefined;
             name?: string | undefined;
             aadObjectId?: string | undefined;
+            tenantId?: string | undefined;
+            agenticUserId?: string | undefined;
+            agenticAppId?: string | undefined;
+            agenticAppBlueprintId?: string | undefined;
             role?: string | undefined;
             properties?: unknown;
         } | null | undefined;
         serviceUrl?: string | undefined;
     } | undefined;
-    expiration?: string | undefined;
+    expiration?: string | Date | undefined;
     importance?: string | undefined;
     deliveryMode?: string | undefined;
     listenFor?: string[] | undefined;
@@ -827,6 +981,21 @@ export const adaptiveCardInvokeActionZodSchema: z.ZodObject<{
 // @public
 export const addAIToActivity: (activity: Activity, citations?: ClientCitation[], usageInfo?: SensitivityUsageInfo) => void;
 
+// @public
+export interface AgentError extends Error {
+    code: number;
+    description: string;
+    helpLink: string;
+    innerException?: Error;
+}
+
+// @public
+export interface AgentErrorDefinition {
+    code: number;
+    description: string;
+    helplink?: string;
+}
+
 // @public (undocumented)
 export interface AIEntity extends Entity {
     '@context': 'https://schema.org';
@@ -868,14 +1037,20 @@ export interface CardAction {
 // @public
 export interface ChannelAccount {
     aadObjectId?: string;
+    agenticAppBlueprintId?: string;
+    agenticAppId?: string;
+    agenticUserId?: string;
     id?: string;
+    membershipSources?: MembershipSource[];
     name?: string;
     properties?: unknown;
     role?: RoleTypes | string;
+    tenantId?: string;
 }
 
 // @public
 export enum Channels {
+    Agents = "agents",
     Alexa = "alexa",
     Console = "console",
     Directline = "directline",
@@ -885,6 +1060,9 @@ export enum Channels {
     Facebook = "facebook",
     Groupme = "groupme",
     Line = "line",
+    // (undocumented)
+    M365Copilot = "msteams:COPILOT",
+    M365CopilotSubChannel = "COPILOT",
     Msteams = "msteams",
     Omni = "omnichannel",
     Outlook = "outlook",
@@ -919,47 +1097,26 @@ export interface ClientCitation {
 
 // @public
 export const ClientCitationIconName: {
-    /** Microsoft Word document icon */
     readonly MicrosoftWord: "Microsoft Word";
-    /** Microsoft Excel spreadsheet icon */
     readonly MicrosoftExcel: "Microsoft Excel";
-    /** Microsoft PowerPoint presentation icon */
     readonly MicrosoftPowerPoint: "Microsoft PowerPoint";
-    /** Microsoft OneNote notebook icon */
     readonly MicrosoftOneNote: "Microsoft OneNote";
-    /** Microsoft SharePoint site or document icon */
     readonly MicrosoftSharePoint: "Microsoft SharePoint";
-    /** Microsoft Visio diagram icon */
     readonly MicrosoftVisio: "Microsoft Visio";
-    /** Microsoft Loop component icon */
     readonly MicrosoftLoop: "Microsoft Loop";
-    /** Microsoft Whiteboard icon */
     readonly MicrosoftWhiteboard: "Microsoft Whiteboard";
-    /** Adobe Illustrator vector graphics icon */
     readonly AdobeIllustrator: "Adobe Illustrator";
-    /** Adobe Photoshop image editing icon */
     readonly AdobePhotoshop: "Adobe Photoshop";
-    /** Adobe InDesign layout design icon */
     readonly AdobeInDesign: "Adobe InDesign";
-    /** Adobe Flash multimedia icon */
     readonly AdobeFlash: "Adobe Flash";
-    /** Sketch design tool icon */
     readonly Sketch: "Sketch";
-    /** Source code file icon */
     readonly SourceCode: "Source Code";
-    /** Generic image file icon */
     readonly Image: "Image";
-    /** Animated GIF image icon */
     readonly GIF: "GIF";
-    /** Video file icon */
     readonly Video: "Video";
-    /** Audio/sound file icon */
     readonly Sound: "Sound";
-    /** ZIP archive file icon */
     readonly ZIP: "ZIP";
-    /** Plain text file icon */
     readonly Text: "Text";
-    /** PDF document icon */
     readonly PDF: "PDF";
 };
 
@@ -1001,10 +1158,6 @@ export interface ConversationReference {
 }
 
 // @public
-function debug_2(namespace: string): Logger;
-export { debug_2 as debug }
-
-// @public
 export enum DeliveryModes {
     Ephemeral = "ephemeral",
     ExpectReplies = "expectReplies",
@@ -1029,6 +1182,14 @@ export interface Entity {
 }
 
 // @public
+export class ExceptionHelper {
+    static readonly DEFAULT_HELPLINK = "https://aka.ms/M365AgentsErrorCodesJS/#{errorCode}";
+    static generateException<T extends Error>(ErrorType: new (message: string, innerException?: Error) => T, errorDefinition: AgentErrorDefinition, innerException?: Error, params?: {
+        [key: string]: string;
+    }): T & AgentError;
+}
+
+// @public
 export interface ExpectedReplies {
     activities: Activity[];
 }
@@ -1050,12 +1211,24 @@ export enum InputHints {
 }
 
 // @public
-export class Logger {
-    constructor(namespace?: string);
-    debug(message: string, ...args: any[]): void;
-    error(message: string, ...args: any[]): void;
-    info(message: string, ...args: any[]): void;
-    warn(message: string, ...args: any[]): void;
+export interface MembershipSource {
+    id: string;
+    membershipType: MembershipTypes;
+    sourceType: MembershipSourceTypes;
+    teamGroupId: string;
+    tenantId?: string;
+}
+
+// @public
+export enum MembershipSourceTypes {
+    Channel = "channel",
+    Team = "team"
+}
+
+// @public
+export enum MembershipTypes {
+    Direct = "direct",
+    Transitive = "transitive"
 }
 
 // @public
@@ -1088,6 +1261,8 @@ export interface Place {
 // @public
 export enum RoleTypes {
     Agent = "bot",
+    AgenticIdentity = "agenticAppInstance",
+    AgenticUser = "agenticUser",
     Skill = "skill",
     User = "user"
 }

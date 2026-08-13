@@ -15,8 +15,10 @@ The repository is a **monorepo** using npm workspaces with multiple interconnect
 - **agents-activity**: Activity protocol types, validators, and schema definitions using Zod. Replaces `botframework-schema`.
 - **agents-hosting**: Core hosting components including ActivityHandler, TurnContext, CloudAdapter, authentication, and state management. Replaces `botbuilder`.
 - **agents-hosting-express**: Express.js integration for hosting agents.
+- **agents-hosting-fastify**: Fastify integration for hosting agents.
 - **agents-hosting-dialogs**: Dialog system for building conversational flows. Replaces `botbuilder-dialogs`.
-- **agents-hosting-extensions-teams**: Teams-specific features (TaskModules, Messaging Extensions).
+- **agents-hosting-extensions-msteams**: Teams-specific features (TaskModules, Messaging Extensions).
+- **agents-hosting-extensions-teams**: Deprecated legacy Teams extension retained for backward compatibility.
 - **agents-hosting-storage-blob**: Azure Blob Storage adapter. Replaces `botbuilder-azure`.
 - **agents-hosting-storage-cosmos**: CosmosDB storage adapter. Replaces `botbuilder-azure`.
 - **agents-copilotstudio-client**: Direct-to-Engine client for interacting with Copilot Studio agents.
@@ -114,6 +116,23 @@ The package dependency hierarchy (simplified):
 
 **Storage**: Abstraction for persisting state (conversation, user, private). Implementations exist for Memory, Blob, and Cosmos.
 
+### Teams Extension (Teams SDK Migration)
+
+The `agents-hosting-extensions-msteams` package aligns with the Teams SDK-based architecture used in .NET. The legacy `agents-hosting-extensions-teams` package remains in the workspace for backward compatibility, but is deprecated and should not be used for new development.
+
+- **Teams SDK dependency**: Uses `@microsoft/teams.api` (`2.0.14`) for Teams models and client operations.
+- **Legacy API isolation**: `TeamsConnectorClient`, `TeamsActivityHandler`, `TeamsInfo`, and the local Teams-specific model wrappers remain available only from the deprecated `agents-hosting-extensions-teams` package.
+- **Shared Teams client setup**: Teams client setup/retrieval for the new package is implemented in `packages/agents-hosting-extensions-msteams/src/teamsApiClientExtensions.ts`.
+- **Turn setup requirements**:
+  - `TeamsAgentExtension` registers a `beforeTurn` handler that configures the Teams client for `AgentApplication` scenarios.
+  - Use `TeamsAgentExtension.getTeamsClient(context)` for Teams SDK client access.
+- **Error handling**:
+  - Missing client access throws `TeamsApiClientNotAvailable`.
+  - Teams client setup prerequisites throw `TeamsApiClientSetupFailed` (for easier misconfiguration diagnosis).
+- **Parsing simplification**:
+  - Teams channel data parsing was simplified to root-object validation/pass-through (`activity-extensions/teamsChannelData.ts`).
+  - Messaging extension query parsing remains validated via a Zod schema (`messageExtensions/messagingExtensionQuery.ts`).
+
 ### Authentication
 
 Authentication configuration is loaded from environment variables using `loadAuthConfigFromEnv()`. The SDK supports:
@@ -145,6 +164,7 @@ Each package has its own `tsconfig.json` that extends the root configuration.
 - Place tests in `test/` directory within each package
 - Name test files with `.test.ts` suffix
 - Tests run with `tsx` for TypeScript support
+- Do not leave a TypeScript cast (`as` or angle-bracket assertion) in a test callback's final executable statement. The VS Code `node:test` extension uses a loose parser for TypeScript; assign the cast result to a typed local earlier in the callback instead.
 
 ## Common Patterns
 

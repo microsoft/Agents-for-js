@@ -12,7 +12,7 @@ For more information please see the parent project information here [Microsoft 3
 
 ## Getting Started
 
-The best to way to get started with these packages is to look at the samples available in https://github.com/microsoft/Agents
+The best way to get started with these packages is to look at the samples available in https://github.com/microsoft/Agents
 
 ## Packages Overview
 
@@ -22,8 +22,10 @@ We offer the following NPM packages to create conversational experiences based o
 |--------------|-------------|-------------|---------|
 | `@microsoft/agents-activity` | [![npm](https://img.shields.io/npm/v/@microsoft/agents-activity)](https://www.npmjs.com/package/@microsoft/agents-activity) | Types and validators implementing the Activity protocol spec. | `botframework-schema` |
 | `@microsoft/agents-hosting` | [![npm](https://img.shields.io/npm/v/@microsoft/agents-hosting)](https://www.npmjs.com/package/@microsoft/agents-hosting) | Provides classes to host an Agent in express.  | `botbuilder` |
-| `@microsoft/agents-hosting-extensions-teams` | [![npm](https://img.shields.io/npm/v/@microsoft/agents-hosting-extensions-teams)](https://www.npmjs.com/package/@microsoft/agents-hosting-extensions-teams) | Teams specific features, such as TaskModules and Messaging Extensions.  | `botbuilder` |
+| `@microsoft/agents-hosting-extensions-msteams` | [![npm](https://img.shields.io/npm/v/@microsoft/agents-hosting-extensions-msteams)](https://www.npmjs.com/package/@microsoft/agents-hosting-extensions-msteams) | Teams specific features, such as TaskModules and Messaging Extensions.  | `botbuilder` |
+| `@microsoft/agents-hosting-extensions-teams` (deprecated) | [![npm](https://img.shields.io/npm/v/@microsoft/agents-hosting-extensions-teams)](https://www.npmjs.com/package/@microsoft/agents-hosting-extensions-teams) | Legacy Teams extension retained for backward compatibility. Use `@microsoft/agents-hosting-extensions-msteams` for new development. | `botbuilder` |
 | `@microsoft/agents-hosting-express` | [![npm](https://img.shields.io/npm/v/@microsoft/agents-hosting-express)](https://www.npmjs.com/package/@microsoft/agents-hosting-express) | Configures express to run the Agent.  | N/A |
+| `@microsoft/agents-hosting-fastify` | [![npm](https://img.shields.io/npm/v/@microsoft/agents-hosting-fastify)](https://www.npmjs.com/package/@microsoft/agents-hosting-fastify) | Configures Fastify to run the Agent.  | N/A |
 | `@microsoft/agents-hosting-dialogs` | [![npm](https://img.shields.io/npm/v/@microsoft/agents-hosting-dialogs)](https://www.npmjs.com/package/@microsoft/agents-hosting-dialogs) | Provides classes to host an Agent in express.  | `botbuilder-dialogs` |
 | `@microsoft/agents-hosting-storage-blob` | [![npm](https://img.shields.io/npm/v/@microsoft/agents-hosting-storage-blob)](https://www.npmjs.com/package/@microsoft/agents-hosting-storage-blob) | Extension to use Azure Blob as storage.  | `botbuilder-azure` |
 | `@microsoft/agents-hosting-storage-cosmos` | [![npm](https://img.shields.io/npm/v/@microsoft/agents-hosting-storage-cosmos)](https://www.npmjs.com/package/@microsoft/agents-hosting-storage-cosmos) | Extension to use CosmosDB as storage.  | `botbuilder-azure` |

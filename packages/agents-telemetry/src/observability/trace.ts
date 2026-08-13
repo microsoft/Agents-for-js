@@ -10,10 +10,12 @@ import type {
   TraceFunction,
   TraceRecord,
 } from '../types.js'
+import { ExceptionHelper } from '@microsoft/agents-activity'
 import { attempt } from '../utils/attempt.js'
 import { isSpanDisabled } from './category.js'
 import { SpanNames } from './constants.js'
 import { noopContext } from '../utils/noop.js'
+import { Errors } from '../errorHelper.js'
 
 /**
  * Creates the trace helper bound to the package tracer.
@@ -28,11 +30,11 @@ export function traceFactory (otel: OTel) {
 
   const trace = function trace (target, callback) {
     if (!target) {
-      throw new Error('Trace definition is required')
+      throw ExceptionHelper.generateException(Error, Errors.TraceDefinitionRequired)
     }
 
     if (!validSpanNames.has(target.name)) {
-      throw new Error(`Unrecognized span name "${target.name}". See SpanNames constants.`)
+      throw ExceptionHelper.generateException(Error, Errors.UnrecognizedSpanName, undefined, { spanName: target.name })
     }
 
     if (isSpanDisabled(target.name)) {
