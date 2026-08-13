@@ -231,7 +231,7 @@ describe('CopilotStudioClient', function () {
         mockFetchResponse([]),
         mockFetchResponse([]),
       ]
-      const fetchMock = mock.fn(() => Promise.resolve(responses.shift()!))
+      const fetchMock = mock.fn((..._args: Parameters<typeof fetch>) => Promise.resolve(responses.shift()!))
       global.fetch = fetchMock as any
 
       await consumeStream(client.startConversationStreaming())
@@ -258,7 +258,7 @@ describe('CopilotStudioClient', function () {
         mockFetchResponse([secondConversationActivity]),
         mockFetchResponse([])
       ]
-      const fetchMock = mock.fn(() => Promise.resolve(responses.shift()!))
+      const fetchMock = mock.fn((..._args: Parameters<typeof fetch>) => Promise.resolve(responses.shift()!))
       global.fetch = fetchMock as any
 
       await consumeStream(client.startConversationStreaming())
@@ -1472,7 +1472,7 @@ describe('CopilotStudioClient', function () {
         mockFetchResponse([]),
         mockFetchResponse([])
       ]
-      const fetchMock = mock.fn(() => Promise.resolve(responses.shift()!))
+      const fetchMock = mock.fn((..._args: Parameters<typeof fetch>) => Promise.resolve(responses.shift()!))
       global.fetch = fetchMock as any
 
       await consumeStream(client.startConversationStreaming())

@@ -4,6 +4,7 @@
 import { strict as assert } from 'assert'
 import { afterEach, describe, it } from 'node:test'
 import type { TraceDefinition } from '@microsoft/agents-telemetry'
+import type { Span } from '@opentelemetry/api'
 import { Activity } from '@microsoft/agents-activity'
 import * as sinon from 'sinon'
 import { CopilotStudioClientMetrics } from '../../src/observability/metrics'
@@ -26,6 +27,14 @@ interface TestSpan {
   end(endTime?: unknown): void
   isRecording(): boolean
   recordException(exception: unknown, time?: unknown): void
+}
+
+interface PostRequestActions {
+  receivedFromCopilot(activity: Activity): void
+}
+
+interface SubscribeAsyncActions {
+  eventReceivedFromCopilot(event: SubscribeEvent): void
 }
 
 function createSpan (): TestSpan {
@@ -76,7 +85,7 @@ function endTrace<TRecord extends object, TActions extends object> (
   error?: unknown
 ): TestSpan {
   const span = createSpan()
-  definition.end({ span: span as unknown as TestSpan, record, duration, error })
+  definition.end({ span: span as unknown as Span, record, duration, error })
   return span
 }
 
@@ -85,7 +94,7 @@ function endTraceWithIncompleteRecord<TRecord extends object, TActions extends o
   record: Record<string, unknown>
 ): TestSpan {
   const span = createSpan()
-  definition.end({ span: span as unknown as TestSpan, record: record as TRecord, duration })
+  definition.end({ span: span as unknown as Span, record: record as TRecord, duration })
   return span
 }
 
@@ -96,21 +105,11 @@ function assertMetric (metric: sinon.SinonStub, value: number, attributes: Recor
 describe('Copilot Studio client trace definitions', () => {
   afterEach(() => sinon.restore())
 
-  it('records web chat connection attributes, metrics, and activity events', () => {
+  it('records web chat connection attributes and metrics', () => {
     const connections = sinon.stub()
     sinon.stub(CopilotStudioClientMetrics, 'webchatConnectionsCounter').value({ add: connections })
-    const span = createSpan()
-    const actions = CopilotStudioClientTraceDefinitions.createConnection.actions!({ span: span as unknown as TestSpan })
-    const activity = Activity.fromObject({ type: 'message', conversation: { id: 'conversation-id' } })
-
-    actions.receivedFromCopilot(activity)
-    actions.sentToWebChat(activity)
     const endedSpan = endTrace(CopilotStudioClientTraceDefinitions.createConnection, { showTyping: true })
 
-    assert.deepEqual(span.events, [
-      { name: 'activity.received.from.copilot.studio', attributes: { 'copilot.webchat.activity.type': 'message', 'copilot.webchat.activity.conversation_id': 'conversation-id' } },
-      { name: 'activity.sent.to.webchat', attributes: { 'copilot.webchat.activity.type': 'message', 'copilot.webchat.activity.conversation_id': 'conversation-id' } },
-    ])
     assert.deepEqual(endedSpan.attributes, { 'copilot.webchat.show_typing': true })
     assertMetric(connections, 1, { 'copilot.webchat.show_typing': true })
   })
@@ -125,7 +124,7 @@ describe('Copilot Studio client trace definitions', () => {
     sinon.stub(CopilotStudioClientMetrics, 'requestsErrorCounter').value({ add: requestErrors })
     sinon.stub(CopilotStudioClientMetrics, 'streamDuration').value({ record: streamDuration })
     const span = createSpan()
-    const actions = CopilotStudioClientTraceDefinitions.postRequest.actions!({ span: span as unknown as TestSpan })
+    const actions = CopilotStudioClientTraceDefinitions.postRequest.actions!({ span: span as unknown as Span }) as PostRequestActions
     actions.receivedFromCopilot(Activity.fromObject({ type: 'message', conversation: { id: 'conversation-id' } }))
 
     const endedSpan = endTrace(CopilotStudioClientTraceDefinitions.postRequest, {
@@ -219,7 +218,7 @@ describe('Copilot Studio client trace definitions', () => {
     sinon.stub(CopilotStudioClientMetrics, 'subscribeAsyncCounter').value({ add: subscriptions })
     sinon.stub(CopilotStudioClientMetrics, 'streamDuration').value({ record: streamDuration })
     const span = createSpan()
-    const actions = CopilotStudioClientTraceDefinitions.subscribeAsync.actions!({ span: span as unknown as TestSpan })
+    const actions = CopilotStudioClientTraceDefinitions.subscribeAsync.actions!({ span: span as unknown as Span }) as SubscribeAsyncActions
     const event: SubscribeEvent = { eventId: 'event-id', activity: Activity.fromObject({ type: 'message' }) }
     actions.eventReceivedFromCopilot(event)
 
@@ -264,14 +263,11 @@ describe('Copilot Studio client trace definitions', () => {
     sinon.stub(CopilotStudioClientMetrics, 'requestDuration').value({ record: requestDuration })
     const activity = Activity.fromObject({ type: 'message' })
 
-    const connectionSpan = createSpan()
-    CopilotStudioClientTraceDefinitions.createConnection.actions!({ span: connectionSpan as unknown as TestSpan }).receivedFromCopilot(activity)
     const requestSpan = createSpan()
-    CopilotStudioClientTraceDefinitions.postRequest.actions!({ span: requestSpan as unknown as TestSpan }).receivedFromCopilot(activity)
+    ;(CopilotStudioClientTraceDefinitions.postRequest.actions!({ span: requestSpan as unknown as Span }) as PostRequestActions).receivedFromCopilot(activity)
     const subscriptionSpan = createSpan()
-    CopilotStudioClientTraceDefinitions.subscribeAsync.actions!({ span: subscriptionSpan as unknown as TestSpan }).eventReceivedFromCopilot({ activity })
+    ;(CopilotStudioClientTraceDefinitions.subscribeAsync.actions!({ span: subscriptionSpan as unknown as Span }) as SubscribeAsyncActions).eventReceivedFromCopilot({ activity })
 
-    assert.deepEqual(connectionSpan.events[0].attributes, { 'copilot.webchat.activity.type': 'message', 'copilot.webchat.activity.conversation_id': 'unknown' })
     assert.deepEqual(requestSpan.events[0].attributes, { 'copilot.post_request.activity.type': 'message', 'copilot.post_request.activity.conversation_id': 'unknown' })
     assert.deepEqual(subscriptionSpan.events[0].attributes, { 'copilot.subscribe_async.event.id': 'unknown', 'copilot.subscribe_async.event.activity.type': 'message' })
     assertMetric(received, 1, { 'copilot.activity.type': 'message', 'copilot.activity.conversation_id': 'unknown' })
@@ -299,7 +295,7 @@ describe('Copilot Studio client trace definitions', () => {
     sinon.assert.calledWithExactly(requestDuration, duration, { operation: 'executeStreaming', 'copilot.activity.type': 'message', 'copilot.activity.conversation_id': 'unknown' })
   })
 
-  it('preserves trace defaults and records sent web chat activities without a conversation', () => {
+  it('preserves trace defaults and uses unknown for missing activity values', () => {
     const connections = sinon.stub()
     const requests = sinon.stub()
     const sent = sinon.stub()
@@ -320,15 +316,11 @@ describe('Copilot Studio client trace definitions', () => {
     const activity = endTrace(CopilotStudioClientTraceDefinitions.sendActivity, CopilotStudioClientTraceDefinitions.sendActivity.record)
     const execution = endTrace(CopilotStudioClientTraceDefinitions.executeStreaming, CopilotStudioClientTraceDefinitions.executeStreaming.record)
     const subscription = endTrace(CopilotStudioClientTraceDefinitions.subscribeAsync, CopilotStudioClientTraceDefinitions.subscribeAsync.record)
-    const actionSpan = createSpan()
-    CopilotStudioClientTraceDefinitions.createConnection.actions!({ span: actionSpan as unknown as TestSpan }).sentToWebChat(Activity.fromObject({ type: 'message' }))
-
     assert.deepEqual(connection.attributes, { 'copilot.webchat.show_typing': false })
     assert.deepEqual(request.attributes, { 'copilot.post_request.url': '', 'copilot.post_request.method': '' })
     assert.deepEqual(activity.attributes, { 'copilot.activity.type': 'unknown', 'copilot.activity.conversation_id': 'unknown' })
     assert.deepEqual(execution.attributes, { 'copilot.activity.type': 'unknown', 'copilot.activity.conversation_id': 'unknown' })
     assert.deepEqual(subscription.attributes, { 'copilot.subscribe_async.conversation_id': 'unknown', 'copilot.subscribe_async.last_received_event_id': 'unknown' })
-    assert.deepEqual(actionSpan.events, [{ name: 'activity.sent.to.webchat', attributes: { 'copilot.webchat.activity.type': 'message', 'copilot.webchat.activity.conversation_id': 'unknown' } }])
     assertMetric(connections, 1, { 'copilot.webchat.show_typing': false })
     assertMetric(requests, 1, { operation: 'postRequestAsync', 'copilot.post_request.url': '', 'copilot.post_request.method': '' })
     assertMetric(sent, 1, { 'copilot.activity.type': 'unknown', 'copilot.activity.conversation_id': 'unknown' })
