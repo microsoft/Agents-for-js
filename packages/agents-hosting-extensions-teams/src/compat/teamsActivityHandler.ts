@@ -32,6 +32,8 @@ const TeamsMeetingEndT = z
   })
 
 /**
+ * @deprecated Use the new agents-hosting-extensions-msteams package instead.
+ *
  * A handler for processing Microsoft Teams-specific activities.
  * Extends the ActivityHandler class to provide additional Teams-specific functionality.
  * This class includes methods for handling various Teams events, such as message updates, channel events, and meeting events.
