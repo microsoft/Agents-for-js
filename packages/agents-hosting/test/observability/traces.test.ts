@@ -74,7 +74,7 @@ describe('trace definitions', () => {
       const turnDuration = { record: sinon.stub() }
       sinon.stub(HostingMetrics, 'turnsTotalCounter').value(turnsTotal as any)
       sinon.stub(HostingMetrics, 'turnDuration').value(turnDuration as any)
-      const activity = Activity.fromObject({ type: 'message', channelId: 'msteams' })
+      const activity = Activity.fromObject({ type: 'message', channelId: 'msteams', name: 'test-activity' })
 
       const span = endTrace(AgentApplicationTraceDefinitions.run, {
         authorized: true,
@@ -90,6 +90,7 @@ describe('trace definitions', () => {
         'route.authorized': true,
         'route.matched': true,
         ...metricAttributes,
+        'activity.name': 'test-activity',
       })
       assertMetric(turnsTotal.add, 1, metricAttributes)
       assertMetric(turnDuration.record, duration, metricAttributes)
@@ -145,6 +146,7 @@ describe('trace definitions', () => {
         'route.authorized': false,
         'route.matched': false,
         ...metricAttributes,
+        'activity.name': 'unknown',
       })
       assertMetric(turnsTotal.add, 1, metricAttributes)
       assertMetric(turnDuration.record, duration, metricAttributes)
@@ -170,6 +172,7 @@ describe('trace definitions', () => {
         'route.authorized': false,
         'route.matched': false,
         ...metricAttributes,
+        'activity.name': 'unknown',
       })
       assertMetric(turnsTotal.add, 1, metricAttributes)
       assertMetric(turnDuration.record, duration, metricAttributes)
