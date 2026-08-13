@@ -179,8 +179,9 @@ export class CopilotStudioClient {
       }
     }
 
-    this.conversationId = responseHeaders?.get(CopilotStudioClient.conversationIdHeaderKey) ?? ''
-    if (this.conversationId) {
+    const conversationId = responseHeaders?.get(CopilotStudioClient.conversationIdHeaderKey)
+    if (conversationId) {
+      this.conversationId = conversationId
       logger.debug(`Conversation ID: ${this.conversationId}`)
     }
 
@@ -229,6 +230,10 @@ export class CopilotStudioClient {
         request = requestOrFlag
         managed.record({ shouldEmitStartEvent: request.emitStartConversationEvent ?? true })
       }
+
+      // A start request establishes a new current conversation. Reset any ID from a
+      // previous conversation so a headerless response can populate it from an activity.
+      this.conversationId = request.conversationId ?? ''
 
       const uriStart: string = getCopilotStudioConnectionUrl(this.settings, request.conversationId)
       const body: any = {
@@ -292,6 +297,9 @@ export class CopilotStudioClient {
       if (!conversationId || !conversationId.trim()) {
         throw ExceptionHelper.generateException(Error, Errors.ExecuteStreamingConversationIdRequired)
       }
+
+      // Explicit execution changes the current conversation used by subsequent calls.
+      this.conversationId = conversationId
 
       const uriExecute = getCopilotStudioConnectionUrl(this.settings, conversationId)
       const request: ExecuteTurnRequest = new ExecuteTurnRequest(activity, conversationId)

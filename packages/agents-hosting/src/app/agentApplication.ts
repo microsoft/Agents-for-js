@@ -87,6 +87,12 @@ export type ApplicationEventHandler<TState extends TurnState> = (context: TurnCo
  *
  */
 export class AgentApplication<TState extends TurnState> {
+  /** Turn-state key for the user authorization service configured on this application. */
+  public static readonly UserAuthorizationKey = Symbol('UserAuthorization')
+
+  /** Turn-state key for the token connections configured on this application. */
+  public static readonly ConnectionsKey = Symbol('Connections')
+
   protected readonly _options: AgentApplicationOptions<TState>
   protected readonly _routes: RouteList<TState> = new RouteList<TState>()
   protected readonly _beforeTurn: ApplicationEventHandler<TState>[] = []
@@ -717,6 +723,15 @@ export class AgentApplication<TState extends TurnState> {
       record({ authorized: true, activity: context.activity })
 
       try {
+        if (this._authorizationManager.handlers.length > 0) {
+          context.turnState.set(AgentApplication.UserAuthorizationKey, this._authorization)
+        }
+
+        const connections = this._options.connections ?? this._adapter?.connectionManager
+        if (connections) {
+          context.turnState.set(AgentApplication.ConnectionsKey, connections)
+        }
+
         if (this._options.startTypingTimer) {
           this.startTypingTimer(context)
         }

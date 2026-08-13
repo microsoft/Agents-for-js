@@ -76,4 +76,14 @@ export interface MsalConnectionSettings extends ConnectionSettingsBase {
    * The federated client ID for the authentication configuration, used for workload identity federation scenarios.
    */
   federatedClientId?: string
+
+  /**
+   * Maximum number of retries for an MSAL HTTP request that returns status 408.
+   *
+   * @remarks
+   * The initial request is not included in this count. Set to `0` to disable retries.
+   * Defaults to `2`.
+   */
+  msalRetryCount?: number
+
 }

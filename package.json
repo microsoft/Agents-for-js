@@ -62,6 +62,11 @@
   "peerDependencies": {
     "@rushstack/terminal": "*"
   },
+  "overrides": {
+    "@microsoft/teams.common": {
+      "axios": "1.18.1"
+    }
+  },
   "engines": {
     "node": ">=20.0.0"
   }
