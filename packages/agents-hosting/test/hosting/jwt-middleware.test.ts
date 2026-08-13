@@ -4,7 +4,7 @@ import sinon from 'sinon'
 import jwt from 'jsonwebtoken'
 import { Response, NextFunction } from 'express'
 import { authorizeJWT, buildJwksUri, clearJwksClients, AuthConfiguration, Request } from '../../src'
-import { getJwksClient } from '../../src/auth/jwt-middleware'
+import { getAuthorizedAudience, getJwksClient } from '../../src/auth/jwt-middleware'
 
 describe('authorizeJWT', () => {
   let req: Request
@@ -86,6 +86,40 @@ describe('authorizeJWT', () => {
 
     assert((next as sinon.SinonStub).calledOnce)
     assert((res.status as sinon.SinonStub).notCalled)
+
+    decodeStub.restore()
+    verifyStub.restore()
+  })
+
+  it('should validate the issuer for and preserve the matched connection audience', async () => {
+    const token = 'valid-token'
+    const alternateConnection: AuthConfiguration = {
+      clientId: 'alternate-client-id',
+      tenantId: 'alternate-tenant-id',
+      issuers: ['alternate-issuer'],
+      validateIssuer: true,
+      authority: 'http://login.microsoftonline.com'
+    }
+    config.connections = new Map([
+      ['default', connections.get('test')!],
+      ['alternate', alternateConnection]
+    ])
+    const audiences = ['secondary-audience', alternateConnection.clientId!]
+    req.headers.authorization = ['Bear', 'er ', token].join('')
+
+    const decodeStub = sinon.stub(jwt, 'decode').returns({ aud: audiences, iss: 'alternate-issuer' })
+    const verifyStub = sinon.stub(jwt, 'verify').callsFake((_token, _secretOrPublicKey, options, callback) => {
+      assert.deepStrictEqual(options?.audience, [alternateConnection.clientId, 'https://api.botframework.com'])
+      if (callback) {
+        callback(null, { aud: audiences, iss: 'alternate-issuer' })
+      }
+    })
+
+    await authorizeJWT(config)(req as Request, res as Response, next)
+
+    assert((next as sinon.SinonStub).calledOnce)
+    assert((res.status as sinon.SinonStub).notCalled)
+    assert.strictEqual(getAuthorizedAudience(req), alternateConnection.clientId)
 
     decodeStub.restore()
     verifyStub.restore()
@@ -262,12 +296,14 @@ describe('authorizeJWT', () => {
         tenantId: 'my-tenant',
         authority: 'https://login.microsoftonline.com'
       }
+      const missingIssuer = undefined as unknown as string
+      const malformedIssuer = { malformed: true } as unknown as string
       assert.strictEqual(
-        buildJwksUri(undefined as unknown as string, authConfig),
+        buildJwksUri(missingIssuer, authConfig),
         'https://login.microsoftonline.com/my-tenant/discovery/v2.0/keys'
       )
       assert.strictEqual(
-        buildJwksUri({ malformed: true } as unknown as string, authConfig),
+        buildJwksUri(malformedIssuer, authConfig),
         'https://login.microsoftonline.com/my-tenant/discovery/v2.0/keys'
       )
     })
