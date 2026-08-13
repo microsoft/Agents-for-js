@@ -84,7 +84,7 @@ function endTrace<TRecord extends object, TActions extends object> (
   error?: unknown
 ): TestSpan {
   const span = createSpan()
-  definition.end({ span: span as unknown as Span, record, duration, error })
+  definition.end({ span, record, duration, error })
   return span
 }
 
@@ -93,7 +93,7 @@ function endTraceWithIncompleteRecord<TRecord extends object, TActions extends o
   record: Record<string, unknown>
 ): TestSpan {
   const span = createSpan()
-  definition.end({ span: span as unknown as Span, record: record as TRecord, duration })
+  definition.end({ span, record: record as TRecord, duration })
   return span
 }
 
@@ -123,7 +123,7 @@ describe('Copilot Studio client trace definitions', () => {
     sinon.stub(CopilotStudioClientMetrics, 'requestsErrorCounter').value({ add: requestErrors })
     sinon.stub(CopilotStudioClientMetrics, 'streamDuration').value({ record: streamDuration })
     const span = createSpan()
-    const actions = CopilotStudioClientTraceDefinitions.postRequest.actions!({ span: span as unknown as Span }) as PostRequestActions
+    const actions = CopilotStudioClientTraceDefinitions.postRequest.actions!({ span }) as PostRequestActions
     actions.receivedFromCopilot(Activity.fromObject({ type: 'message', conversation: { id: 'conversation-id' } }))
 
     const endedSpan = endTrace(CopilotStudioClientTraceDefinitions.postRequest, {
@@ -217,7 +217,7 @@ describe('Copilot Studio client trace definitions', () => {
     sinon.stub(CopilotStudioClientMetrics, 'subscribeAsyncCounter').value({ add: subscriptions })
     sinon.stub(CopilotStudioClientMetrics, 'streamDuration').value({ record: streamDuration })
     const span = createSpan()
-    const actions = CopilotStudioClientTraceDefinitions.subscribeAsync.actions!({ span: span as unknown as Span }) as SubscribeAsyncActions
+    const actions = CopilotStudioClientTraceDefinitions.subscribeAsync.actions!({ span }) as SubscribeAsyncActions
     const event: SubscribeEvent = { eventId: 'event-id', activity: Activity.fromObject({ type: 'message' }) }
     actions.eventReceivedFromCopilot(event)
 
@@ -263,9 +263,9 @@ describe('Copilot Studio client trace definitions', () => {
     const activity = Activity.fromObject({ type: 'message' })
 
     const requestSpan = createSpan()
-    ;(CopilotStudioClientTraceDefinitions.postRequest.actions!({ span: requestSpan as unknown as Span }) as PostRequestActions).receivedFromCopilot(activity)
+    ;(CopilotStudioClientTraceDefinitions.postRequest.actions!({ span: requestSpan }) as PostRequestActions).receivedFromCopilot(activity)
     const subscriptionSpan = createSpan()
-    ;(CopilotStudioClientTraceDefinitions.subscribeAsync.actions!({ span: subscriptionSpan as unknown as Span }) as SubscribeAsyncActions).eventReceivedFromCopilot({ activity })
+    ;(CopilotStudioClientTraceDefinitions.subscribeAsync.actions!({ span: subscriptionSpan }) as SubscribeAsyncActions).eventReceivedFromCopilot({ activity })
 
     assert.deepEqual(requestSpan.events[0].attributes, { 'copilot.post_request.activity.type': 'message', 'copilot.post_request.activity.conversation_id': 'unknown' })
     assert.deepEqual(subscriptionSpan.events[0].attributes, { 'copilot.subscribe_async.event.id': 'unknown', 'copilot.subscribe_async.event.activity.type': 'message' })
