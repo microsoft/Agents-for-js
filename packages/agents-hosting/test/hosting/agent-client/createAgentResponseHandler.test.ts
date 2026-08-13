@@ -155,7 +155,8 @@ describe('createAgentResponseHandler authentication', () => {
     assert.deepStrictEqual(res.body, { 'agent-response-auth-error': 'caller is not authorized for this conversation' })
     assert.strictEqual(invoked, false)
     const stored = await storage.read(['test/conversations/c1'])
-    assert.strictEqual((stored['test/conversations/c1'] as any).c1.expectedAgentClientId, 'delegated-agent-client-id')
+    const storedConversation = stored['test/conversations/c1'] as { c1: { expectedAgentClientId: string } }
+    assert.strictEqual(storedConversation.c1.expectedAgentClientId, 'delegated-agent-client-id')
   })
 
   it('continues with the host audience selected during adapter authorization', async () => {

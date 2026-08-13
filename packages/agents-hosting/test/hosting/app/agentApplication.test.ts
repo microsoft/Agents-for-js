@@ -300,7 +300,9 @@ describe('Application', () => {
     let clock: sinon.SinonFakeTimers
 
     beforeEach(() => {
-      clock = sinon.useFakeTimers()
+      clock = sinon.useFakeTimers({
+        toFake: ['setTimeout', 'clearTimeout'],
+      })
     })
 
     afterEach(() => {

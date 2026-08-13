@@ -49,7 +49,8 @@ describe('UserTokenClient', () => {
       await client.getTokenStatus('user-id', 'msteams')
       await client.getTokenStatus('user-id', 'msteams')
 
-      assert.strictEqual((authProvider.getAccessToken as sinon.SinonStub).calledOnce, true)
+      const getAccessTokenStub = authProvider.getAccessToken as sinon.SinonStub
+      assert.strictEqual(getAccessTokenStub.calledOnce, true)
     })
 
     it('should retry lazy token acquisition after a short token response', async () => {

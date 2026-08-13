@@ -171,6 +171,7 @@ Each package has its own `tsconfig.json` that extends the root configuration.
 - Place tests in `test/` directory within each package
 - Name test files with `.test.ts` suffix
 - Tests run with `tsx` for TypeScript support
+- Do not leave a TypeScript cast (`as` or angle-bracket assertion) in a test callback's final executable statement. The VS Code `node:test` extension uses a loose parser for TypeScript; assign the cast result to a typed local earlier in the callback instead.
 
 ## Common Patterns
 
