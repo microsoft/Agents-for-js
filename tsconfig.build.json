@@ -32,6 +32,9 @@
         "path": "packages/agents-hosting-extensions-teams"
       },
       {
+        "path": "packages/agents-hosting-extensions-msteams"
+      },
+      {
         "path": "packages/agents-hosting-extensions-slack"
       },
       {
@@ -66,6 +69,9 @@
       },
       {
         "path": "test-agents/root-agent"
+      },
+      {
+        "path": "test-agents/a2a-agent"
       }
     ]
   }
