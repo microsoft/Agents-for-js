@@ -7,11 +7,42 @@
 import { ActivityHandler } from '@microsoft/agents-hosting';
 import { AgentApplication } from '@microsoft/agents-hosting';
 import { AuthConfiguration } from '@microsoft/agents-hosting';
+import { CloudAdapterResult } from '@microsoft/agents-hosting';
+import { createCloudAdapter } from '@microsoft/agents-hosting';
 import express from 'express';
+import { Request as Request_2 } from '@microsoft/agents-hosting';
 import { TurnState } from '@microsoft/agents-hosting';
+import { WebResponse } from '@microsoft/agents-hosting';
 
 // @public
-export const startServer: (agent: AgentApplication<TurnState<any, any>> | ActivityHandler, authConfiguration?: AuthConfiguration) => express.Express;
+export type AgentRequestHandler = (req: Request_2, res: WebResponse) => Promise<void>;
+
+export { CloudAdapterResult }
+
+// @public
+export const createAgentRequestHandler: (agent: AgentApplication<TurnState<any, any>> | ActivityHandler, authConfiguration?: AuthConfiguration) => AgentRequestHandler;
+
+export { createCloudAdapter }
+
+// @public
+export function startServer(agent: AgentApplication<TurnState<any, any>> | ActivityHandler, options?: StartServerOptions): express.Express;
+
+// @public (undocumented)
+export function startServer(agent: AgentApplication<TurnState<any, any>> | ActivityHandler, authConfiguration?: AuthConfiguration): express.Express;
+
+// @public
+export interface StartServerOptions {
+    authConfig?: AuthConfiguration;
+    beforeListen?: (app: express.Express) => void;
+    port?: number | string;
+    rateLimitOptions?: {
+        windowMs: number;
+        max: number;
+    };
+    routePath?: string;
+}
+
+export { WebResponse }
 
 // (No @packageDocumentation comment for this package)
 

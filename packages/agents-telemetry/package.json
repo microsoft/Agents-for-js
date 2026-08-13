@@ -44,6 +44,7 @@
     "@opentelemetry/api-logs": "0.214.0"
   },
   "dependencies": {
+    "@microsoft/agents-activity": "file:../agents-activity",
     "debug": "^4.4.3"
   },
   "license": "MIT",
