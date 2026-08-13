@@ -547,6 +547,7 @@ export class CloudAdapter extends BaseAdapter {
     protected _agentName?: string;
     // (undocumented)
     protected readonly authConfig: AuthConfiguration;
+    authorizeRequest(req: Request_2, res: WebResponse, next: NextFunction): Promise<void>;
     connectionManager: Connections;
     continueConversation(botAppIdOrIdentity: string | JwtPayload, reference: ConversationReference, logic: (revocableContext: TurnContext) => Promise<void>, isResponse?: Boolean): Promise<void>;
     protected createConnectorClient(serviceUrl: string, scope: string, identity: JwtPayload, headers?: HeaderPropagationCollection): Promise<ConnectorClient>;
@@ -562,6 +563,7 @@ export class CloudAdapter extends BaseAdapter {
     getAttachment(context: TurnContext, attachmentId: string, viewId: string): Promise<NodeJS.ReadableStream>;
     // @deprecated (undocumented)
     getAttachmentInfo(context: TurnContext, attachmentId: string): Promise<AttachmentInfo>;
+    getClientId(): string | undefined;
     process(request: Request_2, res: WebResponse, logic: (context: TurnContext) => Promise<void>, headerPropagation?: HeaderPropagationDefinition): Promise<void>;
     protected processTurnResults(context: TurnContext): InvokeResponse | undefined;
     protected resolveIfConnectorClientIsNeeded(activity: Activity): boolean;
@@ -719,6 +721,7 @@ export interface ConversationClaims {
 // @public
 export interface ConversationData {
     conversationReference: ConversationReference;
+    expectedAgentClientId?: string;
     nameRequested: boolean;
 }
 
