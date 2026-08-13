@@ -1,0 +1,291 @@
+name: Teams API Drift Detector
+
+# Compares a declared @microsoft/teams.api update with the extension's recorded usage.
+# It classifies compatibility impact, publishes deterministic evidence, and generates an advisory report.
+on:
+  workflow_dispatch:
+    inputs:
+      from:
+        description: Baseline @microsoft/teams.api version
+        required: true
+        type: string
+      to:
+        description: Candidate @microsoft/teams.api version
+        required: true
+        type: string
+  pull_request:
+    branches:
+      - main
+      - release/*
+    # This workflow analyzes declared @microsoft/teams.api dependency updates only.
+    paths:
+      - packages/agents-hosting-extensions-msteams/package.json
+
+permissions:
+  contents: read
+  copilot-requests: write
+  pull-requests: write
+
+jobs:
+  analysis-scope:
+    name: Determine analysis scope
+    runs-on: ubuntu-latest
+    outputs:
+      run_dependency_drift_analysis: ${{ steps.select-checks.outputs.run_dependency_drift_analysis }}
+      baseline_version: ${{ steps.resolve-versions.outputs.baseline_version }}
+      candidate_version: ${{ steps.resolve-versions.outputs.candidate_version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      # Manual runs always analyze the requested versions; pull requests run only for dependency updates.
+      - id: select-checks
+        name: Select required checks
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "run_dependency_drift_analysis=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          dependency_changed=false
+          if git diff --unified=0 "$BASE_SHA" "$HEAD_SHA" -- packages/agents-hosting-extensions-msteams/package.json | grep -q '"@microsoft/teams.api"'; then
+            dependency_changed=true
+          fi
+
+          echo "run_dependency_drift_analysis=$dependency_changed" >> "$GITHUB_OUTPUT"
+
+      - id: resolve-versions
+        name: Resolve comparison versions
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          INPUT_FROM: ${{ inputs.from }}
+          INPUT_TO: ${{ inputs.to }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "baseline_version=$INPUT_FROM" >> "$GITHUB_OUTPUT"
+            echo "candidate_version=$INPUT_TO" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          base_range=$(git show "$BASE_SHA:packages/agents-hosting-extensions-msteams/package.json" | node -e "let input=''; process.stdin.on('data', value => { input += value }); process.stdin.on('end', () => { const version = JSON.parse(input).dependencies['@microsoft/teams.api']; const match = version?.match(/[0-9]+\\.[0-9]+\\.[0-9]+/); if (!match) process.exit(1); console.log(match[0]) })")
+          candidate_range=$(node -p "require('./packages/agents-hosting-extensions-msteams/package.json').dependencies['@microsoft/teams.api']")
+          candidate_version=$(node -e "const match = process.argv[1].match(/[0-9]+\\.[0-9]+\\.[0-9]+/); if (!match) process.exit(1); console.log(match[0])" "$candidate_range")
+          echo "baseline_version=$base_range" >> "$GITHUB_OUTPUT"
+          echo "candidate_version=$candidate_version" >> "$GITHUB_OUTPUT"
+
+  # Verify teams.api dependency compatibility when the dependency version changes.
+  teams-api-compatibility:
+    name: Analyze teams.api compatibility
+    needs: analysis-scope
+    if: needs.analysis-scope.outputs.run_dependency_drift_analysis == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+
+      # Continue so reports and artifacts describe all checks before the final policy fails the run.
+      - id: build
+        name: Build
+        run: npm run build
+        continue-on-error: true
+      - id: verify-usage-manifest
+        name: Verify dependency usage manifest
+        if: always()
+        run: test -f packages/agents-hosting-extensions-msteams/teams-api-usage-manifest.json
+        continue-on-error: true
+      # Capture the complete upstream API delta before determining whether this extension consumes it.
+      - id: compare-upstream-api-models
+        name: Compare teams.api API models
+        if: always() && steps.build.outcome == 'success'
+        run: |
+          npm run compare:teams-api -- \
+            --from "${{ needs.analysis-scope.outputs.baseline_version }}" \
+            --to "${{ needs.analysis-scope.outputs.candidate_version }}" \
+            --output artifacts/teams-api-drift
+        continue-on-error: true
+      - id: run-compile-time-contracts-tests
+        name: Run compile-time contracts tests
+        if: always() && steps.build.outcome == 'success'
+        run: npm run test:teams-api-contracts
+        continue-on-error: true
+      - id: run-runtime-boundaries-tests
+        name: Run Teams API runtime boundaries tests
+        if: always() && steps.build.outcome == 'success'
+        run: node --test --import tsx packages/agents-hosting-extensions-msteams/test/boundaries/teamsApiClientBehavior.test.ts
+        continue-on-error: true
+      # Intersect the upstream delta with actual extension usage; defer fail-on-drift to preserve reports.
+      - id: classify-usage-impact
+        name: Classify direct compatibility impact
+        if: always() && steps.compare-upstream-api-models.outcome == 'success'
+        run: npm run detect:teams-api-drifts -- --comparison artifacts/teams-api-drift/raw-api-diff.json --output artifacts/teams-api-drift --fail-on-drift
+        continue-on-error: true
+      - id: write-verification-summary
+        name: Write verification summary
+        if: always()
+        run: >-
+          npm run write:teams-api-test-summary --
+          --build "${{ steps.build.outcome }}"
+          --usage-collection "${{ steps.verify-usage-manifest.outcome }}"
+          --api-extraction "${{ steps.compare-upstream-api-models.outcome }}"
+          --api-comparison "${{ steps.compare-upstream-api-models.outcome }}"
+          --contract-tests "${{ steps.run-compile-time-contracts-tests.outcome }}"
+          --boundary-tests "${{ steps.run-runtime-boundaries-tests.outcome }}"
+          --output artifacts/teams-api-drift
+        continue-on-error: true
+      - id: render-deterministic-report
+        name: Render deterministic report
+        if: always() && steps.classify-usage-impact.outcome != 'skipped' && steps.write-verification-summary.outcome == 'success'
+        run: npm run render:teams-api-drift-report -- --findings artifacts/teams-api-drift/findings.json --test-summary artifacts/teams-api-drift/test-summary.json --output artifacts/teams-api-drift
+        continue-on-error: true
+      # Trusted runs only: Copilot receives bounded context and is denied all repository tools.
+      - id: prepare-agent-context
+        name: Prepare bounded AI agent context
+        if: >-
+          always() &&
+          steps.render-deterministic-report.outcome == 'success' &&
+          (github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false))
+        run: >-
+          npm run prepare:teams-api-agent-report --
+          --findings artifacts/teams-api-drift/findings.json
+          --usage-manifest packages/agents-hosting-extensions-msteams/teams-api-usage-manifest.json
+          --capabilities packages/agents-hosting-extensions-msteams/config/teams-capabilities.yaml
+          --deterministic-report artifacts/teams-api-drift/deterministic-report.md
+          --test-summary artifacts/teams-api-drift/test-summary.json
+          --output artifacts/teams-api-drift
+        continue-on-error: true
+      - id: install-copilot-cli
+        name: Install GitHub Copilot CLI
+        if: always() && steps.prepare-agent-context.outcome == 'success'
+        run: npm install --global @github/copilot
+        continue-on-error: true
+      - id: generate-advisory-report
+        name: Generate advisory AI report
+        if: always() && steps.install-copilot-cli.outcome == 'success'
+        env:
+          # Authenticates GitHub Copilot CLI with this workflow's copilot-requests permission.
+          GITHUB_TOKEN: ${{ github.token }}
+          PROMPT_FILE: scripts/teams-api-drift/teams-api-agent-report-prompt.md
+          CONTEXT_FILE: artifacts/teams-api-drift/agent-context.json
+          REPORT_FILE: artifacts/teams-api-drift/agent-report.md
+        run: |
+          agent_prompt=$(cat "$PROMPT_FILE")
+          agent_context=$(cat "$CONTEXT_FILE")
+          copilot \
+            -s \
+            -p "$agent_prompt
+
+          ## Runtime context
+
+          \`\`\`json
+          $agent_context
+          \`\`\`" \
+            --deny-tool='shell,write,read,url,memory,github' \
+            --no-ask-user \
+            > "$REPORT_FILE"
+          test -s "$REPORT_FILE"
+        continue-on-error: true
+      - id: validate-advisory-report
+        name: Validate advisory AI report
+        if: always() && steps.generate-advisory-report.outcome == 'success'
+        run: >-
+          npm run validate:teams-api-agent-report --
+          --findings artifacts/teams-api-drift/findings.json
+          --report artifacts/teams-api-drift/agent-report.md
+          --output artifacts/teams-api-drift
+        continue-on-error: true
+      # Upload all evidence before the final policy turns collected failures into a failed workflow.
+      - name: Upload compatibility artifacts
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: teams-api-drift-${{ github.run_id }}
+          path: artifacts/teams-api-drift
+          if-no-files-found: warn
+          retention-days: 21
+      # Upsert one marker-based summary comment only for trusted pull requests.
+      - name: Publish pull-request comment
+        if: always() && (github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false) && steps.render-deterministic-report.outcome == 'success'
+        uses: actions/github-script@v7
+        env:
+          ARTIFACT_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        with:
+          script: |
+            const fs = require('fs')
+            const findings = JSON.parse(fs.readFileSync('artifacts/teams-api-drift/findings.json', 'utf8'))
+            const marker = '<!-- teams-api-drift-report -->'
+            const actionableFindings = findings.findings
+              .filter(finding => finding.classification !== 'no-action')
+            const actionable = actionableFindings.slice(0, 5)
+            const lines = [
+              marker,
+              '## TEAMS API drift analysis',
+              '',
+              `Compared \`${findings.fromVersion}\` to \`${findings.toVersion}\`.`,
+              `The analysis identified **${findings.findings.length}** total findings, of which **${actionableFindings.length}** require attention.`,
+              `Blocking: **${findings.summary.blocking}** · Required: **${findings.summary.required}** · Review: **${findings.summary.review}**.`,
+              '',
+              ...actionable.map(finding => `- **${finding.id}** — ${finding.classification} · ${finding.kind}: \`${finding.upstreamSymbol}${finding.member ? `.${finding.member}` : ''}\``),
+              '',
+              `Find the full report and artifacts in: ${process.env.ARTIFACT_URL}`
+            ]
+            const body = lines.join('\n')
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            })
+            const existing = comments.find(comment => comment.body.includes(marker))
+            if (existing) {
+              await github.rest.issues.updateComment({ owner: context.repo.owner, repo: context.repo.repo, comment_id: existing.id, body })
+            } else {
+              await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body })
+            }
+      # Convert deferred check outcomes into the final workflow result after reports and artifacts are available.
+      - name: Report final workflow result
+        if: always()
+        env:
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
+          USAGE_MANIFEST_OUTCOME: ${{ steps.verify-usage-manifest.outcome }}
+          UPSTREAM_COMPARISON_OUTCOME: ${{ steps.compare-upstream-api-models.outcome }}
+          COMPILE_TIME_CONTRACTS_OUTCOME: ${{ steps.run-compile-time-contracts-tests.outcome }}
+          RUNTIME_BOUNDARIES_OUTCOME: ${{ steps.run-runtime-boundaries-tests.outcome }}
+          IMPACT_CLASSIFICATION_OUTCOME: ${{ steps.classify-usage-impact.outcome }}
+          VERIFICATION_SUMMARY_OUTCOME: ${{ steps.write-verification-summary.outcome }}
+          DETERMINISTIC_REPORT_OUTCOME: ${{ steps.render-deterministic-report.outcome }}
+          RUN_AI_AGENT: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false) }}
+          AGENT_CONTEXT_OUTCOME: ${{ steps.prepare-agent-context.outcome }}
+          COPILOT_INSTALL_OUTCOME: ${{ steps.install-copilot-cli.outcome }}
+          AGENT_REPORT_OUTCOME: ${{ steps.generate-advisory-report.outcome }}
+          AGENT_VALIDATION_OUTCOME: ${{ steps.validate-advisory-report.outcome }}
+        run: |
+          for outcome in "$BUILD_OUTCOME" "$USAGE_MANIFEST_OUTCOME" "$UPSTREAM_COMPARISON_OUTCOME" "$COMPILE_TIME_CONTRACTS_OUTCOME" "$RUNTIME_BOUNDARIES_OUTCOME" "$IMPACT_CLASSIFICATION_OUTCOME" "$VERIFICATION_SUMMARY_OUTCOME" "$DETERMINISTIC_REPORT_OUTCOME"; do
+            if [ "$outcome" != success ]; then
+              echo "Blocking teams.api drift check outcome: $outcome"
+              exit 1
+            fi
+          done
+
+          if [ "$RUN_AI_AGENT" = true ]; then
+            for outcome in "$AGENT_CONTEXT_OUTCOME" "$COPILOT_INSTALL_OUTCOME" "$AGENT_REPORT_OUTCOME" "$AGENT_VALIDATION_OUTCOME"; do
+              if [ "$outcome" != success ]; then
+                echo "Blocking teams.api AI report outcome: $outcome"
+                exit 1
+              fi
+            done
+          fi
