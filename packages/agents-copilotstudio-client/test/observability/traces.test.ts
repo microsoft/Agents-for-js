@@ -4,7 +4,6 @@
 import { strict as assert } from 'assert'
 import { afterEach, describe, it } from 'node:test'
 import type { TraceDefinition } from '@microsoft/agents-telemetry'
-import type { Span } from '@opentelemetry/api'
 import { Activity } from '@microsoft/agents-activity'
 import * as sinon from 'sinon'
 import { CopilotStudioClientMetrics } from '../../src/observability/metrics'
