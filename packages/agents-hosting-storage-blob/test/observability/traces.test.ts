@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { strict as assert } from 'assert'
+import { strict as assert } from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 import type { TraceDefinition } from '@microsoft/agents-telemetry'
 import * as sinon from 'sinon'
@@ -45,13 +45,13 @@ function createSpan (): TestSpan {
 
 function endTrace<TRecord extends object, TActions extends object> (definition: TraceDefinition<TRecord, TActions>, record: TRecord): TestSpan {
   const span = createSpan()
-  definition.end({ span: span as unknown as TestSpan, record, duration })
+  definition.end({ span, record, duration })
   return span
 }
 
 function endTraceWithIncompleteRecord<TRecord extends object, TActions extends object> (definition: TraceDefinition<TRecord, TActions>): TestSpan {
   const span = createSpan()
-  definition.end({ span: span as unknown as TestSpan, record: { keyCount: undefined } as TRecord, duration })
+  definition.end({ span, record: { keyCount: undefined } as TRecord, duration })
   return span
 }
 
