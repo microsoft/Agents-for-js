@@ -18,6 +18,11 @@ describe('HostingErrors', () => {
     assert.strictEqual(Errors.AttachmentDataRequired.code, -120250)
     assert.strictEqual(Errors.AttachmentIdRequired.code, -120260)
     assert.strictEqual(Errors.ViewIdRequired.code, -120270)
+
+    assert.strictEqual(Errors.ConnectionSettingsRequiredForGetAccessTokenScope.code, -120381)
+    assert.strictEqual(Errors.ContinueConversationBotAppIdOrIdentityRequired.code, -120631)
+    assert.strictEqual(Errors.InvalidStatePath.code, -120731)
+    assert.strictEqual(Errors.ContinueConversationAdapterRequired.code, -120902)
   })
 
   it('should contain error message in description', () => {
@@ -30,6 +35,16 @@ describe('HostingErrors', () => {
   it('should support parameter substitution in error messages', () => {
     const error = ExceptionHelper.generateException(Error, Errors.ConnectionNotFound, undefined, { connectionName: 'test-conn' })
     assert.ok(error.message.includes('test-conn'))
+
+    const invalidStatePath = ExceptionHelper.generateException(Error, Errors.InvalidStatePath, undefined, { path: 'conversation.user.name.extra' })
+    assert.ok(invalidStatePath.message.includes('conversation.user.name.extra'))
+
+    const handlerType = ExceptionHelper.generateException(Error, Errors.ConversationUpdateHandlerMustBeFunction, undefined, {
+      event: 'membersAdded',
+      handlerType: 'string'
+    })
+    assert.ok(handlerType.message.includes('membersAdded'))
+    assert.ok(handlerType.message.includes('string'))
   })
 
   it('should have all required properties', () => {

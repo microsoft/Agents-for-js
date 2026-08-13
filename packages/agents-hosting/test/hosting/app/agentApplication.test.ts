@@ -13,6 +13,7 @@ import { RouteRank } from './../../../src/app/routeRank'
 import { CloudAdapter } from '../../../src/cloudAdapter'
 import { createStubInstance, SinonStub } from 'sinon'
 import { ConsoleTranscriptLogger } from '../../../src/transcript/consoleTranscriptLogger'
+import type { Connections } from '../../../src/auth/connections'
 
 class RecordingTestAdapter extends TestAdapter {
   public readonly sentActivities: Activity[] = []
@@ -99,6 +100,18 @@ describe('Application', () => {
     await context.sendActivity('test')
     assert.equal(called, true)
     assert.equal(handled, true)
+  })
+
+  it('should register configured connections in turn state', async () => {
+    const connections = {} as Connections
+    const localApp = new AgentApplication({ connections })
+    const context = new TurnContext(testAdapter, testActivity)
+
+    localApp.onActivity(ActivityTypes.Message, async (turnContext) => {
+      assert.strictEqual(turnContext.turnState.get(AgentApplication.ConnectionsKey), connections)
+    })
+
+    assert.equal(await localApp.runInternal(context), true)
   })
 
   it('should route to an agentic activity handler', async () => {

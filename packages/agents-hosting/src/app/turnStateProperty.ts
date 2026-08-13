@@ -7,6 +7,8 @@ import { TurnContext } from '../turnContext'
 import { StatePropertyAccessor } from '../state'
 import { TurnStateEntry } from './turnStateEntry'
 import { TurnState } from './turnState'
+import { ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from '../errorHelper'
 
 /**
  * Maps an application's Turn State property to a State property.
@@ -27,12 +29,12 @@ export class TurnStateProperty<T = any> implements StatePropertyAccessor<T> {
 
     const scope = state.getScope(scopeName)
     if (!scope) {
-      throw new Error(`TurnStateProperty: TurnState missing state scope named "${scope}".`)
+      throw ExceptionHelper.generateException(Error, Errors.TurnStateMissingStateScope, undefined, { scope: scopeName })
     }
 
     this._state = scope
     if (!this._state) {
-      throw new Error(`TurnStateProperty: TurnState missing state scope named "${scope}".`)
+      throw ExceptionHelper.generateException(Error, Errors.TurnStateMissingStateScope, undefined, { scope: scopeName })
     }
   }
 

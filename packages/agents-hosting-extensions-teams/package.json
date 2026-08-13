@@ -12,9 +12,11 @@
     "email": "agentssdk@microsoft.com",
     "url": "https://aka.ms/Agents"
   },
-  "description": "Microsoft 365 Agents SDK for JavaScript. Teams extensions",
+  "description": "DEPRECATED: Use @microsoft/agents-hosting-extensions-msteams instead.",
+  "deprecated": "This package is deprecated. Use @microsoft/agents-hosting-extensions-msteams instead.",
   "keywords": [
-    "Agents"
+    "Agents",
+    "deprecated"
   ],
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",

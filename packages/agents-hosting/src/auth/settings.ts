@@ -4,12 +4,28 @@
  */
 
 import { debug } from '@microsoft/agents-telemetry'
-import type { ConnectionMapItem } from './msalConnectionManager'
+import { ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from '../errorHelper'
+import type { MsalConnectionSettings } from './msal/msalConnectionSettings'
+import type { SidecarConnectionSettings } from './sidecar/sidecarConnectionSettings'
+
+export type { MsalConnectionSettings } from './msal/msalConnectionSettings'
+export type { SidecarConnectionSettings } from './sidecar/sidecarConnectionSettings'
 
 const logger = debug('agents:authConfiguration')
 
 const DEFAULT_CONNECTION = 'serviceConnection'
 const AUTHORITY_DEFAULT = 'https://login.microsoftonline.com'
+
+/**
+ * A single entry in the connections map used to route an inbound activity
+ * (matched by audience and/or serviceUrl) to a named connection.
+ */
+export interface ConnectionMapItem {
+  serviceUrl: string
+  audience?: string
+  connection: string
+}
 
 export const DEFAULT_CONNECTION_MAP: ConnectionMapItem = { serviceUrl: '*', connection: DEFAULT_CONNECTION }
 
@@ -53,8 +69,14 @@ export function applyDefaultSettings (config: AuthConfiguration) {
     settings.authority = settings.authorityEndpoint
   }
 
+  // .NET parity alias: keep altBlueprintConnectionName and alternateBlueprintConnectionName in sync.
+  settings.altBlueprintConnectionName ??= settings.alternateBlueprintConnectionName
+  if (settings.altBlueprintConnectionName) {
+    settings.alternateBlueprintConnectionName = settings.altBlueprintConnectionName
+  }
+
   if (!settings.clientId && process.env.NODE_ENV?.toLowerCase() === 'production') {
-    throw new Error('ClientId required in production')
+    throw ExceptionHelper.generateException(Error, Errors.ClientIdRequiredInProduction)
   }
 
   const defaultConnections = settings.connections?.size
@@ -171,9 +193,16 @@ function getDefaultIssuers (tenantId: string, authority: string) : string[] {
 }
 
 /**
- * Represents the authentication configuration.
+ * Connection-level settings common to every authentication provider.
+ *
+ * @remarks
+ * Mirrors the .NET `Microsoft.Agents.Authentication.ConnectionSettingsBase` abstract class: these are
+ * the credential-agnostic properties shared by all connection types. Provider-specific settings
+ * extend this base (see {@link MsalConnectionSettings} for MSAL and {@link SidecarConnectionSettings}
+ * for the Entra sidecar). The active provider for a connection is selected
+ * by {@link ConnectionSettingsBase.authType | authType}; see `AuthProviderFactory`.
  */
-export interface AuthConfiguration {
+export interface ConnectionSettingsBase {
   /**
    * The tenant ID for the authentication configuration.
    */
@@ -185,24 +214,9 @@ export interface AuthConfiguration {
   clientId?: string
 
   /**
-   * The client secret for the authentication configuration.
+   * The authentication type for the connection.
    */
-  clientSecret?: string
-
-  /**
-   * The path to the certificate PEM file.
-   */
-  certPemFile?: string
-
-  /**
-   * The path to the certificate key file.
-   */
-  certKeyFile?: string
-
-  /**
-   * Indicates whether to send the X5C param or not (for SNI authentication).
-   */
-  sendX5C?: boolean
+  authType?: AuthType | string
 
   /**
    * A list of valid issuers for the authentication configuration.
@@ -213,13 +227,6 @@ export interface AuthConfiguration {
    * The connection name for the authentication configuration.
    */
   connectionName?: string
-
-  /**
-   * @deprecated Use federatedClientId instead.
-   *
-   * The FIC (First-Party Integration Channel) client ID.
-   */
-  FICClientId?: string,
 
   /**
    * @deprecated Use authorityEndpoint instead.
@@ -234,60 +241,6 @@ export interface AuthConfiguration {
   authority?: string
 
   /**
-   * @deprecated Use scopes instead.
-   */
-  scope?: string
-
-  /**
-   * A map of connection names to their respective authentication configurations.
-   */
-  connections?: Map<string, AuthConfiguration>
-
-  /**
-   * A list of connection map items to map service URLs to connection names.
-   */
-  connectionsMap?: ConnectionMapItem[],
-
-  /**
-   * An optional alternative blueprint Connection name used when constructing a connector client.
-   */
-  altBlueprintConnectionName?: string
-
-  /**
-   * @deprecated Use `authType` set to `'WorkloadIdentity'` and `federatedTokenFile` instead.
-   *
-   * The path to K8s provided token.
-   */
-  WIDAssertionFile?: string
-
-  /**
-   * The Azure region for ESTS-R regional token acquisition (e.g. 'westus', 'eastus').
-   * When set, MSAL routes token requests to the specified regional endpoint.
-   * See https://learn.microsoft.com/en-us/entra/msal/javascript/node/regional-authorities for details.
-   */
-  azureRegion?: string
-
-  /**
-   * The authentication type for the connection.
-   */
-  authType?: AuthType | string
-
-  /**
-   * The path to the federated token file used for Workload Identity authentication.
-   */
-  federatedTokenFile?: string
-
-  /**
-   * Sets the resource URL for Identity Proxy Manager (IDPM).
-   *
-   * @remarks
-   * Set this to the appropriate resource identifier when the application is running in an environment,
-   * such as a Foundry container, that exposes Managed Identity through a container-specific IMDS endpoint.
-   * This setting is only meaningful when using Identity Proxy Manager (AuthType.IdentityProxyManager) for authentication.
-   */
-  idpmResource?: string
-
-  /**
    * Entra Authentication Endpoint to use.
    *
    * @remarks
@@ -298,14 +251,79 @@ export interface AuthConfiguration {
   authorityEndpoint?: string
 
   /**
-   * The federated client ID for the authentication configuration, used for workload identity federation scenarios.
+   * @deprecated Use scopes instead.
    */
-  federatedClientId?: string
+  scope?: string
 
   /**
    * The scopes for the authentication configuration.
    */
   scopes?: string[]
+
+  /**
+   * An optional alternative blueprint Connection name used when constructing a connector client.
+   *
+   * @remarks
+   * Equivalent to the .NET `AlternateBlueprintConnectionName` connection setting. {@link alternateBlueprintConnectionName}
+   * is an alias of this property that matches the .NET name exactly; when both are provided this property takes precedence.
+   */
+  altBlueprintConnectionName?: string
+
+  /**
+   * Alias of {@link altBlueprintConnectionName} named to match the .NET `AlternateBlueprintConnectionName`
+   * connection setting exactly.
+   *
+   * @remarks
+   * Provided for stricter .NET parity. The two properties are kept in sync during configuration normalization;
+   * {@link altBlueprintConnectionName} takes precedence when both are set.
+   */
+  alternateBlueprintConnectionName?: string
+}
+
+/**
+ * The complete settings for a single connection, across every provider.
+ *
+ * @remarks
+ * This is the per-connection unit that an `AuthProvider` consumes: it combines the common base
+ * ({@link ConnectionSettingsBase}) with the MSAL settings ({@link MsalConnectionSettings}) and the
+ * Entra sidecar settings ({@link SidecarConnectionSettings}). The active provider for a connection is
+ * selected by `authType`, so only the subset of these properties relevant to that provider is used.
+ *
+ * Conceptually this is the consumer-facing counterpart to the {@link AuthConfiguration} *container*:
+ * each value in {@link AuthConfiguration.connections} is the settings for one connection. It parallels
+ * the .NET `IConnectionSettings` (a single connection's settings) as distinct from the connection
+ * registry. {@link AuthConfiguration} extends this type for backward compatibility (it doubles as the
+ * settings for the legacy single connection).
+ */
+export interface ConnectionSettings extends MsalConnectionSettings, SidecarConnectionSettings {}
+
+/**
+ * Represents the authentication configuration.
+ *
+ * @remarks
+ * The agent-level authentication container. It owns the connection registry
+ * (`connections`/`connectionsMap`) and, for backward compatibility, also extends
+ * {@link ConnectionSettings} so the legacy single-connection shape (a flat config with `clientId`,
+ * `clientSecret`, etc.) keeps working — in that mode the top-level object *is* the one connection's
+ * settings. The active provider for each connection is dispatched by `authType` via
+ * `AuthProviderFactory`, so a single connection only uses the subset of these properties relevant to
+ * its provider.
+ */
+export interface AuthConfiguration extends ConnectionSettings {
+  /**
+   * The connection registry: a map of connection name to that connection's settings.
+   *
+   * @remarks
+   * Each value is the {@link ConnectionSettings} for one connection (typed as {@link AuthConfiguration}
+   * for backward compatibility; only the connection-settings subset is consumed). An `AuthProvider` is
+   * created per entry by `AuthProviderFactory`, dispatched by `authType`.
+   */
+  connections?: Map<string, AuthConfiguration>
+
+  /**
+   * A list of connection map items to map service URLs to connection names.
+   */
+  connectionsMap?: ConnectionMapItem[]
 }
 
 /**
@@ -319,5 +337,42 @@ export enum AuthType {
   SystemManagedIdentity = 'SystemManagedIdentity',
   FederatedCredentials = 'FederatedCredentials',
   WorkloadIdentity = 'WorkloadIdentity',
-  IdentityProxyManager = 'IdentityProxyManager'
+  IdentityProxyManager = 'IdentityProxyManager',
+  EntraAuthSideCar = 'EntraAuthSideCar'
+}
+
+/**
+ * Resolves the authentication type for a given authentication configuration.
+ * @remarks
+ * The function checks various properties of the `authConfig` object to determine the appropriate authentication type.
+ * It returns a string representing the resolved authentication type or 'unknown' if it cannot be determined.
+ * @param authConfig The authentication configuration object.
+ * @returns The resolved authentication type as a string or 'unknown' if it cannot be determined.
+ */
+export function resolveAuthType (authConfig?: AuthConfiguration): AuthType | string {
+  if (!authConfig) {
+    return 'none'
+  }
+  if (authConfig.authType) {
+    return authConfig.authType
+  }
+  if (authConfig.WIDAssertionFile !== undefined) {
+    return AuthType.WorkloadIdentity
+  }
+  if (authConfig.federatedClientId !== undefined || authConfig.FICClientId !== undefined) {
+    return AuthType.FederatedCredentials
+  }
+  if (authConfig.clientSecret !== undefined) {
+    return AuthType.ClientSecret
+  }
+  if (authConfig.certPemFile !== undefined && authConfig.certKeyFile !== undefined) {
+    return AuthType.Certificate
+  }
+  if (authConfig.clientSecret === undefined && authConfig.certPemFile === undefined && authConfig.certKeyFile === undefined) {
+    return AuthType.UserManagedIdentity
+  }
+  if (authConfig.idpmResource !== undefined) {
+    return AuthType.IdentityProxyManager
+  }
+  return 'unknown'
 }

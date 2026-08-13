@@ -1,7 +1,7 @@
 import { strict as assert } from 'assert'
 import { describe, it, beforeEach, afterEach } from 'node:test'
 import { AuthConfiguration, getAuthConfigWithDefaults, loadAuthConfigFromEnv, loadPrevAuthConfigFromEnv, resolveAuthority } from '../../src'
-import { envParser, envParserUtils } from '../../src/auth/settings'
+import { AuthType, envParser, envParserUtils, resolveAuthType } from '../../src/auth/settings'
 
 describe('AuthConfiguration', () => {
   let originalEnv: NodeJS.ProcessEnv
@@ -221,6 +221,48 @@ describe('AuthConfiguration', () => {
   })
 
   describe('getAuthConfigWithDefaults', () => {
+    it('should populate altBlueprintConnectionName from the alternateBlueprintConnectionName alias', () => {
+      delete process.env.authorityEndpoint
+      delete process.env.idpmResource
+
+      const customConfig: AuthConfiguration = {
+        clientId: 'custom-test-client',
+        clientSecret: 'custom-test-secret',
+        tenantId: 'custom-test-tenant',
+        issuers: ['https://example.com'],
+        alternateBlueprintConnectionName: 'alt-alias-connection'
+      }
+      const config: AuthConfiguration = getAuthConfigWithDefaults(customConfig)
+      assert.strictEqual(config.altBlueprintConnectionName, 'alt-alias-connection')
+      assert.strictEqual(config.alternateBlueprintConnectionName, 'alt-alias-connection')
+    })
+
+    it('should prefer altBlueprintConnectionName over the alternateBlueprintConnectionName alias when both are set', () => {
+      delete process.env.authorityEndpoint
+      delete process.env.idpmResource
+
+      const customConfig: AuthConfiguration = {
+        clientId: 'custom-test-client',
+        clientSecret: 'custom-test-secret',
+        tenantId: 'custom-test-tenant',
+        issuers: ['https://example.com'],
+        altBlueprintConnectionName: 'canonical-connection',
+        alternateBlueprintConnectionName: 'alias-connection'
+      }
+      const config: AuthConfiguration = getAuthConfigWithDefaults(customConfig)
+      assert.strictEqual(config.altBlueprintConnectionName, 'canonical-connection')
+      assert.strictEqual(config.alternateBlueprintConnectionName, 'canonical-connection')
+    })
+
+    it('should load altBlueprintConnectionName from the alternateBlueprintConnectionName env alias', () => {
+      delete process.env.authorityEndpoint
+      delete process.env.idpmResource
+      process.env.alternateBlueprintConnectionName = 'env-alias-connection'
+
+      const config: AuthConfiguration = loadAuthConfigFromEnv()
+      assert.strictEqual(config.altBlueprintConnectionName, 'env-alias-connection')
+    })
+
     it('should load configuration with defaults', () => {
       delete process.env.authorityEndpoint
       delete process.env.idpmResource
@@ -347,6 +389,16 @@ describe('AuthConfiguration', () => {
     })
   })
 
+  describe('resolveAuthType', () => {
+    it('should resolve auth type through the shared MSAL auth type helper', () => {
+      assert.strictEqual(resolveAuthType(undefined), 'none')
+      assert.strictEqual(resolveAuthType({ clientSecret: 'secret' }), AuthType.ClientSecret)
+      assert.strictEqual(resolveAuthType({ WIDAssertionFile: 'token-file', clientSecret: 'secret' }), AuthType.WorkloadIdentity)
+      assert.strictEqual(resolveAuthType({ certPemFile: 'cert.pem', certKeyFile: 'key.pem' }), AuthType.Certificate)
+      assert.strictEqual(resolveAuthType({ authType: 'Certificate' }), AuthType.Certificate)
+    })
+  })
+
   describe('azureRegion', () => {
     describe('with connections env vars', () => {
       beforeEach(() => {
@@ -372,6 +424,35 @@ describe('AuthConfiguration', () => {
       const config = loadAuthConfigFromEnv()
       assert.strictEqual(config.azureRegion, 'eastus')
       delete process.env.azureRegion
+    })
+  })
+
+  describe('msalRetryCount', () => {
+    it('should load msalRetryCount from connections env var', () => {
+      process.env['connections__serviceConnection__settings__clientId'] = 'test-client-id'
+      process.env['connections__serviceConnection__settings__msalRetryCount'] = '5'
+      process.env['connectionsMap__0__serviceUrl'] = '*'
+      process.env['connectionsMap__0__connection'] = 'serviceConnection'
+
+      const config = loadAuthConfigFromEnv()
+
+      assert.strictEqual(config.msalRetryCount, 5)
+    })
+
+    it('should load msalRetryCount from legacy env var', () => {
+      process.env.msalRetryCount = '4'
+
+      const config = loadAuthConfigFromEnv()
+
+      assert.strictEqual(config.msalRetryCount, 4)
+    })
+
+    it('should allow zero retries from env', () => {
+      process.env.msalRetryCount = '0'
+
+      const config = loadAuthConfigFromEnv()
+
+      assert.strictEqual(config.msalRetryCount, 0)
     })
   })
 

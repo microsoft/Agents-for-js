@@ -3,11 +3,12 @@
  * Licensed under the MIT License.
  */
 
-import { Activity, addAIToActivity, Attachment, Entity, ClientCitation, SensitivityUsageInfo, DeliveryModes, Channels } from '@microsoft/agents-activity'
+import { Activity, addAIToActivity, Attachment, Entity, ClientCitation, SensitivityUsageInfo, DeliveryModes, Channels, ExceptionHelper } from '@microsoft/agents-activity'
 import { TurnContext } from '../../turnContext'
 import { Citation } from './citation'
 import { CitationUtil } from './citationUtil'
 import { debug } from '@microsoft/agents-telemetry'
+import { Errors } from '../../errorHelper'
 
 const logger = debug('agents:streamingResponse')
 
@@ -137,7 +138,7 @@ export class StreamingResponse {
     }
 
     if (this._ended) {
-      throw new Error('The stream has already ended.')
+      throw ExceptionHelper.generateException(Error, Errors.StreamAlreadyEnded)
     }
 
     // Queue a typing activity
@@ -169,7 +170,7 @@ export class StreamingResponse {
     }
 
     if (this._ended) {
-      throw new Error('The stream has already ended.')
+      throw ExceptionHelper.generateException(Error, Errors.StreamAlreadyEnded)
     }
 
     // Update full message text
@@ -232,6 +233,7 @@ export class StreamingResponse {
     this._message = ''
     this._nextSequence = 1
     this._streamId = undefined
+    this._attachments = undefined
   }
 
   /**
@@ -248,6 +250,27 @@ export class StreamingResponse {
    */
   public setAttachments (attachments: Attachment[]): void {
     this._attachments = attachments
+  }
+
+  /**
+   * Adds an attachment to the collection of attachments for the final message.
+   *
+   * @param attachment The attachment to add. Must not be null or undefined.
+   * @throws Error if attachment is null or undefined.
+   *
+   * @remarks
+   * Attachments are only included in the final message sent by `endStream()`.
+   * They are not sent in intermediate typing activities.
+   */
+  public addAttachment (attachment: Attachment): void {
+    if (attachment === null || attachment === undefined) {
+      throw ExceptionHelper.generateException(Error, Errors.AttachmentNullOrUndefined)
+    }
+
+    if (!this._attachments) {
+      this._attachments = []
+    }
+    this._attachments.push(attachment)
   }
 
   /**
@@ -514,14 +537,8 @@ export class StreamingResponse {
     if (activity.deliveryMode === DeliveryModes.ExpectReplies) {
       this._isStreamingChannel = false
     } else if (Channels.Msteams === activity.channelIdChannel) {
-      if (activity.isAgenticRequest()) {
-        // Agentic requests do not support streaming responses at this time.
-        // TODO: Enable streaming for agentic requests when supported.
-        this._isStreamingChannel = false
-      } else {
-        this._isStreamingChannel = true
-        this._delayInMs = 1000
-      }
+      this._isStreamingChannel = true
+      this._delayInMs = 1000
     } else if (Channels.Webchat === activity.channelId || Channels.Directline === activity.channelId || Channels.Emulator === activity.channelId) {
       this._isStreamingChannel = true
       this._delayInMs = 500

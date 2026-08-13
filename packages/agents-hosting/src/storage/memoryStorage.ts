@@ -4,9 +4,11 @@
  */
 
 import { trace } from '@microsoft/agents-telemetry'
+import { ExceptionHelper } from '@microsoft/agents-activity'
 import { StorageTraceDefinitions } from '../observability'
 import { Storage, StoreItem } from './storage'
 import { debug } from '@microsoft/agents-telemetry'
+import { Errors } from '../errorHelper'
 
 const logger = debug('agents:memory-storage')
 
@@ -66,7 +68,7 @@ export class MemoryStorage implements Storage {
     return trace(StorageTraceDefinitions.read, async ({ record }) => {
       record({ keyCount: keys?.length })
       if (!keys || keys.length === 0) {
-        throw new ReferenceError('Keys are required when reading.')
+        throw ExceptionHelper.generateException(ReferenceError, Errors.StorageReadKeysRequired)
       }
 
       const data: StoreItem = {}
@@ -98,7 +100,7 @@ export class MemoryStorage implements Storage {
   async write (changes: StoreItem): Promise<void> {
     return trace(StorageTraceDefinitions.write, async ({ record }) => {
       if (!changes || changes.length === 0) {
-        throw new ReferenceError('Changes are required when writing.')
+        throw ExceptionHelper.generateException(ReferenceError, Errors.StorageWriteChangesRequired)
       }
       record({ keyCount: changes.length })
 
@@ -112,7 +114,7 @@ export class MemoryStorage implements Storage {
           if (newItem.eTag === oldItem.eTag) {
             this.saveItem(key, newItem)
           } else {
-            throw new Error(`Storage: error writing "${key}" due to eTag conflict.`)
+            throw ExceptionHelper.generateException(Error, Errors.StorageETagConflict, undefined, { key })
           }
         }
       }

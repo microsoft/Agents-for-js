@@ -46,7 +46,7 @@
     "@microsoft/microsoft-graph-types": "2.43.1",
     "@types/debug": "4.1.13",
     "@types/express": "5.0.6",
-    "@types/node": "25.6.0",
+    "@types/node": "26.1.1",
     "@types/sinon": "21.0.0",
     "esbuild": "0.28.1",
     "eslint": "9.39.2",
@@ -57,10 +57,15 @@
     "sinon": "21.0.3",
     "tsx": "4.22.4",
     "typedoc": "0.28.18",
-    "typescript": "5.9.3"
+    "typescript": "6.0.3"
   },
   "peerDependencies": {
     "@rushstack/terminal": "*"
+  },
+  "overrides": {
+    "@microsoft/teams.common": {
+      "axios": "1.18.1"
+    }
   },
   "engines": {
     "node": ">=20.0.0"
