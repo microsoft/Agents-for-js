@@ -50,7 +50,13 @@ function createStore (pages: BlobItem[][], deleted?: string[]): BlobsTranscriptS
 }
 
 function blob (name: string, timestamp: string): BlobItem {
-  return { name, metadata: { timestamp }, properties: {} } as BlobItem
+  return {
+    name,
+    deleted: false,
+    snapshot: '',
+    metadata: { timestamp },
+    properties: { lastModified: new Date(timestamp), etag: '' },
+  }
 }
 
 function createFilteringStore (
@@ -137,9 +143,11 @@ describe('BlobsTranscriptStore.listTranscripts', () => {
     const store = createStore([[
       {
         name: sanitizeBlobKey('teams/conv/file.json'),
+        deleted: false,
+        snapshot: '',
         metadata: { Timestamp: '2026-01-01T00:00:00.000Z' },
-        properties: {},
-      } as BlobItem,
+        properties: { lastModified: new Date('2026-01-01T00:00:00.000Z'), etag: '' },
+      },
     ]])
 
     const result = await store.listTranscripts('teams')
