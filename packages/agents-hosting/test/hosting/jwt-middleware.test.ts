@@ -70,12 +70,34 @@ describe('authorizeJWT', () => {
     verifyStub.restore()
   })
 
+  it('should authenticate when the configured client ID is one of multiple token audiences', async () => {
+    const token = 'valid-token'
+    const audiences = ['secondary-audience', config.clientId!]
+    req.headers.authorization = ['Bear', 'er ', token].join('')
+
+    const decodeStub = sinon.stub(jwt, 'decode').returns({ aud: audiences })
+    const verifyStub = sinon.stub(jwt, 'verify').callsFake((token, secretOrPublicKey, options, callback) => {
+      if (callback) {
+        callback(null, { aud: audiences })
+      }
+    })
+
+    await authorizeJWT(config)(req as Request, res as Response, next)
+
+    assert((next as sinon.SinonStub).calledOnce)
+    assert((res.status as sinon.SinonStub).notCalled)
+
+    decodeStub.restore()
+    verifyStub.restore()
+  })
+
   it('should respond with 401 if token is missing', async () => {
     await authorizeJWT(config)(req as Request, res as Response, next)
 
     assert((res.status as sinon.SinonStub).calledOnceWith(401))
     assert((res.send as sinon.SinonStub).calledOnceWith({ 'jwt-auth-error': 'authorization header not found' }))
-    assert((next as sinon.SinonStub).notCalled)
+    const nextStub = next as sinon.SinonStub
+    assert(nextStub.notCalled)
   })
 
   it('should respond with 401 if token is invalid', async () => {
@@ -97,7 +119,8 @@ describe('authorizeJWT', () => {
 
     assert((res.status as sinon.SinonStub).calledOnceWith(401))
     assert((res.send as sinon.SinonStub).calledOnceWith({ 'jwt-auth-error': 'invalid token' }))
-    assert((next as sinon.SinonStub).notCalled)
+    const nextStub = next as sinon.SinonStub
+    assert(nextStub.notCalled)
 
     decodeStub.restore()
     verifyStub.restore()
@@ -110,7 +133,8 @@ describe('authorizeJWT', () => {
 
     assert((res.status as sinon.SinonStub).calledOnceWith(405))
     assert((res.send as sinon.SinonStub).calledOnceWith({ 'jwt-auth-error': 'Method not allowed' }))
-    assert((next as sinon.SinonStub).notCalled)
+    const nextStub = next as sinon.SinonStub
+    assert(nextStub.notCalled)
   })
 
   it('should authenticate when a valid Bearer token is not the first array entry', async () => {
@@ -141,9 +165,10 @@ describe('authorizeJWT', () => {
 
     await authorizeJWT(config)(req as Request, res as Response, next)
 
+    const nextStub: sinon.SinonStub = next as sinon.SinonStub
     assert((res.status as sinon.SinonStub).calledOnceWith(401))
     assert((res.send as sinon.SinonStub).calledOnceWith({ 'jwt-auth-error': 'invalid authorization header' }))
-    assert((next as sinon.SinonStub).notCalled)
+    assert(nextStub.notCalled)
   })
 
   it('should respond with 401 and a stable message when a non-Error is thrown', async () => {

@@ -263,13 +263,15 @@ describe('createLocalAdapter', () => {
       superCalls.push({ context, reference })
     }
 
+    const reference = {
+      serviceUrl: 'https://example.com',
+      activityId: 'act-1',
+      conversation: { id: 'conv1' }
+    } as Parameters<CloudAdapter['deleteActivity']>[1]
+
     try {
       const context = createMockContext('https://example.com')
-      await adapter.deleteActivity(context, {
-        serviceUrl: 'https://example.com',
-        activityId: 'act-1',
-        conversation: { id: 'conv1' } as any
-      })
+      await adapter.deleteActivity(context, reference)
 
       assert.strictEqual(calls.length, 0)
       assert.strictEqual(superCalls.length, 1)
