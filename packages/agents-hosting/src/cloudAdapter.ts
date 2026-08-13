@@ -7,7 +7,7 @@ import { AgentHandler, INVOKE_RESPONSE_KEY } from './activityHandler'
 import { BaseAdapter } from './baseAdapter'
 import { TurnContext } from './turnContext'
 import { Request } from './auth/request'
-import { WebResponse } from './interfaces/webResponse'
+import { NextFunction, WebResponse } from './interfaces/webResponse'
 import { ConnectorClient } from './connector-client/connectorClient'
 import { AuthConfiguration, getAuthConfigWithDefaults } from './auth/authConfiguration'
 import { AuthProvider } from './auth/authProvider'
@@ -32,6 +32,7 @@ import { parseBooleanEnv, suggestClosest } from './utils/env'
 import { trace } from '@microsoft/agents-telemetry'
 import { AdapterTraceDefinitions } from './observability'
 import { applyAgenticHeaders } from './getProductInfo'
+import { authorizeJWT } from './auth/jwt-middleware'
 
 const logger = debug('agents:cloud-adapter')
 
@@ -238,6 +239,7 @@ function truncateActivityForLog (activity: unknown, max = 1024): string {
 
 export class CloudAdapter extends BaseAdapter {
   protected readonly authConfig: AuthConfiguration
+  private readonly jwtMiddleware: ReturnType<typeof authorizeJWT>
   protected _agentName?: string
 
   /**
@@ -257,6 +259,7 @@ export class CloudAdapter extends BaseAdapter {
   constructor (authConfig?: AuthConfiguration, authProvider?: AuthProvider, userTokenClient?: UserTokenClient, options?: CloudAdapterOptions) {
     super()
     this.authConfig = authConfig = getAuthConfigWithDefaults(authConfig)
+    this.jwtMiddleware = authorizeJWT(authConfig)
     this.connectionManager = new MsalConnectionManager(undefined, undefined, authConfig)
     this._options = resolveCloudAdapterOptions(options)
 
@@ -423,6 +426,24 @@ export class CloudAdapter extends BaseAdapter {
     return {
       aud: appId
     } as JwtPayload
+  }
+
+  /**
+   * Authorizes an incoming web request using this adapter's resolved authentication configuration.
+   * @param req The incoming request.
+   * @param res The outgoing response.
+   * @param next Callback invoked after successful authorization.
+   */
+  public async authorizeRequest (req: Request, res: WebResponse, next: NextFunction): Promise<void> {
+    await this.jwtMiddleware(req, res, next)
+  }
+
+  /**
+   * Gets the client ID used by this adapter's default authentication connection.
+   * @returns The configured client ID, or `undefined` for anonymous development configuration.
+   */
+  public getClientId (): string | undefined {
+    return this.authConfig.clientId
   }
 
   /**
