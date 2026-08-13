@@ -43,6 +43,8 @@ export interface WebApp {
  * `POST /api/agentresponse/v3/conversations/{conversationId}/activities/{activityId}`
  *
  * The function handles:
+ * - Authenticating callers with JWT validation
+ * - Verifying that the authenticated caller owns the delegated conversation
  * - Normalizing incoming activity data from the request body
  * - Retrieving conversation references from conversation state
  * - Continuing conversations using the stored conversation reference
