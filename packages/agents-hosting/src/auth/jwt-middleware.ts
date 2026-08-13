@@ -16,6 +16,25 @@ import { debug } from '@microsoft/agents-telemetry'
 const logger = debug('agents:jwt-middleware')
 const jwksClients = new Map<string, JwksClient>()
 const maxJwksClients = 100
+const authorizedAudience = Symbol('authorizedAudience')
+
+interface AuthorizedRequest extends Request {
+  [authorizedAudience]?: string
+}
+
+interface VerifiedToken {
+  payload: JwtPayload
+  audience: string
+}
+
+/**
+ * Gets the configured audience selected while authorizing a request.
+ * @param req The authorized request.
+ * @returns The matched configured client ID, or `undefined` for anonymous requests.
+ */
+export function getAuthorizedAudience (req: Request): string | undefined {
+  return (req as AuthorizedRequest)[authorizedAudience]
+}
 
 /**
  * Clears process-wide JWKS clients.
@@ -307,24 +326,30 @@ export function getJwksClient (jwksUri: string): JwksClient {
  * Verifies the JWT token.
  * @param raw The raw JWT token.
  * @param config The authentication configuration.
- * @returns A promise that resolves to the JWT payload.
+ * @returns A promise that resolves to the verified payload and matched configured audience.
  */
-const verifyToken = async (raw: string, config: AuthConfiguration): Promise<JwtPayload> => {
+const verifyToken = async (raw: string, config: AuthConfiguration): Promise<VerifiedToken> => {
   const payload = jwt.decode(raw) as JwtPayload
   logger.debug('jwt.decode ', JSON.stringify(payload))
 
   if (!payload) {
     throw ExceptionHelper.generateException(Error, Errors.InvalidJwtToken)
   }
-  const audience = payload.aud
+  const audiences = Array.isArray(payload.aud)
+    ? payload.aud
+    : typeof payload.aud === 'string'
+      ? [payload.aud]
+      : []
 
   const matchingEntry = config.connections && config.connections.size > 0
-    ? [...config.connections.entries()].find(([_, configuration]) => configuration.clientId === audience)
+    ? [...config.connections.entries()].find(([_, configuration]) =>
+        typeof configuration.clientId === 'string' && audiences.includes(configuration.clientId)
+      )
     : undefined
 
   if (!matchingEntry) {
     const err = ExceptionHelper.generateException(Error, Errors.JwtAudienceMismatch)
-    logger.error(err.message, audience)
+    logger.error(err.message, audiences)
     throw err
   }
 
@@ -368,12 +393,14 @@ const verifyToken = async (raw: string, config: AuthConfiguration): Promise<JwtP
       resolve(user as JwtPayload)
     })
   })
-
   if (authConfig.validateIssuer) {
     validateIssuer(verifiedPayload.iss, authConfig)
   }
   validateTenantBinding(verifiedPayload.iss, verifiedPayload.tid)
-  return verifiedPayload
+  return {
+    payload: verifiedPayload,
+    audience: authConfig.clientId!
+  }
 }
 
 /**
@@ -458,9 +485,11 @@ export const authorizeJWT = (authConfig: AuthConfiguration) => {
       const token = extractBearerToken(req.headers.authorization)
       if (token) {
         try {
-          const user = await verifyToken(token, authConfig)
-          logger.debug('token verified for ', user)
-          req.user = user
+          const verifiedToken = await verifyToken(token, authConfig)
+          logger.debug('token verified for ', verifiedToken.payload)
+          req.user = verifiedToken.payload
+          const authorizedRequest = req as AuthorizedRequest
+          authorizedRequest[authorizedAudience] = verifiedToken.audience
         } catch (err: Error | any) {
           failed = true
           logger.error(err)

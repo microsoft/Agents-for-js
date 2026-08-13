@@ -101,7 +101,8 @@ describe('CreateConversationOptionsBuilder', () => {
         .withUser('user-1')
         .build()
       assert.equal(opts.identity.aud, 'my-client-id')
-      assert.equal((opts.identity as any).tid, 'tenant-1')
+      const identity = opts.identity as { tid?: string }
+      assert.equal(identity.tid, 'tenant-1')
     })
 
     it('sets parameters.agent.id from claims.aud', () => {
@@ -136,7 +137,8 @@ describe('CreateConversationOptionsBuilder', () => {
         .withUser('user-1')
         .withTenantId('tenant-99')
         .build()
-      assert.equal((opts.parameters.channelData as any)?.tenant?.id, 'tenant-99')
+      const channelData = opts.parameters.channelData as { tenant?: { id?: string } }
+      assert.equal(channelData?.tenant?.id, 'tenant-99')
     })
 
     it('does not set channelData.tenant on non-Teams channels', () => {
@@ -144,7 +146,8 @@ describe('CreateConversationOptionsBuilder', () => {
         .withUser('user-1')
         .withTenantId('tenant-99')
         .build()
-      assert.equal((opts.parameters.channelData as any)?.tenant, undefined)
+      const channelData = opts.parameters.channelData as { tenant?: unknown }
+      assert.equal(channelData?.tenant, undefined)
     })
   })
 
@@ -156,7 +159,8 @@ describe('CreateConversationOptionsBuilder', () => {
         .withActivity({ text: 'hello' })
         .build()
       assert.equal(opts.parameters.isGroup, true)
-      assert.equal((opts.parameters.channelData as any)?.channel?.id, 'teams-ch-1')
+      const channelData = opts.parameters.channelData as { channel?: { id?: string } }
+      assert.equal(channelData?.channel?.id, 'teams-ch-1')
     })
 
     it('does nothing on non-Teams channels', () => {
@@ -165,7 +169,8 @@ describe('CreateConversationOptionsBuilder', () => {
         .withTeamsChannelId('teams-ch-1')
         .build()
       assert.equal(opts.parameters.isGroup, undefined)
-      assert.equal((opts.parameters.channelData as any)?.channel, undefined)
+      const channelData = opts.parameters.channelData as { channel?: unknown }
+      assert.equal(channelData?.channel, undefined)
     })
   })
 

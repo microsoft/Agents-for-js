@@ -522,9 +522,10 @@ describe('CloudAdapter', function () {
       const { logic } = bootstrap()
 
       const error = new Error('[-120130] - continueConversation: Invalid conversation reference object - https://aka.ms/M365AgentsErrorCodesJS/#-120130')
+      const clientId = authentication.clientId as string
 
       await assert.rejects(
-        cloudAdapter.continueConversation(authentication.clientId as string, conversationReference, (context) => {
+        cloudAdapter.continueConversation(clientId, conversationReference, (context) => {
           logic(context)
 
           throw error

@@ -470,6 +470,35 @@ describe('AuthConfiguration', () => {
     })
   })
 
+  describe('msalRetryCount', () => {
+    it('should load msalRetryCount from connections env var', () => {
+      process.env['connections__serviceConnection__settings__clientId'] = 'test-client-id'
+      process.env['connections__serviceConnection__settings__msalRetryCount'] = '5'
+      process.env['connectionsMap__0__serviceUrl'] = '*'
+      process.env['connectionsMap__0__connection'] = 'serviceConnection'
+
+      const config = loadAuthConfigFromEnv()
+
+      assert.strictEqual(config.msalRetryCount, 5)
+    })
+
+    it('should load msalRetryCount from legacy env var', () => {
+      process.env.msalRetryCount = '4'
+
+      const config = loadAuthConfigFromEnv()
+
+      assert.strictEqual(config.msalRetryCount, 4)
+    })
+
+    it('should allow zero retries from env', () => {
+      process.env.msalRetryCount = '0'
+
+      const config = loadAuthConfigFromEnv()
+
+      assert.strictEqual(config.msalRetryCount, 0)
+    })
+  })
+
   describe('connections env parsing', () => {
     it('should preserve explicit connections map entries from env', () => {
       process.env['connections__serviceConnection__settings__clientId'] = 'test-client-id'
