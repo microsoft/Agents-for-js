@@ -72,13 +72,14 @@ describe('authorizeJWT (WebResponse contract)', () => {
   it('allows anonymous request through when no clientId and not production', async () => {
     const prev = process.env.NODE_ENV
     process.env.NODE_ENV = 'development'
+    const anonymousAuthConfig: AuthConfiguration = {
+      tenantId: 't',
+      clientId: '',
+      issuers: [],
+      connections: new Map()
+    }
     try {
-      const middleware = authorizeJWT({
-        tenantId: 't',
-        clientId: '',
-        issuers: [],
-        connections: new Map()
-      } as AuthConfiguration)
+      const middleware = authorizeJWT(anonymousAuthConfig)
       const req: Request = { method: 'POST', headers: {} }
       const res = makeRes()
       let nextCalled = false
@@ -141,13 +142,14 @@ describe('authorizeJWT (WebResponse contract)', () => {
   it('treats an empty-string Authorization header as absent (anonymous in dev)', async () => {
     const prev = process.env.NODE_ENV
     process.env.NODE_ENV = 'development'
+    const anonymousAuthConfig: AuthConfiguration = {
+      tenantId: 't',
+      clientId: '',
+      issuers: [],
+      connections: new Map()
+    }
     try {
-      const middleware = authorizeJWT({
-        tenantId: 't',
-        clientId: '',
-        issuers: [],
-        connections: new Map()
-      } as AuthConfiguration)
+      const middleware = authorizeJWT(anonymousAuthConfig)
       const req: Request = { method: 'POST', headers: { authorization: '' } }
       const res = makeRes()
       let nextCalled = false

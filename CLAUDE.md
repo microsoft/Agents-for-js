@@ -84,12 +84,19 @@ npm run docs
 ### Other Commands
 
 ```bash
+# Check repository structure, package metadata, documentation, and runtime configuration
+npm run repo:doctor
+
 # Check API compatibility
 npm run compat
 
 # Launch agents playground (interactive testing tool)
 npm run play
 ```
+
+Run `npm run repo:doctor` after structural, package, documentation, build-reference, dependency, API-baseline, test-agent, Docker, or runtime-configuration changes. Every diagnostic includes a rule ID and a concrete fix instruction.
+
+Do not use implicit npm lifecycle wrappers such as `prebuild`, `postbuild`, `pretest`, or `posttest`. `npm --ignore-scripts` skips these hooks, so required work must be explicit. Install-time hooks (`preinstall`, `install`, `postinstall`, and `prepare`) are prohibited. Put dependent work directly in the explicit command, for example `npm run build && node ...`.
 
 ## Key Architecture Concepts
 
@@ -164,6 +171,7 @@ Each package has its own `tsconfig.json` that extends the root configuration.
 - Place tests in `test/` directory within each package
 - Name test files with `.test.ts` suffix
 - Tests run with `tsx` for TypeScript support
+- Do not leave a TypeScript cast (`as` or angle-bracket assertion) in a test callback's final executable statement. The VS Code `node:test` extension uses a loose parser for TypeScript; assign the cast result to a typed local earlier in the callback instead.
 
 ## Common Patterns
 
@@ -233,11 +241,14 @@ Each package keeps its error definitions in a local `errorHelper.ts` (e.g. `pack
 
 The CI pipeline (`.github/workflows/ci.yml`) runs:
 1. npm ci (clean install)
-2. npm run lint
-3. npm run build
-4. npm test
-5. npm run build:samples
-6. node setVersion.js (version management)
+2. npm run repo:doctor
+3. npm run lint
+4. npm run lint:deps:ci
+5. npm run build
+6. npm test
+7. npm run compat
+8. npm run build:samples
+9. node scripts/set-version.mjs (version management)
 
 ## Node Version
 

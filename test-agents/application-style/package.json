@@ -6,17 +6,13 @@
     "license": "MIT",
     "main": "./dist/index.js",
     "scripts": {
-        "prebuild": "npm i",
         "build": "tsc --build",
-        "prestart": "npm run build",
         "start:anon": "node ./dist/index.js",
-        "start": "node --env-file .env ./dist/index.js",
+        "start": "npm run build && node --env-file .env ./dist/index.js",
         "test-tool": "teamsapptester start",
         "test": "npm-run-all -p -r start:anon test-tool",
-        "prebundle": "npm run build",
-        "bundle": "esbuild ./src/index.ts --bundle --platform=node --metafile=dist/meta.json --outfile=dist/bundle.cjs --tree-shaking=true --keep-names",
-        "predocker": "npm run bundle",
-        "docker": "docker build -t \"$npm_package_name:$npm_package_version\" ."
+        "bundle": "npm run build && esbuild ./src/index.ts --bundle --platform=node --metafile=dist/meta.json --outfile=dist/bundle.cjs --tree-shaking=true --keep-names",
+        "docker": "npm run bundle && docker build -t \"$npm_package_name:$npm_package_version\" ."
     },
     "dependencies": {
         "@microsoft/agents-hosting": "file:../../packages/agents-hosting",

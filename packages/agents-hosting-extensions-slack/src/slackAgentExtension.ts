@@ -16,7 +16,7 @@ import { getSlackChannel, getSlackChannelData, getSlackThreadTs } from './api/sl
 import { SlackStream, type SlackStreamOptions } from './api/slackStream.js'
 
 /**
- * Channel extension that adds Slack-specific routing and API access to an {@link AgentApplication}.
+ * Channel extension that adds Slack-specific routing and API access to an agent application.
  *
  * @remarks
  * Register via `app.registerExtension(new SlackAgentExtension(app), ext => { ... })`.
