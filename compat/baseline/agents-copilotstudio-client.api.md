@@ -28,6 +28,7 @@ export class CopilotStudioClient {
     constructor(settings: ConnectionSettings, token: string);
     // @deprecated
     askQuestionAsync(question: string, conversationId?: string): Promise<Activity[]>;
+    get diagnosticsPseudonymKey(): string;
     // @deprecated
     execute(activity: Activity, conversationId: string): Promise<Activity[]>;
     executeStreaming(activity: Activity, conversationId: string): AsyncGenerator<Activity>;
@@ -61,6 +62,7 @@ export interface CopilotStudioConnectionSettings {
     cloud?: PowerPlatformCloud;
     copilotAgentType?: AgentType;
     customPowerPlatformCloud?: string;
+    diagnosticsPseudonymKey?: string;
     directConnectUrl?: string;
     enableDiagnostics?: boolean;
     environmentId?: string;

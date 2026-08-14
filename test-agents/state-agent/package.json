@@ -8,8 +8,7 @@
   "main": "./dist/index.js",
   "scripts": {
     "build": "tsc --build",
-    "prestart": "npm run build",
-    "start": "node --env-file .env ./dist/index.js"
+    "start": "npm run build && node --env-file .env ./dist/index.js"
   },
   "repository": {
     "type": "git",

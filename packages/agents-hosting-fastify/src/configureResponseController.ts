@@ -20,7 +20,8 @@ import { adaptReply } from './replyAdapter'
  * @remarks
  * Registers `POST /api/agentresponse/v3/conversations/:conversationId/activities/:activityId`
  * using the framework-agnostic handler from `@microsoft/agents-hosting`. Mirrors the
- * Express `configureResponseController` API for parity.
+ * Express `configureResponseController` API for parity. The handler authenticates
+ * callers and verifies that they own the delegated conversation before processing.
  *
  * @param fastify - The Fastify instance to register the route on.
  * @param adapter - The CloudAdapter for processing activities.

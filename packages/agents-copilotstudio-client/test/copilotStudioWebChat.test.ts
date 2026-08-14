@@ -10,6 +10,10 @@ import { firstValueFrom } from 'rxjs'
 // Helpers
 // ---------------------------------------------------------------------------
 
+function hasWebChatSequenceId (channelData: unknown): boolean {
+  return (channelData as Record<string, unknown> | null | undefined)?.['webchat:sequence-id'] !== undefined
+}
+
 /** Creates a minimal Activity-like object. */
 function makeActivity (overrides: Partial<Activity> = {}): Activity {
   return Activity.fromObject({
@@ -123,7 +127,7 @@ describe('CopilotStudioWebChat.createConnection', function () {
       for (const a of activities) {
         assert(a.timestamp, 'activity should have a timestamp')
         assert(
-          (a.channelData as Record<string, unknown>)?.['webchat:sequence-id'] !== undefined,
+          hasWebChatSequenceId(a.channelData),
           'activity should have webchat:sequence-id'
         )
       }

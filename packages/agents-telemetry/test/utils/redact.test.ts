@@ -1,6 +1,6 @@
 import assert from 'assert'
 import { describe, it } from 'node:test'
-import { redactScopes, redactString, redactUrl } from '../../src/utils/redact'
+import { pseudonymizeConversationId, redactScopes, redactString, redactUrl, redactDiagnosticObject } from '../../src/utils/redact'
 
 describe('redactString', () => {
   it('returns undefined for undefined input', () => {
@@ -55,5 +55,87 @@ describe('redactScopes', () => {
     assert.strictEqual(redactScopes([]), '<redacted> (0 scopes)')
     assert.strictEqual(redactScopes(['scope.one']), '<redacted> (1 scope)')
     assert.strictEqual(redactScopes(['scope.one', 'scope.two']), '<redacted> (2 scopes)')
+  })
+})
+
+describe('redactDiagnosticObject', () => {
+  it('redacts conversation IDs, activity text, and URLs without changing unrelated request fields', () => {
+    const body = {
+      emitStartConversationEvent: true,
+      locale: 'en-US',
+      conversationId: 'conversation-secret',
+      activity: {
+        type: 'message',
+        text: 'activity-text-secret',
+        conversation: { id: 'nested-conversation-secret', name: 'Support' },
+        attachments: [{ contentUrl: 'https://files.example.com/attachments/private-file?token=secret' }]
+      },
+      callbackUrl: 'https://example.com/callback/private?code=secret'
+    }
+
+    assert.deepEqual(redactDiagnosticObject(body), {
+      emitStartConversationEvent: true,
+      locale: 'en-US',
+      conversationId: pseudonymizeConversationId('conversation-secret'),
+      activity: {
+        type: 'message',
+        text: 'ac<redacted>',
+        conversation: { id: pseudonymizeConversationId('nested-conversation-secret'), name: 'Support' },
+        attachments: [{ contentUrl: 'https://files.example.com/<redacted> (2 segments)' }]
+      },
+      callbackUrl: 'https://example.com/<redacted> (2 segments)'
+    })
+
+    assert.equal(body.conversationId, 'conversation-secret')
+    assert.equal(body.activity.text, 'activity-text-secret')
+    assert.equal(body.activity.attachments[0].contentUrl, 'https://files.example.com/attachments/private-file?token=secret')
+  })
+
+  it('redacts activityText diagnostic fields and URL aliases', () => {
+    assert.deepEqual(redactDiagnosticObject({
+      activityText: 'activity-text-secret',
+      uri: 'https://example.com/private/resource',
+      href: 'https://example.com/private/link'
+    }), {
+      activityText: 'ac<redacted>',
+      uri: 'https://example.com/<redacted> (2 segments)',
+      href: 'https://example.com/<redacted> (2 segments)'
+    })
+  })
+
+  it('uses its conversation-ID pseudonymizer', () => {
+    assert.deepEqual(redactDiagnosticObject({
+      conversationId: 'conversation-secret',
+      activity: { conversation: { id: 'nested-conversation-secret' } }
+    }, 'diagnostics-key'), {
+      conversationId: pseudonymizeConversationId('conversation-secret', 'diagnostics-key'),
+      activity: { conversation: { id: pseudonymizeConversationId('nested-conversation-secret', 'diagnostics-key') } }
+    })
+  })
+})
+
+describe('pseudonymizeConversationId', () => {
+  it('creates a stable process-local pseudonym without exposing the conversation ID', () => {
+    const conversationId = 'conversation-id-secret'
+    const first = pseudonymizeConversationId(conversationId)
+    const second = pseudonymizeConversationId(conversationId)
+
+    assert.equal(first, second)
+    assert.match(first!, /^cid_[a-f0-9]{32}$/)
+    assert.ok(!first!.includes(conversationId))
+  })
+
+  it('uses a supplied key for stable cross-process correlation', () => {
+    const conversationId = 'conversation-id-secret'
+    const key = 'customer-managed-diagnostics-key'
+
+    assert.equal(
+      pseudonymizeConversationId(conversationId, key),
+      pseudonymizeConversationId(conversationId, key)
+    )
+    assert.notEqual(
+      pseudonymizeConversationId(conversationId, key),
+      pseudonymizeConversationId(conversationId, 'different-diagnostics-key')
+    )
   })
 })

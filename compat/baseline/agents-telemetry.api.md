@@ -56,6 +56,12 @@ export const MetricNames: {
 };
 
 // @public
+export function pseudonymizeConversationId(conversationId: string | undefined, key?: string): string | undefined;
+
+// @public
+export function redactDiagnosticObject(value: unknown, diagnosticsPseudonymKey?: string): unknown;
+
+// @public
 export function redactScopes(scopes: string[] | undefined): string | undefined;
 
 // @public
@@ -126,6 +132,10 @@ export const SpanNames: {
     readonly COPILOT_SEND_ACTIVITY: "agents.copilot_client.send_activity";
     readonly COPILOT_POST_REQUEST: "agents.copilot_client.post_request";
     readonly COPILOT_CREATE_CONNECTION: "agents.copilot_client.webchat.create_connection";
+    readonly COPILOT_WEBCHAT_START_CONVERSATION: "agents.copilot_client.webchat.start_conversation";
+    readonly COPILOT_WEBCHAT_POST_ACTIVITY: "agents.copilot_client.webchat.post_activity";
+    readonly COPILOT_WEBCHAT_RECEIVE_ACTIVITY: "agents.copilot_client.webchat.receive_activity";
+    readonly COPILOT_WEBCHAT_END_CONNECTION: "agents.copilot_client.webchat.end_connection";
     readonly COPILOT_EXECUTE_STREAMING: "agents.copilot_client.execute_streaming";
     readonly COPILOT_SUBSCRIBE_ASYNC: "agents.copilot_client.subscribe_async";
     readonly NAMED_PIPE_CONNECT: "agents.named_pipe.connect";
