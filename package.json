@@ -24,7 +24,7 @@
     "lint:deps:ci": "knip --reporter github-actions",
     "compat": "node scripts/compat.mjs",
     "repo:doctor": "node scripts/repo-doctor.mjs",
-    "test": "node --test --test-reporter=spec --import tsx --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=test-report.xml ./packages/*/test/**/*.test.ts ./scripts/test/**/*.test.mjs",
+    "test": "node --test --test-reporter=spec --import tsx --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=test-report.xml \"./packages/*/test/**/*.test.ts\" \"./scripts/test/**/*.test.mjs\"",
     "compare:teams-api": "node --import tsx scripts/teams-api-drift/compare-teams-api.ts",
     "detect:teams-api-drifts": "node --import tsx scripts/teams-api-drift/detect-teams-api-drifts.ts",
     "render:teams-api-drift-report": "node --import tsx scripts/teams-api-drift/render-teams-api-drift-report.ts",
