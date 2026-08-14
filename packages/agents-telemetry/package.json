@@ -45,7 +45,8 @@
   },
   "dependencies": {
     "@microsoft/agents-activity": "file:../agents-activity",
-    "debug": "^4.4.3"
+    "@noble/hashes": "1.8.0",
+    "debug": "4.4.3"
   },
   "license": "MIT",
   "files": [

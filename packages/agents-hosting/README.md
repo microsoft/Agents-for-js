@@ -1,4 +1,4 @@
-# microsoft/agents-hosting
+# @microsoft/agents-hosting
 
 ## Overview
 
@@ -27,6 +27,15 @@ exposes framework-agnostic primitives that the
 
 Most consumers should keep using `startServer`/`createAgentRequestHandler` from the
 Express or Fastify packages; reach for these APIs when adapting another framework.
+
+The agent-response handler authenticates requests once through the supplied
+`CloudAdapter`. That boundary validates the token for any configured host connection;
+the handler then verifies that the caller application matches the delegated agent
+recorded for that conversation. Existing route-level `authorizeJWT` middleware is
+redundant but remains compatible. Anonymous callbacks are supported only outside
+production and emit a registration warning because peer ownership cannot be verified.
+Missing, malformed, or pre-upgrade delegated state fails closed. Pre-upgrade
+conversations must be restarted.
 
 ## Example Usage based on the AgentApplication object
 

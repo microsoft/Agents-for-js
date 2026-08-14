@@ -416,6 +416,22 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
     description: 'Identity is required to get the token provider.'
   },
 
+  /**
+   * Error thrown when an MSAL HTTP request cannot be completed.
+   */
+  MsalHttpRequestFailed: {
+    code: -120391,
+    description: 'MSAL HTTP request failed: {message}'
+  },
+
+  /**
+   * Error thrown when an MSAL HTTP response body cannot be parsed as JSON.
+   */
+  MsalResponseUnparsable: {
+    code: -120392,
+    description: 'MSAL returned an unparsable response body'
+  },
+
   FailedToAcquireTokenUsingCertificate: {
     code: -120395,
     description: 'Failed to acquire token using certificate'
@@ -1012,35 +1028,6 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   },
 
   // ============================================================================
-  // Hosting / Web layer errors (-120830 to -120832)
-  // ============================================================================
-
-  /**
-   * Error thrown by CloudAdapter.process when the incoming request lacks a parsed body.
-   * Indicates the hosting layer (e.g. express.json() or Fastify's JSON parser) was not configured.
-   */
-  MissingRequestBody: {
-    code: -120830,
-    description: '`request.body` parameter required; ensure your hosting layer parses JSON request bodies before invoking the adapter (e.g., express.json() with Express or Fastify\'s built-in JSON parser).'
-  },
-
-  /**
-   * Error thrown by verifyToken when the provided JWT cannot be decoded.
-   */
-  InvalidJwtToken: {
-    code: -120831,
-    description: 'invalid token'
-  },
-
-  /**
-   * Error thrown by verifyToken when the token audience does not match any configured connection clientId.
-   */
-  JwtAudienceMismatch: {
-    code: -120832,
-    description: 'Audience mismatch'
-  },
-
-  // ============================================================================
   // Application Configuration Errors (-120850 to -120902)
   // ============================================================================
 
@@ -1100,6 +1087,52 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   ContinueConversationAdapterRequired: {
     code: -120902,
     description: "You must configure the Application with an 'adapter' before calling Application.continueConversationAsync()"
+  },
+
+  // ============================================================================
+  // Hosting / Web layer errors (-120910 to -120940)
+  // ============================================================================
+
+  /**
+   * Error thrown by CloudAdapter.process when the incoming request lacks a parsed body.
+   * Indicates the hosting layer (e.g. express.json() or Fastify's JSON parser) was not configured.
+   */
+  MissingRequestBody: {
+    code: -120910,
+    description: '`request.body` parameter required; ensure your hosting layer parses JSON request bodies before invoking the adapter (e.g., express.json() with Express or Fastify\'s built-in JSON parser).'
+  },
+
+  /**
+   * Error thrown by verifyToken when the provided JWT cannot be decoded.
+   */
+  InvalidJwtToken: {
+    code: -120920,
+    description: 'invalid token'
+  },
+
+  /**
+   * Error thrown by verifyToken when the token audience does not match any configured connection clientId.
+   */
+  JwtAudienceMismatch: {
+    code: -120930,
+    description: 'Audience mismatch'
+  },
+
+  /**
+   * Error thrown by verifyToken when the token issuer is not in the connection's allowed issuer list.
+   */
+  JwtIssuerMismatch: {
+    code: -120830,
+    description: 'Issuer mismatch'
+  },
+
+  /**
+   * Error thrown by verifyToken when an Entra token's tenant id (`tid`) claim does not match the
+   * tenant GUID embedded in its issuer (`iss`) claim.
+   */
+  JwtTenantMismatch: {
+    code: -120840,
+    description: 'Tenant mismatch'
   },
 
   // ============================================================================

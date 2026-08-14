@@ -2,6 +2,9 @@
 
 Microsoft Teams extension for the Microsoft 365 Agents SDK for JavaScript.
 
+> [!WARNING]
+> This package is deprecated and is retained for backward compatibility. For new development, use [`@microsoft/agents-hosting-extensions-msteams`](../agents-hosting-extensions-msteams), which uses the Microsoft Teams SDK models and client.
+
 ## Installation
 
 ```bash
@@ -136,4 +139,3 @@ app.registerExtension<TeamsAgentExtension>(teamsExt, (tae) => {
 ## License
 
 MIT
-

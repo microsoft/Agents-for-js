@@ -15,6 +15,7 @@ import crypto from 'crypto'
 import { AuthenticationTraceDefinitions } from '../../observability'
 import { ExceptionHelper } from '@microsoft/agents-activity'
 import { Errors } from '../../errorHelper'
+import { MsalHttpRetryHandlerHelper, normalizeMsalRetryCount } from './msalHttpRetryHandlerHelper'
 
 const audience = 'api://AzureADTokenExchange'
 const logger = debug('agents:msal')
@@ -203,12 +204,14 @@ export class MsalTokenProvider implements AuthProvider {
   }
 
   private getClientSecretClient (authConfig: AuthConfiguration): ConfidentialClientApplication {
+    const retryCount = normalizeMsalRetryCount(authConfig.msalRetryCount)
     const cacheKey = MsalTokenProvider.cacheKey(
       'confidential-client',
       AuthType.ClientSecret,
       authConfig.clientId,
       resolveAuthorityUtil(authConfig.authorityEndpoint ?? authConfig.authority, authConfig.tenantId),
-      MsalTokenProvider.digest(authConfig.clientSecret)
+      MsalTokenProvider.digest(authConfig.clientSecret),
+      retryCount
     )
 
     return this.getOrCreateConfidentialClient(cacheKey, () => new ConfidentialClientApplication({
@@ -217,11 +220,12 @@ export class MsalTokenProvider implements AuthProvider {
         authority: resolveAuthorityUtil(authConfig.authorityEndpoint ?? authConfig.authority, authConfig.tenantId),
         clientSecret: authConfig.clientSecret
       },
-      system: this.sysOptions
+      system: this.getSystemOptions(authConfig)
     }))
   }
 
   private getCertificateClient (authConfig: AuthConfiguration): ConfidentialClientApplication {
+    const retryCount = normalizeMsalRetryCount(authConfig.msalRetryCount)
     const cacheKey = MsalTokenProvider.cacheKey(
       'confidential-client',
       authConfig.authType ?? AuthType.Certificate,
@@ -229,7 +233,8 @@ export class MsalTokenProvider implements AuthProvider {
       resolveAuthorityUtil(authConfig.authorityEndpoint ?? authConfig.authority, authConfig.tenantId),
       this.getFileCacheIdentity(authConfig.certPemFile),
       this.getFileCacheIdentity(authConfig.certKeyFile),
-      authConfig.sendX5C
+      authConfig.sendX5C,
+      retryCount
     )
 
     return this.getOrCreateConfidentialClient(cacheKey, () => {
@@ -258,7 +263,7 @@ export class MsalTokenProvider implements AuthProvider {
             x5c: pemFile.toString()
           }
         },
-        system: this.sysOptions
+        system: this.getSystemOptions(authConfig)
       })
     })
   }
@@ -434,7 +439,7 @@ export class MsalTokenProvider implements AuthProvider {
           clientAssertion: appToken,
           authority: this.resolveAuthority(tenantId),
         },
-        system: this.sysOptions
+        system: this.getSystemOptions(this.connectionSettings)
       })
 
       const token = await cca.acquireTokenByClientCredential({
@@ -613,7 +618,7 @@ export class MsalTokenProvider implements AuthProvider {
         managedIdentityIdParams: {
           userAssignedClientId: this.connectionSettings.clientId
         },
-        system: this.sysOptions
+        system: this.getSystemOptions(this.connectionSettings)
       })
       const tokenResult = await msiApp.acquireToken({ resource })
       if (!tokenResult?.accessToken) {
@@ -638,7 +643,10 @@ export class MsalTokenProvider implements AuthProvider {
         if (!this.connectionSettings.federatedClientId && !this.connectionSettings.FICClientId) {
           throw ExceptionHelper.generateException(Error, Errors.FICClientIdRequired)
         }
-        clientAssertion = await this.fetchExternalToken(this.connectionSettings.federatedClientId as string || this.connectionSettings.FICClientId as string)
+        clientAssertion = await this.fetchExternalToken(
+          this.connectionSettings.federatedClientId as string || this.connectionSettings.FICClientId as string,
+          this.connectionSettings
+        )
         break
       case AuthType.Certificate:
       case AuthType.CertificateSubjectName:
@@ -685,6 +693,13 @@ export class MsalTokenProvider implements AuthProvider {
         }
       },
       piiLoggingEnabled: false
+    }
+  }
+
+  private getSystemOptions (authConfig?: AuthConfiguration): NodeSystemOptions {
+    return {
+      ...this.sysOptions,
+      networkClient: new MsalHttpRetryHandlerHelper(undefined, normalizeMsalRetryCount(authConfig?.msalRetryCount))
     }
   }
 
@@ -742,7 +757,7 @@ export class MsalTokenProvider implements AuthProvider {
       managedIdentityIdParams: {
         userAssignedClientId: authConfig.clientId || ''
       },
-      system: this.sysOptions
+      system: this.getSystemOptions(authConfig)
     })
     const token = await mia.acquireToken({
       resource: scope
@@ -758,7 +773,7 @@ export class MsalTokenProvider implements AuthProvider {
    */
   private async acquireTokenWithSystemAssignedIdentity (authConfig: AuthConfiguration, scope: string) {
     const mia = new ManagedIdentityApplication({
-      system: this.sysOptions
+      system: this.getSystemOptions(authConfig)
     })
     const token = await mia.acquireToken({
       resource: scope
@@ -812,14 +827,17 @@ export class MsalTokenProvider implements AuthProvider {
    */
   private async acquireAccessTokenViaFIC (authConfig: AuthConfiguration, scope: string) : Promise<string> {
     const scopes = [`${scope}/.default`]
-    const clientAssertion = await this.fetchExternalToken(authConfig.federatedClientId as string || authConfig.FICClientId as string)
+    const clientAssertion = await this.fetchExternalToken(
+      authConfig.federatedClientId as string || authConfig.FICClientId as string,
+      authConfig
+    )
     const cca = new ConfidentialClientApplication({
       auth: {
         clientId: authConfig.clientId as string,
         authority: `${authConfig.authorityEndpoint ?? authConfig.authority}/${authConfig.tenantId}`,
         clientAssertion
       },
-      system: this.sysOptions
+      system: this.getSystemOptions(authConfig)
     })
     const token = await cca.acquireTokenByClientCredential({ scopes, azureRegion: authConfig.azureRegion })
     logger.debug('got token using FIC client assertion')
@@ -845,7 +863,7 @@ export class MsalTokenProvider implements AuthProvider {
         authority: `https://login.microsoftonline.com/${authConfig.tenantId}`,
         clientAssertion
       },
-      system: this.sysOptions
+      system: this.getSystemOptions(authConfig)
     })
     const token = await cca.acquireTokenByClientCredential({ scopes, azureRegion: authConfig.azureRegion })
     logger.debug('got token using WID client assertion')
@@ -860,12 +878,12 @@ export class MsalTokenProvider implements AuthProvider {
    * @param FICClientId The FIC client ID.
    * @returns A promise that resolves to the external token.
    */
-  private async fetchExternalToken (FICClientId: string) : Promise<string> {
+  private async fetchExternalToken (FICClientId: string, authConfig?: AuthConfiguration) : Promise<string> {
     const managedIdentityClientAssertion = new ManagedIdentityApplication({
       managedIdentityIdParams: {
         userAssignedClientId: FICClientId
       },
-      system: this.sysOptions
+      system: this.getSystemOptions(authConfig ?? this.connectionSettings)
     }
     )
     const response = await managedIdentityClientAssertion.acquireToken({
