@@ -40,6 +40,10 @@ export interface ConversationData {
    * Reference to the conversation for maintaining context across interactions
    */
   conversationReference: ConversationReference;
+  /**
+   * Client ID of the delegated agent allowed to send responses for this conversation.
+   */
+  expectedAgentClientId?: string;
 }
 
 /**
@@ -91,19 +95,24 @@ export class AgentClient {
       }
       activityCopy.conversation!.id = randomUUID()
 
+      const delegatedContext = new TurnContext(context.adapter, activityCopy, context.identity)
+      const delegatedStateKey = { channelId: activityCopy.channelId!, conversationId: activityCopy.conversation!.id }
       const conversationDataAccessor = conversationState.createProperty<ConversationData>(activityCopy.conversation!.id)
-      const convRef = await conversationDataAccessor.set(context,
-        { conversationReference: activity.getConversationReference(), nameRequested: false },
-        { channelId: activityCopy.channelId!, conversationId: activityCopy.conversation!.id }
+      await conversationDataAccessor.set(delegatedContext,
+        {
+          conversationReference: activity.getConversationReference(),
+          nameRequested: false,
+          expectedAgentClientId: this.agentClientConfig.clientId
+        },
+        delegatedStateKey
       )
 
-      const stateChanges = JSON.stringify(convRef)
-      logger.debug('stateChanges: ', stateChanges)
+      logger.debug('stored delegated conversation state')
 
       const authProvider = new MsalTokenProvider(authConfig)
       const token = await authProvider.getAccessToken(this.agentClientConfig.clientId)
 
-      logger.debug('agent request: ', activityCopy)
+      logger.debug('sending activity to delegated agent')
 
       let authHeader = '' // Allow anonymous auth.
 
@@ -111,21 +120,27 @@ export class AgentClient {
         authHeader = `Bearer ${token}`
       }
 
-      await conversationState.saveChanges(context, false, { channelId: activityCopy.channelId!, conversationId: activityCopy.conversation!.id })
-      const response = await fetch(this.agentClientConfig.endPoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: authHeader,
-          'x-ms-conversation-id': activityCopy.conversation!.id
-        },
-        body: JSON.stringify(activityCopy)
-      })
+      await conversationState.saveChanges(delegatedContext, false, delegatedStateKey)
+      let response: Response
+      try {
+        response = await fetch(this.agentClientConfig.endPoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: authHeader,
+            'x-ms-conversation-id': activityCopy.conversation!.id
+          },
+          body: JSON.stringify(activityCopy)
+        })
+      } catch (error) {
+        await conversationState.delete(delegatedContext, delegatedStateKey)
+        throw error
+      }
 
       record({ httpStatusCode: response.status.toString() })
 
       if (!response.ok) {
-        await conversationDataAccessor.delete(context, { channelId: activityCopy.channelId!, conversationId: activityCopy.conversation!.id })
+        await conversationState.delete(delegatedContext, delegatedStateKey)
         throw ExceptionHelper.generateException(Error, Errors.FailedToPostActivityToAgent, undefined, { statusText: response.statusText })
       }
       return response.statusText

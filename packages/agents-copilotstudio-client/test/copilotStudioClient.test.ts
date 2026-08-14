@@ -13,79 +13,74 @@ import {
 } from '../src'
 import { Activity, ActivityTypes } from '@microsoft/agents-activity'
 
-describe('scopeFromSettings', function () {
-  const testCases: Array<{
-    label: string
-    cloud: PowerPlatformCloud
-    cloudBaseAddress: string
-    expectedAuthority: string
-    shouldthrow: boolean
-  }> = [
-    {
-      label: 'Should return scope for PowerPlatformCloud.Prod environment',
-      cloud: PowerPlatformCloud.Prod,
-      cloudBaseAddress: '',
-      expectedAuthority: 'https://api.powerplatform.com/.default',
-      shouldthrow: false
-    },
-    {
-      label: 'Should return scope for PowerPlatformCloud.Preprod environment',
-      cloud: PowerPlatformCloud.Preprod,
-      cloudBaseAddress: '',
-      expectedAuthority: 'https://api.preprod.powerplatform.com/.default',
-      shouldthrow: false
-    },
-    {
-      label: 'Should return scope for PowerPlatformCloud.Mooncake environment',
-      cloud: PowerPlatformCloud.Mooncake,
-      cloudBaseAddress: '',
-      expectedAuthority: 'https://api.powerplatform.partner.microsoftonline.cn/.default',
-      shouldthrow: false
-    },
-    {
-      label: 'Should return scope for PowerPlatformCloud.FirstRelease environment',
-      cloud: PowerPlatformCloud.FirstRelease,
-      cloudBaseAddress: '',
-      expectedAuthority: 'https://api.powerplatform.com/.default',
-      shouldthrow: false
-    },
-    {
-      label: 'Should return scope for PowerPlatformCloud.Other environment',
-      cloud: PowerPlatformCloud.Other,
-      cloudBaseAddress: 'fido.com',
-      expectedAuthority: 'https://fido.com/.default',
-      shouldthrow: false
-    },
-    {
-      label: 'Should throw when cloud is Unknown and no cloudBaseAddress is provided',
-      cloud: PowerPlatformCloud.Unknown,
-      cloudBaseAddress: '',
-      expectedAuthority: '',
-      shouldthrow: true
+const mockFailedFetchResponse = (status: number, statusText: string, bodyText: string) => {
+  return {
+    ok: false,
+    status,
+    statusText,
+    headers: new Headers(),
+    text: async () => bodyText
+  } as unknown as Response
+}
+
+const captureRejection = async (action: () => Promise<unknown>): Promise<Error> => {
+  try {
+    await action()
+  } catch (error) {
+    if (error instanceof Error) {
+      return error
     }
-  ]
+    return new Error(String(error))
+  }
 
-  testCases.forEach((testCase) => {
-    it(testCase.label, function () {
-      const settings: ConnectionSettings = {
-        appClientId: '123',
-        tenantId: 'test-tenant',
-        environmentId: 'A47151CF-4F34-488F-B377-EBE84E17B478',
-        cloud: testCase.cloud,
-        agentIdentifier: 'Bot01',
-        copilotAgentType: AgentType.Published,
-        customPowerPlatformCloud: testCase.cloudBaseAddress
-      }
+  assert.fail('Expected promise to reject, but it did not.')
+}
 
-      if (testCase.shouldthrow) {
-        assert.throws(() => {
-          CopilotStudioClient.scopeFromSettings(settings)
-        }, Error)
-      } else {
-        const scope = CopilotStudioClient.scopeFromSettings(settings)
-        assert(scope === testCase.expectedAuthority)
-      }
-    })
+async function consumeStream (stream: AsyncIterable<unknown>): Promise<void> {
+  const iterator = stream[Symbol.asyncIterator]()
+  let next = await iterator.next()
+  while (!next.done) {
+    next = await iterator.next()
+  }
+}
+
+describe('scopeFromSettings', function () {
+  function createSettings (cloud: PowerPlatformCloud, cloudBaseAddress = ''): ConnectionSettings {
+    return {
+      appClientId: '123',
+      tenantId: 'test-tenant',
+      environmentId: 'A47151CF-4F34-488F-B377-EBE84E17B478',
+      cloud,
+      agentIdentifier: 'Bot01',
+      copilotAgentType: AgentType.Published,
+      customPowerPlatformCloud: cloudBaseAddress
+    }
+  }
+
+  it('should return scope for PowerPlatformCloud.Prod environment', function () {
+    assert.equal(CopilotStudioClient.scopeFromSettings(createSettings(PowerPlatformCloud.Prod)), 'https://api.powerplatform.com/.default')
+  })
+
+  it('should return scope for PowerPlatformCloud.Preprod environment', function () {
+    assert.equal(CopilotStudioClient.scopeFromSettings(createSettings(PowerPlatformCloud.Preprod)), 'https://api.preprod.powerplatform.com/.default')
+  })
+
+  it('should return scope for PowerPlatformCloud.Mooncake environment', function () {
+    assert.equal(CopilotStudioClient.scopeFromSettings(createSettings(PowerPlatformCloud.Mooncake)), 'https://api.powerplatform.partner.microsoftonline.cn/.default')
+  })
+
+  it('should return scope for PowerPlatformCloud.FirstRelease environment', function () {
+    assert.equal(CopilotStudioClient.scopeFromSettings(createSettings(PowerPlatformCloud.FirstRelease)), 'https://api.powerplatform.com/.default')
+  })
+
+  it('should return scope for PowerPlatformCloud.Other environment', function () {
+    assert.equal(CopilotStudioClient.scopeFromSettings(createSettings(PowerPlatformCloud.Other, 'fido.com')), 'https://fido.com/.default')
+  })
+
+  it('should throw when cloud is Unknown and no cloudBaseAddress is provided', function () {
+    assert.throws(() => {
+      CopilotStudioClient.scopeFromSettings(createSettings(PowerPlatformCloud.Unknown))
+    }, Error)
   })
 })
 
@@ -249,6 +244,67 @@ describe('CopilotStudioClient', function () {
       assert.equal(activities[0].conversation?.id, 'not-expected-conversation-id')
       assert.equal(client['conversationId'], expectedConversationId)
     })
+
+    it('should throw sanitized error for non-2xx start response', async function () {
+      const settings = createTestSettings()
+      const client = new CopilotStudioClient(settings, 'test-token')
+
+      const fetchMock = mock.fn(() => Promise.resolve(mockFailedFetchResponse(401, 'Unauthorized', 'sensitive-response-body test-token')))
+      global.fetch = fetchMock as any
+
+      const error = await captureRejection(() => client.startConversationAsync())
+      assert.match(error.message, /Copilot Studio request failed with status 401 Unauthorized/)
+      assert.doesNotMatch(error.message, /test-token/)
+      assert.doesNotMatch(error.message, /sensitive-response-body/)
+    })
+
+    it('should retain the conversation ID when a later response omits the header', async function () {
+      const settings = createTestSettings()
+      const client = new CopilotStudioClient(settings, 'test-token')
+      const conversationId = 'header-conversation-id'
+      const responses = [
+        mockFetchResponse([], conversationId),
+        mockFetchResponse([]),
+        mockFetchResponse([]),
+      ]
+      const fetchMock = mock.fn((..._args: Parameters<typeof fetch>) => Promise.resolve(responses.shift()!))
+      global.fetch = fetchMock as any
+
+      await consumeStream(client.startConversationStreaming())
+      await consumeStream(client.sendActivityStreaming(Activity.fromObject({ type: ActivityTypes.Message, text: 'First message' })))
+      await consumeStream(client.sendActivityStreaming(Activity.fromObject({ type: ActivityTypes.Message, text: 'Second message' })))
+
+      assert.equal(client['conversationId'], conversationId)
+      const thirdRequestUrl = String(fetchMock.mock.calls[2].arguments[0])
+      assert(thirdRequestUrl.includes(`/conversations/${conversationId}`), `Expected request URL to retain conversation ID: ${thirdRequestUrl}`)
+    })
+
+    it('should replace a stale conversation ID when starting a headerless conversation', async function () {
+      const settings = createTestSettings()
+      const client = new CopilotStudioClient(settings, 'test-token')
+      const firstConversationId = 'first-conversation-id'
+      const secondConversationId = 'second-conversation-id'
+      const secondConversationActivity = Activity.fromObject({
+        type: ActivityTypes.Message,
+        text: 'New conversation',
+        conversation: { id: secondConversationId }
+      })
+      const responses = [
+        mockFetchResponse([], firstConversationId),
+        mockFetchResponse([secondConversationActivity]),
+        mockFetchResponse([])
+      ]
+      const fetchMock = mock.fn((..._args: Parameters<typeof fetch>) => Promise.resolve(responses.shift()!))
+      global.fetch = fetchMock as any
+
+      await consumeStream(client.startConversationStreaming())
+      await consumeStream(client.startConversationStreaming())
+      await consumeStream(client.sendActivityStreaming(Activity.fromObject({ type: ActivityTypes.Message, text: 'Follow-up' })))
+
+      assert.equal(client['conversationId'], secondConversationId)
+      const thirdRequestUrl = String(fetchMock.mock.calls[2].arguments[0])
+      assert(thirdRequestUrl.includes(`/conversations/${secondConversationId}`), `Expected request URL to use the new conversation ID: ${thirdRequestUrl}`)
+    })
   })
 
   describe('sendActivity', function () {
@@ -358,6 +414,24 @@ describe('CopilotStudioClient', function () {
       const activities = await client.sendActivity(userActivity)
 
       assert.equal(activities.length, 0)
+    })
+
+    it('should throw sanitized error for non-2xx send response', async function () {
+      const settings = createTestSettings()
+      const client = new CopilotStudioClient(settings, 'test-token')
+      const userActivity = Activity.fromObject({
+        type: ActivityTypes.Message,
+        text: 'Hello bot',
+        conversation: { id: 'test-conversation-id' }
+      })
+
+      const fetchMock = mock.fn(() => Promise.resolve(mockFailedFetchResponse(403, 'Forbidden', 'sensitive-response-body test-token')))
+      global.fetch = fetchMock as any
+
+      const error = await captureRejection(() => client.sendActivity(userActivity))
+      assert.match(error.message, /Copilot Studio request failed with status 403 Forbidden/)
+      assert.doesNotMatch(error.message, /test-token/)
+      assert.doesNotMatch(error.message, /sensitive-response-body/)
     })
 
     it('should use conversation ID from activity if provided', async function () {
@@ -1442,6 +1516,28 @@ describe('CopilotStudioClient', function () {
       assert.equal(activities[0].text, 'Hi!')
     })
 
+    it('should use an explicitly executed conversation for later default sends', async function () {
+      const settings = createTestSettings()
+      const client = new CopilotStudioClient(settings, 'test-token')
+      const firstConversationId = 'first-conversation-id'
+      const executedConversationId = 'executed-conversation-id'
+      const responses = [
+        mockFetchResponse([], firstConversationId),
+        mockFetchResponse([]),
+        mockFetchResponse([])
+      ]
+      const fetchMock = mock.fn((..._args: Parameters<typeof fetch>) => Promise.resolve(responses.shift()!))
+      global.fetch = fetchMock as any
+
+      await consumeStream(client.startConversationStreaming())
+      await consumeStream(client.executeStreaming(Activity.fromObject({ type: ActivityTypes.Message, text: 'Execute' }), executedConversationId))
+      await consumeStream(client.sendActivityStreaming(Activity.fromObject({ type: ActivityTypes.Message, text: 'Follow-up' })))
+
+      assert.equal(client['conversationId'], executedConversationId)
+      const thirdRequestUrl = String(fetchMock.mock.calls[2].arguments[0])
+      assert(thirdRequestUrl.includes(`/conversations/${executedConversationId}`), `Expected request URL to use the executed conversation ID: ${thirdRequestUrl}`)
+    })
+
     it('should throw error if conversationId is empty', async function () {
       const settings = createTestSettings()
       const client = new CopilotStudioClient(settings, 'test-token')
@@ -1451,15 +1547,15 @@ describe('CopilotStudioClient', function () {
         text: 'Hello'
       })
 
-      try {
+      const error = await captureRejection(async () => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         for await (const _activity of client.executeStreaming(userActivity, '')) {
-          // Should not reach here
+        // Should not reach here
         }
         assert.fail('Should have thrown an error')
-      } catch (error: any) {
-        assert.match(error.message, /conversationId is required for executeStreaming/)
-      }
+      })
+
+      assert.match(error.message, /conversationId is required for executeStreaming/)
     })
 
     it('should use deprecated execute method', async function () {
@@ -1561,7 +1657,7 @@ describe('UserAgentHelper', function () {
 
   it('should include platform info in Node.js', function () {
     const productInfo = UserAgentHelper.getProductInfo()
-    if (typeof window === 'undefined') {
+    if (!('window' in globalThis)) {
       assert(productInfo.includes('nodejs/'))
     }
   })
@@ -1696,15 +1792,15 @@ describe('subscribeAsync', function () {
     const settings = createTestSettings()
     const client = new CopilotStudioClient(settings, 'test-token')
 
-    try {
+    const error = await captureRejection(async () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       for await (const _event of client.subscribeAsync('')) {
         // Should not reach here
       }
       assert.fail('Should have thrown an error')
-    } catch (error: any) {
-      assert.match(error.message, /conversationId is required for subscribeAsync/)
-    }
+    })
+
+    assert.match(error.message, /conversationId is required for subscribeAsync/)
   })
 
   it('should include Last-Event-ID header when resuming', async function () {
@@ -1740,7 +1836,7 @@ describe('subscribeAsync', function () {
 
     const conversationId = 'test-conversation-id'
 
-    const fetchMock = mock.fn(() => Promise.resolve(mockSubscribeFetchResponse([])))
+    const fetchMock = mock.fn((url: string | URL | Request) => Promise.resolve(mockSubscribeFetchResponse([])))
     global.fetch = fetchMock as any
 
     const events: SubscribeEvent[] = []
@@ -1767,7 +1863,26 @@ describe('subscribeAsync', function () {
 
     // Verify that the fetch was called with a URL ending in /subscribe
     assert(fetchMock.mock.calls.length > 0)
-    const callUrl = fetchMock.mock.calls[0].arguments[0]
-    assert(callUrl.includes('/subscribe'), `URL should contain /subscribe: ${callUrl}`)
+    const calls = fetchMock.mock.calls as unknown as Array<{ arguments: [string | URL | Request] }>
+    const callUrl = calls[0]?.arguments[0]
+    assert(String(callUrl).includes('/subscribe'), `URL should contain /subscribe: ${String(callUrl)}`)
+  })
+
+  it('should throw sanitized error for non-2xx subscribe response', async function () {
+    const settings = createTestSettings()
+    const client = new CopilotStudioClient(settings, 'test-token')
+
+    const conversationId = 'test-conversation-id'
+    const fetchMock = mock.fn(() => Promise.resolve(mockFailedFetchResponse(500, 'Internal Server Error', 'sensitive-response-body test-token')))
+    global.fetch = fetchMock as any
+
+    const error = await captureRejection(async () => {
+      for await (const event of client.subscribeAsync(conversationId)) {
+        assert.fail(`Should not receive subscription event ${event.eventId}`)
+      }
+    })
+    assert.match(error.message, /Copilot Studio request failed with status 500 Internal Server Error/)
+    assert.doesNotMatch(error.message, /test-token/)
+    assert.doesNotMatch(error.message, /sensitive-response-body/)
   })
 })

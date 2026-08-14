@@ -1,6 +1,5 @@
 import { trace, SpanNames } from '@microsoft/agents-telemetry'
 import { CopilotStudioClientMetrics } from './metrics'
-import { SubscribeEvent } from '../subscribeEvent'
 
 export const CopilotStudioClientTraceDefinitions = {
   createConnection: trace.define({
@@ -8,20 +7,6 @@ export const CopilotStudioClientTraceDefinitions = {
     record: {
       showTyping: false,
     },
-    actions: ({ span }) => ({
-      receivedFromCopilot (activityType: string | undefined, conversationId: string | undefined) {
-        span.addEvent('activity.received.from.copilot.studio', {
-          'copilot.webchat.activity.type': activityType ?? 'unknown',
-          'copilot.webchat.activity.conversation_id': conversationId ?? 'unknown'
-        })
-      },
-      sentToWebChat (activityType: string | undefined, conversationId: string | undefined) {
-        span.addEvent('activity.sent.to.webchat', {
-          'copilot.webchat.activity.type': activityType ?? 'unknown',
-          'copilot.webchat.activity.conversation_id': conversationId ?? 'unknown'
-        })
-      },
-    }),
     end ({ span, record }) {
       const attributes = {
         'copilot.webchat.show_typing': record.showTyping ?? 'unknown'
@@ -31,6 +16,67 @@ export const CopilotStudioClientTraceDefinitions = {
       CopilotStudioClientMetrics.webchatConnectionsCounter.add(1, attributes)
     }
   }),
+  webchatStartConversation: trace.define({
+    name: SpanNames.COPILOT_WEBCHAT_START_CONVERSATION,
+    record: {
+      activityCount: 0,
+      conversationId: 'unknown',
+    },
+    end ({ span, record }) {
+      span.setAttributes({
+        'copilot.webchat.activity.received_count': record.activityCount,
+        'copilot.webchat.conversation_id': record.conversationId ?? 'unknown'
+      })
+    }
+  }),
+  webchatPostActivity: trace.define({
+    name: SpanNames.COPILOT_WEBCHAT_POST_ACTIVITY,
+    record: {
+      activityId: 'unknown',
+      activityType: 'unknown',
+      responseActivityCount: 0,
+      conversationId: 'unknown',
+    },
+    actions: ({ span }) => ({
+      sentToCopilot (activityId?: string, activityType?: string, conversationId?: string) {
+        span.addEvent('activity.sent', getWebChatActivityAttributes(activityId, activityType, conversationId))
+      }
+    }),
+    end ({ span, record }) {
+      span.setAttributes({
+        'copilot.webchat.activity.type': record.activityType ?? 'unknown',
+        'copilot.webchat.activity.id': record.activityId ?? 'unknown',
+        'copilot.webchat.activity.received_count': record.responseActivityCount,
+        'copilot.webchat.conversation_id': record.conversationId ?? 'unknown'
+      })
+    }
+  }),
+  webchatReceiveActivity: trace.define({
+    name: SpanNames.COPILOT_WEBCHAT_RECEIVE_ACTIVITY,
+    record: {
+      activityId: 'unknown',
+      activityType: 'unknown',
+      conversationId: 'unknown',
+    },
+    end ({ span, record }) {
+      span.setAttributes({
+        'copilot.webchat.activity.id': record.activityId ?? 'unknown',
+        'copilot.webchat.activity.type': record.activityType ?? 'unknown',
+        'copilot.webchat.activity.conversation_id': record.conversationId ?? 'unknown'
+      })
+    }
+  }),
+  endConnection: trace.define({
+    name: SpanNames.COPILOT_WEBCHAT_END_CONNECTION,
+    record: {
+      conversationId: 'unknown',
+    },
+    end ({ span, record }) {
+      span.setAttributes({
+        'copilot.webchat.conversation_id': record.conversationId ?? 'unknown'
+      })
+    }
+  }),
   postRequest: trace.define({
     name: SpanNames.COPILOT_POST_REQUEST,
     record: {
@@ -38,7 +84,7 @@ export const CopilotStudioClientTraceDefinitions = {
       method: ''
     },
     actions: ({ span }) => ({
-      receivedFromCopilot (activityType: string | undefined, conversationId: string | undefined) {
+      receivedFromCopilot (activityType?: string, conversationId?: string) {
         const attributes = {
           'copilot.activity.type': activityType ?? 'unknown',
           'copilot.activity.conversation_id': conversationId ?? 'unknown'
@@ -148,10 +194,10 @@ export const CopilotStudioClientTraceDefinitions = {
       lastReceivedEventId: 'unknown'
     },
     actions: ({ span }) => ({
-      eventReceivedFromCopilot (event: SubscribeEvent) {
+      eventReceivedFromCopilot (eventId: string | undefined, activityType: string | undefined) {
         const attributes = {
-          'copilot.subscribe_async.event.id': event.eventId ?? 'unknown',
-          'copilot.subscribe_async.event.activity.type': event.activity.type ?? 'unknown',
+          'copilot.subscribe_async.event.id': eventId ?? 'unknown',
+          'copilot.subscribe_async.event.activity.type': activityType ?? 'unknown',
         }
 
         span.addEvent('event.received', attributes)
@@ -172,4 +218,16 @@ export const CopilotStudioClientTraceDefinitions = {
       CopilotStudioClientMetrics.streamDuration.record(duration, metricAttributes)
     }
   })
+}
+
+function getWebChatActivityAttributes (
+  activityId: string | undefined,
+  activityType: string | undefined,
+  conversationId: string | undefined
+) {
+  return {
+    'copilot.webchat.activity.id': activityId ?? 'unknown',
+    'copilot.webchat.activity.type': activityType ?? 'unknown',
+    'copilot.webchat.activity.conversation_id': conversationId ?? 'unknown'
+  }
 }

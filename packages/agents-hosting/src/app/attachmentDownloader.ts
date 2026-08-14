@@ -11,6 +11,7 @@ import { Attachment } from '@microsoft/agents-activity'
 import { AuthProvider } from '../auth/authProvider'
 import { debug } from '@microsoft/agents-telemetry'
 import { loadAuthConfigFromEnv, MsalTokenProvider } from '../auth'
+import { Connections } from '../auth/connections'
 
 const logger = debug('agents:attachmentDownloader')
 
@@ -52,10 +53,18 @@ export class AttachmentDownloader<TState extends TurnState = TurnState> implemen
       return Promise.resolve([])
     }
 
-    // TODO: from adapter
-    const authProvider: AuthProvider = new MsalTokenProvider()
-
-    const accessToken = await authProvider.getAccessToken(loadAuthConfigFromEnv(), 'https://api.botframework.com')
+    let accessToken = ''
+    const connectionManager = (context.adapter as { connectionManager?: Connections })?.connectionManager
+    const identity = context.identity
+    if (connectionManager && identity) {
+      const scope = identity.azp ?? identity.appid ?? 'https://api.botframework.com'
+      logger.debug(`Using adapter connection manager token provider for attachment downloads with scope ${scope}`)
+      accessToken = await connectionManager.getTokenProviderFromActivity(identity, context.activity).getAccessToken(scope)
+    } else {
+      logger.debug('Using MsalTokenProvider fallback for attachment downloads')
+      const authProvider: AuthProvider = new MsalTokenProvider()
+      accessToken = await authProvider.getAccessToken(loadAuthConfigFromEnv(), 'https://api.botframework.com')
+    }
 
     const files: InputFile[] = []
     for (const attachment of attachments) {

@@ -52,6 +52,7 @@ describe('AuthConfiguration', () => {
         'https://sts.windows.net/test-tenant-id/',
         'https://login.microsoftonline.com/test-tenant-id/v2.0'
       ])
+      assert.strictEqual(config.validateIssuer, undefined)
       assert.strictEqual(config.authorityEndpoint, 'https://login.microsoftonline.com')
       assert.strictEqual(config.idpmResource, 'https://test.uri.com')
     })
@@ -67,6 +68,18 @@ describe('AuthConfiguration', () => {
       delete process.env.clientId
       const config = loadAuthConfigFromEnv()
       assert.strictEqual(config.clientId, undefined)
+    })
+
+    it('should enable issuer validation explicitly from the environment', () => {
+      process.env.validateIssuer = 'true'
+      const config = loadAuthConfigFromEnv()
+      assert.strictEqual(config.validateIssuer, true)
+    })
+
+    it('should parse supported boolean forms for issuer validation', () => {
+      process.env.validateIssuer = ' 1 '
+      const config = loadAuthConfigFromEnv()
+      assert.strictEqual(config.validateIssuer, true)
     })
 
     it('should handle missing optional environment variables', () => {
@@ -292,6 +305,20 @@ describe('AuthConfiguration', () => {
       assert.strictEqual(config.connections?.get('serviceConnection')?.clientId, 'custom-test-client')
     })
 
+    it('should use the authority-embedded tenant for all default issuers', () => {
+      const config = getAuthConfigWithDefaults({
+        clientId: 'custom-test-client',
+        tenantId: 'stale-tenant',
+        authorityEndpoint: 'https://login.microsoftonline.com/embedded-tenant'
+      })
+
+      assert.deepStrictEqual(config.issuers, [
+        'https://api.botframework.com',
+        'https://sts.windows.net/embedded-tenant/',
+        'https://login.microsoftonline.com/embedded-tenant/v2.0'
+      ])
+    })
+
     it('should load configuration with connections', () => {
       delete process.env.authorityEndpoint
       delete process.env.idpmResource
@@ -318,6 +345,22 @@ describe('AuthConfiguration', () => {
       assert.strictEqual(config.connections?.size, 1)
       assert.strictEqual(config.connectionsMap?.length, 1)
       assert.strictEqual(config.connectionsMap[0].connection, 'test-conn')
+    })
+
+    it('should use US Government default issuers when the authority is a gov endpoint', () => {
+      delete process.env.idpmResource
+
+      const config: AuthConfiguration = getAuthConfigWithDefaults({
+        clientId: 'gov-client',
+        tenantId: 'gov-tenant-id',
+        authorityEndpoint: 'https://login.microsoftonline.us'
+      })
+      assert.deepStrictEqual(config.issuers, [
+        'https://api.botframework.us',
+        'https://sts.windows.net/gov-tenant-id/',
+        'https://login.microsoftonline.us/gov-tenant-id/v2.0'
+      ])
+      assert.strictEqual(config.authority, 'https://login.microsoftonline.us')
     })
 
     it('should load from env with defaults', () => {
@@ -424,6 +467,35 @@ describe('AuthConfiguration', () => {
       const config = loadAuthConfigFromEnv()
       assert.strictEqual(config.azureRegion, 'eastus')
       delete process.env.azureRegion
+    })
+  })
+
+  describe('msalRetryCount', () => {
+    it('should load msalRetryCount from connections env var', () => {
+      process.env['connections__serviceConnection__settings__clientId'] = 'test-client-id'
+      process.env['connections__serviceConnection__settings__msalRetryCount'] = '5'
+      process.env['connectionsMap__0__serviceUrl'] = '*'
+      process.env['connectionsMap__0__connection'] = 'serviceConnection'
+
+      const config = loadAuthConfigFromEnv()
+
+      assert.strictEqual(config.msalRetryCount, 5)
+    })
+
+    it('should load msalRetryCount from legacy env var', () => {
+      process.env.msalRetryCount = '4'
+
+      const config = loadAuthConfigFromEnv()
+
+      assert.strictEqual(config.msalRetryCount, 4)
+    })
+
+    it('should allow zero retries from env', () => {
+      process.env.msalRetryCount = '0'
+
+      const config = loadAuthConfigFromEnv()
+
+      assert.strictEqual(config.msalRetryCount, 0)
     })
   })
 
