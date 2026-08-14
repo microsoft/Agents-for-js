@@ -25,6 +25,11 @@ describe('ApplicationBuilder', () => {
   // const removeRecipientMention = false
   // const startTypingTimer = false
   const storage = new MemoryStorage()
+  const rateLimit = [{
+    scope: context => context.activity.from?.id,
+    limit: 1,
+    windowMs: 1000
+  }]
   // const taskModules: TaskModulesOptions = { taskDataFilter: 'taskFilter' }
 
   it('should create an Application with default options', () => {
@@ -46,6 +51,7 @@ describe('ApplicationBuilder', () => {
       // .setRemoveRecipientMention(removeRecipientMention)
       .withStorage(storage)
       .withAuthorization({ ah1: { name: 'TestConnection' } })
+      .withRateLimit(rateLimit)
       .setStartTypingTimer(true)
       .withTyping({ initialDelayMs: 250, intervalMs: 1000 })
       // .withLongRunningMessages(adapter, botAppId)
@@ -58,6 +64,7 @@ describe('ApplicationBuilder', () => {
     assert.equal(app.options.storage, storage)
     assert.equal(app.options.startTypingTimer, true)
     assert.deepEqual(app.options.typing, { initialDelayMs: 250, intervalMs: 1000 })
+    assert.equal(app.options.rateLimit, rateLimit)
     // assert.equal(app.options.ai, ai)
     // assert.equal(app.options.adaptiveCards, adaptiveCards)
     // assert.equal(app.options.taskModules, taskModules)
