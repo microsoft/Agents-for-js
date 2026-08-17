@@ -71,7 +71,7 @@
         "path": "test-agents/root-agent"
       },
       {
-        "path": "test-agents/a2a-agent"
+        "path": "test-agents/delegated-agent-callback"
       }
     ]
   }
