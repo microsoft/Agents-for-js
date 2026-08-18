@@ -126,7 +126,7 @@ export interface AuthorizationHandlerTokenOptions {
  * where `{handlerId}` is the handler's unique identifier and `{propertyName}` matches the property name.
  *
  * @example
- * ```env
+ * ```
  * # For a handler with id "myAuth":
  * AgentApplication__UserAuthorization__handlers__myAuth__settings__azureBotOAuthConnectionName=MyConnection
  * AgentApplication__UserAuthorization__handlers__myAuth__settings__oboScopes=api://scope1 api://scope2
@@ -170,7 +170,7 @@ export interface AzureBotAuthorizationOptionsLegacy {
  * @deprecated
  * Messages configuration for the AzureBotAuthorization handler.
  */
-interface AzureBotAuthorizationOptionsMessages {
+export interface AzureBotAuthorizationOptionsMessages {
   /**
    * @deprecated Use `invalidSignInRetryMessage` instead.
    * Message displayed when an invalid code is entered.
@@ -198,7 +198,7 @@ interface AzureBotAuthorizationOptionsMessages {
  * @deprecated
  * Settings for on-behalf-of token acquisition.
  */
-interface AzureBotAuthorizationOptionsOBO {
+export interface AzureBotAuthorizationOptionsOBO {
   /**
    * @deprecated Use `oboConnectionName` instead.
    * Connection name to use for on-behalf-of token acquisition.

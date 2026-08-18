@@ -12,7 +12,7 @@ enum TaskModuleInvokeNames {
   DEFAULT_TASK_DATA_FILTER = 'verb'
 }
 
-interface TaskModuleOptions {
+export interface TaskModuleOptions {
   taskDataFilter?: string
 }
 
@@ -58,9 +58,6 @@ export class TaskModule<TState extends TurnState> {
      * @template TData Optional. Type of the data object being passed to the handler.
      * @param {string | RegExp | RouteSelector | string[] | RegExp[] | RouteSelector[]} verb - Name of the verb(s) to register the handler for.
      * @param {(context: TurnContext, state: TState, data: TData) => Promise<TaskModuleTaskInfo | string | null | undefined>} handler - Function to call when the handler is triggered.
-     * @param {TurnContext} handler.context - Context for the current turn of conversation with the user.
-     * @param {TState} handler.state - Current state of the turn.
-     * @param {TData} handler.data - Data object passed to the handler.
      * @returns {Application<TState>} The application for chaining purposes.
      */
   public submit<TData extends Record<string, any> = Record<string, any>>(

@@ -8,7 +8,7 @@ Enables agents to communicate over Windows named pipes, used in Azure App Servic
 
 ## Installation
 
-```powershell
+```sh
 npm install @microsoft/agents-hosting-directline-namedpipes
 ```
 
