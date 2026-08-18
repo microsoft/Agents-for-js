@@ -87,6 +87,12 @@ export type ApplicationEventHandler<TState extends TurnState> = (context: TurnCo
  *
  */
 export class AgentApplication<TState extends TurnState> {
+  /** Turn-state key for the user authorization service configured on this application. */
+  public static readonly UserAuthorizationKey = Symbol('UserAuthorization')
+
+  /** Turn-state key for the token connections configured on this application. */
+  public static readonly ConnectionsKey = Symbol('Connections')
+
   protected readonly _options: AgentApplicationOptions<TState>
   protected readonly _routes: RouteList<TState> = new RouteList<TState>()
   protected readonly _beforeTurn: ApplicationEventHandler<TState>[] = []
@@ -717,6 +723,15 @@ export class AgentApplication<TState extends TurnState> {
       record({ authorized: true, activity: context.activity })
 
       try {
+        if (this._authorizationManager.handlers.length > 0) {
+          context.turnState.set(AgentApplication.UserAuthorizationKey, this._authorization)
+        }
+
+        const connections = this._options.connections ?? this._adapter?.connectionManager
+        if (connections) {
+          context.turnState.set(AgentApplication.ConnectionsKey, connections)
+        }
+
         if (this._options.startTypingTimer) {
           this.startTypingTimer(context)
         }
@@ -1078,20 +1093,75 @@ export class AgentApplication<TState extends TurnState> {
     handler: (context: TurnContext) => Promise<any>
   ) {
     const activity = Activity.fromObject(context.activity)
-    this.continueConversationAsync(context.identity, activity.getConversationReference(), async (ctx) => {
-      try {
-        Object.assign(ctx.activity, activity)
-        await handler(ctx)
-      } catch (err) {
-        if (this.adapter.onTurnError && err instanceof Error) {
-          await this.adapter.onTurnError(ctx, err)
-        } else {
-          throw err
+    const adapter = context.adapter
+    const identity = context.identity
+    const createErrorContext = () => new TurnContext(adapter, Activity.fromObject(activity), identity)
+
+    try {
+      const reference = activity.getConversationReference()
+      this.continueConversationAsync(identity, reference, async (ctx) => {
+        try {
+          Object.assign(ctx.activity, activity)
+          await handler(ctx)
+        } catch (err) {
+          await this.handleLongRunningCallError(ctx, activity, err)
         }
-      }
-    }).catch(err => {
-      logger.error(`Unhandled error in long-running call for activity '${activity.type}' (id: ${activity.id}):`, err)
+      }).catch(async err => {
+        await this.handleLongRunningCallError(createErrorContext(), activity, err)
+      })
+    } catch (err) {
+      this.handleLongRunningCallError(createErrorContext(), activity, err).catch(handlerErr => {
+        logger.error(`Unhandled error in long-running error handler for activity '${activity.type}' (id: ${activity.id}):`, this.normalizeLongRunningCallError(handlerErr))
+      })
+    }
+  }
+
+  private async handleLongRunningCallError (
+    context: TurnContext,
+    activity: Activity,
+    err: unknown
+  ): Promise<void> {
+    const error = this.normalizeLongRunningCallError(err)
+
+    try {
+      await context.adapter.onTurnError(context, error)
+    } catch (handlerErr) {
+      logger.error(`Unhandled error in long-running error handler for activity '${activity.type}' (id: ${activity.id}):`, this.normalizeLongRunningCallError(handlerErr))
+    }
+  }
+
+  private normalizeLongRunningCallError (err: unknown): Error {
+    if (err instanceof Error) {
+      return err
+    }
+
+    return ExceptionHelper.generateException(Error, Errors.UnknownErrorType, undefined, {
+      errorMessage: this.stringifyThrownValue(err)
     })
+  }
+
+  private stringifyThrownValue (value: unknown): string {
+    if (typeof value === 'string') {
+      return value
+    }
+
+    if (value === undefined) {
+      return 'undefined'
+    }
+
+    if (value === null) {
+      return 'null'
+    }
+
+    if (typeof value === 'object') {
+      try {
+        return JSON.stringify(value) ?? Object.prototype.toString.call(value)
+      } catch {
+        return Object.prototype.toString.call(value)
+      }
+    }
+
+    return String(value)
   }
 
   /**

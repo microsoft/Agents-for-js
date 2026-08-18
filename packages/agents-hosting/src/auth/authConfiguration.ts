@@ -8,6 +8,7 @@ import { loadEnvSettings, AuthConfiguration, envParser, envParserUtils, LoadEnv,
 
 export { type AuthConfiguration, type ConnectionSettings, type ConnectionSettingsBase, type MsalConnectionSettings, type SidecarConnectionSettings, AuthType, resolveAuthority, type ConnectionMapItem, resolveAuthType } from './settings'
 import { prune } from '../utils'
+import { parseBooleanEnv } from '../utils/env'
 import { ExceptionHelper } from '@microsoft/agents-activity'
 import { Errors } from '../errorHelper'
 
@@ -28,6 +29,7 @@ function summarizeAuthConfiguration (authConfig: AuthConfiguration) {
       authorityEndpoint: config.authorityEndpoint ? redactUrl(config.authorityEndpoint) : undefined,
       scopes: (config.scopes ? redactScopes(config.scopes) : undefined) as any,
       issuers: config.issuers?.map(redactUrl).filter(e => e !== undefined),
+      validateIssuer: config.validateIssuer,
       federatedClientId: redactString(config.federatedClientId, true),
       certPemFile: redactString(config.certPemFile),
       certKeyFile: redactString(config.certKeyFile),
@@ -40,6 +42,7 @@ function summarizeAuthConfiguration (authConfig: AuthConfiguration) {
       alternateBlueprintConnectionName: undefined, // Alias of altBlueprintConnectionName, avoid logging duplicate info
       azureRegion: config.azureRegion,
       sendX5C: config.sendX5C,
+      msalRetryCount: config.msalRetryCount,
       sidecarBaseUrl: config.sidecarBaseUrl ? redactUrl(config.sidecarBaseUrl) : undefined,
       serviceName: config.serviceName,
       blueprintServiceName: config.blueprintServiceName,
@@ -96,6 +99,10 @@ const connectionsEnv = {
     idpmResource: envParserUtils.bypass,
     azureRegion: envParserUtils.bypass,
     sendX5C: (value) => ({ value: value === 'true' }),
+    msalRetryCount: (value) => {
+      const n = parseInt(value, 10)
+      return { value: Number.isFinite(n) && n >= 0 ? n : undefined }
+    },
     sidecarBaseUrl: envParserUtils.bypass,
     serviceName: envParserUtils.bypass,
     blueprintServiceName: envParserUtils.bypass,
@@ -114,6 +121,7 @@ const connectionsEnv = {
       }
       return { value: value.split(/\s+/).filter(Boolean) }
     },
+    validateIssuer: (value) => ({ value: parseBooleanEnv(value) }),
   }),
   default (connections?: AuthConfiguration['connections'], connectionsMap?: AuthConfiguration['connectionsMap']) {
     const conn = connections ?? this.connections
@@ -230,6 +238,7 @@ const legacyBotFrameworkEnv = {
     WIDAssertionFile: envParserUtils.redirect(connectionsEnv.parser, 'WIDAssertionFile'),
     azureRegion: envParserUtils.redirect(connectionsEnv.parser, 'azureRegion'),
     sendX5C: envParserUtils.redirect(connectionsEnv.parser, 'sendX5C'),
+    msalRetryCount: envParserUtils.redirect(connectionsEnv.parser, 'msalRetryCount'),
     authType: envParserUtils.redirect(connectionsEnv.parser, 'authType'),
     federatedTokenFile: envParserUtils.redirect(connectionsEnv.parser, 'federatedTokenFile'),
     idpmResource: envParserUtils.redirect(connectionsEnv.parser, 'idpmResource'),
@@ -239,6 +248,7 @@ const legacyBotFrameworkEnv = {
     bypassLocalNetworkRestriction: envParserUtils.redirect(connectionsEnv.parser, 'bypassLocalNetworkRestriction'),
     requestTimeout: envParserUtils.redirect(connectionsEnv.parser, 'requestTimeout'),
     retryCount: envParserUtils.redirect(connectionsEnv.parser, 'retryCount'),
+    validateIssuer: envParserUtils.redirect(connectionsEnv.parser, 'validateIssuer'),
   }),
   process (env: LoadEnv) {
     return legacyPrefixEnv.process.call(this, env)
@@ -265,6 +275,7 @@ const legacyPrefixEnv = {
     WIDAssertionFile: envParserUtils.redirect(connectionsEnv.parser, 'WIDAssertionFile'),
     azureRegion: envParserUtils.redirect(connectionsEnv.parser, 'azureRegion'),
     sendX5C: envParserUtils.redirect(connectionsEnv.parser, 'sendX5C'),
+    msalRetryCount: envParserUtils.redirect(connectionsEnv.parser, 'msalRetryCount'),
     authType: envParserUtils.redirect(connectionsEnv.parser, 'authType'),
     federatedTokenFile: envParserUtils.redirect(connectionsEnv.parser, 'federatedTokenFile'),
     idpmResource: envParserUtils.redirect(connectionsEnv.parser, 'idpmResource'),
@@ -274,6 +285,7 @@ const legacyPrefixEnv = {
     bypassLocalNetworkRestriction: envParserUtils.redirect(connectionsEnv.parser, 'bypassLocalNetworkRestriction'),
     requestTimeout: envParserUtils.redirect(connectionsEnv.parser, 'requestTimeout'),
     retryCount: envParserUtils.redirect(connectionsEnv.parser, 'retryCount'),
+    validateIssuer: envParserUtils.redirect(connectionsEnv.parser, 'validateIssuer'),
   }),
   process (env: LoadEnv, prefix?: string) {
     const settings: Partial<AuthConfiguration> = {}

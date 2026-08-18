@@ -3,7 +3,15 @@ import { Readable } from 'stream'
 import { describe, it } from 'node:test'
 import { BlobsStorage } from '../src'
 
-describe('BlobsStorage TTL', () => {
+describe('BlobsStorage', () => {
+  it('accepts an anonymous URL without a credential', () => {
+    assert.doesNotThrow(() => new BlobsStorage('unused', undefined, undefined, 'https://example.blob.core.windows.net/container'))
+  })
+
+  it('accepts a SAS URL without a credential', () => {
+    assert.doesNotThrow(() => new BlobsStorage('unused', undefined, undefined, 'https://example.blob.core.windows.net/container?sv=test&sig=test'))
+  })
+
   it('should write expiry metadata when ttl is provided', async () => {
     let uploadOptions: any
     const storage = Object.create(BlobsStorage.prototype) as BlobsStorage

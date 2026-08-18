@@ -7,7 +7,7 @@ This package allows to configure Azure Blob Storage as the backend for Agents co
 ## Usage with connectionStrings
 
 ```ts
-const blobStorage = new BlobStorage(process.env.BLOB_STORAGE_CONNECTION_STRING!, process.env.BLOB_CONTAINER_ID!)
+const blobStorage = new BlobsStorage(process.env.BLOB_CONTAINER_ID!, process.env.BLOB_STORAGE_CONNECTION_STRING!)
 const conversationState = new ConversationState(blobStorage)
 const userState = new UserState(blobStorage)
 ```

@@ -1,8 +1,7 @@
-import { AgentApplication, MemoryStorage, TurnContext, TurnState } from '@microsoft/agents-hosting'
-import { TeamsAgentExtension } from '@microsoft/agents-hosting-extensions-teams'
+import { AdaptiveCard, AgentApplication, CardFactory, MemoryStorage, MessageFactory, TurnContext, TurnState } from '@microsoft/agents-hosting'
+import { TeamsAgentExtension, teamsGetDataString, TeamsTurnContext } from '@microsoft/agents-hosting-extensions-msteams'
 import { startServer } from '@microsoft/agents-hosting-express'
-
-interface SubmitData extends Record<string, unknown> {}
+import type { TaskModuleRequest, TaskModuleResponse } from '@microsoft/teams.api'
 
 const app = new AgentApplication<TurnState>({ storage: new MemoryStorage() })
 
@@ -10,20 +9,201 @@ const teamsExt = new TeamsAgentExtension<TurnState>(app)
 
 app.registerExtension<TeamsAgentExtension<TurnState>>(teamsExt, (tae) => {
   console.log('Teams extension registered')
-  tae.taskModule.submit<SubmitData>('do', async (context: TurnContext, state: TurnState, data: SubmitData) => {
-    console.log('Task module submit:', data)
-    await context.sendActivity('Task module submitted successfully!')
-    return undefined
+  tae.taskModules.onFetch('simple_form', async (context: TeamsTurnContext, state: TurnState, request: TaskModuleRequest): Promise<TaskModuleResponse> => {
+    const formCard = {
+      type: 'AdaptiveCard',
+      body: [
+        {
+          type: 'TextBlock',
+          size: 'Large',
+          weight: 'Bolder',
+          text: 'Simple Form'
+        },
+        {
+          type: 'Input.Text',
+          id: 'name',
+          label: 'Your Name',
+          isRequired: true
+        }
+      ],
+      actions: [
+        {
+          type: 'Action.Submit',
+          title: 'Submit',
+          data: {
+            task: 'simple_form'
+          }
+        }
+      ],
+      $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
+      version: '1.4'
+    } as AdaptiveCard
+
+    return {
+      task: {
+        type: 'continue',
+        value: {
+          title: 'Simple Form',
+          height: 'small',
+          width: 'small',
+          card: CardFactory.adaptiveCard(formCard)
+        }
+      }
+    }
   })
+    .onSubmit('simple_form', async (context: TeamsTurnContext, state: TurnState, request: TaskModuleRequest): Promise<TaskModuleResponse> => {
+      const name = teamsGetDataString(request, 'name', 'Unknown')
+      console.log('Task module submit:', request.data)
+      await context.sendActivity(`Task module submitted successfully for ${name}!`)
+
+      return {
+        task: {
+          type: 'message',
+          value: 'Form was submitted.'
+        }
+      }
+    })
+    .onFetch('multi_step_form', async (context: TeamsTurnContext, state: TurnState, request: TaskModuleRequest): Promise<TaskModuleResponse> => {
+      const formCard = {
+        type: 'AdaptiveCard',
+        body: [
+          {
+            type: 'TextBlock',
+            size: 'Large',
+            weight: 'Bolder',
+            text: 'This is a multi-step form'
+          },
+          {
+            type: 'Input.Text',
+            id: 'name',
+            label: 'Enter Your Name',
+            isRequired: true
+          }
+        ],
+        actions: [
+          {
+            type: 'Action.Submit',
+            title: 'Submit',
+            data: {
+              task: 'multi_step_form_submit_name'
+            }
+          }
+        ],
+        $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
+        version: '1.4'
+      } as AdaptiveCard
+
+      return {
+        task: {
+          type: 'continue',
+          value: {
+            title: 'Multi-Step Form Dialog',
+            height: 'small',
+            width: 'small',
+            card: CardFactory.adaptiveCard(formCard)
+          }
+        }
+      }
+    })
+    .onSubmit('multi_step_form_submit_name', async (context: TeamsTurnContext, state: TurnState, request: TaskModuleRequest): Promise<TaskModuleResponse> => {
+      const name = teamsGetDataString(request, 'name', 'Unknown')
+
+      const formCard = {
+        type: 'AdaptiveCard',
+        body: [
+          {
+            type: 'TextBlock',
+            size: 'Large',
+            weight: 'Bolder',
+            text: `Email, ${name}!`
+          },
+          {
+            type: 'Input.Text',
+            id: 'email',
+            label: 'Enter Your Email',
+            isRequired: true,
+            placeholder: 'Enter your email'
+          }
+        ],
+        actions: [
+          {
+            type: 'Action.Submit',
+            title: 'Submit',
+            data: {
+              task: 'multi_step_form_submit_email',
+              name
+            }
+          }
+        ],
+        $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
+        version: '1.4'
+      } as AdaptiveCard
+
+      return {
+        task: {
+          type: 'continue',
+          value: {
+            title: `Thanks ${name} - Get Email`,
+            height: 'small',
+            width: 'small',
+            card: CardFactory.adaptiveCard(formCard)
+          }
+        }
+      }
+    })
+    .onSubmit('multi_step_form_submit_email', async (context: TeamsTurnContext, state: TurnState, request: TaskModuleRequest): Promise<TaskModuleResponse> => {
+      const name = teamsGetDataString(request, 'name', 'Unknown')
+      const email = teamsGetDataString(request, 'email', 'No email provided')
+
+      await context.sendActivity(`Hi ${name}, thanks for submitting the form! We got that your email is ${email}`)
+
+      return {
+        task: {
+          type: 'message',
+          value: 'Multi-step form completed successfully'
+        }
+      }
+    })
 })
 
 app.onActivity('message', async (context: TurnContext, state: TurnState) => {
-  const text = context.activity.text || ''
-  console.log('Received message:', text)
+  const card = {
+    type: 'AdaptiveCard',
+    body: [
+      {
+        type: 'TextBlock',
+        size: 'Large',
+        weight: 'Bolder',
+        text: 'Select the examples you want to see!'
+      }
+    ],
+    actions: [
+      {
+        type: 'Action.Submit',
+        title: 'Simple Form',
+        data: {
+          msteams: {
+            type: 'task/fetch'
+          },
+          task: 'simple_form'
+        }
+      },
+      {
+        type: 'Action.Submit',
+        title: 'Multi-Step Form',
+        data: {
+          msteams: {
+            type: 'task/fetch'
+          },
+          task: 'multi_step_form'
+        }
+      }
+    ],
+    $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
+    version: '1.4'
+  } as AdaptiveCard
 
-  state.setValue('user.lastMessage', text)
-
-  await context.sendActivity(`I received your message in Teams: "${text}". Try adding a reaction!`)
+  await context.sendActivity(MessageFactory.attachment(CardFactory.adaptiveCard(card)))
 })
 
 startServer(app)

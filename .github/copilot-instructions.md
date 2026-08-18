@@ -10,6 +10,7 @@ npm run build:clean      # wipe dist/ then rebuild
 npm test                 # all tests (node:test runner + tsx, emits test-report.xml)
 npm run lint             # eslint (neostandard config)
 npm run lint:deps:ci     # knip: unused files/exports/deps must be clean
+npm run repo:doctor      # repository structure, metadata, docs, and runtime drift
 npm run compat           # api-extractor public-API compatibility check
 npm run build:samples    # build the test-agents
 ```
@@ -21,7 +22,11 @@ node --test --import tsx packages/agents-activity/test/exceptionHelper.test.ts  
 node --test --import tsx 'packages/agents-hosting/test/**/*.test.ts'             # one package
 ```
 
-CI (`.github/workflows/ci.yml`) runs, in order: `lint` → `lint:deps:ci` → `build` → `test` → `build:samples`. Match this before assuming work is done.
+Run `npm run repo:doctor` after structural, package, documentation, build-reference, dependency, API-baseline, test-agent, Docker, or runtime-configuration changes. Its ESLint-style diagnostics include stable rule IDs and concrete fix instructions for agents and humans.
+
+Do not add npm `pre*` / `post*` lifecycle wrappers or install-time hooks (`preinstall`, `install`, `postinstall`, `prepare`). `npm --ignore-scripts` skips those hooks; make required script dependencies explicit in the invoked command.
+
+CI (`.github/workflows/ci.yml`) runs, in order: `repo:doctor` → `lint` → `lint:deps:ci` → `build` → `test` → `build:samples`. Match this before assuming work is done.
 
 ## Architecture (the big picture)
 

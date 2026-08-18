@@ -8,10 +8,8 @@
   "type": "module",
   "scripts": {
     "build": "tsc --build",
-    "prestart": "npm run build",
-    "start": "node --env-file .env ./dist/index.js",
-    "prebundle": "npm run build",
-    "bundle": "esbuild dist/index.js --bundle --platform=node --metafile=dist/meta.json --outfile=dist/bundle.js --tree-shaking=true --keep-names"
+    "start": "npm run build && node --env-file .env ./dist/index.js",
+    "bundle": "npm run build && esbuild dist/index.js --bundle --platform=node --metafile=dist/meta.json --outfile=dist/bundle.js --tree-shaking=true --keep-names"
   },
   "dependencies": {
     "@microsoft/agents-activity": "file:../../packages/agents-activity",

@@ -5,7 +5,8 @@
     "nodejs-testing.extensions": [
         {
             "extensions": [
-                "ts"
+                "ts",
+                "mjs"
             ],
             "parameters": [
                 "--import",
@@ -14,7 +15,8 @@
         }
     ],
     "nodejs-testing.include": [
-        "packages/*/test/"
+        "packages/*/test/",
+        "scripts/test/"
     ],
     "json.schemaDownload.trustedDomains": {
         "https://unpkg.com/": true
