@@ -22,17 +22,24 @@
     "lint": "eslint",
     "lint:deps": "knip",
     "lint:deps:ci": "knip --reporter github-actions",
-    "compat": "node compat.mjs",
-    "test": "node --test  --test-reporter=spec  --import tsx  --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=test-report.xml ./packages/*/test/**/*.test.ts",
+    "compat": "node scripts/compat.mjs",
+    "repo:doctor": "node scripts/repo-doctor.mjs",
+    "test": "node --test --test-reporter=spec --import tsx --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=test-report.xml \"./packages/*/test/**/*.test.ts\" \"./scripts/test/**/*.test.mjs\"",
+    "compare:teams-api": "node --import tsx scripts/teams-api-drift/compare-teams-api.ts",
+    "detect:teams-api-drifts": "node --import tsx scripts/teams-api-drift/detect-teams-api-drifts.ts",
+    "render:teams-api-drift-report": "node --import tsx scripts/teams-api-drift/render-teams-api-drift-report.ts",
+    "prepare:teams-api-agent-report": "node --import tsx scripts/teams-api-drift/prepare-teams-api-agent-context.ts",
+    "validate:teams-api-agent-report": "node --import tsx scripts/teams-api-drift/validate-teams-api-agent-report.ts",
+    "write:teams-api-test-summary": "node --import tsx scripts/teams-api-drift/write-teams-api-test-summary.ts",
+    "test:teams-api-contracts": "tsc -p packages/agents-hosting-extensions-msteams/test/contracts/tsconfig.json --noEmit",
     "docs": "typedoc --skipErrorChecking",
     "clean:dist": "rm -rfv packages/*/dist",
     "clean": "git clean -xdf",
     "build:samples": "tsc --build --verbose tsconfig.samples.json",
     "build:browser": "npm run build:browser --workspaces --if-present",
     "build:esm": "npm run build:esm --workspaces --if-present",
-    "build": "tsc --build --verbose tsconfig.build.json",
-    "build:clean": "npm run clean:dist && npm run build",
-    "postbuild": "npm run build:esm && npm run build:browser"
+    "build": "tsc --build --verbose tsconfig.build.json && npm run build:esm && npm run build:browser",
+    "build:clean": "npm run clean:dist && npm run build"
   },
   "license": "MIT",
   "workspaces": [
@@ -46,8 +53,9 @@
     "@microsoft/microsoft-graph-types": "2.43.1",
     "@types/debug": "4.1.13",
     "@types/express": "5.0.6",
-    "@types/node": "25.6.0",
+    "@types/node": "20.19.25",
     "@types/sinon": "21.0.0",
+    "diff": "8.0.3",
     "esbuild": "0.28.1",
     "eslint": "9.39.2",
     "knip": "5.86.0",
@@ -57,7 +65,8 @@
     "sinon": "21.0.3",
     "tsx": "4.22.4",
     "typedoc": "0.28.18",
-    "typescript": "6.0.3"
+    "typescript": "6.0.3",
+    "yaml": "2.8.3"
   },
   "peerDependencies": {
     "@rushstack/terminal": "*"

@@ -28,7 +28,10 @@ steps:
     workingDir: .
   displayName: 'npm ci'
 
-- script: node setVersion.js
+- script: npm run repo:doctor
+  displayName: validate repository structure
+
+- script: node scripts/set-version.mjs
   displayName: set version
 
 - script: npm run lint
@@ -51,4 +54,4 @@ steps:
       testResultsFiles: 'test-report.xml'
       mergeTestResults: true
       failTaskOnFailedTests: true
-      testRunTitle: 'Node Tests'      
+      testRunTitle: 'Node Tests'

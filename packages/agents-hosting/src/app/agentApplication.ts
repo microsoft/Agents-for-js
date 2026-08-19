@@ -1093,20 +1093,75 @@ export class AgentApplication<TState extends TurnState> {
     handler: (context: TurnContext) => Promise<any>
   ) {
     const activity = Activity.fromObject(context.activity)
-    this.continueConversationAsync(context.identity, activity.getConversationReference(), async (ctx) => {
-      try {
-        Object.assign(ctx.activity, activity)
-        await handler(ctx)
-      } catch (err) {
-        if (this.adapter.onTurnError && err instanceof Error) {
-          await this.adapter.onTurnError(ctx, err)
-        } else {
-          throw err
+    const adapter = context.adapter
+    const identity = context.identity
+    const createErrorContext = () => new TurnContext(adapter, Activity.fromObject(activity), identity)
+
+    try {
+      const reference = activity.getConversationReference()
+      this.continueConversationAsync(identity, reference, async (ctx) => {
+        try {
+          Object.assign(ctx.activity, activity)
+          await handler(ctx)
+        } catch (err) {
+          await this.handleLongRunningCallError(ctx, activity, err)
         }
-      }
-    }).catch(err => {
-      logger.error(`Unhandled error in long-running call for activity '${activity.type}' (id: ${activity.id}):`, err)
+      }).catch(async err => {
+        await this.handleLongRunningCallError(createErrorContext(), activity, err)
+      })
+    } catch (err) {
+      this.handleLongRunningCallError(createErrorContext(), activity, err).catch(handlerErr => {
+        logger.error(`Unhandled error in long-running error handler for activity '${activity.type}' (id: ${activity.id}):`, this.normalizeLongRunningCallError(handlerErr))
+      })
+    }
+  }
+
+  private async handleLongRunningCallError (
+    context: TurnContext,
+    activity: Activity,
+    err: unknown
+  ): Promise<void> {
+    const error = this.normalizeLongRunningCallError(err)
+
+    try {
+      await context.adapter.onTurnError(context, error)
+    } catch (handlerErr) {
+      logger.error(`Unhandled error in long-running error handler for activity '${activity.type}' (id: ${activity.id}):`, this.normalizeLongRunningCallError(handlerErr))
+    }
+  }
+
+  private normalizeLongRunningCallError (err: unknown): Error {
+    if (err instanceof Error) {
+      return err
+    }
+
+    return ExceptionHelper.generateException(Error, Errors.UnknownErrorType, undefined, {
+      errorMessage: this.stringifyThrownValue(err)
     })
+  }
+
+  private stringifyThrownValue (value: unknown): string {
+    if (typeof value === 'string') {
+      return value
+    }
+
+    if (value === undefined) {
+      return 'undefined'
+    }
+
+    if (value === null) {
+      return 'null'
+    }
+
+    if (typeof value === 'object') {
+      try {
+        return JSON.stringify(value) ?? Object.prototype.toString.call(value)
+      } catch {
+        return Object.prototype.toString.call(value)
+      }
+    }
+
+    return String(value)
   }
 
   /**

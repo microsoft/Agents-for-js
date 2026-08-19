@@ -7,8 +7,7 @@
   "main": "./dist/agent.js",
   "scripts": {
     "build": "tsc --build",
-    "prestart": "npm run build",
-    "start": "node --env-file .env ./dist/agent.js"
+    "start": "npm run build && node --env-file .env ./dist/agent.js"
   },
   "dependencies": {
     "@microsoft/agents-hosting-express": "file:../../packages/agents-hosting-express",

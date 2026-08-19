@@ -12,10 +12,10 @@ import { AGENT_RESPONSE_ROUTE_PATH, createAgentResponseHandler } from './createA
 
 /**
  * Minimal application surface needed by {@link configureResponseController} to
- * register the agent-to-agent response POST route. Express's `Application`
- * structurally satisfies this; frameworks that do not (e.g., Fastify) should
- * call {@link createAgentResponseHandler} directly and register the route
- * themselves rather than passing a synthetic `WebApp`.
+ * register the SDK-specific Activity callback POST route. Express's `Application`
+ * structurally satisfies this. Framework integrations that do not satisfy it
+ * should wrap {@link createAgentResponseHandler}; Fastify users should use
+ * `configureResponseController` from `@microsoft/agents-hosting-fastify`.
  *
  * `WebApp` is a minimal structural shape rather than a richer, named
  * route-registrar contract. It is exported so it has a stable name in the
@@ -31,23 +31,28 @@ export interface WebApp {
 }
 
 /**
- * To enable Agent to Agent communication, configures the agent response controller endpoint for handling incoming activities from external services.
+ * Registers the authenticated Activity callback endpoint used by SDK-specific
+ * Activity-protocol delegation.
  *
  * @remarks
- * This function sets up a POST endpoint that receives activities (messages, events, etc.) from external
- * services and processes them through the bot framework's activity handling pipeline. It's typically used
- * when the agent needs to receive and respond to activities from channels or services that send activities
- * to a specific webhook endpoint.
+ * This endpoint is part of the Microsoft Agents SDK delegated-agent callback
+ * flow
  *
  * The endpoint expects activities to be sent to:
  * `POST /api/agentresponse/v3/conversations/{conversationId}/activities/{activityId}`
  *
  * The function handles:
+ * - Returning `401` when JWT authentication fails
+ * - Returning `403` when delegated state is invalid or the authenticated caller
+ *   does not own the delegated conversation
  * - Normalizing incoming activity data from the request body
  * - Retrieving conversation references from conversation state
  * - Continuing conversations using the stored conversation reference
  * - Processing EndOfConversation activities by cleaning up conversation state
  * - Sending activities through the turn context and returning responses
+ *
+ * Anonymous callbacks are supported only for unconfigured development hosts
+ * outside production and cannot cryptographically prove callback ownership.
  *
  * @param app - The application instance (Express `Application` or any framework that satisfies {@link WebApp}) to configure the route on.
  * @param adapter - The CloudAdapter instance used for processing bot framework activities and managing conversations.
