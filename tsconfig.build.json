@@ -2,16 +2,19 @@
     "files": [],
     "references": [
       {
-        "path": "packages/agents-telemetry"
+        "path": "packages/agents-activity"
       },
       {
-        "path": "packages/agents-activity"
+        "path": "packages/agents-telemetry"
       },
       {
         "path": "packages/agents-hosting"
       },
       {
         "path": "packages/agents-hosting-express"
+      },
+      {
+        "path": "packages/agents-hosting-fastify"
       },
       {
         "path": "packages/agents-copilotstudio-client"
@@ -29,6 +32,9 @@
         "path": "packages/agents-hosting-extensions-teams"
       },
       {
+        "path": "packages/agents-hosting-extensions-msteams"
+      },
+      {
         "path": "packages/agents-hosting-extensions-slack"
       },
       {
@@ -39,6 +45,12 @@
       },
       {
         "path": "test-agents/empty-agent"
+      },
+      {
+        "path": "test-agents/fastify-empty-agent"
+      },
+      {
+        "path": "test-agents/sidecar-auth"
       },
       {
         "path": "test-agents/web-chat"
@@ -57,6 +69,9 @@
       },
       {
         "path": "test-agents/root-agent"
+      },
+      {
+        "path": "test-agents/delegated-agent-callback"
       }
     ]
   }

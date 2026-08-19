@@ -28,7 +28,7 @@ export class PrebuiltBotStrategy implements Strategy {
     const host = settings.host
 
     this.baseURL = new URL(
-      `/copilotstudio/prebuilt/authenticated/bots/${schema}`,
+      `/copilotstudio/prebuilt/authenticated/bots/${encodeURIComponent(schema)}`,
       host
     )
     this.baseURL.searchParams.append('api-version', this.API_VERSION)
@@ -39,7 +39,7 @@ export class PrebuiltBotStrategy implements Strategy {
     conversationUrl.pathname = `${conversationUrl.pathname}/conversations`
 
     if (conversationId) {
-      conversationUrl.pathname = `${conversationUrl.pathname}/${conversationId}`
+      conversationUrl.pathname = `${conversationUrl.pathname}/${encodeURIComponent(conversationId)}`
     }
 
     return conversationUrl.href

@@ -7,7 +7,7 @@ import {
   AnonymousCredential,
   BlobItem,
   ContainerClient,
-  ContainerListBlobHierarchySegmentResponse,
+  ContainerListBlobFlatSegmentResponse,
   StoragePipelineOptions,
   StorageSharedKeyCredential,
 } from '@azure/storage-blob'
@@ -15,6 +15,7 @@ import { TranscriptStore, PagedResult, TranscriptInfo } from '@microsoft/agents-
 import { debug } from '@microsoft/agents-telemetry'
 
 const logger = debug('agents:blob-transcript-store')
+const ENCODED_PATH_SEPARATOR = encodeURIComponent('/')
 
 /**
  * Formats a Date object into a hexadecimal string representing ticks.
@@ -34,7 +35,8 @@ function formatTicks (timestamp: Date): string {
  * @returns A sanitized string prefix for the channel.
  */
 function getChannelPrefix (channelId: string): string {
-  return sanitizeBlobKey(`${channelId}/`)
+  // sanitizeBlobKey removes trailing separators, so restore the encoded separator to avoid matching "channel2".
+  return `${sanitizeBlobKey(channelId)}${ENCODED_PATH_SEPARATOR}`
 }
 
 /**
@@ -43,8 +45,12 @@ function getChannelPrefix (channelId: string): string {
  * @param conversationId - The ID of the conversation.
  * @returns A sanitized string prefix for the conversation.
  */
-function getConversationPrefix (channelId: string, conversationId: string): string {
-  return sanitizeBlobKey(`${channelId}/${conversationId}`)
+function getConversationPrefix (
+  channelId: string,
+  conversationId: string
+): string {
+  // sanitizeBlobKey removes trailing separators, so restore the encoded separator to avoid matching "conv2".
+  return `${sanitizeBlobKey(`${channelId}/${conversationId}`)}${ENCODED_PATH_SEPARATOR}`
 }
 
 function getBlobKey (activity: Activity, options?: BlobsTranscriptStoreOptions): string {
@@ -141,6 +147,15 @@ function maybeCast<T> (value: unknown, ctor?: { new (...args: any[]): T }): T {
   return value as T
 }
 
+function getConversationId (blobName: string): string | undefined {
+  try {
+    const [, conversationId] = decodeURIComponent(blobName).split('/').filter(Boolean)
+    return conversationId
+  } catch {
+    return undefined
+  }
+}
+
 const MAX_PAGE_SIZE = 20
 
 /**
@@ -153,7 +168,7 @@ export interface BlobsTranscriptStoreOptions {
   storagePipelineOptions?: StoragePipelineOptions;
 
   /**
-   * Indicates whether to decode the transcript key when retrieving transcripts.
+   * Indicates whether to decode a transcript key when supplied to an operation.
    */
   decodeTranscriptKey?: boolean;
 }
@@ -165,7 +180,6 @@ export class BlobsTranscriptStore implements TranscriptStore {
   private readonly _containerClient: ContainerClient
   private readonly _concurrency = Infinity
   private _initializePromise?: Promise<unknown>
-  private _isDecodeTranscriptKey?: boolean = false
 
   /**
    * Constructs a new instance of the BlobsTranscriptStore class.
@@ -214,8 +228,6 @@ export class BlobsTranscriptStore implements TranscriptStore {
       }
     }
 
-    this._isDecodeTranscriptKey = options?.decodeTranscriptKey
-
     logger.info('BlobsTranscriptStore settings loaded', {
       container: containerName,
       connection: {
@@ -223,7 +235,7 @@ export class BlobsTranscriptStore implements TranscriptStore {
         type: (blobServiceUri || connectionString).trim() === 'UseDevelopmentStorage=true;' ? 'development' : 'production',
       },
       pipeline: options?.storagePipelineOptions !== undefined ? 'custom' : 'default',
-      transcriptKey: this._isDecodeTranscriptKey ? 'decoded' : 'encoded',
+      transcriptKey: 'encoded',
     })
   }
 
@@ -257,16 +269,18 @@ export class BlobsTranscriptStore implements TranscriptStore {
     logger.debug('Using conversation prefix', { prefix })
 
     const iter = this._containerClient
-      .listBlobsByHierarchy('/', {
+      .listBlobsFlat({
         prefix,
       })
       .byPage({ continuationToken, maxPageSize: MAX_PAGE_SIZE })
 
-    let page = await iter.next()
+    const page = await iter.next()
     const result: Activity[] = []
-    let response: ContainerListBlobHierarchySegmentResponse | undefined
-    while (!page.done) {
-      response = maybeCast<ContainerListBlobHierarchySegmentResponse>(page?.value ?? {})
+    const response = page.done
+      ? undefined
+      : maybeCast<ContainerListBlobFlatSegmentResponse>(page.value ?? {})
+
+    if (response) {
       const blobItems = response?.segment?.blobItems ?? []
 
       logger.debug('Fetched blob items', { blobCount: blobItems.length })
@@ -299,8 +313,6 @@ export class BlobsTranscriptStore implements TranscriptStore {
           if (activity) result.push(activity)
         })
       }
-
-      page = await iter.next()
     }
 
     logger.debug('Total transcript activities fetched', { activityCount: result.length })
@@ -324,37 +336,41 @@ export class BlobsTranscriptStore implements TranscriptStore {
     await this._initialize()
 
     const iter = this._containerClient
-      .listBlobsByHierarchy('/', {
+      .listBlobsFlat({
         prefix: getChannelPrefix(channelId),
+        includeMetadata: true,
       })
       .byPage({ continuationToken, maxPageSize: MAX_PAGE_SIZE })
 
-    let page = await iter.next()
-    const result: any[] = []
-    let response: ContainerListBlobHierarchySegmentResponse | undefined
+    const page = await iter.next()
+    const transcripts = new Map<string, TranscriptInfo>()
+    const response = page.done
+      ? undefined
+      : maybeCast<ContainerListBlobFlatSegmentResponse>(page.value ?? {})
 
-    while (!page.done) {
-      const response = maybeCast<ContainerListBlobHierarchySegmentResponse>(page?.value ?? {})
+    if (response) {
       const blobItems = response?.segment?.blobItems ?? []
 
-      const items = blobItems.map((blobItem) => {
-        const [, id] = decodeURIComponent(blobItem.name).split('/')
+      blobItems.forEach((blobItem) => {
+        const id = getConversationId(blobItem.name)
+        if (!id) {
+          return
+        }
 
-        const created = blobItem.metadata?.timestamp ? new Date(blobItem.metadata.timestamp) : new Date()
+        const metadataTimestamp = blobItem.metadata?.timestamp ?? blobItem.metadata?.Timestamp
+        const parsedCreated = metadataTimestamp ? new Date(metadataTimestamp) : undefined
+        const created = parsedCreated && !Number.isNaN(parsedCreated.getTime()) ? parsedCreated : new Date()
+        const existing = transcripts.get(id)
 
-        return { channelId, created, id }
+        if (!existing || created < existing.created) {
+          transcripts.set(id, { channelId, created, id })
+        }
       })
-
-      items.forEach((transcript) => {
-        if (transcript) result.push(transcript)
-      })
-
-      page = await iter.next()
     }
 
     return {
       continuationToken: response?.continuationToken ?? '',
-      items: result ?? [],
+      items: [...transcripts.values()],
     }
   }
 
@@ -371,16 +387,14 @@ export class BlobsTranscriptStore implements TranscriptStore {
     await this._initialize()
 
     const iter = this._containerClient
-      .listBlobsByHierarchy('/', {
+      .listBlobsFlat({
         prefix: getConversationPrefix(channelId, conversationId),
       })
-      .byPage({
-        maxPageSize: MAX_PAGE_SIZE,
-      })
+      .byPage({ maxPageSize: MAX_PAGE_SIZE })
 
     let page = await iter.next()
     while (!page.done) {
-      const response = maybeCast<ContainerListBlobHierarchySegmentResponse>(page?.value ?? {})
+      const response = maybeCast<ContainerListBlobFlatSegmentResponse>(page?.value ?? {})
       const blobItems = response?.segment?.blobItems ?? []
 
       const deletionPromises = blobItems.map(blobItem =>
@@ -397,7 +411,7 @@ export class BlobsTranscriptStore implements TranscriptStore {
    * Logs an activity to the transcript store.
    *
    * @param activity - The activity to log.
-   * @param options - Optional configuration options for the operation.
+   * @param options - Optional configuration for this activity.
    * @returns A promise that resolves when the activity is logged.
    */
   async logActivity (activity: Activity, options?: BlobsTranscriptStoreOptions): Promise<void> {
