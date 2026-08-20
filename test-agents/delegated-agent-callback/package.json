@@ -1,0 +1,22 @@
+{
+  "name": "delegated-agent-callback",
+  "version": "1.0.0",
+  "private": true,
+  "author": "Microsoft",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/sageAgent.js",
+  "scripts": {
+    "build": "tsc --build",
+    "start": "npm run build && node --env-file .env ./dist/sageAgent.js",
+    "start:human": "npm run build && node --env-file .env.human ./dist/sageAgent.js",
+    "start:cat": "npm run build && node --env-file .env.cat ./dist/wiseCatAgent.js",
+    "smoke": "npm run build && node --env-file .env.smoke ./dist/smokeClient.js"
+  },
+  "dependencies": {
+    "@microsoft/agents-hosting": "file:../../packages/agents-hosting",
+    "@microsoft/agents-hosting-express": "file:../../packages/agents-hosting-express",
+    "express": "5.2.1",
+    "express-rate-limit": "8.5.2"
+  }
+}

@@ -17,7 +17,8 @@ The repository is a **monorepo** using npm workspaces with multiple interconnect
 - **agents-hosting-express**: Express.js integration for hosting agents.
 - **agents-hosting-fastify**: Fastify integration for hosting agents.
 - **agents-hosting-dialogs**: Dialog system for building conversational flows. Replaces `botbuilder-dialogs`.
-- **agents-hosting-extensions-teams**: Teams-specific features (TaskModules, Messaging Extensions).
+- **agents-hosting-extensions-msteams**: Teams-specific features (TaskModules, Messaging Extensions).
+- **agents-hosting-extensions-teams**: Deprecated legacy Teams extension retained for backward compatibility.
 - **agents-hosting-storage-blob**: Azure Blob Storage adapter. Replaces `botbuilder-azure`.
 - **agents-hosting-storage-cosmos**: CosmosDB storage adapter. Replaces `botbuilder-azure`.
 - **agents-copilotstudio-client**: Direct-to-Engine client for interacting with Copilot Studio agents.
@@ -83,12 +84,19 @@ npm run docs
 ### Other Commands
 
 ```bash
+# Check repository structure, package metadata, documentation, and runtime configuration
+npm run repo:doctor
+
 # Check API compatibility
 npm run compat
 
 # Launch agents playground (interactive testing tool)
 npm run play
 ```
+
+Run `npm run repo:doctor` after structural, package, documentation, build-reference, dependency, API-baseline, test-agent, Docker, or runtime-configuration changes. Every diagnostic includes a rule ID and a concrete fix instruction.
+
+Do not use implicit npm lifecycle wrappers such as `prebuild`, `postbuild`, `pretest`, or `posttest`. `npm --ignore-scripts` skips these hooks, so required work must be explicit. Install-time hooks (`preinstall`, `install`, `postinstall`, and `prepare`) are prohibited. Put dependent work directly in the explicit command, for example `npm run build && node ...`.
 
 ## Key Architecture Concepts
 
@@ -114,6 +122,23 @@ The package dependency hierarchy (simplified):
 **CloudAdapter**: Processes incoming HTTP requests, authenticates them, and creates TurnContext. Handles the communication with channels.
 
 **Storage**: Abstraction for persisting state (conversation, user, private). Implementations exist for Memory, Blob, and Cosmos.
+
+### Teams Extension (Teams SDK Migration)
+
+The `agents-hosting-extensions-msteams` package aligns with the Teams SDK-based architecture used in .NET. The legacy `agents-hosting-extensions-teams` package remains in the workspace for backward compatibility, but is deprecated and should not be used for new development.
+
+- **Teams SDK dependency**: Uses `@microsoft/teams.api` (`2.0.14`) for Teams models and client operations.
+- **Legacy API isolation**: `TeamsConnectorClient`, `TeamsActivityHandler`, `TeamsInfo`, and the local Teams-specific model wrappers remain available only from the deprecated `agents-hosting-extensions-teams` package.
+- **Shared Teams client setup**: Teams client setup/retrieval for the new package is implemented in `packages/agents-hosting-extensions-msteams/src/teamsApiClientExtensions.ts`.
+- **Turn setup requirements**:
+  - `TeamsAgentExtension` registers a `beforeTurn` handler that configures the Teams client for `AgentApplication` scenarios.
+  - Use `TeamsAgentExtension.getTeamsClient(context)` for Teams SDK client access.
+- **Error handling**:
+  - Missing client access throws `TeamsApiClientNotAvailable`.
+  - Teams client setup prerequisites throw `TeamsApiClientSetupFailed` (for easier misconfiguration diagnosis).
+- **Parsing simplification**:
+  - Teams channel data parsing was simplified to root-object validation/pass-through (`activity-extensions/teamsChannelData.ts`).
+  - Messaging extension query parsing remains validated via a Zod schema (`messageExtensions/messagingExtensionQuery.ts`).
 
 ### Authentication
 
@@ -146,6 +171,7 @@ Each package has its own `tsconfig.json` that extends the root configuration.
 - Place tests in `test/` directory within each package
 - Name test files with `.test.ts` suffix
 - Tests run with `tsx` for TypeScript support
+- Do not leave a TypeScript cast (`as` or angle-bracket assertion) in a test callback's final executable statement. The VS Code `node:test` extension uses a loose parser for TypeScript; assign the cast result to a typed local earlier in the callback instead.
 
 ## Common Patterns
 
@@ -215,11 +241,14 @@ Each package keeps its error definitions in a local `errorHelper.ts` (e.g. `pack
 
 The CI pipeline (`.github/workflows/ci.yml`) runs:
 1. npm ci (clean install)
-2. npm run lint
-3. npm run build
-4. npm test
-5. npm run build:samples
-6. node setVersion.js (version management)
+2. npm run repo:doctor
+3. npm run lint
+4. npm run lint:deps:ci
+5. npm run build
+6. npm test
+7. npm run compat
+8. npm run build:samples
+9. node scripts/set-version.mjs (version management)
 
 ## Node Version
 

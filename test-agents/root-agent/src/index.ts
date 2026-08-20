@@ -3,7 +3,7 @@
 
 import express, { Response } from 'express'
 import rateLimit from 'express-rate-limit'
-import { Request, CloudAdapter, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv, configureResponseController, UserState, ConversationState } from '@microsoft/agents-hosting'
+import { Request, CloudAdapter, AuthConfiguration, loadAuthConfigFromEnv, configureResponseController, UserState, ConversationState } from '@microsoft/agents-hosting'
 import { version as sdkVersion } from '@microsoft/agents-hosting/package.json'
 import { RootHandlerWithBlobStorageMemory } from './agent'
 import { BlobsStorage } from '@microsoft/agents-hosting-storage-blob'
@@ -16,6 +16,7 @@ const conversationState = new ConversationState(blobStorage)
 const userState = new UserState(blobStorage)
 
 const adapter = new CloudAdapter(authConfig)
+const authorizeRequest = adapter.authorizeRequest.bind(adapter)
 
 const conversationDataAccessor = conversationState.createProperty<ConversationData>('conversationData')
 const userProfileAccessor = userState.createProperty<UserProfile>('userProfile')
@@ -30,11 +31,12 @@ const messagesRateLimiter = rateLimit({
   max: 100
 })
 
-app.post('/api/messages', messagesRateLimiter, authorizeJWT(authConfig), async (req: Request, res: Response) => {
+app.post('/api/messages', messagesRateLimiter, authorizeRequest, async (req: Request, res: Response) => {
   await adapter.process(req, res, async (context) => await myAgent.run(context))
 })
 
-app.use('/api/agentresponse', messagesRateLimiter, authorizeJWT(authConfig))
+app.use('/api/agentresponse', messagesRateLimiter)
+// The SDK Activity callback controller applies the same adapter-owned authorization internally.
 configureResponseController(app, adapter, myAgent, conversationState)
 
 const port = process.env.PORT || 3978

@@ -111,6 +111,7 @@ export interface AdaptiveCardInvokeValue {
     action: AdaptiveCardInvokeAction;
     authentication: AdaptiveCardAuthentication;
     state: string;
+    trigger?: 'automatic' | 'manual';
 }
 
 // @public
@@ -166,6 +167,7 @@ export class AgentApplication<TState extends TurnState> {
     // (undocumented)
     protected readonly _beforeTurn: ApplicationEventHandler<TState>[];
     protected callEventHandlers(context: TurnContext, state: TState, handlers: ApplicationEventHandler<TState>[]): Promise<boolean>;
+    static readonly ConnectionsKey: unique symbol;
     protected continueConversationAsync(botAppIdOrIdentity: string | JwtPayload, conversationReferenceOrContext: ConversationReference | TurnContext, logic: (context: TurnContext) => Promise<void>): Promise<void>;
     // (undocumented)
     protected readonly _extensions: AgentExtension<TState>[];
@@ -194,6 +196,7 @@ export class AgentApplication<TState extends TurnState> {
     // @deprecated
     stopTypingTimer(): void;
     stopTypingTimer(context: TurnContext): void;
+    static readonly UserAuthorizationKey: unique symbol;
 }
 
 // @public
@@ -257,6 +260,12 @@ export class AgentExtension<TState extends TurnState> {
 
 // @public
 export type AgentHandler = (context: TurnContext, next: () => Promise<void>) => Promise<any>;
+
+// @public
+export interface AgenticAuthorizationOptions {
+    altBlueprintConnectionName?: string;
+    scopes?: string[];
+    type: 'AgenticUserAuthorization' | 'agentic';
 
 // @public
 export type AgentResponseHandler = (req: Request_2, res: WebResponse, params: AgentResponseHandlerParams) => Promise<void>;
@@ -421,6 +430,15 @@ export interface Authorization {
 }
 
 // @public
+export interface AuthorizationHandlerTokenOptions {
+    connection?: string;
+    scopes?: string[];
+}
+
+// @public
+export type AuthorizationOptions = Record<string, (AzureBotAuthorizationOptions & AzureBotAuthorizationOptionsLegacy) | AgenticAuthorizationOptions>;
+
+// @public
 export const authorizeJWT: (authConfig: AuthConfiguration) => (req: Request_2, res: WebResponse, next: NextFunction) => Promise<void>;
 
 // @public
@@ -465,6 +483,51 @@ export enum AuthType {
     UserManagedIdentity = "UserManagedIdentity",
     // (undocumented)
     WorkloadIdentity = "WorkloadIdentity"
+}
+
+// @public
+export interface AzureBotAuthorizationOptions {
+    azureBotOAuthConnectionName?: string;
+    enableSso?: boolean;
+    invalidSignInRetryMax?: number;
+    invalidSignInRetryMaxExceededMessage?: string;
+    invalidSignInRetryMessage?: string;
+    invalidSignInRetryMessageFormat?: string;
+    oboConnectionName?: string;
+    oboScopes?: string[];
+    text?: string;
+    title?: string;
+    type?: 'AzureBotUserAuthorization' | undefined;
+}
+
+// @public
+export interface AzureBotAuthorizationOptionsLegacy {
+    // @deprecated
+    maxAttempts?: number;
+    // @deprecated
+    messages?: AzureBotAuthorizationOptionsMessages;
+    // @deprecated
+    name?: string;
+    // @deprecated
+    obo?: AzureBotAuthorizationOptionsOBO;
+}
+
+// @public @deprecated (undocumented)
+export interface AzureBotAuthorizationOptionsMessages {
+    // @deprecated (undocumented)
+    invalidCode?: string;
+    // @deprecated (undocumented)
+    invalidCodeFormat?: string;
+    // @deprecated (undocumented)
+    maxAttemptsExceeded?: string;
+}
+
+// @public @deprecated (undocumented)
+export interface AzureBotAuthorizationOptionsOBO {
+    // @deprecated (undocumented)
+    connection?: string;
+    // @deprecated (undocumented)
+    scopes?: string[];
 }
 
 // @public
@@ -545,6 +608,7 @@ export class CloudAdapter extends BaseAdapter {
     protected _agentName?: string;
     // (undocumented)
     protected readonly authConfig: AuthConfiguration;
+    authorizeRequest(req: Request_2, res: WebResponse, next: NextFunction): Promise<void>;
     connectionManager: Connections;
     continueConversation(botAppIdOrIdentity: string | JwtPayload, reference: ConversationReference, logic: (revocableContext: TurnContext) => Promise<void>, isResponse?: Boolean): Promise<void>;
     protected createConnectorClient(serviceUrl: string, scope: string, identity: JwtPayload, headers?: HeaderPropagationCollection): Promise<ConnectorClient>;
@@ -560,6 +624,7 @@ export class CloudAdapter extends BaseAdapter {
     getAttachment(context: TurnContext, attachmentId: string, viewId: string): Promise<NodeJS.ReadableStream>;
     // @deprecated (undocumented)
     getAttachmentInfo(context: TurnContext, attachmentId: string): Promise<AttachmentInfo>;
+    getClientId(): string | undefined;
     process(request: Request_2, res: WebResponse, logic: (context: TurnContext) => Promise<void>, headerPropagation?: HeaderPropagationDefinition): Promise<void>;
     protected processTurnResults(context: TurnContext): InvokeResponse | undefined;
     protected resolveIfConnectorClientIsNeeded(activity: Activity): boolean;
@@ -618,6 +683,15 @@ export interface ConnectionMapItem {
     serviceUrl: string;
 }
 
+// @public (undocumented)
+export interface Connections {
+    getConnection: (name: string) => AuthProvider;
+    getDefaultConnection: () => AuthProvider;
+    getDefaultConnectionConfiguration: () => AuthConfiguration;
+    getTokenProvider: (identity: JwtPayload, serviceUrl: string) => AuthProvider;
+    getTokenProviderFromActivity: (identity: JwtPayload, activity: Activity) => AuthProvider;
+}
+
 // @public
 export interface ConnectionSettings extends MsalConnectionSettings, SidecarConnectionSettings {
 }
@@ -637,6 +711,7 @@ export interface ConnectionSettingsBase {
     scope?: string;
     scopes?: string[];
     tenantId?: string;
+    validateIssuer?: boolean;
 }
 
 // @public
@@ -708,6 +783,7 @@ export interface ConversationClaims {
 // @public
 export interface ConversationData {
     conversationReference: ConversationReference;
+    expectedAgentClientId?: string;
     nameRequested: boolean;
 }
 
@@ -791,6 +867,7 @@ export class CreateConversationOptionsBuilder {
 export interface CustomKey {
     channelId: string;
     conversationId: string;
+    namespace?: string;
 }
 
 // @public

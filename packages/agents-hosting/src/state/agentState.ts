@@ -44,7 +44,10 @@ export interface CustomKey {
    * The ID of the conversation where the state should be stored
    */
   conversationId: string;
-  // TODO: namespace needs to be added
+  /**
+   * Optional namespace appended to the generated storage key
+   */
+  namespace?: string;
 }
 
 /**
@@ -152,8 +155,10 @@ export class AgentState {
   private async getStorageOrCustomKey (customKey: CustomKey | undefined, context: TurnContext) {
     let key: string | undefined
     if (customKey && customKey.channelId && customKey.conversationId) {
-      // TODO check ConversationState.ts line 40. This line below should follow the same pattern
-      key = `${customKey!.channelId}/conversations/${customKey!.conversationId}`
+      key = `${customKey.channelId}/conversations/${customKey.conversationId}`
+      if (customKey.namespace) {
+        key = `${key}/${customKey.namespace}`
+      }
     } else {
       key = await this.storageKey(context)
     }
@@ -217,13 +222,26 @@ export class AgentState {
    */
   private readonly calculateChangeHash = (item: StoreItem): string => {
     const { eTag, ...rest } = item
-
-    // TODO review circular json structure
-    const result = JSON.stringify(rest)
+    const result = this.stringifyForHash(rest)
 
     const hash = createHash('sha256', { encoding: 'utf-8' })
     const hashed = hash.update(result).digest('hex')
 
     return hashed
+  }
+
+  private readonly stringifyForHash = (item: StoreItem): string => {
+    const seen = new WeakSet<object>()
+
+    return JSON.stringify(item, (_key, value) => {
+      if (value && typeof value === 'object') {
+        if (seen.has(value)) {
+          return '[Circular]'
+        }
+        seen.add(value)
+      }
+
+      return value
+    })
   }
 }

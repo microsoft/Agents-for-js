@@ -8,9 +8,9 @@ Fastify hosting integration for the Microsoft 365 Agents SDK. Provides three lev
 - **`agentsHostingFastifyPlugin`** (default export) — A standard (encapsulated) Fastify async plugin you can register on an existing Fastify instance, with optional `prefix`.
 - **`createAgentRequestHandler`** — A handler `(request, reply) => Promise<void>` for users who want to register the route themselves.
 
-Fastify parses JSON request bodies automatically, so no equivalent of `express.json()` is required. JWT authorization and rate limiting are applied per-route to the messages endpoint only, so any custom routes you add remain unauthenticated and un-throttled.
+Fastify parses JSON request bodies automatically, so no equivalent of `express.json()` is required. JWT authorization and rate limiting are applied per-route to the messages endpoint only, so custom routes you add remain unauthenticated and un-throttled. The agent-response route registered by `configureResponseController` applies JWT authorization internally.
 
-The package also re-exports `createCloudAdapter` (and `CloudAdapterResult`) from `@microsoft/agents-hosting`, plus `configureResponseController` for wiring the agent-to-agent response endpoint on a Fastify instance.
+The package also re-exports `createCloudAdapter` (and `CloudAdapterResult`) from `@microsoft/agents-hosting`, plus `configureResponseController` for wiring the authenticated SDK-specific Activity callback endpoint on a Fastify instance. This endpoint is not an implementation of the open A2A protocol. Authentication runs once through the supplied `CloudAdapter`, including support for any configured host connection; the stored delegated-agent identity then authorizes the specific conversation. Separate JWT middleware on the same route is redundant but compatible. Failed JWT authentication returns `401`. An authenticated caller that does not own the delegated conversation, or missing, malformed, or pre-upgrade delegated state, returns `403`. Anonymous callbacks are supported only for unconfigured development hosts outside production, and pre-upgrade conversations must be restarted.
 
 ## Usage
 

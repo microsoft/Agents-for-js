@@ -105,6 +105,10 @@ export const SpanNames = {
   COPILOT_SEND_ACTIVITY: 'agents.copilot_client.send_activity',
   COPILOT_POST_REQUEST: 'agents.copilot_client.post_request',
   COPILOT_CREATE_CONNECTION: 'agents.copilot_client.webchat.create_connection',
+  COPILOT_WEBCHAT_START_CONVERSATION: 'agents.copilot_client.webchat.start_conversation',
+  COPILOT_WEBCHAT_POST_ACTIVITY: 'agents.copilot_client.webchat.post_activity',
+  COPILOT_WEBCHAT_RECEIVE_ACTIVITY: 'agents.copilot_client.webchat.receive_activity',
+  COPILOT_WEBCHAT_END_CONNECTION: 'agents.copilot_client.webchat.end_connection',
   COPILOT_EXECUTE_STREAMING: 'agents.copilot_client.execute_streaming',
   COPILOT_SUBSCRIBE_ASYNC: 'agents.copilot_client.subscribe_async',
 

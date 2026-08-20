@@ -15,12 +15,16 @@ import {
 import { adaptReply } from './replyAdapter'
 
 /**
- * Configures the agent response controller endpoint on a Fastify instance.
+ * Configures the authenticated SDK-specific Activity callback endpoint on a
+ * Fastify instance.
  *
  * @remarks
  * Registers `POST /api/agentresponse/v3/conversations/:conversationId/activities/:activityId`
  * using the framework-agnostic handler from `@microsoft/agents-hosting`. Mirrors the
- * Express `configureResponseController` API for parity.
+ * Express `configureResponseController` API for parity. The handler authenticates
+ * callers and verifies that they own the delegated conversation before processing.
+ * Failed JWT authentication returns `401`; invalid delegated state or a caller
+ * that does not own the delegated conversation returns `403`.
  *
  * @param fastify - The Fastify instance to register the route on.
  * @param adapter - The CloudAdapter for processing activities.

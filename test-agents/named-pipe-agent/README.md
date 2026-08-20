@@ -37,7 +37,7 @@ To exercise the agent locally, you need a process on the same machine that conne
 
 ### Custom Pipe Name
 
- > **Note:** The DirectLine App Service extension uses the pipe name `{WEBSITE_SITE_NAME}.directline`. See the library [README](../../libraries/Hosting/DirectLine.NamedPipes/README.md#pipe-name) for details.
+ > **Note:** The DirectLine App Service extension uses the pipe name `{WEBSITE_SITE_NAME}.directline`. See the package [README](../../packages/agents-hosting-directline-namedpipes/README.md#custom-pipe-name) for configuration details.
 
 ```powershell
 $env:PIPE_NAME='{WEBSITE_SITE_NAME}.directline'; npm start
