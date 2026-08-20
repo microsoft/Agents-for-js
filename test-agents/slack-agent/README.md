@@ -44,14 +44,15 @@ SLACK_TOKEN=xoxb-...
 
    1. In **OAuth & Permissions**, add the OAuth redirect URL.
    2. In **Event Subscriptions**, enable events and set the request URL to the event-subscription URL.
-   3. Under **Subscribe to bot events**, add:
+   3. In **Interactivity & Shortcuts**, enable interactivity and set the request URL to the event-subscription URL. This lets Block Kit button clicks reach Azure Bot Service.
+   4. Under **Subscribe to bot events**, add:
 
       - `message.im` to test the bot in a direct message.
       - `app_mention` to respond to mentions in a channel.
       - `message.channels` when the bot needs every message in public channels.
 
-   4. In **App Home**, enable the Messages tab and allow users to send messages to the app.
-   5. Add the bot token scopes required by the events and sample features:
+   5. In **App Home**, enable the Messages tab and allow users to send messages to the app.
+   6. Add the bot token scopes required by the events and sample features:
 
       - `chat:write`
       - `assistant:write` for thread titles and suggested prompts
