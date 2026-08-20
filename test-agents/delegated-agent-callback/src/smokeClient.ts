@@ -25,7 +25,7 @@ const catClientSecret = requireEnv('CAT_CLIENT_SECRET')
 const humanEndpoint = process.env.HUMAN_ENDPOINT ?? 'http://localhost:3978/api/messages'
 const channelPort = Number(process.env.MOCK_CHANNEL_PORT ?? 3980)
 const channelServiceUrl = `http://localhost:${channelPort}`
-const conversationId = `a2a-agent-${randomUUID()}`
+const conversationId = `delegated-agent-callback-${randomUUID()}`
 const captured: CapturedActivity[] = []
 
 const channel = express()
@@ -48,7 +48,7 @@ const server = channel.listen(channelPort, async () => {
       id: randomUUID(),
       timestamp: new Date().toISOString(),
       serviceUrl: channelServiceUrl,
-      channelId: 'a2a-agent',
+      channelId: 'delegated-agent-callback',
       from: { id: 'smoke-user', name: 'Smoke Tester' },
       recipient: { id: humanClientId, name: "I'll Ask My Cat" },
       conversation: { id: conversationId },
@@ -69,7 +69,7 @@ const server = channel.listen(channelPort, async () => {
     }
 
     await waitForWiseCat()
-    console.log('A2A cat smoke test passed: invalid auth was rejected and the authenticated delegated response returned.')
+    console.log('Activity callback cat smoke test passed: invalid authentication was rejected and the authenticated callback reached the original conversation.')
   } catch (error) {
     console.error(error)
     process.exitCode = 1

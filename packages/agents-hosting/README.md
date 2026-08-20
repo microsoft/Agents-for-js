@@ -21,21 +21,27 @@ exposes framework-agnostic primitives that the
 
 - `createCloudAdapter(agent, authConfig)` — returns `{ adapter, headerPropagation }` for processing incoming activities. Use this from any web framework.
 - `CloudAdapterResult` — return type of `createCloudAdapter`.
-- `createAgentResponseHandler(adapter, agent, conversationState)` — framework-agnostic handler `(req, res, params) => Promise<void>` for the agent-to-agent response route.
+- `createAgentResponseHandler(adapter, agent, conversationState)` — framework-agnostic handler `(req, res, params) => Promise<void>` for the authenticated SDK-specific Activity callback route.
 - `AgentResponseHandler`, `AgentResponseHandlerParams`, `AGENT_RESPONSE_ROUTE_PATH` — supporting types and the canonical route path.
 - `WebResponse`, `NextFunction`, `WebRequestParamsCarrier` — minimal structural interfaces (no Express/Fastify imports) used by the cross-framework helpers above.
 
 Most consumers should keep using `startServer`/`createAgentRequestHandler` from the
 Express or Fastify packages; reach for these APIs when adapting another framework.
 
-The agent-response handler authenticates requests once through the supplied
+This Activity callback flow is used for SDK-specific Activity-protocol
+delegation.
+
+The Activity callback handler authenticates requests once through the supplied
 `CloudAdapter`. That boundary validates the token for any configured host connection;
 the handler then verifies that the caller application matches the delegated agent
 recorded for that conversation. Existing route-level `authorizeJWT` middleware is
-redundant but remains compatible. Anonymous callbacks are supported only outside
-production and emit a registration warning because peer ownership cannot be verified.
-Missing, malformed, or pre-upgrade delegated state fails closed. Pre-upgrade
-conversations must be restarted.
+redundant but remains compatible. On configured or production hosts, missing,
+invalid, expired, or wrong-audience tokens return `401`. An authenticated caller
+that does not match the delegated agent, or missing, malformed, or pre-upgrade
+delegated state, returns `403`.
+Anonymous callbacks are supported only for unconfigured development hosts
+outside production and emit a registration warning because peer ownership cannot
+be verified. Pre-upgrade conversations must be restarted.
 
 ## Example Usage based on the AgentApplication object
 
