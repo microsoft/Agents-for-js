@@ -5,6 +5,7 @@ import { describe, it, beforeEach, afterEach } from 'node:test'
 import assert from 'node:assert/strict'
 import sinon from 'sinon'
 import { SlackApi, SlackApiKey } from '../../src/api/slackApi.js'
+import { SlackMetrics, SlackTraceDefinitions } from '../../src/observability/index.js'
 
 describe('SlackApi', () => {
   let fetchStub: sinon.SinonStub
@@ -14,10 +15,38 @@ describe('SlackApi', () => {
   })
 
   afterEach(() => {
-    fetchStub.restore()
+    sinon.restore()
   })
 
+  function stubMetrics () {
+    const add = sinon.stub()
+    const record = sinon.stub()
+    sinon.stub(SlackMetrics, 'apiRequestsCounter').value({ add })
+    sinon.stub(SlackMetrics, 'apiRequestDuration').value({ record })
+    return { add, record }
+  }
+
+  function assertMetrics (
+    metrics: ReturnType<typeof stubMetrics>,
+    attributes: Record<string, unknown>
+  ) {
+    sinon.assert.calledOnceWithExactly(metrics.add, 1, attributes)
+    sinon.assert.calledOnceWithMatch(metrics.record, sinon.match.number, attributes)
+  }
+
+  function captureSpanAttributes () {
+    const setAttributes = sinon.stub()
+    const originalEnd = SlackTraceDefinitions.apiCall.end
+    const traceEnd = sinon.stub(SlackTraceDefinitions.apiCall, 'end').callsFake(args => {
+      const span = { setAttributes } as any
+      originalEnd({ ...args, span })
+    })
+    return { setAttributes, traceEnd }
+  }
+
   it('calls the correct Slack API URL with Bearer token', async () => {
+    const metrics = stubMetrics()
+    const span = captureSpanAttributes()
     fetchStub.resolves(new Response(JSON.stringify({ ok: true, ts: '123.456' }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
@@ -38,6 +67,19 @@ describe('SlackApi', () => {
     const body = JSON.parse(init.body as string)
     assert.equal(body.channel, 'C123')
     assert.equal(body.text, 'hello')
+    sinon.assert.calledOnce(span.traceEnd)
+    sinon.assert.calledOnceWithExactly(span.setAttributes, {
+      'slack.api.method': 'chat.postMessage',
+      'http.method': 'POST',
+      'http.status_code': '200',
+      'server.address': 'slack.com',
+    })
+    assertMetrics(metrics, {
+      'slack.api.method': 'chat.postMessage',
+      'http.method': 'POST',
+      'http.status_code': '200',
+      'operation.success': true,
+    })
   })
 
   it('omits null and undefined values from request body', async () => {
@@ -53,6 +95,8 @@ describe('SlackApi', () => {
   })
 
   it('throws on HTTP error status', async () => {
+    const metrics = stubMetrics()
+    const span = captureSpanAttributes()
     fetchStub.resolves(new Response('Service Unavailable', { status: 503 }))
 
     const api = new SlackApi('token')
@@ -63,9 +107,24 @@ describe('SlackApi', () => {
         return true
       }
     )
+    sinon.assert.calledOnce(span.traceEnd)
+    sinon.assert.calledOnceWithExactly(span.setAttributes, {
+      'slack.api.method': 'chat.postMessage',
+      'http.method': 'POST',
+      'http.status_code': '503',
+      'server.address': 'slack.com',
+    })
+    assertMetrics(metrics, {
+      'slack.api.method': 'chat.postMessage',
+      'http.method': 'POST',
+      'http.status_code': '503',
+      'operation.success': false,
+    })
   })
 
   it('throws when Slack returns ok: false', async () => {
+    const metrics = stubMetrics()
+    const span = captureSpanAttributes()
     fetchStub.resolves(new Response(JSON.stringify({ ok: false, error: 'channel_not_found' }), { status: 200 }))
 
     const api = new SlackApi('token')
@@ -76,6 +135,21 @@ describe('SlackApi', () => {
         return true
       }
     )
+    sinon.assert.calledOnce(span.traceEnd)
+    sinon.assert.calledOnceWithExactly(span.setAttributes, {
+      'slack.api.method': 'chat.postMessage',
+      'http.method': 'POST',
+      'http.status_code': '200',
+      'slack.api.error_code': 'channel_not_found',
+      'server.address': 'slack.com',
+    })
+    assertMetrics(metrics, {
+      'slack.api.method': 'chat.postMessage',
+      'http.method': 'POST',
+      'http.status_code': '200',
+      'slack.api.error_code': 'channel_not_found',
+      'operation.success': false,
+    })
   })
 
   it('SlackApiKey is a unique symbol', () => {

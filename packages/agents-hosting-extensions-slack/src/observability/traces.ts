@@ -17,16 +17,13 @@ export const SlackTraceDefinitions = {
         'slack.api.method': record.method || 'unknown',
         'http.method': 'POST',
         'http.status_code': record.httpStatusCode,
+        ...(record.slackErrorCode && { 'slack.api.error_code': record.slackErrorCode }),
       }
 
       span.setAttributes({
         ...attributes,
         'server.address': 'slack.com',
       })
-
-      if (record.slackErrorCode) {
-        span.setAttribute('slack.api.error_code', record.slackErrorCode)
-      }
 
       const metricAttributes = {
         ...attributes,
