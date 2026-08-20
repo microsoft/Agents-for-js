@@ -98,6 +98,8 @@ describe('agents-telemetry platform build validation', () => {
       'SpanNames',
       'debug',
       'metric',
+      'pseudonymizeConversationId',
+      'redactDiagnosticObject',
       'redactScopes',
       'redactString',
       'redactUrl',
