@@ -1437,6 +1437,7 @@ export class StreamingResponse {
     queueInformativeUpdate(text: string): void;
     queueTextChunk(text: string, citations?: Citation[]): void;
     reset(): Promise<void>;
+    sendStreamTimedOutNotification(message: string): Promise<boolean>;
     setAttachments(attachments: Attachment[]): void;
     setCitations(citations: Citation[]): void;
     setDelayInMs(delayInMs: number): void;
@@ -1446,6 +1447,8 @@ export class StreamingResponse {
     setGeneratedByAILabel(enableGeneratedByAILabel: boolean): void;
     setSensitivityLabel(sensitivityLabel: SensitivityUsageInfo): void;
     get streamId(): string | undefined;
+    get streamingTakingTooLongMessage(): string;
+    set streamingTakingTooLongMessage(message: string);
     get updatesSent(): number;
 }
 
