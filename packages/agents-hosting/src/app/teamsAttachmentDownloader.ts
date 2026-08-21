@@ -11,6 +11,7 @@ import { TurnContext } from '../turnContext'
 import { TurnState } from './turnState'
 import { HttpClient } from '../httpClient'
 import { z } from 'zod'
+import { createOutboundHostValidator, OutboundUrlPolicy } from '../outboundHostValidator'
 
 const logger = debug('agents:M365AttachmentDownloader')
 
@@ -20,10 +21,12 @@ const logger = debug('agents:M365AttachmentDownloader')
 export class M365AttachmentDownloader<TState extends TurnState = TurnState> implements InputFileDownloader<TState> {
   private _httpClient: HttpClient
   private _stateKey: string
+  private readonly _hostValidator: OutboundUrlPolicy
 
-  public constructor (stateKey: string = 'inputFiles') {
+  public constructor (stateKey: string = 'inputFiles', outboundHostValidator?: OutboundUrlPolicy) {
     this._httpClient = new HttpClient()
     this._stateKey = stateKey
+    this._hostValidator = outboundHostValidator ?? createOutboundHostValidator()
   }
 
   /**
@@ -69,6 +72,13 @@ export class M365AttachmentDownloader<TState extends TurnState = TurnState> impl
         const contentSchema = z.object({ downloadUrl: z.string().url() })
         const parsed = contentSchema.safeParse(attachment.content)
         const downloadUrl = parsed.success ? parsed.data.downloadUrl : attachment.contentUrl
+        if (!this._hostValidator.isAllowed(downloadUrl)) {
+          let host = '[invalid-url]'
+          try { host = new URL(downloadUrl).hostname } catch { /* invalid */ }
+          logger.warn(`Attachment downloadUrl host is not in the configured allowed hosts. Host='${host}'`)
+          return undefined
+        }
+
         const response = await this._httpClient.get(downloadUrl, { responseType: 'arraybuffer' })
 
         const content = Buffer.from(response.data as ArrayBuffer)
