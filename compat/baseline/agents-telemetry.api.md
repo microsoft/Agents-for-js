@@ -53,6 +53,8 @@ export const MetricNames: {
     readonly NAMED_PIPE_DISPATCH_ERRORS: "agents.named_pipe.dispatch.error.count";
     readonly NAMED_PIPE_SENDS: "agents.named_pipe.send.count";
     readonly NAMED_PIPE_SEND_DURATION: "agents.named_pipe.send.duration";
+    readonly SLACK_API_REQUESTS: "agents.slack.api.request.count";
+    readonly SLACK_API_REQUEST_DURATION: "agents.slack.api.request.duration";
 };
 
 // @public
@@ -141,6 +143,7 @@ export const SpanNames: {
     readonly NAMED_PIPE_CONNECT: "agents.named_pipe.connect";
     readonly NAMED_PIPE_DISPATCH: "agents.named_pipe.dispatch";
     readonly NAMED_PIPE_SEND: "agents.named_pipe.send";
+    readonly SLACK_API_CALL: "agents.slack.api.call";
 };
 
 // @public (undocumented)
