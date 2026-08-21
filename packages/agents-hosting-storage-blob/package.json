@@ -16,7 +16,7 @@
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
   "dependencies": {
-    "@azure/core-auth": "1.10.1",
+    "@azure/core-auth": "1.11.0",
     "@azure/storage-blob": "12.31.0",
     "@microsoft/agents-hosting": "file:../../packages/agents-hosting",
     "@microsoft/agents-activity": "file:../../packages/agents-activity",
