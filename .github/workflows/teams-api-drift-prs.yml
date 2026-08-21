@@ -36,7 +36,7 @@ jobs:
       candidate_version: ${{ steps.resolve-versions.outputs.candidate_version }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           fetch-depth: 0
 
@@ -88,11 +88,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           fetch-depth: 0
       - name: Set up Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 24
           cache: npm
@@ -212,7 +212,7 @@ jobs:
       # Upload all evidence before the final policy turns collected failures into a failed workflow.
       - name: Upload compatibility artifacts
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: teams-api-drift-${{ github.run_id }}
           path: artifacts/teams-api-drift
@@ -221,7 +221,7 @@ jobs:
       # Upsert one marker-based summary comment only for trusted pull requests.
       - name: Publish pull-request comment
         if: always() && (github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false) && steps.render-deterministic-report.outcome == 'success'
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         env:
           ARTIFACT_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
         with:
