@@ -38,7 +38,8 @@ export type SpanName = typeof SpanNames[keyof typeof SpanNames]
  * Mutable state container used while a trace is active.
  *
  * @remarks
- * - `set()` performs a shallow merge.
+ * - `set()` recursively merges plain objects.
+ * - Arrays are copied and replaced.
  * - `get()` returns the latest snapshot stored for the span.
  */
 export interface TraceRecord<TRecord extends object> {
@@ -50,6 +51,13 @@ export interface TraceRecord<TRecord extends object> {
  * Context passed to traced callbacks.
  */
 export interface TraceContext<TRecord extends object, TActions extends object> {
+  /**
+   * Updates the record values collected for the span.
+   *
+   * @remarks
+   * - Plain objects are recursively merged.
+   * - Arrays are copied and replaced.
+   */
   record(values: Partial<TRecord>): void
   actions: TActions
 }
@@ -78,9 +86,18 @@ export interface TraceEndContext<TRecord extends object> {
 }
 
 /**
+ * Starts a child span parented to an active managed span.
+ */
+export interface TraceChildFunction {
+  <TRecord extends object, TActions extends object>(definition: TraceDefinition<TRecord, TActions>): TraceManagedContext<TRecord, TActions>
+  <TRecord extends object, TActions extends object, TReturn>(definition: TraceDefinition<TRecord, TActions>, callback: TraceCallback<TRecord, TActions, TReturn>): TReturn
+}
+
+/**
  * Handle returned when a trace is created without a callback.
  */
 export interface TraceManagedContext<TRecord extends object, TActions extends object> extends TraceContext<TRecord, TActions> {
+  child: TraceChildFunction
   end(): void
   fail<T extends unknown>(error: T): T
 }
