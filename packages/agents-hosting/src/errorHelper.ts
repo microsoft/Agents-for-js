@@ -157,6 +157,14 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   },
 
   /**
+    * Error thrown when the outbound service URL is denied by the configured host policy.
+    */
+  OutboundServiceUrlNotAllowed: {
+    code: -120175,
+    description: 'serviceUrl host is not in the configured allowed hosts.'
+  },
+
+  /**
      * Error thrown when conversationParameters must be defined.
      */
   ConversationParametersRequired: {
