@@ -11,6 +11,7 @@ import { Attachment } from '@microsoft/agents-activity'
 import { AuthProvider } from '../auth/authProvider'
 import { debug } from '@microsoft/agents-telemetry'
 import { loadAuthConfigFromEnv, MsalTokenProvider } from '../auth'
+import { createOutboundHostValidator, OutboundUrlPolicy } from '../outboundHostValidator'
 import { Connections } from '../auth/connections'
 
 const logger = debug('agents:attachmentDownloader')
@@ -28,16 +29,19 @@ const logger = debug('agents:attachmentDownloader')
 export class AttachmentDownloader<TState extends TurnState = TurnState> implements InputFileDownloader<TState> {
   private _httpClient: HttpClient
   private _stateKey: string
+  private readonly _hostValidator: OutboundUrlPolicy
 
   /**
    * Creates an instance of AttachmentDownloader.
    * This class is responsible for downloading input files from attachments.
    *
    * @param stateKey The key to store files in state. Defaults to 'inputFiles'.
+   * @param outboundHostValidator Optional shared policy used to validate outbound attachment URLs.
    */
-  public constructor (stateKey: string = 'inputFiles') {
+  public constructor (stateKey: string = 'inputFiles', outboundHostValidator?: OutboundUrlPolicy) {
     this._httpClient = new HttpClient()
     this._stateKey = stateKey
+    this._hostValidator = outboundHostValidator ?? createOutboundHostValidator()
   }
 
   /**
@@ -99,6 +103,13 @@ export class AttachmentDownloader<TState extends TurnState = TurnState> implemen
       if (accessToken.length > 0) {
         headers.Authorization = `Bearer ${accessToken}`
       }
+      if (!this._hostValidator.isAllowed(attachment.contentUrl)) {
+        let host = '[invalid-url]'
+        try { host = new URL(attachment.contentUrl).hostname } catch { /* invalid */ }
+        logger.warn(`Attachment contentUrl host is not in the configured allowed hosts. Host='${host}'`)
+        return undefined
+      }
+
       const response = await this._httpClient.get(attachment.contentUrl, {
         headers,
         responseType: 'arraybuffer'
