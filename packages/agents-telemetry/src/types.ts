@@ -39,6 +39,7 @@ export type SpanName = typeof SpanNames[keyof typeof SpanNames]
  *
  * @remarks
  * - `set()` performs a shallow merge.
+ * - `set()` ignores `undefined` values so definition defaults remain available.
  * - `get()` returns the latest snapshot stored for the span.
  */
 export interface TraceRecord<TRecord extends object> {

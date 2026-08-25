@@ -37,6 +37,7 @@ export const SpanNames = {
   AGENTS_APP_BEFORE_TURN: 'agents.app.before_turn',
   AGENTS_APP_AFTER_TURN: 'agents.app.after_turn',
   AGENTS_APP_DOWNLOAD_FILES: 'agents.app.download_files',
+  AGENTS_APP_TYPING_INDICATOR: 'agents.app.typing_indicator',
 
   // ConnectorClient
   CONNECTOR_SEND_TO_CONVERSATION: 'agents.connector.send_to_conversation',

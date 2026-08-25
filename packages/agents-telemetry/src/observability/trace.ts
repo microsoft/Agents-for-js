@@ -83,7 +83,16 @@ function createRecord<TRecord extends object, TActions extends object> (target: 
   return {
     set (values) {
       // TODO: use deep-merge strategy for Object and Array
-      Object.assign(state, values)
+      for (const key of Reflect.ownKeys(values)) {
+        if (!Object.prototype.propertyIsEnumerable.call(values, key)) {
+          continue
+        }
+
+        const value = Reflect.get(values, key)
+        if (value !== undefined) {
+          Reflect.set(state, key, value)
+        }
+      }
     },
     get () {
       return state as Readonly<TRecord>

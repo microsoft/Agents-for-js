@@ -217,6 +217,24 @@ describe('traceFactory', () => {
     assert.deepStrictEqual(captured, { status: 'pending', count: 0 })
   })
 
+  it('record preserves default values when updates contain undefined', () => {
+    const { otel } = createMockOTel()
+    const trace = traceFactory(otel)
+    const symbolKey = Symbol('symbolKey')
+    let captured: any
+
+    trace(
+      {
+        name: SpanNames.ADAPTER_PROCESS,
+        record: { channelId: 'unknown', nullable: 'default' as string | null, [symbolKey]: 'default' },
+        end: ({ record }) => { captured = record },
+      },
+      ({ record }) => record({ channelId: undefined, nullable: null, [symbolKey]: 'updated' })
+    )
+
+    assert.deepStrictEqual(captured, { channelId: 'unknown', nullable: null, [symbolKey]: 'updated' })
+  })
+
   it('end callback receives duration', () => {
     const { otel } = createMockOTel()
     const trace = traceFactory(otel)
