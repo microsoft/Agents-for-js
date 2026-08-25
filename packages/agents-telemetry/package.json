@@ -21,7 +21,7 @@
   ],
   "main": "./dist/cjs/src/index.cjs",
   "module": "./dist/esm/src/index.mjs",
-  "types": "./dist/esm/src/index.d.mts",
+  "types": "./dist/cjs/src/index.d.mts",
   "browser": "./dist/cjs/src/index.cjs",
   "scripts": {
     "clean:esm": "node -e \"require('node:fs').rmSync('dist/esm', { recursive: true, force: true })\"",
@@ -57,7 +57,7 @@
   "exports": {
     ".": {
       "import": {
-        "types": "./dist/esm/src/index.d.mts",
+        "types": "./dist/cjs/src/index.d.mts",
         "browser": "./dist/cjs/src/index.cjs",
         "default": "./dist/esm/src/index.mjs"
       },

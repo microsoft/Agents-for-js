@@ -13,7 +13,7 @@ const testDir = __dirname
 const packageDir = resolve(testDir, '..')
 const repoDir = resolve(packageDir, '..', '..')
 const packageName = '@microsoft/agents-telemetry'
-const tscPath = resolve(repoDir, 'node_modules', 'typescript', 'bin', 'tsc')
+const tscPath = resolve(repoDir, 'node_modules', '@typescript', 'native', 'bin', 'tsc')
 const esmBuildScriptPath = resolve(packageDir, 'scripts', 'esm.mjs')
 
 async function assertFileExists (filePath: string): Promise<void> {
