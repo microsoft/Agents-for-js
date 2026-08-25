@@ -117,6 +117,9 @@ export const SpanNames = {
   NAMED_PIPE_CONNECT: 'agents.named_pipe.connect',
   NAMED_PIPE_DISPATCH: 'agents.named_pipe.dispatch',
   NAMED_PIPE_SEND: 'agents.named_pipe.send',
+
+  // Slack
+  SLACK_API_CALL: 'agents.slack.api.call',
 } as const
 
 /**
@@ -184,4 +187,8 @@ export const MetricNames = {
   NAMED_PIPE_DISPATCH_ERRORS: 'agents.named_pipe.dispatch.error.count',
   NAMED_PIPE_SENDS: 'agents.named_pipe.send.count',
   NAMED_PIPE_SEND_DURATION: 'agents.named_pipe.send.duration',
+
+  // Slack
+  SLACK_API_REQUESTS: 'agents.slack.api.request.count',
+  SLACK_API_REQUEST_DURATION: 'agents.slack.api.request.duration',
 } as const
