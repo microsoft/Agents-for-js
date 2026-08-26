@@ -2,7 +2,8 @@ import assert from 'node:assert/strict'
 import { execFile } from 'node:child_process'
 import { access, readFile } from 'node:fs/promises'
 import { constants as fsConstants } from 'node:fs'
-import { resolve } from 'node:path'
+import { createRequire } from 'node:module'
+import { dirname, resolve } from 'node:path'
 import { before, describe, it } from 'node:test'
 import { promisify } from 'node:util'
 import * as esbuild from 'esbuild'
@@ -13,7 +14,10 @@ const testDir = __dirname
 const packageDir = resolve(testDir, '..')
 const repoDir = resolve(packageDir, '..', '..')
 const packageName = '@microsoft/agents-telemetry'
-const tscPath = resolve(repoDir, 'node_modules', '@typescript', 'native', 'bin', 'tsc')
+const require = createRequire(import.meta.url)
+const nativePackageJsonPath = require.resolve('@typescript/native/package.json')
+const nativePackageJson = require(nativePackageJsonPath) as { bin: { tsc: string } }
+const tscPath = resolve(dirname(nativePackageJsonPath), nativePackageJson.bin.tsc)
 const esmBuildScriptPath = resolve(packageDir, 'scripts', 'esm.mjs')
 
 async function assertFileExists (filePath: string): Promise<void> {
