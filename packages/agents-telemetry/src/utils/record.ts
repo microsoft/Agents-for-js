@@ -10,19 +10,28 @@
  * - Plain objects are recursively merged.
  * - Arrays are copied and replaced.
  */
-export function mergeRecordValues (target: Record<string, unknown>, values: Record<string, unknown>): void {
-  Object.entries(values).forEach(([key, value]) => {
-    const current = target[key]
-
-    if (isPlainObject(current) && isPlainObject(value)) {
-      const merged = { ...current }
-      mergeRecordValues(merged, value)
-      target[key] = merged
-      return
+export function mergeRecordValues (target: Record<PropertyKey, unknown>, values: Record<PropertyKey, unknown>): void {
+  for (const key of Reflect.ownKeys(values)) {
+    if (!Object.prototype.propertyIsEnumerable.call(values, key)) {
+      continue
     }
 
-    target[key] = cloneRecordValue(value)
-  })
+    const value = Reflect.get(values, key)
+    if (value === undefined) {
+      continue
+    }
+
+    const current = Reflect.get(target, key)
+
+    if (isPlainObject(current) && isPlainObject(value)) {
+      const merged = cloneRecordValue(current)
+      mergeRecordValues(merged, value)
+      Reflect.set(target, key, merged)
+      continue
+    }
+
+    Reflect.set(target, key, cloneRecordValue(value))
+  }
 }
 
 /**
@@ -38,10 +47,12 @@ export function cloneRecordValue<T> (value: T): T {
   }
 
   if (isPlainObject(value)) {
-    const result: Record<string, unknown> = {}
-    Object.entries(value).forEach(([key, child]) => {
-      result[key] = cloneRecordValue(child)
-    })
+    const result: Record<PropertyKey, unknown> = {}
+    for (const key of Reflect.ownKeys(value)) {
+      if (Object.prototype.propertyIsEnumerable.call(value, key)) {
+        Reflect.set(result, key, cloneRecordValue(Reflect.get(value, key)))
+      }
+    }
     return result as T
   }
 
@@ -54,7 +65,7 @@ export function cloneRecordValue<T> (value: T): T {
  * @remarks
  * Arrays and class instances are not considered plain objects.
  */
-function isPlainObject (value: unknown): value is Record<string, unknown> {
+function isPlainObject (value: unknown): value is Record<PropertyKey, unknown> {
   if (Object.prototype.toString.call(value) !== '[object Object]') {
     return false
   }

@@ -99,13 +99,14 @@ export function traceFactory (otel: OTel) {
  * @remarks
  * - Plain objects are recursively merged.
  * - Arrays are copied and replaced.
+ * - `undefined` values are ignored so definition defaults remain available.
  */
 function createRecord<TRecord extends object, TActions extends object> (target: TraceDefinition<TRecord, TActions>): TraceRecord<TRecord> {
   const state: Partial<TRecord> = target.record ? cloneRecordValue(target.record) : {}
 
   return {
     set (values) {
-      mergeRecordValues(state as Record<string, unknown>, values as Record<string, unknown>)
+      mergeRecordValues(state as Record<PropertyKey, unknown>, values as Record<PropertyKey, unknown>)
     },
     get () {
       return state as Readonly<TRecord>
