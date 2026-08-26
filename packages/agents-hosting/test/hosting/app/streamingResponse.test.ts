@@ -444,9 +444,13 @@ describe('StreamingResponse', () => {
 
     assert.equal(await endPromise, StreamingResponseResult.Success)
     sinon.assert.calledTwice(mockContext.updateActivity)
-    assert.equal((mockContext.updateActivity.firstCall.args[0] as Activity).type, 'message')
-    assert.equal((mockContext.updateActivity.secondCall.args[0] as Activity).type, 'message')
-    assert.equal((mockContext.updateActivity.secondCall.args[0] as Activity).text, 'Completed response text.')
+
+    const firstActivity = mockContext.updateActivity.firstCall.args[0] as Activity
+    assert.equal(firstActivity.type, 'message')
+
+    const secondActivity = mockContext.updateActivity.secondCall.args[0] as Activity
+    assert.equal(secondActivity.type, 'message')
+    assert.equal(secondActivity.text, 'Completed response text.')
   })
 
   it('should stop streaming after a timeout notification and send the completed response normally', async () => {
