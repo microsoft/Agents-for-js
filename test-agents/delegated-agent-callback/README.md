@@ -1,11 +1,15 @@
-# Authenticated agent-to-agent cat smoke test
+# Authenticated delegated-agent callback smoke test
 
-This test agent pair demonstrates the authenticated callback pattern:
+> This sample demonstrates Activity-protocol agent delegation and an
+> authenticated callback. It is not an implementation of the open A2A
+> protocol.
+
+This test agent pair demonstrates the authenticated Activity callback pattern:
 
 1. **I'll Ask My Cat** receives a user message.
 2. It delegates the activity to **The Wise Cat** with `AgentClient`.
 3. The Wise Cat replies from a cat's point of view.
-4. The reply is posted to the first agent's authenticated `configureResponseController` route.
+4. The reply is posted to the delegating agent's authenticated `configureResponseController` route.
 5. The first agent forwards the reply to the original conversation.
 
 The smoke client verifies that:
@@ -14,6 +18,10 @@ The smoke client verifies that:
 - a valid token for the wrong audience is rejected with `401`;
 - a valid token for the human agent is accepted;
 - the Wise Cat's independently authenticated callback reaches the original conversation.
+
+The Human agent listens on port `3978`, the Wise Cat listens on `3979`, and the
+smoke client's mock channel listens on `3980`. They run as three separate
+processes.
 
 ## Why authentication looks different in each agent
 
@@ -47,6 +55,28 @@ checks that the token's caller application is the Wise Cat client ID stored when
 the delegated conversation was created. The conversation ID routes the callback;
 it is not treated as an authentication secret.
 
+## Callback security contract
+
+- On configured or production hosts, missing, malformed, expired, or
+  wrong-audience bearer tokens are rejected with `401`.
+- A valid token from an application other than the delegated agent stored for
+  the conversation is rejected with `403`.
+- Missing, malformed, or legacy delegated state without the expected delegated
+  agent client ID is rejected with `403`; restart that delegated conversation.
+- Anonymous callbacks are supported only when the host has no configured client
+  ID and is running outside production. A warning is emitted because callback
+  ownership cannot be cryptographically verified. Production anonymous
+  callbacks are rejected.
+
+## State and production deployment
+
+This smoke test uses `MemoryStorage`. That is suitable only because all three
+processes are local and the Human agent remains on one replica for the duration
+of the test. Production callback state must use durable shared storage so it
+survives restarts and is available to whichever replica receives the callback.
+The stored original conversation reference and delegated-agent client ID are
+both required to authorize and process the response.
+
 ## Microsoft Entra setup
 
 Create two confidential-client app registrations in the same tenant:
@@ -65,7 +95,7 @@ The Human agent also sends the final activity through the stored conversation re
 
 ## Configure
 
-From `test-agents/a2a-agent`, copy and fill in:
+From `test-agents/delegated-agent-callback`, copy and fill in:
 
 ```powershell
 Copy-Item .env.human.TEMPLATE .env.human
@@ -81,19 +111,19 @@ token and one valid token. Do not commit the populated `.env.*` files.
 Use three terminals:
 
 ```powershell
-npm run start:human --workspace a2a-agent
+npm run start:human --workspace delegated-agent-callback
 ```
 
 ```powershell
-npm run start:cat --workspace a2a-agent
+npm run start:cat --workspace delegated-agent-callback
 ```
 
 ```powershell
-npm run smoke --workspace a2a-agent
+npm run smoke --workspace delegated-agent-callback
 ```
 
-A successful run reports both rejected auth checks and ends with:
+A successful run reports both rejected authentication checks and ends with:
 
 ```text
-A2A cat smoke test passed: invalid auth was rejected and the authenticated delegated response returned.
+Activity callback cat smoke test passed: invalid authentication was rejected and the authenticated callback reached the original conversation.
 ```

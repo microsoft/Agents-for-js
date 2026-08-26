@@ -1,0 +1,169 @@
+{
+  "dependency": "@microsoft/teams.api",
+  "declaredVersion": "2.0.13",
+  "sourceRoot": "src",
+  "usages": [
+    {
+      "upstreamSymbol": "Client",
+      "usage": "instantiated",
+      "files": [
+        "src/teamsApiClientExtensions.ts"
+      ]
+    },
+    {
+      "upstreamSymbol": "Client",
+      "usage": "type-reference",
+      "files": [
+        "src/teamsAgentExtension.ts",
+        "src/teamsApiClientExtensions.ts",
+        "src/teamsTurnContext.ts"
+      ]
+    },
+    {
+      "upstreamSymbol": "AppBasedLinkQuery",
+      "usage": "request-model",
+      "propertiesValidated": [
+        "state",
+        "url"
+      ],
+      "files": [
+        "src/messageExtensions/messageExtension.ts"
+      ]
+    },
+    {
+      "upstreamSymbol": "ChannelData",
+      "usage": "parsed-model",
+      "propertiesRead": [
+        "channel",
+        "eventType",
+        "meeting",
+        "team"
+      ],
+      "files": [
+        "src/activity-extensions/teamsChannelData.ts",
+        "src/channels/teamsChannel.ts",
+        "src/messages/message.ts",
+        "src/teams/teamsTeam.ts",
+        "src/teamsActivityExtensions.ts"
+      ]
+    },
+    {
+      "upstreamSymbol": "ChannelInfo",
+      "usage": "event-model",
+      "files": [
+        "src/channels/teamsChannel.ts"
+      ]
+    },
+    {
+      "upstreamSymbol": "ConfigResponse",
+      "usage": "response-model",
+      "files": [
+        "src/config/config.ts"
+      ]
+    },
+    {
+      "upstreamSymbol": "FileConsentCardResponse",
+      "usage": "request-model",
+      "files": [
+        "src/fileConsents/fileConsent.ts"
+      ]
+    },
+    {
+      "upstreamSymbol": "MeetingDetails",
+      "usage": "event-model",
+      "files": [
+        "src/meetings/meeting.ts"
+      ]
+    },
+    {
+      "upstreamSymbol": "MessagingExtensionAction",
+      "usage": "request-model",
+      "propertiesRead": [
+        "botActivityPreview",
+        "data"
+      ],
+      "files": [
+        "src/messageExtensions/messageExtension.ts",
+        "src/teamsModelExtensions.ts"
+      ]
+    },
+    {
+      "upstreamSymbol": "MessagingExtensionActionResponse",
+      "usage": "response-model",
+      "files": [
+        "src/messageExtensions/messageExtension.ts"
+      ]
+    },
+    {
+      "upstreamSymbol": "MessagingExtensionQuery",
+      "usage": "request-model",
+      "propertiesValidated": [
+        "commandId",
+        "parameters",
+        "parameters[].name",
+        "parameters[].value",
+        "queryOptions",
+        "queryOptions.count",
+        "queryOptions.skip",
+        "state"
+      ],
+      "files": [
+        "src/messageExtensions/messageExtension.ts",
+        "src/messageExtensions/messagingExtensionQuery.ts"
+      ]
+    },
+    {
+      "upstreamSymbol": "MessagingExtensionResponse",
+      "usage": "response-model",
+      "files": [
+        "src/messageExtensions/messageExtension.ts"
+      ]
+    },
+    {
+      "upstreamSymbol": "O365ConnectorCardActionQuery",
+      "usage": "request-model",
+      "files": [
+        "src/messages/message.ts"
+      ]
+    },
+    {
+      "upstreamSymbol": "OnBehalfOf",
+      "usage": "return-model",
+      "files": [
+        "src/teamsActivityExtensions.ts"
+      ]
+    },
+    {
+      "upstreamSymbol": "TaskModuleRequest",
+      "usage": "request-model",
+      "propertiesRead": [
+        "data"
+      ],
+      "files": [
+        "src/taskModules/taskModule.ts",
+        "src/teamsModelExtensions.ts"
+      ]
+    },
+    {
+      "upstreamSymbol": "TaskModuleResponse",
+      "usage": "response-model",
+      "files": [
+        "src/taskModules/taskModule.ts"
+      ]
+    },
+    {
+      "upstreamSymbol": "TeamInfo",
+      "usage": "event-model",
+      "files": [
+        "src/teams/teamsTeam.ts"
+      ]
+    },
+    {
+      "upstreamSymbol": "TeamsChannelAccount",
+      "usage": "nested-event-model",
+      "files": [
+        "src/meetings/meeting.ts"
+      ]
+    }
+  ]
+}

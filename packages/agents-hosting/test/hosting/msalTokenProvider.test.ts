@@ -25,6 +25,19 @@ function getFetchOptions (fetchStub: sinon.SinonStub): RequestInit {
   return fetchStub.getCall(0).args[1] as RequestInit
 }
 
+type JwtSignOptionsWithHeader = jwt.SignOptions & {
+  header: {
+    x5c?: string
+    alg?: string
+    typ?: string
+    'x5t#S256'?: string
+  }
+}
+
+function getJwtSignOptions (jwtSignStub: sinon.SinonStub): JwtSignOptionsWithHeader {
+  return jwtSignStub.getCall(0).args[2] as JwtSignOptionsWithHeader
+}
+
 function createExpiringJwtToken (expiresInSeconds = 3600): string {
   return jwt.sign({ exp: Math.floor(Date.now() / 1000) + expiresInSeconds }, 'secret')
 }
@@ -128,6 +141,59 @@ describe('MsalTokenProvider', () => {
     await new MsalTokenProvider({ ...connectionSettings }).getAccessToken('scope-two')
 
     assert.strictEqual(acquireTokenStub.calledTwice, true)
+    assert.strictEqual(clientInstances.size, 1)
+  })
+
+  it('should configure the MSAL network client with msalRetryCount', async () => {
+    let maxRetryCount: number | undefined
+    sinon.stub(ConfidentialClientApplication.prototype, 'acquireTokenByClientCredential').callsFake(async function (this: any) {
+      maxRetryCount = this.config.system.networkClient.maxRetryCount
+      return { accessToken: 'opaque-token' } as any
+    })
+
+    await new MsalTokenProvider({
+      clientId: 'retry-client-id',
+      clientSecret: 'retry-secret',
+      tenantId: 'retry-tenant-id',
+      msalRetryCount: 5
+    }).getAccessToken('scope')
+
+    assert.strictEqual(maxRetryCount, 5)
+  })
+
+  it('should not share confidential clients with different msalRetryCount settings', async () => {
+    const clientInstances = new Set<unknown>()
+    sinon.stub(ConfidentialClientApplication.prototype, 'acquireTokenByClientCredential').callsFake(async function (this: unknown) {
+      clientInstances.add(this)
+      return { accessToken: 'opaque-token' } as any
+    })
+    const connectionSettings: AuthConfiguration = {
+      clientId: 'retry-client-id',
+      clientSecret: 'retry-secret',
+      tenantId: 'retry-tenant-id'
+    }
+
+    await new MsalTokenProvider({ ...connectionSettings, msalRetryCount: 2 }).getAccessToken('scope-one')
+    await new MsalTokenProvider({ ...connectionSettings, msalRetryCount: 5 }).getAccessToken('scope-two')
+
+    assert.strictEqual(clientInstances.size, 2)
+  })
+
+  it('should share confidential clients with equivalent normalized msalRetryCount settings', async () => {
+    const clientInstances = new Set<unknown>()
+    sinon.stub(ConfidentialClientApplication.prototype, 'acquireTokenByClientCredential').callsFake(async function (this: unknown) {
+      clientInstances.add(this)
+      return { accessToken: 'opaque-token' } as any
+    })
+    const connectionSettings: AuthConfiguration = {
+      clientId: 'retry-client-id',
+      clientSecret: 'retry-secret',
+      tenantId: 'retry-tenant-id'
+    }
+
+    await new MsalTokenProvider({ ...connectionSettings, msalRetryCount: 1.7 }).getAccessToken('scope-one')
+    await new MsalTokenProvider({ ...connectionSettings, msalRetryCount: 1 }).getAccessToken('scope-two')
+
     assert.strictEqual(clientInstances.size, 1)
   })
 
@@ -301,7 +367,9 @@ describe('MsalTokenProvider', () => {
   })
 
   it('should timeout agentic token fetch requests', async () => {
-    const clock = sinon.useFakeTimers()
+    const clock = sinon.useFakeTimers({
+      toFake: ['setTimeout', 'clearTimeout'],
+    })
     const tokenProvider = new MsalTokenProvider({
       clientId: 'client-id',
       tenantId: 'common',
@@ -716,7 +784,7 @@ describe('MsalTokenProvider', () => {
       await tokenProvider.getAgenticApplicationToken('agentic-tenant-id', 'agent-app-instance-id')
 
       assert.strictEqual(jwtSignStub.called, true)
-      const signOptions = jwtSignStub.getCall(0).args[2] as jwt.SignOptions & { header: any }
+      const signOptions = getJwtSignOptions(jwtSignStub)
       assert.strictEqual(signOptions.header.x5c, fakePem, 'x5c header should contain the PEM certificate contents')
       assert.strictEqual(signOptions.header.alg, 'PS256')
       assert.strictEqual(signOptions.header.typ, 'JWT')
@@ -757,7 +825,7 @@ describe('MsalTokenProvider', () => {
       await tokenProvider.getAgenticApplicationToken('agentic-tenant-id', 'agent-app-instance-id')
 
       assert.strictEqual(jwtSignStub.called, true)
-      const signOptions = jwtSignStub.getCall(0).args[2] as jwt.SignOptions & { header: any }
+      const signOptions = getJwtSignOptions(jwtSignStub)
       assert.strictEqual(signOptions.header.x5c, undefined, 'x5c header should not be set when sendX5C is false')
     } finally {
       MsalTokenProvider.clearSharedCaches()
@@ -794,7 +862,7 @@ describe('MsalTokenProvider', () => {
       await tokenProvider.getAgenticApplicationToken('agentic-tenant-id', 'agent-app-instance-id')
 
       assert.strictEqual(jwtSignStub.called, true)
-      const signOptions = jwtSignStub.getCall(0).args[2] as jwt.SignOptions & { header: any }
+      const signOptions = getJwtSignOptions(jwtSignStub)
       assert.strictEqual(signOptions.header.x5c, undefined, 'x5c header should not be set when sendX5C is not provided')
     } finally {
       MsalTokenProvider.clearSharedCaches()

@@ -170,6 +170,12 @@ export function resolveAuthority (authority?: string, tenantId?: string): string
   return `${base}/${tenantId ?? 'botframework.com'}`
 }
 
+function getEffectiveTenant (tenantId: string | undefined, authority: string): string | undefined {
+  const resolvedAuthority = new URL(trimTrailingSlashes(authority))
+  const embeddedTenant = resolvedAuthority.pathname.split('/').filter(Boolean).pop()
+  return embeddedTenant ?? tenantId
+}
+
 function trimTrailingSlashes (value: string): string {
   let end = value.length
   while (end > 0 && value.charCodeAt(end - 1) === 47) {
@@ -179,14 +185,14 @@ function trimTrailingSlashes (value: string): string {
   return end === value.length ? value : value.slice(0, end)
 }
 
-function getDefaultIssuers (tenantId: string, authority: string) : string[] {
+export function getDefaultIssuers (tenantId: string, authority: string) : string[] {
   // Convert empty string to undefined so resolveAuthority applies its 'botframework.com' default
-  const t = tenantId || undefined
+  const t = getEffectiveTenant(tenantId || undefined, authority)
   if (!t) {
     logger.warn('tenantId is not configured, defaulting to botframework.com')
   }
   return [
-    'https://api.botframework.com',
+    /login\.microsoftonline\.us/i.test(authority) ? 'https://api.botframework.us' : 'https://api.botframework.com',
     `${resolveAuthority('https://sts.windows.net', t)}/`,
     `${resolveAuthority(authority, t)}/v2.0`
   ]
@@ -222,6 +228,15 @@ export interface ConnectionSettingsBase {
    * A list of valid issuers for the authentication configuration.
    */
   issuers?: string[]
+
+  /**
+   * Whether to validate the token issuer against {@link issuers}.
+   *
+   * @remarks
+   * Disabled by default for backward compatibility. Tenant-to-issuer binding is always applied
+   * independently when both claims contain comparable tenant GUIDs.
+   */
+  validateIssuer?: boolean
 
   /**
    * The connection name for the authentication configuration.

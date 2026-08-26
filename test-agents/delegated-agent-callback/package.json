@@ -1,5 +1,5 @@
 {
-  "name": "a2a-agent",
+  "name": "delegated-agent-callback",
   "version": "1.0.0",
   "private": true,
   "author": "Microsoft",
@@ -8,12 +8,10 @@
   "main": "./dist/sageAgent.js",
   "scripts": {
     "build": "tsc --build",
-    "prestart:human": "npm run build",
-    "start:human": "node --env-file .env.human ./dist/sageAgent.js",
-    "prestart:cat": "npm run build",
-    "start:cat": "node --env-file .env.cat ./dist/wiseCatAgent.js",
-    "presmoke": "npm run build",
-    "smoke": "node --env-file .env.smoke ./dist/smokeClient.js"
+    "start": "npm run build && node --env-file .env ./dist/sageAgent.js",
+    "start:human": "npm run build && node --env-file .env.human ./dist/sageAgent.js",
+    "start:cat": "npm run build && node --env-file .env.cat ./dist/wiseCatAgent.js",
+    "smoke": "npm run build && node --env-file .env.smoke ./dist/smokeClient.js"
   },
   "dependencies": {
     "@microsoft/agents-hosting": "file:../../packages/agents-hosting",

@@ -53,7 +53,15 @@ export const MetricNames: {
     readonly NAMED_PIPE_DISPATCH_ERRORS: "agents.named_pipe.dispatch.error.count";
     readonly NAMED_PIPE_SENDS: "agents.named_pipe.send.count";
     readonly NAMED_PIPE_SEND_DURATION: "agents.named_pipe.send.duration";
+    readonly SLACK_API_REQUESTS: "agents.slack.api.request.count";
+    readonly SLACK_API_REQUEST_DURATION: "agents.slack.api.request.duration";
 };
+
+// @public
+export function pseudonymizeConversationId(conversationId: string | undefined, key?: string): string | undefined;
+
+// @public
+export function redactDiagnosticObject(value: unknown, diagnosticsPseudonymKey?: string): unknown;
 
 // @public
 export function redactScopes(scopes: string[] | undefined): string | undefined;
@@ -78,6 +86,7 @@ export const SpanNames: {
     readonly AGENTS_APP_BEFORE_TURN: "agents.app.before_turn";
     readonly AGENTS_APP_AFTER_TURN: "agents.app.after_turn";
     readonly AGENTS_APP_DOWNLOAD_FILES: "agents.app.download_files";
+    readonly AGENTS_APP_TYPING_INDICATOR: "agents.app.typing_indicator";
     readonly CONNECTOR_SEND_TO_CONVERSATION: "agents.connector.send_to_conversation";
     readonly CONNECTOR_REPLY_TO_ACTIVITY: "agents.connector.reply_to_activity";
     readonly CONNECTOR_UPDATE_ACTIVITY: "agents.connector.update_activity";
@@ -126,11 +135,16 @@ export const SpanNames: {
     readonly COPILOT_SEND_ACTIVITY: "agents.copilot_client.send_activity";
     readonly COPILOT_POST_REQUEST: "agents.copilot_client.post_request";
     readonly COPILOT_CREATE_CONNECTION: "agents.copilot_client.webchat.create_connection";
+    readonly COPILOT_WEBCHAT_START_CONVERSATION: "agents.copilot_client.webchat.start_conversation";
+    readonly COPILOT_WEBCHAT_POST_ACTIVITY: "agents.copilot_client.webchat.post_activity";
+    readonly COPILOT_WEBCHAT_RECEIVE_ACTIVITY: "agents.copilot_client.webchat.receive_activity";
+    readonly COPILOT_WEBCHAT_END_CONNECTION: "agents.copilot_client.webchat.end_connection";
     readonly COPILOT_EXECUTE_STREAMING: "agents.copilot_client.execute_streaming";
     readonly COPILOT_SUBSCRIBE_ASYNC: "agents.copilot_client.subscribe_async";
     readonly NAMED_PIPE_CONNECT: "agents.named_pipe.connect";
     readonly NAMED_PIPE_DISPATCH: "agents.named_pipe.dispatch";
     readonly NAMED_PIPE_SEND: "agents.named_pipe.send";
+    readonly SLACK_API_CALL: "agents.slack.api.call";
 };
 
 // @public (undocumented)

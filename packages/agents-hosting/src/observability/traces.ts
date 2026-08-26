@@ -26,7 +26,8 @@ export const AgentApplicationTraceDefinitions = {
       span.setAttributes({
         'route.authorized': record.authorized,
         'route.matched': record.routeMatched,
-        ...attributes
+        ...attributes,
+        'activity.name': activity.name ?? 'unknown'
       })
 
       HostingMetrics.turnsTotalCounter.add(1, attributes)
@@ -46,6 +47,23 @@ export const AgentApplicationTraceDefinitions = {
     },
     end ({ span, record }) {
       span.setAttribute('agents.attachments.count', record.attachmentsCount ?? 0)
+    }
+  }),
+  typingIndicator: trace.define({
+    name: SpanNames.AGENTS_APP_TYPING_INDICATOR,
+    record: {
+      activityType: 'unknown',
+      channelId: 'unknown',
+      conversationId: 'unknown',
+      notificationSequence: 0,
+    },
+    end ({ span, record }) {
+      span.setAttributes({
+        'activity.type': record.activityType,
+        'activity.channel_id': record.channelId,
+        'activity.conversation_id': record.conversationId,
+        'typing.notification.sequence': record.notificationSequence,
+      })
     }
   }),
   beforeTurn: trace.define({

@@ -5,7 +5,7 @@
 
 import { AgentType } from './agentType'
 import { ConnectionSettings } from './connectionSettings'
-import { debug } from '@microsoft/agents-telemetry'
+import { debug, redactUrl } from '@microsoft/agents-telemetry'
 import { ExceptionHelper } from '@microsoft/agents-activity'
 import { PowerPlatformCloud } from './powerPlatformCloud'
 import { PrebuiltBotStrategy } from './strategies/prebuiltBotStrategy'
@@ -31,7 +31,7 @@ export function getCopilotStudioConnectionUrl (
   }
 
   if (settings.directConnectUrl?.trim()) {
-    logger.debug(`Using direct connection: ${settings.directConnectUrl}`)
+    logger.debug(`Using direct connection: ${redactUrl(settings.directConnectUrl)}`)
     if (!isValidUri(settings.directConnectUrl)) {
       throw ExceptionHelper.generateException(Error, Errors.InvalidDirectConnectUrl)
     }
@@ -49,7 +49,7 @@ export function getCopilotStudioConnectionUrl (
     if (!settings.customPowerPlatformCloud?.trim()) {
       throw ExceptionHelper.generateException(Error, Errors.CustomPowerPlatformCloudRequired)
     } else if (isValidUri(settings.customPowerPlatformCloud)) {
-      logger.debug(`Using custom Power Platform cloud: ${settings.customPowerPlatformCloud}`)
+      logger.debug(`Using custom Power Platform cloud: ${redactUrl(settings.customPowerPlatformCloud)}`)
     } else {
       throw ExceptionHelper.generateException(Error, Errors.InvalidCustomPowerPlatformCloud)
     }
@@ -69,7 +69,7 @@ export function getCopilotStudioConnectionUrl (
   }[agentType]()
 
   const url = strategy.getConversationUrl(conversationId)
-  logger.debug(`Generated Copilot Studio connection URL: ${url}`)
+  logger.debug(`Generated Copilot Studio connection URL: ${redactUrl(url)}`)
   return url
 }
 
@@ -95,7 +95,7 @@ export function getCopilotStudioSubscribeUrl (
     : `${url.pathname}/subscribe`
   const subscribeUrl = url.href
 
-  logger.debug(`Generated Copilot Studio subscribe URL: ${subscribeUrl}`)
+  logger.debug(`Generated Copilot Studio subscribe URL: ${redactUrl(subscribeUrl)}`)
   return subscribeUrl
 }
 
@@ -185,7 +185,7 @@ function createURL (base: string, conversationId?: string): URL {
 
   url.pathname = `${url.pathname}/conversations`
   if (conversationId) {
-    url.pathname = `${url.pathname}/${conversationId}`
+    url.pathname = `${url.pathname}/${encodeURIComponent(conversationId)}`
   }
 
   return url

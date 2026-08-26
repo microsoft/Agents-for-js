@@ -111,6 +111,7 @@ export interface AdaptiveCardInvokeValue {
     action: AdaptiveCardInvokeAction;
     authentication: AdaptiveCardAuthentication;
     state: string;
+    trigger?: 'automatic' | 'manual';
 }
 
 // @public
@@ -261,6 +262,12 @@ export class AgentExtension<TState extends TurnState> {
 export type AgentHandler = (context: TurnContext, next: () => Promise<void>) => Promise<any>;
 
 // @public
+export interface AgenticAuthorizationOptions {
+    altBlueprintConnectionName?: string;
+    scopes?: string[];
+    type: 'AgenticUserAuthorization' | 'agentic';
+
+// @public
 export type AgentResponseHandler = (req: Request_2, res: WebResponse, params: AgentResponseHandlerParams) => Promise<void>;
 
 // @public
@@ -366,7 +373,7 @@ export interface AttachmentData {
 
 // @public
 export class AttachmentDownloader<TState extends TurnState = TurnState> implements InputFileDownloader<TState> {
-    constructor(stateKey?: string);
+    constructor(stateKey?: string, outboundHostValidator?: OutboundUrlPolicy);
     downloadAndStoreFiles(context: TurnContext, state: TState): Promise<void>;
     downloadFiles(context: TurnContext): Promise<InputFile[]>;
 }
@@ -423,6 +430,15 @@ export interface Authorization {
 }
 
 // @public
+export interface AuthorizationHandlerTokenOptions {
+    connection?: string;
+    scopes?: string[];
+}
+
+// @public
+export type AuthorizationOptions = Record<string, (AzureBotAuthorizationOptions & AzureBotAuthorizationOptionsLegacy) | AgenticAuthorizationOptions>;
+
+// @public
 export const authorizeJWT: (authConfig: AuthConfiguration) => (req: Request_2, res: WebResponse, next: NextFunction) => Promise<void>;
 
 // @public
@@ -467,6 +483,51 @@ export enum AuthType {
     UserManagedIdentity = "UserManagedIdentity",
     // (undocumented)
     WorkloadIdentity = "WorkloadIdentity"
+}
+
+// @public
+export interface AzureBotAuthorizationOptions {
+    azureBotOAuthConnectionName?: string;
+    enableSso?: boolean;
+    invalidSignInRetryMax?: number;
+    invalidSignInRetryMaxExceededMessage?: string;
+    invalidSignInRetryMessage?: string;
+    invalidSignInRetryMessageFormat?: string;
+    oboConnectionName?: string;
+    oboScopes?: string[];
+    text?: string;
+    title?: string;
+    type?: 'AzureBotUserAuthorization' | undefined;
+}
+
+// @public
+export interface AzureBotAuthorizationOptionsLegacy {
+    // @deprecated
+    maxAttempts?: number;
+    // @deprecated
+    messages?: AzureBotAuthorizationOptionsMessages;
+    // @deprecated
+    name?: string;
+    // @deprecated
+    obo?: AzureBotAuthorizationOptionsOBO;
+}
+
+// @public @deprecated (undocumented)
+export interface AzureBotAuthorizationOptionsMessages {
+    // @deprecated (undocumented)
+    invalidCode?: string;
+    // @deprecated (undocumented)
+    invalidCodeFormat?: string;
+    // @deprecated (undocumented)
+    maxAttemptsExceeded?: string;
+}
+
+// @public @deprecated (undocumented)
+export interface AzureBotAuthorizationOptionsOBO {
+    // @deprecated (undocumented)
+    connection?: string;
+    // @deprecated (undocumented)
+    scopes?: string[];
 }
 
 // @public
@@ -542,7 +603,7 @@ export function clearJwksClients(): void;
 
 // @public (undocumented)
 export class CloudAdapter extends BaseAdapter {
-    constructor(authConfig?: AuthConfiguration, authProvider?: AuthProvider, userTokenClient?: UserTokenClient, options?: CloudAdapterOptions);
+    constructor(authConfig?: AuthConfiguration, authProvider?: AuthProvider, userTokenClient?: UserTokenClient, options?: CloudAdapterOptions, outboundHostValidator?: OutboundUrlPolicy);
     // (undocumented)
     protected _agentName?: string;
     // (undocumented)
@@ -579,6 +640,7 @@ export class CloudAdapter extends BaseAdapter {
 // @public
 export interface CloudAdapterOptions {
     emitStackTrace?: boolean;
+    // @deprecated
     validateServiceUrl?: boolean;
 }
 
@@ -650,6 +712,7 @@ export interface ConnectionSettingsBase {
     scope?: string;
     scopes?: string[];
     tenantId?: string;
+    validateIssuer?: boolean;
 }
 
 // @public
@@ -802,9 +865,17 @@ export class CreateConversationOptionsBuilder {
 }
 
 // @public
+export function createOutboundHostValidator(options?: OutboundHostValidatorOptions): OutboundHostValidator;
+
+// @public
 export interface CustomKey {
     channelId: string;
     conversationId: string;
+}
+export interface CustomKey {
+    channelId: string;
+    conversationId: string;
+    namespace?: string;
 }
 
 // @public
@@ -995,11 +1066,14 @@ export interface InvokeResponse<T = any> {
 export const loadAuthConfigFromEnv: (cnxName?: string) => AuthConfiguration;
 
 // @public
+export function loadOutboundHostValidatorOptionsFromEnv(): OutboundHostValidatorOptions;
+
+// @public
 export const loadPrevAuthConfigFromEnv: () => AuthConfiguration;
 
 // @public
 export class M365AttachmentDownloader<TState extends TurnState = TurnState> implements InputFileDownloader<TState> {
-    constructor(stateKey?: string);
+    constructor(stateKey?: string, outboundHostValidator?: OutboundUrlPolicy);
     downloadAndStoreFiles(context: TurnContext, state: TState): Promise<void>;
     downloadFiles(context: TurnContext): Promise<InputFile[]>;
 }
@@ -1157,6 +1231,30 @@ export interface OAuthCard {
     text: string;
     tokenExchangeResource: TokenExchangeResource;
     tokenPostResource: TokenPostResource;
+}
+
+// @public
+export class OutboundHostValidator implements OutboundUrlPolicy {
+    constructor(options?: OutboundHostValidatorOptions);
+    // (undocumented)
+    readonly enabled: boolean;
+    // (undocumented)
+    isAllowed(input: string | URL | null | undefined): boolean;
+}
+
+// @public
+export interface OutboundHostValidatorOptions {
+    enabled?: boolean;
+    hosts?: readonly string[];
+    includeDefaultMicrosoftHosts?: boolean;
+}
+
+// @public
+export interface OutboundUrlPolicy {
+    // (undocumented)
+    readonly enabled: boolean;
+    // (undocumented)
+    isAllowed(url: string | URL | null | undefined): boolean;
 }
 
 // @public

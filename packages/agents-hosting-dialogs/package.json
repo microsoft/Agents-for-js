@@ -13,7 +13,7 @@
     "url": "https://aka.ms/Agents"
   },
   "description": "Microsoft 365 Agents SDK Dialogs support.",
-  "main": "dist/index.js",
+  "main": "./dist/src/index.js",
   "types": "dist/src/index.d.ts",
   "dependencies": {
     "@microsoft/agents-activity": "file:../agents-activity",
