@@ -36,6 +36,7 @@ const TYPING_TIMER_STATE_KEY = Symbol('typingTimerState')
 type TypingTimerState = {
   timer?: NodeJS.Timeout
   lastSend: Promise<unknown>
+  notificationSequence: number
   stop: () => void
 }
 
@@ -888,6 +889,7 @@ export class AgentApplication<TState extends TurnState> {
 
     const state: TypingTimerState = {
       lastSend: Promise.resolve(),
+      notificationSequence: 0,
       stop: () => {
         if (state.timer) {
           clearTimeout(state.timer)
@@ -915,7 +917,8 @@ export class AgentApplication<TState extends TurnState> {
 
     const onTimeout = async () => {
       try {
-        state.lastSend = this.sendTypingActivity(context)
+        state.notificationSequence += 1
+        state.lastSend = this.sendTypingActivity(context, state.notificationSequence)
         await state.lastSend
       } catch (err: any) {
         logger.error(err)
@@ -948,11 +951,19 @@ export class AgentApplication<TState extends TurnState> {
     return streamingEntity?.streamType ?? activity.channelData?.streamType
   }
 
-  private async sendTypingActivity (context: TurnContext): Promise<ResourceResponse[] | undefined> {
+  private async sendTypingActivity (context: TurnContext, notificationSequence: number): Promise<ResourceResponse[] | undefined> {
     const conversationReference = context.activity.getConversationReference()
     const typingActivity = Activity.fromObject({ type: ActivityTypes.Typing }).applyConversationReference(conversationReference)
 
-    return await context.adapter.sendActivities(context, [typingActivity])
+    return await trace(AgentApplicationTraceDefinitions.typingIndicator, ({ record }) => {
+      record({
+        activityType: typingActivity.type,
+        channelId: typingActivity.channelId,
+        conversationId: typingActivity.conversation?.id,
+        notificationSequence,
+      })
+      return context.adapter.sendActivities(context, [typingActivity])
+    })
   }
 
   /**

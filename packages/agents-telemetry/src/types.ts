@@ -39,7 +39,8 @@ export type SpanName = typeof SpanNames[keyof typeof SpanNames]
  *
  * @remarks
  * - `set()` recursively merges plain objects.
- * - Arrays are copied and replaced.
+ *   - Arrays are copied and replaced.
+ *   - Ignores `undefined` values so definition defaults remain available.
  * - `get()` returns the latest snapshot stored for the span.
  */
 export interface TraceRecord<TRecord extends object> {
