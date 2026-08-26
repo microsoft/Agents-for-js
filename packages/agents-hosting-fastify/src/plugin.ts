@@ -14,13 +14,13 @@ import {
   Request,
   TurnState
 } from '@microsoft/agents-hosting'
-import { createCloudAdapter } from '@microsoft/agents-hosting'
+import { createCloudAdapter, type CreateCloudAdapterOptions } from '@microsoft/agents-hosting'
 import { adaptReply } from './replyAdapter'
 
 /**
  * Options accepted by the `@microsoft/agents-hosting-fastify` plugin.
  */
-export interface AgentsHostingFastifyPluginOptions {
+export interface AgentsHostingFastifyPluginOptions extends CreateCloudAdapterOptions {
   /**
    * The AgentApplication or ActivityHandler instance to process incoming
    * activities.
@@ -59,9 +59,11 @@ const pluginImpl: FastifyPluginAsync<AgentsHostingFastifyPluginOptions> = async 
   fastify: FastifyInstance,
   opts: AgentsHostingFastifyPluginOptions
 ) => {
-  const authConfig = getAuthConfigWithDefaults(opts.authConfig)
-  const { adapter, headerPropagation } = createCloudAdapter(opts.agent, authConfig)
+  const configurationContext = opts.configurationContext ??
+    (opts.agent instanceof AgentApplication ? opts.agent.options.configurationContext : undefined)
+  const authConfig = getAuthConfigWithDefaults(opts.authConfig, { configurationContext })
   const jwtMiddleware = authorizeJWT(authConfig)
+  const { adapter, headerPropagation } = createCloudAdapter(opts.agent, authConfig, { configurationContext: opts.configurationContext })
   const routePath = opts.routePath ?? '/api/messages'
 
   if (opts.rateLimit) {

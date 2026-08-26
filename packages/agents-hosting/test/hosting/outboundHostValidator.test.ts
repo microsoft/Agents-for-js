@@ -8,6 +8,10 @@ import {
   loadOutboundHostValidatorOptionsFromEnv,
   OutboundHostValidator
 } from '../../src'
+import {
+  createConfigurationContext,
+  resetConfigurationSourcesForTest
+} from '../../src/configuration/configuration'
 
 describe('OutboundHostValidator', () => {
   const changedEnvironmentKeys = new Map<string, string | undefined>()
@@ -23,6 +27,59 @@ describe('OutboundHostValidator', () => {
       else process.env[key] = value
     }
     changedEnvironmentKeys.clear()
+    resetConfigurationSourcesForTest()
+  })
+
+  it('creates a policy from a host-scoped configuration context', async () => {
+    const configurationContext = await createConfigurationContext([{
+      source: {
+        name: 'outbound-hosts',
+        async load () {
+          return {
+            format: 'document',
+            value: {
+              outboundHostValidator: {
+                enabled: true,
+                includeDefaultMicrosoftHosts: false,
+                hosts: ['context.contoso.com']
+              }
+            }
+          } as const
+        }
+      },
+      mode: 'enforce'
+    }])
+
+    const validator = createOutboundHostValidator({ configurationContext })
+
+    assert.equal(validator.isAllowed('https://context.contoso.com/file'), true)
+    assert.equal(validator.isAllowed('https://api.botframework.com/file'), false)
+  })
+
+  it('honors a host-scoped context when constructed directly', async () => {
+    const configurationContext = await createConfigurationContext([{
+      source: {
+        name: 'direct-outbound-hosts',
+        async load () {
+          return {
+            format: 'document',
+            value: {
+              outboundHostValidator: {
+                enabled: true,
+                includeDefaultMicrosoftHosts: false,
+                hosts: ['context.contoso.com']
+              }
+            }
+          } as const
+        }
+      },
+      mode: 'enforce'
+    }])
+
+    const validator = new OutboundHostValidator({ configurationContext })
+
+    assert.equal(validator.isAllowed('https://context.contoso.com/file'), true)
+    assert.equal(validator.isAllowed('https://api.botframework.com/file'), false)
   })
 
   function assertDisabledValidatorAllows (url: string | null): void {

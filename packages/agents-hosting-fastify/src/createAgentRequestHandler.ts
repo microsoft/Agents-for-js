@@ -13,7 +13,7 @@ import {
   Request,
   TurnState
 } from '@microsoft/agents-hosting'
-import { createCloudAdapter } from '@microsoft/agents-hosting'
+import { createCloudAdapter, type CreateCloudAdapterOptions } from '@microsoft/agents-hosting'
 import { adaptReply } from './replyAdapter'
 
 /**
@@ -39,6 +39,11 @@ export type FastifyAgentRequestHandler = (
  * @param authConfiguration - Optional custom authentication configuration. If
  * not provided, configuration will be loaded from environment variables using
  * `loadAuthConfigFromEnv()`.
+ * @param options - Optional additional settings, such as a host-scoped
+ * `ConfigurationContext`. For an `AgentApplication`, this defaults to its own
+ * `configurationContext` option when omitted; a plain `ActivityHandler` has no
+ * built-in context and must be supplied here to participate in host-scoped
+ * configuration.
  * @returns A Fastify route handler function `(request, reply) => Promise<void>`.
  *
  * @example
@@ -57,11 +62,14 @@ export type FastifyAgentRequestHandler = (
  */
 export const createAgentRequestHandler = (
   agent: AgentApplication<TurnState<any, any>> | ActivityHandler,
-  authConfiguration?: AuthConfiguration
+  authConfiguration?: AuthConfiguration,
+  options?: CreateCloudAdapterOptions
 ): FastifyAgentRequestHandler => {
-  const authConfig = getAuthConfigWithDefaults(authConfiguration)
-  const { adapter, headerPropagation } = createCloudAdapter(agent, authConfig)
+  const configurationContext = options?.configurationContext ??
+    (agent instanceof AgentApplication ? agent.options.configurationContext : undefined)
+  const authConfig = getAuthConfigWithDefaults(authConfiguration, { configurationContext })
   const jwtMiddleware = authorizeJWT(authConfig)
+  const { adapter, headerPropagation } = createCloudAdapter(agent, authConfig, options)
 
   return async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
     const adaptedReq: Request = {

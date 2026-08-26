@@ -148,7 +148,12 @@ export class AgentApplication<TState extends TurnState> {
     if (this._options.adapter) {
       this._adapter = this._options.adapter
     } else {
-      this._adapter = new CloudAdapter()
+      this._adapter = new CloudAdapter(
+        undefined,
+        undefined,
+        undefined,
+        { configurationContext: this._options.configurationContext }
+      )
     }
 
     this._adapter.setAgentName(this._options.agentName)
@@ -208,7 +213,7 @@ export class AgentApplication<TState extends TurnState> {
    * Gets the authorization instance for the application.
    *
    * @returns The authorization instance.
-   * @throws Error if no authentication options were configured.
+   * @throws Error if no authorization handlers were resolved.
    */
   public get authorization (): Authorization {
     if (this._authorizationManager.handlers.length === 0) {
@@ -495,7 +500,7 @@ export class AgentApplication<TState extends TurnState> {
    *
    * @param handler - The handler function to be called after successful sign-in.
    * @returns The current instance of the application.
-   * @throws Error if authentication options were not configured.
+   * @throws Error if no authorization handlers were resolved.
    *
    * @remarks
    * This method allows you to perform actions after a user has successfully authenticated.
@@ -510,11 +515,7 @@ export class AgentApplication<TState extends TurnState> {
    *
    */
   public onSignInSuccess (handler: (context: TurnContext, state: TurnState, id?: string) => Promise<void>): this {
-    if (this.options.authorization) {
-      this.authorization.onSignInSuccess(handler)
-    } else {
-      throw ExceptionHelper.generateException(Error, Errors.AuthorizationOptionNotAvailable)
-    }
+    this.authorization.onSignInSuccess(handler)
     return this
   }
 
@@ -523,7 +524,7 @@ export class AgentApplication<TState extends TurnState> {
    *
    * @param handler - The handler function to be called after a failed sign-in attempt.
    * @returns The current instance of the application.
-   * @throws Error if authentication options were not configured.
+   * @throws Error if no authorization handlers were resolved.
    *
    * @remarks
    * This method allows you to handle cases where a user fails to authenticate,
@@ -538,11 +539,7 @@ export class AgentApplication<TState extends TurnState> {
    *
    */
   public onSignInFailure (handler: (context: TurnContext, state: TurnState, id?: string) => Promise<void>): this {
-    if (this.options.authorization) {
-      this.authorization.onSignInFailure(handler)
-    } else {
-      throw ExceptionHelper.generateException(Error, Errors.AuthorizationOptionNotAvailable)
-    }
+    this.authorization.onSignInFailure(handler)
     return this
   }
 

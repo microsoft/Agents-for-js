@@ -1,4 +1,5 @@
 import { strict as assert } from 'assert'
+import { createRequire } from 'node:module'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 import sinon from 'sinon'
 
@@ -12,6 +13,7 @@ import { AuthorizationHandlerStatus } from '../../../src/app/auth/types'
 import { HandlerStorage } from '../../../src/app/auth/handlerStorage'
 import { Connections } from '../../../src/auth/connections'
 import { AzureBotAuthorizationOptions } from '../../../src/app/auth/handlers'
+import { createConfigurationContext, preloadConfigurationSources, resetConfigurationSourcesForTest } from '../../../src/configuration/configuration'
 
 class RecordingTestAdapter extends TestAdapter {
   public readonly sentActivities: Activity[] = []
@@ -22,15 +24,290 @@ class RecordingTestAdapter extends TestAdapter {
   }
 }
 
+async function captureAuthorizationManagerInfoLog (fn: () => void | Promise<void>): Promise<string> {
+  const require = createRequire(import.meta.url)
+  const modules = new Set<any>([require('debug')])
+  for (const module of Object.values(require.cache)) {
+    const exports = module?.exports
+    if (typeof exports?.enable === 'function' && typeof exports?.formatArgs === 'function') {
+      modules.add(exports)
+    }
+  }
+
+  const previousSettings = [...modules].map(debug => ({
+    debug,
+    namespaces: debug.disable(),
+    formatArgs: debug.formatArgs
+  }))
+  const calls: string[] = []
+
+  for (const { debug, formatArgs } of previousSettings) {
+    debug.enable('agents:authorization:manager:info')
+    debug.formatArgs = function (args: any[]) {
+      if ((this as any).namespace === 'agents:authorization:manager:info') {
+        calls.push(args.map(value => typeof value === 'string' ? value : JSON.stringify(value)).join(' '))
+      }
+      formatArgs.call(this, args)
+    }
+  }
+
+  try {
+    await fn()
+  } finally {
+    for (const { debug, namespaces, formatArgs } of previousSettings) {
+      debug.formatArgs = formatArgs
+      debug.disable()
+      if (namespaces) debug.enable(namespaces)
+    }
+  }
+
+  return calls.join('\n')
+}
+
 describe('AuthorizationManager - Configuration', () => {
   let originalEnv: NodeJS.ProcessEnv
 
   beforeEach(() => {
     originalEnv = { ...process.env }
+    resetConfigurationSourcesForTest()
   })
 
   afterEach(() => {
     process.env = originalEnv
+    resetConfigurationSourcesForTest()
+  })
+
+  it('logs a safe summary without exposing direct custom settings', async () => {
+    const sentinelSecret = 'DIRECT-AUTH-SECRET-7f34bca1'
+    let app: AgentApplication
+
+    const output = await captureAuthorizationManagerInfoLog(() => {
+      app = new AgentApplication({
+        storage: new MemoryStorage(),
+        authorization: {
+          directAuth: {
+            azureBotOAuthConnectionName: sentinelSecret,
+            invalidSignInRetryMax: 7,
+            oboScopes: ['api://first/.default', 'api://second/.default'],
+            enableSso: false,
+            customExtensionSecret: sentinelSecret
+          } as any
+        }
+      })
+    })
+
+    const options = (app!.authorization as any).manager._handlers.directAuth.options
+    assert.equal(options.customExtensionSecret, sentinelSecret)
+    assert.doesNotMatch(output, new RegExp(sentinelSecret))
+    assert.doesNotMatch(output, /api:\/\/first/)
+    assert.match(output, /AzureBotUserAuthorization/)
+    assert.match(output, /"invalidSignInRetryMax":7/)
+    assert.match(output, /"enableSso":false/)
+    assert.match(output, /<redacted> \(2 scopes\)/)
+  })
+
+  it('logs safe summaries for canonical and document sources without dropping custom settings', async () => {
+    const sentinelSecret = 'EXTERNAL-AUTH-SECRET-19d8c673'
+    const canonicalContext = await createConfigurationContext([{
+      source: {
+        name: 'canonical-authorization',
+        async load () {
+          return {
+            format: 'canonical',
+            values: {
+              'agentApplication.userAuthorization.handlers.canonicalAuth.settings.azureBotOAuthConnectionName': sentinelSecret,
+              'agentApplication.userAuthorization.handlers.canonicalAuth.settings.invalidSignInRetryMax': '11',
+              'agentApplication.userAuthorization.handlers.canonicalAuth.settings.oboScopes': 'canonical.scope.one,canonical.scope.two',
+              'agentApplication.userAuthorization.handlers.canonicalAuth.settings.customExtensionSecret': sentinelSecret
+            }
+          }
+        }
+      },
+      mode: 'overrideEnvironment'
+    }])
+    const documentContext = await createConfigurationContext([{
+      source: {
+        name: 'document-authorization',
+        async load () {
+          return {
+            format: 'document',
+            value: {
+              AgentApplication: {
+                UserAuthorization: {
+                  Handlers: {
+                    documentAuth: {
+                      Settings: {
+                        azureBotOAuthConnectionName: sentinelSecret,
+                        invalidSignInRetryMax: 13,
+                        enableSso: false,
+                        customExtensionSecret: sentinelSecret
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      mode: 'overrideEnvironment'
+    }])
+    let canonicalApp: AgentApplication
+    let documentApp: AgentApplication
+
+    const output = await captureAuthorizationManagerInfoLog(() => {
+      canonicalApp = new AgentApplication({
+        storage: new MemoryStorage(),
+        configurationContext: canonicalContext
+      })
+      documentApp = new AgentApplication({
+        storage: new MemoryStorage(),
+        configurationContext: documentContext
+      })
+    })
+
+    const canonicalOptions = (canonicalApp!.authorization as any).manager._handlers.canonicalAuth.options
+    const documentOptions = (documentApp!.authorization as any).manager._handlers.documentAuth.options
+    assert.equal(canonicalOptions.customExtensionSecret, sentinelSecret)
+    assert.equal(documentOptions.customExtensionSecret, sentinelSecret)
+    assert.doesNotMatch(output, new RegExp(sentinelSecret))
+    assert.doesNotMatch(output, /canonical\.scope\.one/)
+    assert.match(output, /"invalidSignInRetryMax":11/)
+    assert.match(output, /"invalidSignInRetryMax":13/)
+    assert.match(output, /"enableSso":false/)
+    assert.match(output, /<redacted> \(2 scopes\)/)
+  })
+
+  it('should apply preloaded configuration across fallback, overrideEnvironment, and enforce modes', async () => {
+    process.env = {
+      ...process.env,
+      testAuth_connectionName: 'LegacyConnection',
+      testAuth_messages_invalidCodeFormat: 'Legacy format'
+    }
+    await preloadConfigurationSources([
+      {
+        source: {
+          name: 'fallback',
+          async load () {
+            return {
+              format: 'canonical',
+              values: {
+                'agentApplication.userAuthorization.handlers.TESTAUTH.settings.azureBotOAuthConnectionName': 'BelowConnection',
+                'agentApplication.userAuthorization.handlers.TESTAUTH.settings.invalidSignInRetryMessage': 'Below message',
+                'agentApplication.userAuthorization.handlers.TESTAUTH.settings.invalidSignInRetryMessageFormat': 'Below format'
+              }
+            }
+          }
+        },
+        mode: 'fallback'
+      },
+      {
+        source: {
+          name: 'override-environment',
+          async load () {
+            return {
+              format: 'canonical',
+              values: {
+                'agentApplication.userAuthorization.handlers.testauth.settings.title': 'Override title',
+                'agentApplication.userAuthorization.handlers.TestAuth.settings.invalidSignInRetryMax': '50',
+                'agentApplication.userAuthorization.handlers.TestAuth.settings.oboConnectionName': 'Override OBO',
+                'agentApplication.userAuthorization.handlers.TestAuth.settings.enableSso': 'false'
+              }
+            }
+          }
+        },
+        mode: 'overrideEnvironment'
+      },
+      {
+        source: {
+          name: 'enforce',
+          async load () {
+            return {
+              format: 'canonical',
+              values: {
+                'agentApplication.userAuthorization.handlers.TESTAUTH.settings.oboConnectionName': 'Enforced OBO'
+              }
+            }
+          }
+        },
+        mode: 'enforce'
+      }
+    ])
+
+    const app = new AgentApplication({
+      storage: new MemoryStorage(),
+      authorization: {
+        testAuth: {
+          azureBotOAuthConnectionName: 'RuntimeConnection',
+          text: 'Runtime text',
+          oboConnectionName: 'Runtime OBO'
+        }
+      }
+    })
+
+    const handlers = (app.authorization as any).manager._handlers
+    assert.deepEqual(Object.keys(handlers), ['testAuth'])
+    const authHandler: AzureBotAuthorizationOptions = handlers.testAuth.options
+    assert.equal(authHandler.azureBotOAuthConnectionName, 'RuntimeConnection')
+    assert.equal(authHandler.invalidSignInRetryMessage, 'Below message')
+    assert.equal(authHandler.invalidSignInRetryMessageFormat, 'Legacy format')
+    assert.equal(authHandler.title, 'Override title')
+    assert.equal(authHandler.text, 'Runtime text')
+    assert.equal(authHandler.invalidSignInRetryMax, 50)
+    assert.equal(authHandler.oboConnectionName, 'Enforced OBO')
+    assert.equal(authHandler.enableSso, false)
+  })
+
+  it('should create and parse an external-only handler case-insensitively', async () => {
+    await preloadConfigurationSources([{
+      source: {
+        name: 'external-agentic',
+        async load () {
+          return {
+            format: 'canonical',
+            values: {
+              'agentApplication.userAuthorization.handlers.Graph.settings.type': 'AgenticUserAuthorization',
+              'agentApplication.userAuthorization.handlers.graph.settings.scopes': 'scope1, scope2'
+            }
+          }
+        }
+      },
+      mode: 'overrideEnvironment'
+    }])
+
+    const app = new AgentApplication({ storage: new MemoryStorage() })
+    const handlers = (app.authorization as any).manager._handlers
+
+    assert.deepEqual(Object.keys(handlers), ['Graph'])
+    assert.equal(handlers.Graph.constructor.name, 'AgenticAuthorization')
+    assert.deepEqual(handlers.Graph.options.scopes, ['scope1', 'scope2'])
+  })
+
+  it('should apply legacy environment values to a handler introduced externally', async () => {
+    process.env = {
+      ...process.env,
+      externalAuth_connectionName: 'LegacyConnection'
+    }
+    await preloadConfigurationSources([{
+      source: {
+        name: 'external-handler',
+        async load () {
+          return {
+            format: 'canonical',
+            values: {
+              'agentApplication.userAuthorization.handlers.ExternalAuth.settings.azureBotOAuthConnectionName': 'ExternalConnection'
+            }
+          }
+        }
+      },
+      mode: 'fallback'
+    }])
+
+    const app = new AgentApplication({ storage: new MemoryStorage() })
+    const handlers = (app.authorization as any).manager._handlers
+
+    assert.deepEqual(Object.keys(handlers), ['ExternalAuth'])
+    assert.equal(handlers.ExternalAuth.options.azureBotOAuthConnectionName, 'LegacyConnection')
   })
 
   // Constructor options priority over env variables
@@ -462,6 +739,23 @@ describe('AuthorizationManager - Configuration', () => {
     const authHandler: AzureBotAuthorizationOptions = (app.authorization as any).manager._handlers['testAuth'].options
     assert.equal(authHandler.azureBotOAuthConnectionName, 'LatestEnvConnection')
     assert.equal(authHandler.title, 'Latest Title')
+  })
+
+  it('should not merge legacy env into a handler configured by latest env', () => {
+    const key = 'AgentApplication__UserAuthorization__handlers__testAuth__settings'
+    process.env = {
+      ...process.env,
+      testAuth_connectionText: 'Legacy Text',
+      [`${key}__azureBotOAuthConnectionName`]: 'LatestEnvConnection',
+      [`${key}__title`]: 'Latest Title'
+    }
+
+    const app = new AgentApplication({ storage: new MemoryStorage() })
+
+    const authHandler: AzureBotAuthorizationOptions = (app.authorization as any).manager._handlers['testAuth'].options
+    assert.equal(authHandler.azureBotOAuthConnectionName, 'LatestEnvConnection')
+    assert.equal(authHandler.title, 'Latest Title')
+    assert.equal(authHandler.text, 'Please sign-in to continue')
   })
 
   // Deprecated options mapping

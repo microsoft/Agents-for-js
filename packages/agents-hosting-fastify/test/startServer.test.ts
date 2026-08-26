@@ -9,11 +9,17 @@ import type { AddressInfo } from 'node:net'
 import os from 'node:os'
 import path from 'node:path'
 import fs from 'node:fs'
-import { ActivityHandler } from '@microsoft/agents-hosting'
+import { ActivityHandler, AgentApplication, CloudAdapter } from '@microsoft/agents-hosting'
 import { startServer } from '../src/startServer'
 import type { FastifyInstance } from 'fastify'
+import {
+  createContextAuthenticatedAgent,
+  createScopedConfigurationContext,
+  preloadAnonymousGlobalConfiguration
+} from './configurationContext.fixture'
 
 const TEST_AUTH_CONFIG = { clientId: 'test-app-id' }
+before(preloadAnonymousGlobalConfiguration)
 
 describe('startServer', () => {
   let fastify: FastifyInstance
@@ -59,6 +65,82 @@ describe('startServer', () => {
       body: JSON.stringify({ type: 'message', text: 'hello' })
     })
     assert.strictEqual(defaultRouteRes.status, 404)
+  })
+})
+
+describe('startServer with host-scoped configuration', () => {
+  it('keeps explicit host auth independent from the application adapter', async () => {
+    const adapter = new CloudAdapter({})
+    let adapterAuthorizationCalls = 0
+    const adapterAuthorizeRequest = adapter.authorizeRequest.bind(adapter)
+    adapter.authorizeRequest = async (...args) => {
+      adapterAuthorizationCalls++
+      await adapterAuthorizeRequest(...args)
+    }
+    const fastify = await startServer(
+      new AgentApplication({ adapter }),
+      { port: 0, authConfig: { clientId: 'host-client-id' } }
+    )
+
+    try {
+      const response = await fastify.inject({
+        method: 'POST',
+        url: '/api/messages',
+        payload: { type: 'message', text: 'hello' }
+      })
+
+      assert.strictEqual(response.statusCode, 401)
+      assert.strictEqual(adapterAuthorizationCalls, 0)
+    } finally {
+      await fastify.close()
+    }
+  })
+
+  it('uses scoped JWT auth instead of globally preloaded anonymous auth', async () => {
+    const fastify = await startServer(
+      await createContextAuthenticatedAgent(),
+      { port: 0 }
+    )
+
+    try {
+      const response = await fastify.inject({
+        method: 'POST',
+        url: '/api/messages',
+        payload: { type: 'message', text: 'hello' }
+      })
+
+      assert.strictEqual(response.statusCode, 401)
+      assert.deepStrictEqual(
+        response.json(),
+        { 'jwt-auth-error': 'authorization header not found' }
+      )
+    } finally {
+      await fastify.close()
+    }
+  })
+
+  it('uses scoped JWT auth for a plain ActivityHandler instead of globally preloaded anonymous auth', async () => {
+    const configurationContext = await createScopedConfigurationContext()
+    const fastify = await startServer(
+      new ActivityHandler(),
+      { port: 0, configurationContext }
+    )
+
+    try {
+      const response = await fastify.inject({
+        method: 'POST',
+        url: '/api/messages',
+        payload: { type: 'message', text: 'hello' }
+      })
+
+      assert.strictEqual(response.statusCode, 401)
+      assert.deepStrictEqual(
+        response.json(),
+        { 'jwt-auth-error': 'authorization header not found' }
+      )
+    } finally {
+      await fastify.close()
+    }
   })
 })
 

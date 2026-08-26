@@ -3,7 +3,11 @@
  * Licensed under the MIT License.
  */
 
-import { parseBooleanEnv } from './utils/env'
+import {
+  ConfigurationContext,
+  getConfigurationSnapshot
+} from './configuration/configuration'
+import { loadModernEnvironmentConfiguration } from './configuration/environmentConfiguration'
 
 /** Hosts used by Microsoft channel callbacks and hosted attachments. */
 const DEFAULT_MICROSOFT_HOSTS = Object.freeze([
@@ -17,11 +21,11 @@ const DEFAULT_MICROSOFT_HOSTS = Object.freeze([
   'blob.core.windows.net'
 ])
 
-const OUTBOUND_HOST_VALIDATOR_ENV_PREFIX = 'OutboundHostValidator__'
-const OUTBOUND_HOST_VALIDATOR_ENV_PREFIX_UPPER = OUTBOUND_HOST_VALIDATOR_ENV_PREFIX.toUpperCase()
-
 /** Configuration for the shared outbound-host allowlist. */
 export interface OutboundHostValidatorOptions {
+  /** Optional host-scoped external configuration. */
+  configurationContext?: ConfigurationContext
+
   /** Enables allowlist enforcement. Defaults to `false`. */
   enabled?: boolean
 
@@ -56,14 +60,17 @@ export class OutboundHostValidator implements OutboundUrlPolicy {
   private readonly suffixes: ReadonlySet<string>
 
   public constructor (options: OutboundHostValidatorOptions = {}) {
-    this.enabled = options.enabled ?? false
+    const resolved = options.configurationContext
+      ? resolveOutboundHostValidatorOptions(options)
+      : options
+    this.enabled = resolved.enabled ?? false
 
     const suffixes = new Set<string>()
-    if (options.includeDefaultMicrosoftHosts ?? true) {
+    if (resolved.includeDefaultMicrosoftHosts ?? true) {
       for (const host of DEFAULT_MICROSOFT_HOSTS) suffixes.add(host)
     }
 
-    for (const host of options.hosts ?? []) {
+    for (const host of resolved.hosts ?? []) {
       const normalized = normalizeConfiguredHost(host)
       if (normalized) suffixes.add(normalized)
     }
@@ -93,47 +100,32 @@ export class OutboundHostValidator implements OutboundUrlPolicy {
  * indexed values such as `Hosts__0`, `Hosts__1`, and so on.
  */
 export function loadOutboundHostValidatorOptionsFromEnv (): OutboundHostValidatorOptions {
-  const result: OutboundHostValidatorOptions = {}
-  const indexedHosts = new Map<number, string>()
-  const hosts: string[] = []
-
-  for (const [envKey, rawValue] of Object.entries(process.env)) {
-    const upperKey = envKey.toUpperCase()
-    if (!upperKey.startsWith(OUTBOUND_HOST_VALIDATOR_ENV_PREFIX_UPPER)) continue
-
-    const property = envKey.substring(OUTBOUND_HOST_VALIDATOR_ENV_PREFIX.length)
-    const upperProperty = property.toUpperCase()
-
-    if (upperProperty === 'ENABLED') {
-      const value = parseBooleanEnv(rawValue)
-      if (value !== undefined) result.enabled = value
-    } else if (upperProperty === 'INCLUDEDEFAULTMICROSOFTHOSTS') {
-      const value = parseBooleanEnv(rawValue)
-      if (value !== undefined) result.includeDefaultMicrosoftHosts = value
-    } else if (upperProperty === 'HOSTS' && rawValue) {
-      hosts.push(...rawValue.split(',').map(host => host.trim()).filter(Boolean))
-    } else {
-      const match = /^HOSTS__(\d+)$/i.exec(property)
-      if (match && rawValue?.trim()) indexedHosts.set(Number(match[1]), rawValue.trim())
-    }
-  }
-
-  for (const [, host] of [...indexedHosts.entries()].sort(([left], [right]) => left - right)) {
-    hosts.push(host)
-  }
-  if (hosts.length > 0) result.hosts = hosts
-
-  return result
+  return { ...loadModernEnvironmentConfiguration().outboundHostValidator }
 }
 
-/** Creates the default validator, with explicit settings overriding the environment. */
-export function createOutboundHostValidator (options?: OutboundHostValidatorOptions): OutboundHostValidator {
+/** Creates a validator using the shared configuration precedence. */
+export function createOutboundHostValidator (options: OutboundHostValidatorOptions = {}): OutboundHostValidator {
+  return new OutboundHostValidator(resolveOutboundHostValidatorOptions(options))
+}
+
+function resolveOutboundHostValidatorOptions (
+  options: OutboundHostValidatorOptions
+): OutboundHostValidatorOptions {
+  const external = getConfigurationSnapshot(options.configurationContext)
   const fromEnv = loadOutboundHostValidatorOptionsFromEnv()
-  return new OutboundHostValidator({
-    enabled: options?.enabled ?? fromEnv.enabled,
-    includeDefaultMicrosoftHosts: options?.includeDefaultMicrosoftHosts ?? fromEnv.includeDefaultMicrosoftHosts,
-    hosts: options?.hosts ?? fromEnv.hosts
-  })
+  const direct: OutboundHostValidatorOptions = {}
+  if (options.enabled !== undefined) direct.enabled = options.enabled
+  if (options.includeDefaultMicrosoftHosts !== undefined) {
+    direct.includeDefaultMicrosoftHosts = options.includeDefaultMicrosoftHosts
+  }
+  if (options.hosts !== undefined) direct.hosts = options.hosts
+  return {
+    ...external.fallback.outboundHostValidator,
+    ...fromEnv,
+    ...external.overrideEnvironment.outboundHostValidator,
+    ...direct,
+    ...external.enforce.outboundHostValidator
+  }
 }
 
 function getUrlHost (input: string | URL | null | undefined): string | undefined {

@@ -50,6 +50,10 @@ startServer(agent, {
 
 If you manage your own Express app (or another framework with an adapter that exposes Express-compatible request/response objects), use `createAgentRequestHandler` to get a handler that includes JWT authorization and activity processing:
 
+The handler resolves its explicit or environment authentication independently
+from activity processing. An `AgentApplication`'s existing adapter is reused,
+preserving its middleware, connection state, runtime policies, and identity.
+
 ```ts
 import express from 'express';
 import { AgentApplication, TurnState } from '@microsoft/agents-hosting';
