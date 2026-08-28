@@ -172,6 +172,32 @@ describe('CosmosDbPartitionedStorage initialization', () => {
     assert.strictEqual(upsertCalls, 0)
   })
 
+  it('does not condition an unconditional V2 delete', async () => {
+    const storage = new CosmosDbPartitionedStorage({
+      cosmosClientOptions: { endpoint: 'https://unconditional-delete-account.documents.azure.com/', key: 'test-key' },
+      databaseId: 'shared-database',
+      containerId: 'shared-container',
+      storageVersion: 2,
+    })
+    const internals = storage as unknown as StorageInternals
+    let readCalls = 0
+    let deleteOptions: unknown
+    const container = {
+      item: () => ({
+        read: async () => { readCalls++ },
+        delete: async (options?: unknown) => { deleteOptions = options },
+      }),
+    } as unknown as Container
+    internals.client = {} as CosmosClient
+    internals.getOrCreateContainer = async () => ({ container, compatibilityModePartitionKey: false })
+
+    const results = await storage.delete(['key'])
+
+    assert.strictEqual(results.key.status, StorageOperationStatus.Succeeded)
+    assert.strictEqual(readCalls, 0)
+    assert.strictEqual(deleteOptions, undefined)
+  })
+
   it('uses replace for matching and stale upsert version conditions', async () => {
     const storage = new CosmosDbPartitionedStorage({
       cosmosClientOptions: { endpoint: 'https://upsert-version-account.documents.azure.com/', key: 'test-key' },

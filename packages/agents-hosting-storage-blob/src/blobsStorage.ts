@@ -366,17 +366,23 @@ export class BlobsStorage<V extends StorageVersion = typeof StorageVersions.V1> 
 
     const results: StorageDeleteResults = {}
     await Promise.all(keys.map(async key => {
-      const currentVersion = await this.getVersion(key)
-      if (currentVersion === undefined) {
-        results[key] = { key, status: StorageOperationStatus.NotFound }
-        return
-      }
-      if (options?.expectedVersion !== undefined && options.expectedVersion !== currentVersion) {
-        results[key] = { key, status: StorageOperationStatus.ConditionNotMet, version: currentVersion }
-        return
+      let currentVersion: string | undefined
+      if (options?.expectedVersion !== undefined) {
+        currentVersion = await this.getVersion(key)
+        if (currentVersion === undefined) {
+          results[key] = { key, status: StorageOperationStatus.NotFound }
+          return
+        }
+        if (options.expectedVersion !== currentVersion) {
+          results[key] = { key, status: StorageOperationStatus.ConditionNotMet, version: currentVersion }
+          return
+        }
       }
       try {
-        await this._containerClient.deleteBlob(sanitizeBlobKey(key), { conditions: { ifMatch: currentVersion } })
+        await this._containerClient.deleteBlob(
+          sanitizeBlobKey(key),
+          options?.expectedVersion === undefined ? undefined : { conditions: { ifMatch: options.expectedVersion } }
+        )
         results[key] = { key, status: StorageOperationStatus.Succeeded, version: currentVersion }
       } catch (err) {
         const statusCode = (err as { statusCode?: number }).statusCode

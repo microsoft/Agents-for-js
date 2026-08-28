@@ -102,10 +102,11 @@ class StorageToStorageV2Adapter implements StorageV2 {
 
   async write<T extends object = Record<string, unknown>> (changes: Record<string, T>, options?: StorageWriteOptions): Promise<StorageWriteResults> {
     validateChanges(changes)
-    if (Object.keys(changes).length === 0) return {}
     if (options?.mode !== undefined && options.mode !== StorageWriteMode.Upsert) {
       throwUnsupportedOption('mode')
     }
+    validateExpectedVersion(options?.expectedVersion)
+    if (Object.keys(changes).length === 0) return {}
     const legacyChanges = Object.fromEntries(Object.entries(changes).map(([key, value]) => [
       key,
       options?.expectedVersion === undefined
@@ -118,10 +119,11 @@ class StorageToStorageV2Adapter implements StorageV2 {
 
   async delete (keys: string[], options?: StorageDeleteOptions): Promise<StorageDeleteResults> {
     validateKeys(keys)
-    if (keys.length === 0) return {}
+    validateExpectedVersion(options?.expectedVersion)
     if (options?.expectedVersion !== undefined) {
       throwUnsupportedOption('expectedVersion')
     }
+    if (keys.length === 0) return {}
 
     await this.storage.delete(keys)
     return Object.fromEntries(keys.map(key => [key, { key, status: StorageOperationStatus.Succeeded }]))
@@ -150,6 +152,12 @@ function removeLegacyETag<T> (value: T): T {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) return value
   const { eTag: _eTag, ...withoutETag } = value as Record<string, unknown>
   return withoutETag as T
+}
+
+function validateExpectedVersion (expectedVersion: string | undefined): void {
+  if (expectedVersion === '') {
+    throw ExceptionHelper.generateException(ReferenceError, Errors.StorageV2ExpectedVersionEmpty)
+  }
 }
 
 function throwUnsupportedOption (option: string): never {

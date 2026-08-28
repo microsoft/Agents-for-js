@@ -531,6 +531,11 @@ export class CosmosDbPartitionedStorage<V extends StorageVersion = typeof Storag
         )
         try {
           const item = this.container.item(escapedKey, this.getPartitionKey(escapedKey))
+          if (options?.expectedVersion === undefined) {
+            await item.delete()
+            results[k] = { key: k, status: StorageOperationStatus.Succeeded }
+            return
+          }
           const current = await item.read<DocumentStoreItem>()
           const document = current.resource
           if (!document) {
@@ -538,13 +543,11 @@ export class CosmosDbPartitionedStorage<V extends StorageVersion = typeof Storag
             return
           }
           const version = (document as DocumentStoreItem & { _etag?: string })._etag
-          if (options?.expectedVersion !== undefined && options.expectedVersion !== version) {
+          if (options.expectedVersion !== version) {
             results[k] = { key: k, status: StorageOperationStatus.ConditionNotMet, version }
             return
           }
-          const deleteOptions = version
-            ? { accessCondition: { type: 'IfMatch', condition: version } }
-            : undefined
+          const deleteOptions = { accessCondition: { type: 'IfMatch', condition: options.expectedVersion } }
           await item.delete(deleteOptions)
           results[k] = { key: k, status: StorageOperationStatus.Succeeded, version }
         } catch (err: any) {

@@ -11,6 +11,7 @@ import {
   StorageReadResults,
   StorageV2,
   StorageVersions,
+  StorageWriteMode,
   StorageWriteOptions,
   StorageWriteResults,
 } from '../../../src/storage'
@@ -173,5 +174,35 @@ describe('TurnState', () => {
       key: 'test/test/conversations/test',
       options: { expectedVersion: 'test/test/conversations/test-version' },
     }])
+  })
+
+  it('uses create-only when a native V2 scope was missing', async () => {
+    const storage = new RecordingTurnStateStorage()
+    storage.read = async keys => Object.fromEntries(keys.map(key => [key, {
+      key,
+      status: StorageOperationStatus.NotFound,
+    }]))
+    const versionedState = new TurnState()
+    await versionedState.load(context, storage)
+    versionedState.setValue('conversation.counter', 1)
+
+    await versionedState.save(context, storage)
+
+    assert.deepEqual(storage.writes, [{
+      key: 'test/test/conversations/test',
+      options: { mode: StorageWriteMode.CreateOnly },
+    }])
+  })
+
+  it('clears a scope version after deleting V2 state', async () => {
+    const storage = new RecordingTurnStateStorage()
+    const versionedState = new TurnState()
+    const key = 'test/test/conversations/test'
+    await versionedState.load(context, storage)
+    versionedState.deleteConversationState()
+
+    await versionedState.save(context, storage)
+
+    assert.strictEqual(Object.hasOwn(versionedState['_versions'], key), false)
   })
 })

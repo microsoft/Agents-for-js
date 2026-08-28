@@ -23,6 +23,14 @@ interface BlobStorageWriteInternals {
   _initialize: () => Promise<void>;
 }
 
+interface BlobStorageDeleteInternals {
+  _containerClient: {
+    getBlobClient: (key: string) => { getProperties: () => Promise<unknown> };
+    deleteBlob: (key: string, options?: unknown) => Promise<void>;
+  };
+  _initialize: () => Promise<void>;
+}
+
 function createStatusError (statusCode: number): Error {
   return Object.assign(
     ExceptionHelper.generateException(Error, Errors.StorageV2OperationFailed, undefined, { operation: 'test', key: 'test' }),
@@ -147,6 +155,34 @@ describe('BlobsStorage', () => {
     assert.deepStrictEqual(await storage.write({}), {})
     assert.deepStrictEqual(await storage.delete([]), {})
     assert.strictEqual(initializeCalls, 0)
+  })
+
+  it('does not condition an unconditional V2 delete', async () => {
+    const storage = new BlobsStorage(
+      'unused',
+      undefined,
+      { storageVersion: 2 },
+      'https://example.blob.core.windows.net/container'
+    )
+    const internals = storage as unknown as BlobStorageDeleteInternals
+    let versionReads = 0
+    let deleteOptions: unknown
+    internals._initialize = async () => {}
+    internals._containerClient = {
+      getBlobClient: () => ({
+        getProperties: async () => {
+          versionReads++
+          return { etag: 'unexpected' }
+        },
+      }),
+      deleteBlob: async (_key, options) => { deleteOptions = options },
+    }
+
+    const results = await storage.delete(['key'])
+
+    assert.strictEqual(results.key.status, StorageOperationStatus.Succeeded)
+    assert.strictEqual(versionReads, 0)
+    assert.strictEqual(deleteOptions, undefined)
   })
 
   it('rejects V2 values that are not object records', async () => {

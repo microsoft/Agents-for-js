@@ -99,6 +99,27 @@ describe('Storage compatibility', () => {
     )
   })
 
+  it('validates V2 adapter options for empty batches', async () => {
+    const storage = asStorageV2(new LegacyStorage())
+
+    await assert.rejects(
+      storage.write({}, { mode: StorageWriteMode.CreateOnly }),
+      /does not support the V2 storage option "mode"/
+    )
+    await assert.rejects(
+      storage.write({}, { expectedVersion: '' }),
+      /expectedVersion cannot be empty/
+    )
+    await assert.rejects(
+      storage.delete([], { expectedVersion: 'version' }),
+      /does not support the V2 storage option "expectedVersion"/
+    )
+    await assert.rejects(
+      storage.delete([], { expectedVersion: '' }),
+      /expectedVersion cannot be empty/
+    )
+  })
+
   it('translates expected versions to legacy eTags', async () => {
     const legacy = new LegacyStorage()
     const storage = asStorageV2(legacy)

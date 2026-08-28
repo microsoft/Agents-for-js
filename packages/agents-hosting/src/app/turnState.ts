@@ -3,12 +3,13 @@
  * Licensed under the MIT License.
  */
 
-import { StorageProvider, StorageReadResults, StoreItems } from '../storage'
+import { StorageOperationStatus, StorageProvider, StorageReadResults, StorageWriteMode, StoreItems } from '../storage'
 import {
   asStorageV2,
   assertStorageDeleteSucceeded,
   assertStorageWriteSucceeded,
   getStorageReadValue,
+  isStorageV2,
 } from '../storage/storageCompatibility'
 import { AppMemory } from './appMemory'
 import { TurnStateEntry } from './turnStateEntry'
@@ -80,6 +81,7 @@ export class TurnState<
 > implements AppMemory {
   private _scopes: Record<string, TurnStateEntry> = {}
   private _versions: Record<string, string | undefined> = {}
+  private _missingStorageKeys = new Set<string>()
   private _isLoaded = false
   private _loadingPromise?: Promise<boolean>
 
@@ -291,6 +293,11 @@ export class TurnState<
                 const value = storage ? getStorageReadValue(items, storageKey) : undefined
                 this._scopes[key] = new TurnStateEntry(value, storageKey)
                 this._versions[storageKey] = items?.[storageKey]?.version
+                if (items?.[storageKey]?.status === StorageOperationStatus.NotFound) {
+                  this._missingStorageKeys.add(storageKey)
+                } else {
+                  this._missingStorageKeys.delete(storageKey)
+                }
               }
             }
 
@@ -360,18 +367,30 @@ export class TurnState<
       if (changes) {
         for (const [key, value] of Object.entries(changes)) {
           const expectedVersion = this._versions[key]
+          const options = expectedVersion !== undefined
+            ? { expectedVersion }
+            : isStorageV2(storage) && this._missingStorageKeys.has(key)
+              ? { mode: StorageWriteMode.CreateOnly }
+              : undefined
           promises.push(storageV2.write(
             { [key]: value },
-            expectedVersion === undefined ? undefined : { expectedVersion }
+            options
           ).then(results => {
             assertStorageWriteSucceeded(results, [key])
             this._versions[key] = results?.[key]?.version
+            this._missingStorageKeys.delete(key)
           }))
         }
       }
 
       if (deletions) {
-        promises.push(storageV2.delete(deletions).then(results => assertStorageDeleteSucceeded(results, deletions)))
+        promises.push(storageV2.delete(deletions).then(results => {
+          assertStorageDeleteSucceeded(results, deletions)
+          for (const key of deletions) {
+            delete this._versions[key]
+            this._missingStorageKeys.delete(key)
+          }
+        }))
       }
 
       if (promises.length > 0) {
