@@ -362,9 +362,10 @@ export class CosmosDbPartitionedStorage<V extends StorageVersion = typeof Storag
    * @param changes The items to write.
    */
   private async writeV1 (changes: StoreItems): Promise<void> {
-    if (!changes) {
+    if (!changes || typeof changes !== 'object' || Array.isArray(changes)) {
       throw ExceptionHelper.generateException(ReferenceError, Errors.MissingWriteChanges)
-    } else if (changes.length === 0) {
+    }
+    if (Object.keys(changes).length === 0) {
       return
     }
 

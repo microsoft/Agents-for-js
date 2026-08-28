@@ -55,6 +55,21 @@ describe('CosmosDbPartitionedStorage initialization', () => {
     assert.strictEqual(storage.storageVersion, 2)
   })
 
+  it('keeps empty V1 writes as no-ops and rejects arrays', async () => {
+    const storage = createStorage('https://v1-write-validation-account.documents.azure.com/')
+    const internals = storage as unknown as StorageInternals
+    let initializeCalls = 0
+    internals.initialize = async () => { initializeCalls++ }
+
+    await storage.write({})
+    assert.strictEqual(initializeCalls, 0)
+
+    await assert.rejects(
+      storage.write([{}]),
+      /changes parameter is required/
+    )
+  })
+
   it('returns condition-not-met for create-only writes with an expected version on a missing item', async () => {
     const storage = new CosmosDbPartitionedStorage({
       cosmosClientOptions: { endpoint: 'https://create-only-condition-account.documents.azure.com/', key: 'test-key' },
