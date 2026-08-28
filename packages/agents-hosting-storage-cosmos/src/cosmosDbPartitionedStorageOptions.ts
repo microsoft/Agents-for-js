@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 import { CosmosClientOptions } from '@azure/cosmos'
+import type { StorageVersion, StorageVersionOptions } from '@microsoft/agents-hosting'
 
 /**
  * Options for configuring Cosmos DB partitioned storage.
@@ -34,3 +35,7 @@ export interface CosmosDbPartitionedStorageOptions {
   cosmosClientOptions?: CosmosClientOptions;
   // tokenCredential?: TokenCredential;
 }
+
+/** Options that select the Cosmos storage contract at construction time. */
+export type VersionedCosmosDbPartitionedStorageOptions<V extends StorageVersion> =
+  CosmosDbPartitionedStorageOptions & StorageVersionOptions<V>

@@ -2,7 +2,38 @@ import { test, describe, beforeEach } from 'node:test'
 import assert from 'node:assert'
 import { TurnContext, MemoryStorage } from '../../../src'
 import { AgentState } from '../../../src/state/agentState'
-import { StoreItem } from '../../../src/storage/storage'
+import {
+  StorageDeleteResults,
+  StorageOperationStatus,
+  StorageReadResults,
+  Storage,
+  StorageV2,
+  StorageVersions,
+  StorageWriteResults,
+  StoreItem,
+} from '../../../src/storage/storage'
+
+class FailedWriteStorage implements StorageV2 {
+  readonly storageVersion = StorageVersions.V2
+
+  async read<T extends object> (keys: string[]): Promise<StorageReadResults<T>> {
+    return Object.fromEntries(keys.map(key => [key, { key, status: StorageOperationStatus.NotFound }]))
+  }
+
+  async write<T extends object> (changes: Record<string, T>): Promise<StorageWriteResults> {
+    return Object.fromEntries(Object.keys(changes).map(key => [key, { key, status: StorageOperationStatus.Conflict }]))
+  }
+
+  async delete (keys: string[]): Promise<StorageDeleteResults> {
+    return Object.fromEntries(keys.map(key => [key, { key, status: StorageOperationStatus.NotFound }]))
+  }
+}
+
+class ReplaceableAgentState extends AgentState {
+  setStorage (storage: Storage): void {
+    this.storage = storage
+  }
+}
 
 describe('AgentState', () => {
   let botState: AgentState
@@ -39,6 +70,17 @@ describe('AgentState', () => {
       const state = await botState.load(mockContext)
 
       assert.deepStrictEqual(state, { cachedKey: 'cachedValue' })
+    })
+
+    test('uses storage replaced by a subclass', async () => {
+      const replacement = new MemoryStorage()
+      await replacement.write({ mockKey: { source: 'replacement' } })
+      const replaceableState = new ReplaceableAgentState(storage, storageKeyFactory)
+      replaceableState.setStorage(replacement)
+
+      const state = await replaceableState.load(mockContext)
+
+      assert.strictEqual(state.source, 'replacement')
     })
   })
 
@@ -112,6 +154,21 @@ describe('AgentState', () => {
       const updatedHash = botState['calculateChangeHash'](circularState)
 
       assert.notStrictEqual(updatedHash, hash)
+    })
+
+    test('does not update the cached hash when a V2 write fails', async () => {
+      const failedState = new AgentState(new FailedWriteStorage(), storageKeyFactory)
+      mockContext.turnState.set(failedState['stateKey'], {
+        state: { newKey: 'newValue' },
+        hash: 'oldHash',
+      })
+
+      await assert.rejects(
+        failedState.saveChanges(mockContext, true),
+        /write failed for key "mockKey" with status "conflict"/
+      )
+
+      assert.strictEqual(mockContext.turnState.get(failedState['stateKey']).hash, 'oldHash')
     })
   })
 

@@ -3,7 +3,13 @@
  * Licensed under the MIT License.
  */
 
-import { Storage, StoreItems } from '../storage'
+import { StorageProvider, StorageReadResults, StoreItems } from '../storage'
+import {
+  asStorageV2,
+  assertStorageDeleteSucceeded,
+  assertStorageWriteSucceeded,
+  getStorageReadValue,
+} from '../storage/storageCompatibility'
 import { AppMemory } from './appMemory'
 import { TurnStateEntry } from './turnStateEntry'
 import { TurnContext } from '../turnContext'
@@ -256,7 +262,7 @@ export class TurnState<
    * @param force - If true, forces a reload from storage even if state is already loaded
    * @returns Promise that resolves to true if state was loaded, false if it was already loaded
    */
-  public load (context: TurnContext, storage?: Storage, force: boolean = false): Promise<boolean> {
+  public load (context: TurnContext, storage?: StorageProvider, force: boolean = false): Promise<boolean> {
     if (this._isLoaded && !force) {
       return Promise.resolve(false)
     }
@@ -274,12 +280,14 @@ export class TurnState<
               }
             }
 
-            const items = storage ? await storage.read(keys) : {}
+            const items: StorageReadResults<Record<string, unknown>> = storage
+              ? await asStorageV2(storage).read<Record<string, unknown>>(keys)
+              : {}
 
             for (const key in scopes) {
               if (Object.prototype.hasOwnProperty.call(scopes, key)) {
                 const storageKey = scopes[key]
-                const value = items[storageKey]
+                const value = getStorageReadValue(items, storageKey)
                 this._scopes[key] = new TurnStateEntry(value, storageKey)
               }
             }
@@ -311,7 +319,7 @@ export class TurnState<
    * @remarks
    * Only changed scopes will be persisted.
    */
-  public async save (context: TurnContext, storage?: Storage): Promise<void> {
+  public async save (context: TurnContext, storage?: StorageProvider): Promise<void> {
     if (!this._isLoaded && this._loadingPromise) {
       await this._loadingPromise
     }
@@ -346,12 +354,14 @@ export class TurnState<
 
     if (storage) {
       const promises: Promise<void>[] = []
+      const storageV2 = asStorageV2(storage)
       if (changes) {
-        promises.push(storage.write(changes))
+        const keys = Object.keys(changes)
+        promises.push(storageV2.write(changes).then(results => assertStorageWriteSucceeded(results, keys)))
       }
 
       if (deletions) {
-        promises.push(storage.delete(deletions))
+        promises.push(storageV2.delete(deletions).then(results => assertStorageDeleteSucceeded(results, deletions)))
       }
 
       if (promises.length > 0) {

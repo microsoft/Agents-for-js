@@ -41,5 +41,53 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   ETagConflict: {
     code: -160002,
     description: 'Storage: error writing "{key}" due to eTag conflict.'
+  },
+
+  /** Error thrown when an empty V2 storage version token is provided. */
+  StorageV2ExpectedVersionEmpty: {
+    code: -160003,
+    description: 'Storage V2 expectedVersion cannot be empty.'
+  },
+
+  /** Error thrown when a V2 value is not a non-array object. */
+  StorageV2ValueRequired: {
+    code: -160004,
+    description: 'Storage V2 values must be non-null, non-array objects.'
+  },
+
+  /** Error thrown when an Azure Blob V2 operation fails unexpectedly. */
+  StorageV2OperationFailed: {
+    code: -160005,
+    description: 'Blob Storage V2 {operation} failed for key "{key}".'
+  },
+
+  /** Error thrown when a V2 storage key is empty or whitespace. */
+  StorageV2KeyRequired: {
+    code: -160006,
+    description: 'Storage V2 keys must be non-empty strings.'
+  },
+
+  /** Error thrown when a V2 write mode is not supported. */
+  StorageV2WriteModeUnsupported: {
+    code: -160007,
+    description: 'Storage V2 write mode "{mode}" is not supported.'
+  },
+
+  /** Error thrown when a built-in storage version is not supported. */
+  UnsupportedStorageVersion: {
+    code: -160008,
+    description: 'Storage version "{storageVersion}" is not supported.'
+  },
+
+  /** Error thrown when V2 write changes are missing or invalid. */
+  StorageV2ChangesRequired: {
+    code: -160009,
+    description: 'Storage V2 changes must be an object.'
+  },
+
+  /** Error thrown when the V2 key collection is missing or invalid. */
+  StorageV2KeysRequired: {
+    code: -160010,
+    description: 'Storage V2 keys must be an array.'
   }
 }

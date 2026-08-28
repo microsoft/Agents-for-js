@@ -5,7 +5,13 @@
 
 import { ActiveAuthorizationHandler } from './types'
 import { TurnContext } from '../../turnContext'
-import { Storage } from '../../storage'
+import { StorageProvider, StorageV2 } from '../../storage'
+import {
+  asStorageV2,
+  assertStorageDeleteSucceeded,
+  assertStorageWriteSucceeded,
+  getStorageReadValue,
+} from '../../storage/storageCompatibility'
 import { ExceptionHelper } from '@microsoft/agents-activity'
 import { Errors } from '../../errorHelper'
 
@@ -18,7 +24,11 @@ export class HandlerStorage<TActiveHandler extends ActiveAuthorizationHandler = 
    * @param storage The storage provider.
    * @param context The turn context.
    */
-  constructor (private storage: Storage, private context: TurnContext) { }
+  private readonly storage: StorageV2
+
+  constructor (storage: StorageProvider, private context: TurnContext) {
+    this.storage = asStorageV2(storage)
+  }
 
   /**
    * Gets the unique key for a handler session.
@@ -36,15 +46,16 @@ export class HandlerStorage<TActiveHandler extends ActiveAuthorizationHandler = 
    * Reads the active handler state from storage.
    */
   public async read (): Promise<TActiveHandler | undefined> {
-    const ongoing = await this.storage.read([this.key])
-    return ongoing?.[this.key]
+    const ongoing = await this.storage.read<TActiveHandler>([this.key])
+    return getStorageReadValue(ongoing, this.key)
   }
 
   /**
    * Writes handler state to storage.
    */
-  public write (data: TActiveHandler) : Promise<void> {
-    return this.storage.write({ [this.key]: data })
+  public async write (data: TActiveHandler) : Promise<void> {
+    const results = await this.storage.write({ [this.key]: data })
+    assertStorageWriteSucceeded(results, [this.key])
   }
 
   /**
@@ -52,7 +63,8 @@ export class HandlerStorage<TActiveHandler extends ActiveAuthorizationHandler = 
    */
   public async delete (): Promise<void> {
     try {
-      await this.storage.delete([this.key])
+      const results = await this.storage.delete([this.key])
+      assertStorageDeleteSucceeded(results, [this.key])
     } catch (error) {
       if (error instanceof Error && 'code' in error && error.code === 404) {
         return

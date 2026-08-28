@@ -8,22 +8,36 @@ import { AgentError } from '@microsoft/agents-activity';
 import { AgentErrorDefinition } from '@microsoft/agents-activity';
 import { CosmosClientOptions } from '@azure/cosmos';
 import { ExceptionHelper } from '@microsoft/agents-activity';
-import { Storage as Storage_2 } from '@microsoft/agents-hosting';
-import { StoreItems } from '@microsoft/agents-hosting';
+import { StorageDeleteArguments } from '@microsoft/agents-hosting';
+import { StorageDeleteReturn } from '@microsoft/agents-hosting';
+import { StorageReadReturn } from '@microsoft/agents-hosting';
+import { StorageVersion } from '@microsoft/agents-hosting';
+import type { StorageVersionOptions } from '@microsoft/agents-hosting';
+import { StorageVersions } from '@microsoft/agents-hosting';
+import { StorageWriteArguments } from '@microsoft/agents-hosting';
+import { StorageWriteChanges } from '@microsoft/agents-hosting';
+import { StorageWriteReturn } from '@microsoft/agents-hosting';
+import { VersionedStorage } from '@microsoft/agents-hosting';
 
 export { AgentError }
 
 export { AgentErrorDefinition }
 
 // @public
-export class CosmosDbPartitionedStorage implements Storage_2 {
+export class CosmosDbPartitionedStorage<V extends StorageVersion = typeof StorageVersions.V1> implements VersionedStorage<V> {
+    constructor(cosmosDbStorageOptions: VersionedCosmosDbPartitionedStorageOptions<V>);
     constructor(cosmosDbStorageOptions: CosmosDbPartitionedStorageOptions);
     // (undocumented)
     [key: string]: any;
-    delete(keys: string[]): Promise<void>;
+    // (undocumented)
+    delete(keys: string[], ...args: StorageDeleteArguments<V>): Promise<StorageDeleteReturn<V>>;
     length: number;
-    read(keys: string[]): Promise<StoreItems>;
-    write(changes: StoreItems): Promise<void>;
+    // (undocumented)
+    read<T extends object = Record<string, unknown>>(keys: string[]): Promise<StorageReadReturn<V, T>>;
+    // (undocumented)
+    readonly storageVersion: V;
+    // (undocumented)
+    write<T extends object = Record<string, unknown>>(changes: StorageWriteChanges<V, T>, ...args: StorageWriteArguments<V>): Promise<StorageWriteReturn<V>>;
 }
 
 // @public
@@ -42,6 +56,9 @@ export const Errors: {
 };
 
 export { ExceptionHelper }
+
+// @public
+export type VersionedCosmosDbPartitionedStorageOptions<V extends StorageVersion> = CosmosDbPartitionedStorageOptions & StorageVersionOptions<V>;
 
 // (No @packageDocumentation comment for this package)
 

@@ -59,6 +59,28 @@ echo.onActivity('message', async (context: TurnContext, state: TurnState) => {
 })
 ```
 
+## Storage providers
+
+Public `storage` options accept `StorageProvider`, which is `Storage | StorageV2`.
+Providers can implement `Storage` or `StorageV2`. A V2 provider declares
+`storageVersion: 2`.
+Hosting adapts a legacy `Storage` provider for default upsert operations. The
+adapter cannot support create-only, replace, or version conditions.
+Built-in providers implement `VersionedStorage<V>` so their operation types are
+selected from the configured version.
+
+Built-in providers retain the legacy contract by default. Select V2 when the
+provider is created:
+
+```ts
+const legacyStorage = new MemoryStorage()
+const storageV2 = new MemoryStorage(undefined, { storageVersion: 2 })
+const fileStorageV2 = new FileStorage('./data', { storageVersion: 2 })
+```
+
+V2 calls return keyed operation results. Read values are at
+`results[key].value`; inspect `status` and `version` for operation outcomes.
+
 ## Example Usage based on bot framework Activity Handler
 
 Create an Echo bot using the ActivityHandler

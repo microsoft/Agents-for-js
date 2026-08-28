@@ -782,12 +782,58 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
     description: 'Changes are required when writing.'
   },
 
-  /**
-     * Error thrown when storage option is not available in app options.
-     */
+  /** Error thrown when a V2 storage key is empty or whitespace. */
+  StorageV2KeyRequired: {
+    code: -120703,
+    description: 'Storage V2 keys must be non-empty strings.'
+  },
+
+  /** Error thrown when the legacy storage adapter cannot honor a V2 option. */
+  StorageV2UnsupportedOption: {
+    code: -120704,
+    description: 'The legacy storage adapter does not support the V2 storage option "{option}".'
+  },
+
+  /** Error thrown when a built-in storage version is not supported. */
+  StorageVersionUnsupported: {
+    code: -120705,
+    description: 'Storage version "{storageVersion}" is not supported.'
+  },
+
+  /** Error thrown when an empty V2 storage version token is provided. */
+  StorageV2ExpectedVersionEmpty: {
+    code: -120706,
+    description: 'Storage V2 expectedVersion cannot be empty.'
+  },
+
+  /** Error thrown when a V2 storage operation returns a failed or missing result. */
+  StorageV2OperationFailed: {
+    code: -120707,
+    description: 'Storage V2 {operation} failed for key "{key}" with status "{status}".'
+  },
+
+  /** Error thrown when a V2 value is not a non-array object. */
+  StorageV2ValueRequired: {
+    code: -120708,
+    description: 'Storage V2 values must be non-null, non-array objects.'
+  },
+
+  /** Error thrown when keys are required for storage delete operations. */
+  StorageDeleteKeysRequired: {
+    code: -120709,
+    description: 'Keys are required when deleting.'
+  },
+
+  /** Error thrown when storage option is not available in app options. */
   StorageOptionNotAvailable: {
     code: -120710,
     description: "The 'storage' option is not available in the app options. Ensure that the app is properly configured.",
+  },
+
+  /** Error thrown when a V2 write mode is not supported. */
+  StorageV2WriteModeUnsupported: {
+    code: -120711,
+    description: 'Storage V2 write mode "{mode}" is not supported.'
   },
 
   /**

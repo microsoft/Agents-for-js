@@ -208,7 +208,7 @@ export class AgentApplicationBuilder<TState extends TurnState = TurnState> {
     setStartTypingTimer(startTypingTimer: boolean): this;
     withAuthorization(authHandlers: AuthorizationOptions): this;
     withProactive(options: ProactiveOptions): this;
-    withStorage(storage: Storage_2): this;
+    withStorage(storage: StorageProvider): this;
     withTurnStateFactory(turnStateFactory: () => TState): this;
     withTyping(typing: TypingOptions): this;
 }
@@ -228,7 +228,7 @@ export interface AgentApplicationOptions<TState extends TurnState> {
     proactive?: ProactiveOptions;
     removeRecipientMention?: boolean;
     startTypingTimer: boolean;
-    storage?: Storage_2;
+    storage?: StorageProvider;
     transcriptLogger?: TranscriptLogger;
     turnStateFactory: () => TState;
     typing?: TypingOptions;
@@ -266,6 +266,7 @@ export interface AgenticAuthorizationOptions {
     altBlueprintConnectionName?: string;
     scopes?: string[];
     type: 'AgenticUserAuthorization' | 'agentic';
+}
 
 // @public
 export type AgentResponseHandler = (req: Request_2, res: WebResponse, params: AgentResponseHandlerParams) => Promise<void>;
@@ -280,15 +281,15 @@ export interface AgentResponseHandlerParams {
 
 // @public
 export class AgentState {
-    constructor(storage: Storage_2, storageKey: StorageKeyFactory);
+    constructor(storage: StorageProvider, storageKey: StorageKeyFactory);
     clear(context: TurnContext): Promise<void>;
     createProperty<T = any>(name: string): AgentStatePropertyAccessor<T>;
     delete(context: TurnContext, customKey?: CustomKey): Promise<void>;
     get(context: TurnContext): any | undefined;
     load(context: TurnContext, force?: boolean, customKey?: CustomKey): Promise<any>;
     saveChanges(context: TurnContext, force?: boolean, customKey?: CustomKey): Promise<void>;
-    // (undocumented)
-    protected storage: Storage_2;
+    protected get storage(): Storage;
+    protected set storage(storage: Storage);
     // (undocumented)
     protected storageKey: StorageKeyFactory;
 }
@@ -824,7 +825,7 @@ export interface ConversationsResult {
 
 // @public
 export class ConversationState extends AgentState {
-    constructor(storage: Storage_2, namespace?: string);
+    constructor(storage: StorageProvider, namespace?: string);
 }
 
 // @public
@@ -871,10 +872,6 @@ export function createOutboundHostValidator(options?: OutboundHostValidatorOptio
 export interface CustomKey {
     channelId: string;
     conversationId: string;
-}
-export interface CustomKey {
-    channelId: string;
-    conversationId: string;
     namespace?: string;
 }
 
@@ -899,11 +896,14 @@ export interface Fact {
 }
 
 // @public
-export class FileStorage implements Storage_2 {
+export class FileStorage<V extends StorageVersion = typeof StorageVersions.V1> implements VersionedStorage<V> {
     constructor(folder: string);
-    delete(keys: string[]): Promise<void>;
-    read(keys: string[]): Promise<StoreItem>;
-    write(changes: StoreItem): Promise<void>;
+    constructor(folder: string, options: StorageVersionOptions<V>);
+    delete(keys: string[], ...args: StorageDeleteArguments<V>): Promise<StorageDeleteReturn<V>>;
+    read<T extends object = Record<string, unknown>>(keys: string[]): Promise<StorageReadReturn<V, T>>;
+    // (undocumented)
+    readonly storageVersion: V;
+    write<T extends object = Record<string, unknown>>(changes: StorageWriteChanges<V, T>, ...args: StorageWriteArguments<V>): Promise<StorageWriteReturn<V>>;
 }
 
 // @public
@@ -1085,14 +1085,24 @@ export interface MediaUrl {
 }
 
 // @public
-export class MemoryStorage implements Storage_2 {
+export class MemoryStorage<V extends StorageVersion = typeof StorageVersions.V1> implements VersionedStorage<V> {
     constructor(memory?: {
-        [k: string]: string;
+        [key: string]: string;
     });
-    delete(keys: string[]): Promise<void>;
-    static getSingleInstance(): MemoryStorage;
-    read(keys: string[]): Promise<StoreItem>;
-    write(changes: StoreItem): Promise<void>;
+    constructor(memory: {
+        [key: string]: string;
+    } | undefined, options: StorageVersionOptions<V>);
+    // (undocumented)
+    delete(keys: string[], ...args: StorageDeleteArguments<V>): Promise<StorageDeleteReturn<V>>;
+    static getSingleInstance(): MemoryStorage<typeof StorageVersions.V1>;
+    // (undocumented)
+    static getSingleInstance<V extends StorageVersion>(options: StorageVersionOptions<V>): MemoryStorage<V>;
+    // (undocumented)
+    read<T extends object = Record<string, unknown>>(keys: string[]): Promise<StorageReadReturn<V, T>>;
+    // (undocumented)
+    readonly storageVersion: V;
+    // (undocumented)
+    write<T extends object = Record<string, unknown>>(changes: StorageWriteChanges<V, T>, ...args: StorageWriteArguments<V>): Promise<StorageWriteReturn<V>>;
 }
 
 // @public
@@ -1140,6 +1150,7 @@ export interface MsalConnectionSettings extends ConnectionSettingsBase {
     // @deprecated (undocumented)
     FICClientId?: string;
     idpmResource?: string;
+    msalRetryCount?: number;
     sendX5C?: boolean;
     // @deprecated (undocumented)
     WIDAssertionFile?: string;
@@ -1282,7 +1293,7 @@ export class Proactive<TState extends TurnState> {
 // @public
 export interface ProactiveOptions {
     failOnUnsignedInConnections?: boolean;
-    storage?: Storage_2;
+    storage?: StorageProvider;
 }
 
 // @public
@@ -1439,15 +1450,133 @@ export enum StatusCodes {
 }
 
 // @public
-interface Storage_2 {
+export interface Storage {
     delete: (keys: string[]) => Promise<void>;
     read: (keys: string[]) => Promise<StoreItem>;
     write: (changes: StoreItem) => Promise<void>;
 }
-export { Storage_2 as Storage }
+
+// @public
+export type StorageDeleteArguments<V extends StorageVersion> = V extends typeof StorageVersions.V2 ? [options?: StorageDeleteOptions] : [];
+
+// @public
+export interface StorageDeleteOptions {
+    // (undocumented)
+    expectedVersion?: string;
+}
+
+// @public
+export interface StorageDeleteResult {
+    // (undocumented)
+    key: string;
+    // (undocumented)
+    status: StorageOperationStatus;
+    // (undocumented)
+    version?: string;
+}
+
+// @public
+export type StorageDeleteResults = Record<string, StorageDeleteResult>;
+
+// @public
+export type StorageDeleteReturn<V extends StorageVersion> = V extends typeof StorageVersions.V2 ? StorageDeleteResults : void;
 
 // @public
 export type StorageKeyFactory = (context: TurnContext) => string | Promise<string>;
+
+// @public
+export enum StorageOperationStatus {
+    // (undocumented)
+    ConditionNotMet = "conditionNotMet",
+    // (undocumented)
+    Conflict = "conflict",
+    // (undocumented)
+    NotFound = "notFound",
+    // (undocumented)
+    Succeeded = "succeeded"
+}
+
+// @public
+export type StorageProvider = Storage | StorageV2;
+
+// @public
+export interface StorageReadResult<T extends object = Record<string, unknown>> {
+    // (undocumented)
+    key: string;
+    // (undocumented)
+    status: StorageOperationStatus;
+    // (undocumented)
+    value?: T;
+    // (undocumented)
+    version?: string;
+}
+
+// @public
+export type StorageReadResults<T extends object = Record<string, unknown>> = Record<string, StorageReadResult<T>>;
+
+// @public
+export type StorageReadReturn<V extends StorageVersion, T extends object = Record<string, unknown>> = V extends typeof StorageVersions.V2 ? StorageReadResults<T> : StoreItem;
+
+// @public
+export interface StorageV2 extends VersionedStorage<typeof StorageVersions.V2> {
+    // (undocumented)
+    readonly storageVersion: typeof StorageVersions.V2;
+}
+
+// @public
+export type StorageVersion = typeof StorageVersions[keyof typeof StorageVersions];
+
+// @public
+export interface StorageVersionOptions<V extends StorageVersion> {
+    // (undocumented)
+    storageVersion: V;
+}
+
+// @public
+export const StorageVersions: {
+    readonly V1: 1;
+    readonly V2: 2;
+};
+
+// @public
+export type StorageWriteArguments<V extends StorageVersion> = V extends typeof StorageVersions.V2 ? [options?: StorageWriteOptions] : [];
+
+// @public
+export type StorageWriteChanges<V extends StorageVersion, T extends object = Record<string, unknown>> = V extends typeof StorageVersions.V2 ? Record<string, T> : StoreItem;
+
+// @public
+export enum StorageWriteMode {
+    // (undocumented)
+    CreateOnly = "createOnly",
+    // (undocumented)
+    Replace = "replace",
+    // (undocumented)
+    Upsert = "upsert"
+}
+
+// @public
+export interface StorageWriteOptions {
+    // (undocumented)
+    expectedVersion?: string;
+    // (undocumented)
+    mode?: StorageWriteMode;
+}
+
+// @public
+export interface StorageWriteResult {
+    // (undocumented)
+    key: string;
+    // (undocumented)
+    status: StorageOperationStatus;
+    // (undocumented)
+    version?: string;
+}
+
+// @public
+export type StorageWriteResults = Record<string, StorageWriteResult>;
+
+// @public
+export type StorageWriteReturn<V extends StorageVersion> = V extends typeof StorageVersions.V2 ? StorageWriteResults : void;
 
 // @public
 export interface StoreItem {
@@ -1664,9 +1793,9 @@ export class TurnState<TConversationState = DefaultConversationState, TUserState
     getValue<TValue = unknown>(path: string): TValue;
     hasValue(path: string): boolean;
     get isLoaded(): boolean;
-    load(context: TurnContext, storage?: Storage_2, force?: boolean): Promise<boolean>;
+    load(context: TurnContext, storage?: StorageProvider, force?: boolean): Promise<boolean>;
     protected onComputeStorageKeys(context: TurnContext): Promise<Record<string, string>>;
-    save(context: TurnContext, storage?: Storage_2): Promise<void>;
+    save(context: TurnContext, storage?: StorageProvider): Promise<void>;
     setValue(path: string, value: unknown): void;
     get user(): TUserState;
     set user(value: TUserState);
@@ -1699,7 +1828,7 @@ export type UpdateActivityHandler = (context: TurnContext, activity: Activity, n
 
 // @public
 export class UserState extends AgentState {
-    constructor(storage: Storage_2, namespace?: string);
+    constructor(storage: StorageProvider, namespace?: string);
 }
 
 // @public
@@ -1719,6 +1848,18 @@ export class UserTokenClient {
     signOut(userId: string, connectionName: string, channelIdComposite: string): Promise<void>;
     // (undocumented)
     updateAuthToken(token: string): void;
+}
+
+// @public
+export interface VersionedStorage<V extends StorageVersion> {
+    // (undocumented)
+    delete(keys: string[], ...args: StorageDeleteArguments<V>): Promise<StorageDeleteReturn<V>>;
+    // (undocumented)
+    read<T extends object = Record<string, unknown>>(keys: string[]): Promise<StorageReadReturn<V, T>>;
+    // (undocumented)
+    readonly storageVersion: V;
+    // (undocumented)
+    write<T extends object = Record<string, unknown>>(changes: StorageWriteChanges<V, T>, ...args: StorageWriteArguments<V>): Promise<StorageWriteReturn<V>>;
 }
 
 // @public

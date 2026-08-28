@@ -8,20 +8,34 @@ import { Activity } from '@microsoft/agents-activity';
 import { AgentErrorDefinition } from '@microsoft/agents-activity';
 import { AnonymousCredential } from '@azure/storage-blob';
 import { PagedResult } from '@microsoft/agents-hosting';
-import { Storage as Storage_2 } from '@microsoft/agents-hosting';
+import { StorageDeleteArguments } from '@microsoft/agents-hosting';
+import { StorageDeleteReturn } from '@microsoft/agents-hosting';
 import { StoragePipelineOptions } from '@azure/storage-blob';
+import { StorageReadReturn } from '@microsoft/agents-hosting';
 import { StorageSharedKeyCredential } from '@azure/storage-blob';
-import { StoreItems } from '@microsoft/agents-hosting';
+import { StorageVersion } from '@microsoft/agents-hosting';
+import { StorageVersionOptions } from '@microsoft/agents-hosting';
+import { StorageVersions } from '@microsoft/agents-hosting';
+import { StorageWriteArguments } from '@microsoft/agents-hosting';
+import { StorageWriteChanges } from '@microsoft/agents-hosting';
+import { StorageWriteReturn } from '@microsoft/agents-hosting';
 import { TokenCredential } from '@azure/core-auth';
 import { TranscriptInfo } from '@microsoft/agents-hosting';
 import { TranscriptStore } from '@microsoft/agents-hosting';
+import { VersionedStorage } from '@microsoft/agents-hosting';
 
 // @public
-export class BlobsStorage implements Storage_2 {
+export class BlobsStorage<V extends StorageVersion = typeof StorageVersions.V1> implements VersionedStorage<V> {
+    constructor(containerName: string, connectionString: string | undefined, options: VersionedBlobsStorageOptions<V>, url?: string, credential?: StorageSharedKeyCredential | AnonymousCredential | TokenCredential);
     constructor(containerName: string, connectionString?: string, options?: BlobsStorageOptions, url?: string, credential?: StorageSharedKeyCredential | AnonymousCredential | TokenCredential);
-    delete(keys: string[]): Promise<void>;
-    read(keys: string[]): Promise<StoreItems>;
-    write(changes: StoreItems): Promise<void>;
+    // (undocumented)
+    delete(keys: string[], ...args: StorageDeleteArguments<V>): Promise<StorageDeleteReturn<V>>;
+    // (undocumented)
+    read<T extends object = Record<string, unknown>>(keys: string[]): Promise<StorageReadReturn<V, T>>;
+    // (undocumented)
+    readonly storageVersion: V;
+    // (undocumented)
+    write<T extends object = Record<string, unknown>>(changes: StorageWriteChanges<V, T>, ...args: StorageWriteArguments<V>): Promise<StorageWriteReturn<V>>;
 }
 
 // @public
@@ -48,6 +62,9 @@ export interface BlobsTranscriptStoreOptions {
     decodeTranscriptKey?: boolean;
     storagePipelineOptions?: StoragePipelineOptions;
 }
+
+// @public
+export type VersionedBlobsStorageOptions<V extends StorageVersion> = BlobsStorageOptions & StorageVersionOptions<V>;
 
 // (No @packageDocumentation comment for this package)
 
