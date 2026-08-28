@@ -13,11 +13,11 @@ describe('MemoryStorage V2', () => {
     assert.strictEqual(storage.storageVersion, 2)
     await storage.write({ existing: { value: 'test' } })
 
-    const results = await storage.read<{ value: string, eTag: string }>(['existing', 'missing'])
+    const results = await storage.read<{ value: string }>(['existing', 'missing'])
 
     assert.strictEqual(results.existing.status, StorageOperationStatus.Succeeded)
     assert.strictEqual(results.existing.value?.value, 'test')
-    assert.strictEqual(results.existing.value?.eTag, results.existing.version)
+    assert.strictEqual('eTag' in results.existing.value!, false)
     assert.strictEqual(results.missing.status, StorageOperationStatus.NotFound)
   })
 
@@ -28,6 +28,16 @@ describe('MemoryStorage V2', () => {
     assert.strictEqual(first.key.status, StorageOperationStatus.Succeeded)
     assert.strictEqual(second.key.status, StorageOperationStatus.Conflict)
     assert.strictEqual(second.key.version, first.key.version)
+  })
+
+  it('keeps value eTag data separate from the storage version', async () => {
+    const written = await storage.write({ key: { eTag: 'business-value', value: 1 } })
+
+    const read = await storage.read<{ eTag: string, value: number }>(['key'])
+
+    assert.strictEqual(read.key.value?.eTag, 'business-value')
+    assert.strictEqual(read.key.version, written.key.version)
+    assert.notStrictEqual(read.key.version, read.key.value?.eTag)
   })
 
   it('uses expected versions for replace and delete', async () => {

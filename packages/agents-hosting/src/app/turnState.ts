@@ -280,14 +280,14 @@ export class TurnState<
               }
             }
 
-            const items: StorageReadResults<Record<string, unknown>> = storage
+            const items: StorageReadResults<Record<string, unknown>> | undefined = storage
               ? await asStorageV2(storage).read<Record<string, unknown>>(keys)
-              : {}
+              : undefined
 
             for (const key in scopes) {
               if (Object.prototype.hasOwnProperty.call(scopes, key)) {
                 const storageKey = scopes[key]
-                const value = getStorageReadValue(items, storageKey)
+                const value = storage ? getStorageReadValue(items, storageKey) : undefined
                 this._scopes[key] = new TurnStateEntry(value, storageKey)
               }
             }

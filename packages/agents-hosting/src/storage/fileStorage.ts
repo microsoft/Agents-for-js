@@ -39,10 +39,11 @@ import {
  * This implementation is suitable for development scenarios, local testing, and single-instance
  * deployments where shared state across multiple instances is not required.
  *
- * The storage format is a key-value JSON object. All operations use synchronous file I/O wrapped
- * in Promise interfaces. Omit `storageVersion` to retain the legacy Storage contract. Set
- * `storageVersion: 2` in the second constructor argument to select StorageV2. V2 persists generated
- * versions and supports create-only, replace, and expected-version conditions.
+ * Values remain a key-value JSON object in `state.json`. V2 keeps generated storage versions in
+ * `state.versions.json` so a value's own `eTag` property is not changed. All operations use
+ * synchronous file I/O wrapped in Promise interfaces. Omit `storageVersion` to retain the legacy
+ * Storage contract. Set `storageVersion: 2` in the second constructor argument to select StorageV2.
+ * V2 supports create-only, replace, and expected-version conditions.
  *
  * ### Warning
  * This implementation does not provide:
@@ -70,7 +71,9 @@ import {
 export class FileStorage<V extends StorageVersion = typeof StorageVersions.V1> implements VersionedStorage<V> {
   readonly storageVersion: V
   private readonly statePath: string
+  private readonly versionsPath: string
   private state: Record<string, unknown>
+  private versions: Record<string, string>
 
   /**
    * Creates a FileStorage instance that stores data in the specified folder.
@@ -80,7 +83,10 @@ export class FileStorage<V extends StorageVersion = typeof StorageVersions.V1> i
    * @throws May throw filesystem errors if the folder or state file cannot be created or read
    *
    * @remarks
-   * The constructor creates the folder and state file when needed, then loads the file into memory.
+   * The constructor creates the folder and state file when needed, then loads values and any V2
+   * version metadata into memory. The V2 version file is created on the first V2 write.
+   * When options are stored in a variable, preserve `storageVersion` as a literal with `as const`,
+   * `satisfies`, or an explicit {@link StorageVersionOptions} type so return types follow the version.
    */
   constructor (folder: string)
   constructor (folder: string, options: StorageVersionOptions<V>)
@@ -91,8 +97,12 @@ export class FileStorage<V extends StorageVersion = typeof StorageVersions.V1> i
 
     fs.mkdirSync(folder, { recursive: true })
     this.statePath = path.join(folder, 'state.json')
+    this.versionsPath = path.join(folder, 'state.versions.json')
     if (!fs.existsSync(this.statePath)) fs.writeFileSync(this.statePath, '{}')
     this.state = JSON.parse(fs.readFileSync(this.statePath, 'utf8')) as Record<string, unknown>
+    this.versions = fs.existsSync(this.versionsPath)
+      ? JSON.parse(fs.readFileSync(this.versionsPath, 'utf8')) as Record<string, string>
+      : {}
   }
 
   /**
@@ -183,12 +193,12 @@ export class FileStorage<V extends StorageVersion = typeof StorageVersions.V1> i
       if (!Object.prototype.hasOwnProperty.call(this.state, key)) {
         return [key, { key, status: StorageOperationStatus.NotFound }]
       }
-      const value = structuredClone(this.state[key]) as T & { eTag?: string }
+      const value = structuredClone(this.state[key]) as T
       return [key, {
         key,
         status: StorageOperationStatus.Succeeded,
         value,
-        version: value.eTag,
+        version: this.versions[key],
       }]
     }))
   }
@@ -198,6 +208,7 @@ export class FileStorage<V extends StorageVersion = typeof StorageVersions.V1> i
       throw ExceptionHelper.generateException(ReferenceError, Errors.StorageWriteChangesRequired)
     }
     Object.assign(this.state, changes)
+    for (const key of Object.keys(changes)) delete this.versions[key]
     this.flush()
   }
 
@@ -210,8 +221,8 @@ export class FileStorage<V extends StorageVersion = typeof StorageVersions.V1> i
     validateWriteMode(mode)
     let changed = false
     for (const [key, value] of Object.entries(changes)) {
-      const current = this.state[key] as { eTag?: string } | undefined
-      const currentVersion = current?.eTag
+      const current = this.state[key]
+      const currentVersion = this.versions[key]
       if (mode === StorageWriteMode.CreateOnly && current !== undefined) {
         results[key] = { key, status: StorageOperationStatus.Conflict, version: currentVersion }
       } else if (mode === StorageWriteMode.Replace && current === undefined) {
@@ -220,7 +231,8 @@ export class FileStorage<V extends StorageVersion = typeof StorageVersions.V1> i
         results[key] = { key, status: StorageOperationStatus.ConditionNotMet, version: currentVersion }
       } else {
         const version = randomUUID()
-        this.state[key] = structuredClone({ ...value, eTag: version })
+        this.state[key] = structuredClone(value)
+        this.versions[key] = version
         results[key] = { key, status: StorageOperationStatus.Succeeded, version }
         changed = true
       }
@@ -233,7 +245,10 @@ export class FileStorage<V extends StorageVersion = typeof StorageVersions.V1> i
     if (!keys || keys.length === 0) {
       throw ExceptionHelper.generateException(ReferenceError, Errors.StorageDeleteKeysRequired)
     }
-    for (const key of keys) delete this.state[key]
+    for (const key of keys) {
+      delete this.state[key]
+      delete this.versions[key]
+    }
     this.flush()
   }
 
@@ -244,14 +259,16 @@ export class FileStorage<V extends StorageVersion = typeof StorageVersions.V1> i
     const results: StorageDeleteResults = {}
     let changed = false
     for (const key of keys) {
-      const current = this.state[key] as { eTag?: string } | undefined
+      const current = this.state[key]
+      const currentVersion = this.versions[key]
       if (current === undefined) {
         results[key] = { key, status: StorageOperationStatus.NotFound }
-      } else if (options?.expectedVersion !== undefined && options.expectedVersion !== current.eTag) {
-        results[key] = { key, status: StorageOperationStatus.ConditionNotMet, version: current.eTag }
+      } else if (options?.expectedVersion !== undefined && options.expectedVersion !== currentVersion) {
+        results[key] = { key, status: StorageOperationStatus.ConditionNotMet, version: currentVersion }
       } else {
         delete this.state[key]
-        results[key] = { key, status: StorageOperationStatus.Succeeded, version: current.eTag }
+        delete this.versions[key]
+        results[key] = { key, status: StorageOperationStatus.Succeeded, version: currentVersion }
         changed = true
       }
     }
@@ -261,6 +278,9 @@ export class FileStorage<V extends StorageVersion = typeof StorageVersions.V1> i
 
   private flush (): void {
     fs.writeFileSync(this.statePath, JSON.stringify(this.state, null, 2))
+    if (this.storageVersion === StorageVersions.V2 || fs.existsSync(this.versionsPath)) {
+      fs.writeFileSync(this.versionsPath, JSON.stringify(this.versions, null, 2))
+    }
   }
 }
 

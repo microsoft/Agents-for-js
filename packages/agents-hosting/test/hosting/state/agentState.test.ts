@@ -35,6 +35,11 @@ class ReplaceableAgentState extends AgentState {
   }
 }
 
+let fieldStorage: Storage
+class FieldReplacingAgentState extends AgentState {
+  protected storage = fieldStorage
+}
+
 describe('AgentState', () => {
   let botState: AgentState
   let mockContext: TurnContext
@@ -77,6 +82,18 @@ describe('AgentState', () => {
       await replacement.write({ mockKey: { source: 'replacement' } })
       const replaceableState = new ReplaceableAgentState(storage, storageKeyFactory)
       replaceableState.setStorage(replacement)
+
+      const state = await replaceableState.load(mockContext)
+
+      assert.strictEqual(state.source, 'replacement')
+    })
+
+    test('uses storage replaced by a subclass field initializer', async () => {
+      const replacement = new MemoryStorage()
+      await storage.write({ mockKey: { source: 'original' } })
+      await replacement.write({ mockKey: { source: 'replacement' } })
+      fieldStorage = replacement
+      const replaceableState = new FieldReplacingAgentState(storage, storageKeyFactory)
 
       const state = await replaceableState.load(mockContext)
 

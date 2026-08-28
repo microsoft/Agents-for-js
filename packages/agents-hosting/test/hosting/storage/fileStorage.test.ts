@@ -80,6 +80,19 @@ describe('FileStorage', () => {
     assert.strictEqual(reloaded.key.value?.nested.value, 1)
   })
 
+  it('keeps value eTag data separate from the persisted storage version', async () => {
+    const folder = createFolder()
+    const storage = new FileStorage(folder, { storageVersion: 2 })
+    const written = await storage.write({ key: { eTag: 'business-value', value: 1 } })
+
+    const read = await new FileStorage(folder, { storageVersion: 2 })
+      .read<{ eTag: string, value: number }>(['key'])
+
+    assert.strictEqual(read.key.value?.eTag, 'business-value')
+    assert.strictEqual(read.key.version, written.key.version)
+    assert.notStrictEqual(read.key.version, read.key.value?.eTag)
+  })
+
   it('accepts empty V2 batches and validates V2 input', async () => {
     const storage = new FileStorage(createFolder(), { storageVersion: 2 })
 

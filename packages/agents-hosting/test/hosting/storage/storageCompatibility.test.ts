@@ -43,7 +43,7 @@ describe('Storage compatibility', () => {
     assert.strictEqual(read.missing.status, StorageOperationStatus.NotFound)
     assert.strictEqual(write.created.status, StorageOperationStatus.Succeeded)
     assert.strictEqual(remove.existing.status, StorageOperationStatus.Succeeded)
-    assert.strictEqual(remove.missing.status, StorageOperationStatus.NotFound)
+    assert.strictEqual(remove.missing.status, StorageOperationStatus.Succeeded)
   })
 
   it('rejects V2 conditions unsupported by legacy storage', async () => {
@@ -69,6 +69,33 @@ describe('Storage compatibility', () => {
     assert.strictEqual(stored.key.value, 1)
   })
 
+  it('does not add a read dependency to legacy deletes', async () => {
+    let deleted = false
+    const legacy: Storage = {
+      read: async () => { assert.fail('read should not be called') },
+      write: async () => {},
+      delete: async () => { deleted = true },
+    }
+
+    const result = await asStorageV2(legacy).delete(['key'])
+
+    assert.strictEqual(deleted, true)
+    assert.strictEqual(result.key.status, StorageOperationStatus.Succeeded)
+  })
+
+  it('preserves values accepted by a legacy provider', async () => {
+    const legacy = new LegacyStorage()
+    const storage = asStorageV2(legacy)
+
+    await storage.write({ primitive: 1, array: [1], nullable: null } as any)
+
+    assert.deepStrictEqual(await legacy.read(['primitive', 'array', 'nullable']), {
+      primitive: 1,
+      array: [1],
+      nullable: null,
+    })
+  })
+
   it('rejects failed or missing V2 operation results', () => {
     assert.deepStrictEqual(getStorageReadValue({
       key: { key: 'key', status: StorageOperationStatus.Succeeded, value: { value: 1 } },
@@ -81,6 +108,10 @@ describe('Storage compatibility', () => {
       /read failed for key "key" with status "missing"/
     )
     assert.throws(
+      () => getStorageReadValue(undefined, 'key'),
+      /read failed for key "key" with status "missing"/
+    )
+    assert.throws(
       () => assertStorageWriteSucceeded({
         key: { key: 'key', status: StorageOperationStatus.Conflict },
       }, ['key']),
@@ -88,6 +119,10 @@ describe('Storage compatibility', () => {
     )
     assert.throws(
       () => assertStorageWriteSucceeded({}, ['key']),
+      /write failed for key "key" with status "missing"/
+    )
+    assert.throws(
+      () => assertStorageWriteSucceeded(undefined, ['key']),
       /write failed for key "key" with status "missing"/
     )
     assert.doesNotThrow(() => assertStorageDeleteSucceeded({

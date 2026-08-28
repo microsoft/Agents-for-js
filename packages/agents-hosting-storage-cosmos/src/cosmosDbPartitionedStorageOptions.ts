@@ -36,6 +36,11 @@ export interface CosmosDbPartitionedStorageOptions {
   // tokenCredential?: TokenCredential;
 }
 
-/** Options that select the Cosmos storage contract at construction time. */
+/**
+ * Options that select the Cosmos storage contract at construction time.
+ *
+ * @remarks Preserve `storageVersion` as a literal in variable options to keep version-specific
+ * return types. Use `as const`, `satisfies`, or an explicit versioned options type.
+ */
 export type VersionedCosmosDbPartitionedStorageOptions<V extends StorageVersion> =
   CosmosDbPartitionedStorageOptions & StorageVersionOptions<V>

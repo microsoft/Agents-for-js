@@ -179,7 +179,16 @@ export const StorageVersions = {
 /** The storage contract selected when a built-in provider is created. */
 export type StorageVersion = typeof StorageVersions[keyof typeof StorageVersions]
 
-/** Selects a storage contract when a built-in provider is created. */
+/**
+ * Selects a storage contract when a built-in provider is created.
+ *
+ * @remarks
+ * `storageVersion` is the runtime discriminator for {@link StorageProvider}; custom legacy
+ * providers must not use the value `2` unless they implement {@link StorageV2}. Keep the version
+ * as a numeric literal when options are stored in a variable. Use `as const`, `satisfies`, or an
+ * explicit `StorageVersionOptions` type because a mutable object can widen `2` to `number` and
+ * prevent version-specific return-type inference.
+ */
 export interface StorageVersionOptions<V extends StorageVersion> {
   storageVersion: V;
 }

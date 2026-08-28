@@ -288,8 +288,7 @@ export class AgentState {
     get(context: TurnContext): any | undefined;
     load(context: TurnContext, force?: boolean, customKey?: CustomKey): Promise<any>;
     saveChanges(context: TurnContext, force?: boolean, customKey?: CustomKey): Promise<void>;
-    protected get storage(): Storage;
-    protected set storage(storage: Storage);
+    protected storage: Storage;
     // (undocumented)
     protected storageKey: StorageKeyFactory;
 }

@@ -68,21 +68,15 @@ export interface CustomKey {
  */
 export class AgentState {
   private readonly stateKey = Symbol('state')
-  private storageV1: Storage
-  private storageV2: StorageV2
 
   /**
-   * Retains the legacy protected Storage contract for existing subclasses. AgentState keeps a
-   * separate V2 view for its implementation because changing this member to StorageV2 would break
-   * subclasses. The setter synchronizes both views when a subclass replaces the storage provider.
+   * Retains the legacy protected Storage field for existing subclasses. Internal operations adapt
+   * its current value to V2 so subclass field initializers and later replacements remain effective.
    */
-  protected get storage (): Storage {
-    return this.storageV1
-  }
+  protected storage: Storage
 
-  protected set storage (storage: Storage) {
-    this.storageV1 = storage
-    this.storageV2 = asStorageV2(storage)
+  private get storageV2 (): StorageV2 {
+    return asStorageV2(this.storage)
   }
 
   /**
@@ -92,8 +86,7 @@ export class AgentState {
    * @param storageKey A factory function that generates keys for storing state data
    */
   constructor (storage: StorageProvider, protected storageKey: StorageKeyFactory) {
-    this.storageV1 = asStorage(storage)
-    this.storageV2 = asStorageV2(storage)
+    this.storage = asStorage(storage)
   }
 
   /**

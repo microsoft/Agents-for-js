@@ -98,18 +98,44 @@ describe('CosmosDbPartitionedStorage initialization', () => {
     const container = {
       item: () => ({
         read: async () => ({
-          resource: { realId: 'stored-key', document: { value: 'test' }, _etag: 'version' },
+          resource: { realId: 'stored-key', document: { value: 'test', eTag: 'business-value' }, _etag: 'version' },
         }),
       }),
     } as unknown as Container
     internals.client = {} as CosmosClient
     internals.getOrCreateContainer = async () => ({ container, compatibilityModePartitionKey: false })
 
-    const results = await storage.read<{ value: string }>(['requested-key'])
+    const results = await storage.read<{ value: string, eTag: string }>(['requested-key'])
 
     assert.strictEqual(results['requested-key'].key, 'requested-key')
     assert.strictEqual(results['requested-key'].value?.value, 'test')
+    assert.strictEqual(results['requested-key'].value?.eTag, 'business-value')
     assert.strictEqual(results['requested-key'].version, 'version')
+  })
+
+  it('preserves value eTag data when writing a document', async () => {
+    const storage = new CosmosDbPartitionedStorage({
+      cosmosClientOptions: { endpoint: 'https://write-value-account.documents.azure.com/', key: 'test-key' },
+      databaseId: 'shared-database',
+      containerId: 'shared-container',
+      storageVersion: 2,
+    })
+    const internals = storage as unknown as StorageInternals
+    let document: { document?: unknown } | undefined
+    const container = {
+      items: {
+        upsert: async (value: { document?: unknown }) => {
+          document = value
+          return { etag: 'storage-version' }
+        },
+      },
+    } as unknown as Container
+    internals.client = {} as CosmosClient
+    internals.getOrCreateContainer = async () => ({ container, compatibilityModePartitionKey: false })
+
+    await storage.write({ key: { eTag: 'business-value', value: 1 } })
+
+    assert.deepStrictEqual(document?.document, { eTag: 'business-value', value: 1 })
   })
 
   it('does not create a missing item when upsert has an expected version', async () => {

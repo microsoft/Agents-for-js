@@ -46,7 +46,12 @@ export interface BlobsStorageOptions {
   storagePipelineOptions?: StoragePipelineOptions;
 }
 
-/** Options that select the Blob storage contract at construction time. */
+/**
+ * Options that select the Blob storage contract at construction time.
+ *
+ * @remarks Preserve `storageVersion` as a literal in variable options to keep version-specific
+ * return types. Use `as const`, `satisfies`, or an explicit versioned options type.
+ */
 export type VersionedBlobsStorageOptions<V extends StorageVersion> =
   BlobsStorageOptions & StorageVersionOptions<V>
 
@@ -69,6 +74,10 @@ export class BlobsStorage<V extends StorageVersion = typeof StorageVersions.V1> 
    * @param options Optional configuration settings for the storage provider
    * @param url Optional URL to the blob service (used instead of connectionString if provided)
    * @param credential Optional credential for authentication (used with url if provided)
+   *
+   * @remarks
+   * Direct object literals infer the selected contract. For options stored in a variable, preserve
+   * `storageVersion` as a literal with `as const`, `satisfies`, or an explicit versioned options type.
    */
   constructor (
     containerName: string,
@@ -211,6 +220,7 @@ export class BlobsStorage<V extends StorageVersion = typeof StorageVersions.V1> 
 
   private async readV2<T extends object = Record<string, unknown>> (keys: string[]): Promise<StorageReadResults<T>> {
     validateV2Keys(keys)
+    if (keys.length === 0) return {}
 
     await this._initialize()
 
@@ -223,10 +233,7 @@ export class BlobsStorage<V extends StorageVersion = typeof StorageVersions.V1> 
           return
         }
 
-        const parsed = await StreamConsumers.json(readableStreamBody) as T & Record<string, unknown>
-        const value = typeof parsed === 'object' && parsed !== null
-          ? { ...parsed, eTag: version } as T
-          : parsed
+        const value = await StreamConsumers.json(readableStreamBody) as T
         results[key] = { key, status: StorageOperationStatus.Succeeded, value, version }
         logger.debug(`Read blob: ${key}, eTag: ${version}`)
       } catch (err) {
@@ -276,6 +283,7 @@ export class BlobsStorage<V extends StorageVersion = typeof StorageVersions.V1> 
     validateV2Changes(changes)
     const mode = options?.mode ?? StorageWriteMode.Upsert
     validateWriteMode(mode)
+    if (Object.keys(changes).length === 0) return {}
 
     await this._initialize()
 
@@ -296,7 +304,7 @@ export class BlobsStorage<V extends StorageVersion = typeof StorageVersions.V1> 
         return
       }
 
-      const serialized = JSON.stringify(removeETag(change))
+      const serialized = JSON.stringify(change)
       const conditions = mode === StorageWriteMode.CreateOnly
         ? { ifNoneMatch: '*' }
         : options?.expectedVersion !== undefined
@@ -351,6 +359,7 @@ export class BlobsStorage<V extends StorageVersion = typeof StorageVersions.V1> 
   private async deleteV2 (keys: string[], options?: StorageDeleteOptions): Promise<StorageDeleteResults> {
     validateExpectedVersion(options?.expectedVersion)
     validateV2Keys(keys)
+    if (keys.length === 0) return {}
 
     await this._initialize()
 
@@ -393,12 +402,6 @@ export class BlobsStorage<V extends StorageVersion = typeof StorageVersions.V1> 
       throwStorageOperationError('read version', key, err)
     }
   }
-}
-
-function removeETag<T> (value: T): T {
-  if (value === null || typeof value !== 'object' || Array.isArray(value)) return value
-  const { eTag: _eTag, ...withoutETag } = value as Record<string, unknown>
-  return withoutETag as T
 }
 
 function validateExpectedVersion (expectedVersion: string | undefined): void {

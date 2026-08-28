@@ -138,6 +138,10 @@ export class CosmosDbPartitionedStorage<V extends StorageVersion = typeof Storag
   /**
    * Initializes a new instance of the CosmosDbPartitionedStorage class.
    * @param cosmosDbStorageOptions The options for configuring Cosmos DB partitioned storage.
+   *
+   * @remarks
+   * Direct object literals infer the selected contract. For options stored in a variable, preserve
+   * `storageVersion` as a literal with `as const`, `satisfies`, or an explicit versioned options type.
    */
   constructor (cosmosDbStorageOptions: VersionedCosmosDbPartitionedStorageOptions<V>)
   constructor (cosmosDbStorageOptions: CosmosDbPartitionedStorageOptions)
@@ -320,7 +324,7 @@ export class CosmosDbPartitionedStorage<V extends StorageVersion = typeof Storag
           const documentStoreItem = readItemResponse.resource
           if (documentStoreItem) {
             const version = (documentStoreItem as DocumentStoreItem & { _etag?: string })._etag
-            const value = { ...documentStoreItem.document, eTag: version } as T
+            const value = documentStoreItem.document as T
             results[k] = {
               key: k,
               status: StorageOperationStatus.Succeeded,
@@ -416,7 +420,7 @@ export class CosmosDbPartitionedStorage<V extends StorageVersion = typeof Storag
             this.cosmosDbStorageOptions.compatibilityMode
           ),
           realId: key,
-          document: removeETag(value) as object,
+          document: value,
         })
 
         const expectedVersion = options?.expectedVersion
@@ -713,12 +717,6 @@ export class CosmosDbPartitionedStorage<V extends StorageVersion = typeof Storag
 
     checkDepth(json, 0, false)
   }
-}
-
-function removeETag<T> (value: T): T {
-  if (value === null || typeof value !== 'object' || Array.isArray(value)) return value
-  const { eTag: _eTag, ...withoutETag } = value as Record<string, unknown>
-  return withoutETag as T
 }
 
 function validateV2Keys (keys: string[]): void {

@@ -32,6 +32,7 @@ const logger = debug('agents:memory-storage')
 
 interface MemoryStorageState {
   memory: { [key: string]: string };
+  versions: { [key: string]: string };
   etag: number;
 }
 
@@ -42,12 +43,19 @@ interface MemoryStorageState {
  * `storageVersion: 2` in the second constructor argument to select StorageV2.
  */
 export class MemoryStorage<V extends StorageVersion = typeof StorageVersions.V1> implements VersionedStorage<V> {
-  private static readonly singletonState: MemoryStorageState = { memory: {}, etag: 1 }
+  private static readonly singletonState: MemoryStorageState = { memory: {}, versions: {}, etag: 1 }
   private static readonly instances: Partial<Record<StorageVersion, MemoryStorage<any>>> = {}
 
   readonly storageVersion: V
   private state: MemoryStorageState
 
+  /**
+   * Creates an in-memory provider for the selected storage contract.
+   *
+   * @remarks
+   * When options are stored in a variable, preserve `storageVersion` as a literal with `as const`,
+   * `satisfies`, or an explicit {@link StorageVersionOptions} type so return types follow the version.
+   */
   constructor (memory?: { [key: string]: string })
   constructor (memory: { [key: string]: string } | undefined, options: StorageVersionOptions<V>)
   constructor (
@@ -57,10 +65,14 @@ export class MemoryStorage<V extends StorageVersion = typeof StorageVersions.V1>
     const storageVersion = options?.storageVersion ?? StorageVersions.V1
     validateStorageVersion(storageVersion)
     this.storageVersion = storageVersion as V
-    this.state = { memory, etag: 1 }
+    this.state = { memory, versions: {}, etag: 1 }
   }
 
-  /** Gets the shared in-memory provider for the selected contract. */
+  /**
+   * Gets the shared in-memory provider for the selected contract.
+   *
+   * @remarks Preserve a variable option's version literal to keep version-specific return types.
+   */
   static getSingleInstance (): MemoryStorage<typeof StorageVersions.V1>
   static getSingleInstance<V extends StorageVersion>(options: StorageVersionOptions<V>): MemoryStorage<V>
   static getSingleInstance<V extends StorageVersion>(options?: StorageVersionOptions<V>): MemoryStorage<V | 1> {
@@ -123,7 +135,11 @@ export class MemoryStorage<V extends StorageVersion = typeof StorageVersions.V1>
     for (const key of keys) {
       logger.debug(`Reading key: ${key}`)
       const item = this.state.memory[key]
-      if (item) data[key] = JSON.parse(item)
+      if (item) {
+        const value = JSON.parse(item)
+        const version = this.getVersion(key, value)
+        data[key] = version === undefined ? value : { ...value, eTag: version }
+      }
     }
     return data
   }
@@ -144,7 +160,7 @@ export class MemoryStorage<V extends StorageVersion = typeof StorageVersions.V1>
         key,
         status: StorageOperationStatus.Succeeded,
         value,
-        version: value.eTag,
+        version: this.getVersion(key, value),
       }
     }
     return results
@@ -159,12 +175,12 @@ export class MemoryStorage<V extends StorageVersion = typeof StorageVersions.V1>
       logger.debug(`Writing key: ${key}`)
       const oldItemStr = this.state.memory[key]
       if (!oldItemStr || newItem.eTag === '*' || !newItem.eTag) {
-        this.saveItem(key, newItem)
+        this.saveV1Item(key, newItem)
         continue
       }
       const oldItem = JSON.parse(oldItemStr)
-      if (newItem.eTag === oldItem.eTag) {
-        this.saveItem(key, newItem)
+      if (newItem.eTag === this.getVersion(key, oldItem)) {
+        this.saveV1Item(key, newItem)
       } else {
         throw ExceptionHelper.generateException(Error, Errors.StorageETagConflict, undefined, { key })
       }
@@ -187,7 +203,7 @@ export class MemoryStorage<V extends StorageVersion = typeof StorageVersions.V1>
     for (const [key, newItem] of Object.entries(changes)) {
       const oldItemStr = this.state.memory[key]
       const oldItem = oldItemStr ? JSON.parse(oldItemStr) as StoreItem : undefined
-      const currentVersion = oldItem?.eTag
+      const currentVersion = oldItem ? this.getVersion(key, oldItem) : undefined
 
       if (mode === StorageWriteMode.CreateOnly && oldItemStr) {
         results[key] = { key, status: StorageOperationStatus.Conflict, version: currentVersion }
@@ -196,7 +212,7 @@ export class MemoryStorage<V extends StorageVersion = typeof StorageVersions.V1>
       } else if (options?.expectedVersion !== undefined && options.expectedVersion !== currentVersion) {
         results[key] = { key, status: StorageOperationStatus.ConditionNotMet, version: currentVersion }
       } else {
-        results[key] = { key, status: StorageOperationStatus.Succeeded, version: this.saveItem(key, newItem) }
+        results[key] = { key, status: StorageOperationStatus.Succeeded, version: this.saveV2Item(key, newItem) }
       }
     }
     return results
@@ -204,7 +220,10 @@ export class MemoryStorage<V extends StorageVersion = typeof StorageVersions.V1>
 
   private async deleteV1 (keys: string[]): Promise<void> {
     logger.debug(`Deleting keys: ${keys.join(', ')}`)
-    for (const key of keys) delete this.state.memory[key]
+    for (const key of keys) {
+      delete this.state.memory[key]
+      delete this.state.versions[key]
+    }
   }
 
   private async deleteV2 (keys: string[], options?: StorageDeleteOptions): Promise<StorageDeleteResults> {
@@ -218,12 +237,14 @@ export class MemoryStorage<V extends StorageVersion = typeof StorageVersions.V1>
         results[key] = { key, status: StorageOperationStatus.NotFound }
         continue
       }
-      const version = (JSON.parse(item) as StoreItem).eTag
+      const value = JSON.parse(item) as StoreItem
+      const version = this.getVersion(key, value)
       if (options?.expectedVersion !== undefined && options.expectedVersion !== version) {
         results[key] = { key, status: StorageOperationStatus.ConditionNotMet, version }
         continue
       }
       delete this.state.memory[key]
+      delete this.state.versions[key]
       results[key] = { key, status: StorageOperationStatus.Succeeded, version }
     }
     return results
@@ -256,11 +277,24 @@ export class MemoryStorage<V extends StorageVersion = typeof StorageVersions.V1>
     }
   }
 
+  private saveV1Item (key: string, item: StoreItem): string {
+    const { eTag: _eTag, ...value } = item
+    return this.saveItem(key, value)
+  }
+
+  private saveV2Item (key: string, item: unknown): string {
+    return this.saveItem(key, item)
+  }
+
   private saveItem (key: string, item: unknown): string {
     const version = (this.state.etag++).toString()
-    const clone = Object.assign({}, item, { eTag: version })
-    this.state.memory[key] = JSON.stringify(clone)
+    this.state.memory[key] = JSON.stringify(item)
+    this.state.versions[key] = version
     return version
+  }
+
+  private getVersion (key: string, value: StoreItem): string | undefined {
+    return this.state.versions[key] ?? value.eTag as string | undefined
   }
 }
 

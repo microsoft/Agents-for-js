@@ -4,10 +4,21 @@ import { BlobsStorage } from '../src/blobsStorage'
 import { Storage, StorageOperationStatus, StorageV2 } from '@microsoft/agents-hosting'
 import { ExceptionHelper } from '@microsoft/agents-activity'
 import { Errors } from '../src/errorHelper'
+import { Readable } from 'node:stream'
 
 interface BlobStorageInternals {
   _containerClient: {
     getBlobClient: (key: string) => { download: () => Promise<unknown> };
+  };
+  _initialize: () => Promise<void>;
+}
+
+interface BlobStorageWriteInternals {
+  _containerClient: {
+    getBlobClient: (key: string) => { getProperties: () => Promise<unknown> };
+    getBlockBlobClient: (key: string) => {
+      upload: (value: string) => Promise<{ etag?: string }>;
+    };
   };
   _initialize: () => Promise<void>;
 }
@@ -63,6 +74,72 @@ describe('BlobsStorage', () => {
     const results = await storage.read(['missing'])
 
     assert.strictEqual(results.missing.status, StorageOperationStatus.NotFound)
+  })
+
+  it('keeps value eTag data separate from the blob version', async () => {
+    const storage = new BlobsStorage(
+      'unused',
+      undefined,
+      { storageVersion: 2 },
+      'https://example.blob.core.windows.net/container'
+    )
+    const internals = storage as unknown as BlobStorageInternals
+    internals._initialize = async () => {}
+    internals._containerClient = {
+      getBlobClient: () => ({
+        download: async () => ({
+          etag: 'storage-version',
+          readableStreamBody: Readable.from([JSON.stringify({ eTag: 'business-value', value: 1 })]),
+        }),
+      }),
+    }
+
+    const result = await storage.read<{ eTag: string, value: number }>(['key'])
+
+    assert.strictEqual(result.key.value?.eTag, 'business-value')
+    assert.strictEqual(result.key.version, 'storage-version')
+  })
+
+  it('preserves value eTag data when writing a blob', async () => {
+    const storage = new BlobsStorage(
+      'unused',
+      undefined,
+      { storageVersion: 2 },
+      'https://example.blob.core.windows.net/container'
+    )
+    const internals = storage as unknown as BlobStorageWriteInternals
+    let serialized = ''
+    internals._initialize = async () => {}
+    internals._containerClient = {
+      getBlobClient: () => ({ getProperties: async () => Promise.reject(createStatusError(404)) }),
+      getBlockBlobClient: () => ({
+        upload: async (value: string) => {
+          serialized = value
+          return { etag: 'storage-version' }
+        },
+      }),
+    }
+
+    await storage.write({ key: { eTag: 'business-value', value: 1 } })
+
+    assert.deepStrictEqual(JSON.parse(serialized), { eTag: 'business-value', value: 1 })
+  })
+
+  it('does not initialize Azure for empty V2 batches', async () => {
+    const storage = new BlobsStorage(
+      'unused',
+      undefined,
+      { storageVersion: 2 },
+      'https://example.blob.core.windows.net/container'
+    )
+    const internals = storage as unknown as BlobStorageInternals
+    let initializeCalls = 0
+    internals._initialize = async () => { initializeCalls++ }
+
+    assert.deepStrictEqual(await storage.read([]), {})
+    assert.deepStrictEqual(await storage.write({}), {})
+    assert.deepStrictEqual(await storage.delete([]), {})
+    assert.strictEqual(initializeCalls, 0)
   })
 
   it('rejects V2 values that are not object records', async () => {

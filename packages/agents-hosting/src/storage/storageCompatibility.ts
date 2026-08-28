@@ -27,6 +27,7 @@ export function isStorageV2 (storage: StorageProvider): storage is StorageV2 {
 
 /** Converts a supported storage implementation to the V2 contract. */
 export function asStorageV2 (storage: StorageProvider): StorageV2 {
+  if (storage instanceof StorageV2ToStorageAdapter) return storage.source
   return isStorageV2(storage) ? storage : new StorageToStorageV2Adapter(storage)
 }
 
@@ -36,8 +37,8 @@ export function asStorage (storage: StorageProvider): Storage {
 }
 
 /** Returns a successful V2 read value, maps not-found to undefined, and rejects invalid results. */
-export function getStorageReadValue<T extends object> (results: StorageReadResults<T>, key: string): T | undefined {
-  const result = results[key]
+export function getStorageReadValue<T extends object> (results: StorageReadResults<T> | null | undefined, key: string): T | undefined {
+  const result = results?.[key]
   if (result?.status === StorageOperationStatus.NotFound) return undefined
   if (result?.status === StorageOperationStatus.Succeeded) return result.value
   throwStorageResultError('read', key, result?.status)
@@ -47,16 +48,18 @@ export function getStorageReadValue<T extends object> (results: StorageReadResul
 class StorageV2ToStorageAdapter implements Storage {
   constructor (private readonly storage: StorageV2) {}
 
+  /** Returns the original V2 provider when an internal consumer needs the native contract. */
+  get source (): StorageV2 {
+    return this.storage
+  }
+
   async read (keys: string[]): Promise<StoreItem> {
     const results = await this.storage.read(keys)
-    return Object.fromEntries(Object.entries(results)
-      .filter(([, result]) => result.status === StorageOperationStatus.Succeeded)
-      .map(([key, result]) => {
-        const value = result.value
-        return [key, value !== null && typeof value === 'object' && !Array.isArray(value)
-          ? { ...value, eTag: result.version }
-          : value]
-      })) as StoreItem
+    return Object.fromEntries(keys.flatMap(key => {
+      const value = getStorageReadValue(results, key)
+      if (value === undefined) return []
+      return [[key, { ...value, eTag: results?.[key]?.version }]]
+    })) as StoreItem
   }
 
   async write (changes: StoreItem): Promise<void> {
@@ -66,7 +69,7 @@ class StorageV2ToStorageAdapter implements Storage {
         ? { expectedVersion: eTag }
         : undefined
       const results = await this.storage.write({ [key]: value }, options)
-      if (results[key]?.status !== StorageOperationStatus.Succeeded) {
+      if (results?.[key]?.status !== StorageOperationStatus.Succeeded) {
         throw ExceptionHelper.generateException(Error, Errors.StorageETagConflict, undefined, { key })
       }
     }
@@ -118,14 +121,8 @@ class StorageToStorageV2Adapter implements StorageV2 {
       throwUnsupportedOption('expectedVersion')
     }
 
-    const existing = await this.storage.read(keys)
     await this.storage.delete(keys)
-    return Object.fromEntries(keys.map(key => {
-      const value = existing[key]
-      return [key, Object.prototype.hasOwnProperty.call(existing, key)
-        ? { key, status: StorageOperationStatus.Succeeded, version: value?.eTag as string | undefined }
-        : { key, status: StorageOperationStatus.NotFound }]
-    }))
+    return Object.fromEntries(keys.map(key => [key, { key, status: StorageOperationStatus.Succeeded }]))
   }
 }
 
@@ -145,9 +142,6 @@ function validateChanges (changes: Record<string, unknown>): void {
   if (Object.keys(changes).some(key => key.trim() === '')) {
     throw ExceptionHelper.generateException(ReferenceError, Errors.StorageV2KeyRequired)
   }
-  if (Object.values(changes).some(value => value === null || typeof value !== 'object' || Array.isArray(value))) {
-    throw ExceptionHelper.generateException(TypeError, Errors.StorageV2ValueRequired)
-  }
 }
 
 function throwUnsupportedOption (option: string): never {
@@ -155,12 +149,12 @@ function throwUnsupportedOption (option: string): never {
 }
 
 /** Throws when a V2 write did not succeed for every requested key. */
-export function assertStorageWriteSucceeded (results: StorageWriteResults, keys: string[]): void {
+export function assertStorageWriteSucceeded (results: StorageWriteResults | null | undefined, keys: string[]): void {
   assertStorageResults('write', results, keys, new Set([StorageOperationStatus.Succeeded]))
 }
 
 /** Throws when a V2 delete did not complete with idempotent V1 semantics. */
-export function assertStorageDeleteSucceeded (results: StorageDeleteResults, keys: string[]): void {
+export function assertStorageDeleteSucceeded (results: StorageDeleteResults | null | undefined, keys: string[]): void {
   assertStorageResults(
     'delete',
     results,
@@ -171,12 +165,12 @@ export function assertStorageDeleteSucceeded (results: StorageDeleteResults, key
 
 function assertStorageResults (
   operation: 'write' | 'delete',
-  results: StorageWriteResults | StorageDeleteResults,
+  results: StorageWriteResults | StorageDeleteResults | null | undefined,
   keys: string[],
   acceptedStatuses: ReadonlySet<StorageOperationStatus>
 ): void {
   for (const key of keys) {
-    const status = results[key]?.status
+    const status = results?.[key]?.status
     if (status === undefined || !acceptedStatuses.has(status)) {
       throwStorageResultError(operation, key, status)
     }
