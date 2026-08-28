@@ -168,6 +168,11 @@ describe('MemoryStorage V1 compatibility', () => {
     )
     await assert.rejects(
       // @ts-expect-error Verify runtime validation for JavaScript callers.
+      storage.write([{}]),
+      /Changes are required when writing/
+    )
+    await assert.rejects(
+      // @ts-expect-error Verify runtime validation for JavaScript callers.
       storage.write(null),
       /Changes are required when writing/
     )
@@ -183,6 +188,20 @@ describe('MemoryStorage V1 compatibility', () => {
       first: { value: 2, eTag: '2' },
     })
     assert.strictEqual((await storage.read(['second'])).second.eTag, '3')
+  })
+
+  it('keeps V1 eTags recoverable from a supplied memory backing', async () => {
+    const backing: Record<string, string> = {}
+    const first = new MemoryStorage(backing)
+    await first.write({ key: { value: 1, eTag: '*' } })
+    const firstRead = await first.read(['key'])
+    const reconstructed = new MemoryStorage({ ...backing })
+
+    const reconstructedRead = await reconstructed.read(['key'])
+    await reconstructed.write({ key: { value: 2, eTag: reconstructedRead.key.eTag } })
+
+    assert.strictEqual(reconstructedRead.key.eTag, firstRead.key.eTag)
+    assert.strictEqual((await reconstructed.read(['key'])).key.eTag, '2')
   })
 
   it('keeps legacy delete behavior', async () => {

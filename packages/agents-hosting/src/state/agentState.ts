@@ -148,7 +148,6 @@ export class AgentState {
       if (!cached) {
         cached = { state: {}, hash: '' }
       }
-      cached.state.eTag = '*'
       const key: string = await this.getStorageOrCustomKey(customKey, context)
 
       logger.info(`Writing storage with key ${key}`)

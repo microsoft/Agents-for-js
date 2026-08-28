@@ -1,6 +1,16 @@
 import assert from 'node:assert'
 import { describe, it } from 'node:test'
-import { Storage, StorageOperationStatus, StorageWriteMode, StoreItem } from '../../../src'
+import {
+  Storage,
+  StorageOperationStatus,
+  StorageReadResults,
+  StorageV2,
+  StorageVersions,
+  StorageWriteMode,
+  StorageWriteOptions,
+  StorageWriteResults,
+  StoreItem,
+} from '../../../src'
 import {
   asStorage,
   asStorageV2,
@@ -23,6 +33,36 @@ class LegacyStorage implements Storage {
 
   async delete (keys: string[]): Promise<void> {
     keys.forEach(key => delete this.values[key])
+  }
+}
+
+class RecordingV2Storage implements StorageV2 {
+  readonly storageVersion = StorageVersions.V2
+  changes?: Record<string, object>
+  options?: StorageWriteOptions
+
+  async read<T extends object> (keys: string[]): Promise<StorageReadResults<T>> {
+    const value = { value: 1 } as unknown as T
+    return Object.fromEntries(keys.map(key => [key, {
+      key,
+      status: StorageOperationStatus.Succeeded,
+      value,
+      version: 'version-1',
+    }]))
+  }
+
+  async write<T extends object> (changes: Record<string, T>, options?: StorageWriteOptions): Promise<StorageWriteResults> {
+    this.changes = changes
+    this.options = options
+    return Object.fromEntries(Object.keys(changes).map(key => [key, {
+      key,
+      status: StorageOperationStatus.Succeeded,
+      version: 'version-2',
+    }]))
+  }
+
+  async delete (keys: string[]) {
+    return Object.fromEntries(keys.map(key => [key, { key, status: StorageOperationStatus.Succeeded }]))
   }
 }
 
@@ -59,6 +99,17 @@ describe('Storage compatibility', () => {
     )
   })
 
+  it('translates expected versions to legacy eTags', async () => {
+    const legacy = new LegacyStorage()
+    const storage = asStorageV2(legacy)
+
+    await storage.write({ key: { value: 1, eTag: 'value-data' } }, { expectedVersion: 'version-1' })
+
+    assert.deepStrictEqual(await legacy.read(['key']), {
+      key: { value: 1, eTag: 'version-1' },
+    })
+  })
+
   it('retains the legacy interface when adapting V2 storage', async () => {
     const storageV2 = asStorageV2(new LegacyStorage())
     const storage = asStorage(storageV2)
@@ -67,6 +118,16 @@ describe('Storage compatibility', () => {
     const stored = await storage.read(['key'])
 
     assert.strictEqual(stored.key.value, 1)
+  })
+
+  it('translates legacy eTags without persisting them as V2 data', async () => {
+    const storageV2 = new RecordingV2Storage()
+    const storage = asStorage(storageV2)
+
+    await storage.write({ key: { value: 2, eTag: 'version-1' } })
+
+    assert.deepStrictEqual(storageV2.changes, { key: { value: 2 } })
+    assert.deepStrictEqual(storageV2.options, { expectedVersion: 'version-1' })
   })
 
   it('does not add a read dependency to legacy deletes', async () => {

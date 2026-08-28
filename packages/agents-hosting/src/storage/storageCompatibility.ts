@@ -68,7 +68,7 @@ class StorageV2ToStorageAdapter implements Storage {
       const options = typeof eTag === 'string' && eTag !== '' && eTag !== '*'
         ? { expectedVersion: eTag }
         : undefined
-      const results = await this.storage.write({ [key]: value }, options)
+      const results = await this.storage.write({ [key]: removeLegacyETag(value) }, options)
       if (results?.[key]?.status !== StorageOperationStatus.Succeeded) {
         throw ExceptionHelper.generateException(Error, Errors.StorageETagConflict, undefined, { key })
       }
@@ -106,11 +106,13 @@ class StorageToStorageV2Adapter implements StorageV2 {
     if (options?.mode !== undefined && options.mode !== StorageWriteMode.Upsert) {
       throwUnsupportedOption('mode')
     }
-    if (options?.expectedVersion !== undefined) {
-      throwUnsupportedOption('expectedVersion')
-    }
-
-    await this.storage.write(changes)
+    const legacyChanges = Object.fromEntries(Object.entries(changes).map(([key, value]) => [
+      key,
+      options?.expectedVersion === undefined
+        ? removeLegacyETag(value)
+        : { ...removeLegacyETag(value), eTag: options.expectedVersion },
+    ]))
+    await this.storage.write(legacyChanges)
     return Object.fromEntries(Object.keys(changes).map(key => [key, { key, status: StorageOperationStatus.Succeeded }]))
   }
 
@@ -142,6 +144,12 @@ function validateChanges (changes: Record<string, unknown>): void {
   if (Object.keys(changes).some(key => key.trim() === '')) {
     throw ExceptionHelper.generateException(ReferenceError, Errors.StorageV2KeyRequired)
   }
+}
+
+function removeLegacyETag<T> (value: T): T {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return value
+  const { eTag: _eTag, ...withoutETag } = value as Record<string, unknown>
+  return withoutETag as T
 }
 
 function throwUnsupportedOption (option: string): never {

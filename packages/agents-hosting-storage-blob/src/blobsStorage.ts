@@ -290,7 +290,8 @@ export class BlobsStorage<V extends StorageVersion = typeof StorageVersions.V1> 
     const results: StorageWriteResults = {}
     await Promise.all(Object.entries(changes).map(async ([key, change]) => {
       const blob = this._containerClient.getBlockBlobClient(sanitizeBlobKey(key))
-      const currentVersion = await this.getVersion(key)
+      const needsCurrentVersion = mode !== StorageWriteMode.Upsert || options?.expectedVersion !== undefined
+      const currentVersion = needsCurrentVersion ? await this.getVersion(key) : undefined
       if (mode === StorageWriteMode.CreateOnly && currentVersion !== undefined) {
         results[key] = { key, status: StorageOperationStatus.Conflict, version: currentVersion }
         return

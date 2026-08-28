@@ -79,6 +79,7 @@ export class TurnState<
     TUserState = DefaultUserState
 > implements AppMemory {
   private _scopes: Record<string, TurnStateEntry> = {}
+  private _versions: Record<string, string | undefined> = {}
   private _isLoaded = false
   private _loadingPromise?: Promise<boolean>
 
@@ -289,6 +290,7 @@ export class TurnState<
                 const storageKey = scopes[key]
                 const value = storage ? getStorageReadValue(items, storageKey) : undefined
                 this._scopes[key] = new TurnStateEntry(value, storageKey)
+                this._versions[storageKey] = items?.[storageKey]?.version
               }
             }
 
@@ -356,8 +358,16 @@ export class TurnState<
       const promises: Promise<void>[] = []
       const storageV2 = asStorageV2(storage)
       if (changes) {
-        const keys = Object.keys(changes)
-        promises.push(storageV2.write(changes).then(results => assertStorageWriteSucceeded(results, keys)))
+        for (const [key, value] of Object.entries(changes)) {
+          const expectedVersion = this._versions[key]
+          promises.push(storageV2.write(
+            { [key]: value },
+            expectedVersion === undefined ? undefined : { expectedVersion }
+          ).then(results => {
+            assertStorageWriteSucceeded(results, [key])
+            this._versions[key] = results?.[key]?.version
+          }))
+        }
       }
 
       if (deletions) {

@@ -6,6 +6,41 @@ import { TurnState } from './../../../src/app/turnState'
 import { Activity } from '@microsoft/agents-activity'
 import { TestAdapter } from '../testStubs'
 import { TurnContext } from '../../../src/turnContext'
+import {
+  StorageOperationStatus,
+  StorageReadResults,
+  StorageV2,
+  StorageVersions,
+  StorageWriteOptions,
+  StorageWriteResults,
+} from '../../../src/storage'
+
+class RecordingTurnStateStorage implements StorageV2 {
+  readonly storageVersion = StorageVersions.V2
+  readonly writes: Array<{ key: string, options?: StorageWriteOptions }> = []
+
+  async read<T extends object> (keys: string[]): Promise<StorageReadResults<T>> {
+    return Object.fromEntries(keys.map(key => {
+      const value = { counter: 0 } as unknown as T
+      return [key, {
+        key,
+        status: StorageOperationStatus.Succeeded,
+        value,
+        version: `${key}-version`,
+      }]
+    }))
+  }
+
+  async write<T extends object> (changes: Record<string, T>, options?: StorageWriteOptions): Promise<StorageWriteResults> {
+    const key = Object.keys(changes)[0]
+    this.writes.push({ key, options })
+    return { [key]: { key, status: StorageOperationStatus.Succeeded, version: `${key}-next` } }
+  }
+
+  async delete (keys: string[]) {
+    return Object.fromEntries(keys.map(key => [key, { key, status: StorageOperationStatus.Succeeded }]))
+  }
+}
 
 describe('TurnState', () => {
   let adapter: TestAdapter
@@ -124,5 +159,19 @@ describe('TurnState', () => {
 
     // Assert that the user state is undefined
     assert.deepEqual(retrievedUserState, {})
+  })
+
+  it('uses the loaded scope version when saving V2 state', async () => {
+    const storage = new RecordingTurnStateStorage()
+    const versionedState = new TurnState()
+    await versionedState.load(context, storage)
+    versionedState.setValue('conversation.counter', 1)
+
+    await versionedState.save(context, storage)
+
+    assert.deepEqual(storage.writes, [{
+      key: 'test/test/conversations/test',
+      options: { expectedVersion: 'test/test/conversations/test-version' },
+    }])
   })
 })

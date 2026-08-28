@@ -109,9 +109,15 @@ describe('BlobsStorage', () => {
     )
     const internals = storage as unknown as BlobStorageWriteInternals
     let serialized = ''
+    let versionReads = 0
     internals._initialize = async () => {}
     internals._containerClient = {
-      getBlobClient: () => ({ getProperties: async () => Promise.reject(createStatusError(404)) }),
+      getBlobClient: () => ({
+        getProperties: async () => {
+          versionReads++
+          return await Promise.reject(createStatusError(404))
+        },
+      }),
       getBlockBlobClient: () => ({
         upload: async (value: string) => {
           serialized = value
@@ -123,6 +129,7 @@ describe('BlobsStorage', () => {
     await storage.write({ key: { eTag: 'business-value', value: 1 } })
 
     assert.deepStrictEqual(JSON.parse(serialized), { eTag: 'business-value', value: 1 })
+    assert.strictEqual(versionReads, 0)
   })
 
   it('does not initialize Azure for empty V2 batches', async () => {

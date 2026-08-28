@@ -45,6 +45,7 @@ interface MemoryStorageState {
 export class MemoryStorage<V extends StorageVersion = typeof StorageVersions.V1> implements VersionedStorage<V> {
   private static readonly singletonState: MemoryStorageState = { memory: {}, versions: {}, etag: 1 }
   private static readonly instances: Partial<Record<StorageVersion, MemoryStorage<any>>> = {}
+  private static readonly states = new WeakMap<object, MemoryStorageState>()
 
   readonly storageVersion: V
   private state: MemoryStorageState
@@ -65,7 +66,12 @@ export class MemoryStorage<V extends StorageVersion = typeof StorageVersions.V1>
     const storageVersion = options?.storageVersion ?? StorageVersions.V1
     validateStorageVersion(storageVersion)
     this.storageVersion = storageVersion as V
-    this.state = { memory, versions: {}, etag: 1 }
+    let state = MemoryStorage.states.get(memory)
+    if (!state) {
+      state = { memory, versions: {}, etag: getNextETag(memory) }
+      MemoryStorage.states.set(memory, state)
+    }
+    this.state = state
   }
 
   /**
@@ -167,7 +173,7 @@ export class MemoryStorage<V extends StorageVersion = typeof StorageVersions.V1>
   }
 
   private async writeV1 (changes: StoreItem): Promise<void> {
-    if (!changes || changes.length === 0) {
+    if (!changes || typeof changes !== 'object' || Array.isArray(changes)) {
       throw ExceptionHelper.generateException(ReferenceError, Errors.StorageWriteChangesRequired)
     }
 
@@ -279,7 +285,10 @@ export class MemoryStorage<V extends StorageVersion = typeof StorageVersions.V1>
 
   private saveV1Item (key: string, item: StoreItem): string {
     const { eTag: _eTag, ...value } = item
-    return this.saveItem(key, value)
+    const version = (this.state.etag++).toString()
+    this.state.memory[key] = JSON.stringify({ ...value, eTag: version })
+    this.state.versions[key] = version
+    return version
   }
 
   private saveV2Item (key: string, item: unknown): string {
@@ -296,6 +305,17 @@ export class MemoryStorage<V extends StorageVersion = typeof StorageVersions.V1>
   private getVersion (key: string, value: StoreItem): string | undefined {
     return this.state.versions[key] ?? value.eTag as string | undefined
   }
+}
+
+function getNextETag (memory: { [key: string]: string }): number {
+  return Object.values(memory).reduce((next, item) => {
+    try {
+      const version = Number(JSON.parse(item)?.eTag)
+      return Number.isSafeInteger(version) && version >= next ? version + 1 : next
+    } catch {
+      return next
+    }
+  }, 1)
 }
 
 function validateStorageVersion (storageVersion: number): asserts storageVersion is StorageVersion {
