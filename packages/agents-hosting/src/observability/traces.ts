@@ -50,6 +50,23 @@ export const AgentApplicationTraceDefinitions = {
       span.setAttribute('agents.attachments.count', record.attachmentsCount ?? 0)
     }
   }),
+  typingIndicator: trace.define({
+    name: SpanNames.AGENTS_APP_TYPING_INDICATOR,
+    record: {
+      activityType: 'unknown',
+      channelId: 'unknown',
+      conversationId: 'unknown',
+      notificationSequence: 0,
+    },
+    end ({ span, record }) {
+      span.setAttributes({
+        'activity.type': record.activityType,
+        'activity.channel_id': record.channelId,
+        'activity.conversation_id': record.conversationId,
+        'typing.notification.sequence': record.notificationSequence,
+      })
+    }
+  }),
   beforeTurn: trace.define({
     name: SpanNames.AGENTS_APP_BEFORE_TURN,
     record: {},
