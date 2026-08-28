@@ -24,12 +24,14 @@ class RecordingHandlerStorage implements StorageV2 {
       id: 'handler',
       activity: Activity.fromObject({ type: 'message' }),
     } as unknown as T
-    return { [keys[0]]: {
-      key: keys[0],
-      status: StorageOperationStatus.Succeeded,
-      value,
-      version: 'version-1',
-    } }
+    return {
+      [keys[0]]: {
+        key: keys[0],
+        status: StorageOperationStatus.Succeeded,
+        value,
+        version: 'version-1',
+      }
+    }
   }
 
   async write<T extends object> (changes: Record<string, T>, options?: StorageWriteOptions): Promise<StorageWriteResults> {
