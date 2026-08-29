@@ -51,6 +51,20 @@ export interface StoreItems {
 }
 
 /**
+ * Options for writing items to storage.
+ */
+export interface StorageWriteOptions {
+  /**
+   * Optional time to live, in seconds, for written items.
+   *
+   * @remarks
+   * When set, storage providers should stop returning the written items after
+   * this duration has elapsed. Values must be finite numbers greater than zero.
+   */
+  ttl?: number;
+}
+
+/**
  * A factory function to generate storage keys based on the conversation context.
  *
  * @param context The TurnContext for the current turn of conversation
@@ -91,7 +105,7 @@ export interface Storage {
    * @returns A promise that resolves when the write operation is complete
    * @throws If the changes object is empty or undefined, or if an eTag conflict occurs and optimistic concurrency is enabled
    */
-  write: (changes: StoreItem) => Promise<void>;
+  write: (changes: StoreItem, options?: StorageWriteOptions) => Promise<void>;
 
   /**
    * Deletes store items from storage.

@@ -783,6 +783,14 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   },
 
   /**
+   * Error thrown when a storage TTL value is invalid.
+   */
+  InvalidStorageTtl: {
+    code: -120703,
+    description: 'StorageWriteOptions.ttl must be a finite number greater than zero.'
+  },
+
+  /**
      * Error thrown when storage option is not available in app options.
      */
   StorageOptionNotAvailable: {
