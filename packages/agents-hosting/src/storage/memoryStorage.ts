@@ -95,6 +95,13 @@ export class MemoryStorage<V extends StorageVersion = typeof StorageVersions.V1>
     return instance as MemoryStorage<V | 1>
   }
 
+  /**
+   * Reads items from memory storage.
+   *
+   * @param keys The keys to read
+   * @returns Legacy items for V1, or one keyed operation result per requested key for V2
+   * @throws When the key input is invalid
+   */
   async read<T extends object = Record<string, unknown>> (keys: string[]): Promise<StorageReadReturn<V, T>> {
     return trace(StorageTraceDefinitions.read, async ({ record }) => {
       record({ keyCount: keys?.length })
@@ -105,6 +112,14 @@ export class MemoryStorage<V extends StorageVersion = typeof StorageVersions.V1>
     })
   }
 
+  /**
+   * Writes items to memory storage.
+   *
+   * @param changes The keyed items to write
+   * @param args V2 write options; unavailable for V1
+   * @returns Nothing for V1, or one keyed operation result per change for V2
+   * @throws When the input is invalid
+   */
   async write<T extends object = Record<string, unknown>> (
     changes: StorageWriteChanges<V, T>,
     ...args: StorageWriteArguments<V>
@@ -120,6 +135,14 @@ export class MemoryStorage<V extends StorageVersion = typeof StorageVersions.V1>
     })
   }
 
+  /**
+   * Deletes items from memory storage.
+   *
+   * @param keys The keys to delete
+   * @param args V2 delete options; unavailable for V1
+   * @returns Nothing for V1, or one keyed operation result per requested key for V2
+   * @throws When the key input is invalid
+   */
   async delete (keys: string[], ...args: StorageDeleteArguments<V>): Promise<StorageDeleteReturn<V>> {
     return trace(StorageTraceDefinitions.delete, async ({ record }) => {
       record({ keyCount: keys?.length })
@@ -132,6 +155,13 @@ export class MemoryStorage<V extends StorageVersion = typeof StorageVersions.V1>
     })
   }
 
+  /**
+   * Reads legacy items and attaches their versions as `eTag` values.
+   *
+   * @param keys The keys to read
+   * @returns The stored items; missing keys are omitted
+   * @throws When keys are missing or empty
+   */
   private async readV1 (keys: string[]): Promise<StoreItem> {
     if (!keys || keys.length === 0) {
       throw ExceptionHelper.generateException(ReferenceError, Errors.StorageReadKeysRequired)
@@ -150,6 +180,13 @@ export class MemoryStorage<V extends StorageVersion = typeof StorageVersions.V1>
     return data
   }
 
+  /**
+   * Reads V2 items with one status and version result per requested key.
+   *
+   * @param keys The keys to read
+   * @returns The keyed V2 read results
+   * @throws When the key input is invalid
+   */
   private async readV2<T extends object> (keys: string[]): Promise<StorageReadResults<T>> {
     this.validateV2Keys(keys)
 
@@ -172,6 +209,12 @@ export class MemoryStorage<V extends StorageVersion = typeof StorageVersions.V1>
     return results
   }
 
+  /**
+   * Writes legacy items and applies `eTag` concurrency checks.
+   *
+   * @param changes The keyed legacy items to write
+   * @throws When the input is invalid or an `eTag` conflicts
+   */
   private async writeV1 (changes: StoreItem): Promise<void> {
     if (!changes || typeof changes !== 'object' || Array.isArray(changes)) {
       throw ExceptionHelper.generateException(ReferenceError, Errors.StorageWriteChangesRequired)
@@ -193,6 +236,14 @@ export class MemoryStorage<V extends StorageVersion = typeof StorageVersions.V1>
     }
   }
 
+  /**
+   * Writes V2 items with mode and expected-version conditions.
+   *
+   * @param changes The keyed values to write
+   * @param options The V2 write mode and expected version
+   * @returns One keyed operation result per change
+   * @throws When the input or options are invalid
+   */
   private async writeV2<T extends object> (changes: Record<string, T>, options?: StorageWriteOptions): Promise<StorageWriteResults> {
     this.validateExpectedVersion(options?.expectedVersion)
     if (!changes || typeof changes !== 'object' || Array.isArray(changes)) {
@@ -224,6 +275,11 @@ export class MemoryStorage<V extends StorageVersion = typeof StorageVersions.V1>
     return results
   }
 
+  /**
+   * Deletes legacy items and their stored versions unconditionally.
+   *
+   * @param keys The keys to delete
+   */
   private async deleteV1 (keys: string[]): Promise<void> {
     logger.debug(`Deleting keys: ${keys.join(', ')}`)
     for (const key of keys) {
@@ -232,6 +288,14 @@ export class MemoryStorage<V extends StorageVersion = typeof StorageVersions.V1>
     }
   }
 
+  /**
+   * Deletes V2 items with an optional expected-version condition.
+   *
+   * @param keys The keys to delete
+   * @param options The optional expected version
+   * @returns One keyed operation result per requested key
+   * @throws When the key input or options are invalid
+   */
   private async deleteV2 (keys: string[], options?: StorageDeleteOptions): Promise<StorageDeleteResults> {
     this.validateExpectedVersion(options?.expectedVersion)
     this.validateV2Keys(keys)

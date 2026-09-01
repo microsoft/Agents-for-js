@@ -29,14 +29,11 @@ export class CosmosDbPartitionedStorage<V extends StorageVersion = typeof Storag
     constructor(cosmosDbStorageOptions: CosmosDbPartitionedStorageOptions);
     // (undocumented)
     [key: string]: any;
-    // (undocumented)
     delete(keys: string[], ...args: StorageDeleteArguments<V>): Promise<StorageDeleteReturn<V>>;
     length: number;
-    // (undocumented)
     read<T extends object = Record<string, unknown>>(keys: string[]): Promise<StorageReadReturn<V, T>>;
     // (undocumented)
     readonly storageVersion: V;
-    // (undocumented)
     write<T extends object = Record<string, unknown>>(changes: StorageWriteChanges<V, T>, ...args: StorageWriteArguments<V>): Promise<StorageWriteReturn<V>>;
 }
 

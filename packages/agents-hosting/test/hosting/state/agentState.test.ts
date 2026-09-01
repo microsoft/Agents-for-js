@@ -7,6 +7,7 @@ import {
   StorageOperationStatus,
   StorageReadResults,
   Storage,
+  StorageProvider,
   StorageV2,
   StorageVersions,
   StorageWriteOptions,
@@ -60,7 +61,7 @@ class RecordingAgentStateStorage implements StorageV2 {
 }
 
 class ReplaceableAgentState extends AgentState {
-  setStorage (storage: Storage): void {
+  setStorage (storage: StorageProvider): void {
     this.storage = storage
   }
 }
@@ -116,6 +117,16 @@ describe('AgentState', () => {
       const state = await replaceableState.load(mockContext)
 
       assert.strictEqual(state.source, 'replacement')
+    })
+
+    test('uses V2 storage replaced by a subclass', async () => {
+      const replacement = new RecordingAgentStateStorage()
+      const replaceableState = new ReplaceableAgentState(storage, storageKeyFactory)
+      replaceableState.setStorage(replacement)
+
+      const state = await replaceableState.load(mockContext)
+
+      assert.deepStrictEqual(state, { newKey: 'oldValue', eTag: 'business-value' })
     })
 
     test('uses storage replaced by a subclass field initializer', async () => {

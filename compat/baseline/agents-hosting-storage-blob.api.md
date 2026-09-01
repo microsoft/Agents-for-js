@@ -28,13 +28,10 @@ import { VersionedStorage } from '@microsoft/agents-hosting';
 export class BlobsStorage<V extends StorageVersion = typeof StorageVersions.V1> implements VersionedStorage<V> {
     constructor(containerName: string, connectionString: string | undefined, options: VersionedBlobsStorageOptions<V>, url?: string, credential?: StorageSharedKeyCredential | AnonymousCredential | TokenCredential);
     constructor(containerName: string, connectionString?: string, options?: BlobsStorageOptions, url?: string, credential?: StorageSharedKeyCredential | AnonymousCredential | TokenCredential);
-    // (undocumented)
     delete(keys: string[], ...args: StorageDeleteArguments<V>): Promise<StorageDeleteReturn<V>>;
-    // (undocumented)
     read<T extends object = Record<string, unknown>>(keys: string[]): Promise<StorageReadReturn<V, T>>;
     // (undocumented)
     readonly storageVersion: V;
-    // (undocumented)
     write<T extends object = Record<string, unknown>>(changes: StorageWriteChanges<V, T>, ...args: StorageWriteArguments<V>): Promise<StorageWriteReturn<V>>;
 }
 

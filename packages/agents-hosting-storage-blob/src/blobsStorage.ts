@@ -150,6 +150,13 @@ export class BlobsStorage<V extends StorageVersion = typeof StorageVersions.V1> 
     return this._initializePromise
   }
 
+  /**
+   * Reads items from Blob storage.
+   *
+   * @param keys The keys to read
+   * @returns Legacy items for V1, or one keyed operation result per requested key for V2
+   * @throws When the key input is invalid or Blob storage cannot complete the operation
+   */
   async read<T extends object = Record<string, unknown>> (keys: string[]): Promise<StorageReadReturn<V, T>> {
     return trace(BlobsStorageTraceDefinitions.read, async ({ record }) => {
       record({ keyCount: keys?.length ?? 0 })
@@ -160,6 +167,14 @@ export class BlobsStorage<V extends StorageVersion = typeof StorageVersions.V1> 
     })
   }
 
+  /**
+   * Writes items to Blob storage.
+   *
+   * @param changes The keyed items to write
+   * @param args V2 write options; unavailable for V1
+   * @returns Nothing for V1, or one keyed operation result per change for V2
+   * @throws When the input is invalid or Blob storage cannot complete the operation
+   */
   async write<T extends object = Record<string, unknown>> (
     changes: StorageWriteChanges<V, T>,
     ...args: StorageWriteArguments<V>
@@ -175,6 +190,14 @@ export class BlobsStorage<V extends StorageVersion = typeof StorageVersions.V1> 
     })
   }
 
+  /**
+   * Deletes items from Blob storage.
+   *
+   * @param keys The keys to delete
+   * @param args V2 delete options; unavailable for V1
+   * @returns Nothing for V1, or one keyed operation result per requested key for V2
+   * @throws When the key input is invalid or Blob storage cannot complete the operation
+   */
   async delete (keys: string[], ...args: StorageDeleteArguments<V>): Promise<StorageDeleteReturn<V>> {
     return trace(BlobsStorageTraceDefinitions.delete, async ({ record }) => {
       record({ keyCount: keys?.length ?? 0 })
@@ -188,11 +211,11 @@ export class BlobsStorage<V extends StorageVersion = typeof StorageVersions.V1> 
   }
 
   /**
-   * Reads storage items from blob storage.
+   * Reads legacy items and attaches Blob ETags as `eTag` values.
    *
-   * @param keys Array of item keys to read
-   * @returns A promise that resolves to a StoreItems object containing the retrieved items
-   * @throws Will throw if keys parameter is invalid or if there's an error reading from storage
+   * @param keys The keys to read
+   * @returns The stored items; missing keys are omitted
+   * @throws When the key input is invalid or Blob storage cannot complete the operation
    */
   private async readV1 (keys: string[]): Promise<StoreItems> {
     z.object({ keys: z.array(z.string()) }).parse({ keys })
@@ -218,6 +241,13 @@ export class BlobsStorage<V extends StorageVersion = typeof StorageVersions.V1> 
     ), {})
   }
 
+  /**
+   * Reads V2 items with one status and Blob ETag version per requested key.
+   *
+   * @param keys The keys to read
+   * @returns The keyed V2 read results
+   * @throws When the key input is invalid or Blob storage cannot complete the operation
+   */
   private async readV2<T extends object = Record<string, unknown>> (keys: string[]): Promise<StorageReadResults<T>> {
     validateV2Keys(keys)
     if (keys.length === 0) return {}
@@ -249,11 +279,10 @@ export class BlobsStorage<V extends StorageVersion = typeof StorageVersions.V1> 
   }
 
   /**
-   * Writes storage items to blob storage.
+   * Writes legacy items and applies `eTag` concurrency checks.
    *
-   * @param changes The items to write to storage
-   * @returns A promise that resolves when the write operation is complete
-   * @throws Will throw if there's a validation error, eTag conflict, or other storage error
+   * @param changes The keyed legacy items to write
+   * @throws When the input is invalid, an `eTag` conflicts, or Blob storage cannot complete the operation
    */
   private async writeV1 (changes: StoreItems): Promise<void> {
     z.record(z.unknown()).parse(changes)
@@ -278,6 +307,14 @@ export class BlobsStorage<V extends StorageVersion = typeof StorageVersions.V1> 
     }))
   }
 
+  /**
+   * Writes V2 items with mode and expected-version conditions.
+   *
+   * @param changes The keyed values to write
+   * @param options The V2 write mode and expected version
+   * @returns One keyed operation result per change
+   * @throws When the input is invalid or Blob storage cannot complete the operation
+   */
   private async writeV2<T extends object = Record<string, unknown>> (changes: Record<string, T>, options?: StorageWriteOptions): Promise<StorageWriteResults> {
     validateExpectedVersion(options?.expectedVersion)
     validateV2Changes(changes)
@@ -340,11 +377,10 @@ export class BlobsStorage<V extends StorageVersion = typeof StorageVersions.V1> 
   }
 
   /**
-   * Deletes storage items from blob storage.
+   * Deletes legacy items and ignores missing blobs.
    *
-   * @param keys Array of item keys to delete
-   * @returns A promise that resolves when the delete operation is complete
-   * @throws Will throw if keys parameter is invalid
+   * @param keys The keys to delete
+   * @throws When the key input is invalid or Blob storage cannot complete the operation
    */
   private async deleteV1 (keys: string[]): Promise<void> {
     z.object({ keys: z.array(z.string()) }).parse({ keys })
@@ -357,6 +393,14 @@ export class BlobsStorage<V extends StorageVersion = typeof StorageVersions.V1> 
     )))
   }
 
+  /**
+   * Deletes V2 items with an optional expected-version condition.
+   *
+   * @param keys The keys to delete
+   * @param options The optional expected version
+   * @returns One keyed operation result per requested key
+   * @throws When the key input is invalid or Blob storage cannot complete the operation
+   */
   private async deleteV2 (keys: string[], options?: StorageDeleteOptions): Promise<StorageDeleteResults> {
     validateExpectedVersion(options?.expectedVersion)
     validateV2Keys(keys)

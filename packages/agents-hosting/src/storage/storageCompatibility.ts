@@ -17,7 +17,6 @@ import {
   StorageWriteMode,
   StorageWriteOptions,
   StorageWriteResults,
-  StoreItem,
 } from './storage'
 
 /** Returns true when a storage implementation declares the V2 contract. */
@@ -27,13 +26,7 @@ export function isStorageV2 (storage: StorageProvider): storage is StorageV2 {
 
 /** Converts a supported storage implementation to the V2 contract. */
 export function asStorageV2 (storage: StorageProvider): StorageV2 {
-  if (storage instanceof StorageV2ToStorageAdapter) return storage.source
   return isStorageV2(storage) ? storage : new StorageToStorageV2Adapter(storage)
-}
-
-/** Converts a supported storage implementation to the legacy contract. */
-export function asStorage (storage: StorageProvider): Storage {
-  return isStorageV2(storage) ? new StorageV2ToStorageAdapter(storage) : storage
 }
 
 /** Returns a successful V2 read value, maps not-found to undefined, and rejects invalid results. */
@@ -42,43 +35,6 @@ export function getStorageReadValue<T extends object> (results: StorageReadResul
   if (result?.status === StorageOperationStatus.NotFound) return undefined
   if (result?.status === StorageOperationStatus.Succeeded) return result.value
   throwStorageResultError('read', key, result?.status)
-}
-
-/** Adapts V2 storage for legacy consumers that must retain the V1 interface. */
-class StorageV2ToStorageAdapter implements Storage {
-  constructor (private readonly storage: StorageV2) {}
-
-  /** Returns the original V2 provider when an internal consumer needs the native contract. */
-  get source (): StorageV2 {
-    return this.storage
-  }
-
-  async read (keys: string[]): Promise<StoreItem> {
-    const results = await this.storage.read(keys)
-    return Object.fromEntries(keys.flatMap(key => {
-      const value = getStorageReadValue(results, key)
-      if (value === undefined) return []
-      return [[key, { ...value, eTag: results?.[key]?.version }]]
-    })) as StoreItem
-  }
-
-  async write (changes: StoreItem): Promise<void> {
-    for (const [key, value] of Object.entries(changes)) {
-      const eTag = value?.eTag
-      const options = typeof eTag === 'string' && eTag !== '' && eTag !== '*'
-        ? { expectedVersion: eTag }
-        : undefined
-      const results = await this.storage.write({ [key]: removeLegacyETag(value) }, options)
-      if (results?.[key]?.status !== StorageOperationStatus.Succeeded) {
-        throw ExceptionHelper.generateException(Error, Errors.StorageETagConflict, undefined, { key })
-      }
-    }
-  }
-
-  async delete (keys: string[]): Promise<void> {
-    const results = await this.storage.delete(keys)
-    assertStorageDeleteSucceeded(results, keys)
-  }
 }
 
 /** Adapts the legacy storage contract to version 2 where its semantics allow it. */

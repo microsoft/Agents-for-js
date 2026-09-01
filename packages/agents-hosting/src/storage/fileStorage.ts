@@ -177,6 +177,13 @@ export class FileStorage<V extends StorageVersion = typeof StorageVersions.V1> i
     })
   }
 
+  /**
+   * Reads legacy items from the in-memory file snapshot.
+   *
+   * @param keys The keys to read
+   * @returns The stored items; missing keys are omitted
+   * @throws When keys are missing or empty
+   */
   private async readV1 (keys: string[]): Promise<StoreItem> {
     if (!keys || keys.length === 0) {
       throw ExceptionHelper.generateException(ReferenceError, Errors.StorageReadKeysRequired)
@@ -187,6 +194,13 @@ export class FileStorage<V extends StorageVersion = typeof StorageVersions.V1> i
       .map(key => [key, this.state[key]])) as StoreItem
   }
 
+  /**
+   * Reads cloned V2 items with one status and version result per requested key.
+   *
+   * @param keys The keys to read
+   * @returns The keyed V2 read results
+   * @throws When the key input is invalid
+   */
   private async readV2<T extends object> (keys: string[]): Promise<StorageReadResults<T>> {
     validateV2Keys(keys)
     return Object.fromEntries(keys.map(key => {
@@ -203,6 +217,12 @@ export class FileStorage<V extends StorageVersion = typeof StorageVersions.V1> i
     }))
   }
 
+  /**
+   * Writes legacy items and flushes the complete state file.
+   *
+   * @param changes The keyed legacy items to write
+   * @throws When the input is invalid
+   */
   private async writeV1 (changes: StoreItem): Promise<void> {
     if (!changes || typeof changes !== 'object' || Array.isArray(changes)) {
       throw ExceptionHelper.generateException(ReferenceError, Errors.StorageWriteChangesRequired)
@@ -212,6 +232,14 @@ export class FileStorage<V extends StorageVersion = typeof StorageVersions.V1> i
     this.flush()
   }
 
+  /**
+   * Writes cloned V2 items with mode and expected-version conditions.
+   *
+   * @param changes The keyed values to write
+   * @param options The V2 write mode and expected version
+   * @returns One keyed operation result per change
+   * @throws When the input or options are invalid
+   */
   private async writeV2<T extends object> (changes: Record<string, T>, options?: StorageWriteOptions): Promise<StorageWriteResults> {
     validateExpectedVersion(options?.expectedVersion)
     validateV2Changes(changes)
@@ -241,6 +269,12 @@ export class FileStorage<V extends StorageVersion = typeof StorageVersions.V1> i
     return results
   }
 
+  /**
+   * Deletes legacy items and flushes the complete state file.
+   *
+   * @param keys The keys to delete
+   * @throws When keys are missing or empty
+   */
   private async deleteV1 (keys: string[]): Promise<void> {
     if (!keys || keys.length === 0) {
       throw ExceptionHelper.generateException(ReferenceError, Errors.StorageDeleteKeysRequired)
@@ -252,6 +286,14 @@ export class FileStorage<V extends StorageVersion = typeof StorageVersions.V1> i
     this.flush()
   }
 
+  /**
+   * Deletes V2 items with an optional expected-version condition.
+   *
+   * @param keys The keys to delete
+   * @param options The optional expected version
+   * @returns One keyed operation result per requested key
+   * @throws When the key input or options are invalid
+   */
   private async deleteV2 (keys: string[], options?: StorageDeleteOptions): Promise<StorageDeleteResults> {
     validateExpectedVersion(options?.expectedVersion)
     validateV2Keys(keys)

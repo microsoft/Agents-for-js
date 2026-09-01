@@ -288,7 +288,8 @@ export class AgentState {
     get(context: TurnContext): any | undefined;
     load(context: TurnContext, force?: boolean, customKey?: CustomKey): Promise<any>;
     saveChanges(context: TurnContext, force?: boolean, customKey?: CustomKey): Promise<void>;
-    protected storage: Storage;
+    // (undocumented)
+    protected storage: StorageProvider;
     // (undocumented)
     protected storageKey: StorageKeyFactory;
 }
@@ -1091,16 +1092,13 @@ export class MemoryStorage<V extends StorageVersion = typeof StorageVersions.V1>
     constructor(memory: {
         [key: string]: string;
     } | undefined, options: StorageVersionOptions<V>);
-    // (undocumented)
     delete(keys: string[], ...args: StorageDeleteArguments<V>): Promise<StorageDeleteReturn<V>>;
     static getSingleInstance(): MemoryStorage<typeof StorageVersions.V1>;
     // (undocumented)
     static getSingleInstance<V extends StorageVersion>(options: StorageVersionOptions<V>): MemoryStorage<V>;
-    // (undocumented)
     read<T extends object = Record<string, unknown>>(keys: string[]): Promise<StorageReadReturn<V, T>>;
     // (undocumented)
     readonly storageVersion: V;
-    // (undocumented)
     write<T extends object = Record<string, unknown>>(changes: StorageWriteChanges<V, T>, ...args: StorageWriteArguments<V>): Promise<StorageWriteReturn<V>>;
 }
 
@@ -1600,6 +1598,7 @@ export class StreamingResponse {
     queueInformativeUpdate(text: string): void;
     queueTextChunk(text: string, citations?: Citation[]): void;
     reset(): Promise<void>;
+    sendStreamTimedOutNotification(message: string): Promise<boolean>;
     setAttachments(attachments: Attachment[]): void;
     setCitations(citations: Citation[]): void;
     setDelayInMs(delayInMs: number): void;
@@ -1609,6 +1608,8 @@ export class StreamingResponse {
     setGeneratedByAILabel(enableGeneratedByAILabel: boolean): void;
     setSensitivityLabel(sensitivityLabel: SensitivityUsageInfo): void;
     get streamId(): string | undefined;
+    get streamingTakingTooLongMessage(): string;
+    set streamingTakingTooLongMessage(message: string);
     get updatesSent(): number;
 }
 
