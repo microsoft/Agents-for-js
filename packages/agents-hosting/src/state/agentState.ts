@@ -67,7 +67,10 @@ export interface CustomKey {
  */
 export class AgentState {
   private readonly stateKey = Symbol('state')
-  private internalStorage: StorageV2
+
+  private get internalStorage (): StorageV2 {
+    return asStorageV2(this.storage)
+  }
 
   /**
    * Creates a new instance of AgentState.
@@ -75,9 +78,7 @@ export class AgentState {
    * @param storage The storage provider used to persist state between turns
    * @param storageKey A factory function that generates keys for storing state data
    */
-  constructor (protected storage: StorageProvider, protected storageKey: StorageKeyFactory) {
-    this.internalStorage = asStorageV2(storage)
-  }
+  constructor (protected storage: StorageProvider, protected storageKey: StorageKeyFactory) {}
 
   /**
    * Creates a property accessor for the specified property.
