@@ -407,7 +407,14 @@ export function checkRepository (root, options = {}) {
   checkDocumentationImports(normalizedRoot, documents, packages, findings)
   checkRelativeDocumentationLinks(normalizedRoot, documents, findings)
   checkCompatibilityBaselines(normalizedRoot, packages, findings)
-  findings.push(...checkTeamsApiMetadata(normalizedRoot, { baseRef: options.baseRef }))
+  try {
+    findings.push(...checkTeamsApiMetadata(normalizedRoot, { baseRef: options.baseRef }))
+  } catch (error) {
+    if (options.baseRef && error instanceof Error && error.message.startsWith('Unable to resolve Git base ref ')) {
+      throw new DoctorConfigurationError('scripts/repo-doctor.mjs', error.message)
+    }
+    throw error
+  }
   checkRuntimeConfiguration(normalizedRoot, rootManifest, findings)
 
   findings.sort((left, right) => left.path.localeCompare(right.path) ||

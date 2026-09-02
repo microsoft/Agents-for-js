@@ -39,10 +39,10 @@ export function checkTeamsApiMetadata (root, options = {}) {
   const packageManifest = readJsonFile(normalizedRoot, packageManifestPath, findings, 'usage')
   const manifest = readJsonFile(normalizedRoot, manifestPath, findings, 'usage')
   const capabilities = readYamlFile(normalizedRoot, capabilitiesPath, findings)
-  if (!packageManifest || !manifest || !capabilities) return findings
+  if (packageManifest == null || manifest === undefined || capabilities === undefined) return findings
 
   validateDocumentShapes(manifest, capabilities, findings)
-  if (!Array.isArray(manifest.usages) || !isCapabilitiesRecord(capabilities.capabilities)) return findings
+  if (!Array.isArray(manifest?.usages) || !isCapabilitiesRecord(capabilities?.capabilities)) return findings
 
   const sourceFiles = walkSourceFiles(normalizedRoot)
   const imports = sourceFiles.flatMap(file => collectTeamsImports(file, fs.readFileSync(path.join(normalizedRoot, packagePath, file), 'utf8')))
