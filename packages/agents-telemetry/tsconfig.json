@@ -4,9 +4,6 @@
     "src/**/*",
     "package.json"
   ],
-  "exclude": [
-    "src/**/*.mts"
-  ],
   "compilerOptions": {
     "types": ["node"],
     "outDir": "dist/cjs",

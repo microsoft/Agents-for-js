@@ -30,6 +30,7 @@
   "license": "MIT",
   "files": [
     "README.md",
+    "NOTICE",
     "dist/src",
     "dist/vendor",
     "src",
