@@ -2,6 +2,9 @@
 # This package consumes selected Teams API types and clients; it is not a wrapper
 # for the full upstream package. Direct compatibility findings take precedence
 # over these advisory adoption policies.
+
+# For capability metadata maintenance and sourceReview acknowledgments, see:
+# scripts/teams-api-drift/README.md#source-review-acknowledgments
 schemaVersion: 1
 
 dependency:
@@ -22,8 +25,8 @@ capabilities:
     description: "Parses Teams channel data and provides Teams-specific activity helpers."
     owners:
       - "src/activity-extensions/**"
+      - "src/teamsActivity.ts"
       - "src/teamsActivityExtensions.ts"
-      - "src/teamsModelExtensions.ts"
     upstreamAreas:
       - "models.channel-data"
       - "activities"
@@ -62,6 +65,7 @@ capabilities:
     description: "Handles message extension invokes, query parsing, actions, and responses."
     owners:
       - "src/messageExtensions/**"
+      - "src/teamsModelExtensions.ts"
     upstreamAreas:
       - "models.messaging-extension"
       - "models.app-based-link-query"
@@ -72,6 +76,7 @@ capabilities:
     description: "Handles Teams task module fetch and submit invokes."
     owners:
       - "src/taskModules/**"
+      - "src/teamsModelExtensions.ts"
     upstreamAreas:
       - "models.task-module"
       - "activities.invoke"
