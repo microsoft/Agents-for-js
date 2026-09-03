@@ -63,7 +63,7 @@ export interface StoreItems {
 export type StorageKeyFactory = (context: TurnContext) => string | Promise<string>
 
 /**
- * Defines the interface for storage operations in the Agents platform.
+ * Defines the version 1 interface for storage operations in the Agents platform.
  *
  * @remarks
  * Storage providers persist state data across conversation turns, enabling
@@ -72,7 +72,9 @@ export type StorageKeyFactory = (context: TurnContext) => string | Promise<strin
  *
  * The interface is designed to be simple with just three core operations:
  * read, write, and delete. All operations are asynchronous to support both
- * in-memory and remote storage providers.
+ * in-memory and remote storage providers. New implementations should use
+ * {@link StorageV2}; this V1 interface remains supported by
+ * {@link StorageProvider} through a compatibility adapter.
  */
 export interface Storage {
   /**
@@ -101,3 +103,141 @@ export interface Storage {
    */
   delete: (keys: string[]) => Promise<void>;
 }
+
+/**
+ * The result of a version 2 storage read operation.
+ *
+ * A result is returned for every requested key. `value` and `version` are
+ * available when `status` is {@link StorageOperationStatus.Succeeded}.
+ */
+export interface StorageReadResult<T extends object = Record<string, unknown>> {
+  key: string;
+  status: StorageOperationStatus;
+  value?: T;
+  version?: string;
+}
+
+/**
+ * The result of a version 2 storage write operation.
+ */
+export interface StorageWriteResult {
+  key: string;
+  status: StorageOperationStatus;
+  version?: string;
+}
+
+/**
+ * The result of a version 2 storage delete operation.
+ */
+export interface StorageDeleteResult {
+  key: string;
+  status: StorageOperationStatus;
+  version?: string;
+}
+
+/** A keyed set of storage read results. */
+export type StorageReadResults<T extends object = Record<string, unknown>> = Record<string, StorageReadResult<T>>
+
+/** A keyed set of storage write results. */
+export type StorageWriteResults = Record<string, StorageWriteResult>
+
+/** A keyed set of storage delete results. */
+export type StorageDeleteResults = Record<string, StorageDeleteResult>
+
+/** The outcome of one version 2 storage operation. */
+export enum StorageOperationStatus {
+  Succeeded = 'succeeded',
+  NotFound = 'notFound',
+  Conflict = 'conflict',
+  ConditionNotMet = 'conditionNotMet',
+}
+
+/** The write mode for a version 2 storage operation. */
+export enum StorageWriteMode {
+  Upsert = 'upsert',
+  CreateOnly = 'createOnly',
+  Replace = 'replace',
+}
+
+/** Options applied to every item in a version 2 write operation. */
+export interface StorageWriteOptions {
+  mode?: StorageWriteMode;
+  expectedVersion?: string;
+}
+
+/** Options applied to every item in a version 2 delete operation. */
+export interface StorageDeleteOptions {
+  expectedVersion?: string;
+}
+
+/** Supported storage contract versions. */
+export const StorageVersions = {
+  V1: 1,
+  V2: 2,
+} as const
+
+/** The storage contract selected when a built-in provider is created. */
+export type StorageVersion = typeof StorageVersions[keyof typeof StorageVersions]
+
+/**
+ * Selects a storage contract when a built-in provider is created.
+ *
+ * @remarks
+ * `storageVersion` is the runtime discriminator for {@link StorageProvider}; custom legacy
+ * providers must not use the value `2` unless they implement {@link StorageV2}. Keep the version
+ * as a numeric literal when options are stored in a variable. Use `as const`, `satisfies`, or an
+ * explicit `StorageVersionOptions` type because a mutable object can widen `2` to `number` and
+ * prevent version-specific return-type inference.
+ */
+export interface StorageVersionOptions<V extends StorageVersion> {
+  storageVersion: V;
+}
+
+/** Read result selected by a built-in provider's storage version. */
+export type StorageReadReturn<V extends StorageVersion, T extends object = Record<string, unknown>> =
+  V extends typeof StorageVersions.V2 ? StorageReadResults<T> : StoreItem
+
+/** Write values selected by a built-in provider's storage version. */
+export type StorageWriteChanges<V extends StorageVersion, T extends object = Record<string, unknown>> =
+  V extends typeof StorageVersions.V2 ? Record<string, T> : StoreItem
+
+/** Additional write arguments selected by a built-in provider's storage version. */
+export type StorageWriteArguments<V extends StorageVersion> =
+  V extends typeof StorageVersions.V2 ? [options?: StorageWriteOptions] : []
+
+/** Write result selected by a built-in provider's storage version. */
+export type StorageWriteReturn<V extends StorageVersion> =
+  V extends typeof StorageVersions.V2 ? StorageWriteResults : void
+
+/** Additional delete arguments selected by a built-in provider's storage version. */
+export type StorageDeleteArguments<V extends StorageVersion> =
+  V extends typeof StorageVersions.V2 ? [options?: StorageDeleteOptions] : []
+
+/** Delete result selected by a built-in provider's storage version. */
+export type StorageDeleteReturn<V extends StorageVersion> =
+  V extends typeof StorageVersions.V2 ? StorageDeleteResults : void
+
+/**
+ * The version-selected contract implemented by built-in storage providers.
+ * The version literal selects the input and result types of every operation.
+ */
+export interface VersionedStorage<V extends StorageVersion> {
+  readonly storageVersion: V;
+
+  read<T extends object = Record<string, unknown>>(keys: string[]): Promise<StorageReadReturn<V, T>>;
+  write<T extends object = Record<string, unknown>>(changes: StorageWriteChanges<V, T>, ...args: StorageWriteArguments<V>): Promise<StorageWriteReturn<V>>;
+  delete(keys: string[], ...args: StorageDeleteArguments<V>): Promise<StorageDeleteReturn<V>>;
+}
+
+/**
+ * The version 2 storage contract.
+ *
+ * This intentionally does not extend {@link Storage}: JavaScript cannot
+ * overload methods by return type at runtime.
+ */
+export interface StorageV2 extends VersionedStorage<typeof StorageVersions.V2> {
+  readonly storageVersion: typeof StorageVersions.V2;
+}
+
+/** A storage implementation supported by public hosting interfaces. */
+export type StorageProvider = Storage | StorageV2

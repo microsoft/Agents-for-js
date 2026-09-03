@@ -2,7 +2,74 @@ import { test, describe, beforeEach } from 'node:test'
 import assert from 'node:assert'
 import { TurnContext, MemoryStorage } from '../../../src'
 import { AgentState } from '../../../src/state/agentState'
-import { StoreItem } from '../../../src/storage/storage'
+import {
+  StorageDeleteResults,
+  StorageOperationStatus,
+  StorageReadResults,
+  Storage,
+  StorageProvider,
+  StorageV2,
+  StorageVersions,
+  StorageWriteOptions,
+  StorageWriteResults,
+  StoreItem,
+} from '../../../src/storage/storage'
+
+class FailedWriteStorage implements StorageV2 {
+  readonly storageVersion = StorageVersions.V2
+
+  async read<T extends object> (keys: string[]): Promise<StorageReadResults<T>> {
+    return Object.fromEntries(keys.map(key => [key, { key, status: StorageOperationStatus.NotFound }]))
+  }
+
+  async write<T extends object> (changes: Record<string, T>): Promise<StorageWriteResults> {
+    return Object.fromEntries(Object.keys(changes).map(key => [key, { key, status: StorageOperationStatus.Conflict }]))
+  }
+
+  async delete (keys: string[]): Promise<StorageDeleteResults> {
+    return Object.fromEntries(keys.map(key => [key, { key, status: StorageOperationStatus.NotFound }]))
+  }
+}
+
+class RecordingAgentStateStorage implements StorageV2 {
+  readonly storageVersion = StorageVersions.V2
+  changes?: Record<string, object>
+  options?: StorageWriteOptions
+
+  async read<T extends object> (keys: string[]): Promise<StorageReadResults<T>> {
+    const value = { newKey: 'oldValue', eTag: 'business-value' } as unknown as T
+    return {
+      [keys[0]]: {
+        key: keys[0],
+        status: StorageOperationStatus.Succeeded,
+        value,
+        version: 'version-1',
+      }
+    }
+  }
+
+  async write<T extends object> (changes: Record<string, T>, options?: StorageWriteOptions): Promise<StorageWriteResults> {
+    this.changes = changes
+    this.options = options
+    const key = Object.keys(changes)[0]
+    return { [key]: { key, status: StorageOperationStatus.Succeeded, version: 'version-2' } }
+  }
+
+  async delete (keys: string[]): Promise<StorageDeleteResults> {
+    return Object.fromEntries(keys.map(key => [key, { key, status: StorageOperationStatus.Succeeded }]))
+  }
+}
+
+class ReplaceableAgentState extends AgentState {
+  setStorage (storage: StorageProvider): void {
+    this.storage = storage
+  }
+}
+
+let fieldStorage: Storage
+class FieldReplacingAgentState extends AgentState {
+  protected storage = fieldStorage
+}
 
 describe('AgentState', () => {
   let botState: AgentState
@@ -39,6 +106,39 @@ describe('AgentState', () => {
       const state = await botState.load(mockContext)
 
       assert.deepStrictEqual(state, { cachedKey: 'cachedValue' })
+    })
+
+    test('uses storage replaced by a subclass', async () => {
+      const replacement = new MemoryStorage()
+      await replacement.write({ mockKey: { source: 'replacement' } })
+      const replaceableState = new ReplaceableAgentState(storage, storageKeyFactory)
+      replaceableState.setStorage(replacement)
+
+      const state = await replaceableState.load(mockContext)
+
+      assert.strictEqual(state.source, 'replacement')
+    })
+
+    test('uses V2 storage replaced by a subclass', async () => {
+      const replacement = new RecordingAgentStateStorage()
+      const replaceableState = new ReplaceableAgentState(storage, storageKeyFactory)
+      replaceableState.setStorage(replacement)
+
+      const state = await replaceableState.load(mockContext)
+
+      assert.deepStrictEqual(state, { newKey: 'oldValue', eTag: 'business-value' })
+    })
+
+    test('uses storage replaced by a subclass field initializer', async () => {
+      const replacement = new MemoryStorage()
+      await storage.write({ mockKey: { source: 'original' } })
+      await replacement.write({ mockKey: { source: 'replacement' } })
+      fieldStorage = replacement
+      const replaceableState = new FieldReplacingAgentState(storage, storageKeyFactory)
+
+      const state = await replaceableState.load(mockContext)
+
+      assert.strictEqual(state.source, 'replacement')
     })
   })
 
@@ -112,6 +212,35 @@ describe('AgentState', () => {
       const updatedHash = botState['calculateChangeHash'](circularState)
 
       assert.notStrictEqual(updatedHash, hash)
+    })
+
+    test('does not update the cached hash when a V2 write fails', async () => {
+      const failedState = new AgentState(new FailedWriteStorage(), storageKeyFactory)
+      mockContext.turnState.set(failedState['stateKey'], {
+        state: { newKey: 'newValue' },
+        hash: 'oldHash',
+      })
+
+      await assert.rejects(
+        failedState.saveChanges(mockContext, true),
+        /write failed for key "mockKey" with status "conflict"/
+      )
+
+      assert.strictEqual(mockContext.turnState.get(failedState['stateKey']).hash, 'oldHash')
+    })
+
+    test('keeps V2 writes unconditional without adding a wildcard legacy eTag', async () => {
+      const storageV2 = new RecordingAgentStateStorage()
+      const state = new AgentState(storageV2, storageKeyFactory)
+      const loaded = await state.load(mockContext)
+      loaded.newKey = 'newValue'
+
+      await state.saveChanges(mockContext)
+
+      assert.strictEqual(storageV2.options, undefined)
+      assert.deepStrictEqual(storageV2.changes, {
+        mockKey: { newKey: 'newValue', eTag: 'business-value' },
+      })
     })
   })
 

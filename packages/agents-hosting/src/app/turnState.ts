@@ -3,7 +3,14 @@
  * Licensed under the MIT License.
  */
 
-import { Storage, StoreItems } from '../storage'
+import { StorageOperationStatus, StorageProvider, StorageReadResults, StorageWriteMode, StoreItems } from '../storage'
+import {
+  asStorageV2,
+  assertStorageDeleteSucceeded,
+  assertStorageWriteSucceeded,
+  getStorageReadValue,
+  isStorageV2,
+} from '../storage/storageCompatibility'
 import { AppMemory } from './appMemory'
 import { TurnStateEntry } from './turnStateEntry'
 import { TurnContext } from '../turnContext'
@@ -73,6 +80,8 @@ export class TurnState<
     TUserState = DefaultUserState
 > implements AppMemory {
   private _scopes: Record<string, TurnStateEntry> = {}
+  private _versions: Record<string, string | undefined> = {}
+  private _missingStorageKeys = new Set<string>()
   private _isLoaded = false
   private _loadingPromise?: Promise<boolean>
 
@@ -256,7 +265,7 @@ export class TurnState<
    * @param force - If true, forces a reload from storage even if state is already loaded
    * @returns Promise that resolves to true if state was loaded, false if it was already loaded
    */
-  public load (context: TurnContext, storage?: Storage, force: boolean = false): Promise<boolean> {
+  public load (context: TurnContext, storage?: StorageProvider, force: boolean = false): Promise<boolean> {
     if (this._isLoaded && !force) {
       return Promise.resolve(false)
     }
@@ -274,13 +283,21 @@ export class TurnState<
               }
             }
 
-            const items = storage ? await storage.read(keys) : {}
+            const items: StorageReadResults<Record<string, unknown>> | undefined = storage
+              ? await asStorageV2(storage).read<Record<string, unknown>>(keys)
+              : undefined
 
             for (const key in scopes) {
               if (Object.prototype.hasOwnProperty.call(scopes, key)) {
                 const storageKey = scopes[key]
-                const value = items[storageKey]
+                const value = storage ? getStorageReadValue(items, storageKey) : undefined
                 this._scopes[key] = new TurnStateEntry(value, storageKey)
+                this._versions[storageKey] = items?.[storageKey]?.version
+                if (items?.[storageKey]?.status === StorageOperationStatus.NotFound) {
+                  this._missingStorageKeys.add(storageKey)
+                } else {
+                  this._missingStorageKeys.delete(storageKey)
+                }
               }
             }
 
@@ -311,7 +328,7 @@ export class TurnState<
    * @remarks
    * Only changed scopes will be persisted.
    */
-  public async save (context: TurnContext, storage?: Storage): Promise<void> {
+  public async save (context: TurnContext, storage?: StorageProvider): Promise<void> {
     if (!this._isLoaded && this._loadingPromise) {
       await this._loadingPromise
     }
@@ -346,12 +363,34 @@ export class TurnState<
 
     if (storage) {
       const promises: Promise<void>[] = []
+      const storageV2 = asStorageV2(storage)
       if (changes) {
-        promises.push(storage.write(changes))
+        for (const [key, value] of Object.entries(changes)) {
+          const expectedVersion = this._versions[key]
+          const options = expectedVersion !== undefined
+            ? { expectedVersion }
+            : isStorageV2(storage) && this._missingStorageKeys.has(key)
+              ? { mode: StorageWriteMode.CreateOnly }
+              : undefined
+          promises.push(storageV2.write(
+            { [key]: value },
+            options
+          ).then(results => {
+            assertStorageWriteSucceeded(results, [key])
+            this._versions[key] = results?.[key]?.version
+            this._missingStorageKeys.delete(key)
+          }))
+        }
       }
 
       if (deletions) {
-        promises.push(storage.delete(deletions))
+        promises.push(storageV2.delete(deletions).then(results => {
+          assertStorageDeleteSucceeded(results, deletions)
+          for (const key of deletions) {
+            delete this._versions[key]
+            this._missingStorageKeys.delete(key)
+          }
+        }))
       }
 
       if (promises.length > 0) {

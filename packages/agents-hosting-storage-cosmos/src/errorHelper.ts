@@ -177,5 +177,35 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   MaxNestingDepthExceeded: {
     code: -100019,
     description: 'The data structure exceeds the maximum nesting depth of {maxDepth} levels. {additionalMessage} This limit is imposed to prevent stack overflow errors when storing deeply nested objects in Cosmos DB.',
+  },
+
+  /** Error thrown when a built-in storage version is not supported. */
+  UnsupportedStorageVersion: {
+    code: -100020,
+    description: 'Storage version "{storageVersion}" is not supported.',
+  },
+
+  /** Error thrown when an empty V2 storage version token is provided. */
+  StorageV2ExpectedVersionEmpty: {
+    code: -100021,
+    description: 'Storage V2 expectedVersion cannot be empty.',
+  },
+
+  /** Error thrown when a V2 value is not a non-array object. */
+  StorageV2ValueRequired: {
+    code: -100022,
+    description: 'Storage V2 values must be non-null, non-array objects.',
+  },
+
+  /** Error thrown when a V2 storage key is empty or whitespace. */
+  StorageV2KeyRequired: {
+    code: -100023,
+    description: 'Storage V2 keys must be non-empty strings.',
+  },
+
+  /** Error thrown when a V2 write mode is not supported. */
+  StorageV2WriteModeUnsupported: {
+    code: -100024,
+    description: 'Storage V2 write mode "{mode}" is not supported.',
   }
 }

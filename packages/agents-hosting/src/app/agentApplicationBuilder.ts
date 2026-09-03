@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { Storage } from '../storage'
+import { StorageProvider } from '../storage'
 import { AgentApplication } from './agentApplication'
 import { AgentApplicationOptions } from './agentApplicationOptions'
 import { AuthorizationOptions } from './auth/types'
@@ -31,7 +31,7 @@ export class AgentApplicationBuilder<TState extends TurnState = TurnState> {
    * @param storage The storage implementation to use
    * @returns This builder instance for chaining
    */
-  public withStorage (storage: Storage): this {
+  public withStorage (storage: StorageProvider): this {
     this._options.storage = storage
     return this
   }
