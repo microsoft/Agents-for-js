@@ -23,6 +23,8 @@ const disabledSpans = (() => {
     return []
   }
 
+  logger.warn(`${AGENTS_TELEMETRY_DISABLED_SPAN_CATEGORIES} is deprecated and will be removed in a future release. Configure an OpenTelemetry parent-based sampler instead.`)
+
   const envCategories = rawValue
     .split(/[\s,]+/)
     .map((category) => category.trim())
@@ -63,6 +65,8 @@ const disabledSpans = (() => {
  * Determines if a span is disabled based on its name and the `AGENTS_TELEMETRY_DISABLED_SPAN_CATEGORIES` environment variable or configuration setting.
  * @param name The name of the span to check.
  * @returns A boolean indicating whether the span is disabled.
+ *
+ * @deprecated Configure an OpenTelemetry parent-based sampler to filter spans instead.
  */
 export function isSpanDisabled (name: SpanName): boolean {
   if (disabledSpans.length === 0) {
