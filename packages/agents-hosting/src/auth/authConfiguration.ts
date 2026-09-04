@@ -4,17 +4,27 @@
  */
 
 import { debug, redactString, redactScopes, redactUrl } from '@microsoft/agents-telemetry'
-import { loadEnvSettings, AuthConfiguration, envParser, envParserUtils, LoadEnv, applyDefaultSettings, DEFAULT_CONNECTION_MAP, ConnectionKeys, ConnectionMapKeys, ConnectionMapItem } from './settings'
+import { AuthConfiguration, applyDefaultSettings, DEFAULT_CONNECTION_MAP, ConnectionMapItem } from './settings'
 
 export { type AuthConfiguration, type ConnectionSettings, type ConnectionSettingsBase, type MsalConnectionSettings, type SidecarConnectionSettings, AuthType, resolveAuthority, type ConnectionMapItem, resolveAuthType } from './settings'
 import { prune } from '../utils'
-import { parseBooleanEnv } from '../utils/env'
 import { ExceptionHelper } from '@microsoft/agents-activity'
 import { Errors } from '../errorHelper'
+import {
+  ConfigurationContext,
+  ConfigurationLayer,
+  getConfigurationSnapshot
+} from '../configuration/configuration'
+import { loadModernEnvironmentConfiguration } from '../configuration/environmentConfiguration'
+import {
+  loadBotFrameworkEnvironmentConfiguration,
+  loadBotFrameworkPrefixedEnvironmentConfiguration
+} from '../configuration/botFrameworkEnvironmentCompatibility'
 
 const logger = debug('agents:authConfiguration')
 
 type NonOptional<T> = { [K in keyof Required<T>]: T[K] }
+type ConnectionMapPatch = Partial<ConnectionMapItem>
 
 /**
  * Summarizes the authentication configuration for logging by redacting sensitive information and pruning undefined values. This is used to log the loaded authentication settings without exposing secrets or personally identifiable information.
@@ -66,274 +76,317 @@ function summarizeAuthConfiguration (authConfig: AuthConfiguration) {
  * Environment variables for connections map should be in the format ConnectionsMap__<index>__<property>, e.g. ConnectionsMap__0__ServiceUrl, ConnectionsMap__0__Connection, etc.
  */
 const connectionsEnv = {
-  connections: new Map<string, AuthConfiguration>(),
-  parser: envParser<ConnectionKeys>({
-    authType: envParserUtils.bypass,
-    tenantId: envParserUtils.bypass,
-    clientId: envParserUtils.bypass,
-    clientSecret: envParserUtils.bypass,
-    certPemFile: envParserUtils.bypass,
-    certKeyFile: envParserUtils.bypass,
-    connectionName: envParserUtils.bypass,
-    federatedClientId: envParserUtils.bypass,
-    FICClientId (value) {
-      logger.warn('Connections__<id>__Settings__FICClientId is deprecated, please use Connections__<id>__Settings__FederatedClientId instead.')
-      return { key: 'federatedClientId', value } // redirect
-    },
-    authorityEndpoint: envParserUtils.bypass,
-    authority (value) {
-      logger.warn('Connections__<id>__Settings__Authority is deprecated, please use Connections__<id>__Settings__AuthorityEndpoint instead.')
-      return { key: 'authorityEndpoint', value }  // redirect
-    },
-    scopes (value) {
-      return this.issuers(value) // scopes can be comma or space separated list, same as issuers.
-    },
-    scope (value) {
-      logger.warn('Connections__<id>__Settings__Scope is deprecated, please use Connections__<id>__Settings__Scopes instead.')
-      return { key: 'scopes', value: this.scopes(value)?.value } // redirect with single scope
-    },
-    altBlueprintConnectionName: envParserUtils.bypass,
-    alternateBlueprintConnectionName: (value) => ({ key: 'altBlueprintConnectionName', value }), // .NET parity alias
-    WIDAssertionFile: envParserUtils.bypass,
-    federatedTokenFile: envParserUtils.bypass,
-    idpmResource: envParserUtils.bypass,
-    azureRegion: envParserUtils.bypass,
-    sendX5C: (value) => ({ value: value === 'true' }),
-    msalRetryCount: (value) => {
-      const n = parseInt(value, 10)
-      return { value: Number.isFinite(n) && n >= 0 ? n : undefined }
-    },
-    sidecarBaseUrl: envParserUtils.bypass,
-    serviceName: envParserUtils.bypass,
-    blueprintServiceName: envParserUtils.bypass,
-    bypassLocalNetworkRestriction: (value) => ({ value: value === 'true' }),
-    requestTimeout: (value) => {
-      const n = parseInt(value, 10)
-      return { value: Number.isFinite(n) && n > 0 ? n : undefined }
-    },
-    retryCount: (value) => {
-      const n = parseInt(value, 10)
-      return { value: Number.isFinite(n) && n >= 0 ? n : undefined }
-    },
-    issuers (value) {
-      if (value.includes(',')) {
-        return { value: value.split(',').map(s => s.trim()).filter(Boolean) }
-      }
-      return { value: value.split(/\s+/).filter(Boolean) }
-    },
-    validateIssuer: (value) => ({ value: parseBooleanEnv(value) }),
-  }),
-  default (connections?: AuthConfiguration['connections'], connectionsMap?: AuthConfiguration['connectionsMap']) {
-    const conn = connections ?? this.connections
-    const map = connectionsMap ?? connectionsMapEnv.connectionsMap
-    const name = map?.find((item) => item.serviceUrl === '*')?.connection
-    if (!name) {
-      throw ExceptionHelper.generateException(Error, Errors.NoDefaultConnectionFound)
-    }
-
-    const connection = conn?.get(name ?? '')
-    if (!connection) {
-      throw ExceptionHelper.generateException(Error, Errors.ConnectionNotFoundInEnvironment, undefined, { connectionName: name })
-    }
-
-    return applyDefaultSettings({ ...connection, connections: conn, connectionsMap: map })
-  },
-  process (key:string, value: string) {
-    const format = 'Connections__<id>__Settings__<property>'
-    const parts = key.split('__')
-    const [connections, id, settings, prop] = parts
-
-    if (`${connections}/${settings}`.toUpperCase() !== 'CONNECTIONS/SETTINGS') {
-      return false
-    }
-
-    if (parts.length !== 4) {
-      logger.warn(`Invalid connection environment variable: ${key}. Expected format: ${format}.`)
-      return false
-    }
-
-    if (!id?.trim()) {
-      logger.warn(`Invalid connection <id> in environment variable: ${key}. Expected format: ${format}.`)
-      return false
-    }
-
-    if (!prop?.trim()) {
-      logger.warn(`Invalid connection <property> in environment variable: ${key}. Expected format: ${format}.`)
-      return false
-    }
-
-    const result = this.parser.parse(prop as ConnectionKeys, value)
-    if (!result.key) {
-      return false
-    }
-
-    const config = this.connections.get(id) ?? {}
-    config[result.key as keyof AuthConfiguration] = result.value
-    this.connections.set(id, config)
-    return true
-  },
+  connections: new Map<string, AuthConfiguration>()
 }
 
 const connectionsMapEnv = {
-  connectionsMap: [] as ConnectionMapItem[],
-  parser: envParser<ConnectionMapKeys>({
-    serviceUrl: envParserUtils.bypass,
-    connection: envParserUtils.bypass,
-    audience: envParserUtils.bypass,
-  }),
-  process (key: string, value: string) {
-    const format = 'ConnectionsMap__<index>__<property>'
-    const parts = key.split('__')
-    const [connectionsMap, index, prop] = parts
-
-    if (connectionsMap.toUpperCase() !== 'CONNECTIONSMAP') {
-      return false
-    }
-
-    if (parts.length !== 3) {
-      logger.warn(`Invalid connection map environment variable: ${key}. Expected format: ${format}.`)
-      return false
-    }
-
-    const indexNumber = parseInt(index, 10)
-    if (!index?.trim() || isNaN(indexNumber) || indexNumber < 0) {
-      logger.warn(`Invalid connection map <index> in environment variable: ${key}. Expected format: ${format}, where <index> is a number.`)
-      return false
-    }
-
-    if (!prop?.trim()) {
-      logger.warn(`Invalid connection map <property> in environment variable: ${key}. Expected format: ${format}.`)
-      return false
-    }
-
-    const result = this.parser.parse(prop as ConnectionMapKeys, value)
-    if (!result.key) {
-      return false
-    }
-
-    const mapItem = this.connectionsMap[indexNumber] ?? { ...DEFAULT_CONNECTION_MAP }
-    mapItem[result.key as keyof ConnectionMapItem] = result.value
-    this.connectionsMap[indexNumber] = mapItem
-    return true
-  },
-}
-
-/**
- * Legacy BotFramework style-like authentication configuration loaded from environment variables, with support for hot-reloading in test mode.
- * Environment variables should be named MicrosoftAppTenantId, MicrosoftAppId, MicrosoftAppPassword, etc.
- */
-const legacyBotFrameworkEnv = {
-  parser: envParser({
-    MicrosoftAppTenantId: envParserUtils.redirect(connectionsEnv.parser, 'tenantId'),
-    MicrosoftAppId: envParserUtils.redirect(connectionsEnv.parser, 'clientId'),
-    MicrosoftAppPassword: envParserUtils.redirect(connectionsEnv.parser, 'clientSecret'),
-    certPemFile: envParserUtils.redirect(connectionsEnv.parser, 'certPemFile'),
-    certKeyFile: envParserUtils.redirect(connectionsEnv.parser, 'certKeyFile'),
-    connectionName: envParserUtils.redirect(connectionsEnv.parser, 'connectionName'),
-    MicrosoftAppClientId: envParserUtils.redirect(connectionsEnv.parser, 'federatedClientId'),
-    authorityEndpoint: envParserUtils.redirect(connectionsEnv.parser, 'authorityEndpoint'),
-    scope: envParserUtils.redirect(connectionsEnv.parser, 'scopes'),
-    altBlueprintConnectionName: envParserUtils.redirect(connectionsEnv.parser, 'altBlueprintConnectionName'),
-    alternateBlueprintConnectionName: envParserUtils.redirect(connectionsEnv.parser, 'altBlueprintConnectionName'),
-    WIDAssertionFile: envParserUtils.redirect(connectionsEnv.parser, 'WIDAssertionFile'),
-    azureRegion: envParserUtils.redirect(connectionsEnv.parser, 'azureRegion'),
-    sendX5C: envParserUtils.redirect(connectionsEnv.parser, 'sendX5C'),
-    msalRetryCount: envParserUtils.redirect(connectionsEnv.parser, 'msalRetryCount'),
-    authType: envParserUtils.redirect(connectionsEnv.parser, 'authType'),
-    federatedTokenFile: envParserUtils.redirect(connectionsEnv.parser, 'federatedTokenFile'),
-    idpmResource: envParserUtils.redirect(connectionsEnv.parser, 'idpmResource'),
-    sidecarBaseUrl: envParserUtils.redirect(connectionsEnv.parser, 'sidecarBaseUrl'),
-    serviceName: envParserUtils.redirect(connectionsEnv.parser, 'serviceName'),
-    blueprintServiceName: envParserUtils.redirect(connectionsEnv.parser, 'blueprintServiceName'),
-    bypassLocalNetworkRestriction: envParserUtils.redirect(connectionsEnv.parser, 'bypassLocalNetworkRestriction'),
-    requestTimeout: envParserUtils.redirect(connectionsEnv.parser, 'requestTimeout'),
-    retryCount: envParserUtils.redirect(connectionsEnv.parser, 'retryCount'),
-    validateIssuer: envParserUtils.redirect(connectionsEnv.parser, 'validateIssuer'),
-  }),
-  process (env: LoadEnv) {
-    return legacyPrefixEnv.process.call(this, env)
-  },
-}
-
-/**
- * Legacy prefix-based authentication configuration loaded from environment variables, with support for hot-reloading in test mode.
- * Environment variables should be prefixed with the connection name, e.g. <CONNECTION_NAME>_ClientId, <CONNECTION_NAME>_TenantId, etc.
- */
-const legacyPrefixEnv = {
-  parser: envParser({
-    tenantId: envParserUtils.redirect(connectionsEnv.parser, 'tenantId'),
-    clientId: envParserUtils.redirect(connectionsEnv.parser, 'clientId'),
-    clientSecret: envParserUtils.redirect(connectionsEnv.parser, 'clientSecret'),
-    certPemFile: envParserUtils.redirect(connectionsEnv.parser, 'certPemFile'),
-    certKeyFile: envParserUtils.redirect(connectionsEnv.parser, 'certKeyFile'),
-    connectionName: envParserUtils.redirect(connectionsEnv.parser, 'connectionName'),
-    FICClientId: envParserUtils.redirect(connectionsEnv.parser, 'federatedClientId'),
-    authorityEndpoint: envParserUtils.redirect(connectionsEnv.parser, 'authorityEndpoint'),
-    scope: envParserUtils.redirect(connectionsEnv.parser, 'scopes'),
-    altBlueprintConnectionName: envParserUtils.redirect(connectionsEnv.parser, 'altBlueprintConnectionName'),
-    alternateBlueprintConnectionName: envParserUtils.redirect(connectionsEnv.parser, 'altBlueprintConnectionName'),
-    WIDAssertionFile: envParserUtils.redirect(connectionsEnv.parser, 'WIDAssertionFile'),
-    azureRegion: envParserUtils.redirect(connectionsEnv.parser, 'azureRegion'),
-    sendX5C: envParserUtils.redirect(connectionsEnv.parser, 'sendX5C'),
-    msalRetryCount: envParserUtils.redirect(connectionsEnv.parser, 'msalRetryCount'),
-    authType: envParserUtils.redirect(connectionsEnv.parser, 'authType'),
-    federatedTokenFile: envParserUtils.redirect(connectionsEnv.parser, 'federatedTokenFile'),
-    idpmResource: envParserUtils.redirect(connectionsEnv.parser, 'idpmResource'),
-    sidecarBaseUrl: envParserUtils.redirect(connectionsEnv.parser, 'sidecarBaseUrl'),
-    serviceName: envParserUtils.redirect(connectionsEnv.parser, 'serviceName'),
-    blueprintServiceName: envParserUtils.redirect(connectionsEnv.parser, 'blueprintServiceName'),
-    bypassLocalNetworkRestriction: envParserUtils.redirect(connectionsEnv.parser, 'bypassLocalNetworkRestriction'),
-    requestTimeout: envParserUtils.redirect(connectionsEnv.parser, 'requestTimeout'),
-    retryCount: envParserUtils.redirect(connectionsEnv.parser, 'retryCount'),
-    validateIssuer: envParserUtils.redirect(connectionsEnv.parser, 'validateIssuer'),
-  }),
-  process (env: LoadEnv, prefix?: string) {
-    const settings: Partial<AuthConfiguration> = {}
-    for (const key of this.parser.keys) {
-      const k = prefix ? `${prefix}_${key}` : key
-      const envValue = env[k.toUpperCase()]
-      if (!envValue) {
-        continue
-      }
-      const result = this.parser.parse(key, envValue.value)
-      if (result.key) {
-        settings[result.key as keyof AuthConfiguration] = result.value
-      }
-    }
-    return settings
-  },
+  connectionsMap: new Map<number, ConnectionMapPatch>(),
+  finalized: [] as ConnectionMapItem[]
 }
 
 const loadEnv = () => {
-  connectionsEnv.connections = new Map<string, AuthConfiguration>()
-  connectionsMapEnv.connectionsMap = []
-
-  const env = loadEnvSettings((key, value) => {
-    // Process the first parser that matches the environment variable key and value,
-    // otherwise it continues to the next parser.
-    return connectionsEnv.process(key, value) ||
-           connectionsMapEnv.process(key, value)
-  })
+  const modern = loadModernEnvironmentConfiguration()
+  connectionsEnv.connections.clear()
+  for (const connection of modern.connections.values()) {
+    connectionsEnv.connections.set(
+      connection.id,
+      { ...connection.settings } as AuthConfiguration
+    )
+  }
+  connectionsMapEnv.connectionsMap.clear()
+  for (const [index, item] of modern.connectionsMap) {
+    connectionsMapEnv.connectionsMap.set(index, { ...item })
+  }
 
   if (connectionsEnv.connections.size === 0) {
     logger.warn('No connections found in configuration.')
   }
 
-  if (connectionsMapEnv.connectionsMap.length === 0 && connectionsEnv.connections.size > 0) {
+  if (connectionsMapEnv.connectionsMap.size === 0 && connectionsEnv.connections.size > 0) {
     logger.warn('No connections map found in configuration, assuming default connection map with serviceUrl "*" for the first connection.')
     const [key] = connectionsEnv.connections.keys()
-    connectionsMapEnv.connectionsMap.push({ ...DEFAULT_CONNECTION_MAP, connection: key })
+    connectionsMapEnv.connectionsMap.set(0, { ...DEFAULT_CONNECTION_MAP, connection: key })
+  }
+  return {
+    legacyBotFrameworkSettings: configurationLayerSettings(
+      loadBotFrameworkEnvironmentConfiguration()
+    ),
+    legacyPrefixSettings: configurationLayerSettings(
+      loadBotFrameworkPrefixedEnvironmentConfiguration('')
+    )
+  }
+}
+
+interface AuthOperation {
+  readonly connections?: ReadonlyMap<string, Readonly<AuthConfiguration>>
+  readonly connectionsMap?: ReadonlyMap<number, Readonly<ConnectionMapPatch>>
+  readonly flatSettings?: Readonly<AuthConfiguration>
+  readonly replaceRegistry?: boolean
+  readonly synthesizeFlatConnection?: boolean
+}
+
+function externalAuthOperation (layer: ConfigurationLayer): AuthOperation {
+  return {
+    connections: new Map(
+      [...layer.connections.values()].map(connection => [connection.id, connection.settings])
+    ),
+    connectionsMap: layer.connectionsMap
+  }
+}
+
+function configurationLayerSettings (
+  layer: ConfigurationLayer,
+  connectionName?: string
+): AuthConfiguration {
+  const connection = connectionName
+    ? layer.connections.get(connectionName.toLowerCase())
+    : layer.connections.values().next().value
+  return connection ? { ...connection.settings } as AuthConfiguration : {}
+}
+
+function settingsOperation (
+  settings: AuthConfiguration,
+  synthesizeFlatConnection = false
+): AuthOperation {
+  const { connections, connectionsMap, ...flatSettings } = settings
+  return {
+    flatSettings,
+    connections,
+    connectionsMap: connectionsMap
+      ? new Map(connectionsMap.map((item, index) => [index, item]))
+      : undefined,
+    synthesizeFlatConnection
+  }
+}
+
+function registryOperation (settings: AuthConfiguration): AuthOperation {
+  return {
+    connections: settings.connections,
+    connectionsMap: settings.connectionsMap
+      ? new Map(settings.connectionsMap.map((item, index) => [index, item]))
+      : undefined,
+    replaceRegistry: true
+  }
+}
+
+function environmentRegistryOperation (): AuthOperation {
+  return {
+    connections: connectionsEnv.connections,
+    connectionsMap: connectionsMapEnv.connectionsMap
+  }
+}
+
+function environmentRouteOperation (): AuthOperation {
+  return {
+    connectionsMap: connectionsMapEnv.connectionsMap
+  }
+}
+
+function applyConnectionOperation (
+  connections: Map<string, AuthConfiguration>,
+  operation: AuthOperation
+): void {
+  if (operation.replaceRegistry) {
+    const retained = new Set(
+      [...operation.connections?.keys() ?? []].map(id => id.toLowerCase())
+    )
+    for (const id of connections.keys()) {
+      if (!retained.has(id.toLowerCase())) {
+        connections.delete(id)
+      }
+    }
   }
 
-  return {
-    env,
-    legacyBotFrameworkSettings: legacyBotFrameworkEnv.process(env),
-    legacyPrefixSettings: legacyPrefixEnv.process(env)
+  for (const [id, settings] of operation.connections ?? []) {
+    const existingId = findConnectionKey(connections, id)
+    const targetId = existingId ?? id
+    connections.set(targetId, { ...connections.get(targetId), ...settings })
   }
+}
+
+function findConnectionKey (
+  connections: ReadonlyMap<string, AuthConfiguration> | undefined,
+  requested: string | undefined
+): string | undefined {
+  if (!connections || !requested) {
+    return undefined
+  }
+  const normalized = requested.toLowerCase()
+  return [...connections.keys()].find(id => id.toLowerCase() === normalized)
+}
+
+function resolveConnectionsMap (operations: readonly AuthOperation[]): Map<number, ConnectionMapPatch> {
+  const connectionsMap = new Map<number, ConnectionMapPatch>()
+  for (const operation of operations) {
+    for (const [index, item] of operation.connectionsMap ?? []) {
+      connectionsMap.set(index, { ...connectionsMap.get(index), ...item })
+    }
+  }
+  return connectionsMap
+}
+
+function finalizeConnectionsMap (
+  patches: ReadonlyMap<number, Readonly<ConnectionMapPatch>>,
+  connections: ReadonlyMap<string, AuthConfiguration>,
+  synthesizeDefault = true
+): ConnectionMapItem[] {
+  if (synthesizeDefault && patches.size === 0 && connections.size > 0) {
+    const [connection] = connections.keys()
+    return [{ ...DEFAULT_CONNECTION_MAP, connection }]
+  }
+
+  return [...patches.entries()]
+    .sort(([left], [right]) => left - right)
+    .map(([index, item]) => {
+      if (!item.serviceUrl || !item.connection) {
+        throw ExceptionHelper.generateException(
+          Error,
+          Errors.InvalidConnectionMapEntry,
+          undefined,
+          { index: index.toString() }
+        )
+      }
+      return {
+        serviceUrl: item.serviceUrl,
+        connection: item.connection,
+        ...(item.audience === undefined ? {} : { audience: item.audience })
+      }
+    })
+}
+
+function resolveAuthOperations (
+  operations: readonly AuthOperation[],
+  connectionName?: string
+): AuthConfiguration {
+  const connections = new Map<string, AuthConfiguration>()
+  for (const operation of operations) {
+    applyConnectionOperation(connections, operation)
+  }
+
+  if (
+    connections.size === 0 &&
+    operations.some(operation => operation.synthesizeFlatConnection)
+  ) {
+    connections.set(DEFAULT_CONNECTION_MAP.connection, {})
+  }
+
+  const requiresDefaultRoute = operations.some(operation => operation.replaceRegistry)
+  let connectionsMap = finalizeConnectionsMap(
+    resolveConnectionsMap(operations),
+    connections,
+    !requiresDefaultRoute
+  )
+  if (connectionsMap.length === 0 && requiresDefaultRoute) {
+    throw ExceptionHelper.generateException(Error, Errors.NoDefaultConnectionFound)
+  }
+  const requestedConnection = connections.size > 0 ? connectionName?.trim() : undefined
+  const defaultConnection = connectionsMap.find(item => item.serviceUrl === '*')?.connection
+  if (connectionsMap.length > 0 && !requestedConnection && !defaultConnection) {
+    throw ExceptionHelper.generateException(Error, Errors.NoDefaultConnectionFound)
+  }
+  const selectedConnection = requestedConnection || defaultConnection || connections.keys().next().value
+
+  if (connections.size > 0 && !selectedConnection) {
+    throw ExceptionHelper.generateException(Error, Errors.NoDefaultConnectionFound)
+  }
+  const selectedConnectionKey = findConnectionKey(connections, selectedConnection)
+  if (selectedConnection && !selectedConnectionKey) {
+    throw ExceptionHelper.generateException(
+      Error,
+      Errors.ConnectionNotFoundInEnvironment,
+      undefined,
+      { connectionName: selectedConnection }
+    )
+  }
+  if (requestedConnection) {
+    connectionsMap = [{ ...DEFAULT_CONNECTION_MAP, connection: requestedConnection }]
+  }
+
+  if (selectedConnection) {
+    const selectedSettings: AuthConfiguration = {}
+    for (const operation of operations) {
+      const operationConnectionKey = findConnectionKey(operation.connections, selectedConnection)
+      const connectionSettings = operationConnectionKey
+        ? operation.connections?.get(operationConnectionKey)
+        : undefined
+      if (connectionSettings) {
+        Object.assign(selectedSettings, connectionSettings)
+      }
+      if (operation.flatSettings) {
+        Object.assign(selectedSettings, operation.flatSettings)
+      }
+    }
+
+    const resolved = applyDefaultSettings(selectedSettings)
+    const providerSettings = { ...resolved }
+    delete providerSettings.connections
+    delete providerSettings.connectionsMap
+    connections.set(selectedConnectionKey ?? selectedConnection, providerSettings)
+    return { ...providerSettings, connections, connectionsMap }
+  }
+
+  const flatSettings: AuthConfiguration = {}
+  for (const operation of operations) {
+    Object.assign(flatSettings, operation.flatSettings)
+  }
+  return applyDefaultSettings(flatSettings)
+}
+
+function environmentOperation (
+  legacySettings: AuthConfiguration
+): AuthOperation {
+  return connectionsEnv.connections.size > 0
+    ? environmentRegistryOperation()
+    : settingsOperation(legacySettings)
+}
+
+function externalOperations (context?: ConfigurationContext) {
+  const snapshot = getConfigurationSnapshot(context)
+  return {
+    hasAuth: (['fallback', 'overrideEnvironment', 'enforce'] as const).some(mode =>
+      snapshot[mode].connections.size > 0 ||
+      snapshot[mode].connectionsMap.size > 0
+    ),
+    fallback: externalAuthOperation(snapshot.fallback),
+    overrideEnvironment: externalAuthOperation(snapshot.overrideEnvironment),
+    enforce: externalAuthOperation(snapshot.enforce)
+  }
+}
+
+function preserveEnvironmentRegistryIdentity (
+  result: AuthConfiguration,
+  external: ReturnType<typeof externalOperations>,
+  environmentRegistrySelected: boolean
+): AuthConfiguration {
+  if (external.hasAuth || !environmentRegistrySelected) {
+    return result
+  }
+
+  for (const [id, settings] of result.connections ?? []) {
+    const environmentId = findConnectionKey(connectionsEnv.connections, id)
+    if (environmentId) {
+      connectionsEnv.connections.set(environmentId, settings)
+    }
+  }
+  connectionsMapEnv.finalized.splice(
+    0,
+    connectionsMapEnv.finalized.length,
+    ...(result.connectionsMap ?? [])
+  )
+  result.connections = connectionsEnv.connections
+  result.connectionsMap = connectionsMapEnv.finalized
+  return result
 }
 
 // Initial load of environment variables
 let globalEnv = loadEnv()
+
+/**
+ * Optional host-scoped inputs used while resolving authentication settings.
+ */
+export interface AuthConfigurationResolutionOptions {
+  configurationContext?: ConfigurationContext
+}
 
 /**
  * Loads the authentication configuration from environment variables.
@@ -361,17 +414,27 @@ let globalEnv = loadEnv()
  * ```
  *
  */
-export const loadAuthConfigFromEnv = (cnxName?: string): AuthConfiguration => {
+export const loadAuthConfigFromEnv = (
+  cnxName?: string,
+  options?: AuthConfigurationResolutionOptions
+): AuthConfiguration => {
   if (process.env.TEST_MODE === 'true') {
     globalEnv = loadEnv()
   }
 
-  if (connectionsEnv.connections.size > 0) {
-    return cnxName?.trim() ? connectionsEnv.default(undefined, [{ ...DEFAULT_CONNECTION_MAP, connection: cnxName }]) : connectionsEnv.default()
-  }
-
-  // No connections provided, we need to populate the connections map with the old config settings
-  const result = applyDefaultSettings(cnxName?.trim() ? legacyPrefixEnv.process(globalEnv.env, cnxName) : globalEnv.legacyPrefixSettings)
+  const legacySettings = cnxName?.trim()
+    ? configurationLayerSettings(
+      loadBotFrameworkPrefixedEnvironmentConfiguration(cnxName),
+      cnxName
+    )
+    : globalEnv.legacyPrefixSettings
+  const external = externalOperations(options?.configurationContext)
+  const result = preserveEnvironmentRegistryIdentity(resolveAuthOperations([
+    external.fallback,
+    environmentOperation(legacySettings),
+    external.overrideEnvironment,
+    external.enforce
+  ], cnxName), external, connectionsEnv.connections.size > 0)
   if (cnxName && !result.clientId) {
     throw ExceptionHelper.generateException(Error, Errors.ClientIdNotFoundForConnection, undefined, { connectionName: cnxName })
   }
@@ -398,18 +461,20 @@ export const loadAuthConfigFromEnv = (cnxName?: string): AuthConfiguration => {
  * ```
  *
  */
-export const loadPrevAuthConfigFromEnv: () => AuthConfiguration = () => {
+export const loadPrevAuthConfigFromEnv = (
+  options?: AuthConfigurationResolutionOptions
+): AuthConfiguration => {
   if (process.env.TEST_MODE === 'true') {
     globalEnv = loadEnv()
   }
 
-  let result: AuthConfiguration
-  if (connectionsEnv.connections.size > 0) {
-    result = connectionsEnv.default()
-  } else {
-    // No connections provided, we need to populate the connection map with the old config settings
-    result = applyDefaultSettings(globalEnv.legacyBotFrameworkSettings)
-  }
+  const external = externalOperations(options?.configurationContext)
+  const result = preserveEnvironmentRegistryIdentity(resolveAuthOperations([
+    external.fallback,
+    environmentOperation(globalEnv.legacyBotFrameworkSettings),
+    external.overrideEnvironment,
+    external.enforce
+  ]), external, connectionsEnv.connections.size > 0)
 
   logger.info('Legacy auth settings loaded from environment', summarizeAuthConfiguration(result), result.connectionsMap)
   return result
@@ -439,23 +504,54 @@ export const loadPrevAuthConfigFromEnv: () => AuthConfiguration = () => {
  * ```
  *
  */
-export function getAuthConfigWithDefaults (config?: AuthConfiguration): AuthConfiguration {
+export function getAuthConfigWithDefaults (
+  config?: AuthConfiguration,
+  options?: AuthConfigurationResolutionOptions
+): AuthConfiguration {
   if (process.env.TEST_MODE === 'true') {
     globalEnv = loadEnv()
   }
 
-  let result: AuthConfiguration
-  if (!config) {
-    result = loadAuthConfigFromEnv()
+  const external = externalOperations(options?.configurationContext)
+  const operations: AuthOperation[] = [external.fallback]
+
+  if (config?.connections?.size) {
+    operations.push(settingsOperation(globalEnv.legacyPrefixSettings))
+    if (!config.connectionsMap?.length) {
+      operations.push(environmentRouteOperation())
+    }
+    operations.push(external.overrideEnvironment)
+    operations.push(registryOperation(config))
+  } else if (connectionsEnv.connections.size > 0) {
+    if (config) {
+      operations.push(settingsOperation(globalEnv.legacyPrefixSettings))
+    }
+    operations.push(environmentRegistryOperation())
+    operations.push(external.overrideEnvironment)
   } else {
-    const { connections, connectionsMap } = config.connections?.size ? config : { connections: connectionsEnv.connections, connectionsMap: connectionsMapEnv.connectionsMap }
-    if (connections?.size) {
-      result = { ...globalEnv.legacyPrefixSettings, ...connectionsEnv.default(connections, connectionsMap) }
-    } else {
-      result = applyDefaultSettings({ ...globalEnv.legacyPrefixSettings, ...config })
+    operations.push(settingsOperation(globalEnv.legacyPrefixSettings))
+    operations.push(external.overrideEnvironment)
+    if (config) {
+      operations.push(settingsOperation(config, true))
     }
   }
+  operations.push(external.enforce)
 
+  const result = preserveEnvironmentRegistryIdentity(
+    resolveAuthOperations(operations),
+    external,
+    !config?.connections?.size && connectionsEnv.connections.size > 0
+  )
+  const directParticipates = Boolean(config?.connections?.size) ||
+    connectionsEnv.connections.size === 0
+  if (!external.hasAuth && config && directParticipates) {
+    if (config.connections?.size) {
+      result.connections = config.connections
+    }
+    if (config.connectionsMap?.length) {
+      result.connectionsMap = config.connectionsMap
+    }
+  }
   logger.info('Auth settings loaded from runtime configuration', summarizeAuthConfiguration(result), result.connectionsMap)
   return result
 }

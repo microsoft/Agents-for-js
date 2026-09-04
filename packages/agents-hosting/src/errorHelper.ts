@@ -1036,7 +1036,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   },
 
   // ============================================================================
-  // Application Configuration Errors (-120850 to -120902)
+  // Application Configuration Errors (-120850 to -120909)
   // ============================================================================
 
   /**
@@ -1095,6 +1095,71 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   ContinueConversationAdapterRequired: {
     code: -120902,
     description: "You must configure the Application with an 'adapter' before calling Application.continueConversationAsync()"
+  },
+
+  ConfigurationAlreadyConsumed: {
+    code: -120903,
+    description: 'Configuration sources must be preloaded before the first configuration consumer is created.'
+  },
+
+  ConfigurationSourceNameRequired: {
+    code: -120904,
+    description: 'Configuration source name must be a non-empty string.'
+  },
+
+  DuplicateConfigurationSource: {
+    code: -120905,
+    description: 'Configuration source name `{sourceName}` is registered more than once.'
+  },
+
+  ConfigurationSourceLoadFailed: {
+    code: -120906,
+    description: 'Configuration source `{sourceName}` failed to load.'
+  },
+
+  InvalidConfigurationPath: {
+    code: -120907,
+    description: 'Configuration source `{sourceName}` returned unsupported canonical path `{path}`.'
+  },
+
+  InvalidConfigurationValue: {
+    code: -120908,
+    description: 'Configuration source `{sourceName}` returned an invalid value for canonical path `{path}`.'
+  },
+
+  ConfigurationPreloadInProgress: {
+    code: -120909,
+    description: 'Another configuration preload is already in progress.'
+  },
+
+  InvalidConnectionMapEntry: {
+    code: -120911,
+    description: 'Connection map entry at index {index} must define both serviceUrl and connection.'
+  },
+
+  ConfigurationAlreadyPreloaded: {
+    code: -120912,
+    description: 'Configuration sources have already been preloaded for this process.'
+  },
+
+  UnsupportedRuntimeConfigurationField: {
+    code: -120913,
+    description: 'Configuration source `{sourceName}` returned field `{path}`, which is not supported by the JavaScript SDK.'
+  },
+
+  InvalidConfigurationSourceResult: {
+    code: -120914,
+    description: 'Configuration source `{sourceName}` returned an invalid source result.'
+  },
+
+  InvalidConfigurationContext: {
+    code: -120915,
+    description: 'The configuration context is invalid. Create contexts with createConfigurationContext().'
+  },
+
+  InvalidConfigurationSourceMode: {
+    code: -120916,
+    description: 'Configuration source `{sourceName}` uses unsupported mode `{mode}`. Use `fallback`, `overrideEnvironment`, or `enforce`.'
   },
 
   // ============================================================================

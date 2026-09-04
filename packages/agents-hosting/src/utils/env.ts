@@ -10,6 +10,69 @@
  * normalize behavior across the package without growing the public API.
  */
 
+export interface LoadEnv {
+  [upperKey: string]: { key: string, value: any }
+}
+
+type ParserSettings<K extends string> = {
+  [key in K]: (value: string) => { key?: string, value?: any } | undefined
+}
+
+/**
+ * Indexes non-empty environment values case-insensitively while preserving
+ * their original key spelling.
+ */
+export function loadEnvSettings (
+  callback: (key: string, value: string) => void,
+  environment: NodeJS.ProcessEnv = process.env
+): LoadEnv {
+  const env: LoadEnv = {}
+  for (const [envKey, envValue] of Object.entries(environment)) {
+    if (!envValue?.trim()) {
+      continue
+    }
+
+    env[envKey.toUpperCase()] = { key: envKey, value: envValue }
+    callback(envKey, envValue)
+  }
+
+  return env
+}
+
+/**
+ * Creates a case-insensitive parser for a fixed set of environment keys.
+ */
+export function envParser<K extends string> (
+  settings: ParserSettings<K> & ThisType<ParserSettings<K>>
+) {
+  const keys = Object.keys(settings) as K[]
+  const upperKeys = keys.reduce((acc, key) => {
+    acc[key.toUpperCase()] = key
+    return acc
+  }, {} as Record<string, K>)
+
+  return {
+    keys,
+    parse (key: K, value: string) {
+      const match = upperKeys[key.toUpperCase()]
+      if (!match) {
+        return {}
+      }
+
+      const result = settings[match](value)
+      return { key: result?.key ?? match, value: result?.value }
+    }
+  }
+}
+
+export const envParserUtils = {
+  bypass: (value: string) => ({ value }),
+  redirect: <Parser extends ReturnType<typeof envParser>>(
+    parser: Parser,
+    key: Parameters<Parser['parse']>[0]
+  ) => (value: string) => parser.parse(key, value)
+}
+
 /**
  * Parses an environment-variable string into a boolean.
  *

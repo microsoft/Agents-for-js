@@ -28,12 +28,16 @@ import { HeaderPropagation, HeaderPropagationCollection, HeaderPropagationDefini
 import { JwtPayload } from 'jsonwebtoken'
 import { getTokenServiceEndpoint } from './oauth/customUserTokenAPI'
 import { Connections } from './auth/connections'
-import { parseBooleanEnv, suggestClosest } from './utils/env'
 import { trace } from '@microsoft/agents-telemetry'
 import { AdapterTraceDefinitions } from './observability'
 import { applyAgenticHeaders } from './getProductInfo'
-import { createOutboundHostValidator, OutboundUrlPolicy } from './outboundHostValidator'
+import {
+  createOutboundHostValidator,
+  OutboundUrlPolicy
+} from './outboundHostValidator'
 import { authorizeJWT } from './auth/jwt-middleware'
+import { ConfigurationContext, getConfigurationSnapshot } from './configuration/configuration'
+import { loadModernEnvironmentConfiguration } from './configuration/environmentConfiguration'
 
 const logger = debug('agents:cloud-adapter')
 
@@ -63,6 +67,11 @@ const logger = debug('agents:cloud-adapter')
  */
 export interface CloudAdapterOptions {
   /**
+   * Optional host-scoped external configuration.
+   */
+  configurationContext?: ConfigurationContext
+
+  /**
    * When `true`, the default `onTurnError` handler includes `error.stack` in
    * its log output. Defaults to `false`.
    *
@@ -89,110 +98,11 @@ export interface CloudAdapterOptions {
   validateServiceUrl?: boolean
 }
 
-const DEFAULT_CLOUD_ADAPTER_OPTIONS: Required<CloudAdapterOptions> = {
+type ResolvedCloudAdapterOptions = Required<Pick<CloudAdapterOptions, 'emitStackTrace' | 'validateServiceUrl'>>
+
+const DEFAULT_CLOUD_ADAPTER_OPTIONS: ResolvedCloudAdapterOptions = {
   emitStackTrace: false,
   validateServiceUrl: false
-}
-
-/** Env-var prefix for {@link CloudAdapterOptions} (matches .NET config section). */
-const CLOUD_ADAPTER_OPTIONS_ENV_PREFIX = 'CloudAdapterOptions__'
-const CLOUD_ADAPTER_OPTIONS_ENV_PREFIX_UPPER = CLOUD_ADAPTER_OPTIONS_ENV_PREFIX.toUpperCase()
-
-/**
- * Declarative env-var parser for {@link CloudAdapterOptions}.
- *
- * Shape mirrors `envParser<K>` introduced in PR #1119
- * (`packages/agents-hosting/src/auth/settings.ts`) so this loader can be
- * swapped for the shared utility once that lands. Each entry is a
- * `(rawValue) => parsedValue | undefined` function. Lookups are
- * case-insensitive via the `upperKeys` map, matching the upstream
- * convention and accommodating hosts that uppercase env-var names.
- *
- * Adding a new option to `CloudAdapterOptions` only requires adding an
- * entry here.
- */
-const cloudAdapterOptionsParser = (() => {
-  const schema: {
-    [K in keyof Required<CloudAdapterOptions>]: (raw: string | undefined) => CloudAdapterOptions[K]
-  } = {
-    emitStackTrace: parseBooleanEnv,
-    validateServiceUrl: parseBooleanEnv
-  }
-  const keys = Object.keys(schema) as Array<keyof CloudAdapterOptions>
-  const upperKeys = keys.reduce<Record<string, keyof CloudAdapterOptions>>((acc, key) => {
-    acc[key.toUpperCase()] = key
-    return acc
-  }, {})
-  return {
-    schema,
-    keys,
-    /**
-     * Resolves an env-var property name (case-insensitive) to its canonical
-     * `CloudAdapterOptions` key, or `undefined` when the name is unknown.
-     */
-    resolveKey (property: string): keyof CloudAdapterOptions | undefined {
-      return upperKeys[property.toUpperCase()]
-    }
-  }
-})()
-
-/**
- * Per-process dedup set for configuration warnings. Without this, every
- * `new CloudAdapter()` re-scans `process.env` and re-emits warnings for any
- * typo'd `CloudAdapterOptions__*` key (or unparseable value), which spams
- * stderr in multi-adapter scenarios (tests, proactive flows, DI containers).
- */
-const warnedConfigKeys = new Set<string>()
-
-function emitConfigWarning (envKey: string, message: string): void {
-  if (warnedConfigKeys.has(envKey)) return
-  warnedConfigKeys.add(envKey)
-  // Visible by default (writes synchronously to stderr) so users see typos
-  // and bad values without having to opt in via `DEBUG=agents:cloud-adapter:*`.
-  // Hosts that want to route or suppress can intercept `console.warn` or
-  // subscribe to the `agents:cloud-adapter:warn` debug namespace below.
-  console.warn(`[agents:cloud-adapter] ${message}`)
-  logger.warn(message)
-}
-
-/**
- * Scans `process.env` for keys with the `CloudAdapterOptions__` prefix
- * (case-insensitive) and returns the parsed partial options. Unknown keys
- * and values that fail to parse are warned about once per process via
- * `console.warn` (so they are visible by default without enabling debug)
- * and through the `agents:cloud-adapter:warn` debug channel for log
- * aggregators. Hosts that want to route or suppress these diagnostics can
- * intercept `console.warn` or filter the debug namespace.
- */
-function loadCloudAdapterOptionsFromEnv (): CloudAdapterOptions {
-  const result: CloudAdapterOptions = {}
-  for (const [envKey, rawValue] of Object.entries(process.env)) {
-    const upper = envKey.toUpperCase()
-    if (!upper.startsWith(CLOUD_ADAPTER_OPTIONS_ENV_PREFIX_UPPER)) continue
-    const property = envKey.substring(CLOUD_ADAPTER_OPTIONS_ENV_PREFIX.length)
-    const canonical = cloudAdapterOptionsParser.resolveKey(property)
-    if (!canonical) {
-      const suggestion = suggestClosest(property, cloudAdapterOptionsParser.keys as readonly string[], 4)
-      const hint = suggestion ? ` Did you mean "${CLOUD_ADAPTER_OPTIONS_ENV_PREFIX}${suggestion}"?` : ''
-      emitConfigWarning(envKey, `Unknown CloudAdapterOptions env var: ${envKey} (ignored).${hint}`)
-      continue
-    }
-    const parsed = cloudAdapterOptionsParser.schema[canonical](rawValue) as any
-    if (parsed !== undefined) {
-      (result as any)[canonical] = parsed
-    } else if (rawValue !== undefined && rawValue.trim() !== '') {
-      // Known key, recognized but unparseable value (e.g. `yes`, `on`, `enabled`).
-      // For a security-relevant flag like `validateServiceUrl`, silent
-      // fallthrough is the dangerous failure mode — surface it.
-      // Note: parseBooleanEnv treats whitespace-only as unset, so don't warn
-      // on `'   '`; only warn when the user actually typed something.
-      emitConfigWarning(
-        `${envKey}=${rawValue}`,
-        `Ignored ${envKey}=${rawValue}; expected one of true/false/1/0.`
-      )
-    }
-  }
-  return result
 }
 
 /**
@@ -200,11 +110,27 @@ function loadCloudAdapterOptionsFromEnv (): CloudAdapterOptions {
  * absent, from environment variables. Values supplied in the explicit object
  * win over env vars.
  */
-function resolveCloudAdapterOptions (options?: CloudAdapterOptions): Required<CloudAdapterOptions> {
-  const fromEnv = loadCloudAdapterOptionsFromEnv()
+function resolveCloudAdapterOptions (options?: CloudAdapterOptions): ResolvedCloudAdapterOptions {
+  const external = getConfigurationSnapshot(options?.configurationContext)
+  const fromEnv = loadModernEnvironmentConfiguration(
+    process.env,
+    { reportCloudAdapterDiagnostics: true }
+  ).cloudAdapterOptions
   return {
-    emitStackTrace: options?.emitStackTrace ?? fromEnv.emitStackTrace ?? DEFAULT_CLOUD_ADAPTER_OPTIONS.emitStackTrace,
-    validateServiceUrl: options?.validateServiceUrl ?? fromEnv.validateServiceUrl ?? DEFAULT_CLOUD_ADAPTER_OPTIONS.validateServiceUrl
+    emitStackTrace:
+      external.enforce.cloudAdapterOptions.emitStackTrace ??
+      options?.emitStackTrace ??
+      external.overrideEnvironment.cloudAdapterOptions.emitStackTrace ??
+      fromEnv.emitStackTrace ??
+      external.fallback.cloudAdapterOptions.emitStackTrace ??
+      DEFAULT_CLOUD_ADAPTER_OPTIONS.emitStackTrace,
+    validateServiceUrl:
+      external.enforce.cloudAdapterOptions.validateServiceUrl ??
+      options?.validateServiceUrl ??
+      external.overrideEnvironment.cloudAdapterOptions.validateServiceUrl ??
+      fromEnv.validateServiceUrl ??
+      external.fallback.cloudAdapterOptions.validateServiceUrl ??
+      DEFAULT_CLOUD_ADAPTER_OPTIONS.validateServiceUrl
   }
 }
 
@@ -251,7 +177,7 @@ export class CloudAdapter extends BaseAdapter {
    */
   connectionManager: Connections
 
-  private readonly _options: Required<CloudAdapterOptions>
+  private readonly _options: ResolvedCloudAdapterOptions
   private readonly _hostValidator: OutboundUrlPolicy
 
   /**
@@ -266,11 +192,14 @@ export class CloudAdapter extends BaseAdapter {
    */
   constructor (authConfig?: AuthConfiguration, authProvider?: AuthProvider, userTokenClient?: UserTokenClient, options?: CloudAdapterOptions, outboundHostValidator?: OutboundUrlPolicy) {
     super()
-    this.authConfig = authConfig = getAuthConfigWithDefaults(authConfig)
+    this.authConfig = authConfig = getAuthConfigWithDefaults(authConfig, {
+      configurationContext: options?.configurationContext
+    })
     this.jwtMiddleware = authorizeJWT(authConfig)
     this.connectionManager = new MsalConnectionManager(undefined, undefined, authConfig)
     this._options = resolveCloudAdapterOptions(options)
-    this._hostValidator = outboundHostValidator ?? createOutboundHostValidator()
+    this._hostValidator = outboundHostValidator ??
+      createOutboundHostValidator({ configurationContext: options?.configurationContext })
 
     // Install a CloudAdapter-aware default `onTurnError` that honors
     // `emitStackTrace`. The base class default only logs the message; we

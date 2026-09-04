@@ -8,11 +8,18 @@ import assert from 'assert'
 import { createServer, type Server } from 'node:http'
 import express, { type Express, type Request, type Response } from 'express'
 import rateLimit from 'express-rate-limit'
-import { ActivityHandler, authorizeJWT } from '@microsoft/agents-hosting'
+import { ActivityHandler, AgentApplication, authorizeJWT, CloudAdapter } from '@microsoft/agents-hosting'
 import { startServer, StartServerOptions } from '../src/startServer'
+import {
+  createContextAuthenticatedAgent,
+  createScopedConfigurationContext,
+  preloadAnonymousGlobalConfiguration
+} from './configurationContext.fixture'
 
 // Using a clientId ensures JWT is enforced (non-empty clientId prevents anonymous fallback)
 const TEST_AUTH_CONFIG = { clientId: 'test-app-id' }
+before(preloadAnonymousGlobalConfiguration)
+
 describe('startServer', () => {
   let server: Server
   let port: number
@@ -87,6 +94,179 @@ describe('startServer', () => {
       body: JSON.stringify({ type: 'message', text: 'hello' })
     })
     assert.strictEqual(defaultRouteRes.status, 404)
+  })
+})
+
+describe('startServer with host-scoped configuration', () => {
+  it('keeps explicit host auth independent from the application adapter', async () => {
+    const originalListen = express.application.listen
+    let server: Server | undefined
+    let port: number | undefined
+    const adapter = new CloudAdapter({})
+    let adapterAuthorizationCalls = 0
+    const adapterAuthorizeRequest = adapter.authorizeRequest.bind(adapter)
+    adapter.authorizeRequest = async (...args) => {
+      adapterAuthorizationCalls++
+      await adapterAuthorizeRequest(...args)
+    }
+
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const patchedListen = function (this: Express, ...args: unknown[]) {
+          const callback = typeof args[args.length - 1] === 'function'
+            ? args.pop() as (() => void)
+            : undefined
+          const listeningServer = originalListen.call(this, 0, () => {
+            const address = listeningServer.address()
+            if (address && typeof address === 'object') {
+              port = address.port
+              callback?.()
+              resolve()
+            } else {
+              reject(new Error('Failed to get server address'))
+            }
+          })
+          listeningServer.on('error', reject)
+          server = listeningServer
+          return listeningServer
+        }
+        ;(express.application.listen as unknown as typeof patchedListen) = patchedListen
+
+        try {
+          startServer(
+            new AgentApplication({ adapter }),
+            { port: 0, authConfig: { clientId: 'host-client-id' } }
+          )
+        } catch (error) {
+          reject(error)
+        }
+      })
+
+      const response = await fetch(`http://localhost:${port}/api/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'message', text: 'hello' })
+      })
+
+      assert.strictEqual(response.status, 401)
+      assert.strictEqual(adapterAuthorizationCalls, 0)
+    } finally {
+      express.application.listen = originalListen
+      if (server) {
+        await new Promise<void>((resolve, reject) => {
+          server?.close(error => error ? reject(error) : resolve())
+        })
+      }
+    }
+  })
+
+  it('uses scoped JWT auth instead of globally preloaded anonymous auth', async () => {
+    const originalListen = express.application.listen
+    let server: Server | undefined
+    let port: number | undefined
+
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const patchedListen = function (this: Express, ...args: unknown[]) {
+          const callback = typeof args[args.length - 1] === 'function'
+            ? args.pop() as (() => void)
+            : undefined
+          const listeningServer = originalListen.call(this, 0, () => {
+            const address = listeningServer.address()
+            if (address && typeof address === 'object') {
+              port = address.port
+              callback?.()
+              resolve()
+            } else {
+              reject(new Error('Failed to get server address'))
+            }
+          })
+          listeningServer.on('error', reject)
+          server = listeningServer
+          return listeningServer
+        }
+        ;(express.application.listen as unknown as typeof patchedListen) = patchedListen
+
+        createContextAuthenticatedAgent()
+          .then(agent => startServer(agent, { port: 0 }))
+          .catch(reject)
+      })
+
+      const response = await fetch(`http://localhost:${port}/api/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'message', text: 'hello' })
+      })
+
+      assert.strictEqual(response.status, 401)
+      assert.deepStrictEqual(
+        await response.json(),
+        { 'jwt-auth-error': 'authorization header not found' }
+      )
+    } finally {
+      express.application.listen = originalListen
+      if (server) {
+        await new Promise<void>((resolve, reject) => {
+          server?.close(error => error ? reject(error) : resolve())
+        })
+      }
+    }
+  })
+
+  it('uses scoped JWT auth for a plain ActivityHandler instead of globally preloaded anonymous auth', async () => {
+    const originalListen = express.application.listen
+    let server: Server | undefined
+    let port: number | undefined
+
+    try {
+      const configurationContext = await createScopedConfigurationContext()
+      await new Promise<void>((resolve, reject) => {
+        const patchedListen = function (this: Express, ...args: unknown[]) {
+          const callback = typeof args[args.length - 1] === 'function'
+            ? args.pop() as (() => void)
+            : undefined
+          const listeningServer = originalListen.call(this, 0, () => {
+            const address = listeningServer.address()
+            if (address && typeof address === 'object') {
+              port = address.port
+              callback?.()
+              resolve()
+            } else {
+              reject(new Error('Failed to get server address'))
+            }
+          })
+          listeningServer.on('error', reject)
+          server = listeningServer
+          return listeningServer
+        }
+        ;(express.application.listen as unknown as typeof patchedListen) = patchedListen
+
+        try {
+          startServer(new ActivityHandler(), { port: 0, configurationContext })
+        } catch (error) {
+          reject(error)
+        }
+      })
+
+      const response = await fetch(`http://localhost:${port}/api/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'message', text: 'hello' })
+      })
+
+      assert.strictEqual(response.status, 401)
+      assert.deepStrictEqual(
+        await response.json(),
+        { 'jwt-auth-error': 'authorization header not found' }
+      )
+    } finally {
+      express.application.listen = originalListen
+      if (server) {
+        await new Promise<void>((resolve, reject) => {
+          server?.close(error => error ? reject(error) : resolve())
+        })
+      }
+    }
   })
 })
 

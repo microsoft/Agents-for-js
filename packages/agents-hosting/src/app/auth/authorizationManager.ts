@@ -4,7 +4,7 @@
  */
 
 import { Activity, ExceptionHelper } from '@microsoft/agents-activity'
-import { debug, redactScopes } from '@microsoft/agents-telemetry'
+import { debug, redactScopes, redactString } from '@microsoft/agents-telemetry'
 import { AgentApplication } from '../agentApplication'
 import { AgenticAuthorization, AzureBotAuthorization } from './handlers'
 import { TurnContext } from '../../turnContext'
@@ -13,14 +13,49 @@ import { Errors } from '../../errorHelper'
 import { ActiveAuthorizationHandler, AuthorizationHandlerStatus, AuthorizationHandler, AuthorizationHandlerSettings, AuthorizationOptions } from './types'
 import { Connections } from '../../auth/connections'
 import { sendInvokeResponse } from './utils'
-import { envParser, envParserUtils } from '../../auth/settings'
 import { prune } from '../../utils'
+import { getConfigurationSnapshot } from '../../configuration/configuration'
+import { loadModernEnvironmentConfiguration } from '../../configuration/environmentConfiguration'
+import { loadBotFrameworkAuthorizationEnvironmentConfiguration } from '../../configuration/botFrameworkEnvironmentCompatibility'
 
 const logger = debug('agents:authorization:manager')
 
 const AGENTIC = 'AgenticUserAuthorization'
 const AGENTIC_LEGACY = 'agentic'
 const AZURE_BOT = 'AzureBotUserAuthorization'
+
+function redactAuthorizationString (value: unknown): string | undefined {
+  return typeof value === 'string' ? redactString(value) : undefined
+}
+
+function summarizeAuthorizationConfiguration (options: AuthorizationOptions[string]) {
+  return prune({
+    type: options.type,
+    azureBotOAuthConnectionName: 'azureBotOAuthConnectionName' in options
+      ? redactAuthorizationString(options.azureBotOAuthConnectionName)
+      : undefined,
+    invalidSignInRetryMax: 'invalidSignInRetryMax' in options && typeof options.invalidSignInRetryMax === 'number'
+      ? options.invalidSignInRetryMax
+      : undefined,
+    oboConnectionName: 'oboConnectionName' in options
+      ? redactAuthorizationString(options.oboConnectionName)
+      : undefined,
+    oboScopes: 'oboScopes' in options && Array.isArray(options.oboScopes) &&
+      options.oboScopes.every(scope => typeof scope === 'string')
+      ? redactScopes(options.oboScopes)
+      : undefined,
+    enableSso: 'enableSso' in options && typeof options.enableSso === 'boolean'
+      ? options.enableSso
+      : undefined,
+    scopes: 'scopes' in options && Array.isArray(options.scopes) &&
+      options.scopes.every(scope => typeof scope === 'string')
+      ? redactScopes(options.scopes)
+      : undefined,
+    altBlueprintConnectionName: 'altBlueprintConnectionName' in options
+      ? redactAuthorizationString(options.altBlueprintConnectionName)
+      : undefined
+  })
+}
 
 /**
  * Active handler information used by the AuthorizationManager.
@@ -59,92 +94,6 @@ type GetHandlerIds = (activity: Activity) => string[] | Promise<string[]>
  */
 export class AuthorizationManager {
   private _handlers: Record<string, AuthorizationHandler> = {}
-
-  /**
-   * Environment variable configuration for the latest format.
-   */
-  private _envLatest = {
-    key: {
-      prefix: 'AgentApplication__UserAuthorization__Handlers__',
-      separator: '__Settings__',
-      create (id: string, prop: string) {
-        return `${this.prefix}${id}${this.separator}${prop}`
-      },
-      extract (envKey: string) {
-        // Substring: AgentApplication__UserAuthorization__Handlers__<id>__Settings__<prop>
-        // position —————————————————————————————————————————> start^   ^end         ^prop
-        const start = this.prefix.length
-        const end = envKey.toUpperCase().indexOf(this.separator.toUpperCase())
-        if (end === -1) {
-          return { id: undefined, prop: undefined }
-        }
-
-        const id = envKey.substring(start, end)
-        const prop = envKey.substring(end + this.separator.length)
-        return { id, prop }
-      }
-    },
-    parser: envParser({
-      // Common
-      type: envParserUtils.bypass,
-
-      // Azure Bot
-      azureBotOAuthConnectionName: envParserUtils.bypass,
-      title: envParserUtils.bypass,
-      text: envParserUtils.bypass,
-      invalidSignInRetryMessage: envParserUtils.bypass,
-      invalidSignInRetryMessageFormat: envParserUtils.bypass,
-      invalidSignInRetryMaxExceededMessage: envParserUtils.bypass,
-      oboConnectionName: envParserUtils.bypass,
-      enableSso (value) {
-        return { value: value !== 'false' }
-      },
-      invalidSignInRetryMax (value) {
-        return { value: parseInt(value) }
-      },
-      oboScopes (value) {
-        return this.scopes(value)
-      },
-
-      // Agentic
-      altBlueprintConnectionName: envParserUtils.bypass,
-      scopes (value) {
-        if (value.includes(',')) {
-          return { value: value.split(',').map(s => s.trim()).filter(Boolean) }
-        }
-        return { value: value.split(/\s+/).filter(Boolean) }
-      }
-    }),
-  }
-
-  /**
-   * Environment variable configuration for the legacy format.
-   */
-  private _envLegacy = {
-    key: {
-      separator: '_',
-    },
-    parser: envParser({
-      // Common
-      type: envParserUtils.redirect(this._envLatest.parser, 'type'),
-
-      // Azure Bot
-      connectionName: envParserUtils.redirect(this._envLatest.parser, 'azureBotOAuthConnectionName'),
-      connectionTitle: envParserUtils.redirect(this._envLatest.parser, 'title'),
-      connectionText: envParserUtils.redirect(this._envLatest.parser, 'text'),
-      maxAttempts: envParserUtils.redirect(this._envLatest.parser, 'invalidSignInRetryMax'),
-      messages_invalidCode: envParserUtils.redirect(this._envLatest.parser, 'invalidSignInRetryMessage'),
-      messages_invalidCodeFormat: envParserUtils.redirect(this._envLatest.parser, 'invalidSignInRetryMessageFormat'),
-      messages_maxAttemptsExceeded: envParserUtils.redirect(this._envLatest.parser, 'invalidSignInRetryMaxExceededMessage'),
-      obo_connection: envParserUtils.redirect(this._envLatest.parser, 'oboConnectionName'),
-      obo_scopes: envParserUtils.redirect(this._envLatest.parser, 'oboScopes'),
-      enableSso: envParserUtils.redirect(this._envLatest.parser, 'enableSso'),
-
-      // Agentic
-      scopes: envParserUtils.redirect(this._envLatest.parser, 'scopes'),
-      altBlueprintConnectionName: envParserUtils.redirect(this._envLatest.parser, 'altBlueprintConnectionName')
-    })
-  }
 
   /**
    * Creates an instance of the AuthorizationManager.
@@ -318,82 +267,58 @@ export class AuthorizationManager {
     let legacyMessage = ''
     const settings: AuthorizationHandlerSettings = { storage: this.app.options.storage!, connections: this.connections }
     const runtimeOptionEntries = Object.entries(this.app.options.authorization ?? {})
-    const result = { latest: {}, legacy: {} } as {
+    const result = {
+      latest: {},
+      legacy: {}
+    } as {
       latest: Record<string, Record<string, any> | undefined>;
       legacy: Record<string, Record<string, any> | undefined>;
     }
+    const external = getConfigurationSnapshot(this.app.options.configurationContext)
+    const externalOptionEntries = [
+      ...[...external.fallback.agentApplication.userAuthorization.handlers.values()].map(handler => [handler.id, handler.settings] as const),
+      ...[...external.overrideEnvironment.agentApplication.userAuthorization.handlers.values()].map(handler => [handler.id, handler.settings] as const),
+      ...[...external.enforce.agentApplication.userAuthorization.handlers.values()].map(handler => [handler.id, handler.settings] as const)
+    ]
+    const modernHandlers = loadModernEnvironmentConfiguration()
+      .agentApplication.userAuthorization.handlers
+    for (const handler of modernHandlers.values()) {
+      result.latest[handler.id] = { ...handler.settings }
+    }
 
-    for (const [envKey, envValue] of Object.entries(process.env)) {
-      if (!envValue?.trim()) {
-        continue
-      }
-
-      const upperEnvKey = envKey.toUpperCase()
-
-      // Legacy: extract handler ID, handler options key and its value, and assign it to the correct runtime handler ID.
-      if (!upperEnvKey.startsWith(this._envLatest.key.prefix.toUpperCase())) {
-        const [id] = runtimeOptionEntries.find(([id]) => upperEnvKey.startsWith(`${id.toUpperCase()}${this._envLegacy.key.separator}`)) ?? []
-        if (!id) {
-          continue
-        }
-
-        const prop = envKey.substring(id.length + this._envLegacy.key.separator.length)
-        if (!prop) {
-          continue
-        }
-
-        const { key, value } = this._envLegacy.parser.parse(prop as any, envValue)
-        if (!key) {
-          continue
-        }
-
-        legacyMessage += `  ${envKey}= # Use ${this._envLatest.key.create(id, key)} instead.\n`
-
-        result.legacy[id] ??= {}
-        result.legacy[id][key] = value
-        continue
-      }
-
-      // Latest: extract handler ID, handler options key and its value, and assign it to the correct latest handler ID.
-      const { id, prop } = this._envLatest.key.extract(envKey)
-      if (!id || !prop) {
-        continue
-      }
-
-      const { key, value } = this._envLatest.parser.parse(prop as any, envValue)
-      if (!key) {
-        continue
-      }
-
-      // Find existing handler ID case-insensitively to avoid duplicates, but keep the original casing for later processing.
-      // This allows users to specify environment variables in a case-insensitive way, while ensuring that the handler IDs are treated in a case-sensitive way internally, to avoid issues when referencing them later.
-      // For example, if the user specifies AGENTAPPLICATION__USERAUTHORIZATION__HANDLERS__GRAPH__SETTINGS__AZUREBOTOAUTHCONNECTIONNAME and agentapplication__userauthorization__handlers__graph__settings__azurebotoauthconnectionname, we want to treat them as the same handler ID "graph", and not create two separate handlers "GRAPH" and "graph".
-      // Note: the first environment variable that is processed will determine the casing of the handler ID, and any subsequent environment variable that matches the same handler ID case-insensitively will be treated as referring to the same handler, regardless of its casing.
-      const existingId = id in result.latest ? id : Object.keys(result.latest).find(e => e.toLowerCase() === id.toLowerCase())
-      const realId = existingId ?? id
-      result.latest[realId] ??= {}
-      result.latest[realId][key] = value
+    const compatibility = loadBotFrameworkAuthorizationEnvironmentConfiguration(
+      [...runtimeOptionEntries, ...externalOptionEntries].map(([id]) => id)
+    )
+    for (const handler of compatibility.layer.agentApplication.userAuthorization.handlers.values()) {
+      result.legacy[handler.id] = { ...handler.settings }
+    }
+    for (const replacement of compatibility.replacements) {
+      legacyMessage += `  ${replacement.legacyKey}= # Use ${replacement.modernKey} instead.\n`
     }
 
     if (legacyMessage.length > 0) {
       logger.warn('Deprecated environment variables detected, update to the latest format: (case-insensitive)', `[\n${legacyMessage}]`)
     }
 
-    // Fix types
-    const fixTypes = (entries: [string, any][]) => entries
-      .map(([id, options]) => [id, { ...options, type: this.fixType(id, options?.type) }] as [string, AuthorizationOptions[string]])
-
-    const runtimeEntries = fixTypes(runtimeOptionEntries)
-    const latestEntries = fixTypes(Object.entries(result.latest))
-    const legacyEntries = fixTypes(Object.entries(result.legacy))
-
     const registeredHandlers = new Set()
-    for (const [id] of [...runtimeEntries, ...latestEntries]) {
+    const handlerEntries = [
+      ...runtimeOptionEntries,
+      ...Object.entries(result.latest),
+      ...Object.entries(result.legacy),
+      ...externalOptionEntries
+    ]
+    for (const [id] of handlerEntries) {
       if (registeredHandlers.has(id.toLowerCase())) {
         continue
       }
 
-      const { options, format } = this.resolveHandlerConfiguration(id, runtimeEntries, latestEntries, legacyEntries)
+      const { options, format } = this.resolveHandlerConfiguration(
+        id,
+        runtimeOptionEntries,
+        Object.entries(result.latest),
+        Object.entries(result.legacy),
+        external
+      )
 
       if (options.type === AZURE_BOT) {
         // Set default values if not provided
@@ -403,17 +328,11 @@ export class AuthorizationManager {
         options.enableSso = options.enableSso !== false // default value is true if undefined.
       }
 
-      const maskedOptions: any = {}
-
-      if ('oboScopes' in options && options.oboScopes && options.oboScopes.length > 0) {
-        maskedOptions.oboScopes = redactScopes(options.oboScopes)
-      }
-
-      if ('scopes' in options && options.scopes && options.scopes.length > 0) {
-        maskedOptions.scopes = redactScopes(options.scopes)
-      }
-
-      logger.info(this.prefix(id, 'settings loaded from \'%s\''), format, { ...options, ...maskedOptions })
+      logger.info(
+        this.prefix(id, 'settings loaded from \'%s\''),
+        format,
+        summarizeAuthorizationConfiguration(options)
+      )
 
       if (!settings.storage) {
         throw ExceptionHelper.generateException(Error, Errors.StorageRequiredForAuthorization)
@@ -458,62 +377,66 @@ export class AuthorizationManager {
    */
   private resolveHandlerConfiguration (
     id: string,
-    runtimeEntries: Array<[string, AuthorizationOptions[string]]>,
-    latestEntries: Array<[string, AuthorizationOptions[string]]>,
-    legacyEntries: Array<[string, AuthorizationOptions[string]]>
+    runtimeEntries: Array<[string, any]>,
+    latestEntries: Array<[string, any]>,
+    legacyEntries: Array<[string, any]>,
+    external: ReturnType<typeof getConfigurationSnapshot>
   ): {
       options: AuthorizationOptions[string];
       format: string;
     } {
-    const matchesId = ([_id]: [string, AuthorizationOptions[string]]) => _id.toLowerCase() === id.toLowerCase()
+    const matchesId = ([_id]: [string, any]) => _id.toLowerCase() === id.toLowerCase()
+    const find = (entries: Array<[string, any]>) => entries.find(matchesId)?.[1]
+    const findExternal = (
+      entries: ReadonlyMap<string, Readonly<{ id: string; settings: Readonly<Record<string, unknown>> }>>
+    ) => [...entries.values()].find(handler => handler.id.toLowerCase() === id.toLowerCase())?.settings
 
-    // Find entries case-insensitively for later processing
-    const [, runtime] = runtimeEntries.find(matchesId) ?? []
-    const [, latest] = latestEntries.find(matchesId) ?? []
-    const [, legacy] = legacyEntries.find(matchesId) ?? []
+    const runtime = find(runtimeEntries)
+    const latest = find(latestEntries)
+    const legacy = find(legacyEntries)
 
     if (runtime !== undefined && latest !== undefined) {
       logger.warn(this.prefix(id, 'Both runtime options and latest environment variable configurations detected. Runtime configuration will take precedence over latest environment variables.'))
     }
 
+    const runtimeOptions = runtime === undefined ? undefined : { ...runtime }
     const runtimeLegacyKeys = ['name', 'maxAttempts', 'messages', 'obo']
-    const isRuntimeLegacy = runtime !== undefined && Object.keys(runtime).some(key => runtimeLegacyKeys.includes(key))
+    const isRuntimeLegacy = runtimeOptions !== undefined && Object.keys(runtimeOptions).some(key => runtimeLegacyKeys.includes(key))
 
-    let runtimeLegacyFormat = ''
-    if (isRuntimeLegacy && runtime.type === AZURE_BOT) {
-      runtime.azureBotOAuthConnectionName ??= runtime.name
-      runtime.invalidSignInRetryMax ??= runtime.maxAttempts
-      runtime.invalidSignInRetryMessage ??= runtime.messages?.invalidCode
-      runtime.invalidSignInRetryMessageFormat ??= runtime.messages?.invalidCodeFormat
-      runtime.invalidSignInRetryMaxExceededMessage ??= runtime.messages?.maxAttemptsExceeded
-      runtime.oboConnectionName ??= runtime.obo?.connection
-      runtime.oboScopes ??= runtime.obo?.scopes
-      delete runtime.name
-      delete runtime.maxAttempts
-      delete runtime.messages
-      delete runtime.obo
-      runtimeLegacyFormat = 'runtime options (legacy)'
+    let runtimeFormat = 'runtime options'
+    if (isRuntimeLegacy && this.fixType(id, runtimeOptions.type) === AZURE_BOT) {
+      runtimeOptions.azureBotOAuthConnectionName ??= runtimeOptions.name
+      runtimeOptions.invalidSignInRetryMax ??= runtimeOptions.maxAttempts
+      runtimeOptions.invalidSignInRetryMessage ??= runtimeOptions.messages?.invalidCode
+      runtimeOptions.invalidSignInRetryMessageFormat ??= runtimeOptions.messages?.invalidCodeFormat
+      runtimeOptions.invalidSignInRetryMaxExceededMessage ??= runtimeOptions.messages?.maxAttemptsExceeded
+      runtimeOptions.oboConnectionName ??= runtimeOptions.obo?.connection
+      runtimeOptions.oboScopes ??= runtimeOptions.obo?.scopes
+      delete runtimeOptions.name
+      delete runtimeOptions.maxAttempts
+      delete runtimeOptions.messages
+      delete runtimeOptions.obo
+      runtimeFormat = 'runtime options (legacy)'
     }
 
-    if (runtime !== undefined && legacy !== undefined) {
-      return { format: `${runtimeLegacyFormat || 'runtime options'} + .env variables (legacy)`, options: { ...prune(legacy), ...prune(runtime) } }
-    }
+    const layers: Array<[string, Record<string, any> | undefined]> = [
+      ['external configuration (fallback)', findExternal(external.fallback.agentApplication.userAuthorization.handlers)],
+      ['.env variables (legacy)', latest === undefined ? legacy : undefined],
+      ['.env variables', runtimeOptions === undefined ? latest : undefined],
+      ['external configuration (overrideEnvironment)', findExternal(external.overrideEnvironment.agentApplication.userAuthorization.handlers)],
+      [runtimeFormat, runtimeOptions],
+      ['external configuration (enforce)', findExternal(external.enforce.agentApplication.userAuthorization.handlers)]
+    ]
+    const activeLayers = layers.filter((layer): layer is [string, Record<string, any>] => layer[1] !== undefined)
+    const options = activeLayers.reduce(
+      (resolved, [, layer]) => ({ ...resolved, ...prune(layer) }),
+      {} as AuthorizationOptions[string]
+    )
+    options.type = this.fixType(id, options.type)
 
-    if (runtime !== undefined) {
-      return { format: runtimeLegacyFormat || 'runtime options', options: prune(runtime) }
+    return {
+      format: activeLayers.map(([format]) => format).join(' + ') || 'empty options',
+      options
     }
-
-    if (latest !== undefined) {
-      return { format: '.env variables', options: prune(latest) }
-    }
-
-    if (legacy !== undefined) {
-      // Note: this should never happen, as legacy requires runtime to be present.
-      // However, we show a warning just in case to detect if something goes wrong.
-      logger.warn(this.prefix(id, 'Legacy environment variable configuration detected without a corresponding runtime options configuration.'))
-      return { format: '.env variables (legacy)', options: prune(legacy) }
-    }
-
-    return { format: 'empty options', options: {} }
   }
 }

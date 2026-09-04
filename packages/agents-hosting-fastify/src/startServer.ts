@@ -14,7 +14,7 @@ import {
   Request,
   TurnState
 } from '@microsoft/agents-hosting'
-import { createCloudAdapter } from '@microsoft/agents-hosting'
+import { createCloudAdapter, type CreateCloudAdapterOptions } from '@microsoft/agents-hosting'
 import { version } from '@microsoft/agents-hosting/package.json'
 import { debug } from '@microsoft/agents-telemetry'
 import { adaptReply } from './replyAdapter'
@@ -24,7 +24,7 @@ const logger = debug('agents:hosting-fastify')
 /**
  * Options for configuring the Fastify server started by `startServer`.
  */
-export interface StartServerOptions {
+export interface StartServerOptions extends CreateCloudAdapterOptions {
   /**
    * Optional custom authentication configuration.
    * If not provided, configuration will be loaded from environment variables using loadAuthConfigFromEnv().
@@ -139,7 +139,7 @@ export async function startServer (
   const isOptions = typeof optionsOrAuth === 'object' && optionsOrAuth !== null &&
     ('authConfig' in optionsOrAuth || 'port' in optionsOrAuth || 'routePath' in optionsOrAuth ||
       'rateLimit' in optionsOrAuth || 'beforeListen' in optionsOrAuth || 'fastifyOptions' in optionsOrAuth ||
-      'bodyLimit' in optionsOrAuth)
+      'bodyLimit' in optionsOrAuth || 'configurationContext' in optionsOrAuth)
 
   // Legacy overload: the second argument is a raw AuthConfiguration. An empty object carries no auth
   // settings, so treat it like no argument and load defaults from the environment (matching startServer(agent)).
@@ -149,9 +149,11 @@ export async function startServer (
     : { authConfig: hasAuthSettings ? optionsOrAuth as AuthConfiguration : undefined }
 
   const routePath = opts.routePath ?? '/api/messages'
-  const authConfig = getAuthConfigWithDefaults(opts.authConfig)
-  const { adapter, headerPropagation } = createCloudAdapter(agent, authConfig)
+  const configurationContext = opts.configurationContext ??
+    (agent instanceof AgentApplication ? agent.options.configurationContext : undefined)
+  const authConfig = getAuthConfigWithDefaults(opts.authConfig, { configurationContext })
   const jwtMiddleware = authorizeJWT(authConfig)
+  const { adapter, headerPropagation } = createCloudAdapter(agent, authConfig, { configurationContext: opts.configurationContext })
   const fastify = Fastify(opts.fastifyOptions)
 
   if (opts.rateLimit) {
