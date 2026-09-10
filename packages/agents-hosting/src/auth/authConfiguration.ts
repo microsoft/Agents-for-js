@@ -246,9 +246,18 @@ function finalizeConnectionsMap (
           { index: index.toString() }
         )
       }
+      const connection = findConnectionKey(connections, item.connection)
+      if (!connection) {
+        throw ExceptionHelper.generateException(
+          Error,
+          Errors.ConnectionNotFoundInEnvironment,
+          undefined,
+          { connectionName: item.connection }
+        )
+      }
       return {
         serviceUrl: item.serviceUrl,
-        connection: item.connection,
+        connection,
         ...(item.audience === undefined ? {} : { audience: item.audience })
       }
     })
@@ -299,7 +308,7 @@ function resolveAuthOperations (
     )
   }
   if (requestedConnection) {
-    connectionsMap = [{ ...DEFAULT_CONNECTION_MAP, connection: requestedConnection }]
+    connectionsMap = [{ ...DEFAULT_CONNECTION_MAP, connection: selectedConnectionKey ?? requestedConnection }]
   }
 
   if (selectedConnection) {

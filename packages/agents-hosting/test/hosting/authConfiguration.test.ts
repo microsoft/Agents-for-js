@@ -20,6 +20,8 @@ import {
   envParserUtils as sharedEnvParserUtils,
   loadEnvSettings as sharedLoadEnvSettings
 } from '../../src/utils/env'
+import { ConnectionManager } from '../../src/auth/connectionManager'
+import { AuthProvider } from '../../src/auth/authProvider'
 
 describe('AuthConfiguration', () => {
   let originalEnv: NodeJS.ProcessEnv
@@ -1032,7 +1034,14 @@ describe('AuthConfiguration', () => {
       assert.strictEqual(config.clientId, 'primary-client')
       assert.strictEqual(config.clientSecret, 'primary-secret')
       assert.deepStrictEqual([...(config.connections?.keys() ?? [])], ['Primary'])
-      assert.deepStrictEqual(config.connectionsMap, [{ serviceUrl: '*', connection: 'primary' }])
+      assert.deepStrictEqual(config.connectionsMap, [{ serviceUrl: '*', connection: 'Primary' }])
+
+      const manager = new ConnectionManager(
+        settings => ({ connectionSettings: settings }) as AuthProvider,
+        config.connections,
+        config.connectionsMap
+      )
+      assert.strictEqual(manager.getDefaultConnection().connectionSettings?.clientId, 'primary-client')
     })
 
     it('should retain environment routes when a direct registry omits its map', () => {

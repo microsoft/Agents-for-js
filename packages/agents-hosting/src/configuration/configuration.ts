@@ -927,7 +927,7 @@ async function loadConfigurationSnapshot (
     names.add(source.name)
   }
 
-  const loaded = await Promise.all(registrations.map(async registration => {
+  const settled = await Promise.allSettled(registrations.map(async registration => {
     try {
       return {
         ...registration,
@@ -937,6 +937,12 @@ async function loadConfigurationSnapshot (
       throw ExceptionHelper.generateException(Error, Errors.ConfigurationSourceLoadFailed, undefined, { sourceName: registration.source.name })
     }
   }))
+  const loaded = settled.map(result => {
+    if (result.status === 'rejected') {
+      throw result.reason
+    }
+    return result.value
+  })
 
   const mutable = Object.fromEntries(
     modes.map(mode => [mode, createConfigurationLayer()])

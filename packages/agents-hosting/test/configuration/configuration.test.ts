@@ -1071,7 +1071,7 @@ describe('configuration sources', () => {
       (error: ConfigurationTestError) => {
         assert.match(error.message, /not supported by the JavaScript SDK/)
         assert.match(error.message, /requestTimeout/)
-        assert.equal(error.code, -120913)
+        assert.equal(error.code, Errors.UnsupportedRuntimeConfigurationField.code)
         return true
       }
     )
@@ -1310,5 +1310,48 @@ describe('configuration sources', () => {
     })
     await loading
     assert.equal(getConfigurationSnapshot().enforce.cloudAdapterOptions.emitStackTrace, true)
+  })
+
+  it('waits for all failed preload sources to settle before allowing a retry', async () => {
+    let completeSlowLoad: (() => void) | undefined
+    const loading = preloadConfigurationSources([
+      {
+        source: {
+          name: 'failed-source',
+          async load () {
+            throw new Error('source failed')
+          }
+        },
+        mode: 'fallback'
+      },
+      {
+        source: {
+          name: 'slow-source',
+          load () {
+            return new Promise<{
+              format: 'canonical'
+              values: Readonly<Record<string, string>>
+            }>(resolve => {
+              completeSlowLoad = () => resolve({
+                format: 'canonical',
+                values: {}
+              })
+            })
+          }
+        },
+        mode: 'fallback'
+      }
+    ])
+
+    await assert.rejects(
+      preloadConfigurationSources([]),
+      /preload is already in progress/
+    )
+
+    completeSlowLoad?.()
+    await assert.rejects(loading, /failed-source/)
+
+    await preloadConfigurationSources([])
+    assert.equal(getConfigurationSnapshot().fallback.connections.size, 0)
   })
 })
