@@ -19,7 +19,7 @@ exposes framework-agnostic primitives that the
 [`@microsoft/agents-hosting-express`](../agents-hosting-express) and
 [`@microsoft/agents-hosting-fastify`](../agents-hosting-fastify) packages build on:
 
-- `createCloudAdapter(agent, authConfig)` — returns `{ adapter, headerPropagation }` for processing incoming activities. It preserves an `AgentApplication`'s existing adapter; `authConfig` is used only when creating an adapter. Use this from any web framework.
+- `createCloudAdapter(agent, authConfig, options?)` — returns `{ adapter, headerPropagation }` for processing incoming activities. It preserves an `AgentApplication`'s existing adapter; `authConfig` is used only when creating an adapter. Use `options.configurationContext` to scope preloaded configuration to this host. Use this from any web framework.
 - `CloudAdapterResult` — return type of `createCloudAdapter`.
 - `createAgentResponseHandler(adapter, agent, conversationState)` — framework-agnostic handler `(req, res, params) => Promise<void>` for the authenticated SDK-specific Activity callback route.
 - `AgentResponseHandler`, `AgentResponseHandlerParams`, `AGENT_RESPONSE_ROUTE_PATH` — supporting types and the canonical route path.
