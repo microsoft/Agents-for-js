@@ -3,8 +3,10 @@
  * Licensed under the MIT License.
  */
 
+import { TokenCredential } from '@azure/core-auth'
 import { debug } from '@microsoft/agents-telemetry'
 import { ExceptionHelper } from '@microsoft/agents-activity'
+import { DelegatedTokenCredential } from '../../auth/delegatedTokenCredential'
 import { TokenResponse } from '../../oauth'
 import { TurnContext } from '../../turnContext'
 import { TurnState } from '../turnState'
@@ -16,8 +18,10 @@ const logger = debug('agents:authorization')
 
 export interface Authorization {
   getToken(context: TurnContext, authHandlerId: string): Promise<TokenResponse>
+  getTokenAsTokenCredential(context: TurnContext, authHandlerId: string): TokenCredential
   exchangeToken(context: TurnContext, scopes: string[], authHandlerId: string): Promise<TokenResponse>
   exchangeToken(context: TurnContext, authHandlerId: string, options?: AuthorizationHandlerTokenOptions): Promise<TokenResponse>
+  exchangeTokenAsTokenCredential(context: TurnContext, authHandlerId: string, options?: AuthorizationHandlerTokenOptions): TokenCredential
   signOut(context: TurnContext, state: TurnState, authHandlerId?: string): Promise<void>
   onSignInSuccess(handler: (context: TurnContext, state: TurnState, authHandlerId?: string) => Promise<void>): void
   onSignInFailure(handler: (context: TurnContext, state: TurnState, authHandlerId?: string, errorMessage?: string) => Promise<void>): void
@@ -73,6 +77,32 @@ export class UserAuthorization implements Authorization {
     const handler = this.getHandler(authHandlerId)
     const { token } = await handler.token(context)
     return { token }
+  }
+
+  /**
+   * Creates a token credential backed by the current turn's user token.
+   *
+   * @param context - The context object for the current turn.
+   * @param authHandlerId - ID of the auth handler to use.
+   * @returns A {@link TokenCredential} that resolves to the current turn's user token.
+   * @throws {Error} If the auth handler is not configured.
+   *
+   * @remarks
+   * The returned credential is scoped to this `context` and should only be used during the
+   * current turn. Do not cache it or pass it to a client that outlives the turn; create a new
+   * credential in each turn instead.
+   *
+   * @example
+   * ```typescript
+   * const credential = auth.getTokenAsTokenCredential(context, 'microsoft');
+   * const client = new SomeAzureClient(endpoint, credential);
+   * ```
+   *
+   * @public
+   */
+  public getTokenAsTokenCredential (context: TurnContext, authHandlerId: string): TokenCredential {
+    const handler = this.getHandler(authHandlerId)
+    return new DelegatedTokenCredential(async () => await handler.token(context))
   }
 
   /**
@@ -151,6 +181,44 @@ export class UserAuthorization implements Authorization {
     }
 
     throw ExceptionHelper.generateException(Error, Errors.InvalidExchangeTokenParameters)
+  }
+
+  /**
+   * Creates a token credential that exchanges the user token for requested scopes during the current turn.
+   *
+   * @param context - The context object for the current turn.
+   * @param authHandlerId - ID of the auth handler to use.
+   * @param options - Optional token options. If `connection` and `scopes` are NOT provided, the auth handler's
+   * configured `obo` options are used. Provide `options` only to override them for a specific credential.
+   * @returns A {@link TokenCredential} that exchanges the current turn's user token for the requested scopes.
+   * @throws {Error} If the auth handler is not configured.
+   *
+   * @remarks
+   * The returned credential is scoped to this `context` and should only be used during the current turn.
+   * Do not cache it or pass it to a client that outlives the turn; create a new credential in each turn instead.
+   * Scopes requested from the credential (via `TokenCredential.getToken`) are combined with `options.scopes`,
+   * and duplicate scopes are removed.
+   *
+   * @example
+   * ```typescript
+   * const credential = auth.exchangeTokenAsTokenCredential(
+   *   context,
+   *   'microsoft',
+   *   { connection: 'oboConnection', scopes: ['https://graph.microsoft.com/.default'] }
+   * );
+   * const client = new SomeAzureClient(endpoint, credential);
+   * ```
+   *
+   * @public
+   */
+  public exchangeTokenAsTokenCredential (context: TurnContext, authHandlerId: string, options?: AuthorizationHandlerTokenOptions): TokenCredential {
+    const handler = this.getHandler(authHandlerId)
+    const configuredScopes = options?.scopes ?? []
+
+    return new DelegatedTokenCredential(async (scopes) => {
+      const mergedScopes = Array.from(new Set([...configuredScopes, ...scopes]))
+      return await handler.token(context, { connection: options?.connection, scopes: mergedScopes })
+    })
   }
 
   /**
