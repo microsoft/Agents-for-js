@@ -166,10 +166,12 @@ describe('UserAuthorization', () => {
     assert.equal(accessToken?.token, `${graph.id}-token`)
   })
 
-  it('getTokenAsTokenCredential should throw synchronously for a non-existent auth handler id', () => {
+  it('getTokenAsTokenCredential should reject when getToken() is called for a non-existent auth handler id', async () => {
     const auth = new UserAuthorization(manager)
-    assert.throws(
-      () => auth.getTokenAsTokenCredential(context, 'nonExistinghandler'),
+    const credential = auth.getTokenAsTokenCredential(context, 'nonExistinghandler')
+
+    await assert.rejects(
+      async () => credential.getToken([]),
       /Cannot find auth handler with ID 'nonExistinghandler'. Ensure it is configured in the agent application options./
     )
   })
@@ -220,10 +222,12 @@ describe('UserAuthorization', () => {
     assert.deepEqual(options.scopes, ['scope.write'])
   })
 
-  it('exchangeTokenAsTokenCredential should throw synchronously for a non-existent auth handler id', () => {
+  it('exchangeTokenAsTokenCredential should reject when getToken() is called for a non-existent auth handler id', async () => {
     const auth = new UserAuthorization(manager)
-    assert.throws(
-      () => auth.exchangeTokenAsTokenCredential(context, 'nonExistinghandler'),
+    const credential = auth.exchangeTokenAsTokenCredential(context, 'nonExistinghandler')
+
+    await assert.rejects(
+      async () => credential.getToken([]),
       /Cannot find auth handler with ID 'nonExistinghandler'. Ensure it is configured in the agent application options./
     )
   })

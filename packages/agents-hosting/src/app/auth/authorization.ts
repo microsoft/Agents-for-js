@@ -4,15 +4,15 @@
  */
 
 import { TokenCredential } from '@azure/core-auth'
-import { debug } from '@microsoft/agents-telemetry'
 import { ExceptionHelper } from '@microsoft/agents-activity'
+import { debug } from '@microsoft/agents-telemetry'
 import { DelegatedTokenCredential } from '../../auth/delegatedTokenCredential'
+import { Errors } from '../../errorHelper'
 import { TokenResponse } from '../../oauth'
 import { TurnContext } from '../../turnContext'
 import { TurnState } from '../turnState'
 import { AuthorizationManager } from './authorizationManager'
 import { AuthorizationHandlerTokenOptions } from './types'
-import { Errors } from '../../errorHelper'
 
 const logger = debug('agents:authorization')
 
@@ -101,8 +101,7 @@ export class UserAuthorization implements Authorization {
    * @public
    */
   public getTokenAsTokenCredential (context: TurnContext, authHandlerId: string): TokenCredential {
-    const handler = this.getHandler(authHandlerId)
-    return new DelegatedTokenCredential(async () => await handler.token(context))
+    return new DelegatedTokenCredential(async () => await this.getToken(context, authHandlerId))
   }
 
   /**
@@ -212,12 +211,10 @@ export class UserAuthorization implements Authorization {
    * @public
    */
   public exchangeTokenAsTokenCredential (context: TurnContext, authHandlerId: string, options?: AuthorizationHandlerTokenOptions): TokenCredential {
-    const handler = this.getHandler(authHandlerId)
     const configuredScopes = options?.scopes ?? []
-
     return new DelegatedTokenCredential(async (scopes) => {
       const mergedScopes = Array.from(new Set([...configuredScopes, ...scopes]))
-      return await handler.token(context, { connection: options?.connection, scopes: mergedScopes })
+      return await this.exchangeToken(context, authHandlerId, { connection: options?.connection, scopes: mergedScopes })
     })
   }
 
