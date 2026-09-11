@@ -18,10 +18,8 @@ const logger = debug('agents:authorization')
 
 export interface Authorization {
   getToken(context: TurnContext, authHandlerId: string): Promise<TokenResponse>
-  getTokenAsTokenCredential(context: TurnContext, authHandlerId: string): TokenCredential
   exchangeToken(context: TurnContext, scopes: string[], authHandlerId: string): Promise<TokenResponse>
   exchangeToken(context: TurnContext, authHandlerId: string, options?: AuthorizationHandlerTokenOptions): Promise<TokenResponse>
-  exchangeTokenAsTokenCredential(context: TurnContext, authHandlerId: string, options?: AuthorizationHandlerTokenOptions): TokenCredential
   signOut(context: TurnContext, state: TurnState, authHandlerId?: string): Promise<void>
   onSignInSuccess(handler: (context: TurnContext, state: TurnState, authHandlerId?: string) => Promise<void>): void
   onSignInFailure(handler: (context: TurnContext, state: TurnState, authHandlerId?: string, errorMessage?: string) => Promise<void>): void
@@ -211,9 +209,9 @@ export class UserAuthorization implements Authorization {
    * @public
    */
   public exchangeTokenAsTokenCredential (context: TurnContext, authHandlerId: string, options?: AuthorizationHandlerTokenOptions): TokenCredential {
-    const configuredScopes = options?.scopes ?? []
     return new DelegatedTokenCredential(async (scopes) => {
-      const mergedScopes = Array.from(new Set([...configuredScopes, ...scopes]))
+      const scopeSet = new Set([...scopes, ...(options?.scopes ?? [])])
+      const mergedScopes = Array.from(scopeSet)
       return await this.exchangeToken(context, authHandlerId, { connection: options?.connection, scopes: mergedScopes })
     })
   }
