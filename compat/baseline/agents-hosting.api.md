@@ -420,7 +420,11 @@ export interface Authorization {
     // (undocumented)
     exchangeToken(context: TurnContext, authHandlerId: string, options?: AuthorizationHandlerTokenOptions): Promise<TokenResponse>;
     // (undocumented)
+    exchangeTokenAsTokenCredential?(context: TurnContext, authHandlerId: string, options?: AuthorizationHandlerTokenOptions): TokenCredential;
+    // (undocumented)
     getToken(context: TurnContext, authHandlerId: string): Promise<TokenResponse>;
+    // (undocumented)
+    getTokenAsTokenCredential?(context: TurnContext, authHandlerId: string): TokenCredential;
     // (undocumented)
     onSignInFailure(handler: (context: TurnContext, state: TurnState, authHandlerId?: string, errorMessage?: string) => Promise<void>): void;
     // (undocumented)
