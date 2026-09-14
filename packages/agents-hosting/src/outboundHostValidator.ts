@@ -8,6 +8,7 @@ import {
   getConfigurationSnapshot
 } from './configuration/configuration'
 import { loadModernEnvironmentConfiguration } from './configuration/environmentConfiguration'
+import { mergeDefined } from './utils'
 
 /** Hosts used by Microsoft channel callbacks and hosted attachments. */
 const DEFAULT_MICROSOFT_HOSTS = Object.freeze([
@@ -119,13 +120,13 @@ function resolveOutboundHostValidatorOptions (
     direct.includeDefaultMicrosoftHosts = options.includeDefaultMicrosoftHosts
   }
   if (options.hosts !== undefined) direct.hosts = options.hosts
-  return {
-    ...external.fallback.outboundHostValidator,
-    ...fromEnv,
-    ...external.overrideEnvironment.outboundHostValidator,
-    ...direct,
-    ...external.enforce.outboundHostValidator
-  }
+  return mergeDefined<OutboundHostValidatorOptions>(
+    external.fallback.outboundHostValidator,
+    fromEnv,
+    external.overrideEnvironment.outboundHostValidator,
+    direct,
+    external.enforce.outboundHostValidator
+  )
 }
 
 function getUrlHost (input: string | URL | null | undefined): string | undefined {

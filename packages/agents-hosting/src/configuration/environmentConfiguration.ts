@@ -264,41 +264,43 @@ function bindAuthorizationHandler (
   sourceName: string,
   reportDiagnostics: boolean
 ): void {
+  const settingsIndex = parts.length - 2
   const userAuthorization = suggestClosest(parts[1] ?? '', ['UserAuthorization'], 4)
   const handlers = suggestClosest(parts[2] ?? '', ['Handlers'], 4)
-  const settings = suggestClosest(parts[4] ?? '', ['Settings'], 4)
-  if (parts.length !== 6 ||
+  const settings = suggestClosest(parts[settingsIndex] ?? '', ['Settings'], 4)
+  const handlerId = parts.slice(3, settingsIndex).join('__')
+  const property = parts.at(-1) ?? ''
+  if (parts.length < 6 ||
     parts[1]?.toUpperCase() !== 'USERAUTHORIZATION' ||
     parts[2]?.toUpperCase() !== 'HANDLERS' ||
-    parts[4]?.toUpperCase() !== 'SETTINGS' ||
-    !parts[3]?.trim() ||
-    !parts[5]?.trim()) {
-    if (reportDiagnostics && parts.length === 6 && userAuthorization && handlers && settings) {
+    parts[settingsIndex]?.toUpperCase() !== 'SETTINGS' ||
+    !handlerId.trim() ||
+    !property.trim()) {
+    if (reportDiagnostics && parts.length >= 6 && userAuthorization && handlers && settings) {
       emitHierarchySuggestion(
         sourceName,
-        [parts[0], userAuthorization, handlers, parts[3], settings, parts[5]].join('__'),
+        [parts[0], userAuthorization, handlers, ...parts.slice(3, settingsIndex), settings, property].join('__'),
         true
       )
     }
     return
   }
 
-  const property = parts[5]
   if (reportDiagnostics && property.toLowerCase() !== 'alternateblueprintconnectionname') {
     const suggestedProperty = suggestedLeaf(
-      `agentApplication.userAuthorization.handlers.${parts[3]}.settings.${property}`
+      `agentApplication.userAuthorization.handlers.${handlerId}.settings.${property}`
     )
     if (suggestedProperty) {
       emitHierarchySuggestion(
         sourceName,
-        [parts[0], parts[1], parts[2], parts[3], parts[4], suggestedProperty].join('__'),
+        [parts[0], parts[1], parts[2], ...parts.slice(3, settingsIndex), parts[settingsIndex], suggestedProperty].join('__'),
         false
       )
     }
   }
   trySet(
     layer,
-    `agentApplication.userAuthorization.handlers.${parts[3]}.settings.${property}`,
+    `agentApplication.userAuthorization.handlers.${handlerId}.settings.${property}`,
     normalizeAuthorizationEnvironmentValue(property, value),
     sourceName
   )

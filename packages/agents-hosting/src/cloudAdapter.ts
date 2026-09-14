@@ -38,6 +38,7 @@ import {
 import { authorizeJWT } from './auth/jwt-middleware'
 import { ConfigurationContext, getConfigurationSnapshot } from './configuration/configuration'
 import { loadModernEnvironmentConfiguration } from './configuration/environmentConfiguration'
+import { mergeDefined } from './utils'
 
 const logger = debug('agents:cloud-adapter')
 
@@ -116,22 +117,17 @@ function resolveCloudAdapterOptions (options?: CloudAdapterOptions): ResolvedClo
     process.env,
     { reportCloudAdapterDiagnostics: true }
   ).cloudAdapterOptions
-  return {
-    emitStackTrace:
-      external.enforce.cloudAdapterOptions.emitStackTrace ??
-      options?.emitStackTrace ??
-      external.overrideEnvironment.cloudAdapterOptions.emitStackTrace ??
-      fromEnv.emitStackTrace ??
-      external.fallback.cloudAdapterOptions.emitStackTrace ??
-      DEFAULT_CLOUD_ADAPTER_OPTIONS.emitStackTrace,
-    validateServiceUrl:
-      external.enforce.cloudAdapterOptions.validateServiceUrl ??
-      options?.validateServiceUrl ??
-      external.overrideEnvironment.cloudAdapterOptions.validateServiceUrl ??
-      fromEnv.validateServiceUrl ??
-      external.fallback.cloudAdapterOptions.validateServiceUrl ??
-      DEFAULT_CLOUD_ADAPTER_OPTIONS.validateServiceUrl
-  }
+  return mergeDefined<ResolvedCloudAdapterOptions>(
+    DEFAULT_CLOUD_ADAPTER_OPTIONS,
+    external.fallback.cloudAdapterOptions,
+    fromEnv,
+    external.overrideEnvironment.cloudAdapterOptions,
+    {
+      emitStackTrace: options?.emitStackTrace,
+      validateServiceUrl: options?.validateServiceUrl
+    },
+    external.enforce.cloudAdapterOptions
+  )
 }
 
 /**

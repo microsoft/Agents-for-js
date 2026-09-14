@@ -688,6 +688,55 @@ describe('configuration sources', () => {
     })
   })
 
+  it('preserves document entries with empty settings', async () => {
+    const context = await createConfigurationContext([{
+      source: {
+        name: 'empty-settings',
+        async load () {
+          return {
+            format: 'document',
+            value: {
+              connections: {
+                anonymous: {
+                  settings: {}
+                }
+              },
+              connectionsMap: [{
+                serviceUrl: '*',
+                connection: 'anonymous'
+              }],
+              agentApplication: {
+                userAuthorization: {
+                  handlers: {
+                    defaultAuth: {
+                      settings: {}
+                    }
+                  }
+                }
+              }
+            }
+          } as const
+        }
+      },
+      mode: 'overrideEnvironment'
+    }])
+
+    const snapshot = getConfigurationSnapshot(context).overrideEnvironment
+    assert.deepEqual(snapshot.connections.get('anonymous'), {
+      id: 'anonymous',
+      settings: {}
+    })
+    assert.deepEqual(snapshot.agentApplication.userAuthorization.handlers.get('defaultauth'), {
+      id: 'defaultAuth',
+      settings: {}
+    })
+    assert.equal(
+      getAuthConfigWithDefaults(undefined, { configurationContext: context })
+        .connections?.has('anonymous'),
+      true
+    )
+  })
+
   it('compiles equivalent canonical and document inputs into identical shapes and consumer behavior', async () => {
     const canonical = await createConfigurationContext([{
       source: {

@@ -178,6 +178,43 @@ describe('AuthorizationManager - Configuration', () => {
     assert.match(output, /<redacted> \(2 scopes\)/)
   })
 
+  it('supplements a document handler with empty settings from legacy environment', async () => {
+    process.env.defaultAuth_connectionName = 'default-oauth'
+    const configurationContext = await createConfigurationContext([{
+      source: {
+        name: 'empty-handler-settings',
+        async load () {
+          return {
+            format: 'document',
+            value: {
+              agentApplication: {
+                userAuthorization: {
+                  handlers: {
+                    defaultAuth: {
+                      settings: {}
+                    }
+                  }
+                }
+              }
+            }
+          } as const
+        }
+      },
+      mode: 'overrideEnvironment'
+    }])
+
+    const app = new AgentApplication({
+      storage: new MemoryStorage(),
+      configurationContext
+    })
+    const options = (app.authorization as any).manager._handlers.defaultAuth.options
+
+    assert.equal(options.type, 'AzureBotUserAuthorization')
+    assert.equal(options.azureBotOAuthConnectionName, 'default-oauth')
+    assert.equal(options.title, 'Sign-in')
+    assert.equal(options.text, 'Please sign-in to continue')
+  })
+
   it('should apply preloaded configuration across fallback, overrideEnvironment, and enforce modes', async () => {
     process.env = {
       ...process.env,
@@ -372,6 +409,30 @@ describe('AuthorizationManager - Configuration', () => {
     assert.equal(authHandler.invalidSignInRetryMax, 3)
     assert.equal(authHandler.oboConnectionName, 'ConstructorOboConnection')
     assert.deepEqual(authHandler.oboScopes, ['constructor.scope1', 'constructor.scope2'])
+  })
+
+  it('should preserve legacy fallbacks when runtime and modern settings coexist', () => {
+    const key = 'AgentApplication__UserAuthorization__handlers__testAuth__settings'
+    process.env = {
+      ...process.env,
+      testAuth_connectionText: 'Legacy Text',
+      [`${key}__title`]: 'Modern Title'
+    }
+
+    const app = new AgentApplication({
+      storage: new MemoryStorage(),
+      authorization: {
+        testAuth: {
+          name: 'RuntimeConnection'
+        }
+      }
+    })
+
+    const options: AzureBotAuthorizationOptions =
+      (app.authorization as any).manager._handlers.testAuth.options
+    assert.equal(options.azureBotOAuthConnectionName, 'RuntimeConnection')
+    assert.equal(options.text, 'Legacy Text')
+    assert.equal(options.title, 'Sign-in')
   })
 
   it('should use constructor options over latest env variables', () => {

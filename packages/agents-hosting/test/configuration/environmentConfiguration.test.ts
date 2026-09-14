@@ -150,6 +150,24 @@ describe('environment configuration adapters', () => {
     })
   })
 
+  it('preserves __ separators inside modern authorization handler IDs', () => {
+    const layer = loadModernEnvironmentConfiguration({
+      AgentApplication__UserAuthorization__Handlers__foo__bar__Settings__Type: 'AgenticUserAuthorization',
+      AgentApplication__UserAuthorization__Handlers__foo__bar__Settings__Scopes: 'scope-a scope-b'
+    })
+
+    assert.deepEqual(
+      layer.agentApplication.userAuthorization.handlers.get('foo__bar'),
+      {
+        id: 'foo__bar',
+        settings: {
+          type: 'AgenticUserAuthorization',
+          scopes: ['scope-a', 'scope-b']
+        }
+      }
+    )
+  })
+
   it('maps only known Bot Framework handler bindings and reports replacements', () => {
     const compatibility = loadBotFrameworkAuthorizationEnvironmentConfiguration(
       ['Graph'],
@@ -174,6 +192,25 @@ describe('environment configuration adapters', () => {
     assert.ok(compatibility.replacements.every(({ modernKey }) =>
       modernKey.startsWith('AgentApplication__UserAuthorization__Handlers__Graph__Settings__')
     ))
+  })
+
+  it('matches the longest Bot Framework handler ID first', () => {
+    const compatibility = loadBotFrameworkAuthorizationEnvironmentConfiguration(
+      ['foo', 'foo_bar'],
+      {
+        foo_bar_connectionName: 'foo-bar-oauth'
+      }
+    )
+
+    assert.equal(
+      compatibility.layer.agentApplication.userAuthorization.handlers.get('foo_bar')
+        ?.settings.azureBotOAuthConnectionName,
+      'foo-bar-oauth'
+    )
+    assert.equal(
+      compatibility.layer.agentApplication.userAuthorization.handlers.has('foo'),
+      false
+    )
   })
 
   it('merges sparse hierarchical patches by schema section', () => {

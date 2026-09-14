@@ -13,7 +13,7 @@ import { Errors } from '../../errorHelper'
 import { ActiveAuthorizationHandler, AuthorizationHandlerStatus, AuthorizationHandler, AuthorizationHandlerSettings, AuthorizationOptions } from './types'
 import { Connections } from '../../auth/connections'
 import { sendInvokeResponse } from './utils'
-import { prune } from '../../utils'
+import { mergeDefined, prune } from '../../utils'
 import { getConfigurationSnapshot } from '../../configuration/configuration'
 import { loadModernEnvironmentConfiguration } from '../../configuration/environmentConfiguration'
 import { loadBotFrameworkAuthorizationEnvironmentConfiguration } from '../../configuration/botFrameworkEnvironmentCompatibility'
@@ -421,16 +421,15 @@ export class AuthorizationManager {
 
     const layers: Array<[string, Record<string, any> | undefined]> = [
       ['external configuration (fallback)', findExternal(external.fallback.agentApplication.userAuthorization.handlers)],
-      ['.env variables (legacy)', latest === undefined ? legacy : undefined],
+      ['.env variables (legacy)', runtimeOptions !== undefined || latest === undefined ? legacy : undefined],
       ['.env variables', runtimeOptions === undefined ? latest : undefined],
       ['external configuration (overrideEnvironment)', findExternal(external.overrideEnvironment.agentApplication.userAuthorization.handlers)],
       [runtimeFormat, runtimeOptions],
       ['external configuration (enforce)', findExternal(external.enforce.agentApplication.userAuthorization.handlers)]
     ]
     const activeLayers = layers.filter((layer): layer is [string, Record<string, any>] => layer[1] !== undefined)
-    const options = activeLayers.reduce(
-      (resolved, [, layer]) => ({ ...resolved, ...prune(layer) }),
-      {} as AuthorizationOptions[string]
+    const options = mergeDefined<AuthorizationOptions[string]>(
+      ...activeLayers.map(([, layer]) => layer)
     )
     options.type = this.fixType(id, options.type)
 

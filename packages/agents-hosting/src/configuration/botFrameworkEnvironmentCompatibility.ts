@@ -120,12 +120,13 @@ export function loadBotFrameworkAuthorizationEnvironmentConfiguration (
 ): BotFrameworkAuthorizationCompatibility {
   const layer = createConfigurationLayer()
   const replacements: Array<{ legacyKey: string, modernKey: string }> = []
+  const longestHandlerIdsFirst = [...handlerIds].sort((left, right) => right.length - left.length)
 
   for (const [legacyKey, rawValue] of Object.entries(env)) {
     if (!rawValue?.trim()) {
       continue
     }
-    const id = handlerIds.find(candidate =>
+    const id = longestHandlerIdsFirst.find(candidate =>
       legacyKey.toLowerCase().startsWith(`${candidate.toLowerCase()}_`)
     )
     if (!id) {

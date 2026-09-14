@@ -12,3 +12,13 @@ export const prune = <T extends Record<string, any>>(obj: T) => {
   const entries = Object.entries(obj).filter(([, value]) => value !== undefined)
   return Object.fromEntries(entries) as T
 }
+
+export const mergeDefined = <T extends Record<string, any>>(
+  ...layers: readonly (Partial<T> | undefined)[]
+): T => {
+  const result: Partial<T> = {}
+  for (const layer of layers) {
+    if (layer) Object.assign(result, prune(layer))
+  }
+  return result as T
+}

@@ -303,6 +303,29 @@ describe('AuthConfiguration', () => {
       assert.strictEqual(second.connections?.get('modern')?.clientId, 'modern-client-id')
     })
 
+    it('should isolate named environment projections from later default loads', () => {
+      process.env = {
+        TEST_MODE: 'true',
+        NODE_ENV: 'development',
+        Connections__primary__Settings__ClientId: 'primary-client-id',
+        Connections__secondary__Settings__ClientId: 'secondary-client-id',
+        ConnectionsMap__0__ServiceUrl: '*',
+        ConnectionsMap__0__Connection: 'primary'
+      }
+
+      const named = loadAuthConfigFromEnv('secondary')
+      const manager = new ConnectionManager(
+        settings => ({ connectionSettings: settings }) as AuthProvider,
+        named.connections,
+        named.connectionsMap
+      )
+      const defaultConfig = loadAuthConfigFromEnv()
+
+      assert.deepStrictEqual(named.connectionsMap, [{ serviceUrl: '*', connection: 'secondary' }])
+      assert.strictEqual(manager.getDefaultConnection().connectionSettings?.clientId, 'secondary-client-id')
+      assert.deepStrictEqual(defaultConfig.connectionsMap, [{ serviceUrl: '*', connection: 'primary' }])
+    })
+
     it('should preserve environment registry identity with a non-auth configuration context', async () => {
       process.env = {
         TEST_MODE: 'true',
@@ -664,6 +687,36 @@ describe('AuthConfiguration', () => {
       assert.strictEqual(config.connections?.get('serviceConnection')?.clientId, 'legacy-client-id')
       assert.strictEqual(config.connections?.get('serviceConnection')?.clientSecret, 'legacy-client-secret')
       assert.strictEqual(config.connections?.get('serviceConnection')?.authorityEndpoint, 'https://login.microsoftonline.us')
+    })
+
+    it('should materialize a requested legacy connection over an unrelated fallback registry', async () => {
+      process.env = {
+        TEST_MODE: 'true',
+        NODE_ENV: 'development',
+        named_clientId: 'named-client-id'
+      }
+      const configurationContext = await createConfigurationContext([{
+        source: {
+          name: 'fallback-auth',
+          async load () {
+            return {
+              format: 'canonical',
+              values: {
+                'connections.central.settings.clientId': 'central-client-id',
+                'connectionsMap.0.serviceUrl': '*',
+                'connectionsMap.0.connection': 'central'
+              }
+            }
+          },
+        },
+        mode: 'fallback'
+      }])
+
+      const config = loadAuthConfigFromEnv('named', { configurationContext })
+
+      assert.strictEqual(config.clientId, 'named-client-id')
+      assert.strictEqual(config.connections?.get('named')?.clientId, 'named-client-id')
+      assert.deepStrictEqual(config.connectionsMap, [{ serviceUrl: '*', connection: 'named' }])
     })
 
     it('should apply flat auth values to both the top-level config and the selected connection', async () => {
@@ -1115,6 +1168,89 @@ describe('AuthConfiguration', () => {
           return true
         }
       )
+    })
+
+    it('should infer a default route for one external connection', async () => {
+      process.env = { TEST_MODE: 'true', NODE_ENV: 'development' }
+      const configurationContext = await createConfigurationContext([{
+        source: {
+          name: 'single-connection',
+          async load () {
+            return {
+              format: 'canonical',
+              values: {
+                'connections.primary.settings.clientId': 'primary-client-id'
+              }
+            }
+          },
+        },
+        mode: 'overrideEnvironment'
+      }])
+
+      const config = getAuthConfigWithDefaults(undefined, { configurationContext })
+
+      assert.deepStrictEqual(config.connectionsMap, [{ serviceUrl: '*', connection: 'primary' }])
+    })
+
+    it('should require a route for multiple external connections', async () => {
+      process.env = { TEST_MODE: 'true', NODE_ENV: 'development' }
+      const configurationContext = await createConfigurationContext([{
+        source: {
+          name: 'multiple-connections',
+          async load () {
+            return {
+              format: 'canonical',
+              values: {
+                'connections.primary.settings.clientId': 'primary-client-id',
+                'connections.secondary.settings.clientId': 'secondary-client-id'
+              }
+            }
+          },
+        },
+        mode: 'overrideEnvironment'
+      }])
+
+      assert.throws(
+        () => getAuthConfigWithDefaults(undefined, { configurationContext }),
+        (error: Error & { code?: number }) => {
+          assert.strictEqual(error.code, Errors.NoDefaultConnectionFound.code)
+          return true
+        }
+      )
+    })
+
+    it('should discard fallback routes for connections removed by a direct registry', async () => {
+      process.env = { TEST_MODE: 'true', NODE_ENV: 'development' }
+      const configurationContext = await createConfigurationContext([{
+        source: {
+          name: 'fallback-routes',
+          async load () {
+            return {
+              format: 'canonical',
+              values: {
+                'connections.primary.settings.clientId': 'fallback-primary',
+                'connections.secondary.settings.clientId': 'fallback-secondary',
+                'connectionsMap.0.serviceUrl': '*',
+                'connectionsMap.0.connection': 'primary',
+                'connectionsMap.1.serviceUrl': 'https://secondary.example',
+                'connectionsMap.1.connection': 'secondary'
+              }
+            }
+          },
+        },
+        mode: 'fallback'
+      }])
+      const connections = new Map<string, AuthConfiguration>([
+        ['primary', { clientId: 'direct-primary' }]
+      ])
+
+      const config = getAuthConfigWithDefaults({
+        connections,
+        connectionsMap: [{ serviceUrl: '*', connection: 'primary' }]
+      }, { configurationContext })
+
+      assert.deepStrictEqual(config.connectionsMap, [{ serviceUrl: '*', connection: 'primary' }])
+      assert.deepStrictEqual([...(config.connections?.keys() ?? [])], ['primary'])
     })
 
     it('should preserve caller registry, route, and connection references without sources', () => {

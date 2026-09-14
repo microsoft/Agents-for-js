@@ -123,6 +123,7 @@ interface AuthOperation {
   readonly flatSettings?: Readonly<AuthConfiguration>
   readonly replaceRegistry?: boolean
   readonly synthesizeFlatConnection?: boolean
+  readonly materializeRequestedConnection?: boolean
 }
 
 function externalAuthOperation (layer: ConfigurationLayer): AuthOperation {
@@ -146,7 +147,8 @@ function configurationLayerSettings (
 
 function settingsOperation (
   settings: AuthConfiguration,
-  synthesizeFlatConnection = false
+  synthesizeFlatConnection = false,
+  materializeRequestedConnection = false
 ): AuthOperation {
   const { connections, connectionsMap, ...flatSettings } = settings
   return {
@@ -155,7 +157,8 @@ function settingsOperation (
     connectionsMap: connectionsMap
       ? new Map(connectionsMap.map((item, index) => [index, item]))
       : undefined,
-    synthesizeFlatConnection
+    synthesizeFlatConnection,
+    materializeRequestedConnection
   }
 }
 
@@ -187,9 +190,7 @@ function applyConnectionOperation (
   operation: AuthOperation
 ): void {
   if (operation.replaceRegistry) {
-    const retained = new Set(
-      [...operation.connections?.keys() ?? []].map(id => id.toLowerCase())
-    )
+    const retained = retainedConnectionIds(operation)
     for (const id of connections.keys()) {
       if (!retained.has(id.toLowerCase())) {
         connections.delete(id)
@@ -202,6 +203,12 @@ function applyConnectionOperation (
     const targetId = existingId ?? id
     connections.set(targetId, { ...connections.get(targetId), ...settings })
   }
+}
+
+function retainedConnectionIds (operation: AuthOperation): ReadonlySet<string> {
+  return new Set(
+    [...operation.connections?.keys() ?? []].map(id => id.toLowerCase())
+  )
 }
 
 function findConnectionKey (
@@ -218,6 +225,14 @@ function findConnectionKey (
 function resolveConnectionsMap (operations: readonly AuthOperation[]): Map<number, ConnectionMapPatch> {
   const connectionsMap = new Map<number, ConnectionMapPatch>()
   for (const operation of operations) {
+    if (operation.replaceRegistry) {
+      const retained = retainedConnectionIds(operation)
+      for (const [index, item] of connectionsMap) {
+        if (item.connection && !retained.has(item.connection.toLowerCase())) {
+          connectionsMap.delete(index)
+        }
+      }
+    }
     for (const [index, item] of operation.connectionsMap ?? []) {
       connectionsMap.set(index, { ...connectionsMap.get(index), ...item })
     }
@@ -230,7 +245,7 @@ function finalizeConnectionsMap (
   connections: ReadonlyMap<string, AuthConfiguration>,
   synthesizeDefault = true
 ): ConnectionMapItem[] {
-  if (synthesizeDefault && patches.size === 0 && connections.size > 0) {
+  if (synthesizeDefault && patches.size === 0 && connections.size === 1) {
     const [connection] = connections.keys()
     return [{ ...DEFAULT_CONNECTION_MAP, connection }]
   }
@@ -279,16 +294,25 @@ function resolveAuthOperations (
     connections.set(DEFAULT_CONNECTION_MAP.connection, {})
   }
 
+  const requestedName = connectionName?.trim()
+  if (
+    requestedName &&
+    !findConnectionKey(connections, requestedName) &&
+    operations.some(operation => operation.materializeRequestedConnection)
+  ) {
+    connections.set(requestedName, {})
+  }
+
+  const requestedConnection = connections.size > 0 ? requestedName : undefined
   const requiresDefaultRoute = operations.some(operation => operation.replaceRegistry)
   let connectionsMap = finalizeConnectionsMap(
     resolveConnectionsMap(operations),
     connections,
     !requiresDefaultRoute
   )
-  if (connectionsMap.length === 0 && requiresDefaultRoute) {
+  if (connectionsMap.length === 0 && (requiresDefaultRoute || connections.size > 1)) {
     throw ExceptionHelper.generateException(Error, Errors.NoDefaultConnectionFound)
   }
-  const requestedConnection = connections.size > 0 ? connectionName?.trim() : undefined
   const defaultConnection = connectionsMap.find(item => item.serviceUrl === '*')?.connection
   if (connectionsMap.length > 0 && !requestedConnection && !defaultConnection) {
     throw ExceptionHelper.generateException(Error, Errors.NoDefaultConnectionFound)
@@ -342,11 +366,16 @@ function resolveAuthOperations (
 }
 
 function environmentOperation (
-  legacySettings: AuthConfiguration
+  legacySettings: AuthConfiguration,
+  connectionName?: string
 ): AuthOperation {
   return connectionsEnv.connections.size > 0
     ? environmentRegistryOperation()
-    : settingsOperation(legacySettings)
+    : settingsOperation(
+      legacySettings,
+      false,
+      Boolean(connectionName?.trim() && Object.keys(legacySettings).length > 0)
+    )
 }
 
 function externalOperations (context?: ConfigurationContext) {
@@ -440,10 +469,10 @@ export const loadAuthConfigFromEnv = (
   const external = externalOperations(options?.configurationContext)
   const result = preserveEnvironmentRegistryIdentity(resolveAuthOperations([
     external.fallback,
-    environmentOperation(legacySettings),
+    environmentOperation(legacySettings, cnxName),
     external.overrideEnvironment,
     external.enforce
-  ], cnxName), external, connectionsEnv.connections.size > 0)
+  ], cnxName), external, connectionsEnv.connections.size > 0 && !cnxName?.trim())
   if (cnxName && !result.clientId) {
     throw ExceptionHelper.generateException(Error, Errors.ClientIdNotFoundForConnection, undefined, { connectionName: cnxName })
   }

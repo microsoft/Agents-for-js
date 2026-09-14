@@ -564,10 +564,8 @@ export function setConfigurationValue (
       authPropertyAliases,
       true
     )
-    const lookup = id.toLowerCase()
-    const current = target.connections.get(lookup) ?? { id, settings: {} }
+    const current = ensureConnection(target, id)
     ;(current.settings as AuthConnectionPatch)[parsed.key] = parsed.value
-    ;(target.connections as Map<string, { id: string, settings: AuthConnectionPatch }>).set(lookup, current)
     return
   }
 
@@ -610,15 +608,37 @@ export function setConfigurationValue (
       authorizationPropertyAliases,
       true
     )
-    const lookup = id.toLowerCase()
-    const handlers = target.agentApplication.userAuthorization.handlers
-    const current = handlers.get(lookup) ?? { id, settings: {} }
+    const current = ensureAuthorizationHandler(target, id)
     ;(current.settings as AuthorizationHandlerPatch)[parsed.key] = parsed.value
-    ;(handlers as Map<string, { id: string, settings: AuthorizationHandlerPatch }>).set(lookup, current)
     return
   }
 
   throw invalidConfigurationPath(path, sourceName)
+}
+
+function ensureConnection (
+  target: ConfigurationLayer,
+  id: string
+): { id: string, settings: AuthConnectionPatch } {
+  const connections = target.connections as Map<string, { id: string, settings: AuthConnectionPatch }>
+  const lookup = id.toLowerCase()
+  const connection = connections.get(lookup) ?? { id, settings: {} }
+  connections.set(lookup, connection)
+  return connection
+}
+
+function ensureAuthorizationHandler (
+  target: ConfigurationLayer,
+  id: string
+): { id: string, settings: AuthorizationHandlerPatch } {
+  const handlers = target.agentApplication.userAuthorization.handlers as Map<
+  string,
+  { id: string, settings: AuthorizationHandlerPatch }
+  >
+  const lookup = id.toLowerCase()
+  const handler = handlers.get(lookup) ?? { id, settings: {} }
+  handlers.set(lookup, handler)
+  return handler
 }
 
 export function isConfigurationInputError (error: unknown): boolean {
@@ -709,6 +729,7 @@ function compileDocumentConnections (
   for (const [id, definitionValue] of uniqueEntries(connections, path, sourceName)) {
     validateDynamicSegment(id, `${path}.${id}`, sourceName)
     const definition = asDocumentObject(definitionValue, `${path}.${id}`, sourceName)
+    ensureConnection(target, id)
     let settingsFound = false
     for (const [key, entryValue] of uniqueEntries(definition, `${path}.${id}`, sourceName)) {
       const entryPath = `${path}.${id}.${key}`
@@ -789,6 +810,7 @@ function compileDocumentAuthorizationHandlers (
   for (const [id, definitionValue] of uniqueEntries(handlers, path, sourceName)) {
     validateDynamicSegment(id, `${path}.${id}`, sourceName)
     const definition = asDocumentObject(definitionValue, `${path}.${id}`, sourceName)
+    ensureAuthorizationHandler(target, id)
     let settingsFound = false
     for (const [key, entryValue] of uniqueEntries(definition, `${path}.${id}`, sourceName)) {
       const entryPath = `${path}.${id}.${key}`

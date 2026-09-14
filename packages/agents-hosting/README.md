@@ -125,9 +125,14 @@ and should be reserved for deliberate central policy enforcement.
 Within the environment band, a modern `Connections__*` registry replaces flat
 or prefixed Bot Framework authentication variables; the two representations
 are not merged property by property. When no modern registry exists, the
-legacy flat or prefixed variables remain supported. Existing auth loaders also
-require an explicit wildcard/default route and do not infer a default from
-connection insertion order.
+legacy flat or prefixed variables remain supported. When a modern environment
+registry has no `ConnectionsMap__*` entries, the environment auth loader
+preserves backward compatibility by creating a wildcard/default route for the
+first connection; connection insertion order determines the default only in
+that case. External sources may omit `connectionsMap` when they define exactly
+one connection, which is treated as the wildcard/default. External sources
+that define multiple connections must provide an explicit wildcard/default
+route.
 
 Supported canonical path families are:
 
