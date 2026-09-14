@@ -6,6 +6,10 @@ import { UserAuthorization } from '../../../src/app/auth/authorization'
 import { AgentApplication } from '../../../src/app'
 import { MemoryStorage } from '../../../src/storage'
 import { AzureBotAuthorizationOptions } from '../../../src/app/auth/handlers'
+import {
+  createConfigurationContext,
+  resetConfigurationSourcesForTest
+} from '../../../src/configuration/configuration'
 
 describe('AgentApplication - Authorization Setup', () => {
   let originalEnv: NodeJS.ProcessEnv
@@ -16,6 +20,7 @@ describe('AgentApplication - Authorization Setup', () => {
 
   afterEach(() => {
     process.env = originalEnv
+    resetConfigurationSourcesForTest()
   })
 
   it('should initialize with undefined authorization', () => {
@@ -68,6 +73,42 @@ describe('AgentApplication - Authorization Setup', () => {
     const app = new AgentApplication({ storage: new MemoryStorage() })
     assert.equal(app.options.authorization, undefined)
     assert.notEqual(app.authorization, undefined)
+    assert.doesNotThrow(() => app.onSignInSuccess(async () => {}))
+    assert.doesNotThrow(() => app.onSignInFailure(async () => {}))
+  })
+
+  it('should register sign-in callbacks for context-provided authorization', async () => {
+    const configurationContext = await createConfigurationContext([{
+      source: {
+        name: 'authorization',
+        async load () {
+          return {
+            format: 'document',
+            value: {
+              agentApplication: {
+                userAuthorization: {
+                  handlers: {
+                    contextAuth: {
+                      settings: {
+                        azureBotOAuthConnectionName: 'ContextConnection'
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          } as const
+        }
+      },
+      mode: 'overrideEnvironment'
+    }])
+    const app = new AgentApplication({
+      storage: new MemoryStorage(),
+      configurationContext
+    })
+
+    assert.doesNotThrow(() => app.onSignInSuccess(async () => {}))
+    assert.doesNotThrow(() => app.onSignInFailure(async () => {}))
   })
 
   it('should throw when accessing authorization without configuring it', () => {

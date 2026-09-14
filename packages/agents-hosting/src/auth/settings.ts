@@ -11,6 +11,8 @@ import type { SidecarConnectionSettings } from './sidecar/sidecarConnectionSetti
 
 export type { MsalConnectionSettings } from './msal/msalConnectionSettings'
 export type { SidecarConnectionSettings } from './sidecar/sidecarConnectionSettings'
+export { envParser, envParserUtils, loadEnvSettings } from '../utils/env'
+export type { LoadEnv } from '../utils/env'
 
 const logger = debug('agents:authConfiguration')
 
@@ -31,25 +33,6 @@ export const DEFAULT_CONNECTION_MAP: ConnectionMapItem = { serviceUrl: '*', conn
 
 export type ConnectionKeys = keyof Omit<AuthConfiguration, 'connections' | 'connectionsMap'>
 export type ConnectionMapKeys = keyof ConnectionMapItem
-
-export interface LoadEnv {
-  [upperKey: string]: { key: string, value: any }
-}
-
-export function loadEnvSettings (callback: (key: string, value: string) => void) {
-  const env: LoadEnv = {}
-  for (const [envKey, envValue] of Object.entries(process.env)) {
-    if (!envValue?.trim()) {
-      continue
-    }
-
-    env[envKey.toUpperCase()] = { key: envKey, value: envValue }
-
-    callback(envKey, envValue)
-  }
-
-  return env
-}
 
 export function applyDefaultSettings (config: AuthConfiguration) {
   const settings = { ...config }
@@ -89,68 +72,6 @@ export function applyDefaultSettings (config: AuthConfiguration) {
   settings.connections = defaultConnections
   settings.connectionsMap = defaultConnectionsMap
   return settings
-}
-
-/**
- * A type representing a parser settings object.
- */
-type ParserSettings<K extends string> = {
-  [key in K]: (value: string) => { key?: string, value?: any } | undefined
-}
-
-/**
- * Creates an environment variable parser that maps the variable keys to parsing functions.
- * @param settings An object where each key is an environment variable name and the value is a function
- * that takes the variable value as input and returns an object with optional `key` and `value` properties.
- * @remarks
- * The `key` property in the returned object can be used to rename the environment variable key,
- * while the `value` property contains the parsed value.
- * @returns An object with a `parse` method that takes an environment variable key and value,
- * and returns the parsed result.
- */
-export function envParser<K extends string> (settings: ParserSettings<K> & ThisType<ParserSettings<K>>) {
-  const keys = Object.keys(settings) as K[]
-  const upperKeys = keys.reduce((acc, key) => {
-    acc[key.toUpperCase()] = key
-    return acc
-  }, {} as Record<string, K>)
-  return {
-    keys,
-    /**
-     * Parses the given environment variable key and value using the provided settings.
-     * @param key The environment variable key.
-     * @param value The environment variable value.
-     * @returns The parsed result with optional renamed key and parsed value.
-     */
-    parse (key: K, value: string) {
-      const match = upperKeys[key.toUpperCase()]
-      if (!match) {
-        return {}
-      }
-
-      const result = settings[match](value)
-      return { key: result?.key ?? match, value: result?.value }
-    }
-  }
-}
-
-/**
- * Utility functions for environment variable parsers.
- */
-export const envParserUtils = {
-  /**
-   * Bypass parser that returns the value as is.
-   * @param value The environment variable value.
-   * @returns An object with the original value.
-   */
-  bypass: (value: string) => ({ value }),
-  /**
-   * Redirects the parsing to another parser for a specific key.
-   * @param parser The target parser to redirect to.
-   * @param key The key to use in the target parser.
-   * @returns A function that takes the environment variable value and returns the parsed result from the target parser.
-   */
-  redirect: <Parser extends ReturnType<typeof envParser>>(parser: Parser, key: Parameters<Parser['parse']>[0]) => (value: string) => parser.parse(key, value)
 }
 
 /**
