@@ -117,7 +117,7 @@ const authorizationParsers = {
   invalidSignInRetryMaxExceededMessage: asString,
   oboConnectionName: asString,
   enableSso: asBoolean,
-  invalidSignInRetryMax: asInteger,
+  invalidSignInRetryMax: asNonNegativeInteger,
   oboScopes: asList,
   altBlueprintConnectionName: asString,
   scopes: asList

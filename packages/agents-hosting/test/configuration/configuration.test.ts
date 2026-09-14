@@ -483,6 +483,58 @@ describe('configuration sources', () => {
     )
   })
 
+  it('rejects negative invalidSignInRetryMax values in canonical and document sources', async () => {
+    const sources = [
+      {
+        name: 'negative-canonical-retry-limit',
+        result: {
+          format: 'canonical',
+          values: {
+            'agentApplication.userAuthorization.handlers.auth.settings.invalidSignInRetryMax': '-1'
+          }
+        }
+      },
+      {
+        name: 'negative-document-retry-limit',
+        result: {
+          format: 'document',
+          value: {
+            agentApplication: {
+              userAuthorization: {
+                handlers: {
+                  auth: {
+                    settings: {
+                      invalidSignInRetryMax: -1
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ] as const
+
+    for (const { name, result } of sources) {
+      await assert.rejects(
+        createConfigurationContext([{
+          source: {
+            name,
+            async load () {
+              return result
+            }
+          },
+          mode: 'fallback'
+        }]),
+        (error: Error) => {
+          assert.match(error.message, /invalid value/)
+          assert.match(error.message, /invalidSignInRetryMax/)
+          return true
+        }
+      )
+    }
+  })
+
   it('rejects legacy aliases in canonical external paths', async () => {
     await assert.rejects(
       preloadConfigurationSources([{
