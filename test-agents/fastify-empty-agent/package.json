@@ -13,6 +13,6 @@
   "dependencies": {
     "@microsoft/agents-hosting": "file:../../packages/agents-hosting",
     "@microsoft/agents-hosting-fastify": "file:../../packages/agents-hosting-fastify",
-    "fastify": "5.8.5"
+    "fastify": "5.12.1"
   }
 }
