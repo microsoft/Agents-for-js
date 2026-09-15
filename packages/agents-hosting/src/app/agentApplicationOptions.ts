@@ -4,7 +4,7 @@
  */
 
 import { CloudAdapter } from '../cloudAdapter'
-import { Storage } from '../storage'
+import { StorageProvider } from '../storage'
 import { TranscriptLogger } from '../transcript'
 import { AdaptiveCardsOptions } from './adaptiveCards'
 import { InputFileDownloader } from './inputFileDownloader'
@@ -72,12 +72,12 @@ export interface AgentApplicationOptions<TState extends TurnState> {
 
   /**
    * The storage mechanism for persisting conversation and user state across turns.
-   * This can be any implementation of the Storage interface, such as memory storage
-   * for development or blob storage for production scenarios.
+   * This can be a legacy Storage implementation, a StorageV2 implementation,
+   * or a built-in storage provider.
    *
    * @default undefined (no persistence)
    */
-  storage?: Storage;
+  storage?: StorageProvider;
 
   /**
    * Whether to start a typing indicator timer when the bot begins processing a message.
