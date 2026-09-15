@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "authorization:absGraphLatest": "tsx --env-file ./authorization/absGraphLatest.env ./authorization/absGraphLatest.ts",
-    "authorization:absGraphLegacy": "tsx --env-file ./authorization/absGraphLegacy.env ./authorization/absGraphLegacy.ts"
+    "authorization:absGraphLegacy": "tsx --env-file ./authorization/absGraphLegacy.env ./authorization/absGraphLegacy.ts",
+    "rateLimit": "tsx --env-file ./.env ./basic/rateLimit.ts"
   },
   "devDependencies": {
     "tsx": "4.21.0"
