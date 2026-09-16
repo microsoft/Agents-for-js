@@ -196,6 +196,83 @@ describe('UserAuthorization', () => {
     assert.deepEqual(result, { token: `${graph.id}-token` })
   })
 
+  it('getTokenAsTokenCredential should return a credential that resolves the handler token', async () => {
+    const auth = new UserAuthorization(manager)
+    const credential = auth.getTokenAsTokenCredential(context, graph.id)
+
+    const accessToken = await credential.getToken([])
+
+    assert.equal(graph.token.calledOnce, true)
+    assert.deepEqual(graph.token.firstCall.args, [context])
+    assert.equal(accessToken?.token, `${graph.id}-token`)
+  })
+
+  it('getTokenAsTokenCredential should reject when getToken() is called for a non-existent auth handler id', async () => {
+    const auth = new UserAuthorization(manager)
+    const credential = auth.getTokenAsTokenCredential(context, 'nonExistinghandler')
+
+    await assert.rejects(
+      async () => credential.getToken([]),
+      /Cannot find auth handler with ID 'nonExistinghandler'. Ensure it is configured in the agent application options./
+    )
+  })
+
+  it('exchangeTokenAsTokenCredential should call handler.token with merged connection/scopes', async () => {
+    const auth = new UserAuthorization(manager)
+    const credential = auth.exchangeTokenAsTokenCredential(context, graph.id, { connection: 'oboConn', scopes: ['scope.read'] })
+
+    const accessToken = await credential.getToken(['scope.write', 'scope.read'])
+
+    assert.equal(graph.token.calledOnce, true)
+    const [, options] = graph.token.firstCall.args
+    assert.equal(options.connection, 'oboConn')
+    assert.deepEqual(new Set(options.scopes), new Set(['scope.read', 'scope.write']))
+    assert.equal(accessToken?.token, `${graph.id}-token`)
+  })
+
+  it('getTokenAsTokenCredential should call handler.token again on each getToken invocation', async () => {
+    const auth = new UserAuthorization(manager)
+    const credential = auth.getTokenAsTokenCredential(context, graph.id)
+
+    await credential.getToken([])
+    await credential.getToken(['some-scope'])
+
+    assert.equal(graph.token.calledTwice, true)
+  })
+
+  it('getTokenAsTokenCredential should propagate a null-token error from the underlying credential', async () => {
+    graph.token.resolves({ token: undefined })
+    const auth = new UserAuthorization(manager)
+    const credential = auth.getTokenAsTokenCredential(context, graph.id)
+
+    await assert.rejects(
+      async () => credential.getToken([]),
+      /token response provider returned a null response/
+    )
+  })
+
+  it('exchangeTokenAsTokenCredential should default to no configured connection/scopes when options are omitted', async () => {
+    const auth = new UserAuthorization(manager)
+    const credential = auth.exchangeTokenAsTokenCredential(context, graph.id)
+
+    await credential.getToken(['scope.write'])
+
+    assert.equal(graph.token.calledOnce, true)
+    const [, options] = graph.token.firstCall.args
+    assert.equal(options.connection, undefined)
+    assert.deepEqual(options.scopes, ['scope.write'])
+  })
+
+  it('exchangeTokenAsTokenCredential should reject when getToken() is called for a non-existent auth handler id', async () => {
+    const auth = new UserAuthorization(manager)
+    const credential = auth.exchangeTokenAsTokenCredential(context, 'nonExistinghandler')
+
+    await assert.rejects(
+      async () => credential.getToken([]),
+      /Cannot find auth handler with ID 'nonExistinghandler'. Ensure it is configured in the agent application options./
+    )
+  })
+
   it('exchangeToken should call handler.token with options', async () => {
     const auth = new UserAuthorization(manager)
     const options = { scopes: ['scope.read'], connection: 'oboConn' }
