@@ -349,7 +349,7 @@ export class CopilotStudioWebChat {
           })
         } catch (error) {
           connectionError = error
-          connectionStatus$.next(webChatConnectionStatus.failedToConnect)
+          if (connectionStatus$.value !== webChatConnectionStatus.online) connectionStatus$.next(webChatConnectionStatus.failedToConnect)
           activitySubscriber = undefined
           logger.error('Failed to start Copilot Studio WebChat connection:', error)
           throw error
