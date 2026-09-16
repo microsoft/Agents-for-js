@@ -8,6 +8,7 @@ export {
   createConfigurationContext,
   preloadConfigurationSources
 } from './configuration'
+export { createJsonFileConfigurationSource } from './jsonFileConfigurationSource'
 export type {
   ConfigurationDocument,
   ConfigurationDocumentValue,

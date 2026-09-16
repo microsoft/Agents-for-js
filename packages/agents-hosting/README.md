@@ -96,6 +96,26 @@ const outboundPolicy = createOutboundHostValidator({ configurationContext })
 const downloader = new AttachmentDownloader('inputFiles', outboundPolicy)
 ```
 
+For an explicitly selected JSON file, use the built-in file source:
+
+```ts
+import {
+  createConfigurationContext,
+  createJsonFileConfigurationSource
+} from '@microsoft/agents-hosting'
+
+const configurationContext = await createConfigurationContext([{
+  source: createJsonFileConfigurationSource('config.DEVELOPMENT.json'),
+  mode: 'overrideEnvironment'
+}])
+```
+
+The helper loads strict JSON using the hierarchical document shape. It does not
+discover files, select environment-specific names, parse command-line options,
+or choose precedence. The application owns those policies and supplies the
+source mode. Missing files, malformed JSON, and non-object document roots fail
+loading without including file contents in diagnostics.
+
 Context creation is atomic: if a source fails, no partial values are applied.
 Create separate contexts for independently configured agents in one process.
 Pass the same context to each agent's `CloudAdapter` and

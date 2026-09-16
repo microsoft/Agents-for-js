@@ -919,6 +919,9 @@ export class CreateConversationOptionsBuilder {
 }
 
 // @public
+export function createJsonFileConfigurationSource(filePath: string): ConfigurationSource;
+
+// @public
 export function createOutboundHostValidator(options?: OutboundHostValidatorOptions): OutboundHostValidator;
 
 // @public

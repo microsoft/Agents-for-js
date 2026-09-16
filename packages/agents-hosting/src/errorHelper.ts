@@ -1036,7 +1036,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   },
 
   // ============================================================================
-  // Configuration Source Errors (-120812 to -120824)
+  // Configuration Source Errors (-120812 to -120827)
   // ============================================================================
 
   ConfigurationAlreadyConsumed: {
@@ -1102,6 +1102,21 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   InvalidConfigurationSourceMode: {
     code: -120824,
     description: 'Configuration source `{sourceName}` uses unsupported mode `{mode}`. Use `fallback`, `overrideEnvironment`, or `enforce`.'
+  },
+
+  JsonConfigurationFileReadFailed: {
+    code: -120825,
+    description: 'JSON configuration file `{filePath}` could not be read.'
+  },
+
+  InvalidJsonConfigurationFile: {
+    code: -120826,
+    description: 'JSON configuration file `{filePath}` does not contain valid JSON.'
+  },
+
+  JsonConfigurationDocumentRequired: {
+    code: -120827,
+    description: 'JSON configuration file `{filePath}` must contain an object at the document root.'
   },
 
   // ============================================================================

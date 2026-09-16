@@ -12,6 +12,7 @@ import {
   ConfigurationSourceRegistration,
   ConfigurationSourceResult
 } from './configurationSource'
+import { isSafeJsonFileConfigurationError } from './jsonFileConfigurationSource'
 
 export type AuthConnectionPatch = Record<string, unknown>
 export type AuthConnectionMapPatch = Partial<{
@@ -955,8 +956,13 @@ async function loadConfigurationSnapshot (
         ...registration,
         result: await registration.source.load()
       }
-    } catch {
-      throw ExceptionHelper.generateException(Error, Errors.ConfigurationSourceLoadFailed, undefined, { sourceName: registration.source.name })
+    } catch (cause) {
+      throw ExceptionHelper.generateException(
+        Error,
+        Errors.ConfigurationSourceLoadFailed,
+        isSafeJsonFileConfigurationError(cause) ? cause : undefined,
+        { sourceName: registration.source.name }
+      )
     }
   }))
   const loaded = settled.map(result => {
