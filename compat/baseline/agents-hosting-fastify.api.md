@@ -11,6 +11,7 @@ import { CloudAdapter } from '@microsoft/agents-hosting';
 import { CloudAdapterResult } from '@microsoft/agents-hosting';
 import { ConversationState } from '@microsoft/agents-hosting';
 import { createCloudAdapter } from '@microsoft/agents-hosting';
+import { CreateCloudAdapterOptions } from '@microsoft/agents-hosting';
 import { FastifyInstance } from 'fastify';
 import type { FastifyPluginAsync } from 'fastify';
 import type { FastifyReply } from 'fastify';
@@ -29,7 +30,7 @@ export { agentsHostingFastifyPlugin }
 export default agentsHostingFastifyPlugin;
 
 // @public
-export interface AgentsHostingFastifyPluginOptions {
+export interface AgentsHostingFastifyPluginOptions extends CreateCloudAdapterOptions {
     agent: AgentApplication<TurnState<any, any>> | ActivityHandler;
     authConfig?: AuthConfiguration;
     bodyLimit?: number;
@@ -43,9 +44,11 @@ export { CloudAdapterResult }
 export const configureResponseController: (fastify: FastifyInstance, adapter: CloudAdapter, agent: ActivityHandler, conversationState: ConversationState) => void;
 
 // @public
-export const createAgentRequestHandler: (agent: AgentApplication<TurnState<any, any>> | ActivityHandler, authConfiguration?: AuthConfiguration) => FastifyAgentRequestHandler;
+export const createAgentRequestHandler: (agent: AgentApplication<TurnState<any, any>> | ActivityHandler, authConfiguration?: AuthConfiguration, options?: CreateCloudAdapterOptions) => FastifyAgentRequestHandler;
 
 export { createCloudAdapter }
+
+export { CreateCloudAdapterOptions }
 
 // @public
 export type FastifyAgentRequestHandler = (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
@@ -74,7 +77,7 @@ export function startServer(agent: AgentApplication<TurnState<any, any>> | Activ
 export function startServer(agent: AgentApplication<TurnState<any, any>> | ActivityHandler, authConfiguration?: AuthConfiguration): Promise<FastifyInstance>;
 
 // @public
-export interface StartServerOptions {
+export interface StartServerOptions extends CreateCloudAdapterOptions {
     authConfig?: AuthConfiguration;
     beforeListen?: (fastify: FastifyInstance) => void | Promise<void>;
     bodyLimit?: number;

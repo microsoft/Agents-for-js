@@ -8,6 +8,7 @@
   "scripts": {
     "build": "tsc --build",
     "start": "npm run build && node --env-file .env ./dist/agent.js",
+    "start:config": "npm run build && node ./dist/agent.js --config-file config.DEVELOPMENT.json",
     "bundle": "npm run build && esbuild dist/agent.js --bundle --platform=node --metafile=dist/meta.json --outfile=dist/bundle.js --tree-shaking=true --keep-names"
   },
   "dependencies": {

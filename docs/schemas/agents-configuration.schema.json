@@ -1,0 +1,558 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aka.ms/agents/schemas/configuration/v1",
+  "title": "Microsoft 365 Agents SDK configuration",
+  "description": "Proposed provider-neutral configuration document shared by the JavaScript and .NET Agents SDKs. Source precedence and executable dependencies are host concerns and are intentionally excluded.",
+  "x-agents-status": "proposed",
+  "type": "object",
+  "properties": {
+    "connections": {
+      "description": "Named authentication connections.",
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/$defs/safeIdentifier"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/connectionDefinition"
+      }
+    },
+    "connectionsMap": {
+      "description": "Ordered rules mapping an audience or service URL to a named connection. The first matching rule wins.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/connectionMapItem"
+      }
+    },
+    "cloudAdapterOptions": {
+      "$ref": "#/$defs/cloudAdapterOptions"
+    },
+    "outboundHostValidator": {
+      "$ref": "#/$defs/outboundHostValidator"
+    },
+    "agentApplication": {
+      "$ref": "#/$defs/agentApplication"
+    }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "safeIdentifier": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!(?:__[pP][rR][oO][tT][oO]__|[cC][oO][nN][sS][tT][rR][uU][cC][tT][oO][rR]|[pP][rR][oO][tT][oO][tT][yY][pP][eE])$).+$"
+    },
+    "stringList": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "extensionValue": {
+      "description": "A declarative provider setting. Executable objects and credentials are not configuration values.",
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "integer"
+        },
+        {
+          "$ref": "#/$defs/stringList"
+        }
+      ]
+    },
+    "connectionDefinition": {
+      "type": "object",
+      "properties": {
+        "assembly": {
+          "description": ".NET-only provider assembly metadata. JavaScript uses code-level AuthProviderFactory injection and does not load modules from configuration.",
+          "type": "string",
+          "minLength": 1,
+          "x-agents-runtimes": [
+            "dotnet"
+          ]
+        },
+        "type": {
+          "description": ".NET-only provider implementation type. It is not the connection authentication method; use settings.authType for that.",
+          "type": "string",
+          "minLength": 1,
+          "x-agents-runtimes": [
+            "dotnet"
+          ]
+        },
+        "settings": {
+          "$ref": "#/$defs/connectionSettings"
+        }
+      },
+      "required": [
+        "settings"
+      ],
+      "additionalProperties": false
+    },
+    "connectionSettings": {
+      "description": "Declarative settings consumed by an authentication provider. Known cross-SDK settings are listed explicitly; custom providers may define additional scalar or string-array settings.",
+      "type": "object",
+      "properties": {
+        "authType": {
+          "description": "Authentication method or provider discriminator understood by the selected runtime provider.",
+          "type": "string",
+          "minLength": 1
+        },
+        "tenantId": {
+          "type": "string"
+        },
+        "clientId": {
+          "type": "string"
+        },
+        "clientSecret": {
+          "type": "string",
+          "writeOnly": true
+        },
+        "connectionName": {
+          "type": "string"
+        },
+        "authorityEndpoint": {
+          "type": "string",
+          "format": "uri"
+        },
+        "scopes": {
+          "$ref": "#/$defs/stringList"
+        },
+        "issuers": {
+          "$ref": "#/$defs/stringList"
+        },
+        "validateIssuer": {
+          "type": "boolean"
+        },
+        "altBlueprintConnectionName": {
+          "description": "JavaScript connection setting for an alternate blueprint connection. alternateBlueprintConnectionName is the shared .NET-name alias.",
+          "type": "string",
+          "x-agents-runtimes": [
+            "javascript"
+          ]
+        },
+        "alternateBlueprintConnectionName": {
+          "type": "string"
+        },
+        "federatedClientId": {
+          "type": "string"
+        },
+        "federatedTokenFile": {
+          "type": "string"
+        },
+        "idpmResource": {
+          "type": "string"
+        },
+        "azureRegion": {
+          "type": "string"
+        },
+        "sendX5C": {
+          "type": "boolean"
+        },
+        "msalRetryCount": {
+          "type": "integer",
+          "minimum": 0,
+          "x-agents-runtimes": [
+            "javascript"
+          ]
+        },
+        "certPemFile": {
+          "description": "JavaScript PEM certificate file.",
+          "type": "string",
+          "x-agents-runtimes": [
+            "javascript"
+          ]
+        },
+        "certKeyFile": {
+          "description": "JavaScript PEM certificate key file.",
+          "type": "string",
+          "x-agents-runtimes": [
+            "javascript"
+          ]
+        },
+        "certificateThumbPrint": {
+          "description": ".NET certificate-store thumbprint.",
+          "type": "string",
+          "x-agents-runtimes": [
+            "dotnet"
+          ]
+        },
+        "certificateSubjectName": {
+          "description": ".NET certificate-store subject name.",
+          "type": "string",
+          "x-agents-runtimes": [
+            "dotnet"
+          ]
+        },
+        "certificateStoreName": {
+          "description": ".NET certificate store name.",
+          "type": "string",
+          "x-agents-runtimes": [
+            "dotnet"
+          ]
+        },
+        "certificateStoreLocation": {
+          "description": ".NET certificate store location.",
+          "type": "string",
+          "x-agents-runtimes": [
+            "dotnet"
+          ]
+        },
+        "validCertificateOnly": {
+          "description": ".NET certificate validity filter.",
+          "type": "boolean",
+          "x-agents-runtimes": [
+            "dotnet"
+          ]
+        },
+        "sidecarBaseUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "serviceName": {
+          "type": "string"
+        },
+        "blueprintServiceName": {
+          "type": "string"
+        },
+        "bypassLocalNetworkRestriction": {
+          "type": "boolean"
+        },
+        "requestTimeout": {
+          "description": "Sidecar request timeout. This is a JS/.NET superset field: JavaScript accepts only the positive-integer milliseconds form, and .NET accepts only the string TimeSpan form. JavaScript rejects a string requestTimeout in a hierarchical document with UnsupportedRuntimeConfigurationField; canonical (environment variable) string values are unaffected because every canonical value is a string regardless of runtime.",
+          "oneOf": [
+            {
+              "description": "JavaScript milliseconds representation.",
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "x-agents-runtimes": [
+                "javascript"
+              ]
+            },
+            {
+              "description": ".NET-only TimeSpan string representation.",
+              "type": "string",
+              "minLength": 1,
+              "x-agents-runtimes": [
+                "dotnet"
+              ]
+            }
+          ]
+        },
+        "retryCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "FICClientId": {
+          "description": "Deprecated JavaScript alias for federatedClientId.",
+          "type": "string",
+          "deprecated": true,
+          "x-agents-runtimes": [
+            "javascript"
+          ]
+        },
+        "WIDAssertionFile": {
+          "description": "Deprecated JavaScript workload identity token-file alias.",
+          "type": "string",
+          "deprecated": true,
+          "x-agents-runtimes": [
+            "javascript"
+          ]
+        }
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/extensionValue"
+      }
+    },
+    "connectionMapItem": {
+      "type": "object",
+      "properties": {
+        "serviceUrl": {
+          "description": "Service URL pattern. An asterisk identifies the default route.",
+          "type": "string",
+          "minLength": 1
+        },
+        "audience": {
+          "type": "string",
+          "minLength": 1
+        },
+        "connection": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "serviceUrl",
+        "connection"
+      ],
+      "additionalProperties": false
+    },
+    "cloudAdapterOptions": {
+      "type": "object",
+      "properties": {
+        "emitStackTrace": {
+          "type": "boolean",
+          "default": false
+        },
+        "validateServiceUrl": {
+          "description": "Deprecated JavaScript claim-only validation option. Prefer outboundHostValidator.",
+          "type": "boolean",
+          "default": false,
+          "deprecated": true,
+          "x-agents-runtimes": [
+            "javascript"
+          ]
+        },
+        "shutdownTimeoutSeconds": {
+          "description": "Deprecated .NET hosting shutdown timeout.",
+          "type": "integer",
+          "minimum": 0,
+          "deprecated": true,
+          "x-agents-runtimes": [
+            "dotnet"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "outboundHostValidator": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "includeDefaultMicrosoftHosts": {
+          "type": "boolean",
+          "default": true
+        },
+        "hosts": {
+          "$ref": "#/$defs/stringList"
+        }
+      },
+      "additionalProperties": false
+    },
+    "agentApplication": {
+      "type": "object",
+      "properties": {
+        "userAuthorization": {
+          "$ref": "#/$defs/userAuthorization"
+        }
+      },
+      "additionalProperties": true
+    },
+    "userAuthorization": {
+      "type": "object",
+      "properties": {
+        "defaultHandlerName": {
+          "description": ".NET-only handler ID used when a caller does not specify one (for example UserAuthorization.GetTurnTokenAsync(turnContext, UserAuthorization.DefaultHandlerName)). JavaScript configuration has no default-handler concept; JavaScript callers always pass an explicit handler ID, such as Authorization.getToken(context, handlerId).",
+          "type": "string",
+          "minLength": 1,
+          "x-agents-runtimes": [
+            "dotnet"
+          ]
+        },
+        "autoSignIn": {
+          "description": ".NET-only declarative toggle that acquires a token from the default handler before every turn. JavaScript has no configuration-level auto-sign-in; JavaScript callers pass explicit handler IDs as autoSignInHandlers to AgentApplication.addRoute or Proactive.continueConversation in code.",
+          "type": "boolean",
+          "default": true,
+          "x-agents-runtimes": [
+            "dotnet"
+          ]
+        },
+        "handlers": {
+          "type": "object",
+          "propertyNames": {
+            "$ref": "#/$defs/safeIdentifier"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/authorizationHandlerDefinition"
+          }
+        }
+      },
+      "required": [
+        "handlers"
+      ],
+      "additionalProperties": false
+    },
+    "authorizationHandlerDefinition": {
+      "type": "object",
+      "properties": {
+        "assembly": {
+          "description": ".NET-only handler assembly metadata.",
+          "type": "string",
+          "minLength": 1,
+          "x-agents-runtimes": [
+            "dotnet"
+          ]
+        },
+        "type": {
+          "description": ".NET-only handler implementation type at the handler-definition level, analogous to connectionDefinition.type. JavaScript rejects this field; the JavaScript handler discriminator is settings.type (see authorizationHandlerSettings.type).",
+          "type": "string",
+          "minLength": 1,
+          "x-agents-runtimes": [
+            "dotnet"
+          ]
+        },
+        "settings": {
+          "$ref": "#/$defs/authorizationHandlerSettings"
+        }
+      },
+      "required": [
+        "settings"
+      ],
+      "additionalProperties": false
+    },
+    "authorizationHandlerSettings": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "description": "JavaScript handler discriminator, such as AzureBotUserAuthorization or AgenticUserAuthorization.",
+          "type": "string",
+          "x-agents-runtimes": [
+            "javascript"
+          ]
+        },
+        "azureBotOAuthConnectionName": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "invalidSignInRetryMax": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "invalidSignInRetryMessage": {
+          "type": "string"
+        },
+        "invalidSignInRetryMessageFormat": {
+          "type": "string",
+          "x-agents-runtimes": [
+            "javascript"
+          ]
+        },
+        "invalidSignInRetryMaxExceededMessage": {
+          "type": "string",
+          "x-agents-runtimes": [
+            "javascript"
+          ]
+        },
+        "oboConnectionName": {
+          "type": "string"
+        },
+        "oboScopes": {
+          "$ref": "#/$defs/stringList"
+        },
+        "enableSso": {
+          "type": "boolean",
+          "default": true
+        },
+        "scopes": {
+          "$ref": "#/$defs/stringList"
+        },
+        "altBlueprintConnectionName": {
+          "description": "JavaScript authorization-handler setting for an alternate blueprint connection. alternateBlueprintConnectionName is the shared .NET-name alias.",
+          "type": "string",
+          "x-agents-runtimes": [
+            "javascript"
+          ]
+        },
+        "alternateBlueprintConnectionName": {
+          "type": "string"
+        },
+        "teamsSignInInProgressMessage": {
+          "type": "string",
+          "x-agents-runtimes": [
+            "dotnet"
+          ]
+        },
+        "cancelSignInCommands": {
+          "$ref": "#/$defs/stringList",
+          "x-agents-runtimes": [
+            "dotnet"
+          ]
+        },
+        "signInCancelledMessage": {
+          "type": "string",
+          "x-agents-runtimes": [
+            "dotnet"
+          ]
+        },
+        "timeout": {
+          "type": "integer",
+          "minimum": 0,
+          "x-agents-runtimes": [
+            "dotnet"
+          ]
+        },
+        "endOnInvalidMessage": {
+          "type": "boolean",
+          "x-agents-runtimes": [
+            "dotnet"
+          ]
+        },
+        "showSignInLink": {
+          "type": "boolean",
+          "x-agents-runtimes": [
+            "dotnet"
+          ]
+        }
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/extensionValue"
+      }
+    }
+  },
+  "examples": [
+    {
+      "connections": {
+        "serviceConnection": {
+          "settings": {
+            "authType": "ClientSecret",
+            "tenantId": "00000000-0000-0000-0000-000000000000",
+            "clientId": "00000000-0000-0000-0000-000000000000",
+            "clientSecret": "${AGENT_CLIENT_SECRET}"
+          }
+        }
+      },
+      "connectionsMap": [
+        {
+          "serviceUrl": "*",
+          "connection": "serviceConnection"
+        }
+      ],
+      "cloudAdapterOptions": {
+        "emitStackTrace": false
+      },
+      "outboundHostValidator": {
+        "enabled": true,
+        "includeDefaultMicrosoftHosts": true,
+        "hosts": [
+          "api.contoso.com"
+        ]
+      },
+      "agentApplication": {
+        "userAuthorization": {
+          "handlers": {
+            "graph": {
+              "settings": {
+                "type": "AzureBotUserAuthorization",
+                "azureBotOAuthConnectionName": "graph",
+                "oboScopes": [
+                  "https://graph.microsoft.com/.default"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

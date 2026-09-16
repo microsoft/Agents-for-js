@@ -3,9 +3,62 @@
 
 import { strict as assert } from 'assert'
 import { describe, it } from 'node:test'
-import { parseBooleanEnv, parseIntEnv, suggestClosest } from '../../src/utils/env'
+import {
+  envParser,
+  envParserUtils,
+  loadEnvSettings,
+  parseBooleanEnv,
+  parseIntEnv,
+  suggestClosest
+} from '../../src/utils/env'
 
 describe('utils/env', () => {
+  describe('loadEnvSettings', () => {
+    it('indexes non-empty values case-insensitively and invokes the callback in enumeration order', () => {
+      const visited: Array<[string, string]> = []
+      const loaded = loadEnvSettings(
+        (key, value) => visited.push([key, value]),
+        {
+          First_Key: 'first',
+          empty: '',
+          whitespace: '   ',
+          second_key: 'second'
+        }
+      )
+
+      assert.deepEqual(visited, [
+        ['First_Key', 'first'],
+        ['second_key', 'second']
+      ])
+      assert.deepEqual(loaded, {
+        FIRST_KEY: { key: 'First_Key', value: 'first' },
+        SECOND_KEY: { key: 'second_key', value: 'second' }
+      })
+    })
+  })
+
+  describe('envParser', () => {
+    const parser = envParser<'name' | 'alias'>({
+      name: envParserUtils.bypass,
+      alias: value => ({ key: 'name', value: value.toUpperCase() })
+    })
+
+    it('matches keys case-insensitively and preserves the canonical key', () => {
+      assert.deepEqual(parser.parse('NAME', 'value'), { key: 'name', value: 'value' })
+    })
+
+    it('returns an empty result for unknown keys', () => {
+      assert.deepEqual(parser.parse('unknown', 'value'), {})
+    })
+
+    it('supports key redirection and parser composition', () => {
+      assert.deepEqual(parser.parse('alias', 'value'), { key: 'name', value: 'VALUE' })
+
+      const redirect = envParserUtils.redirect(parser, 'alias')
+      assert.deepEqual(redirect('other'), { key: 'name', value: 'OTHER' })
+    })
+  })
+
   describe('parseBooleanEnv', () => {
     it('returns undefined for undefined input', () => {
       assert.equal(parseBooleanEnv(undefined), undefined)
