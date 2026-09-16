@@ -14,6 +14,10 @@ import { CopilotStudioClientTraceDefinitions } from './observability'
 import { Errors } from './errorHelper'
 
 const logger = debug('copilot-studio:webchat')
+const webChatConnectionStatus = {
+  online: 2,
+  failedToConnect: 4,
+} as const
 
 /**
  * Configuration settings for the Copilot Studio WebChat connection.
@@ -75,6 +79,7 @@ export interface CopilotStudioWebChatConnection {
    * - 0: Disconnected - No active connection to the service
    * - 1: Connecting - Attempting to establish connection
    * - 2: Connected - Successfully connected and ready for communication
+   * - 4: Failed to connect - The initial connection attempt failed
    */
   connectionStatus$: BehaviorSubject<number>;
 
@@ -283,15 +288,22 @@ export class CopilotStudioWebChat {
       let pseudomizedConversationId: string | undefined
       let ended = false
       let started = false
+      let connectionError: unknown
 
       const connectionStatus$ = new BehaviorSubject(0)
       const activity$ = createObservable<Partial<Activity>>(async (subscriber) => {
         activitySubscriber = subscriber
 
         const handleAcknowledgementOnce = once(async (): Promise<void> => {
-          connectionStatus$.next(2)
+          connectionStatus$.next(webChatConnectionStatus.online)
           await Promise.resolve() // Webchat requires an extra tick to process the connection status change
         })
+
+        if (connectionError) {
+          activitySubscriber = undefined
+          subscriber.error(connectionError)
+          return
+        }
 
         // When resuming (shouldStart === false), transition straight to connected
         if (!shouldStart || started) {
@@ -303,37 +315,45 @@ export class CopilotStudioWebChat {
         started = true
         notifyTyping()
 
-        await trace(CopilotStudioClientTraceDefinitions.webchatStartConversation, async ({ record }) => {
-          let activityCount = 0
+        try {
+          await trace(CopilotStudioClientTraceDefinitions.webchatStartConversation, async ({ record }) => {
+            let activityCount = 0
 
-          for await (const activity of client.startConversationStreaming()) {
-            delete activity.replyToId
-            if (!conversation && activity.conversation) {
-              conversation = activity.conversation
-            }
-            if (activity.conversation?.id) {
-              activeConversationId = activity.conversation.id
-              pseudomizedConversationId = pseudonymizeConversationId(activeConversationId, client.diagnosticsPseudonymKey)
-            }
-            activityCount++
-            record({
-              activityCount,
-              conversationId: pseudomizedConversationId
-            })
-            await handleAcknowledgementOnce()
-            notifyActivity(activity)
-
-            trace(CopilotStudioClientTraceDefinitions.webchatReceiveActivity, ({ record }) => {
+            for await (const activity of client.startConversationStreaming()) {
+              delete activity.replyToId
+              if (!conversation && activity.conversation) {
+                conversation = activity.conversation
+              }
+              if (activity.conversation?.id) {
+                activeConversationId = activity.conversation.id
+                pseudomizedConversationId = pseudonymizeConversationId(activeConversationId, client.diagnosticsPseudonymKey)
+              }
+              activityCount++
               record({
-                activityId: activity.id,
-                activityType: activity.type,
-                conversationId: pseudonymizeConversationId(activity.conversation?.id ?? activeConversationId, client.diagnosticsPseudonymKey)
+                activityCount,
+                conversationId: pseudomizedConversationId
               })
-            })
-          }
-          // If no activities received from bot, we should still acknowledge.
-          await handleAcknowledgementOnce()
-        })
+              await handleAcknowledgementOnce()
+              notifyActivity(activity)
+
+              trace(CopilotStudioClientTraceDefinitions.webchatReceiveActivity, ({ record }) => {
+                record({
+                  activityId: activity.id,
+                  activityType: activity.type,
+                  conversationId: pseudonymizeConversationId(activity.conversation?.id ?? activeConversationId, client.diagnosticsPseudonymKey)
+                })
+              })
+            }
+            // If no activities received from bot, we should still acknowledge.
+            await handleAcknowledgementOnce()
+          })
+        } catch (error) {
+          connectionError = error
+          if (connectionStatus$.value !== webChatConnectionStatus.online) connectionStatus$.next(webChatConnectionStatus.failedToConnect)
+          activitySubscriber = undefined
+          logger.error('Failed to start Copilot Studio WebChat connection:', error)
+          throw error
+        }
       })
 
       const notifyActivity = (activity: Partial<Activity>) => {

@@ -292,6 +292,26 @@ describe('CopilotStudioWebChat.createConnection', function () {
   // Error handling
   // =========================================================================
   describe('error handling', function () {
+    it('should report FailedToConnect when starting a conversation fails', async function () {
+      const expectedError = new Error('Copilot Studio request failed with status 404 Not Found')
+      const client = createMockClient(sandbox)
+      client.startConversationStreaming.callsFake(async function * () {
+        throw expectedError
+      })
+      const conn = CopilotStudioWebChat.createConnection(client)
+      const statuses: number[] = []
+      conn.connectionStatus$.subscribe((status) => statuses.push(status))
+
+      const receivedError = await new Promise<unknown>((resolve) => {
+        conn.activity$.subscribe({ error: resolve })
+      })
+
+      assert.strictEqual(receivedError, expectedError)
+      assert.strictEqual(statuses.at(-1), 4, 'connection status should be FailedToConnect')
+      assert(!statuses.includes(2), 'connection status should not transition to Online')
+      conn.end()
+    })
+
     it('should throw when postActivity is called after end()', function () {
       const client = createMockClient(sandbox)
       const conn = CopilotStudioWebChat.createConnection(client)
