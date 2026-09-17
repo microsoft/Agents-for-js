@@ -244,14 +244,8 @@ Each package keeps its error definitions in a local `errorHelper.ts` (e.g. `pack
 
 The CI pipeline (`.github/workflows/ci.yml`) runs:
 1. npm ci (clean install)
-2. npm run repo:doctor
-3. npm run lint
-4. npm run lint:deps:ci
-5. npm run build
-6. npm test
-7. npm run compat
-8. npm run build:samples
-9. node scripts/set-version.mjs (version management)
+2. npm run quality (doctor, lint, dependency lint, build, tests, compatibility, and samples; logs are folded in GitHub Actions and retained as a seven-day `quality-logs` artifact)
+3. node scripts/set-version.mjs (version management)
 
 ## Node Version
 
