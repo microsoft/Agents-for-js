@@ -9,7 +9,7 @@ import { describe, it } from 'node:test'
 import { createNpmCheckRunner, createReporter, failureOutput, reportCheckOutput, runQualityChecks } from '../quality.mjs'
 
 const check = (id, options = {}) => ({ id, label: id, script: id, ...options })
-const silentReporter = () => createReporter({ write: () => {}, color: false })
+const silentReporter = () => createReporter({ live: false, write: () => {}, color: false })
 const tick = async () => await new Promise(resolve => setImmediate(resolve))
 
 describe('quality runner', () => {

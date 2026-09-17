@@ -28,11 +28,11 @@ steps:
     workingDir: .
   displayName: 'npm ci'
 
-- script: node scripts/set-version.mjs
-  displayName: set version
-
 - script: npm run quality
   displayName: quality checks
+
+- script: node scripts/set-version.mjs
+  displayName: set version
 
 - task: PublishTestResults@2
   displayName: 'Publish Unit Test Results'
