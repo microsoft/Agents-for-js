@@ -271,6 +271,14 @@ describe('repo:doctor', () => {
     assert.equal(checkRepository(root).findings.some(finding => finding.ruleId === 'repository/doctor-ci-missing'), false)
   })
 
+  it('accepts the quality suite as the repository-doctor CI check', () => {
+    const root = fixture(({ write }) => {
+      write('.github/workflows/ci.yml', 'jobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - run: npm ci\n      - run: npm run quality\n')
+      write('.azdo/ci-pr.yaml', "steps:\n- task: Npm@1\n  inputs:\n    customCommand: 'ci'\n- script: npm run quality\n")
+    })
+    assert.equal(checkRepository(root).findings.some(finding => finding.ruleId === 'repository/doctor-ci-missing'), false)
+  })
+
   it('validates compatibility baselines and supported Node types', () => {
     const root = fixture(({ write, readJson, remove }) => {
       remove('compat/baseline/agents-example.api.md')

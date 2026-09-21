@@ -31,26 +31,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Validate repository structure
-        run: npm run repo:doctor
+      - name: Run quality checks
+        run: npm run quality
+        env:
+          QUALITY_LOG_DIR: quality-logs
 
-      - name: Lint codebase
-        run: npm run lint
-
-      - name: Validate unused dependencies, exports, and files
-        run: npm run lint:deps:ci
-
-      - name: Build TS
-        run: npm run build
-
-      - name: Run tests
-        run: npm test
-
-      - name: Run compat
-        run: npm run compat
-
-      - name: Build samples
-        run: npm run build:samples
+      - name: Upload quality logs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: quality-logs
+          path: quality-logs/
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Set Version
         run: node scripts/set-version.mjs

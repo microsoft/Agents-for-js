@@ -433,6 +433,14 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   },
 
   /**
+   * Error thrown when a delegated token credential's provider returns a response without a usable token.
+   */
+  NullTokenResponse: {
+    code: -120393,
+    description: 'The token response provider returned a null response or a response without a token.'
+  },
+
+  /**
    * Error thrown when an MSAL HTTP response body cannot be parsed as JSON.
    */
   MsalResponseUnparsable: {
@@ -780,6 +788,14 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   StorageWriteChangesRequired: {
     code: -120702,
     description: 'Changes are required when writing.'
+  },
+
+  /**
+   * Error thrown when a storage TTL value is invalid.
+   */
+  InvalidStorageTtl: {
+    code: -120703,
+    description: 'StorageWriteOptions.ttl must be a finite number greater than zero.'
   },
 
   /**
