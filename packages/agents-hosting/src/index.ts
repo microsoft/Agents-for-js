@@ -32,5 +32,6 @@ export * from './storage/storage'
 export * from './headerPropagation'
 export * from './interfaces'
 export * from './httpClient'
+export * from './outboundHostValidator'
 
 export * from './agent-client'

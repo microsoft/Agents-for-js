@@ -143,7 +143,6 @@ describe('Choices Recognizers Tests', function () {
   })
 
   describe('recognizeChoices()', function () {
-    // TODO: add recognizer test with ordinal and number options
     it('should find a choice in an utterance by name.', function () {
       const found = recognizeChoices('the red one please.', colorChoices)
       assert(found.length === 1, `Invalid token count of '${found.length}' returned.`)
@@ -211,6 +210,12 @@ describe('Choices Recognizers Tests', function () {
         recognizeNumbers: false,
       })
       assert(found.length === 0, `Invalid token count of '${found.length}' returned.`)
+    })
+
+    it('should ignore nullish choices from JavaScript callers.', function () {
+      const found = recognizeChoices('the green one please.', ['red', null, 'green', undefined] as any)
+      assert(found.length === 1, `Invalid token count of '${found.length}' returned.`)
+      assertChoice(found[0], 'green', 1, 1, 'green')
     })
   })
 })

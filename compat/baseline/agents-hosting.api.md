@@ -373,7 +373,7 @@ export interface AttachmentData {
 
 // @public
 export class AttachmentDownloader<TState extends TurnState = TurnState> implements InputFileDownloader<TState> {
-    constructor(stateKey?: string);
+    constructor(stateKey?: string, outboundHostValidator?: OutboundUrlPolicy);
     downloadAndStoreFiles(context: TurnContext, state: TState): Promise<void>;
     downloadFiles(context: TurnContext): Promise<InputFile[]>;
 }
@@ -420,7 +420,11 @@ export interface Authorization {
     // (undocumented)
     exchangeToken(context: TurnContext, authHandlerId: string, options?: AuthorizationHandlerTokenOptions): Promise<TokenResponse>;
     // (undocumented)
+    exchangeTokenAsTokenCredential?(context: TurnContext, authHandlerId: string, options?: AuthorizationHandlerTokenOptions): TokenCredential;
+    // (undocumented)
     getToken(context: TurnContext, authHandlerId: string): Promise<TokenResponse>;
+    // (undocumented)
+    getTokenAsTokenCredential?(context: TurnContext, authHandlerId: string): TokenCredential;
     // (undocumented)
     onSignInFailure(handler: (context: TurnContext, state: TurnState, authHandlerId?: string, errorMessage?: string) => Promise<void>): void;
     // (undocumented)
@@ -603,7 +607,7 @@ export function clearJwksClients(): void;
 
 // @public (undocumented)
 export class CloudAdapter extends BaseAdapter {
-    constructor(authConfig?: AuthConfiguration, authProvider?: AuthProvider, userTokenClient?: UserTokenClient, options?: CloudAdapterOptions);
+    constructor(authConfig?: AuthConfiguration, authProvider?: AuthProvider, userTokenClient?: UserTokenClient, options?: CloudAdapterOptions, outboundHostValidator?: OutboundUrlPolicy);
     // (undocumented)
     protected _agentName?: string;
     // (undocumented)
@@ -640,6 +644,7 @@ export class CloudAdapter extends BaseAdapter {
 // @public
 export interface CloudAdapterOptions {
     emitStackTrace?: boolean;
+    // @deprecated
     validateServiceUrl?: boolean;
 }
 
@@ -864,6 +869,13 @@ export class CreateConversationOptionsBuilder {
 }
 
 // @public
+export function createOutboundHostValidator(options?: OutboundHostValidatorOptions): OutboundHostValidator;
+
+// @public
+export interface CustomKey {
+    channelId: string;
+    conversationId: string;
+}
 export interface CustomKey {
     channelId: string;
     conversationId: string;
@@ -1058,11 +1070,14 @@ export interface InvokeResponse<T = any> {
 export const loadAuthConfigFromEnv: (cnxName?: string) => AuthConfiguration;
 
 // @public
+export function loadOutboundHostValidatorOptionsFromEnv(): OutboundHostValidatorOptions;
+
+// @public
 export const loadPrevAuthConfigFromEnv: () => AuthConfiguration;
 
 // @public
 export class M365AttachmentDownloader<TState extends TurnState = TurnState> implements InputFileDownloader<TState> {
-    constructor(stateKey?: string);
+    constructor(stateKey?: string, outboundHostValidator?: OutboundUrlPolicy);
     downloadAndStoreFiles(context: TurnContext, state: TState): Promise<void>;
     downloadFiles(context: TurnContext): Promise<InputFile[]>;
 }
@@ -1220,6 +1235,30 @@ export interface OAuthCard {
     text: string;
     tokenExchangeResource: TokenExchangeResource;
     tokenPostResource: TokenPostResource;
+}
+
+// @public
+export class OutboundHostValidator implements OutboundUrlPolicy {
+    constructor(options?: OutboundHostValidatorOptions);
+    // (undocumented)
+    readonly enabled: boolean;
+    // (undocumented)
+    isAllowed(input: string | URL | null | undefined): boolean;
+}
+
+// @public
+export interface OutboundHostValidatorOptions {
+    enabled?: boolean;
+    hosts?: readonly string[];
+    includeDefaultMicrosoftHosts?: boolean;
+}
+
+// @public
+export interface OutboundUrlPolicy {
+    // (undocumented)
+    readonly enabled: boolean;
+    // (undocumented)
+    isAllowed(url: string | URL | null | undefined): boolean;
 }
 
 // @public
@@ -1437,6 +1476,7 @@ export class StreamingResponse {
     queueInformativeUpdate(text: string): void;
     queueTextChunk(text: string, citations?: Citation[]): void;
     reset(): Promise<void>;
+    sendStreamTimedOutNotification(message: string): Promise<boolean>;
     setAttachments(attachments: Attachment[]): void;
     setCitations(citations: Citation[]): void;
     setDelayInMs(delayInMs: number): void;
@@ -1446,6 +1486,8 @@ export class StreamingResponse {
     setGeneratedByAILabel(enableGeneratedByAILabel: boolean): void;
     setSensitivityLabel(sensitivityLabel: SensitivityUsageInfo): void;
     get streamId(): string | undefined;
+    get streamingTakingTooLongMessage(): string;
+    set streamingTakingTooLongMessage(message: string);
     get updatesSent(): number;
 }
 

@@ -49,7 +49,7 @@ The nightly build contains the code from our `main` branch and may contain featu
 
 The packages require Node.js 20 or greater, and can be used from JavaScript using CommonJS or ES6 modules, or from TypeScript.
 
-> Note: We are using node 24 to be able to initialize the process from a `.env` file without adding the dependency to `dotenv` by using the [`--env-file` flag](https://nodejs.org/en/learn/command-line/how-to-read-environment-variables-from-nodejs). Previous node versions should set the env vars explicitly before running.
+> Note: Development and CI use Node.js 24. The [`--env-file` flag](https://nodejs.org/en/learn/command-line/how-to-read-environment-variables-from-nodejs) is available in Node.js 20.6 and later; Node.js 20.0–20.5 users should set environment variables explicitly before running.
 
 ### Debugging
 
@@ -131,7 +131,17 @@ We are using `eslint` configured with [neostandard](https://github.com/neostanda
 
 ## Contributing
 
-Before submitting structural, package, documentation, build-reference, or runtime-configuration changes, run:
+Before submitting a change, run:
+
+```bash
+npm run quality
+```
+
+`quality` runs the repository doctor, ESLint, dependency lint, build, tests, API compatibility checks, and sample build. It reports each check's status and duration, while printing command output only when that check fails.
+
+Use `npm run quality -- --verbose` to print the complete captured output for every check after the concise report. In GitHub Actions, each command log is available in a folded group and as the `quality-logs` artifact for seven days.
+
+For a structural, package, documentation, build-reference, or runtime-configuration change, you can run the focused doctor check directly:
 
 ```bash
 npm run repo:doctor
