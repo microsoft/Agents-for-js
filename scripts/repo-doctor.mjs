@@ -5,6 +5,8 @@ import path from 'node:path'
 import { isDeepStrictEqual } from 'node:util'
 import { fileURLToPath } from 'node:url'
 
+import { checkTeamsApiMetadata } from './teams-api-drift/validate-teams-api-metadata.mjs'
+
 const ignoredDirectories = new Set(['.git', 'node_modules', 'dist', 'coverage'])
 const ignoredDocumentPrefixes = ['compat/', 'packages/agents-hosting-dialogs/vendor/']
 const workspaceRoots = ['packages', 'test-agents']
@@ -285,6 +287,26 @@ export const ruleDefinitions = {
     why: 'Keeps public API compatibility checks complete and attributable.',
     fix: 'Regenerate the API report so its header matches the package name.',
   },
+  'compat/teams-api-usage-manifest-stale': {
+    what: 'Teams API usage metadata matches concrete dependency consumption.',
+    why: 'Keeps direct Teams API compatibility findings and affected source files accurate.',
+    fix: 'Update teams-api-usage-manifest.json to match the current Teams extension source.',
+  },
+  'compat/teams-api-usage-review-missing': {
+    what: 'Ambiguous Teams API usage changes receive an explicit metadata review.',
+    why: 'Keeps dynamic and manually classified Teams API usage from drifting silently.',
+    fix: 'Update the usage manifest, or follow scripts/teams-api-drift/README.md#source-review-acknowledgments.',
+  },
+  'compat/teams-api-capabilities-stale': {
+    what: 'Teams capability ownership and upstream areas match the extension structure.',
+    why: 'Keeps additive Teams API changes assigned to the correct feature and adoption policy.',
+    fix: 'Update teams-capabilities.yaml to match current feature ownership and upstream areas.',
+  },
+  'compat/teams-api-capabilities-review-missing': {
+    what: 'Ambiguous Teams capability changes receive an explicit metadata review.',
+    why: 'Keeps feature ownership and adoption-policy decisions from drifting silently.',
+    fix: 'Update the capabilities map, or follow scripts/teams-api-drift/README.md#source-review-acknowledgments.',
+  },
   'runtime/toolchain-mismatch': {
     what: 'Configured Node versions match the .nvmrc major.',
     why: 'Keeps local, CI, container, and type-level runtime support aligned.',
@@ -324,8 +346,9 @@ const ruleCategories = {
 /**
  * Runs the repository consistency checks without modifying the checkout.
  * @param {string} root
+ * @param {{ baseRef?: string }} [options]
  */
-export function checkRepository (root) {
+export function checkRepository (root, options = {}) {
   const normalizedRoot = path.resolve(root)
   const rootManifestFile = 'package.json'
   const rootManifestText = readRequiredText(normalizedRoot, rootManifestFile)
@@ -384,6 +407,14 @@ export function checkRepository (root) {
   checkDocumentationImports(normalizedRoot, documents, packages, findings)
   checkRelativeDocumentationLinks(normalizedRoot, documents, findings)
   checkCompatibilityBaselines(normalizedRoot, packages, findings)
+  try {
+    findings.push(...checkTeamsApiMetadata(normalizedRoot, { baseRef: options.baseRef }))
+  } catch (error) {
+    if (options.baseRef && error instanceof Error && error.message.startsWith('Unable to resolve Git base ref ')) {
+      throw new DoctorConfigurationError('scripts/repo-doctor.mjs', error.message)
+    }
+    throw error
+  }
   checkRuntimeConfiguration(normalizedRoot, rootManifest, findings)
 
   findings.sort((left, right) => left.path.localeCompare(right.path) ||
@@ -408,6 +439,7 @@ export function checkRepository (root) {
 /** @param {string[]} argv */
 export function parseArguments (argv) {
   let root = process.cwd()
+  let baseRef
   let rules = false
   const ruleIds = []
   for (let index = 0; index < argv.length; index += 1) {
@@ -423,12 +455,17 @@ export function parseArguments (argv) {
       if (!root) throw new DoctorConfigurationError('scripts/repo-doctor.mjs', '--root requires a path.')
       continue
     }
+    if (argument === '--base-ref') {
+      baseRef = argv[++index]
+      if (!baseRef) throw new DoctorConfigurationError('scripts/repo-doctor.mjs', '--base-ref requires a Git ref.')
+      continue
+    }
     throw new DoctorConfigurationError('scripts/repo-doctor.mjs', `Unknown argument: ${argument}`)
   }
   for (const ruleId of ruleIds) {
     if (!Object.hasOwn(ruleDefinitions, ruleId)) throw new DoctorConfigurationError('scripts/repo-doctor.mjs', `Unknown rule ID: ${ruleId}`)
   }
-  return { help: false, rules, ruleIds, root }
+  return { help: false, rules, ruleIds, root, ...(baseRef ? { baseRef } : {}) }
 }
 
 /**
@@ -495,15 +532,16 @@ function runCli () {
   try {
     const options = parseArguments(process.argv.slice(2))
     if (options.help) {
-      console.log('Usage: npm run repo:doctor -- [--root <path>] [--rules [<rule-id>...]]')
+      console.log('Usage: npm run repo:doctor -- [--root <path>] [--base-ref <git-ref>] [--rules [<rule-id>...]]')
       console.log('  --rules  List every rule, or selected rule IDs, with their purpose and typical resolution.')
+      console.log('  --base-ref  Compare Teams API metadata reviews with the merge base of this Git ref.')
       return
     }
     if (options.rules) {
       console.log(formatRuleGuide({ ruleIds: options.ruleIds }))
       return
     }
-    const report = checkRepository(options.root)
+    const report = checkRepository(options.root, { baseRef: options.baseRef })
     console.log(formatReport(report))
     process.exitCode = report.status === 'fail' ? 1 : 0
   } catch (error) {
