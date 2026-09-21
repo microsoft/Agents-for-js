@@ -19,3 +19,13 @@ const cosmosStorage = new CosmosDbPartitionedStorage(cosmosDbStorageOptions)
 const conversationState = new ConversationState(cosmosStorage)
 const userState = new UserState(cosmosStorage)
 ```
+
+## TTL writes
+
+`CosmosDbPartitionedStorage` supports the shared storage TTL option:
+
+```ts
+await cosmosStorage.write({ 'session/123': { value: 'temporary' } }, { ttl: 3600 })
+```
+
+The provider stores Cosmos DB item-level TTL on the wrapper document and also enforces logical expiry during reads.

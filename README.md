@@ -131,7 +131,17 @@ We are using `eslint` configured with [neostandard](https://github.com/neostanda
 
 ## Contributing
 
-Before submitting structural, package, documentation, build-reference, or runtime-configuration changes, run:
+Before submitting a change, run:
+
+```bash
+npm run quality
+```
+
+`quality` runs the repository doctor, ESLint, dependency lint, build, tests, API compatibility checks, and sample build. It reports each check's status and duration, while printing command output only when that check fails.
+
+Use `npm run quality -- --verbose` to print the complete captured output for every check after the concise report. In GitHub Actions, each command log is available in a folded group and as the `quality-logs` artifact for seven days.
+
+For a structural, package, documentation, build-reference, or runtime-configuration change, you can run the focused doctor check directly:
 
 ```bash
 npm run repo:doctor

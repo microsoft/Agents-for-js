@@ -145,11 +145,11 @@ export const adaptiveCardsSearchParamsZodSchema: z.ZodObject<{
     queryText: z.ZodString;
     dataset: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    queryText: string;
     dataset: string;
+    queryText: string;
 }, {
-    queryText: string;
     dataset: string;
+    queryText: string;
 }>;
 
 // @public
@@ -960,7 +960,7 @@ export class FileStorage implements Storage {
     constructor(folder: string);
     delete(keys: string[]): Promise<void>;
     read(keys: string[]): Promise<StoreItem>;
-    write(changes: StoreItem): Promise<void>;
+    write(changes: StoreItem, options?: StorageWriteOptions): Promise<void>;
 }
 
 // @public
@@ -968,6 +968,9 @@ export function getAuthConfigWithDefaults(config?: AuthConfiguration, options?: 
 
 // @public
 export const getProductInfo: () => string;
+
+// @public
+export function getStorageWriteExpiry(options?: StorageWriteOptions): number | undefined;
 
 // @public
 export class HeaderPropagation implements HeaderPropagationCollection {
@@ -1149,7 +1152,7 @@ export class MemoryStorage implements Storage {
     delete(keys: string[]): Promise<void>;
     static getSingleInstance(): MemoryStorage;
     read(keys: string[]): Promise<StoreItem>;
-    write(changes: StoreItem): Promise<void>;
+    write(changes: StoreItem, options?: StorageWriteOptions): Promise<void>;
 }
 
 // @public
@@ -1504,11 +1507,16 @@ export enum StatusCodes {
 export interface Storage {
     delete: (keys: string[]) => Promise<void>;
     read: (keys: string[]) => Promise<StoreItem>;
-    write: (changes: StoreItem) => Promise<void>;
+    write: (changes: StoreItem, options?: StorageWriteOptions) => Promise<void>;
 }
 
 // @public
 export type StorageKeyFactory = (context: TurnContext) => string | Promise<string>;
+
+// @public
+export interface StorageWriteOptions {
+    ttl?: number;
+}
 
 // @public
 export interface StoreItem {

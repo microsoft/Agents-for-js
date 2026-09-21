@@ -28,23 +28,11 @@ steps:
     workingDir: .
   displayName: 'npm ci'
 
-- script: npm run repo:doctor
-  displayName: validate repository structure
+- script: npm run quality
+  displayName: quality checks
 
 - script: node scripts/set-version.mjs
   displayName: set version
-
-- script: npm run lint
-  displayName: lint
-
-- script: npm run build
-  displayName: build
-
-- script: npm run build:samples
-  displayName: build samples
-
-- script: npm run test
-  displayName: tests
 
 - task: PublishTestResults@2
   displayName: 'Publish Unit Test Results'
