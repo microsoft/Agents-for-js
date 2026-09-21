@@ -3,10 +3,11 @@
  * Licensed under the MIT License.
  */
 
-import { trace } from '@microsoft/agents-telemetry'
+import { redactString, trace } from '@microsoft/agents-telemetry'
 import { ExceptionHelper } from '@microsoft/agents-activity'
 import { StorageTraceDefinitions } from '../observability'
-import { Storage, StoreItem } from './storage'
+import { Storage, StoreItem, StorageWriteOptions } from './storage'
+import { getStorageWriteExpiry } from './storageExpiry'
 import { debug } from '@microsoft/agents-telemetry'
 import { Errors } from '../errorHelper'
 
@@ -28,6 +29,7 @@ const logger = debug('agents:memory-storage')
  */
 export class MemoryStorage implements Storage {
   private static instance: MemoryStorage
+  private expirations: { [k: string]: number } = {}
   /**
    * Counter used to generate unique eTags for stored items
    */
@@ -74,6 +76,12 @@ export class MemoryStorage implements Storage {
       const data: StoreItem = {}
       for (const key of keys) {
         logger.debug(`Reading key: ${key}`)
+        if (this.isExpired(key)) {
+          logger.info('Item expired, deleting from memory', { key: redactString(key, true) })
+          delete this.memory[key]
+          delete this.expirations[key]
+          continue
+        }
         const item = this.memory[key]
         if (item) {
           data[key] = JSON.parse(item)
@@ -97,22 +105,29 @@ export class MemoryStorage implements Storage {
    * has the same eTag. If an item has an eTag of '*' or no eTag, it will
    * always be written regardless of the current state.
    */
-  async write (changes: StoreItem): Promise<void> {
+  async write (changes: StoreItem, options?: StorageWriteOptions): Promise<void> {
     return trace(StorageTraceDefinitions.write, async ({ record }) => {
-      if (!changes || changes.length === 0) {
+      const keys = changes ? Object.keys(changes) : []
+      if (!changes || keys.length === 0) {
         throw ExceptionHelper.generateException(ReferenceError, Errors.StorageWriteChangesRequired)
       }
-      record({ keyCount: changes.length })
+      const expiresAt = getStorageWriteExpiry(options)
+      record({ keyCount: keys.length })
 
       for (const [key, newItem] of Object.entries(changes)) {
         logger.debug(`Writing key: ${key}`)
+        if (this.isExpired(key)) {
+          logger.info('Item expired, deleting from memory', { key: redactString(key, true) })
+          delete this.memory[key]
+          delete this.expirations[key]
+        }
         const oldItemStr = this.memory[key]
         if (!oldItemStr || newItem.eTag === '*' || !newItem.eTag) {
-          this.saveItem(key, newItem)
+          this.saveItem(key, newItem, expiresAt)
         } else {
           const oldItem = JSON.parse(oldItemStr)
           if (newItem.eTag === oldItem.eTag) {
-            this.saveItem(key, newItem)
+            this.saveItem(key, newItem, expiresAt)
           } else {
             throw ExceptionHelper.generateException(Error, Errors.StorageETagConflict, undefined, { key })
           }
@@ -133,6 +148,7 @@ export class MemoryStorage implements Storage {
       logger.debug(`Deleting keys: ${keys.join(', ')}`)
       for (const key of keys) {
         delete this.memory[key]
+        delete this.expirations[key]
       }
     })
   }
@@ -151,8 +167,18 @@ export class MemoryStorage implements Storage {
    *
    * @private
    */
-  private saveItem (key: string, item: unknown): void {
+  private saveItem (key: string, item: unknown, expiresAt?: number): void {
     const clone = Object.assign({}, item, { eTag: (this.etag++).toString() })
     this.memory[key] = JSON.stringify(clone)
+    if (expiresAt === undefined) {
+      delete this.expirations[key]
+    } else {
+      this.expirations[key] = expiresAt
+    }
+  }
+
+  private isExpired (key: string): boolean {
+    const expiresAt = this.expirations[key]
+    return expiresAt !== undefined && expiresAt <= Date.now()
   }
 }
