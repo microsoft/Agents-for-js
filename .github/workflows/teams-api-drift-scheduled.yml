@@ -23,11 +23,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
       - name: Set up Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
           cache: npm
@@ -155,7 +155,7 @@ jobs:
       # Upload evidence before the policy gate or issue update can fail the run.
       - name: Upload scheduled drift artifacts
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: scheduled-teams-api-drift-${{ github.run_id }}
           path: artifacts/teams-api-drift
@@ -163,7 +163,7 @@ jobs:
           retention-days: 21
       - name: Create or update drift issue
         if: always() && steps.comparison-result.outputs.changed == 'true' && steps.validate-advisory-report.outcome == 'success'
-        uses: actions/github-script@v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           BASELINE_VERSION: ${{ steps.resolve-baseline-version.outputs.version }}
           CANDIDATE_VERSION: ${{ steps.comparison-result.outputs.candidate_version }}

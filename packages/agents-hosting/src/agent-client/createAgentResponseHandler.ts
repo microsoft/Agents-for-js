@@ -38,7 +38,7 @@ export interface AgentResponseHandlerParams {
 }
 
 /**
- * Framework-agnostic handler signature for the agent response controller endpoint.
+ * Framework-agnostic handler signature for the SDK-specific Activity callback endpoint.
  *
  * @remarks
  * The handler is intended to be invoked by a thin framework-specific wrapper (such
@@ -52,7 +52,7 @@ export type AgentResponseHandler = (
 ) => Promise<void>
 
 /**
- * Creates a framework-agnostic handler for the agent response controller endpoint.
+ * Creates a framework-agnostic handler for the authenticated Activity callback endpoint.
  *
  * This is the core, Express-free implementation used by:
  * - `configureResponseController` in `@microsoft/agents-hosting-express`
@@ -61,6 +61,11 @@ export type AgentResponseHandler = (
  * Both wrappers register the canonical route
  * `POST /api/agentresponse/v3/conversations/:conversationId/activities/:activityId`
  * and forward the parsed body + path parameters to the handler returned here.
+ * The handler returns `401` for failed JWT authentication and `403` when the
+ * authenticated caller does not match the delegated agent stored for the
+ * conversation, or when that delegated state is missing or malformed.
+ *
+ * This callback contract is SDK-specific and is not the open A2A protocol.
  *
  * @param adapter - The CloudAdapter used for processing activities and managing conversations.
  * @param agent - The ActivityHandler containing the agent logic.

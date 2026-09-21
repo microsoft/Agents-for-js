@@ -36,7 +36,7 @@ app.post('/api/messages', messagesRateLimiter, authorizeRequest, async (req: Req
 })
 
 app.use('/api/agentresponse', messagesRateLimiter)
-// The response controller applies the same adapter-owned authorization internally.
+// The SDK Activity callback controller applies the same adapter-owned authorization internally.
 configureResponseController(app, adapter, myAgent, conversationState)
 
 const port = process.env.PORT || 3978

@@ -1,5 +1,5 @@
 {
-  "name": "a2a-agent",
+  "name": "delegated-agent-callback",
   "version": "1.0.0",
   "private": true,
   "author": "Microsoft",
@@ -17,6 +17,6 @@
     "@microsoft/agents-hosting": "file:../../packages/agents-hosting",
     "@microsoft/agents-hosting-express": "file:../../packages/agents-hosting-express",
     "express": "5.2.1",
-    "express-rate-limit": "8.5.2"
+    "express-rate-limit": "8.6.2"
   }
 }

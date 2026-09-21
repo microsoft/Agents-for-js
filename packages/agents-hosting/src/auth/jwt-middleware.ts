@@ -49,7 +49,7 @@ export function clearJwksClients (): void {
  * (Microsoft.Agents.Hosting.AspNetCore `AspNetExtensions.AddAgentAspNetAuthentication`).
  *
  * These identify Microsoft infrastructure tenants used by Azure Bot Service, Teams and
- * skill/agent-to-agent flows. They are accepted in addition to a connection's configured
+ * skill and SDK-specific Activity callback flows. They are accepted in addition to a connection's configured
  * issuers so that enabling issuer validation does not reject legitimate first-party traffic.
  */
 const WELL_KNOWN_PUBLIC_TENANT_IDS = [

@@ -145,8 +145,10 @@ app.registerExtension<SlackAgentExtension<TurnState>>(new SlackAgentExtension(ap
     await ctx.sendActivity(
       'Commands:\n' +
       '• `topic <title>` — set thread title\n' +
+      '• `prompts` — add suggested prompts\n' +
       '• `status <text>` — set thread status\n' +
-      '• `stream demo` — demonstrate Slack streaming API'
+      '• `stream demo` — demonstrate Slack streaming API\n' +
+      '• `buttons` — post interactive Block Kit buttons'
     )
   })
 

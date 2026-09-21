@@ -17,11 +17,14 @@ The repository is a **monorepo** using npm workspaces with multiple interconnect
 - **agents-hosting-express**: Express.js integration for hosting agents.
 - **agents-hosting-fastify**: Fastify integration for hosting agents.
 - **agents-hosting-dialogs**: Dialog system for building conversational flows. Replaces `botbuilder-dialogs`.
+- **agents-hosting-directline-namedpipes**: Direct Line transport over named pipes.
 - **agents-hosting-extensions-msteams**: Teams-specific features (TaskModules, Messaging Extensions).
+- **agents-hosting-extensions-slack**: Slack-specific integration and extensions.
 - **agents-hosting-extensions-teams**: Deprecated legacy Teams extension retained for backward compatibility.
 - **agents-hosting-storage-blob**: Azure Blob Storage adapter. Replaces `botbuilder-azure`.
 - **agents-hosting-storage-cosmos**: CosmosDB storage adapter. Replaces `botbuilder-azure`.
 - **agents-copilotstudio-client**: Direct-to-Engine client for interacting with Copilot Studio agents.
+- **agents-telemetry**: Shared telemetry instrumentation for Microsoft 365 Agents SDK packages.
 
 ### Test Agents (in `test-agents/`)
 
@@ -241,14 +244,8 @@ Each package keeps its error definitions in a local `errorHelper.ts` (e.g. `pack
 
 The CI pipeline (`.github/workflows/ci.yml`) runs:
 1. npm ci (clean install)
-2. npm run repo:doctor
-3. npm run lint
-4. npm run lint:deps:ci
-5. npm run build
-6. npm test
-7. npm run compat
-8. npm run build:samples
-9. node scripts/set-version.mjs (version management)
+2. npm run quality (doctor, lint, dependency lint, build, tests, compatibility, and samples; logs are folded in GitHub Actions and retained as a seven-day `quality-logs` artifact)
+3. node scripts/set-version.mjs (version management)
 
 ## Node Version
 

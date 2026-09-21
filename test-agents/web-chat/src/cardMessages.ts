@@ -12,11 +12,10 @@ export class CardMessages {
       { type: ActionTypes.ImBack, title: '3. Audio Card', value: '3' },
       { type: ActionTypes.ImBack, title: '4. Hero Card', value: '4' },
       { type: ActionTypes.ImBack, title: '5. Receipt Card', value: '5' },
-      // { type: ActionTypes.ImBack, title: '6. oAuth Card [NotImplemented]', value: '6' }, // TODO still pending
-      { type: ActionTypes.ImBack, title: '7. o365Connector Card', value: '7' },
-      { type: ActionTypes.ImBack, title: '8. Signin Card', value: '8' },
-      { type: ActionTypes.ImBack, title: '9. Thumbnail Card', value: '9' },
-      { type: ActionTypes.ImBack, title: '10. Video Card', value: '10' },
+      { type: ActionTypes.ImBack, title: '6. o365Connector Card', value: '6' },
+      { type: ActionTypes.ImBack, title: '7. Signin Card', value: '7' },
+      { type: ActionTypes.ImBack, title: '8. Thumbnail Card', value: '8' },
+      { type: ActionTypes.ImBack, title: '9. Video Card', value: '9' },
     ]
 
     const card = CardFactory.heroCard('', undefined,
@@ -122,11 +121,6 @@ export class CardMessages {
     })
 
     await CardMessages.sendActivity(context, card)
-  }
-
-  static async sendOauthCard (context: TurnContext): Promise<void> {
-    // TODO still pending
-    throw new Error('NotImplemented')
   }
 
   static async sendO365ConnectorCard (context: TurnContext): Promise<void> {

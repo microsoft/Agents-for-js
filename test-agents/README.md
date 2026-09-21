@@ -6,7 +6,7 @@ If you are looking for samples to learn how to use these packages see the sample
 
 ## Test-agent catalog
 
-- [a2a-agent](a2a-agent)
+- [delegated-agent-callback](delegated-agent-callback)
 - [agentic-ai](agentic-ai)
 - [application-style](application-style)
 - [copilotstudio-console](copilotstudio-console)

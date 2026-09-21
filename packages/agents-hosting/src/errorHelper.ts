@@ -157,6 +157,14 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   },
 
   /**
+    * Error thrown when the outbound service URL is denied by the configured host policy.
+    */
+  OutboundServiceUrlNotAllowed: {
+    code: -120175,
+    description: 'serviceUrl host is not in the configured allowed hosts.'
+  },
+
+  /**
      * Error thrown when conversationParameters must be defined.
      */
   ConversationParametersRequired: {
@@ -422,6 +430,14 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   MsalHttpRequestFailed: {
     code: -120391,
     description: 'MSAL HTTP request failed: {message}'
+  },
+
+  /**
+   * Error thrown when a delegated token credential's provider returns a response without a usable token.
+   */
+  NullTokenResponse: {
+    code: -120393,
+    description: 'The token response provider returned a null response or a response without a token.'
   },
 
   /**

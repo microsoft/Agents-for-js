@@ -11,7 +11,11 @@ import { Errors } from '../errorHelper'
 const logger = debug('agents:agent-client')
 
 /**
- * Configuration settings required to connect to an agent endpoint.
+ * Configuration for SDK-specific Activity-protocol delegation.
+ *
+ * @remarks
+ * This configuration is used by the authenticated Activity callback flow and
+ * does not describe an open A2A protocol endpoint.
  */
 export interface AgentClientConfig {
   /**
@@ -23,13 +27,13 @@ export interface AgentClientConfig {
    */
   clientId: string;
   /**
-   * The service URL used for communication with the agent
+   * The delegating host's callback base URL.
    */
   serviceUrl: string;
 }
 
 /**
- * Data structure to store conversation state for agent interactions
+ * Conversation state for an SDK-specific delegated Activity exchange.
  */
 export interface ConversationData {
   /**
@@ -41,14 +45,18 @@ export interface ConversationData {
    */
   conversationReference: ConversationReference;
   /**
-   * Client ID of the delegated agent allowed to send responses for this conversation.
+   * Client ID of the delegated agent allowed to send authenticated Activity
+   * callbacks for this conversation.
    */
   expectedAgentClientId?: string;
 }
 
 /**
- * Client for communicating with other agents through HTTP requests.
- * Manages configuration, authentication, and activity exchange with target agents.
+ * Client for SDK-specific Activity-protocol delegation over HTTP.
+ *
+ * @remarks
+ * Manages configuration, authentication, delegated conversation state, and
+ * Activity exchange with a target agent.
  */
 export class AgentClient {
   /** Configuration settings for the agent client */
@@ -65,7 +73,7 @@ export class AgentClient {
   }
 
   /**
-   * Sends an activity to another agent and handles the conversation state.
+   * Sends an activity to a delegated agent and stores the callback state.
    *
    * @param activity The activity to send to the target agent
    * @param authConfig Authentication configuration used to obtain access tokens

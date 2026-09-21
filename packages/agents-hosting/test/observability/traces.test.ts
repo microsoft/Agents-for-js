@@ -184,6 +184,36 @@ describe('trace definitions', () => {
       assert.deepEqual(span.attributes, { 'agents.attachments.count': 3 })
     })
 
+    it('should set activity attributes when a typing notification span ends', () => {
+      const span = endTrace(AgentApplicationTraceDefinitions.typingIndicator, {
+        activityType: 'typing',
+        channelId: 'webchat',
+        conversationId: 'conversation-id',
+        notificationSequence: 2,
+      })
+
+      assert.deepEqual(span.attributes, {
+        'activity.type': 'typing',
+        'activity.channel_id': 'webchat',
+        'activity.conversation_id': 'conversation-id',
+        'typing.notification.sequence': 2,
+      })
+    })
+
+    it('should set default activity attributes when a typing notification has no values', () => {
+      const span = endTrace(
+        AgentApplicationTraceDefinitions.typingIndicator,
+        AgentApplicationTraceDefinitions.typingIndicator.record
+      )
+
+      assert.deepEqual(span.attributes, {
+        'activity.type': 'unknown',
+        'activity.channel_id': 'unknown',
+        'activity.conversation_id': 'unknown',
+        'typing.notification.sequence': 0,
+      })
+    })
+
     it('should set route type attributes when a route handler ends', () => {
       const span = endTrace(AgentApplicationTraceDefinitions.routeHandler, {
         isInvoke: true,

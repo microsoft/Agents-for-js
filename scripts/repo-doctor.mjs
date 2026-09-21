@@ -1403,7 +1403,7 @@ function hasDoctorInExecutableCiSequence (file, text) {
     : azureJobBlocks(uncommented)
   return blocks.some(block => {
     const commands = ciCommands(block)
-    const doctorIndex = commands.findIndex(command => /^npm run repo:doctor(?:\s|$)/.test(command))
+    const doctorIndex = commands.findIndex(command => /^npm run (?:repo:doctor|quality)(?:\s|$)/.test(command))
     const installIndices = commands
       .map((command, index) => /^npm ci(?:\s|$)/.test(command) || /^customCommand:\s*['"]?ci['"]?\s*$/.test(command) ? index : -1)
       .filter(index => index >= 0)
