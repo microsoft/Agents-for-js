@@ -28,20 +28,11 @@ steps:
     workingDir: .
   displayName: 'npm ci'
 
-- script: node setVersion.js
+- script: npm run quality
+  displayName: quality checks
+
+- script: node scripts/set-version.mjs
   displayName: set version
-
-- script: npm run lint
-  displayName: lint
-
-- script: npm run build
-  displayName: build
-
-- script: npm run build:samples
-  displayName: build samples
-
-- script: npm run test
-  displayName: tests
 
 - task: PublishTestResults@2
   displayName: 'Publish Unit Test Results'
@@ -51,4 +42,4 @@ steps:
       testResultsFiles: 'test-report.xml'
       mergeTestResults: true
       failTaskOnFailedTests: true
-      testRunTitle: 'Node Tests'      
+      testRunTitle: 'Node Tests'

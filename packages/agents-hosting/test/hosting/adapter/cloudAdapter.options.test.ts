@@ -2,14 +2,17 @@
 // Licensed under the MIT License.
 
 import { strict as assert } from 'assert'
+import { createRequire } from 'node:module'
 import { afterEach, describe, it } from 'node:test'
 import sinon from 'sinon'
-import { Activity, ActivityTypes } from '@microsoft/agents-activity'
+import { Activity, ActivityTypes, ConversationParameters, ConversationReference } from '@microsoft/agents-activity'
 import {
   AuthConfiguration,
   CloudAdapter,
   CloudAdapterOptions,
   MsalConnectionManager,
+  OutboundUrlPolicy,
+  OutboundHostValidator,
   Request,
   TurnContext,
   UserTokenClient
@@ -35,12 +38,12 @@ describe('CloudAdapter options (PR #838 parity)', () => {
 
   // --- Test scaffolding ----------------------------------------------------
 
-  function buildAdapter (options?: CloudAdapterOptions) {
+  function buildAdapter (options?: CloudAdapterOptions, outboundHostValidator?: OutboundUrlPolicy) {
     const mockConnectorClient = sinon.createStubInstance(ConnectorClient)
     const mockConnectionManager = sinon.createStubInstance(MsalConnectionManager)
     const mockUserTokenClient = sinon.createStubInstance(UserTokenClient)
 
-    const adapter = new CloudAdapter(authentication, undefined, undefined, options)
+    const adapter = new CloudAdapter(authentication, undefined, undefined, options, outboundHostValidator)
     const adapterAny = adapter as any
     adapterAny.connectionManager = mockConnectionManager
     sinon.stub(adapterAny, 'createConnectorClient').returns(mockConnectorClient)
@@ -58,6 +61,20 @@ describe('CloudAdapter options (PR #838 parity)', () => {
       end: sinon.stub().returnsThis() as any,
       setHeader: sinon.stub().returnsThis() as any
     }
+  }
+
+  function assertStatus (res: Partial<Response>, statusCode: number, shouldBeCalled: boolean) {
+    const status = (res as any).status
+    if (shouldBeCalled) sinon.assert.calledWith(status, statusCode)
+    else sinon.assert.neverCalledWith(status, statusCode)
+  }
+
+  function getAdapterOptions (adapter: CloudAdapter): CloudAdapterOptions {
+    return (adapter as { _options: CloudAdapterOptions })._options
+  }
+
+  async function processWithServiceUrl (adapter: CloudAdapter, serviceUrl: string, res: Partial<Response>) {
+    await adapter.process(buildReq({ serviceurl: serviceUrl }), res as Response, async () => {})
   }
 
   function buildReq (user?: JwtPayload): Request {
@@ -87,6 +104,47 @@ describe('CloudAdapter options (PR #838 parity)', () => {
     sinon.restore()
   })
 
+  async function captureDebugLog (fn: () => void | Promise<void>): Promise<string> {
+    // CloudAdapter's logger is created during module initialization. Hook the
+    // debug formatter instead of stderr: the VS Code reporter owns and wraps
+    // the output streams before this test module is evaluated.
+    const require = createRequire(import.meta.url)
+    const modules = new Set<any>([require('debug')])
+    for (const module of Object.values(require.cache)) {
+      const exports = module?.exports
+      if (typeof exports?.enable === 'function' && typeof exports?.formatArgs === 'function') {
+        modules.add(exports)
+      }
+    }
+
+    const previousSettings = [...modules].map(debug => ({
+      debug,
+      namespaces: debug.disable(),
+      formatArgs: debug.formatArgs
+    }))
+    const calls: string[] = []
+
+    for (const { debug, formatArgs } of previousSettings) {
+      debug.enable('agents:cloud-adapter:*')
+      debug.formatArgs = function (args: any[]) {
+        if ((this as any).namespace === 'agents:cloud-adapter:warn' || (this as any).namespace === 'agents:cloud-adapter:error') {
+          calls.push(args.map(String).join(' '))
+        }
+        formatArgs.call(this, args)
+      }
+    }
+    try {
+      await fn()
+    } finally {
+      for (const { debug, namespaces, formatArgs } of previousSettings) {
+        debug.formatArgs = formatArgs
+        debug.disable()
+        if (namespaces) debug.enable(namespaces)
+      }
+    }
+    return calls.join('')
+  }
+
   // --- validateServiceUrl --------------------------------------------------
 
   describe('validateServiceUrl', () => {
@@ -96,7 +154,7 @@ describe('CloudAdapter options (PR #838 parity)', () => {
       stubFromObject = sinon.stub(Activity, 'fromObject').returns(activity)
       const res = buildRes()
       await adapter.process(buildReq({ serviceurl: 'https://smba.trafficmanager.net/other/' } as any), res as Response, async () => {})
-      sinon.assert.neverCalledWith((res as any).status, 400)
+      assertStatus(res, 400, false)
     })
 
     it('mismatched hosts return 400 when enabled', async () => {
@@ -105,7 +163,7 @@ describe('CloudAdapter options (PR #838 parity)', () => {
       stubFromObject = sinon.stub(Activity, 'fromObject').returns(activity)
       const res = buildRes()
       await adapter.process(buildReq({ serviceurl: 'https://evil.example.com/callback/' } as any), res as Response, async () => {})
-      sinon.assert.calledWith((res as any).status, 400)
+      assertStatus(res, 400, true)
     })
 
     it('mismatched hosts do not return 400 when disabled (warn only)', async () => {
@@ -114,7 +172,7 @@ describe('CloudAdapter options (PR #838 parity)', () => {
       stubFromObject = sinon.stub(Activity, 'fromObject').returns(activity)
       const res = buildRes()
       await adapter.process(buildReq({ serviceurl: 'https://evil.example.com/callback/' } as any), res as Response, async () => {})
-      sinon.assert.neverCalledWith((res as any).status, 400)
+      assertStatus(res, 400, false)
     })
 
     it('passes when identity has no serviceurl claim', async () => {
@@ -123,7 +181,7 @@ describe('CloudAdapter options (PR #838 parity)', () => {
       stubFromObject = sinon.stub(Activity, 'fromObject').returns(activity)
       const res = buildRes()
       await adapter.process(buildReq({ aud: 'clientId' } as any), res as Response, async () => {})
-      sinon.assert.neverCalledWith((res as any).status, 400)
+      assertStatus(res, 400, false)
     })
 
     it('passes when activity has no serviceUrl', async () => {
@@ -132,7 +190,7 @@ describe('CloudAdapter options (PR #838 parity)', () => {
       stubFromObject = sinon.stub(Activity, 'fromObject').returns(activity)
       const res = buildRes()
       await adapter.process(buildReq({ serviceurl: 'https://smba.trafficmanager.net/teams/' } as any), res as Response, async () => {})
-      sinon.assert.neverCalledWith((res as any).status, 400)
+      assertStatus(res, 400, false)
     })
 
     it('mismatched hosts on Invoke activity return 400 when enabled', async () => {
@@ -141,7 +199,7 @@ describe('CloudAdapter options (PR #838 parity)', () => {
       stubFromObject = sinon.stub(Activity, 'fromObject').returns(activity)
       const res = buildRes()
       await adapter.process(buildReq({ serviceurl: 'https://evil.example.com/callback/' } as any), res as Response, async () => {})
-      sinon.assert.calledWith((res as any).status, 400)
+      assertStatus(res, 400, true)
     })
 
     it('malformed claim URI returns 400 when enabled', async () => {
@@ -150,7 +208,7 @@ describe('CloudAdapter options (PR #838 parity)', () => {
       stubFromObject = sinon.stub(Activity, 'fromObject').returns(activity)
       const res = buildRes()
       await adapter.process(buildReq({ serviceurl: 'not-a-valid-uri' } as any), res as Response, async () => {})
-      sinon.assert.calledWith((res as any).status, 400)
+      assertStatus(res, 400, true)
     })
 
     it('matches hosts regardless of port differences (.NET Uri.Host parity)', async () => {
@@ -160,7 +218,7 @@ describe('CloudAdapter options (PR #838 parity)', () => {
       stubFromObject = sinon.stub(Activity, 'fromObject').returns(activity)
       const res = buildRes()
       await adapter.process(buildReq({ serviceurl: 'https://channel.example.com:8443/teams/' } as any), res as Response, async () => {})
-      sinon.assert.neverCalledWith((res as any).status, 400)
+      assertStatus(res, 400, false)
     })
 
     it('rejects when claim has a userinfo-spoofed host', async () => {
@@ -171,7 +229,7 @@ describe('CloudAdapter options (PR #838 parity)', () => {
       stubFromObject = sinon.stub(Activity, 'fromObject').returns(activity)
       const res = buildRes()
       await adapter.process(buildReq({ serviceurl: 'https://victim.com@evil.com/' } as any), res as Response, async () => {})
-      sinon.assert.calledWith((res as any).status, 400)
+      assertStatus(res, 400, true)
     })
 
     it('empty-string claim value is treated as a malformed claim and rejected when enabled', async () => {
@@ -180,7 +238,7 @@ describe('CloudAdapter options (PR #838 parity)', () => {
       stubFromObject = sinon.stub(Activity, 'fromObject').returns(activity)
       const res = buildRes()
       await adapter.process(buildReq({ serviceurl: '' } as any), res as Response, async () => {})
-      sinon.assert.calledWith((res as any).status, 400)
+      assertStatus(res, 400, true)
     })
 
     it('non-string claim value (type confusion) is ignored', async () => {
@@ -191,7 +249,7 @@ describe('CloudAdapter options (PR #838 parity)', () => {
       stubFromObject = sinon.stub(Activity, 'fromObject').returns(activity)
       const res = buildRes()
       await adapter.process(buildReq({ serviceurl: 12345 } as any), res as Response, async () => {})
-      sinon.assert.neverCalledWith((res as any).status, 400)
+      assertStatus(res, 400, false)
     })
 
     it('passes when serviceurl claim is missing entirely (.NET PR #838 parity)', async () => {
@@ -204,7 +262,7 @@ describe('CloudAdapter options (PR #838 parity)', () => {
       stubFromObject = sinon.stub(Activity, 'fromObject').returns(activity)
       const res = buildRes()
       await adapter.process(buildReq({ aud: 'clientId' } as any), res as Response, async () => {})
-      sinon.assert.neverCalledWith((res as any).status, 400)
+      assertStatus(res, 400, false)
     })
 
     it('passes when serviceurl claim is explicitly null (same as missing)', async () => {
@@ -215,7 +273,7 @@ describe('CloudAdapter options (PR #838 parity)', () => {
       stubFromObject = sinon.stub(Activity, 'fromObject').returns(activity)
       const res = buildRes()
       await adapter.process(buildReq({ serviceurl: null } as any), res as Response, async () => {})
-      sinon.assert.neverCalledWith((res as any).status, 400)
+      assertStatus(res, 400, false)
     })
 
     it('passes when the authenticated identity itself is missing (anonymous request)', async () => {
@@ -225,7 +283,7 @@ describe('CloudAdapter options (PR #838 parity)', () => {
       stubFromObject = sinon.stub(Activity, 'fromObject').returns(activity)
       const res = buildRes()
       await adapter.process(buildReq(undefined), res as Response, async () => {})
-      sinon.assert.neverCalledWith((res as any).status, 400)
+      assertStatus(res, 400, false)
     })
 
     it('malformed activity URI does not return 400 when disabled (warn only)', async () => {
@@ -234,7 +292,7 @@ describe('CloudAdapter options (PR #838 parity)', () => {
       stubFromObject = sinon.stub(Activity, 'fromObject').returns(activity)
       const res = buildRes()
       await adapter.process(buildReq({ serviceurl: 'https://smba.trafficmanager.net/teams/' } as any), res as Response, async () => {})
-      sinon.assert.neverCalledWith((res as any).status, 400)
+      assertStatus(res, 400, false)
     })
 
     it('env var CloudAdapterOptions__validateServiceUrl=true enables enforcement when no options arg is passed', async () => {
@@ -245,8 +303,8 @@ describe('CloudAdapter options (PR #838 parity)', () => {
         const activity = makeActivity(ActivityTypes.Message, 'https://smba.trafficmanager.net/teams/')
         stubFromObject = sinon.stub(Activity, 'fromObject').returns(activity)
         const res = buildRes()
-        await adapter.process(buildReq({ serviceurl: 'https://evil.example.com/callback/' } as any), res as Response, async () => {})
-        sinon.assert.calledWith((res as any).status, 400)
+        await processWithServiceUrl(adapter, 'https://evil.example.com/callback/', res)
+        assertStatus(res, 400, true)
       } finally {
         if (prev === undefined) delete process.env.CloudAdapterOptions__validateServiceUrl
         else process.env.CloudAdapterOptions__validateServiceUrl = prev
@@ -261,8 +319,8 @@ describe('CloudAdapter options (PR #838 parity)', () => {
         const activity = makeActivity(ActivityTypes.Message, 'https://smba.trafficmanager.net/teams/')
         stubFromObject = sinon.stub(Activity, 'fromObject').returns(activity)
         const res = buildRes()
-        await adapter.process(buildReq({ serviceurl: 'https://evil.example.com/callback/' } as any), res as Response, async () => {})
-        sinon.assert.neverCalledWith((res as any).status, 400)
+        await processWithServiceUrl(adapter, 'https://evil.example.com/callback/', res)
+        assertStatus(res, 400, false)
       } finally {
         if (prev === undefined) delete process.env.CloudAdapterOptions__validateServiceUrl
         else process.env.CloudAdapterOptions__validateServiceUrl = prev
@@ -279,8 +337,8 @@ describe('CloudAdapter options (PR #838 parity)', () => {
         const activity = makeActivity(ActivityTypes.Message, 'https://smba.trafficmanager.net/teams/')
         stubFromObject = sinon.stub(Activity, 'fromObject').returns(activity)
         const res = buildRes()
-        await adapter.process(buildReq({ serviceurl: 'https://evil.example.com/callback/' } as any), res as Response, async () => {})
-        sinon.assert.neverCalledWith((res as any).status, 400)
+        await processWithServiceUrl(adapter, 'https://evil.example.com/callback/', res)
+        assertStatus(res, 400, false)
       } finally {
         if (prev === undefined) delete process.env.CloudAdapterOptions__unknownOption
         else process.env.CloudAdapterOptions__unknownOption = prev
@@ -297,12 +355,125 @@ describe('CloudAdapter options (PR #838 parity)', () => {
         const activity = makeActivity(ActivityTypes.Message, 'https://smba.trafficmanager.net/teams/')
         stubFromObject = sinon.stub(Activity, 'fromObject').returns(activity)
         const res = buildRes()
-        await adapter.process(buildReq({ serviceurl: 'https://evil.example.com/callback/' } as any), res as Response, async () => {})
-        sinon.assert.calledWith((res as any).status, 400)
+        await processWithServiceUrl(adapter, 'https://evil.example.com/callback/', res)
+        assertStatus(res, 400, true)
       } finally {
         if (prev === undefined) delete process.env.CloudAdapterOptions__VALIDATESERVICEURL
         else process.env.CloudAdapterOptions__VALIDATESERVICEURL = prev
       }
+    })
+  })
+
+  describe('outboundHostValidator', () => {
+    it('rejects a disallowed ServiceUrl even when there is no serviceurl claim', async () => {
+      const adapter = buildAdapter(undefined, new OutboundHostValidator({ enabled: true }))
+      const activity = makeActivity(ActivityTypes.Message, 'https://evil.example.com/relay/')
+      stubFromObject = sinon.stub(Activity, 'fromObject').returns(activity)
+      const res = buildRes()
+
+      await adapter.process(buildReq({ aud: 'clientId' } as any), res as Response, async () => {})
+
+      const responseStatus = (res as any).status
+      sinon.assert.calledWith(responseStatus, 400)
+    })
+
+    it('allows a built-in Microsoft ServiceUrl', async () => {
+      const adapter = buildAdapter(undefined, new OutboundHostValidator({ enabled: true }))
+      const activity = makeActivity(ActivityTypes.Message, 'https://smba.trafficmanager.net/teams/')
+      stubFromObject = sinon.stub(Activity, 'fromObject').returns(activity)
+      const res = buildRes()
+
+      await adapter.process(buildReq({ aud: 'clientId' } as any), res as Response, async () => {})
+
+      const responseStatus = (res as any).status
+      sinon.assert.neverCalledWith(responseStatus, 400)
+    })
+
+    it('allows a configured ServiceUrl host', async () => {
+      const adapter = buildAdapter(undefined, new OutboundHostValidator({ enabled: true, hosts: ['contoso.com'] }))
+      const activity = makeActivity(ActivityTypes.Message, 'https://callback.contoso.com/api/')
+      stubFromObject = sinon.stub(Activity, 'fromObject').returns(activity)
+      const res = buildRes()
+
+      await adapter.process(buildReq({ aud: 'clientId' } as any), res as Response, async () => {})
+
+      const responseStatus = (res as any).status
+      sinon.assert.neverCalledWith(responseStatus, 400)
+    })
+
+    it('preserves existing behavior when the validator is disabled', async () => {
+      const adapter = buildAdapter(undefined, new OutboundHostValidator({ enabled: false }))
+      const activity = makeActivity(ActivityTypes.Message, 'https://evil.example.com/relay/')
+      stubFromObject = sinon.stub(Activity, 'fromObject').returns(activity)
+      const res = buildRes()
+
+      await adapter.process(buildReq({ aud: 'clientId' } as any), res as Response, async () => {})
+
+      const responseStatus = (res as any).status
+      sinon.assert.neverCalledWith(responseStatus, 400)
+    })
+
+    it('enforces serviceurl claim matching when the validator is enabled', async () => {
+      const adapter = buildAdapter(undefined, new OutboundHostValidator({ enabled: true }))
+      const activity = makeActivity(ActivityTypes.Message, 'https://smba.trafficmanager.net/teams/')
+      stubFromObject = sinon.stub(Activity, 'fromObject').returns(activity)
+      const res = buildRes()
+
+      await adapter.process(buildReq({ serviceurl: 'https://graph.microsoft.com/callback/' } as any), res as Response, async () => {})
+
+      const responseStatus = (res as any).status
+      sinon.assert.calledWith(responseStatus, 400)
+    })
+
+    it('rejects a disallowed continuation ServiceUrl before creating a connector client', async () => {
+      const adapter = new CloudAdapter(
+        authentication,
+        undefined,
+        undefined,
+        undefined,
+        new OutboundHostValidator({ enabled: true })
+      )
+      const reference: ConversationReference = {
+        activityId: 'activity-id',
+        user: { id: 'user-id' },
+        agent: { id: 'agent-id' },
+        conversation: { id: 'conversation-id' },
+        channelId: 'msteams',
+        serviceUrl: 'https://evil.example.com/relay/'
+      }
+
+      await assert.rejects(
+        adapter.continueConversation('clientId', reference, async () => {}),
+        /serviceUrl host is not in the configured allowed hosts/
+      )
+    })
+
+    it('rejects a disallowed create-conversation ServiceUrl before creating a connector client', async () => {
+      const adapter = new CloudAdapter(
+        authentication,
+        undefined,
+        undefined,
+        undefined,
+        new OutboundHostValidator({ enabled: true })
+      )
+      const parameters: ConversationParameters = {
+        members: [{ id: 'user-id' }],
+        isGroup: false,
+        activity: new Activity(ActivityTypes.Message),
+        channelData: undefined
+      }
+
+      await assert.rejects(
+        adapter.createConversationAsync(
+          'agentAppId',
+          'msteams',
+          'https://evil.example.com/relay/',
+          'audience',
+          parameters,
+          async () => {}
+        ),
+        /serviceUrl host is not in the configured allowed hosts/
+      )
     })
   })
 
@@ -317,28 +488,11 @@ describe('CloudAdapter options (PR #838 parity)', () => {
       await adapter.onTurnError(context, err)
     }
 
-    async function captureLog (fn: () => Promise<void>): Promise<string> {
-      const debugModule = await import('debug')
-      const prev = (debugModule.default as any).disable() // returns previous namespace string
-      ;(debugModule.default as any).enable('agents:cloud-adapter:*')
-      const calls: string[] = []
-      const origStderr = process.stderr.write.bind(process.stderr)
-      ;(process.stderr.write as any) = (chunk: any) => { calls.push(String(chunk)); return true }
-      try {
-        await fn()
-      } finally {
-        ;(process.stderr.write as any) = origStderr
-        ;(debugModule.default as any).disable()
-        if (prev) (debugModule.default as any).enable(prev)
-      }
-      return calls.join('')
-    }
-
     it('omits stack from log line by default', async () => {
       const adapter = buildAdapter()
       const err = new Error('boom')
       err.stack = 'STACK-MARKER\n  at fake'
-      const out = await captureLog(() => invokeDefaultOnTurnError(adapter, err))
+      const out = await captureDebugLog(() => invokeDefaultOnTurnError(adapter, err))
       assert.ok(out.includes('boom'), `should log error message, got: ${out}`)
       assert.ok(!out.includes('STACK-MARKER'), 'should NOT include stack by default')
     })
@@ -347,7 +501,7 @@ describe('CloudAdapter options (PR #838 parity)', () => {
       const adapter = buildAdapter({ emitStackTrace: true })
       const err = new Error('boom')
       err.stack = 'STACK-MARKER\n  at fake'
-      const out = await captureLog(() => invokeDefaultOnTurnError(adapter, err))
+      const out = await captureDebugLog(() => invokeDefaultOnTurnError(adapter, err))
       assert.ok(out.includes('STACK-MARKER'), `should include stack when emitStackTrace=true, got: ${out}`)
     })
 
@@ -358,7 +512,7 @@ describe('CloudAdapter options (PR #838 parity)', () => {
         const adapter = buildAdapter()
         const err = new Error('boom')
         err.stack = 'ENV-STACK-MARKER\n  at fake'
-        const out = await captureLog(() => invokeDefaultOnTurnError(adapter, err))
+        const out = await captureDebugLog(() => invokeDefaultOnTurnError(adapter, err))
         assert.ok(out.includes('ENV-STACK-MARKER'), `env var should enable stack trace, got: ${out}`)
       } finally {
         if (prev === undefined) delete process.env.CloudAdapterOptions__emitStackTrace
@@ -380,25 +534,12 @@ describe('CloudAdapter options (PR #838 parity)', () => {
       activity.id = 'identifiable-activity-id'
       stubFromObject = sinon.stub(Activity, 'fromObject').returns(activity)
 
-      const debugModule = await import('debug')
-      const prev = (debugModule.default as any).disable()
-      ;(debugModule.default as any).enable('agents:cloud-adapter:*')
-      const calls: string[] = []
-      const origStderr = process.stderr.write.bind(process.stderr)
-      ;(process.stderr.write as any) = (chunk: any) => { calls.push(String(chunk)); return true }
       const res = buildRes()
-      try {
-        await adapter.process(buildReq(), res as Response, async () => {})
-      } finally {
-        ;(process.stderr.write as any) = origStderr
-        ;(debugModule.default as any).disable()
-        if (prev) (debugModule.default as any).enable(prev)
-      }
+      const out = await captureDebugLog(() => adapter.process(buildReq(), res as Response, async () => {}))
 
       sinon.assert.calledWith((res as any).status, 400)
-      const joined = calls.join('')
-      assert.ok(joined.includes('invalid activity body'), `should log the invalid-activity warning, got: ${joined}`)
-      assert.ok(joined.includes('identifiable-activity-id'), 'should include serialized activity body in log')
+      assert.ok(out.includes('invalid activity body'), `should log the invalid-activity warning, got: ${out}`)
+      assert.ok(out.includes('identifiable-activity-id'), 'should include serialized activity body in log')
     })
 
     it('sanitizes control characters and U+2028/U+2029 from logged activity body (log-forging defense)', async () => {
@@ -411,25 +552,12 @@ describe('CloudAdapter options (PR #838 parity)', () => {
       ;(activity as any).text = 'first\nFAKE_LINE\x00\u2028INJECTED\r\nALSO'
       stubFromObject = sinon.stub(Activity, 'fromObject').returns(activity)
 
-      const debugModule = await import('debug')
-      const prev = (debugModule.default as any).disable()
-      ;(debugModule.default as any).enable('agents:cloud-adapter:*')
-      const calls: string[] = []
-      const origStderr = process.stderr.write.bind(process.stderr)
-      ;(process.stderr.write as any) = (chunk: any) => { calls.push(String(chunk)); return true }
-      try {
-        await adapter.process(buildReq(), buildRes() as Response, async () => {})
-      } finally {
-        ;(process.stderr.write as any) = origStderr
-        ;(debugModule.default as any).disable()
-        if (prev) (debugModule.default as any).enable(prev)
-      }
+      const res = buildRes()
+      const out = await captureDebugLog(() => adapter.process(buildReq(), res as Response, async () => {}))
 
-      const joined = calls.join('')
-      assert.ok(joined.includes('invalid activity body'), 'should log the invalid-activity warning')
-      // JSON.stringify escapes \n/\r/\x00 but leaves U+2028 untouched on Node.
-      // sanitizeForLog in truncateActivityForLog must replace U+2028 with '?'.
-      assert.ok(!joined.includes('\u2028'), 'U+2028 must not appear in the log output')
+      sinon.assert.calledWith((res as any).status, 400)
+      assert.ok(out.includes('invalid activity body'), 'should log the invalid-activity warning')
+      assert.ok(!out.includes('\u2028'), 'U+2028 must not appear in the log output')
     })
   })
 
@@ -515,7 +643,7 @@ describe('CloudAdapter options (PR #838 parity)', () => {
       try {
         const adapter = buildAdapter()
         // No warning should fire; option should be picked up.
-        assert.equal((adapter as any)._options.validateServiceUrl, true)
+        assert.equal(getAdapterOptions(adapter).validateServiceUrl, true)
       } finally {
         if (prev === undefined) delete process.env[key]
         else process.env[key] = prev

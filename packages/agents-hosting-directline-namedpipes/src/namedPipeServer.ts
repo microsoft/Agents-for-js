@@ -190,10 +190,18 @@ export class NamedPipeService {
   }
 
   private _createReadyPromise (): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
+    const ready = new Promise<void>((resolve, reject) => {
       this._readyResolve = resolve
       this._readyReject = reject
     })
+
+    // `ready` is an internally managed promise that may reject before callers
+    // choose to await it. Mark it handled here so a rejected readiness state
+    // does not surface as an unhandled rejection when callers only await
+    // `start()`.
+    ready.catch(() => {})
+
+    return ready
   }
 
   private _resolveReady (): void {

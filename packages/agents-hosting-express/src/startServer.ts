@@ -113,7 +113,12 @@ export function startServer (agent: AgentApplication<TurnState<any, any>> | Acti
   const isOptions = typeof optionsOrAuth === 'object' && optionsOrAuth !== null &&
     ('authConfig' in optionsOrAuth || 'port' in optionsOrAuth || 'routePath' in optionsOrAuth || 'rateLimitOptions' in optionsOrAuth || 'beforeListen' in optionsOrAuth)
 
-  const opts: StartServerOptions = isOptions ? optionsOrAuth as StartServerOptions : { authConfig: optionsOrAuth as AuthConfiguration | undefined }
+  // Legacy overload: the second argument is a raw AuthConfiguration. An empty object carries no auth
+  // settings, so treat it like no argument and load defaults from the environment (matching startServer(agent)).
+  const hasAuthSettings = !isOptions && optionsOrAuth != null && Object.keys(optionsOrAuth).length > 0
+  const opts: StartServerOptions = isOptions
+    ? optionsOrAuth as StartServerOptions
+    : { authConfig: hasAuthSettings ? optionsOrAuth as AuthConfiguration : undefined }
   const authConfig: AuthConfiguration = getAuthConfigWithDefaults(opts.authConfig)
   const routePath = opts.routePath ?? '/api/messages'
   const { adapter, headerPropagation } = createCloudAdapter(agent, authConfig)

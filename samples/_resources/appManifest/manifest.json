@@ -1,0 +1,50 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.22/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.22",
+  "version": "1.0.0",
+  "id": "<bot-app-id>",
+  "developer": {
+    "name": "Teams Features",
+    "websiteUrl": "https://example.azurewebsites.net",
+    "privacyUrl": "https://example.azurewebsites.net/privacy",
+    "termsOfUseUrl": "https://example.azurewebsites.net/termsofuse"
+  },
+  "icons": {
+    "outline": "icon-outline.png",
+    "color": "icon-color.png"
+  },
+  "name": {
+    "short": "Teams Features",
+    "full": "Teams Features"
+  },
+  "description": {
+    "short": "Teams Features",
+    "full": "Teams Features"
+  },
+  "accentColor": "#FFFFFF",
+  "bots": [
+    {
+      "botId": "<bot-app-id>",
+      "scopes": [
+        "personal",
+        "team",
+        "groupChat"
+      ],
+      "isNotificationOnly": false,
+      "supportsCalling": false,
+      "supportsVideo": false,
+      "supportsFiles": false
+    }
+  ],
+  "permissions": [
+    "identity",
+    "messageTeamMembers"
+  ],
+  "webApplicationInfo": {
+    "id": "<bot-app-id>",
+    "resource": "api://<bot-app-id>"
+  },
+  "validDomains": [
+    "<<BOT_DOMAIN>>"
+  ]
+}

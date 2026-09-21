@@ -13,15 +13,21 @@ import { CosmosStorageTraceDefinitions } from './observability'
 import { debug } from '@microsoft/agents-telemetry'
 
 const logger = debug('agents:cosmos-storage')
+const maxCachedInitializations = 100
+
+interface CachedTask<T> {
+  promise: Promise<T>;
+  settled: boolean;
+}
 
 /**
  * A utility class to ensure that a specific asynchronous task is executed only once for a given key.
  * @typeParam T The type of the result returned by the asynchronous task.
  */
 class DoOnce<T> {
-  private task: {
-    [key: string]: Promise<T>;
-  } = {}
+  private readonly tasks = new Map<string, CachedTask<T>>()
+
+  constructor (private readonly maxTasks: number) {}
 
   /**
    * Waits for the task associated with the given key to complete, or starts the task if it hasn't been started yet.
@@ -30,17 +36,66 @@ class DoOnce<T> {
    * @returns A promise that resolves to the result of the task.
    */
   waitFor (key: string, fn: () => Promise<T>): Promise<T> {
-    if (!this.task[key]) {
-      this.task[key] = fn()
+    const existingTask = this.tasks.get(key)
+    if (existingTask) {
+      this.tasks.delete(key)
+      this.tasks.set(key, existingTask)
+      return existingTask.promise
     }
 
-    return this.task[key]
+    const cachedTask: CachedTask<T> = {
+      promise: Promise.resolve().then(fn),
+      settled: false,
+    }
+    this.tasks.set(key, cachedTask)
+    cachedTask.promise.then(() => {
+      if (this.tasks.get(key) === cachedTask) {
+        cachedTask.settled = true
+        this.evictLeastRecentlyUsed()
+      }
+    }, () => {
+      if (this.tasks.get(key) === cachedTask) {
+        this.tasks.delete(key)
+      }
+    })
+    this.evictLeastRecentlyUsed()
+
+    return cachedTask.promise
+  }
+
+  private evictLeastRecentlyUsed (): void {
+    while (this.tasks.size > this.maxTasks) {
+      let evicted = false
+      for (const [key, task] of this.tasks) {
+        if (task.settled) {
+          this.tasks.delete(key)
+          evicted = true
+          break
+        }
+      }
+      if (!evicted) {
+        return
+      }
+    }
   }
 }
 
-const _doOnce: DoOnce<Container> = new DoOnce<Container>()
+interface ContainerInitialization {
+  container: Container;
+  compatibilityModePartitionKey: boolean;
+}
+
+const _doOnce: DoOnce<ContainerInitialization> = new DoOnce<ContainerInitialization>(maxCachedInitializations)
 
 const maxDepthAllowed = 127
+
+function isNotFoundError (err: unknown): boolean {
+  if (!err || typeof err !== 'object' || !('code' in err)) {
+    return false
+  }
+
+  return Number(err.code) === 404
+}
 
 /**
  * Implements storage using Cosmos DB partitioned storage.
@@ -280,20 +335,29 @@ export class CosmosDbPartitionedStorage implements Storage {
    */
   private async initialize (): Promise<void> {
     if (!this.container) {
-      if (!this.client) {
-        this.client = new CosmosClient(this.cosmosDbStorageOptions.cosmosClientOptions!)
-      }
-      const dbAndContainerKey = `${this.cosmosDbStorageOptions.databaseId}-${this.cosmosDbStorageOptions.containerId}`
-      this.container = await _doOnce.waitFor(
+      const dbAndContainerKey = JSON.stringify([
+        this.cosmosDbStorageOptions.cosmosClientOptions!.endpoint,
+        this.cosmosDbStorageOptions.databaseId,
+        this.cosmosDbStorageOptions.containerId,
+      ])
+      const initialization = await _doOnce.waitFor(
         dbAndContainerKey,
-        async (): Promise<Container> => await this.getOrCreateContainer()
+        () => {
+          if (!this.client) {
+            this.client = new CosmosClient(this.cosmosDbStorageOptions.cosmosClientOptions!)
+          }
+          return this.getOrCreateContainer()
+        }
       )
+      this.container = initialization.container
+      this.compatibilityModePartitionKey = initialization.compatibilityModePartitionKey
     }
   }
 
-  private async getOrCreateContainer (): Promise<Container> {
+  private async getOrCreateContainer (): Promise<ContainerInitialization> {
     let createIfNotExists = !this.cosmosDbStorageOptions.compatibilityMode
     let container: Container | undefined
+    let compatibilityModePartitionKey = false
 
     try {
       const { database } = await this.client.databases.createIfNotExists({
@@ -303,12 +367,11 @@ export class CosmosDbPartitionedStorage implements Storage {
       if (this.cosmosDbStorageOptions.compatibilityMode) {
         try {
           container = database.container(this.cosmosDbStorageOptions.containerId)
-          // @ts-ignore
-          const partitionKeyResponse = await container.readPartitionKeyDefinition()
-          if (partitionKeyResponse.resource && partitionKeyResponse.resource.paths) {
-            const paths = partitionKeyResponse.resource.paths
+          const containerResponse = await container.read()
+          const paths = containerResponse.resource?.partitionKey?.paths
+          if (paths) {
             if (paths.includes('/_partitionKey')) {
-              this.compatibilityModePartitionKey = true
+              compatibilityModePartitionKey = true
             } else if (paths.indexOf(DocumentStoreItem.partitionKeyPath) === -1) {
               throw ExceptionHelper.generateException(
                 Error,
@@ -321,10 +384,13 @@ export class CosmosDbPartitionedStorage implements Storage {
               )
             }
           } else {
-            this.compatibilityModePartitionKey = true
+            compatibilityModePartitionKey = true
           }
-          return container
-        } catch {
+          return { container, compatibilityModePartitionKey }
+        } catch (err: unknown) {
+          if (!isNotFoundError(err)) {
+            throw err
+          }
           createIfNotExists = true
         }
       }
@@ -337,7 +403,7 @@ export class CosmosDbPartitionedStorage implements Storage {
           },
           throughput: this.cosmosDbStorageOptions.containerThroughput,
         })
-        return result.container
+        return { container: result.container, compatibilityModePartitionKey }
       }
 
       if (!container) {
@@ -348,7 +414,7 @@ export class CosmosDbPartitionedStorage implements Storage {
           { containerId: this.cosmosDbStorageOptions.containerId }
         )
       }
-      return container
+      return { container, compatibilityModePartitionKey }
     } catch (err: any) {
       throw ExceptionHelper.generateException(
         Error,
@@ -367,6 +433,8 @@ export class CosmosDbPartitionedStorage implements Storage {
   }
 
   private checkForNestingError (json: object, err: Error | Record<'message', string> | string): void {
+    const ancestors = new WeakSet<object>()
+
     const checkDepth = (obj: unknown, depth: number, isInDialogState: boolean): void => {
       if (depth > maxDepthAllowed) {
         let additionalMessage = ''
@@ -397,8 +465,17 @@ export class CosmosDbPartitionedStorage implements Storage {
           }
         )
       } else if (obj && typeof obj === 'object') {
-        for (const [key, value] of Object.entries(obj)) {
-          checkDepth(value, depth + 1, key === 'dialogStack' || isInDialogState)
+        if (ancestors.has(obj)) {
+          return
+        }
+
+        ancestors.add(obj)
+        try {
+          for (const [key, value] of Object.entries(obj)) {
+            checkDepth(value, depth + 1, key === 'dialogStack' || isInDialogState)
+          }
+        } finally {
+          ancestors.delete(obj)
         }
       }
     }

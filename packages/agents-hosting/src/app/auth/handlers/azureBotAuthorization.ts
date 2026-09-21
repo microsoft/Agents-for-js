@@ -48,7 +48,7 @@ interface AzureBotActiveHandler extends ActiveAuthorizationHandler {
  * where `{handlerId}` is the handler's unique identifier and `{propertyName}` matches the property name.
  *
  * @example
- * ```env
+ * ```
  * # For a handler with id "myAuth":
  * AgentApplication__UserAuthorization__handlers__myAuth__settings__azureBotOAuthConnectionName=MyConnection
  * AgentApplication__UserAuthorization__handlers__myAuth__settings__oboScopes=api://scope1 api://scope2

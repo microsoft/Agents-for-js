@@ -22,4 +22,9 @@ export interface AdaptiveCardInvokeValue {
    * The state of the adaptive card.
    */
   state: string
+  /**
+   * Indicates whether Teams initiated the action while rendering a refreshable
+   * card or a user explicitly selected an action.
+   */
+  trigger?: 'automatic' | 'manual'
 }

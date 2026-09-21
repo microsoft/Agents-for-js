@@ -52,7 +52,7 @@ export class BlobsStorage implements Storage {
     url = '',
     credential?: StorageSharedKeyCredential | AnonymousCredential | TokenCredential
   ) {
-    if (url !== '' && credential != null) {
+    if (url.trim() !== '') {
       z.object({ url: z.string() }).parse({
         url,
       })
@@ -81,7 +81,7 @@ export class BlobsStorage implements Storage {
     logger.info('BlobsStorage settings loaded', {
       container: containerName,
       connection: {
-        mode: isTokenCredential(credential) ? 'tokenCredential' : 'connectionString',
+        mode: isTokenCredential(credential) ? 'tokenCredential' : url.trim() !== '' ? 'url' : 'connectionString',
         type: (url.trim() !== '' ? url : connectionString!).trim() === 'UseDevelopmentStorage=true;' ? 'development' : 'production',
       },
       pipeline: options?.storagePipelineOptions !== undefined ? 'custom' : 'default',

@@ -44,7 +44,7 @@ export class StateManagementAgent extends ActivityHandler {
           if (conversationData.promptedForUserName) {
             userProfile.name = turnContext.activity.text
 
-            await turnContext.sendActivity(`Thanks ${userProfile.name}. To see conversation data, type anything.`)
+            await turnContext.sendActivity(`Thanks ${userProfile.name}. To see conversation data, type anything. Type '/reset' to clear state or '/transcript' to see the conversation transcript.`)
 
             conversationData.promptedForUserName = false
           } else {
@@ -52,19 +52,22 @@ export class StateManagementAgent extends ActivityHandler {
             conversationData.promptedForUserName = true
           }
         } else {
-          conversationData.timestamp = turnContext.activity.timestamp!.toLocaleString()
-          conversationData.channelId = turnContext.activity.channelId
-
-          await turnContext.sendActivity(`${userProfile.name} sent: ${turnContext.activity.text}`)
-
           if (turnContext.activity.text === '/reset') {
             await this.conversationDataAccessor.delete(turnContext)
             await this.userProfileAccessor.delete(turnContext)
-          }
-        }
+            await turnContext.sendActivity('State has been reset.')
+          } else if (turnContext.activity.text === '/transcript') {
+            await this.showTranscript(turnContext)
+          } else {
+            // Add message details to the conversation data.
+            conversationData.timestamp = turnContext.activity.timestamp!.toLocaleString()
+            conversationData.channelId = turnContext.activity.channelId
 
-        if (turnContext.activity.text === 'show transcript') {
-          await this.showTranscript(turnContext)
+            // Display state data.
+            await turnContext.sendActivity(`${userProfile.name} sent: ${turnContext.activity.text}`)
+            await turnContext.sendActivity(`Message received at: ${conversationData.timestamp}`)
+            await turnContext.sendActivity(`Message received from: ${conversationData.channelId}`)
+          }
         }
       } catch (error) {
         console.error('State accessor error:', error)

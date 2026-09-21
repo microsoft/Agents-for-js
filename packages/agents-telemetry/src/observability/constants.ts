@@ -37,6 +37,7 @@ export const SpanNames = {
   AGENTS_APP_BEFORE_TURN: 'agents.app.before_turn',
   AGENTS_APP_AFTER_TURN: 'agents.app.after_turn',
   AGENTS_APP_DOWNLOAD_FILES: 'agents.app.download_files',
+  AGENTS_APP_TYPING_INDICATOR: 'agents.app.typing_indicator',
 
   // ConnectorClient
   CONNECTOR_SEND_TO_CONVERSATION: 'agents.connector.send_to_conversation',
@@ -105,6 +106,10 @@ export const SpanNames = {
   COPILOT_SEND_ACTIVITY: 'agents.copilot_client.send_activity',
   COPILOT_POST_REQUEST: 'agents.copilot_client.post_request',
   COPILOT_CREATE_CONNECTION: 'agents.copilot_client.webchat.create_connection',
+  COPILOT_WEBCHAT_START_CONVERSATION: 'agents.copilot_client.webchat.start_conversation',
+  COPILOT_WEBCHAT_POST_ACTIVITY: 'agents.copilot_client.webchat.post_activity',
+  COPILOT_WEBCHAT_RECEIVE_ACTIVITY: 'agents.copilot_client.webchat.receive_activity',
+  COPILOT_WEBCHAT_END_CONNECTION: 'agents.copilot_client.webchat.end_connection',
   COPILOT_EXECUTE_STREAMING: 'agents.copilot_client.execute_streaming',
   COPILOT_SUBSCRIBE_ASYNC: 'agents.copilot_client.subscribe_async',
 
@@ -112,6 +117,9 @@ export const SpanNames = {
   NAMED_PIPE_CONNECT: 'agents.named_pipe.connect',
   NAMED_PIPE_DISPATCH: 'agents.named_pipe.dispatch',
   NAMED_PIPE_SEND: 'agents.named_pipe.send',
+
+  // Slack
+  SLACK_API_CALL: 'agents.slack.api.call',
 } as const
 
 /**
@@ -179,4 +187,8 @@ export const MetricNames = {
   NAMED_PIPE_DISPATCH_ERRORS: 'agents.named_pipe.dispatch.error.count',
   NAMED_PIPE_SENDS: 'agents.named_pipe.send.count',
   NAMED_PIPE_SEND_DURATION: 'agents.named_pipe.send.duration',
+
+  // Slack
+  SLACK_API_REQUESTS: 'agents.slack.api.request.count',
+  SLACK_API_REQUEST_DURATION: 'agents.slack.api.request.duration',
 } as const

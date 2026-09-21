@@ -22,7 +22,7 @@ const logger = debug('agents:authorization:agentic')
  * where `{handlerId}` is the handler's unique identifier and `{propertyName}` matches the property name.
  *
  * @example
- * ```env
+ * ```
  * # For a handler with id "myAuth":
  * AgentApplication__UserAuthorization__handlers__myAuth__settings__type=AgenticUserAuthorization
  * AgentApplication__UserAuthorization__handlers__myAuth__settings__scopes=api://scope1 api://scope2

@@ -1,0 +1,17 @@
+{
+  "name": "sidecar-auth",
+  "version": "1.0.0",
+  "private": true,
+  "author": "Microsoft",
+  "license": "MIT",
+  "main": "./dist/agent.js",
+  "scripts": {
+    "build": "tsc --build",
+    "start": "npm run build && node --env-file .env ./dist/agent.js",
+    "bundle": "npm run build && esbuild dist/agent.js --bundle --platform=node --metafile=dist/meta.json --outfile=dist/bundle.js --tree-shaking=true --keep-names"
+  },
+  "dependencies": {
+    "@microsoft/agents-hosting-express": "file:../../packages/agents-hosting-express",
+    "@microsoft/agents-hosting": "file:../../packages/agents-hosting"
+  }
+}

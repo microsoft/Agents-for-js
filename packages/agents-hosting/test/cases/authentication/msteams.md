@@ -24,9 +24,6 @@ This document presents a comprehensive suite of test cases for authentication ha
 
 ## Test Cases
 
-> [!NOTE]
-> These test cases were created using the [autoAuth](/samples/auth/autoAuth.ts) sample.
-
 ### 1. Basic Login Flow
 
 **Description:**

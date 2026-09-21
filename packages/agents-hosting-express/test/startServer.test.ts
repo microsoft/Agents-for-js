@@ -195,7 +195,8 @@ describe('StartServerOptions', () => {
       let capturedListenTarget: string | number | undefined
 
       const originalListen = express.application.listen
-      ;(express.application as any).listen = function (listenTarget: string | number) {
+      const application = express.application as { listen: typeof originalListen }
+      application.listen = function (listenTarget: string | number) {
         capturedListenTarget = listenTarget
         return {
           on: function () {
@@ -212,7 +213,7 @@ describe('StartServerOptions', () => {
 
         assert.strictEqual(capturedListenTarget, target)
       } finally {
-        ;(express.application as any).listen = originalListen
+        application.listen = originalListen
       }
     })
   })

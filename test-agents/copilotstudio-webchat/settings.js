@@ -25,7 +25,11 @@ export class SampleConnectionSettings extends ConnectionSettings {
       // Type of Copilot Studio Agent (Published or Prebuilt). Default value is "Published".
       copilotAgentType: '',
       // Flag to use the "x-ms-d2e-experimental" header URL on subsequent calls to the Copilot Studio service.
-      useExperimentalEndpoint: false
+      useExperimentalEndpoint: false,
+      // Flag to enable diagnostics logging. Default value is false.
+      enableDiagnostics: false,
+      // Key used to pseudonymize conversation IDs in the diagnostics logs. Default value is an empty string.
+      diagnosticsPseudonymKey: '',
     })
     // App ID of the App Registration used to log in; should be in the same tenant as the Copilot Studio agent.
     this.appClientId = ''

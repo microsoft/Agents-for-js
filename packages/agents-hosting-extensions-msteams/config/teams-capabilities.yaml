@@ -1,0 +1,115 @@
+# Curated ownership map for classifying new @microsoft/teams.api surface area.
+# This package consumes selected Teams API types and clients; it is not a wrapper
+# for the full upstream package. Direct compatibility findings take precedence
+# over these advisory adoption policies.
+schemaVersion: 1
+
+dependency:
+  package: "@microsoft/teams.api"
+
+capabilities:
+  teams-api-client:
+    description: "Creates, stores, and exposes the Teams API client for a Teams turn."
+    owners:
+      - "src/teamsApiClientExtensions.ts"
+      - "src/teamsTurnContext.ts"
+      - "src/teamsAgentExtension.ts"
+    upstreamAreas:
+      - "clients"
+    adoptionPolicy: "strict-compatibility"
+
+  activity-data:
+    description: "Parses Teams channel data and provides Teams-specific activity helpers."
+    owners:
+      - "src/activity-extensions/**"
+      - "src/teamsActivityExtensions.ts"
+      - "src/teamsModelExtensions.ts"
+    upstreamAreas:
+      - "models.channel-data"
+      - "activities"
+    adoptionPolicy: "strict-compatibility"
+
+  channels:
+    description: "Routes Teams channel lifecycle and membership events."
+    owners:
+      - "src/channels/**"
+    upstreamAreas:
+      - "clients.team"
+      - "models.channel-data.channel-info"
+      - "models.channel-data"
+    adoptionPolicy: "review-new-members"
+
+  teams:
+    description: "Routes Teams team lifecycle events."
+    owners:
+      - "src/teams/**"
+    upstreamAreas:
+      - "models.channel-data.team-info"
+      - "models.channel-data"
+    adoptionPolicy: "review-new-members"
+
+  meetings:
+    description: "Routes meeting lifecycle and participant events."
+    owners:
+      - "src/meetings/**"
+    upstreamAreas:
+      - "models.meeting"
+      - "models.account"
+      - "activities.event"
+    adoptionPolicy: "review-new-members"
+
+  message-extensions:
+    description: "Handles message extension invokes, query parsing, actions, and responses."
+    owners:
+      - "src/messageExtensions/**"
+    upstreamAreas:
+      - "models.messaging-extension"
+      - "models.app-based-link-query"
+      - "activities.invoke.message-extension"
+    adoptionPolicy: "review-new-members"
+
+  task-modules:
+    description: "Handles Teams task module fetch and submit invokes."
+    owners:
+      - "src/taskModules/**"
+    upstreamAreas:
+      - "models.task-module"
+      - "activities.invoke"
+    adoptionPolicy: "review-new-members"
+
+  file-consents:
+    description: "Handles file consent accept and decline invoke payloads."
+    owners:
+      - "src/fileConsents/**"
+    upstreamAreas:
+      - "models.file"
+    adoptionPolicy: "review-new-members"
+
+  app-configuration:
+    description: "Handles Teams app configuration fetch and submit invokes."
+    owners:
+      - "src/config/**"
+    upstreamAreas:
+      - "models.config"
+      - "activities.invoke.config"
+    adoptionPolicy: "review-new-members"
+
+  message-actions:
+    description: "Handles message lifecycle events, read receipts, and connector-card execute actions."
+    owners:
+      - "src/messages/**"
+      - "src/models/readReceiptInfo.ts"
+    upstreamAreas:
+      - "models.o365"
+      - "activities.message"
+      - "activities.event"
+    adoptionPolicy: "review-new-members"
+
+  app-routing:
+    description: "Provides Teams route registration, feedback-loop, and handoff helpers over agent activities."
+    owners:
+      - "src/app/**"
+      - "src/teamsRouteHandler.ts"
+    upstreamAreas:
+      - "activities"
+    adoptionPolicy: "advisory-only"

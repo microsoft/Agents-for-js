@@ -2,7 +2,9 @@
 // Licensed under the MIT License.
 
 import { ExceptionHelper } from '@microsoft/agents-activity'
+import { trace } from '@microsoft/agents-telemetry'
 import { Errors } from '../errorHelper.js'
+import { SlackTraceDefinitions } from '../observability/index.js'
 import type { SlackResponse } from './slackResponse.js'
 
 /**
@@ -37,34 +39,40 @@ export class SlackApi {
    * @throws When the HTTP request fails or the API returns `ok: false`.
    */
   async call (method: string, options?: Record<string, unknown>): Promise<SlackResponse> {
-    const body = options
-      ? JSON.stringify(options, (_key, value) => (value === null || value === undefined ? undefined : value))
-      : undefined
+    return trace(SlackTraceDefinitions.apiCall, async ({ record }) => {
+      record({ method })
 
-    let response: Response
-    try {
-      response = await fetch(`https://slack.com/api/${method}`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${this._token}`,
-          'Content-Type': 'application/json',
-        },
-        body,
-      })
-    } catch (err) {
-      throw ExceptionHelper.generateException(Error, Errors.SlackApiHttpError, err instanceof Error ? err : undefined, { status: 'network error' })
-    }
+      const body = options
+        ? JSON.stringify(options, (_key, value) => (value === null || value === undefined ? undefined : value))
+        : undefined
 
-    if (!response.ok) {
-      throw ExceptionHelper.generateException(Error, Errors.SlackApiHttpError, undefined, { status: String(response.status) })
-    }
+      let response: Response
+      try {
+        response = await fetch(`https://slack.com/api/${method}`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${this._token}`,
+            'Content-Type': 'application/json',
+          },
+          body,
+        })
+      } catch (err) {
+        throw ExceptionHelper.generateException(Error, Errors.SlackApiHttpError, err instanceof Error ? err : undefined, { status: 'network error' })
+      }
 
-    const data = await response.json() as SlackResponse
+      record({ httpStatusCode: String(response.status) })
+      if (!response.ok) {
+        throw ExceptionHelper.generateException(Error, Errors.SlackApiHttpError, undefined, { status: String(response.status) })
+      }
 
-    if (!data.ok) {
-      throw ExceptionHelper.generateException(Error, Errors.SlackApiError, undefined, { error: data.error ?? 'unknown' })
-    }
+      const data = await response.json() as SlackResponse
 
-    return data
+      if (!data.ok) {
+        record({ slackErrorCode: data.error ?? 'unknown' })
+        throw ExceptionHelper.generateException(Error, Errors.SlackApiError, undefined, { error: data.error ?? 'unknown' })
+      }
+
+      return data
+    })
   }
 }

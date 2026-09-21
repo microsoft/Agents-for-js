@@ -1,0 +1,7 @@
+{
+  "intentionallyNotExported": [
+    "src/createLocalAdapter.ts:LocalPipeAdapter",
+    "src/protocol/namedPipeRequest.ts:NamedPipeAttachment",
+    "src/protocol/namedPipeProtocol.ts:NamedPipeProtocol"
+  ]
+}

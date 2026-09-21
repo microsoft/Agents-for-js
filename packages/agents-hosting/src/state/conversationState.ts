@@ -6,7 +6,8 @@
 import { AgentState } from './agentState'
 import { Storage } from '../storage/storage'
 import { TurnContext } from '../turnContext'
-import { Activity } from '@microsoft/agents-activity'
+import { Activity, ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from '../errorHelper'
 
 /**
  * Manages the state of a conversation.
@@ -30,11 +31,11 @@ export class ConversationState extends AgentState {
     const conversationId = activity && (activity.conversation != null) && activity.conversation.id ? activity.conversation.id : undefined
 
     if (!channelId) {
-      throw new Error('missing activity.channelId')
+      throw ExceptionHelper.generateException(Error, Errors.MissingActivityChannelId)
     }
 
     if (!conversationId) {
-      throw new Error('missing activity.conversation.id')
+      throw ExceptionHelper.generateException(Error, Errors.MissingActivityConversationId)
     }
 
     return `${channelId}/conversations/${conversationId}/${this.namespace}`

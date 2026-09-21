@@ -1,4 +1,4 @@
-# microsoft/agents-hosting-express
+# @microsoft/agents-hosting-express
 
 ## Overview
 
@@ -68,6 +68,8 @@ app.listen(3978);
 ### Advanced — `createCloudAdapter`
 
 For full control, use `createCloudAdapter` to obtain the `CloudAdapter` directly. This is useful when you need to customize request processing and can provide the request/response shape expected by `CloudAdapter.process`.
+
+> `createCloudAdapter` is now exported from `@microsoft/agents-hosting`; the re-export below is preserved for backward compatibility. New code may import it directly from `@microsoft/agents-hosting` to avoid taking a dependency on Express.
 
 `CloudAdapter.process` expects:
 

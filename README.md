@@ -12,7 +12,7 @@ For more information please see the parent project information here [Microsoft 3
 
 ## Getting Started
 
-The best to way to get started with these packages is to look at the samples available in https://github.com/microsoft/Agents
+The best way to get started with these packages is to look at the samples available in https://github.com/microsoft/Agents
 
 ## Packages Overview
 
@@ -22,9 +22,14 @@ We offer the following NPM packages to create conversational experiences based o
 |--------------|-------------|-------------|---------|
 | `@microsoft/agents-activity` | [![npm](https://img.shields.io/npm/v/@microsoft/agents-activity)](https://www.npmjs.com/package/@microsoft/agents-activity) | Types and validators implementing the Activity protocol spec. | `botframework-schema` |
 | `@microsoft/agents-hosting` | [![npm](https://img.shields.io/npm/v/@microsoft/agents-hosting)](https://www.npmjs.com/package/@microsoft/agents-hosting) | Provides classes to host an Agent in express.  | `botbuilder` |
-| `@microsoft/agents-hosting-extensions-teams` | [![npm](https://img.shields.io/npm/v/@microsoft/agents-hosting-extensions-teams)](https://www.npmjs.com/package/@microsoft/agents-hosting-extensions-teams) | Teams specific features, such as TaskModules and Messaging Extensions.  | `botbuilder` |
+| `@microsoft/agents-hosting-extensions-msteams` | [![npm](https://img.shields.io/npm/v/@microsoft/agents-hosting-extensions-msteams)](https://www.npmjs.com/package/@microsoft/agents-hosting-extensions-msteams) | Teams specific features, such as TaskModules and Messaging Extensions.  | `botbuilder` |
+| `@microsoft/agents-hosting-extensions-teams` (deprecated) | [![npm](https://img.shields.io/npm/v/@microsoft/agents-hosting-extensions-teams)](https://www.npmjs.com/package/@microsoft/agents-hosting-extensions-teams) | Legacy Teams extension retained for backward compatibility. Use `@microsoft/agents-hosting-extensions-msteams` for new development. | `botbuilder` |
 | `@microsoft/agents-hosting-express` | [![npm](https://img.shields.io/npm/v/@microsoft/agents-hosting-express)](https://www.npmjs.com/package/@microsoft/agents-hosting-express) | Configures express to run the Agent.  | N/A |
+| `@microsoft/agents-hosting-fastify` | [![npm](https://img.shields.io/npm/v/@microsoft/agents-hosting-fastify)](https://www.npmjs.com/package/@microsoft/agents-hosting-fastify) | Configures Fastify to run the Agent.  | N/A |
 | `@microsoft/agents-hosting-dialogs` | [![npm](https://img.shields.io/npm/v/@microsoft/agents-hosting-dialogs)](https://www.npmjs.com/package/@microsoft/agents-hosting-dialogs) | Provides classes to host an Agent in express.  | `botbuilder-dialogs` |
+| `@microsoft/agents-hosting-directline-namedpipes` | [![npm](https://img.shields.io/npm/v/@microsoft/agents-hosting-directline-namedpipes)](https://www.npmjs.com/package/@microsoft/agents-hosting-directline-namedpipes) | Direct Line named-pipe hosting support. | N/A |
+| `@microsoft/agents-hosting-extensions-slack` | [![npm](https://img.shields.io/npm/v/@microsoft/agents-hosting-extensions-slack)](https://www.npmjs.com/package/@microsoft/agents-hosting-extensions-slack) | Slack channel extensions. | N/A |
+| `@microsoft/agents-telemetry` | [![npm](https://img.shields.io/npm/v/@microsoft/agents-telemetry)](https://www.npmjs.com/package/@microsoft/agents-telemetry) | Telemetry support for agents. | N/A |
 | `@microsoft/agents-hosting-storage-blob` | [![npm](https://img.shields.io/npm/v/@microsoft/agents-hosting-storage-blob)](https://www.npmjs.com/package/@microsoft/agents-hosting-storage-blob) | Extension to use Azure Blob as storage.  | `botbuilder-azure` |
 | `@microsoft/agents-hosting-storage-cosmos` | [![npm](https://img.shields.io/npm/v/@microsoft/agents-hosting-storage-cosmos)](https://www.npmjs.com/package/@microsoft/agents-hosting-storage-cosmos) | Extension to use CosmosDB as storage.  | `botbuilder-azure` |
 
@@ -44,7 +49,7 @@ The nightly build contains the code from our `main` branch and may contain featu
 
 The packages require Node.js 20 or greater, and can be used from JavaScript using CommonJS or ES6 modules, or from TypeScript.
 
-> Note: We are using node 24 to be able to initialize the process from a `.env` file without adding the dependency to `dotenv` by using the [`--env-file` flag](https://nodejs.org/en/learn/command-line/how-to-read-environment-variables-from-nodejs). Previous node versions should set the env vars explicitly before running.
+> Note: Development and CI use Node.js 24. The [`--env-file` flag](https://nodejs.org/en/learn/command-line/how-to-read-environment-variables-from-nodejs) is available in Node.js 20.6 and later; Node.js 20.0–20.5 users should set environment variables explicitly before running.
 
 ### Debugging
 
@@ -125,6 +130,28 @@ DEBUG=agents:authorization:connections:*,agents:msal:* node index.js
 We are using `eslint` configured with [neostandard](https://github.com/neostandard/neostandard)
 
 ## Contributing
+
+Before submitting a change, run:
+
+```bash
+npm run quality
+```
+
+`quality` runs the repository doctor, ESLint, dependency lint, build, tests, API compatibility checks, and sample build. It reports each check's status and duration, while printing command output only when that check fails.
+
+Use `npm run quality -- --verbose` to print the complete captured output for every check after the concise report. In GitHub Actions, each command log is available in a folded group and as the `quality-logs` artifact for seven days.
+
+For a structural, package, documentation, build-reference, or runtime-configuration change, you can run the focused doctor check directly:
+
+```bash
+npm run repo:doctor
+```
+
+The repository doctor reports file-oriented diagnostics with stable rule IDs and concrete fix instructions. It validates workspace discovery, build references, package metadata and exports, internal dependencies, catalogs and relative documentation links, API baselines, test-agent configuration and Docker lifecycles, supported Node runtimes, and disallowed npm lifecycle hooks.
+
+Run `npm run repo:doctor -- --rules` to list every rule's check, rationale, and typical resolution in the terminal. Add one or more rule IDs after `--rules` to inspect selected rules.
+
+Repository scripts must be explicit: do not add `pre*` or `post*` npm lifecycle wrappers. `npm --ignore-scripts` skips those hooks, so required work must be chained directly in the invoked command. Install-time hooks (`preinstall`, `install`, `postinstall`, and `prepare`) are also disallowed.
 
 #### Note for Microsoft internal developers: 
 - Internal Microsoft Developers should join the Core identity group [Agents SDK Contrib](https://coreidentity.microsoft.com/manage/Entitlement/entitlement/agentssdkint-upyj)

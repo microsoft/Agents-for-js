@@ -3,8 +3,13 @@
  * Licensed under the MIT License.
  */
 
+import { hmac } from '@noble/hashes/hmac'
+import { sha256 } from '@noble/hashes/sha2'
+import { bytesToHex, utf8ToBytes } from '@noble/hashes/utils'
+
 const REDACTED_VALUE = '<redacted>'
 const REDACTION_PEEK_LENGTH = 2
+let processLocalKey: Uint8Array | undefined
 
 /**
  * Redacts a string value, optionally allowing a peek at the beginning of the string for context.
@@ -58,4 +63,72 @@ export function redactScopes (scopes: string[] | undefined): string | undefined 
 
   const count = scopes.length
   return `${REDACTED_VALUE} (${count} ${count === 1 ? 'scope' : 'scopes'})`
+}
+
+/**
+ * Returns a stable, non-reversible identifier for diagnostic correlation.
+ * @param conversationId The conversation ID to pseudonymize.
+ * @param key Optional secret used to keep pseudonyms stable across restarts.
+ * @returns A pseudonymized conversation ID, or undefined when no ID is supplied.
+ */
+export function pseudonymizeConversationId (conversationId: string | undefined, key?: string): string | undefined {
+  if (!conversationId?.trim()) {
+    return undefined
+  }
+
+  const trimmedKey = key?.trim()
+  const hmacKey = trimmedKey
+    ? utf8ToBytes(trimmedKey)
+    : (processLocalKey ??= createProcessLocalKey())
+  const digest = hmac(sha256, hmacKey, utf8ToBytes(conversationId))
+
+  return `cid_${bytesToHex(digest).slice(0, 32)}`
+}
+
+function createProcessLocalKey (): Uint8Array {
+  const key = new Uint8Array(32)
+  globalThis.crypto.getRandomValues(key)
+  return key
+}
+
+/**
+ * Creates a redacted copy of an object for diagnostic logging.
+ * Conversation IDs, activity text, and URL-valued properties are redacted while all other values are preserved.
+ * @param value The value to sanitize for diagnostics.
+ * @param diagnosticsPseudonymKey Optional secret used to keep conversation pseudonyms stable across restarts.
+ * @returns A non-mutating, redacted copy of the value.
+ */
+export function redactDiagnosticObject (value: unknown, diagnosticsPseudonymKey?: string): unknown {
+  return redactValue(value, [], diagnosticsPseudonymKey)
+}
+
+function redactValue (value: unknown, path: string[], diagnosticsPseudonymKey?: string): unknown {
+  if (typeof value === 'string') {
+    const propertyName = path.at(-1)?.toLowerCase()
+    const parentPropertyName = path.at(-2)?.toLowerCase()
+
+    if (propertyName === 'conversationid' || (propertyName === 'id' && parentPropertyName === 'conversation')) {
+      return pseudonymizeConversationId(value, diagnosticsPseudonymKey)
+    }
+
+    if (propertyName === 'text' || propertyName === 'activitytext') {
+      return redactString(value, true)
+    }
+
+    if (propertyName?.includes('url') || propertyName === 'uri' || propertyName === 'href') {
+      return redactUrl(value)
+    }
+
+    return value
+  }
+
+  if (Array.isArray(value)) {
+    return value.map(item => redactValue(item, path, diagnosticsPseudonymKey))
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, redactValue(item, [...path, key], diagnosticsPseudonymKey)]))
+  }
+
+  return value
 }

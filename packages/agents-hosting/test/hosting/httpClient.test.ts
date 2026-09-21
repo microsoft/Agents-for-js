@@ -4,6 +4,14 @@ import { Readable } from 'node:stream'
 import { describe, it } from 'node:test'
 import { HttpClient, HttpError } from '../../src'
 
+async function readChunks (stream: NodeJS.ReadableStream): Promise<Buffer[]> {
+  const chunks: Buffer[] = []
+  for await (const chunk of stream as AsyncIterable<string | Buffer>) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
+  }
+  return chunks
+}
+
 describe('HttpClient', () => {
   it('merges content-type headers without sending duplicates', async () => {
     let requestHeaders: http.IncomingHttpHeaders | undefined
@@ -204,10 +212,7 @@ describe('HttpClient', () => {
 
       assert.ok(response.data instanceof Readable)
 
-      const chunks: Buffer[] = []
-      for await (const chunk of response.data as AsyncIterable<string | Buffer>) {
-        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
-      }
+      const chunks = await readChunks(response.data)
 
       assert.strictEqual(Buffer.concat(chunks).toString('utf8'), 'chunk-1chunk-2')
     } finally {

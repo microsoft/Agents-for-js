@@ -66,9 +66,7 @@ export function recognizeChoices (
   // Normalize choices
   const list: Choice[] = (choices || [])
     .map((choice) => (typeof choice === 'string' ? { value: choice } : choice))
-    .filter(
-      (choice: Choice) => choice // TODO: does this do anything?
-    )
+    .filter((choice): choice is Choice => choice !== undefined && choice !== null)
 
   // Try finding choices by text search first
   // - We only want to use a single strategy for returning results to avoid issues where utterances

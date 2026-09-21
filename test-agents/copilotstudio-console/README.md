@@ -49,7 +49,7 @@ This step will require permissions to Create application identities in your Azur
 
 #### Instructions - Configure the Example Application
 
-1. Open the [env.TEMPLATE](./copilotstudio/env.TEMPLATE) and rename it to .env.
+1. Open the [env.TEMPLATE](./env.TEMPLATE) and rename it to .env.
 2. Fill in the values you recorded during setup:
     - `environmentId`: The Copilot Studio Environment Id.
     - `schemaName`: The Copilot Studio Schema name.
@@ -95,7 +95,7 @@ This step will require permissions to Create application identities in your Azur
 
 #### Instructions - Configure the Example Application
 
-1. Open the [env.TEMPLATE](./copilotstudio/env.TEMPLATE) and rename it to .env.
+1. Open the [env.TEMPLATE](./env.TEMPLATE) and rename it to .env.
 2. Fill in the values you recorded during setup:
     - `environmentId`: The Copilot Studio Environment Id.
     - `schemaName`: The Copilot Studio Schema name.

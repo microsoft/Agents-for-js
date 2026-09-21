@@ -3,6 +3,8 @@
   "compilerOptions": {
     "rootDirs": [ "src/", "test/"],
     "outDir": "dist",
+    "types": ["node"],
+    "lib": ["ES2022", "DOM"],
     "paths": {
       "@microsoft/*": ["./packages/*"]
     }
