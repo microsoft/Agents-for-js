@@ -49,7 +49,7 @@ jobs:
         run: node scripts/set-version.mjs
 
       - name: Publish Test Report
-        uses: dorny/test-reporter@c0efed4aa2e7b2e2ea5ba190e28b07a86790ecdd # v1
+        uses: dorny/test-reporter@c0efed4aa2e7b2e2ea5ba190e28b07a86790ecdd
         if: success() || failure()
         with:
           name: Node Tests 
