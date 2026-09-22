@@ -6,6 +6,7 @@ import { escapeKey } from './cosmosDbKeyEscape'
 import { DocumentStoreItem } from './documentStoreItem'
 import { CosmosDbPartitionedStorageOptions } from './cosmosDbPartitionedStorageOptions'
 import {
+  getStorageWriteExpiry,
   StorageDeleteOptions,
   StorageDeleteResults,
   StorageOperationStatus,
@@ -264,6 +265,7 @@ class CosmosDbPartitionedStorageInternals {
           partitionKey: {
             paths: [DocumentStoreItem.partitionKeyPath],
           },
+          defaultTtl: -1,
           throughput: this.cosmosDbStorageOptions.containerThroughput,
         })
         return { container: result.container, compatibilityModePartitionKey }
@@ -293,6 +295,10 @@ class CosmosDbPartitionedStorageInternals {
 
   getPartitionKey (key: string) {
     return this.compatibilityModePartitionKey ? undefined : key
+  }
+
+  isExpired (item: DocumentStoreItem): boolean {
+    return item.expiresAt !== undefined && item.expiresAt <= Date.now()
   }
 
   checkForNestingError (json: object, err: Error | Record<'message', string> | string): void {
@@ -376,6 +382,10 @@ export class CosmosDbPartitionedStorage extends CosmosDbPartitionedStorageIntern
           const response = await this.container.item(escapedKey, this.getPartitionKey(escapedKey)).read<DocumentStoreItem>()
           const item = response.resource
           if (item) {
+            if (this.isExpired(item)) {
+              await this.container.item(escapedKey, this.getPartitionKey(escapedKey)).delete({ accessCondition: { type: 'IfMatch', condition: item._etag } }).catch(() => undefined)
+              return
+            }
             storeItems[item.realId] = item.document
             storeItems[item.realId].eTag = item._etag
           }
@@ -395,19 +405,22 @@ export class CosmosDbPartitionedStorage extends CosmosDbPartitionedStorageIntern
    * @param changes The keyed legacy items to write.
    * @throws When the input is invalid or Cosmos DB cannot complete the operation.
    */
-  async write (changes: StoreItems): Promise<void> {
+  async write (changes: StoreItems, options?: StorageWriteOptions): Promise<void> {
     return trace(CosmosStorageTraceDefinitions.write, async ({ record }) => {
       record({ keyCount: changes ? Object.keys(changes).length : undefined })
       if (!changes || typeof changes !== 'object' || Array.isArray(changes)) {
         throw ExceptionHelper.generateException(ReferenceError, Errors.MissingWriteChanges)
       }
       if (Object.keys(changes).length === 0) return
+      const expiresAt = getStorageWriteExpiry(options)
       await this.initialize()
       await Promise.all(Object.entries(changes).map(async ([key, { eTag, ...change }]) => {
         const document = new DocumentStoreItem({
           id: escapeKey(key, this.cosmosDbStorageOptions.keySuffix, this.cosmosDbStorageOptions.compatibilityMode),
           realId: key,
           document: change,
+          ttl: options?.ttl === undefined ? undefined : Math.ceil(options.ttl),
+          expiresAt,
         })
         const accessCondition = eTag !== '*' && eTag != null && eTag.length > 0
           ? { accessCondition: { type: 'IfMatch', condition: eTag } }
@@ -484,7 +497,10 @@ export class CosmosDbPartitionedStorageV2 extends StorageV2 {
           const escapedKey = escapeKey(key, this.internals.cosmosDbStorageOptions.keySuffix, this.internals.cosmosDbStorageOptions.compatibilityMode)
           const response = await this.internals.container.item(escapedKey, this.internals.getPartitionKey(escapedKey)).read<DocumentStoreItem>()
           const item = response.resource
-          results[key] = item
+          if (item && this.internals.isExpired(item)) {
+            await this.internals.container.item(escapedKey, this.internals.getPartitionKey(escapedKey)).delete({ accessCondition: { type: 'IfMatch', condition: item._etag } }).catch(() => undefined)
+            results[key] = { key, status: StorageOperationStatus.NotFound }
+          } else results[key] = item
             ? { key, status: StorageOperationStatus.Succeeded, value: item.document as T, version: item._etag }
             : { key, status: StorageOperationStatus.NotFound }
         } catch (err: any) {
@@ -517,6 +533,7 @@ export class CosmosDbPartitionedStorageV2 extends StorageV2 {
         throw ExceptionHelper.generateException(ReferenceError, Errors.MissingWriteChanges)
       }
       const mode = options?.mode ?? StorageWriteMode.Upsert
+      const expiresAt = getStorageWriteExpiry(options)
       validateWriteMode(mode)
       if (Object.keys(changes).length === 0) return {}
       validateV2ChangeKeys(changes)
@@ -530,6 +547,8 @@ export class CosmosDbPartitionedStorageV2 extends StorageV2 {
           id: escapeKey(key, this.internals.cosmosDbStorageOptions.keySuffix, this.internals.cosmosDbStorageOptions.compatibilityMode),
           realId: key,
           document: value,
+          ttl: options?.ttl === undefined ? undefined : Math.ceil(options.ttl),
+          expiresAt,
         })
         const expectedVersion = options?.expectedVersion
         const accessCondition = expectedVersion === undefined

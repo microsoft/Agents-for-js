@@ -93,7 +93,7 @@ export interface Storage {
    * @returns A promise that resolves when the write operation is complete
    * @throws If the changes object is empty or undefined, or if an eTag conflict occurs and optimistic concurrency is enabled
    */
-  write: (changes: StoreItem) => Promise<void>;
+  write: (changes: StoreItem, options?: StorageWriteOptions) => Promise<void>;
 
   /**
    * Deletes store items from storage.
@@ -161,6 +161,13 @@ export enum StorageWriteMode {
 
 /** Options applied to every item in a version 2 write operation. */
 export interface StorageWriteOptions {
+  /**
+   * Optional time to live, in seconds, for written items.
+   *
+   * When set, storage providers stop returning the written items after this
+   * duration has elapsed. Values must be finite numbers greater than zero.
+   */
+  ttl?: number;
   mode?: StorageWriteMode;
   expectedVersion?: string;
 }

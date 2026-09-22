@@ -905,7 +905,7 @@ export interface Fact {
 export class FileStorage extends FileStorageInternals implements Storage {
     delete(keys: string[]): Promise<void>;
     read(keys: string[]): Promise<StoreItem>;
-    write(changes: StoreItem): Promise<void>;
+    write(changes: StoreItem, options?: StorageWriteOptions): Promise<void>;
 }
 
 // @public
@@ -921,6 +921,9 @@ export function getAuthConfigWithDefaults(config?: AuthConfiguration): AuthConfi
 
 // @public
 export const getProductInfo: () => string;
+
+// @public (undocumented)
+export function getStorageWriteExpiry(options?: StorageWriteOptions): number | undefined;
 
 // @public
 export class HeaderPropagation implements HeaderPropagationCollection {
@@ -1103,7 +1106,7 @@ export class MemoryStorage extends MemoryStorageInternals implements Storage {
     // (undocumented)
     static getSingleInstance(): MemoryStorage;
     read(keys: string[]): Promise<StoreItem>;
-    write(changes: StoreItem): Promise<void>;
+    write(changes: StoreItem, options?: StorageWriteOptions): Promise<void>;
 }
 
 // @public
@@ -1466,7 +1469,7 @@ export enum StatusCodes {
 export interface Storage {
     delete: (keys: string[]) => Promise<void>;
     read: (keys: string[]) => Promise<StoreItem>;
-    write: (changes: StoreItem) => Promise<void>;
+    write: (changes: StoreItem, options?: StorageWriteOptions) => Promise<void>;
 }
 
 // @public
@@ -1544,6 +1547,7 @@ export interface StorageWriteOptions {
     expectedVersion?: string;
     // (undocumented)
     mode?: StorageWriteMode;
+    ttl?: number;
 }
 
 // @public

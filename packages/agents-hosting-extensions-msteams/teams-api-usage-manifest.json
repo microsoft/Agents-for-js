@@ -1,6 +1,6 @@
 {
   "dependency": "@microsoft/teams.api",
-  "declaredVersion": "2.0.13",
+  "declaredVersion": "2.0.14",
   "sourceRoot": "src",
   "usages": [
     {
@@ -13,6 +13,7 @@
     {
       "upstreamSymbol": "Client",
       "usage": "type-reference",
+      "exposure": "publicly-exposed",
       "files": [
         "src/teamsAgentExtension.ts",
         "src/teamsApiClientExtensions.ts",
@@ -22,6 +23,7 @@
     {
       "upstreamSymbol": "AppBasedLinkQuery",
       "usage": "request-model",
+      "exposure": "publicly-exposed",
       "propertiesValidated": [
         "state",
         "url"
@@ -33,6 +35,7 @@
     {
       "upstreamSymbol": "ChannelData",
       "usage": "parsed-model",
+      "exposure": "publicly-exposed",
       "propertiesRead": [
         "channel",
         "eventType",
@@ -44,12 +47,14 @@
         "src/channels/teamsChannel.ts",
         "src/messages/message.ts",
         "src/teams/teamsTeam.ts",
+        "src/teamsActivity.ts",
         "src/teamsActivityExtensions.ts"
       ]
     },
     {
       "upstreamSymbol": "ChannelInfo",
       "usage": "event-model",
+      "exposure": "publicly-exposed",
       "files": [
         "src/channels/teamsChannel.ts"
       ]
@@ -57,6 +62,7 @@
     {
       "upstreamSymbol": "ConfigResponse",
       "usage": "response-model",
+      "exposure": "publicly-exposed",
       "files": [
         "src/config/config.ts"
       ]
@@ -64,6 +70,7 @@
     {
       "upstreamSymbol": "FileConsentCardResponse",
       "usage": "request-model",
+      "exposure": "publicly-exposed",
       "files": [
         "src/fileConsents/fileConsent.ts"
       ]
@@ -71,6 +78,7 @@
     {
       "upstreamSymbol": "MeetingDetails",
       "usage": "event-model",
+      "exposure": "publicly-exposed",
       "files": [
         "src/meetings/meeting.ts"
       ]
@@ -78,6 +86,7 @@
     {
       "upstreamSymbol": "MessagingExtensionAction",
       "usage": "request-model",
+      "exposure": "publicly-exposed",
       "propertiesRead": [
         "botActivityPreview",
         "data"
@@ -90,6 +99,7 @@
     {
       "upstreamSymbol": "MessagingExtensionActionResponse",
       "usage": "response-model",
+      "exposure": "publicly-exposed",
       "files": [
         "src/messageExtensions/messageExtension.ts"
       ]
@@ -97,6 +107,7 @@
     {
       "upstreamSymbol": "MessagingExtensionQuery",
       "usage": "request-model",
+      "exposure": "publicly-exposed",
       "propertiesValidated": [
         "commandId",
         "parameters",
@@ -115,6 +126,7 @@
     {
       "upstreamSymbol": "MessagingExtensionResponse",
       "usage": "response-model",
+      "exposure": "publicly-exposed",
       "files": [
         "src/messageExtensions/messageExtension.ts"
       ]
@@ -122,6 +134,7 @@
     {
       "upstreamSymbol": "O365ConnectorCardActionQuery",
       "usage": "request-model",
+      "exposure": "publicly-exposed",
       "files": [
         "src/messages/message.ts"
       ]
@@ -129,6 +142,7 @@
     {
       "upstreamSymbol": "OnBehalfOf",
       "usage": "return-model",
+      "exposure": "publicly-exposed",
       "files": [
         "src/teamsActivityExtensions.ts"
       ]
@@ -136,6 +150,7 @@
     {
       "upstreamSymbol": "TaskModuleRequest",
       "usage": "request-model",
+      "exposure": "publicly-exposed",
       "propertiesRead": [
         "data"
       ],
@@ -147,6 +162,7 @@
     {
       "upstreamSymbol": "TaskModuleResponse",
       "usage": "response-model",
+      "exposure": "publicly-exposed",
       "files": [
         "src/taskModules/taskModule.ts"
       ]
@@ -154,6 +170,7 @@
     {
       "upstreamSymbol": "TeamInfo",
       "usage": "event-model",
+      "exposure": "publicly-exposed",
       "files": [
         "src/teams/teamsTeam.ts"
       ]
@@ -161,6 +178,7 @@
     {
       "upstreamSymbol": "TeamsChannelAccount",
       "usage": "nested-event-model",
+      "exposure": "publicly-exposed",
       "files": [
         "src/meetings/meeting.ts"
       ]

@@ -2,7 +2,7 @@ import * as z from 'zod'
 import StreamConsumers from 'stream/consumers'
 import { isTokenCredential, TokenCredential } from '@azure/core-auth'
 import { AnonymousCredential, ContainerClient, StoragePipelineOptions, StorageSharedKeyCredential } from '@azure/storage-blob'
-import { StorageDeleteOptions, StorageDeleteResults, StorageOperationStatus, StorageReadResults, StorageWriteMode, StorageWriteOptions, StorageWriteResults, Storage, StorageV2, StoreItems } from '@microsoft/agents-hosting'
+import { getStorageWriteExpiry, StorageDeleteOptions, StorageDeleteResults, StorageOperationStatus, StorageReadResults, StorageWriteMode, StorageWriteOptions, StorageWriteResults, Storage, StorageV2, StoreItems } from '@microsoft/agents-hosting'
 import { ExceptionHelper } from '@microsoft/agents-activity'
 import { Errors } from './errorHelper'
 import { sanitizeBlobKey } from './blobsTranscriptStore'
@@ -11,6 +11,7 @@ import { trace, debug } from '@microsoft/agents-telemetry'
 import { BlobsStorageTraceDefinitions } from './observability'
 
 const logger = debug('agents:blob-storage')
+const expirationMetadataKey = 'agentsstorageexpiresat'
 
 /** Options for configuring Blob storage. */
 export interface BlobsStorageOptions {
@@ -81,6 +82,11 @@ export class BlobsStorage extends BlobsStorageInternals implements Storage {
         const result = { key, value: undefined as unknown }
         const blob = await ignoreError(this._containerClient.getBlobClient(sanitizeBlobKey(key)).download(), isStatusCodeError(404))
         if (!blob?.readableStreamBody) return result
+        if (isExpired(blob.metadata?.[expirationMetadataKey])) {
+          blob.readableStreamBody.destroy()
+          await ignoreError(this._containerClient.deleteBlob(sanitizeBlobKey(key), { conditions: { ifMatch: blob.etag } }), isStatusCodeError(404, 412))
+          return result
+        }
         const parsed = await StreamConsumers.json(blob.readableStreamBody) as Record<string, unknown>
         result.value = { ...parsed, eTag: blob.etag }
         logger.debug(`Read blob: ${key}, eTag: ${blob.etag}`)
@@ -97,10 +103,11 @@ export class BlobsStorage extends BlobsStorageInternals implements Storage {
    * @throws If the input is invalid, Blob Storage cannot complete the write, or a legacy `eTag`
    * condition fails.
    */
-  async write (changes: StoreItems): Promise<void> {
+  async write (changes: StoreItems, options?: StorageWriteOptions): Promise<void> {
     return trace(BlobsStorageTraceDefinitions.write, async ({ record }) => {
       record({ keyCount: changes ? Object.keys(changes).length : 0 })
       z.record(z.unknown()).parse(changes)
+      const expiresAt = getStorageWriteExpiry(options)
       await this._initialize()
       await Promise.all(Object.entries(changes).map(async ([key, { eTag = '', ...change }]) => {
         try {
@@ -113,6 +120,7 @@ export class BlobsStorage extends BlobsStorageInternals implements Storage {
           await blob.upload(serialized, serialized.length, {
             conditions,
             blobHTTPHeaders: { blobContentType: 'application/json' },
+            metadata: expiresAt === undefined ? {} : { [expirationMetadataKey]: expiresAt.toString() },
           })
         } catch (err: any) {
           if (err.statusCode === 412) {
@@ -180,8 +188,14 @@ export class BlobsStorageV2 extends StorageV2 {
       const results: StorageReadResults<T> = {}
       await Promise.all(keys.map(async key => {
         try {
-          const { etag: version, readableStreamBody } = await this.internals._containerClient.getBlobClient(sanitizeBlobKey(key)).download()
+          const { etag: version, metadata, readableStreamBody } = await this.internals._containerClient.getBlobClient(sanitizeBlobKey(key)).download()
           if (!readableStreamBody) {
+            results[key] = { key, status: StorageOperationStatus.NotFound }
+            return
+          }
+          if (isExpired(metadata?.[expirationMetadataKey])) {
+            readableStreamBody.destroy()
+            await ignoreError(this.internals._containerClient.deleteBlob(sanitizeBlobKey(key), { conditions: { ifMatch: version } }), isStatusCodeError(404, 412))
             results[key] = { key, status: StorageOperationStatus.NotFound }
             return
           }
@@ -217,6 +231,7 @@ export class BlobsStorageV2 extends StorageV2 {
       if (Object.keys(changes).length === 0) return {}
       await this.internals._initialize()
       const results: StorageWriteResults = {}
+      const expiresAt = getStorageWriteExpiry(options)
       await Promise.all(Object.entries(changes).map(async ([key, change]) => {
         const blob = this.internals._containerClient.getBlockBlobClient(sanitizeBlobKey(key))
         const needsCurrentVersion = mode !== StorageWriteMode.Upsert || options?.expectedVersion !== undefined
@@ -247,6 +262,7 @@ export class BlobsStorageV2 extends StorageV2 {
           const response = await blob.upload(serialized, serialized.length, {
             conditions,
             blobHTTPHeaders: { blobContentType: 'application/json' },
+            metadata: expiresAt === undefined ? {} : { [expirationMetadataKey]: expiresAt.toString() },
           })
           results[key] = { key, status: StorageOperationStatus.Succeeded, version: response.etag }
         } catch (err) {
@@ -353,4 +369,9 @@ function validateV2Keys (keys: string[]): void {
 
 function throwStorageOperationError (operation: string, key: string, error: unknown): never {
   throw ExceptionHelper.generateException(Error, Errors.StorageV2OperationFailed, error instanceof Error ? error : undefined, { operation, key })
+}
+
+function isExpired (expiresAt?: string): boolean {
+  const timestamp = Number(expiresAt)
+  return Number.isFinite(timestamp) && timestamp <= Date.now()
 }

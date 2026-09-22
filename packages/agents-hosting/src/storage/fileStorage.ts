@@ -10,6 +10,7 @@ import { ExceptionHelper } from '@microsoft/agents-activity'
 import { trace } from '@microsoft/agents-telemetry'
 import { Errors } from '../errorHelper'
 import { StorageTraceDefinitions } from '../observability'
+import { getStorageWriteExpiry } from './storageExpiry'
 import {
   StorageDeleteOptions,
   StorageDeleteResults,
@@ -26,17 +27,23 @@ import {
 class FileStorageInternals {
   private readonly statePath: string
   private readonly versionsPath: string
+  private readonly expirationsPath: string
   readonly state: Record<string, unknown>
   readonly versions: Record<string, string>
+  readonly expirations: Record<string, number>
 
   constructor (folder: string) {
     fs.mkdirSync(folder, { recursive: true })
     this.statePath = path.join(folder, 'state.json')
     this.versionsPath = path.join(folder, 'state.versions.json')
+    this.expirationsPath = path.join(folder, 'state.expirations.json')
     if (!fs.existsSync(this.statePath)) fs.writeFileSync(this.statePath, '{}')
     this.state = JSON.parse(fs.readFileSync(this.statePath, 'utf8')) as Record<string, unknown>
     this.versions = fs.existsSync(this.versionsPath)
       ? JSON.parse(fs.readFileSync(this.versionsPath, 'utf8')) as Record<string, string>
+      : {}
+    this.expirations = fs.existsSync(this.expirationsPath)
+      ? JSON.parse(fs.readFileSync(this.expirationsPath, 'utf8')) as Record<string, number>
       : {}
   }
 
@@ -45,12 +52,26 @@ class FileStorageInternals {
     if (fs.existsSync(this.versionsPath) || Object.keys(this.versions).length > 0) {
       fs.writeFileSync(this.versionsPath, JSON.stringify(this.versions, null, 2))
     }
+    if (fs.existsSync(this.expirationsPath) || Object.keys(this.expirations).length > 0) {
+      fs.writeFileSync(this.expirationsPath, JSON.stringify(this.expirations, null, 2))
+    }
   }
 
   getOrCreateVersion (key: string): string {
     const version = this.versions[key] ?? randomUUID()
     this.versions[key] = version
     return version
+  }
+
+  isExpired (key: string): boolean {
+    const expiresAt = this.expirations[key]
+    return expiresAt !== undefined && expiresAt <= Date.now()
+  }
+
+  remove (key: string): void {
+    delete this.state[key]
+    delete this.versions[key]
+    delete this.expirations[key]
   }
 }
 
@@ -107,9 +128,19 @@ export class FileStorage extends FileStorageInternals implements Storage {
       if (!keys || keys.length === 0) {
         throw ExceptionHelper.generateException(ReferenceError, Errors.StorageReadKeysRequired)
       }
-      return Object.fromEntries(keys
-        .filter(key => Boolean(this.state[key]))
+      let changed = false
+      const items = Object.fromEntries(keys
+        .filter(key => {
+          if (this.isExpired(key)) {
+            this.remove(key)
+            changed = true
+            return false
+          }
+          return Boolean(this.state[key])
+        })
         .map(key => [key, this.state[key]])) as StoreItem
+      if (changed) this.flush()
+      return items
     })
   }
 
@@ -119,14 +150,19 @@ export class FileStorage extends FileStorageInternals implements Storage {
    * @param changes The items to write, keyed by storage key.
    * @throws If `changes` is invalid or the file cannot be written.
    */
-  async write (changes: StoreItem): Promise<void> {
+  async write (changes: StoreItem, options?: StorageWriteOptions): Promise<void> {
     return trace(StorageTraceDefinitions.write, async ({ record }) => {
       record({ keyCount: changes ? Object.keys(changes).length : undefined })
       if (!changes || typeof changes !== 'object' || Array.isArray(changes)) {
         throw ExceptionHelper.generateException(ReferenceError, Errors.StorageWriteChangesRequired)
       }
+      const expiresAt = getStorageWriteExpiry(options)
       Object.assign(this.state, changes)
-      for (const key of Object.keys(changes)) delete this.versions[key]
+      for (const key of Object.keys(changes)) {
+        delete this.versions[key]
+        if (expiresAt === undefined) delete this.expirations[key]
+        else this.expirations[key] = expiresAt
+      }
       this.flush()
     })
   }
@@ -143,8 +179,7 @@ export class FileStorage extends FileStorageInternals implements Storage {
         throw ExceptionHelper.generateException(ReferenceError, Errors.StorageDeleteKeysRequired)
       }
       for (const key of keys) {
-        delete this.state[key]
-        delete this.versions[key]
+        this.remove(key)
       }
       this.flush()
     })
@@ -188,7 +223,11 @@ export class FileStorageV2 extends StorageV2 {
       validateV2Keys(keys)
       let createdVersion = false
       const results = Object.fromEntries(keys.map(key => {
-        if (!Object.prototype.hasOwnProperty.call(this.internals.state, key)) {
+        if (!Object.prototype.hasOwnProperty.call(this.internals.state, key) || this.internals.isExpired(key)) {
+          if (this.internals.isExpired(key)) {
+            this.internals.remove(key)
+            createdVersion = true
+          }
           return [key, { key, status: StorageOperationStatus.NotFound }]
         }
         const value = structuredClone(this.internals.state[key]) as T
@@ -220,11 +259,16 @@ export class FileStorageV2 extends StorageV2 {
       validateV2Changes(changes)
 
       const results: StorageWriteResults = {}
+      const expiresAt = getStorageWriteExpiry(options)
       const mode = options?.mode ?? StorageWriteMode.Upsert
       validateWriteMode(mode)
       let changed = false
       let createdVersion = false
       for (const [key, value] of Object.entries(changes)) {
+        if (this.internals.isExpired(key)) {
+          this.internals.remove(key)
+          changed = true
+        }
         const current = this.internals.state[key]
         createdVersion ||= current !== undefined && this.internals.versions[key] === undefined
         const currentVersion = current === undefined
@@ -240,6 +284,8 @@ export class FileStorageV2 extends StorageV2 {
           const version = randomUUID()
           this.internals.state[key] = structuredClone(value)
           this.internals.versions[key] = version
+          if (expiresAt === undefined) delete this.internals.expirations[key]
+          else this.internals.expirations[key] = expiresAt
           results[key] = { key, status: StorageOperationStatus.Succeeded, version }
           changed = true
         }
@@ -266,6 +312,10 @@ export class FileStorageV2 extends StorageV2 {
       let changed = false
       let createdVersion = false
       for (const key of keys) {
+        if (this.internals.isExpired(key)) {
+          this.internals.remove(key)
+          changed = true
+        }
         const current = this.internals.state[key]
         createdVersion ||= current !== undefined && this.internals.versions[key] === undefined
         const currentVersion = current === undefined
@@ -276,8 +326,7 @@ export class FileStorageV2 extends StorageV2 {
         } else if (options?.expectedVersion !== undefined && options.expectedVersion !== currentVersion) {
           results[key] = { key, status: StorageOperationStatus.ConditionNotMet, version: currentVersion }
         } else {
-          delete this.internals.state[key]
-          delete this.internals.versions[key]
+          this.internals.remove(key)
           results[key] = { key, status: StorageOperationStatus.Succeeded, version: currentVersion }
           changed = true
         }
