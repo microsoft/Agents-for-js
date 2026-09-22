@@ -20,6 +20,7 @@ describe('HostingErrors', () => {
     assert.strictEqual(Errors.ViewIdRequired.code, -120270)
 
     assert.strictEqual(Errors.ConnectionSettingsRequiredForGetAccessTokenScope.code, -120381)
+    assert.strictEqual(Errors.NullTokenResponse.code, -120393)
     assert.strictEqual(Errors.ContinueConversationBotAppIdOrIdentityRequired.code, -120631)
     assert.strictEqual(Errors.InvalidStatePath.code, -120731)
     assert.strictEqual(Errors.ContinueConversationAdapterRequired.code, -120902)
