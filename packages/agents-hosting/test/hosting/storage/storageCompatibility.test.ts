@@ -52,6 +52,7 @@ describe('Storage compatibility', () => {
 
   it('rejects V2 conditions unsupported by legacy storage', async () => {
     const storage = asStorageV2(new LegacyStorage())
+    const invalidKeys = undefined as unknown as string[]
 
     await assert.rejects(
       storage.write({ key: {} }, { mode: StorageWriteMode.CreateOnly }),
@@ -66,7 +67,7 @@ describe('Storage compatibility', () => {
       /does not support the V2 storage option "expectedVersion"/
     )
     await assert.rejects(
-      storage.delete(undefined as unknown as string[]),
+      storage.delete(invalidKeys),
       /Keys are required when deleting/
     )
   })
