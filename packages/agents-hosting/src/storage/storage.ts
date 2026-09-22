@@ -93,7 +93,7 @@ export interface Storage {
    * @returns A promise that resolves when the write operation is complete
    * @throws If the changes object is empty or undefined, or if an eTag conflict occurs and optimistic concurrency is enabled
    */
-  write: (changes: StoreItem, options?: StorageWriteOptions) => Promise<void>;
+  write: (changes: StoreItem) => Promise<void>;
 
   /**
    * Deletes store items from storage.

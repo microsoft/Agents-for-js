@@ -4,7 +4,7 @@
  */
 
 import { ExceptionHelper } from '@microsoft/agents-activity'
-import { debug, trace } from '@microsoft/agents-telemetry'
+import { debug, redactString, trace } from '@microsoft/agents-telemetry'
 import { Errors } from '../errorHelper'
 import { StorageTraceDefinitions } from '../observability'
 import { getStorageWriteExpiry } from './storageExpiry'
@@ -102,7 +102,6 @@ export class MemoryStorage extends MemoryStorageInternals implements Storage {
       const data: StoreItem = {}
       for (const key of keys) {
         logger.debug(`Reading key: ${key}`)
-        if (this.isExpired(key)) this.remove(key)
         const item = this.state.memory[key]
         if (item) {
           const value = JSON.parse(item)
@@ -120,27 +119,25 @@ export class MemoryStorage extends MemoryStorageInternals implements Storage {
    * @param changes The items to write, keyed by storage key.
    * @throws If `changes` is invalid or an item supplies a stale legacy `eTag`.
    */
-  async write (changes: StoreItem, options?: StorageWriteOptions): Promise<void> {
+  async write (changes: StoreItem): Promise<void> {
     return trace(StorageTraceDefinitions.write, async ({ record }) => {
       record({ keyCount: changes ? Object.keys(changes).length : undefined })
       if (!changes || typeof changes !== 'object' || Array.isArray(changes)) {
         throw ExceptionHelper.generateException(ReferenceError, Errors.StorageWriteChangesRequired)
       }
 
-      const expiresAt = getStorageWriteExpiry(options)
       for (const [key, newItem] of Object.entries(changes)) {
         logger.debug(`Writing key: ${key}`)
-        if (this.isExpired(key)) this.remove(key)
         const oldItemStr = this.state.memory[key]
         if (!oldItemStr || newItem.eTag === '*' || !newItem.eTag) {
           const { eTag: _eTag, ...value } = newItem
-          this.save(key, { ...value, eTag: (this.state.etag).toString() }, expiresAt)
+          this.save(key, { ...value, eTag: (this.state.etag).toString() })
           continue
         }
         const oldItem = JSON.parse(oldItemStr)
         if (newItem.eTag === this.getVersion(key, oldItem)) {
           const { eTag: _eTag, ...value } = newItem
-          this.save(key, { ...value, eTag: (this.state.etag).toString() }, expiresAt)
+          this.save(key, { ...value, eTag: (this.state.etag).toString() })
         } else {
           throw ExceptionHelper.generateException(Error, Errors.StorageETagConflict, undefined, { key })
         }
@@ -214,7 +211,10 @@ export class MemoryStorageV2 extends StorageV2 {
       const results: StorageReadResults<T> = {}
       for (const key of keys) {
         logger.debug(`Reading key: ${key}`)
-        if (this.internals.isExpired(key)) this.internals.remove(key)
+        if (this.internals.isExpired(key)) {
+          logger.info('Item expired, deleting from memory', { key: redactString(key, true) })
+          this.internals.remove(key)
+        }
         const item = this.internals.state.memory[key]
         if (!item) {
           results[key] = { key, status: StorageOperationStatus.NotFound }
@@ -258,7 +258,10 @@ export class MemoryStorageV2 extends StorageV2 {
         throw ExceptionHelper.generateException(RangeError, Errors.StorageV2WriteModeUnsupported, undefined, { mode: String(mode) })
       }
       for (const [key, newItem] of Object.entries(changes)) {
-        if (this.internals.isExpired(key)) this.internals.remove(key)
+        if (this.internals.isExpired(key)) {
+          logger.info('Item expired, deleting from memory', { key: redactString(key, true) })
+          this.internals.remove(key)
+        }
         const oldItemStr = this.internals.state.memory[key]
         const oldItem = oldItemStr ? JSON.parse(oldItemStr) as StoreItem : undefined
         const currentVersion = oldItem ? this.internals.getVersion(key, oldItem) : undefined
@@ -298,7 +301,10 @@ export class MemoryStorageV2 extends StorageV2 {
 
       const results: StorageDeleteResults = {}
       for (const key of keys) {
-        if (this.internals.isExpired(key)) this.internals.remove(key)
+        if (this.internals.isExpired(key)) {
+          logger.info('Item expired, deleting from memory', { key: redactString(key, true) })
+          this.internals.remove(key)
+        }
         const item = this.internals.state.memory[key]
         if (!item) {
           results[key] = { key, status: StorageOperationStatus.NotFound }

@@ -7,7 +7,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { randomUUID } from 'node:crypto'
 import { ExceptionHelper } from '@microsoft/agents-activity'
-import { trace } from '@microsoft/agents-telemetry'
+import { debug, redactString, trace } from '@microsoft/agents-telemetry'
 import { Errors } from '../errorHelper'
 import { StorageTraceDefinitions } from '../observability'
 import { getStorageWriteExpiry } from './storageExpiry'
@@ -23,6 +23,8 @@ import {
   StorageV2,
   StoreItem,
 } from './storage'
+
+const logger = debug('agents:file-storage')
 
 class FileStorageInternals {
   private readonly statePath: string
@@ -128,18 +130,9 @@ export class FileStorage extends FileStorageInternals implements Storage {
       if (!keys || keys.length === 0) {
         throw ExceptionHelper.generateException(ReferenceError, Errors.StorageReadKeysRequired)
       }
-      let changed = false
       const items = Object.fromEntries(keys
-        .filter(key => {
-          if (this.isExpired(key)) {
-            this.remove(key)
-            changed = true
-            return false
-          }
-          return Boolean(this.state[key])
-        })
+        .filter(key => Boolean(this.state[key]))
         .map(key => [key, this.state[key]])) as StoreItem
-      if (changed) this.flush()
       return items
     })
   }
@@ -150,18 +143,16 @@ export class FileStorage extends FileStorageInternals implements Storage {
    * @param changes The items to write, keyed by storage key.
    * @throws If `changes` is invalid or the file cannot be written.
    */
-  async write (changes: StoreItem, options?: StorageWriteOptions): Promise<void> {
+  async write (changes: StoreItem): Promise<void> {
     return trace(StorageTraceDefinitions.write, async ({ record }) => {
       record({ keyCount: changes ? Object.keys(changes).length : undefined })
       if (!changes || typeof changes !== 'object' || Array.isArray(changes)) {
         throw ExceptionHelper.generateException(ReferenceError, Errors.StorageWriteChangesRequired)
       }
-      const expiresAt = getStorageWriteExpiry(options)
       Object.assign(this.state, changes)
       for (const key of Object.keys(changes)) {
         delete this.versions[key]
-        if (expiresAt === undefined) delete this.expirations[key]
-        else this.expirations[key] = expiresAt
+        delete this.expirations[key]
       }
       this.flush()
     })
@@ -225,6 +216,7 @@ export class FileStorageV2 extends StorageV2 {
       const results = Object.fromEntries(keys.map(key => {
         if (!Object.prototype.hasOwnProperty.call(this.internals.state, key) || this.internals.isExpired(key)) {
           if (this.internals.isExpired(key)) {
+            logger.info('Item expired, deleting from storage', { key: redactString(key, true) })
             this.internals.remove(key)
             createdVersion = true
           }
@@ -266,6 +258,7 @@ export class FileStorageV2 extends StorageV2 {
       let createdVersion = false
       for (const [key, value] of Object.entries(changes)) {
         if (this.internals.isExpired(key)) {
+          logger.info('Item expired, deleting from storage', { key: redactString(key, true) })
           this.internals.remove(key)
           changed = true
         }
@@ -313,6 +306,7 @@ export class FileStorageV2 extends StorageV2 {
       let createdVersion = false
       for (const key of keys) {
         if (this.internals.isExpired(key)) {
+          logger.info('Item expired, deleting from storage', { key: redactString(key, true) })
           this.internals.remove(key)
           changed = true
         }

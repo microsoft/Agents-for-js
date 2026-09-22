@@ -58,8 +58,16 @@ describe('Storage compatibility', () => {
       /does not support the V2 storage option "mode"/
     )
     await assert.rejects(
+      storage.write({ key: {} }, { ttl: 60 }),
+      /does not support the V2 storage option "ttl"/
+    )
+    await assert.rejects(
       storage.delete(['key'], { expectedVersion: 'version' }),
       /does not support the V2 storage option "expectedVersion"/
+    )
+    await assert.rejects(
+      storage.delete(undefined as unknown as string[]),
+      /Keys are required when deleting/
     )
   })
 
@@ -72,7 +80,7 @@ describe('Storage compatibility', () => {
     )
     await assert.rejects(
       storage.write({}, { expectedVersion: '' }),
-      /expectedVersion cannot be empty/
+      (error: Error) => error instanceof RangeError && /expectedVersion cannot be empty/.test(error.message)
     )
     await assert.rejects(
       storage.delete([], { expectedVersion: 'version' }),

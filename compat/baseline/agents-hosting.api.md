@@ -905,7 +905,7 @@ export interface Fact {
 export class FileStorage extends FileStorageInternals implements Storage {
     delete(keys: string[]): Promise<void>;
     read(keys: string[]): Promise<StoreItem>;
-    write(changes: StoreItem, options?: StorageWriteOptions): Promise<void>;
+    write(changes: StoreItem): Promise<void>;
 }
 
 // @public
@@ -1106,7 +1106,7 @@ export class MemoryStorage extends MemoryStorageInternals implements Storage {
     // (undocumented)
     static getSingleInstance(): MemoryStorage;
     read(keys: string[]): Promise<StoreItem>;
-    write(changes: StoreItem, options?: StorageWriteOptions): Promise<void>;
+    write(changes: StoreItem): Promise<void>;
 }
 
 // @public
@@ -1469,7 +1469,7 @@ export enum StatusCodes {
 export interface Storage {
     delete: (keys: string[]) => Promise<void>;
     read: (keys: string[]) => Promise<StoreItem>;
-    write: (changes: StoreItem, options?: StorageWriteOptions) => Promise<void>;
+    write: (changes: StoreItem) => Promise<void>;
 }
 
 // @public

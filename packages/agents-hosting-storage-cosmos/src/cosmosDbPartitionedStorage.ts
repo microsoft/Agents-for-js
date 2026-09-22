@@ -27,6 +27,15 @@ import { debug } from '@microsoft/agents-telemetry'
 const logger = debug('agents:cosmos-storage')
 const maxCachedInitializations = 100
 
+async function ignoreCosmosErrors (operation: Promise<unknown>, ...ignoredCodes: number[]): Promise<void> {
+  const ignored = new Set(ignoredCodes)
+  try {
+    await operation
+  } catch (err: any) {
+    if (!ignored.has(err.code)) throw err
+  }
+}
+
 interface CachedTask<T> {
   promise: Promise<T>;
   settled: boolean;
@@ -382,10 +391,6 @@ export class CosmosDbPartitionedStorage extends CosmosDbPartitionedStorageIntern
           const response = await this.container.item(escapedKey, this.getPartitionKey(escapedKey)).read<DocumentStoreItem>()
           const item = response.resource
           if (item) {
-            if (this.isExpired(item)) {
-              await this.container.item(escapedKey, this.getPartitionKey(escapedKey)).delete({ accessCondition: { type: 'IfMatch', condition: item._etag } }).catch(() => undefined)
-              return
-            }
             storeItems[item.realId] = item.document
             storeItems[item.realId].eTag = item._etag
           }
@@ -405,22 +410,19 @@ export class CosmosDbPartitionedStorage extends CosmosDbPartitionedStorageIntern
    * @param changes The keyed legacy items to write.
    * @throws When the input is invalid or Cosmos DB cannot complete the operation.
    */
-  async write (changes: StoreItems, options?: StorageWriteOptions): Promise<void> {
+  async write (changes: StoreItems): Promise<void> {
     return trace(CosmosStorageTraceDefinitions.write, async ({ record }) => {
       record({ keyCount: changes ? Object.keys(changes).length : undefined })
       if (!changes || typeof changes !== 'object' || Array.isArray(changes)) {
         throw ExceptionHelper.generateException(ReferenceError, Errors.MissingWriteChanges)
       }
       if (Object.keys(changes).length === 0) return
-      const expiresAt = getStorageWriteExpiry(options)
       await this.initialize()
       await Promise.all(Object.entries(changes).map(async ([key, { eTag, ...change }]) => {
         const document = new DocumentStoreItem({
           id: escapeKey(key, this.cosmosDbStorageOptions.keySuffix, this.cosmosDbStorageOptions.compatibilityMode),
           realId: key,
           document: change,
-          ttl: options?.ttl === undefined ? undefined : Math.ceil(options.ttl),
-          expiresAt,
         })
         const accessCondition = eTag !== '*' && eTag != null && eTag.length > 0
           ? { accessCondition: { type: 'IfMatch', condition: eTag } }
@@ -498,11 +500,23 @@ export class CosmosDbPartitionedStorageV2 extends StorageV2 {
           const response = await this.internals.container.item(escapedKey, this.internals.getPartitionKey(escapedKey)).read<DocumentStoreItem>()
           const item = response.resource
           if (item && this.internals.isExpired(item)) {
-            await this.internals.container.item(escapedKey, this.internals.getPartitionKey(escapedKey)).delete({ accessCondition: { type: 'IfMatch', condition: item._etag } }).catch(() => undefined)
+            logger.info('Document expired, deleting from storage', {
+              key: redactString(key, true),
+              documentId: redactString(item.id, true),
+              eTag: redactString(item._etag, true),
+              expiresAt: item.expiresAt,
+            })
+            await ignoreCosmosErrors(
+              this.internals.container.item(escapedKey, this.internals.getPartitionKey(escapedKey)).delete({ accessCondition: { type: 'IfMatch', condition: item._etag } }),
+              404,
+              412
+            )
             results[key] = { key, status: StorageOperationStatus.NotFound }
-          } else results[key] = item
-            ? { key, status: StorageOperationStatus.Succeeded, value: item.document as T, version: item._etag }
-            : { key, status: StorageOperationStatus.NotFound }
+          } else {
+            results[key] = item
+              ? { key, status: StorageOperationStatus.Succeeded, value: item.document as T, version: item._etag }
+              : { key, status: StorageOperationStatus.NotFound }
+          }
         } catch (err: any) {
           if (err.code === 404) {
             results[key] = { key, status: StorageOperationStatus.NotFound }

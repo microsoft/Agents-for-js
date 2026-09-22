@@ -26,7 +26,7 @@ export { AgentErrorDefinition }
 export class CosmosDbPartitionedStorage extends CosmosDbPartitionedStorageInternals implements Storage {
     delete(keys: string[]): Promise<void>;
     read(keys: string[]): Promise<StoreItems>;
-    write(changes: StoreItems, options?: StorageWriteOptions): Promise<void>;
+    write(changes: StoreItems): Promise<void>;
 }
 
 // @public

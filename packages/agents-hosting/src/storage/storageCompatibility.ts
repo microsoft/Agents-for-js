@@ -60,6 +60,9 @@ class StorageToStorageV2Adapter extends StorageV2 {
     if (options?.mode !== undefined && options.mode !== StorageWriteMode.Upsert) {
       throwUnsupportedOption('mode')
     }
+    if (options?.ttl !== undefined) {
+      throwUnsupportedOption('ttl')
+    }
     validateExpectedVersion(options?.expectedVersion)
     if (Object.keys(changes).length === 0) return {}
     const legacyChanges = Object.fromEntries(Object.entries(changes).map(([key, value]) => [
@@ -73,7 +76,7 @@ class StorageToStorageV2Adapter extends StorageV2 {
   }
 
   async delete (keys: string[], options?: StorageDeleteOptions): Promise<StorageDeleteResults> {
-    validateKeys(keys)
+    validateDeleteKeys(keys)
     validateExpectedVersion(options?.expectedVersion)
     if (options?.expectedVersion !== undefined) {
       throwUnsupportedOption('expectedVersion')
@@ -88,6 +91,15 @@ class StorageToStorageV2Adapter extends StorageV2 {
 function validateKeys (keys: string[]): void {
   if (!Array.isArray(keys)) {
     throw ExceptionHelper.generateException(ReferenceError, Errors.StorageReadKeysRequired)
+  }
+  if (keys.some(key => typeof key !== 'string' || key.trim() === '')) {
+    throw ExceptionHelper.generateException(ReferenceError, Errors.StorageV2KeyRequired)
+  }
+}
+
+function validateDeleteKeys (keys: string[]): void {
+  if (!Array.isArray(keys)) {
+    throw ExceptionHelper.generateException(ReferenceError, Errors.StorageDeleteKeysRequired)
   }
   if (keys.some(key => typeof key !== 'string' || key.trim() === '')) {
     throw ExceptionHelper.generateException(ReferenceError, Errors.StorageV2KeyRequired)
@@ -111,7 +123,7 @@ function removeLegacyETag<T> (value: T): T {
 
 function validateExpectedVersion (expectedVersion: string | undefined): void {
   if (expectedVersion === '') {
-    throw ExceptionHelper.generateException(ReferenceError, Errors.StorageV2ExpectedVersionEmpty)
+    throw ExceptionHelper.generateException(RangeError, Errors.StorageV2ExpectedVersionEmpty)
   }
 }
 
