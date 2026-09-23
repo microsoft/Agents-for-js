@@ -578,11 +578,11 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   },
 
   /**
-     * Error thrown when authorization option is not available in app options.
+     * Error thrown when no authorization handlers were resolved.
      */
   AuthorizationOptionNotAvailable: {
     code: -120530,
-    description: 'The Application.authorization property is unavailable because no authorization options were configured.'
+    description: 'The Application.authorization property is unavailable because no authorization handlers were resolved.'
   },
 
   /**

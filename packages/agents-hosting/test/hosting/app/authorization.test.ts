@@ -116,14 +116,21 @@ describe('AgentApplication - Authorization Setup', () => {
     assert.throws(() => {
       const auth = app.authorization
       assert.equal(auth, undefined)
-    }, { message: /The Application\.authorization property is unavailable because no authorization options were configured\./ })
+    }, { message: /The Application\.authorization property is unavailable because no authorization handlers were resolved\./ })
   })
 
   it('should throw when registering onSignInSuccess without authorization', () => {
     const app = new AgentApplication()
     assert.throws(() => {
       app.onSignInSuccess(async () => {})
-    }, { message: /The Application\.authorization property is unavailable because no authorization options were configured\./ })
+    }, { message: /The Application\.authorization property is unavailable because no authorization handlers were resolved\./ })
+  })
+
+  it('should throw when registering onSignInFailure without authorization', () => {
+    const app = new AgentApplication()
+    assert.throws(() => {
+      app.onSignInFailure(async () => {})
+    }, { message: /The Application\.authorization property is unavailable because no authorization handlers were resolved\./ })
   })
 
   it('should support multiple auth handlers', () => {
