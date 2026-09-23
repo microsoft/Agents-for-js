@@ -645,8 +645,12 @@ function ensureAuthorizationHandler (
 export function isConfigurationInputError (error: unknown): boolean {
   const code = (error as { code?: unknown } | null)?.code
   return code === Errors.InvalidConfigurationPath.code ||
-    code === Errors.InvalidConfigurationValue.code ||
+    isInvalidConfigurationValueError(error) ||
     code === Errors.UnsupportedRuntimeConfigurationField.code
+}
+
+export function isInvalidConfigurationValueError (error: unknown): boolean {
+  return (error as { code?: unknown } | null)?.code === Errors.InvalidConfigurationValue.code
 }
 
 function asDocumentObject (

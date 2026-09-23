@@ -8,6 +8,7 @@ import {
   createConfigurationLayer,
   freezeConfigurationLayer,
   isConfigurationInputError,
+  isInvalidConfigurationValueError,
   setConfigurationValue,
   suggestConfigurationPath
 } from './configuration'
@@ -151,7 +152,8 @@ function bindConnection (
     layer,
     `connections.${parts[1]}.settings.${property}`,
     normalizeConnectionEnvironmentValue(property, value),
-    sourceName
+    sourceName,
+    lookup === 'validateissuer'
   )
 }
 
@@ -254,7 +256,13 @@ function bindOutboundHostValidator (
       emitHierarchySuggestion(sourceName, [parts[0], suggestedProperty].join('__'), true)
     }
   }
-  trySet(layer, `outboundHostValidator.${parts[1]}`, value, sourceName)
+  trySet(
+    layer,
+    `outboundHostValidator.${parts[1]}`,
+    value,
+    sourceName,
+    parts[1].toLowerCase() === 'enabled'
+  )
 }
 
 function bindAuthorizationHandler (
@@ -334,12 +342,16 @@ function trySet (
   layer: ConfigurationLayer,
   path: string,
   value: string,
-  sourceName: string
+  sourceName: string,
+  throwOnInvalidValue = false
 ): void {
   try {
     setConfigurationValue(layer, path, value, sourceName, 'environment')
   } catch (error) {
     if (!isConfigurationInputError(error)) {
+      throw error
+    }
+    if (throwOnInvalidValue && isInvalidConfigurationValueError(error)) {
       throw error
     }
     // Existing environment binders ignore unknown and invalid values.

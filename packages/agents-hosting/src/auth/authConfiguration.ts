@@ -172,6 +172,24 @@ function registryOperation (settings: AuthConfiguration): AuthOperation {
   }
 }
 
+function validateDirectIssuerConfiguration (config: AuthConfiguration): void {
+  validateDirectIssuerValue(config, 'validateIssuer')
+  for (const [id, settings] of config.connections ?? []) {
+    validateDirectIssuerValue(settings, `connections.${id}.settings.validateIssuer`)
+  }
+}
+
+function validateDirectIssuerValue (settings: AuthConfiguration, path: string): void {
+  if (settings.validateIssuer !== undefined && typeof settings.validateIssuer !== 'boolean') {
+    throw ExceptionHelper.generateException(
+      TypeError,
+      Errors.InvalidConfigurationValue,
+      undefined,
+      { sourceName: 'runtime configuration', path }
+    )
+  }
+}
+
 function environmentRegistryOperation (): AuthOperation {
   return {
     connections: connectionsEnv.connections,
@@ -546,6 +564,9 @@ export function getAuthConfigWithDefaults (
   config?: AuthConfiguration,
   options?: AuthConfigurationResolutionOptions
 ): AuthConfiguration {
+  if (config) {
+    validateDirectIssuerConfiguration(config)
+  }
   if (process.env.TEST_MODE === 'true') {
     globalEnv = loadEnv()
   }

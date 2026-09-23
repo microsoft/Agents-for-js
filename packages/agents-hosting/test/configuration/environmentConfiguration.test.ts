@@ -150,6 +150,36 @@ describe('environment configuration adapters', () => {
     })
   })
 
+  it('rejects unsupported issuer-validation boolean values in every environment format', () => {
+    assert.throws(
+      () => loadModernEnvironmentConfiguration({
+        Connections__Primary__Settings__ValidateIssuer: 'enabled'
+      }),
+      /Configuration source `Connections__Primary__Settings__ValidateIssuer` returned an invalid value for canonical path `connections\.Primary\.settings\.ValidateIssuer`/
+    )
+    assert.throws(
+      () => loadBotFrameworkEnvironmentConfiguration({
+        validateIssuer: 'yes'
+      }),
+      /Configuration source `validateIssuer` returned an invalid value for canonical path `connections\.serviceConnection\.settings\.validateIssuer`/
+    )
+    assert.throws(
+      () => loadBotFrameworkPrefixedEnvironmentConfiguration('named', {
+        named_validateIssuer: 'on'
+      }),
+      /Configuration source `named_validateIssuer` returned an invalid value for canonical path `connections\.named\.settings\.validateIssuer`/
+    )
+  })
+
+  it('rejects an unsupported outbound-host-validator enabled value', () => {
+    assert.throws(
+      () => loadModernEnvironmentConfiguration({
+        OutboundHostValidator__Enabled: 'enabled'
+      }),
+      /Configuration source `OutboundHostValidator__Enabled` returned an invalid value for canonical path `outboundHostValidator\.Enabled`/
+    )
+  })
+
   it('preserves __ separators inside modern authorization handler IDs', () => {
     const layer = loadModernEnvironmentConfiguration({
       AgentApplication__UserAuthorization__Handlers__foo__bar__Settings__Type: 'AgenticUserAuthorization',

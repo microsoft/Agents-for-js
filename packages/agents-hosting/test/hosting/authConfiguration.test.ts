@@ -102,6 +102,16 @@ describe('AuthConfiguration', () => {
       assert.strictEqual(config.validateIssuer, true)
     })
 
+    it('should reject unsupported boolean values for issuer validation', () => {
+      for (const value of ['yes', 'on', 'enabled', 'y', 't', 'unexpected']) {
+        process.env.validateIssuer = value
+        assert.throws(
+          () => loadAuthConfigFromEnv(),
+          /Configuration source `validateIssuer` returned an invalid value for canonical path `connections\.serviceConnection\.settings\.validateIssuer`/
+        )
+      }
+    })
+
     it('should handle missing optional environment variables', () => {
       delete process.env.tenantId
       delete process.env.clientSecret
@@ -997,6 +1007,35 @@ describe('AuthConfiguration', () => {
   })
 
   describe('getAuthConfigWithDefaults', () => {
+    it('should reject non-boolean direct issuer validation values', () => {
+      for (const value of [0, null, '']) {
+        const config: AuthConfiguration = JSON.parse(JSON.stringify({
+          clientId: 'custom-test-client',
+          validateIssuer: value
+        }))
+        assert.throws(
+          () => getAuthConfigWithDefaults(config),
+          /Configuration source `runtime configuration` returned an invalid value for canonical path `validateIssuer`/
+        )
+      }
+    })
+
+    it('should reject non-boolean issuer validation values in direct connections', () => {
+      const invalidConnection: AuthConfiguration = JSON.parse(JSON.stringify({
+        clientId: 'custom-test-client',
+        validateIssuer: 0
+      }))
+      const config: AuthConfiguration = {
+        connections: new Map([['custom', invalidConnection]]),
+        connectionsMap: [{ serviceUrl: '*', connection: 'custom' }]
+      }
+
+      assert.throws(
+        () => getAuthConfigWithDefaults(config),
+        /Configuration source `runtime configuration` returned an invalid value for canonical path `connections\.custom\.settings\.validateIssuer`/
+      )
+    })
+
     it('should preserve flat direct JSON routes through the synthesized compatibility connection', () => {
       process.env = { TEST_MODE: 'true', NODE_ENV: 'development' }
       const connectionsMap = [
@@ -1532,6 +1571,19 @@ describe('AuthConfiguration', () => {
   })
 
   describe('connections env parsing', () => {
+    it('should reject unsupported latest-format issuer validation values', () => {
+      const envKey = 'connections__serviceConnection__settings__validateIssuer'
+      process.env['connections__serviceConnection__settings__clientId'] = 'test-client-id'
+      process.env[envKey] = 'enabled'
+      process.env['connectionsMap__0__serviceUrl'] = '*'
+      process.env['connectionsMap__0__connection'] = 'serviceConnection'
+
+      assert.throws(
+        () => loadAuthConfigFromEnv(),
+        new RegExp(`Configuration source \`${envKey}\` returned an invalid value for canonical path \`connections\\.serviceConnection\\.settings\\.validateIssuer\``)
+      )
+    })
+
     it('should preserve explicit connections map entries from env', () => {
       process.env['connections__serviceConnection__settings__clientId'] = 'test-client-id'
       process.env['connectionsMap__0__serviceUrl'] = '*'
