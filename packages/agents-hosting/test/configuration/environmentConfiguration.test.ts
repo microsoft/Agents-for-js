@@ -171,15 +171,6 @@ describe('environment configuration adapters', () => {
     )
   })
 
-  it('rejects an unsupported outbound-host-validator enabled value', () => {
-    assert.throws(
-      () => loadModernEnvironmentConfiguration({
-        OutboundHostValidator__Enabled: 'enabled'
-      }),
-      /Configuration source `OutboundHostValidator__Enabled` returned an invalid value for canonical path `outboundHostValidator\.Enabled`/
-    )
-  })
-
   it('preserves __ separators inside modern authorization handler IDs', () => {
     const layer = loadModernEnvironmentConfiguration({
       AgentApplication__UserAuthorization__Handlers__foo__bar__Settings__Type: 'AgenticUserAuthorization',

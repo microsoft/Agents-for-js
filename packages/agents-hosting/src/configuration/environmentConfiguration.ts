@@ -256,13 +256,7 @@ function bindOutboundHostValidator (
       emitHierarchySuggestion(sourceName, [parts[0], suggestedProperty].join('__'), true)
     }
   }
-  trySet(
-    layer,
-    `outboundHostValidator.${parts[1]}`,
-    value,
-    sourceName,
-    parts[1].toLowerCase() === 'enabled'
-  )
+  trySet(layer, `outboundHostValidator.${parts[1]}`, value, sourceName)
 }
 
 function bindAuthorizationHandler (
