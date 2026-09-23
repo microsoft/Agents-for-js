@@ -489,6 +489,14 @@ function parseValue (
     ? parseDocumentValue(parser, value)
     : typeof value === 'string' ? parser(value) : undefined
   if (parsed === undefined) {
+    if (key === 'validateIssuer') {
+      throw ExceptionHelper.generateException(
+        TypeError,
+        Errors.InvalidBooleanConfigurationValue,
+        undefined,
+        { path, sourceName }
+      )
+    }
     if (format === 'document' && typeof value === 'string' && dotNetOnlyTimeSpanSettings.has(lookup)) {
       unsupportedRuntimeField(path, sourceName)
     }
@@ -650,7 +658,9 @@ export function isConfigurationInputError (error: unknown): boolean {
 }
 
 export function isInvalidConfigurationValueError (error: unknown): boolean {
-  return (error as { code?: unknown } | null)?.code === Errors.InvalidConfigurationValue.code
+  const code = (error as { code?: unknown } | null)?.code
+  return code === Errors.InvalidConfigurationValue.code ||
+    code === Errors.InvalidBooleanConfigurationValue.code
 }
 
 function asDocumentObject (

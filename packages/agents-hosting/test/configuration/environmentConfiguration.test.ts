@@ -155,19 +155,19 @@ describe('environment configuration adapters', () => {
       () => loadModernEnvironmentConfiguration({
         Connections__Primary__Settings__ValidateIssuer: 'enabled'
       }),
-      /Configuration source `Connections__Primary__Settings__ValidateIssuer` returned an invalid value for canonical path `connections\.Primary\.settings\.ValidateIssuer`/
+      /Configuration source "Connections__Primary__Settings__ValidateIssuer" returned an invalid boolean for "connections\.Primary\.settings\.ValidateIssuer"\. Expected one of true\/false\/1\/0\./
     )
     assert.throws(
       () => loadBotFrameworkEnvironmentConfiguration({
         validateIssuer: 'yes'
       }),
-      /Configuration source `validateIssuer` returned an invalid value for canonical path `connections\.serviceConnection\.settings\.validateIssuer`/
+      /Configuration source "validateIssuer" returned an invalid boolean for "connections\.serviceConnection\.settings\.validateIssuer"\. Expected one of true\/false\/1\/0\./
     )
     assert.throws(
       () => loadBotFrameworkPrefixedEnvironmentConfiguration('named', {
         named_validateIssuer: 'on'
       }),
-      /Configuration source `named_validateIssuer` returned an invalid value for canonical path `connections\.named\.settings\.validateIssuer`/
+      /Configuration source "named_validateIssuer" returned an invalid boolean for "connections\.named\.settings\.validateIssuer"\. Expected one of true\/false\/1\/0\./
     )
   })
 

@@ -102,12 +102,25 @@ describe('AuthConfiguration', () => {
       assert.strictEqual(config.validateIssuer, true)
     })
 
+    it('should parse supported false forms for issuer validation', () => {
+      process.env.validateIssuer = ' FaLsE '
+      assert.strictEqual(loadAuthConfigFromEnv().validateIssuer, false)
+
+      process.env.validateIssuer = ' 0 '
+      assert.strictEqual(loadAuthConfigFromEnv().validateIssuer, false)
+    })
+
+    it('should treat whitespace-only issuer validation as not configured', () => {
+      process.env.validateIssuer = '   '
+      assert.strictEqual(loadAuthConfigFromEnv().validateIssuer, undefined)
+    })
+
     it('should reject unsupported boolean values for issuer validation', () => {
       for (const value of ['yes', 'on', 'enabled', 'y', 't', 'unexpected']) {
         process.env.validateIssuer = value
         assert.throws(
           () => loadAuthConfigFromEnv(),
-          /Configuration source `validateIssuer` returned an invalid value for canonical path `connections\.serviceConnection\.settings\.validateIssuer`/
+          /Configuration source "validateIssuer" returned an invalid boolean for "connections\.serviceConnection\.settings\.validateIssuer"\. Expected one of true\/false\/1\/0\./
         )
       }
     })
@@ -1015,7 +1028,7 @@ describe('AuthConfiguration', () => {
         }))
         assert.throws(
           () => getAuthConfigWithDefaults(config),
-          /Configuration source `runtime configuration` returned an invalid value for canonical path `validateIssuer`/
+          /Configuration source "runtime configuration" returned an invalid boolean for "validateIssuer"\. Expected one of true\/false\/1\/0\./
         )
       }
     })
@@ -1032,7 +1045,7 @@ describe('AuthConfiguration', () => {
 
       assert.throws(
         () => getAuthConfigWithDefaults(config),
-        /Configuration source `runtime configuration` returned an invalid value for canonical path `connections\.custom\.settings\.validateIssuer`/
+        /Configuration source "runtime configuration" returned an invalid boolean for "connections\.custom\.settings\.validateIssuer"\. Expected one of true\/false\/1\/0\./
       )
     })
 
@@ -1580,7 +1593,7 @@ describe('AuthConfiguration', () => {
 
       assert.throws(
         () => loadAuthConfigFromEnv(),
-        new RegExp(`Configuration source \`${envKey}\` returned an invalid value for canonical path \`connections\\.serviceConnection\\.settings\\.validateIssuer\``)
+        new RegExp(`Configuration source "${envKey}" returned an invalid boolean for "connections\\.serviceConnection\\.settings\\.validateIssuer"\\. Expected one of true/false/1/0\\.`)
       )
     })
 

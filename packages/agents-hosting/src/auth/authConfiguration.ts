@@ -183,7 +183,7 @@ function validateDirectIssuerValue (settings: AuthConfiguration, path: string): 
   if (settings.validateIssuer !== undefined && typeof settings.validateIssuer !== 'boolean') {
     throw ExceptionHelper.generateException(
       TypeError,
-      Errors.InvalidConfigurationValue,
+      Errors.InvalidBooleanConfigurationValue,
       undefined,
       { sourceName: 'runtime configuration', path }
     )
