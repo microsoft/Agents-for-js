@@ -271,6 +271,14 @@ describe('repo:doctor', () => {
     assert.equal(checkRepository(root).findings.some(finding => finding.ruleId === 'repository/doctor-ci-missing'), false)
   })
 
+  it('accepts the quality suite as the repository-doctor CI check', () => {
+    const root = fixture(({ write }) => {
+      write('.github/workflows/ci.yml', 'jobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - run: npm ci\n      - run: npm run quality\n')
+      write('.azdo/ci-pr.yaml', "steps:\n- task: Npm@1\n  inputs:\n    customCommand: 'ci'\n- script: npm run quality\n")
+    })
+    assert.equal(checkRepository(root).findings.some(finding => finding.ruleId === 'repository/doctor-ci-missing'), false)
+  })
+
   it('validates compatibility baselines and supported Node types', () => {
     const root = fixture(({ write, readJson, remove }) => {
       remove('compat/baseline/agents-example.api.md')
@@ -347,10 +355,12 @@ describe('repo:doctor', () => {
 
   it('parses supported CLI arguments', () => {
     assert.deepEqual(parseArguments(['--root', 'fixture']), { help: false, rules: false, ruleIds: [], root: 'fixture' })
+    assert.deepEqual(parseArguments(['--base-ref', 'origin/release/v1.3']), { help: false, rules: false, ruleIds: [], root: process.cwd(), baseRef: 'origin/release/v1.3' })
     assert.deepEqual(parseArguments(['--rules']), { help: false, rules: true, ruleIds: [], root: process.cwd() })
     assert.deepEqual(parseArguments(['--rules', 'package/private', 'docs/relative-link-missing']), { help: false, rules: true, ruleIds: ['package/private', 'docs/relative-link-missing'], root: process.cwd() })
     assert.throws(() => parseArguments(['--rules', 'missing/rule']), /Unknown rule ID/)
     assert.throws(() => parseArguments(['--format', 'json']), /Unknown argument/)
+    assert.throws(() => parseArguments(['--base-ref']), /requires a Git ref/)
     assert.throws(() => parseArguments(['--wat']), /Unknown argument/)
   })
 

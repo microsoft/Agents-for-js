@@ -6,6 +6,10 @@ import { UserAuthorization } from '../../../src/app/auth/authorization'
 import { AgentApplication } from '../../../src/app'
 import { MemoryStorage } from '../../../src/storage'
 import { AzureBotAuthorizationOptions } from '../../../src/app/auth/handlers'
+import {
+  createConfigurationContext,
+  resetConfigurationSourcesForTest
+} from '../../../src/configuration/configuration'
 
 describe('AgentApplication - Authorization Setup', () => {
   let originalEnv: NodeJS.ProcessEnv
@@ -16,6 +20,7 @@ describe('AgentApplication - Authorization Setup', () => {
 
   afterEach(() => {
     process.env = originalEnv
+    resetConfigurationSourcesForTest()
   })
 
   it('should initialize with undefined authorization', () => {
@@ -68,6 +73,42 @@ describe('AgentApplication - Authorization Setup', () => {
     const app = new AgentApplication({ storage: new MemoryStorage() })
     assert.equal(app.options.authorization, undefined)
     assert.notEqual(app.authorization, undefined)
+    assert.doesNotThrow(() => app.onSignInSuccess(async () => {}))
+    assert.doesNotThrow(() => app.onSignInFailure(async () => {}))
+  })
+
+  it('should register sign-in callbacks for context-provided authorization', async () => {
+    const configurationContext = await createConfigurationContext([{
+      source: {
+        name: 'authorization',
+        async load () {
+          return {
+            format: 'document',
+            value: {
+              agentApplication: {
+                userAuthorization: {
+                  handlers: {
+                    contextAuth: {
+                      settings: {
+                        azureBotOAuthConnectionName: 'ContextConnection'
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          } as const
+        }
+      },
+      mode: 'overrideEnvironment'
+    }])
+    const app = new AgentApplication({
+      storage: new MemoryStorage(),
+      configurationContext
+    })
+
+    assert.doesNotThrow(() => app.onSignInSuccess(async () => {}))
+    assert.doesNotThrow(() => app.onSignInFailure(async () => {}))
   })
 
   it('should throw when accessing authorization without configuring it', () => {
@@ -75,14 +116,21 @@ describe('AgentApplication - Authorization Setup', () => {
     assert.throws(() => {
       const auth = app.authorization
       assert.equal(auth, undefined)
-    }, { message: /The Application\.authorization property is unavailable because no authorization options were configured\./ })
+    }, { message: /The Application\.authorization property is unavailable because no authorization handlers were resolved\./ })
   })
 
   it('should throw when registering onSignInSuccess without authorization', () => {
     const app = new AgentApplication()
     assert.throws(() => {
       app.onSignInSuccess(async () => {})
-    }, { message: /The Application\.authorization property is unavailable because no authorization options were configured\./ })
+    }, { message: /The Application\.authorization property is unavailable because no authorization handlers were resolved\./ })
+  })
+
+  it('should throw when registering onSignInFailure without authorization', () => {
+    const app = new AgentApplication()
+    assert.throws(() => {
+      app.onSignInFailure(async () => {})
+    }, { message: /The Application\.authorization property is unavailable because no authorization handlers were resolved\./ })
   })
 
   it('should support multiple auth handlers', () => {
@@ -153,6 +201,83 @@ describe('UserAuthorization', () => {
 
     assert.equal(graph.token.calledOnce, true)
     assert.deepEqual(result, { token: `${graph.id}-token` })
+  })
+
+  it('getTokenAsTokenCredential should return a credential that resolves the handler token', async () => {
+    const auth = new UserAuthorization(manager)
+    const credential = auth.getTokenAsTokenCredential(context, graph.id)
+
+    const accessToken = await credential.getToken([])
+
+    assert.equal(graph.token.calledOnce, true)
+    assert.deepEqual(graph.token.firstCall.args, [context])
+    assert.equal(accessToken?.token, `${graph.id}-token`)
+  })
+
+  it('getTokenAsTokenCredential should reject when getToken() is called for a non-existent auth handler id', async () => {
+    const auth = new UserAuthorization(manager)
+    const credential = auth.getTokenAsTokenCredential(context, 'nonExistinghandler')
+
+    await assert.rejects(
+      async () => credential.getToken([]),
+      /Cannot find auth handler with ID 'nonExistinghandler'. Ensure it is configured in the agent application options./
+    )
+  })
+
+  it('exchangeTokenAsTokenCredential should call handler.token with merged connection/scopes', async () => {
+    const auth = new UserAuthorization(manager)
+    const credential = auth.exchangeTokenAsTokenCredential(context, graph.id, { connection: 'oboConn', scopes: ['scope.read'] })
+
+    const accessToken = await credential.getToken(['scope.write', 'scope.read'])
+
+    assert.equal(graph.token.calledOnce, true)
+    const [, options] = graph.token.firstCall.args
+    assert.equal(options.connection, 'oboConn')
+    assert.deepEqual(new Set(options.scopes), new Set(['scope.read', 'scope.write']))
+    assert.equal(accessToken?.token, `${graph.id}-token`)
+  })
+
+  it('getTokenAsTokenCredential should call handler.token again on each getToken invocation', async () => {
+    const auth = new UserAuthorization(manager)
+    const credential = auth.getTokenAsTokenCredential(context, graph.id)
+
+    await credential.getToken([])
+    await credential.getToken(['some-scope'])
+
+    assert.equal(graph.token.calledTwice, true)
+  })
+
+  it('getTokenAsTokenCredential should propagate a null-token error from the underlying credential', async () => {
+    graph.token.resolves({ token: undefined })
+    const auth = new UserAuthorization(manager)
+    const credential = auth.getTokenAsTokenCredential(context, graph.id)
+
+    await assert.rejects(
+      async () => credential.getToken([]),
+      /token response provider returned a null response/
+    )
+  })
+
+  it('exchangeTokenAsTokenCredential should default to no configured connection/scopes when options are omitted', async () => {
+    const auth = new UserAuthorization(manager)
+    const credential = auth.exchangeTokenAsTokenCredential(context, graph.id)
+
+    await credential.getToken(['scope.write'])
+
+    assert.equal(graph.token.calledOnce, true)
+    const [, options] = graph.token.firstCall.args
+    assert.equal(options.connection, undefined)
+    assert.deepEqual(options.scopes, ['scope.write'])
+  })
+
+  it('exchangeTokenAsTokenCredential should reject when getToken() is called for a non-existent auth handler id', async () => {
+    const auth = new UserAuthorization(manager)
+    const credential = auth.exchangeTokenAsTokenCredential(context, 'nonExistinghandler')
+
+    await assert.rejects(
+      async () => credential.getToken([]),
+      /Cannot find auth handler with ID 'nonExistinghandler'. Ensure it is configured in the agent application options./
+    )
   })
 
   it('exchangeToken should call handler.token with options', async () => {

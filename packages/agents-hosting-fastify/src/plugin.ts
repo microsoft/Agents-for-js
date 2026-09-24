@@ -3,24 +3,21 @@
  * Licensed under the MIT License.
  */
 
-import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify'
+import type { FastifyInstance, FastifyPluginAsync } from 'fastify'
 import rateLimit, { type RateLimitPluginOptions } from '@fastify/rate-limit'
 import {
   ActivityHandler,
   AgentApplication,
   AuthConfiguration,
-  authorizeJWT,
-  getAuthConfigWithDefaults,
-  Request,
   TurnState
 } from '@microsoft/agents-hosting'
-import { createCloudAdapter } from '@microsoft/agents-hosting'
-import { adaptReply } from './replyAdapter'
+import { type CreateCloudAdapterOptions } from '@microsoft/agents-hosting'
+import { createAgentRequestHandlerInternal } from './createAgentRequestHandlerInternal'
 
 /**
  * Options accepted by the `@microsoft/agents-hosting-fastify` plugin.
  */
-export interface AgentsHostingFastifyPluginOptions {
+export interface AgentsHostingFastifyPluginOptions extends CreateCloudAdapterOptions {
   /**
    * The AgentApplication or ActivityHandler instance to process incoming
    * activities.
@@ -59,9 +56,6 @@ const pluginImpl: FastifyPluginAsync<AgentsHostingFastifyPluginOptions> = async 
   fastify: FastifyInstance,
   opts: AgentsHostingFastifyPluginOptions
 ) => {
-  const authConfig = getAuthConfigWithDefaults(opts.authConfig)
-  const { adapter, headerPropagation } = createCloudAdapter(opts.agent, authConfig)
-  const jwtMiddleware = authorizeJWT(authConfig)
   const routePath = opts.routePath ?? '/api/messages'
 
   if (opts.rateLimit) {
@@ -71,39 +65,13 @@ const pluginImpl: FastifyPluginAsync<AgentsHostingFastifyPluginOptions> = async 
   }
 
   const bodyLimit = opts.bodyLimit ?? 102400
+  const { handler } = createAgentRequestHandlerInternal(opts.agent, opts.authConfig, {
+    configurationContext: opts.configurationContext
+  })
   fastify.post(routePath, {
     config: opts.rateLimit ? { rateLimit: opts.rateLimit } : {},
     bodyLimit
-  }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const adaptedReq: Request = {
-      method: request.method,
-      headers: request.headers as Record<string, string | string[] | undefined>,
-      body: (request.body ?? undefined) as Record<string, unknown> | undefined
-    }
-    const adaptedRes = adaptReply(reply)
-
-    let middlewareError: any
-    let nextCalled = false
-    await jwtMiddleware(adaptedReq, adaptedRes, (err?: any) => {
-      nextCalled = true
-      middlewareError = err
-    })
-    if (middlewareError) {
-      throw middlewareError
-    }
-    if (!nextCalled || adaptedRes.headersSent) {
-      return
-    }
-    if (adaptedReq.user !== undefined) {
-      ;(request as FastifyRequest & { user?: unknown }).user = adaptedReq.user
-    }
-    await adapter.process(
-      adaptedReq,
-      adaptedRes,
-      (context) => opts.agent.run(context),
-      headerPropagation
-    )
-  })
+  }, handler)
 }
 
 /**

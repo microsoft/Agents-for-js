@@ -5,6 +5,8 @@ The **Microsoft 365 Agents SDK for JavaScript/TypeScript** (successor to BotFram
 ## Commands
 
 ```bash
+npm run quality          # concise report for the complete standard validation suite
+npm run quality -- --verbose # include the captured output of every check
 npm run build            # TypeScript 7 native build via scripts/tsc7.mjs and tsconfig.build.json
 npm run build:clean      # wipe dist/ then rebuild
 npm test                 # all tests (node:test runner + tsx, emits test-report.xml)
@@ -26,7 +28,7 @@ Run `npm run repo:doctor` after structural, package, documentation, build-refere
 
 Do not add npm `pre*` / `post*` lifecycle wrappers or install-time hooks (`preinstall`, `install`, `postinstall`, `prepare`). `npm --ignore-scripts` skips those hooks; make required script dependencies explicit in the invoked command.
 
-CI (`.github/workflows/ci.yml`) runs, in order: `repo:doctor` → `lint` → `lint:deps:ci` → `build` → `test` → `compat` → `build:samples`. Match this before assuming work is done.
+CI (`.github/workflows/ci.yml`) runs `npm run quality`, which performs `repo:doctor` → `lint` → `lint:deps:ci` → `build` → `test` → (`compat` and `build:samples`). It folds each command log in the GitHub Actions output and uploads a seven-day `quality-logs` artifact. Match this before assuming work is done.
 
 ## Architecture (the big picture)
 
