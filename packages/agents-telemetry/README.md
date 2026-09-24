@@ -17,7 +17,7 @@ This package supports both ESM and CommonJS consumers and requires Node.js 20 or
 
 ## For Agent Developers
 
-This section covers how to enable and configure telemetry in your agent application. The SDK automatically instruments its components — you only need to wire up OpenTelemetry exporters and, optionally, tune which span categories are active.
+This section covers how to enable and configure telemetry in your agent application. The SDK automatically instruments its components — you only need to wire up OpenTelemetry exporters and, optionally, configure sampling for the spans you want to collect.
 
 ### Peer Dependencies
 
@@ -93,26 +93,59 @@ const sdk = new NodeSDK({
 sdk.start()
 ```
 
-### Disabling Span Categories
+### Filtering Spans with a Parent-Based Sampler
 
-All built-in span categories are enabled by default. To disable one or more categories without changing code, set `AGENTS_TELEMETRY_DISABLED_SPAN_CATEGORIES` in your environment:
+Configure filtering in your OpenTelemetry SDK with a custom sampler. A parent-based delegate ensures that descendants of a filtered span are also excluded while preserving the sampling decision for all other traces.
 
+The following reusable sampler filters spans by their names. This example excludes automatic typing-indicator spans and their adapter and connector descendants:
+
+```ts
+import { SpanNames } from '@microsoft/agents-telemetry'
+import { NodeSDK } from '@opentelemetry/sdk-node'
+import {
+  AlwaysOnSampler,
+  ParentBasedSampler,
+  SamplingDecision,
+  type Sampler,
+} from '@opentelemetry/sdk-trace-base'
+import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-node'
+
+class SpanNameFilteringSampler implements Sampler {
+  private readonly filteredSpanNames: ReadonlySet<string>
+  private readonly parentBased = new ParentBasedSampler({
+    root: new AlwaysOnSampler(),
+  })
+
+  constructor (spanNames: Iterable<string>) {
+    this.filteredSpanNames = new Set(spanNames)
+  }
+
+  shouldSample (...args: Parameters<Sampler['shouldSample']>) {
+    return this.filteredSpanNames.has(args[2])
+      ? { decision: SamplingDecision.NOT_RECORD }
+      : this.parentBased.shouldSample(...args)
+  }
+
+  toString () {
+    return `SpanNameFilteringSampler(${[...this.filteredSpanNames].join(',')})`
+  }
+}
+
+const sdk = new NodeSDK({
+  sampler: new SpanNameFilteringSampler([
+    SpanNames.AGENTS_APP_TYPING_INDICATOR,
+  ]),
+  traceExporter: new ConsoleSpanExporter(),
+  serviceName: 'my-agent-service',
+})
+
+sdk.start()
 ```
-AGENTS_TELEMETRY_DISABLED_SPAN_CATEGORIES=STORAGE,AUTHORIZATION
 
-# or
+Add any other values from `SpanNames` to the sampler's list when you need to filter additional SDK spans.
 
-AGENTS_TELEMETRY_DISABLED_SPAN_CATEGORIES=STORAGE AUTHORIZATION
-```
-
-Valid category names are:
-
-- `STORAGE`
-- `AUTHENTICATION`
-- `AUTHORIZATION`
-- `DIALOGS`
-
-When a span category is disabled, instrumented code still runs normally with a noop context — no telemetry is emitted for those spans.
+> [!WARNING]
+> `AGENTS_TELEMETRY_DISABLED_SPAN_CATEGORIES` is deprecated and will be removed in a future release. It remains supported temporarily for backward compatibility, but new applications should configure an OpenTelemetry sampler instead.
 
 ### Span and Metric Names
 
@@ -242,7 +275,7 @@ trace(storageReadTrace, ({ record }) => {
 - On failure, the exception is recorded on the span, status is set to `ERROR`, and the error is rethrown.
 - Non-Error thrown values are recorded with their type name and string representation.
 - Unrecognized span names throw immediately.
-- Disabled span categories run the callback with a noop context — no telemetry is emitted.
+- The deprecated disabled-span categories run the callback with a noop context — no telemetry is emitted.
 - Managed spans can start parented spans with `child(definition)` or `child(definition, callback)`.
 - Record updates recursively merge plain objects; arrays are copied and replaced.
 - The `end` hook receives `{ span, record, duration, error? }`.
@@ -285,7 +318,7 @@ When `@opentelemetry/api` is not available, the instruments are safe noops.
 - **Record tracking**: Accumulate structured data during a trace and access it in the `end` hook
 - **Managed child spans**: Start child spans from a managed trace context when a manual parent span stays open
 - **Custom actions**: Define span-scoped helper functions via the `actions` factory
-- **Category-based disabling**: Disable groups of spans via environment configuration
+- **Sampler-based filtering**: Use OpenTelemetry parent-based sampling to exclude selected spans and their descendants
 - **Noop fallback**: All instrumentation calls are safe no-ops when OpenTelemetry APIs are not installed
 
 ---
