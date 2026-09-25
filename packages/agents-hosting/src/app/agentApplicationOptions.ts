@@ -13,6 +13,7 @@ import { HeaderPropagationDefinition } from '../headerPropagation'
 import { AuthorizationOptions } from './auth/types'
 import { Connections } from '../auth/connections'
 import { ProactiveOptions } from './proactive'
+import { RateLimitRule } from './rateLimit'
 import { ConfigurationContext } from '../configuration/configuration'
 
 /**
@@ -208,4 +209,10 @@ export interface AgentApplicationOptions<TState extends TurnState> {
    * When provided, `app.proactive` will be available.
    */
   proactive?: ProactiveOptions
+
+  /**
+   * Optional. Rate limit rules for incoming turns.
+   * When omitted or empty, no rate limiting is applied.
+   */
+  rateLimit?: RateLimitRule[]
 }

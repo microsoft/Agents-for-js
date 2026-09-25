@@ -8,6 +8,7 @@ import { AgentApplication } from './agentApplication'
 import { AgentApplicationOptions } from './agentApplicationOptions'
 import { AuthorizationOptions } from './auth/types'
 import { ProactiveOptions } from './proactive'
+import { RateLimitRule } from './rateLimit'
 import { TurnState } from './turnState'
 import { TypingOptions } from './agentApplicationOptions'
 
@@ -83,6 +84,16 @@ export class AgentApplicationBuilder<TState extends TurnState = TurnState> {
    */
   public withProactive (options: ProactiveOptions): this {
     this._options.proactive = options
+    return this
+  }
+
+  /**
+   * Configures rate limit rules for incoming turns.
+   * @param rules The rate limit rules to apply
+   * @returns This builder instance for chaining
+   */
+  public withRateLimit (rules: RateLimitRule[]): this {
+    this._options.rateLimit = rules
     return this
   }
 
