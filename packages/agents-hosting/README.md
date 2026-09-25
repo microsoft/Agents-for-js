@@ -196,16 +196,24 @@ echo.onActivity('message', async (context: TurnContext, state: TurnState) => {
 })
 ```
 
-## Storage TTL
+## Storage providers
 
-Storage providers support optional write TTL, in seconds, for short-lived state:
+Public `storage` options accept `StorageProvider`, which is `Storage | StorageV2`.
+Providers can implement either contract. Custom V2 providers extend `StorageV2`,
+so hosting can identify the structured contract with `instanceof`.
+Hosting adapts a legacy `Storage` provider for default upsert operations. The
+adapter cannot support create-only, replace, or version conditions.
+Built-in V1 and V2 providers have separately named classes, avoiding overloaded
+JavaScript methods while preserving every legacy constructor and return type:
 
 ```ts
-const storage = new MemoryStorage()
-await storage.write({ 'session/123': { value: 'temporary' } }, { ttl: 3600 })
+const legacyStorage = new MemoryStorage()
+const storageV2 = new MemoryStorageV2()
+const fileStorageV2 = new FileStorageV2('./data')
 ```
 
-Expired items are omitted from subsequent reads. Providers without native expiry enforce this logically and may clean up expired data opportunistically.
+V2 calls return keyed operation results. Read values are at
+`results[key].value`; inspect `status` and `version` for operation outcomes.
 
 ## Example Usage based on bot framework Activity Handler
 

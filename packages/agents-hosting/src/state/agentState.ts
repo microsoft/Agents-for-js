@@ -3,7 +3,14 @@
  * Licensed under the MIT License.
  */
 
-import { Storage, StorageKeyFactory, StoreItem } from '../storage/storage'
+import { StorageKeyFactory, StorageOperationStatus, StorageProvider, StorageV2, StorageWriteMode, StoreItem } from '../storage/storage'
+import {
+  asStorageV2,
+  assertAgentStateWriteSucceeded,
+  assertStorageDeleteSucceeded,
+  getStorageReadValue,
+  isStorageV2,
+} from '../storage/storageCompatibility'
 import { TurnContext } from '../turnContext'
 import { createHash } from 'node:crypto'
 import { AgentStatePropertyAccessor } from './agentStatePropertyAccesor'
@@ -26,6 +33,10 @@ export interface CachedAgentState {
    * Hash of the state used to detect changes
    */
   hash: string;
+  /** Version returned when the state was loaded, used to reject stale V2 writes. */
+  version?: string;
+  /** Whether the state was not found when it was loaded. */
+  isNew?: boolean;
 }
 
 /**
@@ -62,13 +73,17 @@ export interface CustomKey {
 export class AgentState {
   private readonly stateKey = Symbol('state')
 
+  private get internalStorage (): StorageV2 {
+    return asStorageV2(this.storage)
+  }
+
   /**
    * Creates a new instance of AgentState.
    *
    * @param storage The storage provider used to persist state between turns
    * @param storageKey A factory function that generates keys for storing state data
    */
-  constructor (protected storage: Storage, protected storageKey: StorageKeyFactory) { }
+  constructor (protected storage: StorageProvider, protected storageKey: StorageKeyFactory) {}
 
   /**
    * Creates a property accessor for the specified property.
@@ -101,11 +116,15 @@ export class AgentState {
     if (force || !cached || !cached.state) {
       const key: string = await this.getStorageOrCustomKey(customKey, context)
       logger.info(`Reading storage with key ${key}`)
-      const storedItem = await this.storage.read([key])
-
-      const state: any = storedItem[key] || {}
+      const storedItems = await this.internalStorage.read<Record<string, any>>([key])
+      const state: any = getStorageReadValue(storedItems, key) ?? {}
       const hash: string = this.calculateChangeHash(state)
-      context.turnState.set(this.stateKey, { state, hash })
+      context.turnState.set(this.stateKey, {
+        state,
+        hash,
+        version: storedItems[key]?.version,
+        isNew: storedItems[key]?.status === StorageOperationStatus.NotFound,
+      })
 
       return state
     }
@@ -130,15 +149,21 @@ export class AgentState {
       if (!cached) {
         cached = { state: {}, hash: '' }
       }
-      cached.state.eTag = '*'
-      const changes: StoreItem = {} as StoreItem
-
       const key: string = await this.getStorageOrCustomKey(customKey, context)
 
-      changes[key] = cached.state
-
       logger.info(`Writing storage with key ${key}`)
-      await this.storage.write(changes)
+      const results = await this.internalStorage.write(
+        { [key]: cached.state },
+        cached.version !== undefined
+          ? { expectedVersion: cached.version }
+          : cached.isNew && isStorageV2(this.storage)
+            ? { mode: StorageWriteMode.CreateOnly }
+            : undefined
+      )
+      assertAgentStateWriteSucceeded(results, key, this.constructor.name)
+      const result = results[key]
+      cached.version = result.version
+      cached.isNew = false
       cached.hash = this.calculateChangeHash(cached.state)
       context.turnState.set(this.stateKey, cached)
     }
@@ -195,7 +220,8 @@ export class AgentState {
     }
     const key = await this.getStorageOrCustomKey(customKey, context)
     logger.info(`Deleting storage with key ${key}`)
-    await this.storage.delete([key])
+    const results = await this.internalStorage.delete([key])
+    assertStorageDeleteSucceeded(results, [key])
   }
 
   /**

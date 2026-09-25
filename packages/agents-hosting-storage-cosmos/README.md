@@ -4,6 +4,10 @@
 
 This package allows to configure Azure CosmosDB Storage as the backend for Agents conversation State
 
+`CosmosDbPartitionedStorage` retains the legacy `Storage` contract. Use
+`CosmosDbPartitionedStorageV2` for the separate `StorageV2` contract; V2 calls
+return keyed operation results with `value`, `status`, and `version`.
+
 ## Usage
 
 ```ts
@@ -20,12 +24,6 @@ const conversationState = new ConversationState(cosmosStorage)
 const userState = new UserState(cosmosStorage)
 ```
 
-## TTL writes
-
-`CosmosDbPartitionedStorage` supports the shared storage TTL option:
-
 ```ts
-await cosmosStorage.write({ 'session/123': { value: 'temporary' } }, { ttl: 3600 })
+const cosmosStorageV2 = new CosmosDbPartitionedStorageV2(cosmosDbStorageOptions)
 ```
-
-The provider stores Cosmos DB item-level TTL on the wrapper document and also enforces logical expiry during reads.

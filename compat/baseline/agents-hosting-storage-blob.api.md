@@ -7,27 +7,41 @@
 import { Activity } from '@microsoft/agents-activity';
 import { AgentErrorDefinition } from '@microsoft/agents-activity';
 import { AnonymousCredential } from '@azure/storage-blob';
+import { ContainerClient } from '@azure/storage-blob';
 import { PagedResult } from '@microsoft/agents-hosting';
-import { Storage as Storage_2 } from '@microsoft/agents-hosting';
+import { Storage } from '@microsoft/agents-hosting';
+import { StorageDeleteOptions } from '@microsoft/agents-hosting';
+import { StorageDeleteResults } from '@microsoft/agents-hosting';
 import { StoragePipelineOptions } from '@azure/storage-blob';
+import { StorageReadResults } from '@microsoft/agents-hosting';
 import { StorageSharedKeyCredential } from '@azure/storage-blob';
+import { StorageV2 } from '@microsoft/agents-hosting';
 import { StorageWriteOptions } from '@microsoft/agents-hosting';
+import { StorageWriteResults } from '@microsoft/agents-hosting';
 import { StoreItems } from '@microsoft/agents-hosting';
 import { TokenCredential } from '@azure/core-auth';
 import { TranscriptInfo } from '@microsoft/agents-hosting';
 import { TranscriptStore } from '@microsoft/agents-hosting';
 
 // @public
-export class BlobsStorage implements Storage_2 {
+export class BlobsStorage extends BlobsStorageInternals implements Storage {
     constructor(containerName: string, connectionString?: string, options?: BlobsStorageOptions, url?: string, credential?: StorageSharedKeyCredential | AnonymousCredential | TokenCredential);
     delete(keys: string[]): Promise<void>;
     read(keys: string[]): Promise<StoreItems>;
-    write(changes: StoreItems, options?: StorageWriteOptions): Promise<void>;
+    write(changes: StoreItems): Promise<void>;
 }
 
 // @public
 export interface BlobsStorageOptions {
     storagePipelineOptions?: StoragePipelineOptions;
+}
+
+// @public
+export class BlobsStorageV2 extends StorageV2 {
+    constructor(containerName: string, connectionString?: string, options?: BlobsStorageOptions, url?: string, credential?: StorageSharedKeyCredential | AnonymousCredential | TokenCredential);
+    delete(keys: string[], options?: StorageDeleteOptions): Promise<StorageDeleteResults>;
+    read<T extends object = Record<string, unknown>>(keys: string[]): Promise<StorageReadResults<T>>;
+    write<T extends object = Record<string, unknown>>(changes: Record<string, T>, options?: StorageWriteOptions): Promise<StorageWriteResults>;
 }
 
 // @public

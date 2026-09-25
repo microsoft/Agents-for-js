@@ -6,10 +6,16 @@
 
 import { AgentError } from '@microsoft/agents-activity';
 import { AgentErrorDefinition } from '@microsoft/agents-activity';
+import { Container } from '@azure/cosmos';
 import { CosmosClientOptions } from '@azure/cosmos';
 import { ExceptionHelper } from '@microsoft/agents-activity';
-import { Storage as Storage_2 } from '@microsoft/agents-hosting';
+import { Storage } from '@microsoft/agents-hosting';
+import { StorageDeleteOptions } from '@microsoft/agents-hosting';
+import { StorageDeleteResults } from '@microsoft/agents-hosting';
+import { StorageReadResults } from '@microsoft/agents-hosting';
+import { StorageV2 } from '@microsoft/agents-hosting';
 import { StorageWriteOptions } from '@microsoft/agents-hosting';
+import { StorageWriteResults } from '@microsoft/agents-hosting';
 import { StoreItems } from '@microsoft/agents-hosting';
 
 export { AgentError }
@@ -17,14 +23,10 @@ export { AgentError }
 export { AgentErrorDefinition }
 
 // @public
-export class CosmosDbPartitionedStorage implements Storage_2 {
-    constructor(cosmosDbStorageOptions: CosmosDbPartitionedStorageOptions);
-    // (undocumented)
-    [key: string]: any;
+export class CosmosDbPartitionedStorage extends CosmosDbPartitionedStorageInternals implements Storage {
     delete(keys: string[]): Promise<void>;
-    length: number;
     read(keys: string[]): Promise<StoreItems>;
-    write(changes: StoreItems, options?: StorageWriteOptions): Promise<void>;
+    write(changes: StoreItems): Promise<void>;
 }
 
 // @public
@@ -35,6 +37,14 @@ export interface CosmosDbPartitionedStorageOptions {
     cosmosClientOptions?: CosmosClientOptions;
     databaseId: string;
     keySuffix?: string;
+}
+
+// @public
+export class CosmosDbPartitionedStorageV2 extends StorageV2 {
+    constructor(options: CosmosDbPartitionedStorageOptions);
+    delete(keys: string[], options?: StorageDeleteOptions): Promise<StorageDeleteResults>;
+    read<T extends object = Record<string, unknown>>(keys: string[]): Promise<StorageReadResults<T>>;
+    write<T extends object = Record<string, unknown>>(changes: Record<string, T>, options?: StorageWriteOptions): Promise<StorageWriteResults>;
 }
 
 // @public

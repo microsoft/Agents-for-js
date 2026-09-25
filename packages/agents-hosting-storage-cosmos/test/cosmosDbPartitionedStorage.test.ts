@@ -1,8 +1,10 @@
 import assert from 'assert'
-import { describe, it } from 'node:test'
 import { Container, CosmosClient } from '@azure/cosmos'
-import { CosmosDbPartitionedStorage } from '../src/cosmosDbPartitionedStorage'
+import { describe, it } from 'node:test'
+import { CosmosDbPartitionedStorage as CosmosDbPartitionedStorageV1, CosmosDbPartitionedStorageV2 as CosmosDbPartitionedStorage } from '../src/cosmosDbPartitionedStorage'
 import { Errors } from '../src/errorHelper'
+import { Storage, StorageOperationStatus, StorageV2, StorageWriteMode } from '@microsoft/agents-hosting'
+import { ExceptionHelper } from '@microsoft/agents-activity'
 
 interface StorageInternals {
   client: CosmosClient;
@@ -24,15 +26,283 @@ function isStorageError (err: unknown): err is StorageError {
   return err instanceof Error
 }
 
-function createStorage (endpoint: string): CosmosDbPartitionedStorage {
-  return new CosmosDbPartitionedStorage({
+function createStatusError (code: number): Error {
+  return Object.assign(ExceptionHelper.generateException(Error, Errors.DocumentUpsertError), { code })
+}
+
+function createStorage (endpoint: string): CosmosDbPartitionedStorageV1 {
+  return new CosmosDbPartitionedStorageV1({
     cosmosClientOptions: { endpoint, key: 'test-key' },
     databaseId: 'shared-database',
     containerId: 'shared-container',
   })
 }
 
+function getInternals (storage: CosmosDbPartitionedStorageV1 | CosmosDbPartitionedStorage): StorageInternals {
+  if (storage instanceof StorageV2) {
+    return (storage as unknown as { internals: StorageInternals }).internals
+  }
+  return storage as unknown as StorageInternals
+}
+
 describe('CosmosDbPartitionedStorage initialization', () => {
+  it('uses separately named V1 and V2 classes', () => {
+    const v1 = createStorage('https://version-account.documents.azure.com/')
+    const storage = new CosmosDbPartitionedStorage({
+      cosmosClientOptions: { endpoint: 'https://version-v2-account.documents.azure.com/', key: 'test-key' },
+      databaseId: 'shared-database',
+      containerId: 'shared-container',
+    })
+    const legacyContract: Storage = v1
+    const v2Contract: StorageV2 = storage
+    assert.strictEqual(legacyContract, v1)
+    assert.strictEqual(v2Contract, storage)
+  })
+
+  it('keeps empty V1 writes as no-ops and rejects arrays', async () => {
+    const storage = createStorage('https://v1-write-validation-account.documents.azure.com/')
+    const internals = getInternals(storage)
+    let initializeCalls = 0
+    internals.initialize = async () => { initializeCalls++ }
+
+    await storage.write({})
+    assert.strictEqual(initializeCalls, 0)
+
+    await assert.rejects(
+      storage.write([{}]),
+      /changes parameter is required/
+    )
+  })
+
+  it('returns condition-not-met for create-only writes with an expected version on a missing item', async () => {
+    const storage = new CosmosDbPartitionedStorage({
+      cosmosClientOptions: { endpoint: 'https://create-only-condition-account.documents.azure.com/', key: 'test-key' },
+      databaseId: 'shared-database',
+      containerId: 'shared-container',
+    })
+    const internals = getInternals(storage)
+    let createCalls = 0
+    const container = {
+      items: {
+        create: async () => {
+          createCalls++
+          return { etag: 'new-version' }
+        },
+      },
+      item: () => ({
+        read: () => Promise.reject(createStatusError(404)),
+      }),
+    } as unknown as Container
+    internals.client = {} as CosmosClient
+    internals.getOrCreateContainer = async () => ({ container, compatibilityModePartitionKey: false })
+
+    const results = await storage.write(
+      { key: { value: 'test' } },
+      { mode: StorageWriteMode.CreateOnly, expectedVersion: 'version' }
+    )
+
+    assert.strictEqual(results.key.status, StorageOperationStatus.ConditionNotMet)
+    assert.strictEqual(createCalls, 0)
+  })
+
+  it('returns V2 read results under each requested key', async () => {
+    const storage = new CosmosDbPartitionedStorage({
+      cosmosClientOptions: { endpoint: 'https://read-result-key-account.documents.azure.com/', key: 'test-key' },
+      databaseId: 'shared-database',
+      containerId: 'shared-container',
+    })
+    const internals = getInternals(storage)
+    const container = {
+      item: () => ({
+        read: async () => ({
+          resource: { realId: 'stored-key', document: { value: 'test', eTag: 'business-value' }, _etag: 'version' },
+        }),
+      }),
+    } as unknown as Container
+    internals.client = {} as CosmosClient
+    internals.getOrCreateContainer = async () => ({ container, compatibilityModePartitionKey: false })
+
+    const results = await storage.read<{ value: string, eTag: string }>(['requested-key'])
+
+    assert.strictEqual(results['requested-key'].key, 'requested-key')
+    assert.strictEqual(results['requested-key'].value?.value, 'test')
+    assert.strictEqual(results['requested-key'].value?.eTag, 'business-value')
+    assert.strictEqual(results['requested-key'].version, 'version')
+  })
+
+  it('preserves value eTag data when writing a document', async () => {
+    const storage = new CosmosDbPartitionedStorage({
+      cosmosClientOptions: { endpoint: 'https://write-value-account.documents.azure.com/', key: 'test-key' },
+      databaseId: 'shared-database',
+      containerId: 'shared-container',
+    })
+    const internals = getInternals(storage)
+    let document: { document?: unknown } | undefined
+    const container = {
+      items: {
+        upsert: async (value: { document?: unknown }) => {
+          document = value
+          return { etag: 'storage-version' }
+        },
+      },
+    } as unknown as Container
+    internals.client = {} as CosmosClient
+    internals.getOrCreateContainer = async () => ({ container, compatibilityModePartitionKey: false })
+
+    await storage.write({ key: { eTag: 'business-value', value: 1 } })
+
+    assert.deepStrictEqual(document?.document, { eTag: 'business-value', value: 1 })
+  })
+
+  it('does not create a missing item when upsert has an expected version', async () => {
+    const storage = new CosmosDbPartitionedStorage({
+      cosmosClientOptions: { endpoint: 'https://upsert-condition-account.documents.azure.com/', key: 'test-key' },
+      databaseId: 'shared-database',
+      containerId: 'shared-container',
+    })
+    const internals = getInternals(storage)
+    let upsertCalls = 0
+    let replaceCalls = 0
+    const container = {
+      items: {
+        upsert: async () => {
+          upsertCalls++
+          return { etag: 'unexpected' }
+        },
+      },
+      item: () => ({
+        replace: () => {
+          replaceCalls++
+          return Promise.reject(createStatusError(404))
+        },
+      }),
+    } as unknown as Container
+    internals.client = {} as CosmosClient
+    internals.getOrCreateContainer = async () => ({ container, compatibilityModePartitionKey: false })
+
+    const results = await storage.write({ key: { value: 'test' } }, { expectedVersion: 'version' })
+
+    assert.strictEqual(results.key.status, StorageOperationStatus.ConditionNotMet)
+    assert.strictEqual(replaceCalls, 1)
+    assert.strictEqual(upsertCalls, 0)
+  })
+
+  it('does not condition an unconditional V2 delete', async () => {
+    const storage = new CosmosDbPartitionedStorage({
+      cosmosClientOptions: { endpoint: 'https://unconditional-delete-account.documents.azure.com/', key: 'test-key' },
+      databaseId: 'shared-database',
+      containerId: 'shared-container',
+    })
+    const internals = getInternals(storage)
+    let readCalls = 0
+    let deleteOptions: unknown
+    const container = {
+      item: () => ({
+        read: async () => { readCalls++ },
+        delete: async (options?: unknown) => { deleteOptions = options },
+      }),
+    } as unknown as Container
+    internals.client = {} as CosmosClient
+    internals.getOrCreateContainer = async () => ({ container, compatibilityModePartitionKey: false })
+
+    const results = await storage.delete(['key'])
+
+    assert.strictEqual(results.key.status, StorageOperationStatus.Succeeded)
+    assert.strictEqual(readCalls, 0)
+    assert.strictEqual(deleteOptions, undefined)
+  })
+
+  it('uses replace for matching and stale upsert version conditions', async () => {
+    const storage = new CosmosDbPartitionedStorage({
+      cosmosClientOptions: { endpoint: 'https://upsert-version-account.documents.azure.com/', key: 'test-key' },
+      databaseId: 'shared-database',
+      containerId: 'shared-container',
+    })
+    const internals = getInternals(storage)
+    let upsertCalls = 0
+    const replaceVersions: string[] = []
+    const container = {
+      items: {
+        upsert: async () => {
+          upsertCalls++
+          return { etag: 'unexpected' }
+        },
+      },
+      item: () => ({
+        replace: async (_document: unknown, options: { accessCondition?: { condition?: string } }) => {
+          const version = options.accessCondition?.condition ?? ''
+          replaceVersions.push(version)
+          if (version === 'stale') return Promise.reject(createStatusError(412))
+          return { etag: 'next-version' }
+        },
+      }),
+    } as unknown as Container
+    internals.client = {} as CosmosClient
+    internals.getOrCreateContainer = async () => ({ container, compatibilityModePartitionKey: false })
+
+    const matched = await storage.write({ key: { value: 1 } }, { expectedVersion: 'current' })
+    const stale = await storage.write({ key: { value: 2 } }, { expectedVersion: 'stale' })
+
+    assert.strictEqual(matched.key.status, StorageOperationStatus.Succeeded)
+    assert.strictEqual(matched.key.version, 'next-version')
+    assert.strictEqual(stale.key.status, StorageOperationStatus.ConditionNotMet)
+    assert.deepStrictEqual(replaceVersions, ['current', 'stale'])
+    assert.strictEqual(upsertCalls, 0)
+  })
+
+  it('rejects V2 values that are not object records', async () => {
+    const storage = new CosmosDbPartitionedStorage({
+      cosmosClientOptions: { endpoint: 'https://invalid-value-account.documents.azure.com/', key: 'test-key' },
+      databaseId: 'shared-database',
+      containerId: 'shared-container',
+    })
+
+    await assert.rejects(
+      // @ts-expect-error Verify runtime validation for JavaScript callers.
+      storage.write({ key: null }),
+      /values must be non-null, non-array objects/
+    )
+  })
+
+  it('rejects blank V2 write keys', async () => {
+    const storage = new CosmosDbPartitionedStorage({
+      cosmosClientOptions: { endpoint: 'https://invalid-key-account.documents.azure.com/', key: 'test-key' },
+      databaseId: 'shared-database',
+      containerId: 'shared-container',
+    })
+
+    await assert.rejects(storage.write({ ' ': {} }), /keys must be non-empty strings/)
+  })
+
+  it('rejects unsupported V2 write modes', async () => {
+    const storage = new CosmosDbPartitionedStorage({
+      cosmosClientOptions: { endpoint: 'https://invalid-mode-account.documents.azure.com/', key: 'test-key' },
+      databaseId: 'shared-database',
+      containerId: 'shared-container',
+    })
+
+    await assert.rejects(
+      // @ts-expect-error Verify runtime validation for JavaScript callers.
+      storage.write({ key: {} }, { mode: 'invalid' }),
+      /write mode "invalid" is not supported/
+    )
+    await assert.rejects(
+      // @ts-expect-error Verify validation before the empty-batch return.
+      storage.write({}, { mode: 'invalid' }),
+      /write mode "invalid" is not supported/
+    )
+    await assert.rejects(
+      // @ts-expect-error Verify runtime validation for JavaScript callers.
+      storage.read(''),
+      /keys/i
+    )
+    await assert.rejects(
+      // @ts-expect-error Verify runtime validation for JavaScript callers.
+      storage.delete({ length: 0 }),
+      /keys/i
+    )
+  })
+
   it('should not share cached containers across Cosmos accounts', async () => {
     const firstContainer = {} as Container
     const secondContainer = {} as Container
@@ -317,91 +587,5 @@ describe('CosmosDbPartitionedStorage initialization', () => {
 
     assert.strictEqual(createContainerCalls, 1)
     assert.strictEqual(storage.container, createdContainer)
-  })
-
-  it('should write native ttl and sdk expiry metadata when ttl is provided', async () => {
-    let writtenDocument: any
-    const storage = Object.create(CosmosDbPartitionedStorage.prototype) as CosmosDbPartitionedStorage
-    const storageAsAny = storage as any
-    storageAsAny.container = {
-      items: {
-        upsert: async (document: any) => {
-          writtenDocument = document
-        }
-      }
-    }
-    storageAsAny.cosmosDbStorageOptions = {
-      compatibilityMode: false
-    }
-
-    await storage.write({ key1: { value: 'test' } }, { ttl: 60 })
-
-    assert.strictEqual(writtenDocument.id, 'key1')
-    assert.strictEqual(writtenDocument.realId, 'key1')
-    assert.deepStrictEqual(writtenDocument.document, { value: 'test' })
-    assert.strictEqual(writtenDocument.ttl, 60)
-    assert.ok(writtenDocument.expiresAt > Date.now())
-  })
-
-  it('should omit expired items on read and attempt cleanup', async () => {
-    let deleteCalled = false
-    let deleteOptions: any
-    const storage = Object.create(CosmosDbPartitionedStorage.prototype) as CosmosDbPartitionedStorage
-    const storageAsAny = storage as any
-    storageAsAny.container = {
-      item: () => ({
-        read: async () => ({
-          resource: {
-            id: 'key1',
-            realId: 'key1',
-            document: { value: 'test' },
-            expiresAt: Date.now() - 1000,
-            _etag: 'etag-1'
-          }
-        }),
-        delete: async (options: any) => {
-          deleteCalled = true
-          deleteOptions = options
-        }
-      })
-    }
-    storageAsAny.cosmosDbStorageOptions = {
-      compatibilityMode: false
-    }
-
-    const result = await storage.read(['key1'])
-
-    assert.deepStrictEqual(result, {})
-    assert.strictEqual(deleteCalled, true)
-    assert.deepStrictEqual(deleteOptions, { accessCondition: { type: 'IfMatch', condition: 'etag-1' } })
-  })
-
-  it('should ignore cleanup conflicts when expired item was replaced', async () => {
-    const storage = Object.create(CosmosDbPartitionedStorage.prototype) as CosmosDbPartitionedStorage
-    const storageAsAny = storage as any
-    storageAsAny.container = {
-      item: () => ({
-        read: async () => ({
-          resource: {
-            id: 'key1',
-            realId: 'key1',
-            document: { value: 'test' },
-            expiresAt: Date.now() - 1000,
-            _etag: 'etag-1'
-          }
-        }),
-        delete: async (_options: any) => {
-          // eslint-disable-next-line no-throw-literal
-          throw { code: 412 }
-        }
-      })
-    }
-    storageAsAny.cosmosDbStorageOptions = {
-      compatibilityMode: false
-    }
-
-    const result = await storage.read(['key1'])
-
-    assert.deepStrictEqual(result, {})
   })
 })

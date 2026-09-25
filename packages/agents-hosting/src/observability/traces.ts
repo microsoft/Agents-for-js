@@ -5,7 +5,8 @@ import { SpanNames, trace } from '@microsoft/agents-telemetry'
 import { HostingMetrics } from './metrics'
 import { Activity, ConversationReference } from '@microsoft/agents-activity'
 import { HandlerStorage } from '../app/auth/handlerStorage'
-import type { Storage } from '../storage'
+import type { StorageProvider } from '../storage'
+import { asStorageV2 } from '../storage/storageCompatibility'
 
 export const AgentApplicationTraceDefinitions = {
   run: trace.define({
@@ -279,8 +280,8 @@ export const ProactiveTraceDefinitions = {
       conversationId: '',
     },
     actions: ({ span }) => ({
-      async link (storage: Storage, key: string) {
-        const item = (await storage.read([key]))?.[key] ?? {}
+      async link (storage: StorageProvider, key: string) {
+        const item = ((await asStorageV2(storage).read([key]))?.[key]?.value ?? {}) as { __link?: unknown }
         return link(span, item)
       }
     }),
@@ -333,8 +334,8 @@ export const ProactiveTraceDefinitions = {
       activityType: '',
     },
     actions: ({ span }) => ({
-      async link (storage: Storage, key: string) {
-        const item = (await storage.read([key]))?.[key] ?? {}
+      async link (storage: StorageProvider, key: string) {
+        const item = ((await asStorageV2(storage).read([key]))?.[key]?.value ?? {}) as { __link?: unknown }
         link(span, item)
       }
     }),
@@ -367,8 +368,8 @@ export const ProactiveTraceDefinitions = {
       hasAutoSignIn: false,
     },
     actions: ({ span }) => ({
-      async link (storage: Storage, key: string) {
-        const item = (await storage.read([key]))?.[key] ?? {}
+      async link (storage: StorageProvider, key: string) {
+        const item = ((await asStorageV2(storage).read([key]))?.[key]?.value ?? {}) as { __link?: unknown }
         link(span, item)
       }
     }),

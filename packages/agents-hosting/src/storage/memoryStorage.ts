@@ -3,68 +3,94 @@
  * Licensed under the MIT License.
  */
 
-import { redactString, trace } from '@microsoft/agents-telemetry'
 import { ExceptionHelper } from '@microsoft/agents-activity'
-import { StorageTraceDefinitions } from '../observability'
-import { Storage, StoreItem, StorageWriteOptions } from './storage'
-import { getStorageWriteExpiry } from './storageExpiry'
-import { debug } from '@microsoft/agents-telemetry'
+import { debug, redactString, trace } from '@microsoft/agents-telemetry'
 import { Errors } from '../errorHelper'
+import { StorageTraceDefinitions } from '../observability'
+import { getStorageWriteExpiry } from './storageExpiry'
+import {
+  StorageDeleteOptions,
+  StorageDeleteResults,
+  StorageOperationStatus,
+  StorageReadResults,
+  StorageWriteMode,
+  StorageWriteOptions,
+  StorageWriteResults,
+  Storage,
+  StorageV2,
+  StoreItem,
+} from './storage'
 
 const logger = debug('agents:memory-storage')
 
-/**
- * A simple in-memory storage provider that implements the Storage interface.
- *
- * @remarks
- * This class provides a volatile storage solution that keeps data in memory,
- * which means data is lost when the process terminates. It's primarily useful for:
- * - Development and testing scenarios
- * - Simple applications that don't require data persistence across restarts
- * - Stateless environments where external storage isn't available
- *
- * MemoryStorage supports optimistic concurrency control through eTags and
- * can be used as a singleton through the {@link MemoryStorage.getSingleInstance | getSingleInstance() method} to
- * share state across different parts of an application.
- */
-export class MemoryStorage implements Storage {
-  private static instance: MemoryStorage
-  private expirations: { [k: string]: number } = {}
-  /**
-   * Counter used to generate unique eTags for stored items
-   */
-  private etag: number = 1
+interface MemoryStorageState {
+  memory: { [key: string]: string };
+  versions: { [key: string]: string };
+  expirations: { [key: string]: number };
+  etag: number;
+}
+
+class MemoryStorageInternals {
+  private static readonly states = new WeakMap<object, MemoryStorageState>()
+
+  readonly state: MemoryStorageState
 
   /**
-   * Creates a new instance of the MemoryStorage class.
-   *
-   * @param memory An optional initial memory store to seed the storage with data
+   * Creates an internal in-memory provider for the selected storage contract.
    */
-  constructor (private memory: { [k: string]: string } = {}) { }
-
-  /**
-   * Gets a single shared instance of the MemoryStorage class.
-   *
-   * @returns The singleton instance of MemoryStorage
-   *
-   * @remarks
-   * Using this method ensures that the same storage instance is used across
-   * the application, allowing for shared state without passing references.
-   *
-   */
-  static getSingleInstance (): MemoryStorage {
-    if (!MemoryStorage.instance) {
-      MemoryStorage.instance = new MemoryStorage()
+  constructor (memory: { [key: string]: string } = {}) {
+    let state = MemoryStorageInternals.states.get(memory)
+    if (!state) {
+      state = { memory, versions: {}, expirations: {}, etag: getNextETag(memory) }
+      MemoryStorageInternals.states.set(memory, state)
     }
-    return MemoryStorage.instance
+    this.state = state
+  }
+
+  save (key: string, item: unknown, expiresAt?: number): string {
+    const version = (this.state.etag++).toString()
+    this.state.memory[key] = JSON.stringify(item)
+    this.state.versions[key] = version
+    if (expiresAt === undefined) delete this.state.expirations[key]
+    else this.state.expirations[key] = expiresAt
+    return version
+  }
+
+  getVersion (key: string, value: StoreItem): string | undefined {
+    return this.state.versions[key] ?? value.eTag as string | undefined
+  }
+
+  isExpired (key: string): boolean {
+    const expiresAt = this.state.expirations[key]
+    return expiresAt !== undefined && expiresAt <= Date.now()
+  }
+
+  remove (key: string): void {
+    delete this.state.memory[key]
+    delete this.state.versions[key]
+    delete this.state.expirations[key]
+  }
+}
+
+/**
+ * A simple in-memory storage provider for development and testing.
+ *
+ * This class implements the legacy {@link Storage} contract. Use
+ * {@link MemoryStorageV2} for the structured StorageV2 contract.
+ */
+export class MemoryStorage extends MemoryStorageInternals implements Storage {
+  private static instance: MemoryStorage
+
+  constructor (memory: { [key: string]: string } = {}) {
+    super(memory)
   }
 
   /**
-   * Reads storage items from memory.
+   * Reads legacy items from process-local memory.
    *
-   * @param keys The keys of the items to read
-   * @returns A promise that resolves to the read items
-   * @throws Will throw an error if keys are not provided or the array is empty
+   * @param keys The keys to read; must not be empty.
+   * @returns Existing items keyed by storage key. Missing keys are omitted and returned items
+   * include their legacy `eTag`.
    */
   async read (keys: string[]): Promise<StoreItem> {
     return trace(StorageTraceDefinitions.read, async ({ record }) => {
@@ -76,109 +102,240 @@ export class MemoryStorage implements Storage {
       const data: StoreItem = {}
       for (const key of keys) {
         logger.debug(`Reading key: ${key}`)
-        if (this.isExpired(key)) {
-          logger.info('Item expired, deleting from memory', { key: redactString(key, true) })
-          delete this.memory[key]
-          delete this.expirations[key]
-          continue
-        }
-        const item = this.memory[key]
+        const item = this.state.memory[key]
         if (item) {
-          data[key] = JSON.parse(item)
+          const value = JSON.parse(item)
+          const version = this.getVersion(key, value)
+          data[key] = version === undefined ? value : { ...value, eTag: version }
         }
       }
-
       return data
     })
   }
 
   /**
-   * Writes storage items to memory.
+   * Writes legacy items to process-local memory.
    *
-   * @param changes The items to write, indexed by key
-   * @returns A promise that resolves when the write operation is complete
-   * @throws Will throw an error if changes are not provided or if there's an eTag conflict
-   *
-   * @remarks
-   * This method supports optimistic concurrency control through eTags.
-   * If an item has an eTag, it will only be updated if the existing item
-   * has the same eTag. If an item has an eTag of '*' or no eTag, it will
-   * always be written regardless of the current state.
+   * @param changes The items to write, keyed by storage key.
+   * @throws If `changes` is invalid or an item supplies a stale legacy `eTag`.
    */
-  async write (changes: StoreItem, options?: StorageWriteOptions): Promise<void> {
+  async write (changes: StoreItem): Promise<void> {
     return trace(StorageTraceDefinitions.write, async ({ record }) => {
-      const keys = changes ? Object.keys(changes) : []
-      if (!changes || keys.length === 0) {
+      record({ keyCount: changes ? Object.keys(changes).length : undefined })
+      if (!changes || typeof changes !== 'object' || Array.isArray(changes)) {
         throw ExceptionHelper.generateException(ReferenceError, Errors.StorageWriteChangesRequired)
       }
-      const expiresAt = getStorageWriteExpiry(options)
-      record({ keyCount: keys.length })
 
       for (const [key, newItem] of Object.entries(changes)) {
         logger.debug(`Writing key: ${key}`)
-        if (this.isExpired(key)) {
-          logger.info('Item expired, deleting from memory', { key: redactString(key, true) })
-          delete this.memory[key]
-          delete this.expirations[key]
-        }
-        const oldItemStr = this.memory[key]
+        const oldItemStr = this.state.memory[key]
         if (!oldItemStr || newItem.eTag === '*' || !newItem.eTag) {
-          this.saveItem(key, newItem, expiresAt)
+          const { eTag: _eTag, ...value } = newItem
+          this.save(key, { ...value, eTag: (this.state.etag).toString() })
+          continue
+        }
+        const oldItem = JSON.parse(oldItemStr)
+        if (newItem.eTag === this.getVersion(key, oldItem)) {
+          const { eTag: _eTag, ...value } = newItem
+          this.save(key, { ...value, eTag: (this.state.etag).toString() })
         } else {
-          const oldItem = JSON.parse(oldItemStr)
-          if (newItem.eTag === oldItem.eTag) {
-            this.saveItem(key, newItem, expiresAt)
-          } else {
-            throw ExceptionHelper.generateException(Error, Errors.StorageETagConflict, undefined, { key })
-          }
+          throw ExceptionHelper.generateException(Error, Errors.StorageETagConflict, undefined, { key })
         }
       }
     })
   }
 
   /**
-   * Deletes storage items from memory.
+   * Deletes legacy items from process-local memory.
    *
-   * @param keys The keys of the items to delete
-   * @returns A promise that resolves when the delete operation is complete
+   * @param keys The keys to delete. Missing keys are ignored.
    */
   async delete (keys: string[]): Promise<void> {
     return trace(StorageTraceDefinitions.delete, async ({ record }) => {
       record({ keyCount: keys?.length })
       logger.debug(`Deleting keys: ${keys.join(', ')}`)
       for (const key of keys) {
-        delete this.memory[key]
-        delete this.expirations[key]
+        this.remove(key)
       }
     })
   }
 
+  static getSingleInstance (): MemoryStorage {
+    if (!MemoryStorage.instance) MemoryStorage.instance = new MemoryStorage()
+    return MemoryStorage.instance
+  }
+}
+
+/**
+ * An in-memory provider for the structured {@link StorageV2} contract.
+ *
+ * Unlike {@link MemoryStorage}, every read returns an outcome for every requested key, and every
+ * write and delete returns an outcome for every supplied key. Storage versions are returned
+ * separately from application values, so an `eTag` property in a value is preserved. Use
+ * {@link StorageWriteMode.CreateOnly}, {@link StorageWriteMode.Replace}, or `expectedVersion` to
+ * guard concurrent writes.
+ *
+ * This provider is intended for development and testing only; state is process-local.
+ */
+export class MemoryStorageV2 extends StorageV2 {
+  private static instance: MemoryStorageV2
+  private readonly internals: MemoryStorageInternals
+
   /**
-   * Saves an item to memory with a new eTag.
+   * Creates a V2 in-memory storage provider.
    *
-   * @param key The key of the item to save
-   * @param item The item to save
-   *
-   * @remarks
-   * This private method handles the details of:
-   * - Creating a clone of the item to prevent modification of the original
-   * - Generating a new eTag for optimistic concurrency control
-   * - Converting the item to a JSON string for storage
-   *
-   * @private
+   * @param memory Optional backing store to share with another in-memory storage instance.
    */
-  private saveItem (key: string, item: unknown, expiresAt?: number): void {
-    const clone = Object.assign({}, item, { eTag: (this.etag++).toString() })
-    this.memory[key] = JSON.stringify(clone)
-    if (expiresAt === undefined) {
-      delete this.expirations[key]
-    } else {
-      this.expirations[key] = expiresAt
-    }
+  constructor (memory: { [key: string]: string } = {}) {
+    super()
+    this.internals = new MemoryStorageInternals(memory)
   }
 
-  private isExpired (key: string): boolean {
-    const expiresAt = this.expirations[key]
-    return expiresAt !== undefined && expiresAt <= Date.now()
+  /**
+   * Reads items from process-local memory.
+   *
+   * @param keys The keys to read. Empty batches are valid.
+   * @returns A result for every key, with `notFound` for missing items and a separate storage
+   * version for successful reads.
+   */
+  async read<T extends object = Record<string, unknown>> (keys: string[]): Promise<StorageReadResults<T>> {
+    return trace(StorageTraceDefinitions.read, async ({ record }) => {
+      record({ keyCount: keys?.length })
+      if (!Array.isArray(keys)) {
+        throw ExceptionHelper.generateException(ReferenceError, Errors.StorageReadKeysRequired)
+      }
+      if (keys.some(key => typeof key !== 'string' || key.trim() === '')) {
+        throw ExceptionHelper.generateException(ReferenceError, Errors.StorageV2KeyRequired)
+      }
+
+      const results: StorageReadResults<T> = {}
+      for (const key of keys) {
+        logger.debug(`Reading key: ${key}`)
+        if (this.internals.isExpired(key)) {
+          logger.info('Item expired, deleting from memory', { key: redactString(key, true) })
+          this.internals.remove(key)
+        }
+        const item = this.internals.state.memory[key]
+        if (!item) {
+          results[key] = { key, status: StorageOperationStatus.NotFound }
+          continue
+        }
+        const value = JSON.parse(item) as T & StoreItem
+        results[key] = { key, status: StorageOperationStatus.Succeeded, value, version: this.internals.getVersion(key, value) }
+      }
+      return results
+    })
   }
+
+  /**
+   * Writes items to process-local memory with optional concurrency conditions.
+   *
+   * @param changes The values to write, keyed by storage key.
+   * @param options Create-only, replace, or expected-version conditions.
+   * @returns A result for every supplied key, including `conflict` or `conditionNotMet` when a
+   * condition cannot be satisfied.
+   */
+  async write<T extends object = Record<string, unknown>> (changes: Record<string, T>, options?: StorageWriteOptions): Promise<StorageWriteResults> {
+    return trace(StorageTraceDefinitions.write, async ({ record }) => {
+      record({ keyCount: changes ? Object.keys(changes).length : undefined })
+      if (options?.expectedVersion === '') {
+        throw ExceptionHelper.generateException(RangeError, Errors.StorageV2ExpectedVersionEmpty)
+      }
+      if (!changes || typeof changes !== 'object' || Array.isArray(changes)) {
+        throw ExceptionHelper.generateException(ReferenceError, Errors.StorageWriteChangesRequired)
+      }
+      if (Object.values(changes).some(value => value === null || typeof value !== 'object' || Array.isArray(value))) {
+        throw ExceptionHelper.generateException(TypeError, Errors.StorageV2ValueRequired)
+      }
+      if (Object.keys(changes).some(key => key.trim() === '')) {
+        throw ExceptionHelper.generateException(ReferenceError, Errors.StorageV2KeyRequired)
+      }
+
+      const results: StorageWriteResults = {}
+      const expiresAt = getStorageWriteExpiry(options)
+      const mode = options?.mode ?? StorageWriteMode.Upsert
+      if (!Object.values(StorageWriteMode).includes(mode)) {
+        throw ExceptionHelper.generateException(RangeError, Errors.StorageV2WriteModeUnsupported, undefined, { mode: String(mode) })
+      }
+      for (const [key, newItem] of Object.entries(changes)) {
+        if (this.internals.isExpired(key)) {
+          logger.info('Item expired, deleting from memory', { key: redactString(key, true) })
+          this.internals.remove(key)
+        }
+        const oldItemStr = this.internals.state.memory[key]
+        const oldItem = oldItemStr ? JSON.parse(oldItemStr) as StoreItem : undefined
+        const currentVersion = oldItem ? this.internals.getVersion(key, oldItem) : undefined
+        if (mode === StorageWriteMode.CreateOnly && oldItemStr) {
+          results[key] = { key, status: StorageOperationStatus.Conflict, version: currentVersion }
+        } else if (mode === StorageWriteMode.Replace && !oldItemStr) {
+          results[key] = { key, status: StorageOperationStatus.NotFound }
+        } else if (options?.expectedVersion !== undefined && options.expectedVersion !== currentVersion) {
+          results[key] = { key, status: StorageOperationStatus.ConditionNotMet, version: currentVersion }
+        } else {
+          results[key] = { key, status: StorageOperationStatus.Succeeded, version: this.internals.save(key, newItem, expiresAt) }
+        }
+      }
+      return results
+    })
+  }
+
+  /**
+   * Deletes items from process-local memory with an optional version condition.
+   *
+   * @param keys The keys to delete. Empty batches are valid.
+   * @param options An optional expected storage version.
+   * @returns A result for every supplied key.
+   */
+  async delete (keys: string[], options?: StorageDeleteOptions): Promise<StorageDeleteResults> {
+    return trace(StorageTraceDefinitions.delete, async ({ record }) => {
+      record({ keyCount: keys?.length })
+      if (options?.expectedVersion === '') {
+        throw ExceptionHelper.generateException(RangeError, Errors.StorageV2ExpectedVersionEmpty)
+      }
+      if (!Array.isArray(keys)) {
+        throw ExceptionHelper.generateException(ReferenceError, Errors.StorageReadKeysRequired)
+      }
+      if (keys.some(key => typeof key !== 'string' || key.trim() === '')) {
+        throw ExceptionHelper.generateException(ReferenceError, Errors.StorageV2KeyRequired)
+      }
+
+      const results: StorageDeleteResults = {}
+      for (const key of keys) {
+        if (this.internals.isExpired(key)) {
+          logger.info('Item expired, deleting from memory', { key: redactString(key, true) })
+          this.internals.remove(key)
+        }
+        const item = this.internals.state.memory[key]
+        if (!item) {
+          results[key] = { key, status: StorageOperationStatus.NotFound }
+          continue
+        }
+        const value = JSON.parse(item) as StoreItem
+        const version = this.internals.getVersion(key, value)
+        if (options?.expectedVersion !== undefined && options.expectedVersion !== version) {
+          results[key] = { key, status: StorageOperationStatus.ConditionNotMet, version }
+          continue
+        }
+        this.internals.remove(key)
+        results[key] = { key, status: StorageOperationStatus.Succeeded, version }
+      }
+      return results
+    })
+  }
+
+  static getSingleInstance (): MemoryStorageV2 {
+    if (!MemoryStorageV2.instance) MemoryStorageV2.instance = new MemoryStorageV2()
+    return MemoryStorageV2.instance
+  }
+}
+
+function getNextETag (memory: { [key: string]: string }): number {
+  return Object.values(memory).reduce((next, item) => {
+    try {
+      const version = Number(JSON.parse(item)?.eTag)
+      return Number.isSafeInteger(version) && version >= next ? version + 1 : next
+    } catch {
+      return next
+    }
+  }, 1)
 }

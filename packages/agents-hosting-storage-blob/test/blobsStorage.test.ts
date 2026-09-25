@@ -1,84 +1,231 @@
-import assert from 'assert'
-import { Readable } from 'stream'
+import assert from 'node:assert'
 import { describe, it } from 'node:test'
-import { BlobsStorage } from '../src'
+import { BlobsStorage, BlobsStorageV2 } from '../src/blobsStorage'
+import { Storage, StorageOperationStatus, StorageV2 } from '@microsoft/agents-hosting'
+import { ExceptionHelper } from '@microsoft/agents-activity'
+import { Errors } from '../src/errorHelper'
+import { Readable } from 'node:stream'
+
+interface BlobStorageInternals {
+  _containerClient: {
+    getBlobClient: (key: string) => { download: () => Promise<unknown> };
+  };
+  _initialize: () => Promise<void>;
+}
+
+interface BlobStorageWriteInternals {
+  _containerClient: {
+    getBlobClient: (key: string) => { getProperties: () => Promise<unknown> };
+    getBlockBlobClient: (key: string) => {
+      upload: (value: string) => Promise<{ etag?: string }>;
+    };
+  };
+  _initialize: () => Promise<void>;
+}
+
+interface BlobStorageDeleteInternals {
+  _containerClient: {
+    getBlobClient: (key: string) => { getProperties: () => Promise<unknown> };
+    deleteBlob: (key: string, options?: unknown) => Promise<void>;
+  };
+  _initialize: () => Promise<void>;
+}
+
+interface BlobsStorageV2Internals<T> {
+  internals: T;
+}
+
+function createStatusError (statusCode: number): Error {
+  return Object.assign(
+    ExceptionHelper.generateException(Error, Errors.StorageV2OperationFailed, undefined, { operation: 'test', key: 'test' }),
+    { statusCode }
+  )
+}
 
 describe('BlobsStorage', () => {
-  it('accepts an anonymous URL without a credential', () => {
-    assert.doesNotThrow(() => new BlobsStorage('unused', undefined, undefined, 'https://example.blob.core.windows.net/container'))
+  for (const [authentication, url] of [
+    ['an anonymous', 'https://example.blob.core.windows.net/container'],
+    ['a SAS', 'https://example.blob.core.windows.net/container?sv=test&sig=test'],
+  ]) {
+    it(`accepts ${authentication} URL without a credential`, () => {
+      assert.doesNotThrow(() => new BlobsStorage('unused', undefined, undefined, url))
+    })
+  }
+
+  it('uses separately named V1 and V2 classes', () => {
+    const v1 = new BlobsStorage('unused', undefined, undefined, 'https://example.blob.core.windows.net/container')
+    const v2 = new BlobsStorageV2(
+      'unused',
+      undefined,
+      undefined,
+      'https://example.blob.core.windows.net/container'
+    )
+    const legacyContract: Storage = v1
+    const v2Contract: StorageV2 = v2
+    assert.strictEqual(legacyContract, v1)
+    assert.strictEqual(v2Contract, v2)
+    assert.ok(v2 instanceof StorageV2)
   })
 
-  it('accepts a SAS URL without a credential', () => {
-    assert.doesNotThrow(() => new BlobsStorage('unused', undefined, undefined, 'https://example.blob.core.windows.net/container?sv=test&sig=test'))
+  it('returns a not-found result for a missing blob', async () => {
+    const storage = new BlobsStorageV2(
+      'unused',
+      undefined,
+      undefined,
+      'https://example.blob.core.windows.net/container'
+    )
+    const { internals } = storage as unknown as BlobsStorageV2Internals<BlobStorageInternals>
+    internals._initialize = async () => {}
+    internals._containerClient = {
+      getBlobClient: () => ({
+        download: () => Promise.reject(createStatusError(404)),
+      }),
+    }
+
+    const results = await storage.read(['missing'])
+
+    assert.strictEqual(results.missing.status, StorageOperationStatus.NotFound)
   })
 
-  it('should write expiry metadata when ttl is provided', async () => {
-    let uploadOptions: any
-    const storage = Object.create(BlobsStorage.prototype) as BlobsStorage
-    const storageAsAny = storage as any
-    storageAsAny._containerClient = {
-      createIfNotExists: async () => undefined,
+  it('keeps value eTag data separate from the blob version', async () => {
+    const storage = new BlobsStorageV2(
+      'unused',
+      undefined,
+      undefined,
+      'https://example.blob.core.windows.net/container'
+    )
+    const { internals } = storage as unknown as BlobsStorageV2Internals<BlobStorageInternals>
+    internals._initialize = async () => {}
+    internals._containerClient = {
+      getBlobClient: () => ({
+        download: async () => ({
+          etag: 'storage-version',
+          readableStreamBody: Readable.from([JSON.stringify({ eTag: 'business-value', value: 1 })]),
+        }),
+      }),
+    }
+
+    const result = await storage.read<{ eTag: string, value: number }>(['key'])
+
+    assert.strictEqual(result.key.value?.eTag, 'business-value')
+    assert.strictEqual(result.key.version, 'storage-version')
+  })
+
+  it('preserves value eTag data when writing a blob', async () => {
+    const storage = new BlobsStorageV2(
+      'unused',
+      undefined,
+      undefined,
+      'https://example.blob.core.windows.net/container'
+    )
+    const { internals } = storage as unknown as BlobsStorageV2Internals<BlobStorageWriteInternals>
+    let serialized = ''
+    let versionReads = 0
+    internals._initialize = async () => {}
+    internals._containerClient = {
+      getBlobClient: () => ({
+        getProperties: async () => {
+          versionReads++
+          return await Promise.reject(createStatusError(404))
+        },
+      }),
       getBlockBlobClient: () => ({
-        upload: async (_body: string, _length: number, options: any) => {
-          uploadOptions = options
-        }
-      })
+        upload: async (value: string) => {
+          serialized = value
+          return { etag: 'storage-version' }
+        },
+      }),
     }
 
-    await storage.write({ key1: { value: 'test' } }, { ttl: 60 })
+    await storage.write({ key: { eTag: 'business-value', value: 1 } })
 
-    assert.strictEqual(typeof uploadOptions.metadata.agentsstorageexpiresat, 'string')
-    assert.ok(Number(uploadOptions.metadata.agentsstorageexpiresat) > Date.now())
+    assert.deepStrictEqual(JSON.parse(serialized), { eTag: 'business-value', value: 1 })
+    assert.strictEqual(versionReads, 0)
   })
 
-  it('should omit expired blobs on read and attempt cleanup', async () => {
-    let deletedBlobName: string | undefined
-    let deleteOptions: any
-    const storage = Object.create(BlobsStorage.prototype) as BlobsStorage
-    const storageAsAny = storage as any
-    storageAsAny._containerClient = {
-      createIfNotExists: async () => undefined,
-      getBlobClient: () => ({
-        download: async () => ({
-          etag: 'etag-1',
-          metadata: { agentsstorageexpiresat: (Date.now() - 1000).toString() },
-          readableStreamBody: Readable.from(['{"value":"test"}'])
-        })
-      }),
-      deleteBlob: async (name: string, options: any) => {
-        deletedBlobName = name
-        deleteOptions = options
-      }
-    }
+  it('does not initialize Azure for empty V2 batches', async () => {
+    const storage = new BlobsStorageV2(
+      'unused',
+      undefined,
+      undefined,
+      'https://example.blob.core.windows.net/container'
+    )
+    const { internals } = storage as unknown as BlobsStorageV2Internals<BlobStorageInternals>
+    let initializeCalls = 0
+    internals._initialize = async () => { initializeCalls++ }
 
-    const result = await storage.read(['key1'])
-
-    assert.deepStrictEqual(result, {})
-    assert.strictEqual(deletedBlobName, '%2Fkey1')
-    assert.deepStrictEqual(deleteOptions, { conditions: { ifMatch: 'etag-1' } })
+    assert.deepStrictEqual(await storage.read([]), {})
+    assert.deepStrictEqual(await storage.write({}), {})
+    assert.deepStrictEqual(await storage.delete([]), {})
+    assert.strictEqual(initializeCalls, 0)
   })
 
-  it('should ignore cleanup conflicts when expired blob was replaced', async () => {
-    const storage = Object.create(BlobsStorage.prototype) as BlobsStorage
-    const storageAsAny = storage as any
-    storageAsAny._containerClient = {
-      createIfNotExists: async () => undefined,
+  it('does not condition an unconditional V2 delete', async () => {
+    const storage = new BlobsStorageV2(
+      'unused',
+      undefined,
+      undefined,
+      'https://example.blob.core.windows.net/container'
+    )
+    const { internals } = storage as unknown as BlobsStorageV2Internals<BlobStorageDeleteInternals>
+    let versionReads = 0
+    let deleteOptions: unknown
+    internals._initialize = async () => {}
+    internals._containerClient = {
       getBlobClient: () => ({
-        download: async () => ({
-          etag: 'etag-1',
-          metadata: { agentsstorageexpiresat: (Date.now() - 1000).toString() },
-          readableStreamBody: Readable.from(['{"value":"test"}'])
-        })
+        getProperties: async () => {
+          versionReads++
+          return { etag: 'unexpected' }
+        },
       }),
-      deleteBlob: async (_name: string, _options: any) => {
-        const err: any = new Error('precondition failed')
-        err.statusCode = 412
-        throw err
-      }
+      deleteBlob: async (_key, options) => { deleteOptions = options },
     }
 
-    const result = await storage.read(['key1'])
+    const results = await storage.delete(['key'])
 
-    assert.deepStrictEqual(result, {})
+    assert.strictEqual(results.key.status, StorageOperationStatus.Succeeded)
+    assert.strictEqual(versionReads, 0)
+    assert.strictEqual(deleteOptions, undefined)
+  })
+
+  it('rejects V2 values that are not object records', async () => {
+    const storage = new BlobsStorageV2(
+      'unused',
+      undefined,
+      undefined,
+      'https://example.blob.core.windows.net/container'
+    )
+
+    await assert.rejects(
+      // @ts-expect-error Verify runtime validation for JavaScript callers.
+      storage.write({ key: null }),
+      /values must be non-null, non-array objects/
+    )
+  })
+
+  it('rejects blank V2 write keys', async () => {
+    const storage = new BlobsStorageV2(
+      'unused',
+      undefined,
+      undefined,
+      'https://example.blob.core.windows.net/container'
+    )
+
+    await assert.rejects(storage.write({ ' ': {} }), /keys must be non-empty strings/)
+  })
+
+  it('rejects unsupported V2 write modes', async () => {
+    const storage = new BlobsStorageV2(
+      'unused',
+      undefined,
+      undefined,
+      'https://example.blob.core.windows.net/container'
+    )
+
+    await assert.rejects(
+      // @ts-expect-error Verify runtime validation for JavaScript callers.
+      storage.write({ key: {} }, { mode: 'invalid' }),
+      /write mode "invalid" is not supported/
+    )
   })
 })

@@ -5,7 +5,19 @@ import { Container, CosmosClient } from '@azure/cosmos'
 import { escapeKey } from './cosmosDbKeyEscape'
 import { DocumentStoreItem } from './documentStoreItem'
 import { CosmosDbPartitionedStorageOptions } from './cosmosDbPartitionedStorageOptions'
-import { getStorageWriteExpiry, Storage, StorageWriteOptions, StoreItems } from '@microsoft/agents-hosting'
+import {
+  getStorageWriteExpiry,
+  StorageDeleteOptions,
+  StorageDeleteResults,
+  StorageOperationStatus,
+  StorageReadResults,
+  StorageWriteMode,
+  StorageWriteOptions,
+  StorageWriteResults,
+  Storage,
+  StorageV2,
+  StoreItems,
+} from '@microsoft/agents-hosting'
 import { ExceptionHelper } from '@microsoft/agents-activity'
 import { Errors } from './errorHelper'
 import { trace, redactString } from '@microsoft/agents-telemetry'
@@ -14,6 +26,15 @@ import { debug } from '@microsoft/agents-telemetry'
 
 const logger = debug('agents:cosmos-storage')
 const maxCachedInitializations = 100
+
+async function ignoreCosmosErrors (operation: Promise<unknown>, ...ignoredCodes: number[]): Promise<void> {
+  const ignored = new Set(ignoredCodes)
+  try {
+    await operation
+  } catch (err: any) {
+    if (!ignored.has(err.code)) throw err
+  }
+}
 
 interface CachedTask<T> {
   promise: Promise<T>;
@@ -89,17 +110,6 @@ const _doOnce: DoOnce<ContainerInitialization> = new DoOnce<ContainerInitializat
 
 const maxDepthAllowed = 127
 
-async function ignoreCosmosErrors (operation: Promise<unknown>, ...ignoredCodes: number[]): Promise<void> {
-  const ignored = new Set(ignoredCodes)
-  try {
-    await operation
-  } catch (err: any) {
-    if (!ignored.has(err.code)) {
-      throw err
-    }
-  }
-}
-
 function isNotFoundError (err: unknown): boolean {
   if (!err || typeof err !== 'object' || !('code' in err)) {
     return false
@@ -108,13 +118,10 @@ function isNotFoundError (err: unknown): boolean {
   return Number(err.code) === 404
 }
 
-/**
- * Implements storage using Cosmos DB partitioned storage.
- */
-export class CosmosDbPartitionedStorage implements Storage {
-  private container!: Container
+class CosmosDbPartitionedStorageInternals {
+  container!: Container
   private client!: CosmosClient
-  private compatibilityModePartitionKey = false;
+  compatibilityModePartitionKey = false;
   [key: string]: any;
 
   /**
@@ -125,8 +132,11 @@ export class CosmosDbPartitionedStorage implements Storage {
   /**
    * Initializes a new instance of the CosmosDbPartitionedStorage class.
    * @param cosmosDbStorageOptions The options for configuring Cosmos DB partitioned storage.
+   *
    */
-  constructor (private readonly cosmosDbStorageOptions: CosmosDbPartitionedStorageOptions) {
+  constructor (
+    readonly cosmosDbStorageOptions: CosmosDbPartitionedStorageOptions
+  ) {
     if (!cosmosDbStorageOptions) {
       throw ExceptionHelper.generateException(
         ReferenceError,
@@ -176,7 +186,6 @@ export class CosmosDbPartitionedStorage implements Storage {
         )
       }
     }
-
     logger.info('CosmosDbPartitionedStorage settings loaded', {
       container: {
         id: redactString(cosmosDbStorageOptions.containerId, true),
@@ -195,175 +204,9 @@ export class CosmosDbPartitionedStorage implements Storage {
   }
 
   /**
-   * Reads items from storage.
-   * @param keys The keys of the items to read.
-   * @returns A promise that resolves to the read items.
-   */
-  async read (keys: string[]): Promise<StoreItems> {
-    return trace(CosmosStorageTraceDefinitions.read, async ({ record }) => {
-      if (!keys) {
-        throw ExceptionHelper.generateException(
-          ReferenceError,
-          Errors.MissingReadKeys
-        )
-      } else if (keys.length === 0) {
-        return {}
-      }
-
-      record({ keyCount: keys?.length })
-      await this.initialize()
-
-      const storeItems: StoreItems = {}
-
-      await Promise.all(
-        keys.map(async (k: string): Promise<void> => {
-          try {
-            const escapedKey = escapeKey(
-              k,
-              this.cosmosDbStorageOptions.keySuffix,
-              this.cosmosDbStorageOptions.compatibilityMode
-            )
-
-            const readItemResponse = await this.container
-              .item(escapedKey, this.getPartitionKey(escapedKey))
-              .read<DocumentStoreItem>()
-            const documentStoreItem = readItemResponse.resource
-            if (documentStoreItem) {
-              if (this.isExpired(documentStoreItem)) {
-                logger.info('Document expired, deleting from storage', {
-                  key: redactString(k, true),
-                  documentId: redactString(documentStoreItem.id, true),
-                  eTag: redactString(documentStoreItem._etag, true),
-                  expiresAt: documentStoreItem.expiresAt,
-                })
-                await ignoreCosmosErrors(
-                  this.container.item(escapedKey, this.getPartitionKey(escapedKey)).delete({
-                    accessCondition: { type: 'IfMatch', condition: documentStoreItem._etag }
-                  }),
-                  404,
-                  412
-                )
-                return
-              }
-              storeItems[documentStoreItem.realId] = documentStoreItem.document
-              storeItems[documentStoreItem.realId].eTag = documentStoreItem._etag
-            }
-          } catch (err: any) {
-            if (err.code === 404) {
-              // Not Found is not an error during read operations, just skip
-            } else if (err.code === 400) {
-              throw ExceptionHelper.generateException(
-                Error,
-                Errors.ContainerReadBadRequest,
-                err
-              )
-            } else {
-              throw ExceptionHelper.generateException(
-                Error,
-                Errors.ContainerReadError,
-                err
-              )
-            }
-          }
-        })
-      )
-
-      return storeItems
-    })
-  }
-
-  /**
-   * Writes items to storage.
-   * @param changes The items to write.
-   */
-  async write (changes: StoreItems, options?: StorageWriteOptions): Promise<void> {
-    return trace(CosmosStorageTraceDefinitions.write, async ({ record }) => {
-      if (!changes) {
-        throw ExceptionHelper.generateException(
-          ReferenceError,
-          Errors.MissingWriteChanges
-        )
-      } else if (Object.keys(changes).length === 0) {
-        return
-      }
-
-      const expiresAt = getStorageWriteExpiry(options)
-      record({ keyCount: Object.keys(changes).length })
-
-      await this.initialize()
-
-      await Promise.all(
-        Object.entries(changes).map(async ([key, { eTag, ...change }]): Promise<void> => {
-          const document = new DocumentStoreItem({
-            id: escapeKey(
-              key,
-              this.cosmosDbStorageOptions.keySuffix,
-              this.cosmosDbStorageOptions.compatibilityMode
-            ),
-            realId: key,
-            document: change,
-            ttl: options?.ttl === undefined ? undefined : Math.ceil(options.ttl),
-            expiresAt,
-          })
-
-          const accessCondition =
-                      eTag !== '*' && eTag != null && eTag.length > 0
-                        ? { accessCondition: { type: 'IfMatch', condition: eTag } }
-                        : undefined
-
-          try {
-            await this.container.items.upsert(document, accessCondition)
-          } catch (err: any) {
-            this.checkForNestingError(change, err)
-            throw ExceptionHelper.generateException(
-              Error,
-              Errors.DocumentUpsertError,
-              err
-            )
-          }
-        })
-      )
-    })
-  }
-
-  /**
-   * Deletes items from storage.
-   * @param keys The keys of the items to delete.
-   */
-  async delete (keys: string[]): Promise<void> {
-    return trace(CosmosStorageTraceDefinitions.delete, async ({ record }) => {
-      record({ keyCount: keys?.length })
-      await this.initialize()
-
-      await Promise.all(
-        keys.map(async (k: string): Promise<void> => {
-          const escapedKey = escapeKey(
-            k,
-            this.cosmosDbStorageOptions.keySuffix,
-            this.cosmosDbStorageOptions.compatibilityMode
-          )
-          try {
-            await this.container.item(escapedKey, this.getPartitionKey(escapedKey)).delete()
-          } catch (err: any) {
-            if (err.code === 404) {
-              // Not Found is not an error during delete operations, just skip
-            } else {
-              throw ExceptionHelper.generateException(
-                Error,
-                Errors.DocumentDeleteError,
-                err
-              )
-            }
-          }
-        })
-      )
-    })
-  }
-
-  /**
    * Initializes the Cosmos DB container.
    */
-  private async initialize (): Promise<void> {
+  async initialize (): Promise<void> {
     if (!this.container) {
       const dbAndContainerKey = JSON.stringify([
         this.cosmosDbStorageOptions.cosmosClientOptions!.endpoint,
@@ -459,15 +302,15 @@ export class CosmosDbPartitionedStorage implements Storage {
     }
   }
 
-  private getPartitionKey (key: string) {
+  getPartitionKey (key: string) {
     return this.compatibilityModePartitionKey ? undefined : key
   }
 
-  private isExpired (item: DocumentStoreItem): boolean {
+  isExpired (item: DocumentStoreItem): boolean {
     return item.expiresAt !== undefined && item.expiresAt <= Date.now()
   }
 
-  private checkForNestingError (json: object, err: Error | Record<'message', string> | string): void {
+  checkForNestingError (json: object, err: Error | Record<'message', string> | string): void {
     const ancestors = new WeakSet<object>()
 
     const checkDepth = (obj: unknown, depth: number, isInDialogState: boolean): void => {
@@ -516,5 +359,331 @@ export class CosmosDbPartitionedStorage implements Storage {
     }
 
     checkDepth(json, 0, false)
+  }
+}
+
+/**
+ * Cosmos DB partitioned storage provider.
+ *
+ * This class implements the legacy {@link Storage} contract. Use
+ * {@link CosmosDbPartitionedStorageV2} for the structured StorageV2 contract.
+ */
+export class CosmosDbPartitionedStorage extends CosmosDbPartitionedStorageInternals implements Storage {
+  /**
+   * Reads legacy items and attaches Cosmos DB ETags as `eTag` values.
+   *
+   * @param keys The keys to read.
+   * @returns The stored items; missing keys are omitted.
+   * @throws When the key input is invalid or Cosmos DB cannot complete the operation.
+   */
+  async read (keys: string[]): Promise<StoreItems> {
+    return trace(CosmosStorageTraceDefinitions.read, async ({ record }) => {
+      record({ keyCount: keys?.length })
+      if (!keys) {
+        throw ExceptionHelper.generateException(ReferenceError, Errors.MissingReadKeys)
+      }
+      if (keys.length === 0) return {}
+      await this.initialize()
+      const storeItems: StoreItems = {}
+      await Promise.all(keys.map(async key => {
+        try {
+          const escapedKey = escapeKey(key, this.cosmosDbStorageOptions.keySuffix, this.cosmosDbStorageOptions.compatibilityMode)
+          const response = await this.container.item(escapedKey, this.getPartitionKey(escapedKey)).read<DocumentStoreItem>()
+          const item = response.resource
+          if (item) {
+            storeItems[item.realId] = item.document
+            storeItems[item.realId].eTag = item._etag
+          }
+        } catch (err: any) {
+          if (err.code === 404) return
+          if (err.code === 400) throw ExceptionHelper.generateException(Error, Errors.ContainerReadBadRequest, err)
+          throw ExceptionHelper.generateException(Error, Errors.ContainerReadError, err)
+        }
+      }))
+      return storeItems
+    })
+  }
+
+  /**
+   * Writes legacy items and applies `eTag` concurrency checks.
+   *
+   * @param changes The keyed legacy items to write.
+   * @throws When the input is invalid or Cosmos DB cannot complete the operation.
+   */
+  async write (changes: StoreItems): Promise<void> {
+    return trace(CosmosStorageTraceDefinitions.write, async ({ record }) => {
+      record({ keyCount: changes ? Object.keys(changes).length : undefined })
+      if (!changes || typeof changes !== 'object' || Array.isArray(changes)) {
+        throw ExceptionHelper.generateException(ReferenceError, Errors.MissingWriteChanges)
+      }
+      if (Object.keys(changes).length === 0) return
+      await this.initialize()
+      await Promise.all(Object.entries(changes).map(async ([key, { eTag, ...change }]) => {
+        const document = new DocumentStoreItem({
+          id: escapeKey(key, this.cosmosDbStorageOptions.keySuffix, this.cosmosDbStorageOptions.compatibilityMode),
+          realId: key,
+          document: change,
+        })
+        const accessCondition = eTag !== '*' && eTag != null && eTag.length > 0
+          ? { accessCondition: { type: 'IfMatch', condition: eTag } }
+          : undefined
+        try {
+          await this.container.items.upsert(document, accessCondition)
+        } catch (err: any) {
+          this.checkForNestingError(change, err)
+          throw ExceptionHelper.generateException(Error, Errors.DocumentUpsertError, err)
+        }
+      }))
+    })
+  }
+
+  /**
+   * Deletes legacy items and ignores missing documents.
+   *
+   * @param keys The keys to delete.
+   * @throws When Cosmos DB cannot complete the operation.
+   */
+  async delete (keys: string[]): Promise<void> {
+    return trace(CosmosStorageTraceDefinitions.delete, async ({ record }) => {
+      record({ keyCount: keys?.length })
+      await this.initialize()
+      await Promise.all(keys.map(async key => {
+        const escapedKey = escapeKey(key, this.cosmosDbStorageOptions.keySuffix, this.cosmosDbStorageOptions.compatibilityMode)
+        try {
+          await this.container.item(escapedKey, this.getPartitionKey(escapedKey)).delete()
+        } catch (err: any) {
+          if (err.code !== 404) throw ExceptionHelper.generateException(Error, Errors.DocumentDeleteError, err)
+        }
+      }))
+    })
+  }
+}
+
+/**
+ * A Cosmos DB provider for the structured {@link StorageV2} contract.
+ *
+ * This is the V2 counterpart to {@link CosmosDbPartitionedStorage} and uses the same
+ * {@link CosmosDbPartitionedStorageOptions}. Each read, write, and delete returns an outcome for
+ * every requested key. Cosmos DB ETags are returned as separate storage versions, and writes
+ * support create-only, replace, and expected-version conditions for optimistic concurrency.
+ */
+export class CosmosDbPartitionedStorageV2 extends StorageV2 {
+  private readonly internals: CosmosDbPartitionedStorageInternals
+
+  /**
+   * Creates a V2 Cosmos DB storage provider.
+   *
+   * @param options The Cosmos DB connection, database, container, and partitioning options.
+   */
+  constructor (options: CosmosDbPartitionedStorageOptions) {
+    super()
+    this.internals = new CosmosDbPartitionedStorageInternals(options)
+  }
+
+  /**
+   * Reads V2 items with one status and Cosmos DB ETag version per requested key.
+   *
+   * @param keys The keys to read.
+   * @returns The keyed V2 read results.
+   * @throws When the key input is invalid or Cosmos DB cannot complete the operation.
+   */
+  async read<T extends object = Record<string, unknown>> (keys: string[]): Promise<StorageReadResults<T>> {
+    return trace(CosmosStorageTraceDefinitions.read, async ({ record }) => {
+      record({ keyCount: keys?.length })
+      validateV2Keys(keys)
+      if (keys.length === 0) return {}
+      await this.internals.initialize()
+      const results: StorageReadResults<T> = {}
+      await Promise.all(keys.map(async key => {
+        try {
+          const escapedKey = escapeKey(key, this.internals.cosmosDbStorageOptions.keySuffix, this.internals.cosmosDbStorageOptions.compatibilityMode)
+          const response = await this.internals.container.item(escapedKey, this.internals.getPartitionKey(escapedKey)).read<DocumentStoreItem>()
+          const item = response.resource
+          if (item && this.internals.isExpired(item)) {
+            logger.info('Document expired, deleting from storage', {
+              key: redactString(key, true),
+              documentId: redactString(item.id, true),
+              eTag: redactString(item._etag, true),
+              expiresAt: item.expiresAt,
+            })
+            await ignoreCosmosErrors(
+              this.internals.container.item(escapedKey, this.internals.getPartitionKey(escapedKey)).delete({ accessCondition: { type: 'IfMatch', condition: item._etag } }),
+              404,
+              412
+            )
+            results[key] = { key, status: StorageOperationStatus.NotFound }
+          } else {
+            results[key] = item
+              ? { key, status: StorageOperationStatus.Succeeded, value: item.document as T, version: item._etag }
+              : { key, status: StorageOperationStatus.NotFound }
+          }
+        } catch (err: any) {
+          if (err.code === 404) {
+            results[key] = { key, status: StorageOperationStatus.NotFound }
+          } else if (err.code === 400) {
+            throw ExceptionHelper.generateException(Error, Errors.ContainerReadBadRequest, err)
+          } else {
+            throw ExceptionHelper.generateException(Error, Errors.ContainerReadError, err)
+          }
+        }
+      }))
+      return results
+    })
+  }
+
+  /**
+   * Writes V2 items with mode and expected-version conditions.
+   *
+   * @param changes The keyed values to write.
+   * @param options The V2 write mode and expected version.
+   * @returns One keyed operation result per change.
+   * @throws When the input is invalid or Cosmos DB cannot complete the operation.
+   */
+  async write<T extends object = Record<string, unknown>> (changes: Record<string, T>, options?: StorageWriteOptions): Promise<StorageWriteResults> {
+    return trace(CosmosStorageTraceDefinitions.write, async ({ record }) => {
+      record({ keyCount: changes ? Object.keys(changes).length : undefined })
+      validateExpectedVersion(options?.expectedVersion)
+      if (!changes || typeof changes !== 'object' || Array.isArray(changes)) {
+        throw ExceptionHelper.generateException(ReferenceError, Errors.MissingWriteChanges)
+      }
+      const mode = options?.mode ?? StorageWriteMode.Upsert
+      const expiresAt = getStorageWriteExpiry(options)
+      validateWriteMode(mode)
+      if (Object.keys(changes).length === 0) return {}
+      validateV2ChangeKeys(changes)
+      if (Object.values(changes).some(value => value === null || typeof value !== 'object' || Array.isArray(value))) {
+        throw ExceptionHelper.generateException(TypeError, Errors.StorageV2ValueRequired)
+      }
+      await this.internals.initialize()
+      const results: StorageWriteResults = {}
+      await Promise.all(Object.entries(changes).map(async ([key, value]) => {
+        const document = new DocumentStoreItem({
+          id: escapeKey(key, this.internals.cosmosDbStorageOptions.keySuffix, this.internals.cosmosDbStorageOptions.compatibilityMode),
+          realId: key,
+          document: value,
+          ttl: options?.ttl === undefined ? undefined : Math.ceil(options.ttl),
+          expiresAt,
+        })
+        const expectedVersion = options?.expectedVersion
+        const accessCondition = expectedVersion === undefined
+          ? undefined
+          : { accessCondition: { type: 'IfMatch', condition: expectedVersion } }
+        if (mode === StorageWriteMode.CreateOnly && expectedVersion !== undefined) {
+          try {
+            const current = await this.internals.container.item(document.id, this.internals.getPartitionKey(document.id)).read<DocumentStoreItem>()
+            const version = (current.resource as DocumentStoreItem & { _etag?: string } | undefined)?._etag
+            results[key] = current.resource
+              ? { key, status: StorageOperationStatus.Conflict, version }
+              : { key, status: StorageOperationStatus.ConditionNotMet }
+            return
+          } catch (err: any) {
+            if (err.code === 404) {
+              results[key] = { key, status: StorageOperationStatus.ConditionNotMet }
+              return
+            }
+            throw ExceptionHelper.generateException(Error, Errors.DocumentUpsertError, err)
+          }
+        }
+        try {
+          const response = mode === StorageWriteMode.CreateOnly
+            ? await this.internals.container.items.create(document)
+            : mode === StorageWriteMode.Replace || expectedVersion !== undefined
+              ? await this.internals.container.item(document.id, this.internals.getPartitionKey(document.id)).replace(document, accessCondition)
+              : await this.internals.container.items.upsert(document)
+          results[key] = { key, status: StorageOperationStatus.Succeeded, version: response?.etag }
+        } catch (err: any) {
+          if (mode === StorageWriteMode.CreateOnly && err.code === 409) {
+            results[key] = { key, status: StorageOperationStatus.Conflict }
+          } else if (err.code === 404) {
+            const status = expectedVersion !== undefined
+              ? StorageOperationStatus.ConditionNotMet
+              : StorageOperationStatus.NotFound
+            results[key] = { key, status }
+          } else if (err.code === 412) {
+            results[key] = { key, status: StorageOperationStatus.ConditionNotMet }
+          } else {
+            this.internals.checkForNestingError(value as object, err)
+            throw ExceptionHelper.generateException(Error, Errors.DocumentUpsertError, err)
+          }
+        }
+      }))
+      return results
+    })
+  }
+
+  /**
+   * Deletes V2 items with an optional expected-version condition.
+   *
+   * @param keys The keys to delete.
+   * @param options The optional expected version.
+   * @returns One keyed operation result per requested key.
+   * @throws When the key input is invalid or Cosmos DB cannot complete the operation.
+   */
+  async delete (keys: string[], options?: StorageDeleteOptions): Promise<StorageDeleteResults> {
+    return trace(CosmosStorageTraceDefinitions.delete, async ({ record }) => {
+      record({ keyCount: keys?.length })
+      validateExpectedVersion(options?.expectedVersion)
+      validateV2Keys(keys)
+      if (keys.length === 0) return {}
+      await this.internals.initialize()
+      const results: StorageDeleteResults = {}
+      await Promise.all(keys.map(async key => {
+        const escapedKey = escapeKey(key, this.internals.cosmosDbStorageOptions.keySuffix, this.internals.cosmosDbStorageOptions.compatibilityMode)
+        try {
+          const item = this.internals.container.item(escapedKey, this.internals.getPartitionKey(escapedKey))
+          if (options?.expectedVersion === undefined) {
+            await item.delete()
+            results[key] = { key, status: StorageOperationStatus.Succeeded }
+            return
+          }
+          const current = await item.read<DocumentStoreItem>()
+          const document = current.resource
+          if (!document) {
+            results[key] = { key, status: StorageOperationStatus.NotFound }
+            return
+          }
+          const version = (document as DocumentStoreItem & { _etag?: string })._etag
+          if (options.expectedVersion !== version) {
+            results[key] = { key, status: StorageOperationStatus.ConditionNotMet, version }
+            return
+          }
+          await item.delete({ accessCondition: { type: 'IfMatch', condition: options.expectedVersion } })
+          results[key] = { key, status: StorageOperationStatus.Succeeded, version }
+        } catch (err: any) {
+          if (err.code === 404) {
+            results[key] = { key, status: StorageOperationStatus.NotFound }
+          } else if (err.code === 412) {
+            results[key] = { key, status: StorageOperationStatus.ConditionNotMet }
+          } else {
+            throw ExceptionHelper.generateException(Error, Errors.DocumentDeleteError, err)
+          }
+        }
+      }))
+      return results
+    })
+  }
+}
+
+function validateV2Keys (keys: string[]): void {
+  if (!Array.isArray(keys) || keys.some(key => typeof key !== 'string' || key.trim() === '')) {
+    throw ExceptionHelper.generateException(ReferenceError, Errors.MissingReadKeys)
+  }
+}
+
+function validateV2ChangeKeys (changes: Record<string, unknown>): void {
+  if (Object.keys(changes).some(key => key.trim() === '')) {
+    throw ExceptionHelper.generateException(ReferenceError, Errors.StorageV2KeyRequired)
+  }
+}
+
+function validateExpectedVersion (expectedVersion: string | undefined): void {
+  if (expectedVersion === '') {
+    throw ExceptionHelper.generateException(RangeError, Errors.StorageV2ExpectedVersionEmpty)
+  }
+}
+
+function validateWriteMode (mode: StorageWriteMode): void {
+  if (!Object.values(StorageWriteMode).includes(mode)) {
+    throw ExceptionHelper.generateException(RangeError, Errors.StorageV2WriteModeUnsupported, undefined, { mode: String(mode) })
   }
 }
