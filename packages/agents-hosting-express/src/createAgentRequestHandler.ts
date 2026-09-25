@@ -4,8 +4,17 @@
  */
 
 import { type Response as ExpressResponse } from 'express'
-import { ActivityHandler, AgentApplication, AuthConfiguration, authorizeJWT, getAuthConfigWithDefaults, WebResponse, Request, TurnState } from '@microsoft/agents-hosting'
-import { createCloudAdapter } from './createCloudAdapter'
+import {
+  ActivityHandler,
+  AgentApplication,
+  AuthConfiguration,
+  authorizeJWT,
+  getAuthConfigWithDefaults,
+  WebResponse,
+  Request,
+  TurnState
+} from '@microsoft/agents-hosting'
+import { createCloudAdapter, type CreateCloudAdapterOptions } from './createCloudAdapter'
 
 /**
  * Compile-time contract guard — no runtime effect; type-checked by `npm run build`.
@@ -48,6 +57,10 @@ export type AgentRequestHandler = (req: Request, res: WebResponse) => Promise<vo
  * @param agent - The AgentApplication or ActivityHandler instance to process incoming activities.
  * @param authConfiguration - Optional custom authentication configuration. If not provided,
  * configuration will be loaded from environment variables using loadAuthConfigFromEnv().
+ * @param options - Optional additional settings, such as a host-scoped `ConfigurationContext`.
+ * For an `AgentApplication`, this defaults to its own `configurationContext` option when omitted;
+ * a plain `ActivityHandler` has no built-in context and must be supplied here to participate in
+ * host-scoped configuration.
  * @returns A request handler function `(req, res) => Promise<void>`.
  *
  * @example
@@ -68,11 +81,14 @@ export type AgentRequestHandler = (req: Request, res: WebResponse) => Promise<vo
  */
 export const createAgentRequestHandler = (
   agent: AgentApplication<TurnState<any, any>> | ActivityHandler,
-  authConfiguration?: AuthConfiguration
+  authConfiguration?: AuthConfiguration,
+  options?: CreateCloudAdapterOptions
 ): AgentRequestHandler => {
-  const authConfig = getAuthConfigWithDefaults(authConfiguration)
-  const { adapter, headerPropagation } = createCloudAdapter(agent, authConfig)
+  const configurationContext = options?.configurationContext ??
+    (agent instanceof AgentApplication ? agent.options.configurationContext : undefined)
+  const authConfig = getAuthConfigWithDefaults(authConfiguration, { configurationContext })
   const jwtMiddleware = authorizeJWT(authConfig)
+  const { adapter, headerPropagation } = createCloudAdapter(agent, authConfig, options)
 
   return async (req: Request, res: WebResponse): Promise<void> => {
     let middlewareError: any

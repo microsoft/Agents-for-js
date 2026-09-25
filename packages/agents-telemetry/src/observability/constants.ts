@@ -5,11 +5,15 @@
 
 /**
  * Environment variable or configuration setting name for disabling spans by category in the Agents SDK telemetry. The value should be comma-separated or whitespace-separated list of span categories to disable. See `SpanCategories` for available categories.
+ *
+ * @deprecated Configure an OpenTelemetry parent-based sampler to filter spans instead.
  */
 export const AGENTS_TELEMETRY_DISABLED_SPAN_CATEGORIES = 'AGENTS_TELEMETRY_DISABLED_SPAN_CATEGORIES'
 
 /**
  * Categories of spans used for telemetry in the Agents SDK. Spans can be disabled by category using the `AGENTS_TELEMETRY_DISABLED_SPAN_CATEGORIES` environment variable or configuration setting.
+ *
+ * @deprecated Configure an OpenTelemetry parent-based sampler to filter spans instead.
  */
 export const SpanCategories = {
   STORAGE: ['STORAGE_'],

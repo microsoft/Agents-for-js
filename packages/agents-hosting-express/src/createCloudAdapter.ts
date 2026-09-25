@@ -7,4 +7,4 @@
  * other hosting integrations without dragging the Express runtime along.
  */
 
-export { createCloudAdapter, type CloudAdapterResult } from '@microsoft/agents-hosting'
+export { createCloudAdapter, type CloudAdapterResult, type CreateCloudAdapterOptions } from '@microsoft/agents-hosting'

@@ -5,6 +5,7 @@
 ```ts
 
 import { Activity } from '@microsoft/agents-activity';
+import { ActivityTypes } from '@microsoft/agents-activity';
 import { AdaptiveCardInvokeAction } from '@microsoft/agents-activity';
 import { AgentErrorDefinition } from '@microsoft/agents-activity';
 import { Attachment } from '@microsoft/agents-activity';
@@ -208,7 +209,8 @@ export class AgentApplicationBuilder<TState extends TurnState = TurnState> {
     setStartTypingTimer(startTypingTimer: boolean): this;
     withAuthorization(authHandlers: AuthorizationOptions): this;
     withProactive(options: ProactiveOptions): this;
-    withStorage(storage: StorageProvider): this;
+    withRateLimit(rules: RateLimitRule[]): this;
+    withStorage(storage: Storage): this;
     withTurnStateFactory(turnStateFactory: () => TState): this;
     withTyping(typing: TypingOptions): this;
 }
@@ -220,15 +222,17 @@ export interface AgentApplicationOptions<TState extends TurnState> {
     agentAppId?: string;
     agentName?: string;
     authorization?: AuthorizationOptions;
+    configurationContext?: ConfigurationContext;
     connections?: Connections;
     fileDownloaders?: InputFileDownloader<TState>[];
     headerPropagation?: HeaderPropagationDefinition;
     longRunningMessages: boolean;
     normalizeMentions?: boolean;
     proactive?: ProactiveOptions;
+    rateLimit?: RateLimitRule[];
     removeRecipientMention?: boolean;
     startTypingTimer: boolean;
-    storage?: StorageProvider;
+    storage?: Storage;
     transcriptLogger?: TranscriptLogger;
     turnStateFactory: () => TState;
     typing?: TypingOptions;
@@ -281,7 +285,7 @@ export interface AgentResponseHandlerParams {
 
 // @public
 export class AgentState {
-    constructor(storage: StorageProvider, storageKey: StorageKeyFactory);
+    constructor(storage: Storage, storageKey: StorageKeyFactory);
     clear(context: TurnContext): Promise<void>;
     createProperty<T = any>(name: string): AgentStatePropertyAccessor<T>;
     delete(context: TurnContext, customKey?: CustomKey): Promise<void>;
@@ -289,7 +293,7 @@ export class AgentState {
     load(context: TurnContext, force?: boolean, customKey?: CustomKey): Promise<any>;
     saveChanges(context: TurnContext, force?: boolean, customKey?: CustomKey): Promise<void>;
     // (undocumented)
-    protected storage: StorageProvider;
+    protected storage: Storage;
     // (undocumented)
     protected storageKey: StorageKeyFactory;
 }
@@ -412,6 +416,12 @@ export interface AudioCard {
 export interface AuthConfiguration extends ConnectionSettings {
     connections?: Map<string, AuthConfiguration>;
     connectionsMap?: ConnectionMapItem[];
+}
+
+// @public
+export interface AuthConfigurationResolutionOptions {
+    // (undocumented)
+    configurationContext?: ConfigurationContext;
 }
 
 // @public (undocumented)
@@ -565,11 +575,9 @@ export function buildJwksUri(iss: string, authConfig: AuthConfiguration): string
 // @public
 export interface CachedAgentState {
     hash: string;
-    isNew?: boolean;
     state: {
         [id: string]: any;
     };
-    version?: string;
 }
 
 // @public
@@ -646,6 +654,7 @@ export class CloudAdapter extends BaseAdapter {
 
 // @public
 export interface CloudAdapterOptions {
+    configurationContext?: ConfigurationContext;
     emitStackTrace?: boolean;
     // @deprecated
     validateServiceUrl?: boolean;
@@ -658,6 +667,43 @@ export interface CloudAdapterResult {
     // (undocumented)
     headerPropagation: HeaderPropagationDefinition | undefined;
 }
+
+// @public
+export class ConfigurationContext {
+}
+
+// @public
+export interface ConfigurationDocument {
+    // (undocumented)
+    readonly [key: string]: ConfigurationDocumentValue;
+}
+
+// @public
+export type ConfigurationDocumentValue = string | number | boolean | readonly ConfigurationDocumentValue[] | ConfigurationDocument;
+
+// @public
+export interface ConfigurationSource {
+    load(): Promise<ConfigurationSourceResult>;
+    readonly name: string;
+}
+
+// @public
+export type ConfigurationSourceMode = 'fallback' | 'overrideEnvironment' | 'enforce';
+
+// @public
+export interface ConfigurationSourceRegistration {
+    readonly mode: ConfigurationSourceMode;
+    readonly source: ConfigurationSource;
+}
+
+// @public
+export type ConfigurationSourceResult = Readonly<Record<string, string>> | {
+    readonly format: 'canonical';
+    readonly values: Readonly<Record<string, string>>;
+} | {
+    readonly format: 'document';
+    readonly value: Readonly<ConfigurationDocument>;
+};
 
 // @public
 export const configureResponseController: (app: WebApp, adapter: CloudAdapter, agent: ActivityHandler, conversationState: ConversationState) => void;
@@ -831,7 +877,7 @@ export interface ConversationsResult {
 
 // @public
 export class ConversationState extends AgentState {
-    constructor(storage: StorageProvider, namespace?: string);
+    constructor(storage: Storage, namespace?: string);
 }
 
 // @public
@@ -841,7 +887,15 @@ export type ConversationUpdateEvents = 'membersAdded' | 'membersRemoved';
 export const createAgentResponseHandler: (adapter: CloudAdapter, agent: ActivityHandler, conversationState: ConversationState) => AgentResponseHandler;
 
 // @public
-export const createCloudAdapter: (agent: AgentApplication<TurnState<any, any>> | ActivityHandler, authConfig?: AuthConfiguration) => CloudAdapterResult;
+export const createCloudAdapter: (agent: AgentApplication<TurnState<any, any>> | ActivityHandler, authConfig?: AuthConfiguration, options?: CreateCloudAdapterOptions) => CloudAdapterResult;
+
+// @public
+export interface CreateCloudAdapterOptions {
+    configurationContext?: ConfigurationContext;
+}
+
+// @public
+export function createConfigurationContext(registrations: readonly ConfigurationSourceRegistration[]): Promise<ConfigurationContext>;
 
 // @public
 export interface CreateConversationOptions {
@@ -870,6 +924,9 @@ export class CreateConversationOptionsBuilder {
     // (undocumented)
     withUser(account: ChannelAccount): this;
 }
+
+// @public
+export function createJsonFileConfigurationSource(filePath: string): ConfigurationSource;
 
 // @public
 export function createOutboundHostValidator(options?: OutboundHostValidatorOptions): OutboundHostValidator;
@@ -902,22 +959,15 @@ export interface Fact {
 }
 
 // @public
-export class FileStorage extends FileStorageInternals implements Storage {
+export class FileStorage implements Storage {
+    constructor(folder: string);
     delete(keys: string[]): Promise<void>;
     read(keys: string[]): Promise<StoreItem>;
-    write(changes: StoreItem): Promise<void>;
+    write(changes: StoreItem, options?: StorageWriteOptions): Promise<void>;
 }
 
 // @public
-export class FileStorageV2 extends StorageV2 {
-    constructor(folder: string);
-    delete(keys: string[], options?: StorageDeleteOptions): Promise<StorageDeleteResults>;
-    read<T extends object = Record<string, unknown>>(keys: string[]): Promise<StorageReadResults<T>>;
-    write<T extends object = Record<string, unknown>>(changes: Record<string, T>, options?: StorageWriteOptions): Promise<StorageWriteResults>;
-}
-
-// @public
-export function getAuthConfigWithDefaults(config?: AuthConfiguration): AuthConfiguration;
+export function getAuthConfigWithDefaults(config?: AuthConfiguration, options?: AuthConfigurationResolutionOptions): AuthConfiguration;
 
 // @public
 export const getProductInfo: () => string;
@@ -1076,13 +1126,13 @@ export interface InvokeResponse<T = any> {
 }
 
 // @public
-export const loadAuthConfigFromEnv: (cnxName?: string) => AuthConfiguration;
+export const loadAuthConfigFromEnv: (cnxName?: string, options?: AuthConfigurationResolutionOptions) => AuthConfiguration;
 
 // @public
 export function loadOutboundHostValidatorOptionsFromEnv(): OutboundHostValidatorOptions;
 
 // @public
-export const loadPrevAuthConfigFromEnv: () => AuthConfiguration;
+export const loadPrevAuthConfigFromEnv: (options?: AuthConfigurationResolutionOptions) => AuthConfiguration;
 
 // @public
 export class M365AttachmentDownloader<TState extends TurnState = TurnState> implements InputFileDownloader<TState> {
@@ -1098,27 +1148,14 @@ export interface MediaUrl {
 }
 
 // @public
-export class MemoryStorage extends MemoryStorageInternals implements Storage {
+export class MemoryStorage implements Storage {
     constructor(memory?: {
-        [key: string]: string;
+        [k: string]: string;
     });
     delete(keys: string[]): Promise<void>;
-    // (undocumented)
     static getSingleInstance(): MemoryStorage;
     read(keys: string[]): Promise<StoreItem>;
-    write(changes: StoreItem): Promise<void>;
-}
-
-// @public
-export class MemoryStorageV2 extends StorageV2 {
-    constructor(memory?: {
-        [key: string]: string;
-    });
-    delete(keys: string[], options?: StorageDeleteOptions): Promise<StorageDeleteResults>;
-    // (undocumented)
-    static getSingleInstance(): MemoryStorageV2;
-    read<T extends object = Record<string, unknown>>(keys: string[]): Promise<StorageReadResults<T>>;
-    write<T extends object = Record<string, unknown>>(changes: Record<string, T>, options?: StorageWriteOptions): Promise<StorageWriteResults>;
+    write(changes: StoreItem, options?: StorageWriteOptions): Promise<void>;
 }
 
 // @public
@@ -1271,6 +1308,7 @@ export class OutboundHostValidator implements OutboundUrlPolicy {
 
 // @public
 export interface OutboundHostValidatorOptions {
+    configurationContext?: ConfigurationContext;
     enabled?: boolean;
     hosts?: readonly string[];
     includeDefaultMicrosoftHosts?: boolean;
@@ -1291,6 +1329,9 @@ export interface PagedResult<T> {
 }
 
 // @public
+export function preloadConfigurationSources(registrations: readonly ConfigurationSourceRegistration[]): Promise<void>;
+
+// @public
 export class Proactive<TState extends TurnState> {
     constructor(app: AgentApplication<TState>, options: ProactiveOptions);
     continueConversation(adapter: BaseAdapter, conversationId: string, handler: RouteHandler<TState>, autoSignInHandlers?: string[], continuationActivity?: Partial<Activity>): Promise<void>;
@@ -1309,7 +1350,7 @@ export class Proactive<TState extends TurnState> {
 // @public
 export interface ProactiveOptions {
     failOnUnsignedInConnections?: boolean;
-    storage?: StorageProvider;
+    storage?: Storage;
 }
 
 // @public
@@ -1318,6 +1359,35 @@ export interface Query<TParams extends Record<string, any>> {
     parameters: TParams;
     skip: number;
 }
+
+// @public
+export type RateLimitMessageFactory = (context: TurnContext, result: RateLimitResult) => string | Activity | Promise<string | Activity>;
+
+// @public
+export interface RateLimitResult {
+    key?: string;
+    retryAfterMs: number;
+    ruleIndex: number;
+}
+
+// @public
+export interface RateLimitRule {
+    activityTypes?: ActivityTypes[];
+    appliesTo?: (context: TurnContext) => boolean | Promise<boolean>;
+    limit: number;
+    maxStorageRetries?: number;
+    message?: string | Activity | RateLimitMessageFactory;
+    scope: RateLimitScope;
+    storage?: Storage;
+    storageErrorBehavior?: RateLimitStorageErrorBehavior;
+    windowMs: number;
+}
+
+// @public
+export type RateLimitScope = (context: TurnContext) => string | undefined | Promise<string | undefined>;
+
+// @public
+export type RateLimitStorageErrorBehavior = 'throttle' | 'allow' | 'throw';
 
 // @public
 export interface ReceiptCard {
@@ -1461,6 +1531,7 @@ export enum StatusCodes {
     NOT_IMPLEMENTED = 501,
     OK = 200,
     PRECONDITION_FAILED = 412,
+    TOO_MANY_REQUESTS = 429,
     UNAUTHORIZED = 401,
     UPGRADE_REQUIRED = 426
 }
@@ -1469,99 +1540,16 @@ export enum StatusCodes {
 export interface Storage {
     delete: (keys: string[]) => Promise<void>;
     read: (keys: string[]) => Promise<StoreItem>;
-    write: (changes: StoreItem) => Promise<void>;
+    write: (changes: StoreItem, options?: StorageWriteOptions) => Promise<void>;
 }
-
-// @public
-export interface StorageDeleteOptions {
-    // (undocumented)
-    expectedVersion?: string;
-}
-
-// @public
-export interface StorageDeleteResult {
-    // (undocumented)
-    key: string;
-    // (undocumented)
-    status: StorageOperationStatus;
-    // (undocumented)
-    version?: string;
-}
-
-// @public
-export type StorageDeleteResults = Record<string, StorageDeleteResult>;
 
 // @public
 export type StorageKeyFactory = (context: TurnContext) => string | Promise<string>;
 
 // @public
-export enum StorageOperationStatus {
-    // (undocumented)
-    ConditionNotMet = "conditionNotMet",
-    // (undocumented)
-    Conflict = "conflict",
-    // (undocumented)
-    NotFound = "notFound",
-    // (undocumented)
-    Succeeded = "succeeded"
-}
-
-// @public
-export type StorageProvider = Storage | StorageV2;
-
-// @public
-export interface StorageReadResult<T extends object = Record<string, unknown>> {
-    // (undocumented)
-    key: string;
-    // (undocumented)
-    status: StorageOperationStatus;
-    // (undocumented)
-    value?: T;
-    // (undocumented)
-    version?: string;
-}
-
-// @public
-export type StorageReadResults<T extends object = Record<string, unknown>> = Record<string, StorageReadResult<T>>;
-
-// @public
-export abstract class StorageV2 {
-    abstract delete(keys: string[], options?: StorageDeleteOptions): Promise<StorageDeleteResults>;
-    abstract read<T extends object = Record<string, unknown>>(keys: string[]): Promise<StorageReadResults<T>>;
-    abstract write<T extends object = Record<string, unknown>>(changes: Record<string, T>, options?: StorageWriteOptions): Promise<StorageWriteResults>;
-}
-
-// @public
-export enum StorageWriteMode {
-    // (undocumented)
-    CreateOnly = "createOnly",
-    // (undocumented)
-    Replace = "replace",
-    // (undocumented)
-    Upsert = "upsert"
-}
-
-// @public
 export interface StorageWriteOptions {
-    // (undocumented)
-    expectedVersion?: string;
-    // (undocumented)
-    mode?: StorageWriteMode;
     ttl?: number;
 }
-
-// @public
-export interface StorageWriteResult {
-    // (undocumented)
-    key: string;
-    // (undocumented)
-    status: StorageOperationStatus;
-    // (undocumented)
-    version?: string;
-}
-
-// @public
-export type StorageWriteResults = Record<string, StorageWriteResult>;
 
 // @public
 export interface StoreItem {
@@ -1781,9 +1769,9 @@ export class TurnState<TConversationState = DefaultConversationState, TUserState
     getValue<TValue = unknown>(path: string): TValue;
     hasValue(path: string): boolean;
     get isLoaded(): boolean;
-    load(context: TurnContext, storage?: StorageProvider, force?: boolean): Promise<boolean>;
+    load(context: TurnContext, storage?: Storage, force?: boolean): Promise<boolean>;
     protected onComputeStorageKeys(context: TurnContext): Promise<Record<string, string>>;
-    save(context: TurnContext, storage?: StorageProvider): Promise<void>;
+    save(context: TurnContext, storage?: Storage): Promise<void>;
     setValue(path: string, value: unknown): void;
     get user(): TUserState;
     set user(value: TUserState);
@@ -1816,7 +1804,7 @@ export type UpdateActivityHandler = (context: TurnContext, activity: Activity, n
 
 // @public
 export class UserState extends AgentState {
-    constructor(storage: StorageProvider, namespace?: string);
+    constructor(storage: Storage, namespace?: string);
 }
 
 // @public

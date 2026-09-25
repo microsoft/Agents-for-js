@@ -11,4 +11,4 @@ export { default, default as agentsHostingFastifyPlugin } from './plugin'
 export type { AgentsHostingFastifyPluginOptions } from './plugin'
 // Re-export createCloudAdapter from core so users of the Fastify package can configure adapters
 // without an additional dependency on @microsoft/agents-hosting-express.
-export { createCloudAdapter, type CloudAdapterResult } from '@microsoft/agents-hosting'
+export { createCloudAdapter, type CloudAdapterResult, type CreateCloudAdapterOptions } from '@microsoft/agents-hosting'

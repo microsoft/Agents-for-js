@@ -4,9 +4,9 @@
  */
 
 import { describe, it } from 'node:test'
-import assert from 'assert'
+import assert from 'node:assert'
 import { ActivityHandler, AgentApplication, CloudAdapter, type OutboundUrlPolicy } from '@microsoft/agents-hosting'
-import { createCloudAdapter } from '../src/createCloudAdapter'
+import { createCloudAdapter } from '../src/index'
 import {
   createScopedAdapterConfigurationContext,
   createScopedConfigurationContext
@@ -19,14 +19,6 @@ describe('createCloudAdapter', () => {
 
     assert.ok(result.adapter instanceof CloudAdapter)
     assert.strictEqual(result.headerPropagation, undefined)
-  })
-
-  it('should return adapter and headerPropagation properties', () => {
-    const handler = new ActivityHandler()
-    const result = createCloudAdapter(handler)
-
-    assert.ok('adapter' in result)
-    assert.ok('headerPropagation' in result)
   })
 
   it('should use provided authConfig when creating a new CloudAdapter', () => {

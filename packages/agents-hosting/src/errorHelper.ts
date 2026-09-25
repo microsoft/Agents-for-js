@@ -578,11 +578,11 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   },
 
   /**
-     * Error thrown when authorization option is not available in app options.
+     * Error thrown when no authorization handlers were resolved.
      */
   AuthorizationOptionNotAvailable: {
     code: -120530,
-    description: 'The Application.authorization property is unavailable because no authorization options were configured.'
+    description: 'The Application.authorization property is unavailable because no authorization handlers were resolved.'
   },
 
   /**
@@ -1087,6 +1087,90 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   SidecarUnsupportedAuthScheme: {
     code: -120811,
     description: 'The Entra Agent ID sidecar returned an unsupported authorization scheme `{scheme}`. Only the Bearer scheme is supported'
+  },
+
+  // ============================================================================
+  // Configuration Source Errors (-120812 to -120827)
+  // ============================================================================
+
+  ConfigurationAlreadyConsumed: {
+    code: -120812,
+    description: 'Configuration sources must be preloaded before the first configuration consumer is created.'
+  },
+
+  ConfigurationSourceNameRequired: {
+    code: -120813,
+    description: 'Configuration source name must be a non-empty string.'
+  },
+
+  DuplicateConfigurationSource: {
+    code: -120814,
+    description: 'Configuration source name `{sourceName}` is registered more than once.'
+  },
+
+  ConfigurationSourceLoadFailed: {
+    code: -120815,
+    description: 'Configuration source `{sourceName}` failed to load.'
+  },
+
+  InvalidConfigurationPath: {
+    code: -120816,
+    description: 'Configuration source `{sourceName}` returned unsupported canonical path `{path}`.'
+  },
+
+  InvalidConfigurationValue: {
+    code: -120817,
+    description: 'Configuration source `{sourceName}` returned an invalid value for canonical path `{path}`.'
+  },
+
+  ConfigurationPreloadInProgress: {
+    code: -120818,
+    description: 'Another configuration preload is already in progress.'
+  },
+
+  InvalidConnectionMapEntry: {
+    code: -120819,
+    description: 'Connection map entry at index {index} must define both serviceUrl and connection.'
+  },
+
+  ConfigurationAlreadyPreloaded: {
+    code: -120820,
+    description: 'Configuration sources have already been preloaded for this process.'
+  },
+
+  UnsupportedRuntimeConfigurationField: {
+    code: -120821,
+    description: 'Configuration source `{sourceName}` returned field `{path}`, which is not supported by the JavaScript SDK.'
+  },
+
+  InvalidConfigurationSourceResult: {
+    code: -120822,
+    description: 'Configuration source `{sourceName}` returned an invalid source result.'
+  },
+
+  InvalidConfigurationContext: {
+    code: -120823,
+    description: 'The configuration context is invalid. Create contexts with createConfigurationContext().'
+  },
+
+  InvalidConfigurationSourceMode: {
+    code: -120824,
+    description: 'Configuration source `{sourceName}` uses unsupported mode `{mode}`. Use `fallback`, `overrideEnvironment`, or `enforce`.'
+  },
+
+  JsonConfigurationFileReadFailed: {
+    code: -120825,
+    description: 'JSON configuration file `{filePath}` could not be read.'
+  },
+
+  InvalidJsonConfigurationFile: {
+    code: -120826,
+    description: 'JSON configuration file `{filePath}` does not contain valid JSON.'
+  },
+
+  JsonConfigurationDocumentRequired: {
+    code: -120827,
+    description: 'JSON configuration file `{filePath}` must contain an object at the document root.'
   },
 
   // ============================================================================
