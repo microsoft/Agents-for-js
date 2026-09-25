@@ -448,6 +448,14 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
     description: 'MSAL returned an unparsable response body'
   },
 
+  /**
+   * Error thrown when a security-sensitive boolean configuration value is invalid.
+   */
+  InvalidBooleanConfigurationValue: {
+    code: -120394,
+    description: 'Configuration source "{sourceName}" returned an invalid boolean for "{path}". Expected one of true/false/1/0.'
+  },
+
   FailedToAcquireTokenUsingCertificate: {
     code: -120395,
     description: 'Failed to acquire token using certificate'

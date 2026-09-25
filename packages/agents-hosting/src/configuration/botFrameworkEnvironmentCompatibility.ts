@@ -8,6 +8,7 @@ import {
   createConfigurationLayer,
   freezeConfigurationLayer,
   isConfigurationInputError,
+  isInvalidConfigurationValueError,
   setConfigurationValue
 } from './configuration'
 import { LoadEnv, loadEnvSettings } from '../utils/env'
@@ -180,7 +181,8 @@ function bindConnectionCompatibility (
       layer,
       `connections.${id}.settings.${property}`,
       normalizeConnectionValue(property, value),
-      key
+      key,
+      property === 'validateIssuer'
     )
   }
 
@@ -225,13 +227,17 @@ function trySet (
   layer: ConfigurationLayer,
   path: string,
   value: string,
-  sourceName: string
+  sourceName: string,
+  throwOnInvalidValue = false
 ): boolean {
   try {
     setConfigurationValue(layer, path, value, sourceName, 'environment')
     return true
   } catch (error) {
     if (!isConfigurationInputError(error)) {
+      throw error
+    }
+    if (throwOnInvalidValue && isInvalidConfigurationValueError(error)) {
       throw error
     }
     return false

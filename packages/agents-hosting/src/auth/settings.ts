@@ -155,7 +155,9 @@ export interface ConnectionSettingsBase {
    *
    * @remarks
    * Disabled by default for backward compatibility. Tenant-to-issuer binding is always applied
-   * independently when both claims contain comparable tenant GUIDs.
+   * independently when both claims contain comparable tenant GUIDs. Environment configuration
+   * accepts `true`, `false`, `1`, and `0` case-insensitively with surrounding whitespace ignored.
+   * Any other non-empty value fails configuration loading.
    */
   validateIssuer?: boolean
 
