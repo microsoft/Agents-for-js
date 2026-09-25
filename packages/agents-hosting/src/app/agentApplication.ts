@@ -37,6 +37,7 @@ const TYPING_TIMER_STATE_KEY = Symbol('typingTimerState')
 type TypingTimerState = {
   timer?: NodeJS.Timeout
   lastSend: Promise<unknown>
+  notificationSequence: number
   stop: () => void
 }
 
@@ -88,6 +89,12 @@ export type ApplicationEventHandler<TState extends TurnState> = (context: TurnCo
  *
  */
 export class AgentApplication<TState extends TurnState> {
+  /** Turn-state key for the user authorization service configured on this application. */
+  public static readonly UserAuthorizationKey = Symbol('UserAuthorization')
+
+  /** Turn-state key for the token connections configured on this application. */
+  public static readonly ConnectionsKey = Symbol('Connections')
+
   protected readonly _options: AgentApplicationOptions<TState>
   protected readonly _routes: RouteList<TState> = new RouteList<TState>()
   protected readonly _beforeTurn: ApplicationEventHandler<TState>[] = []
@@ -144,7 +151,12 @@ export class AgentApplication<TState extends TurnState> {
     if (this._options.adapter) {
       this._adapter = this._options.adapter
     } else {
-      this._adapter = new CloudAdapter()
+      this._adapter = new CloudAdapter(
+        undefined,
+        undefined,
+        undefined,
+        { configurationContext: this._options.configurationContext }
+      )
     }
 
     this._adapter.setAgentName(this._options.agentName)
@@ -162,12 +174,12 @@ export class AgentApplication<TState extends TurnState> {
     }
 
     if (this._options.longRunningMessages && !this._adapter && !this._options.agentAppId) {
-      throw new Error('The Application.longRunningMessages property is unavailable because no adapter was configured in the app.')
+      throw ExceptionHelper.generateException(Error, Errors.LongRunningMessagesPropertyUnavailable)
     }
 
     if (this._options.transcriptLogger) {
       if (!this._options.adapter) {
-        throw new Error('The Application.transcriptLogger property is unavailable because no adapter was configured in the app.')
+        throw ExceptionHelper.generateException(Error, Errors.TranscriptLoggerPropertyUnavailable)
       } else {
         this._adapter?.use(new TranscriptLoggerMiddleware(this._options.transcriptLogger))
       }
@@ -209,11 +221,11 @@ export class AgentApplication<TState extends TurnState> {
    * Gets the authorization instance for the application.
    *
    * @returns The authorization instance.
-   * @throws Error if no authentication options were configured.
+   * @throws Error if no authorization handlers were resolved.
    */
   public get authorization (): Authorization {
     if (this._authorizationManager.handlers.length === 0) {
-      throw new Error('The Application.authorization property is unavailable because no authorization options were configured.')
+      throw ExceptionHelper.generateException(Error, Errors.AuthorizationOptionNotAvailable)
     }
     return this._authorization
   }
@@ -408,9 +420,7 @@ export class AgentApplication<TState extends TurnState> {
     isAgenticRoute: boolean = false
   ): this {
     if (typeof handler !== 'function') {
-      throw new Error(
-                `ConversationUpdate 'handler' for ${event} is ${typeof handler}. Type of 'handler' must be a function.`
-      )
+      throw ExceptionHelper.generateException(Error, Errors.ConversationUpdateHandlerMustBeFunction, undefined, { event, handlerType: typeof handler })
     }
 
     const selector = this.createConversationUpdateSelector(event, isAgenticRoute)
@@ -432,9 +442,7 @@ export class AgentApplication<TState extends TurnState> {
     logic: (context: TurnContext) => Promise<void>
   ): Promise<void> {
     if (!this._adapter) {
-      throw new Error(
-        "You must configure the Application with an 'adapter' before calling Application.continueConversationAsync()"
-      )
+      throw ExceptionHelper.generateException(Error, Errors.ContinueConversationAdapterRequired)
     }
 
     if (!this.options.agentAppId) {
@@ -500,7 +508,7 @@ export class AgentApplication<TState extends TurnState> {
    *
    * @param handler - The handler function to be called after successful sign-in.
    * @returns The current instance of the application.
-   * @throws Error if authentication options were not configured.
+   * @throws Error if no authorization handlers were resolved.
    *
    * @remarks
    * This method allows you to perform actions after a user has successfully authenticated.
@@ -515,13 +523,7 @@ export class AgentApplication<TState extends TurnState> {
    *
    */
   public onSignInSuccess (handler: (context: TurnContext, state: TurnState, id?: string) => Promise<void>): this {
-    if (this.options.authorization) {
-      this.authorization.onSignInSuccess(handler)
-    } else {
-      throw new Error(
-        'The Application.authorization property is unavailable because no authorization options were configured.'
-      )
-    }
+    this.authorization.onSignInSuccess(handler)
     return this
   }
 
@@ -530,7 +532,7 @@ export class AgentApplication<TState extends TurnState> {
    *
    * @param handler - The handler function to be called after a failed sign-in attempt.
    * @returns The current instance of the application.
-   * @throws Error if authentication options were not configured.
+   * @throws Error if no authorization handlers were resolved.
    *
    * @remarks
    * This method allows you to handle cases where a user fails to authenticate,
@@ -545,13 +547,7 @@ export class AgentApplication<TState extends TurnState> {
    *
    */
   public onSignInFailure (handler: (context: TurnContext, state: TurnState, id?: string) => Promise<void>): this {
-    if (this.options.authorization) {
-      this.authorization.onSignInFailure(handler)
-    } else {
-      throw new Error(
-        'The Application.authorization property is unavailable because no authorization options were configured.'
-      )
-    }
+    this.authorization.onSignInFailure(handler)
     return this
   }
 
@@ -696,7 +692,7 @@ export class AgentApplication<TState extends TurnState> {
 
     if (!authorized) {
       const managed = trace(AgentApplicationTraceDefinitions.run)
-      managed.record({ authorized, activity: context.activity })
+      managed.record({ authorized, activity: Activity.fromObject(context.activity) })
       managed.end()
       // We don't log a message here because it is handled by the authorization manager and could cause confusion during mid sign-in operations.
       return false
@@ -737,75 +733,90 @@ export class AgentApplication<TState extends TurnState> {
    * Executes the turn processing logic for the given context, including routing and handler execution.
    */
   private async runTurn (context: TurnContext): Promise<boolean> {
-    return trace(AgentApplicationTraceDefinitions.run, async ({ record }) => {
-      record({ authorized: true, activity: context.activity })
+    const managed = trace(AgentApplicationTraceDefinitions.run)
+    managed.record({ authorized: true, activity: Activity.fromObject(context.activity) })
 
-      try {
-        if (this._options.startTypingTimer) {
-          this.startTypingTimer(context)
-        }
+    try {
+      if (this._authorizationManager.handlers.length > 0) {
+        context.turnState.set(AgentApplication.UserAuthorizationKey, this._authorization)
+      }
 
-        if (this._options.removeRecipientMention && context.activity.type === ActivityTypes.Message) {
-          context.activity.removeRecipientMention()
-        }
+      const connections = this._options.connections ?? this._adapter?.connectionManager
+      if (connections) {
+        context.turnState.set(AgentApplication.ConnectionsKey, connections)
+      }
 
-        if (this._options.normalizeMentions && context.activity.type === ActivityTypes.Message) {
-          context.activity.normalizeMentions()
-        }
+      if (this._options.startTypingTimer) {
+        this.startTypingTimer(context)
+      }
 
-        const { storage, turnStateFactory } = this._options
-        const state = turnStateFactory()
-        await state.load(context, storage)
+      if (this._options.removeRecipientMention && context.activity.type === ActivityTypes.Message) {
+        context.activity.removeRecipientMention()
+      }
 
-        const route = await this.getRoute(context)
+      if (this._options.normalizeMentions && context.activity.type === ActivityTypes.Message) {
+        context.activity.normalizeMentions()
+      }
 
-        record({ routeMatched: route !== undefined })
+      const { storage, turnStateFactory } = this._options
+      const state = turnStateFactory()
+      await state.load(context, storage)
 
-        if (!route) {
-          logger.debug('No matching route found for activity:', context.activity)
-          return false
-        }
+      const route = await this.getRoute(context)
 
-        const fileDownloaders = this._options.fileDownloaders
-        if (Array.isArray(fileDownloaders) && fileDownloaders.length > 0) {
-          await trace(AgentApplicationTraceDefinitions.downloadFiles, async ({ record }) => {
-            record({ attachmentsCount: context.activity.attachments?.length })
-            for (let i = 0; i < fileDownloaders.length; i++) {
-              await fileDownloaders[i].downloadAndStoreFiles(context, state)
-            }
-          })
-        }
+      managed.record({ routeMatched: route !== undefined })
 
-        if (this._beforeTurn.length > 0) {
-          await trace(AgentApplicationTraceDefinitions.beforeTurn, async () => {
-            if (!(await this.callEventHandlers(context, state, this._beforeTurn))) {
-              await state.save(context, storage)
-              return false
-            }
-          })
-        }
+      if (!route) {
+        logger.debug('No matching route found for activity:', context.activity)
+        return false
+      }
 
-        await trace(AgentApplicationTraceDefinitions.routeHandler, async ({ record }) => {
-          record({ isInvoke: route.isInvokeRoute, isAgentic: route.isAgenticRoute })
-          await route.handler(context, state)
+      const fileDownloaders = this._options.fileDownloaders
+      if (Array.isArray(fileDownloaders) && fileDownloaders.length > 0) {
+        await managed.child(AgentApplicationTraceDefinitions.downloadFiles, async ({ record }) => {
+          record({ attachmentsCount: context.activity.attachments?.length })
+          for (let i = 0; i < fileDownloaders.length; i++) {
+            await fileDownloaders[i].downloadAndStoreFiles(context, state)
+          }
+        })
+      }
+
+      if (this._beforeTurn.length > 0) {
+        const continueTurn = await managed.child(AgentApplicationTraceDefinitions.beforeTurn, async () => {
+          if (!(await this.callEventHandlers(context, state, this._beforeTurn))) {
+            await state.save(context, storage)
+            return false
+          }
+
+          return true
         })
 
-        if (this._afterTurn.length > 0) {
-          await trace(AgentApplicationTraceDefinitions.afterTurn, async () => {
-            if (await this.callEventHandlers(context, state, this._afterTurn)) {
-              await state.save(context, storage)
-            }
-          })
+        if (!continueTurn) {
+          return false
         }
-
-        return true
-      } catch (err: any) {
-        logger.error(err)
-        throw err
-      } finally {
-        this.stopTypingTimer(context)
       }
-    })
+
+      await managed.child(AgentApplicationTraceDefinitions.routeHandler, async ({ record }) => {
+        record({ isInvoke: route.isInvokeRoute, isAgentic: route.isAgenticRoute })
+        await route.handler(context, state)
+      })
+
+      if (this._afterTurn.length > 0) {
+        await managed.child(AgentApplicationTraceDefinitions.afterTurn, async () => {
+          if (await this.callEventHandlers(context, state, this._afterTurn)) {
+            await state.save(context, storage)
+          }
+        })
+      }
+
+      return true
+    } catch (err: any) {
+      logger.error(err)
+      throw managed.fail(err)
+    } finally {
+      this.stopTypingTimer(context)
+      managed.end()
+    }
   }
 
   /**
@@ -891,6 +902,7 @@ export class AgentApplication<TState extends TurnState> {
 
     const state: TypingTimerState = {
       lastSend: Promise.resolve(),
+      notificationSequence: 0,
       stop: () => {
         if (state.timer) {
           clearTimeout(state.timer)
@@ -918,7 +930,8 @@ export class AgentApplication<TState extends TurnState> {
 
     const onTimeout = async () => {
       try {
-        state.lastSend = this.sendTypingActivity(context)
+        state.notificationSequence += 1
+        state.lastSend = this.sendTypingActivity(context, state.notificationSequence)
         await state.lastSend
       } catch (err: any) {
         logger.error(err)
@@ -951,11 +964,19 @@ export class AgentApplication<TState extends TurnState> {
     return streamingEntity?.streamType ?? activity.channelData?.streamType
   }
 
-  private async sendTypingActivity (context: TurnContext): Promise<ResourceResponse[] | undefined> {
+  private async sendTypingActivity (context: TurnContext, notificationSequence: number): Promise<ResourceResponse[] | undefined> {
     const conversationReference = context.activity.getConversationReference()
     const typingActivity = Activity.fromObject({ type: ActivityTypes.Typing }).applyConversationReference(conversationReference)
 
-    return await context.adapter.sendActivities(context, [typingActivity])
+    return await trace(AgentApplicationTraceDefinitions.typingIndicator, ({ record }) => {
+      record({
+        activityType: typingActivity.type,
+        channelId: typingActivity.channelId,
+        conversationId: typingActivity.conversation?.id,
+        notificationSequence,
+      })
+      return context.adapter.sendActivities(context, [typingActivity])
+    })
   }
 
   /**
@@ -981,7 +1002,7 @@ export class AgentApplication<TState extends TurnState> {
    */
   public registerExtension<T extends AgentExtension<TState>> (extension: T, regcb : (ext:T) => void): void {
     if (this._extensions.includes(extension)) {
-      throw new Error('Extension already registered')
+      throw ExceptionHelper.generateException(Error, Errors.ExtensionAlreadyRegistered)
     }
     this._extensions.push(extension)
     regcb(extension)
@@ -1102,20 +1123,75 @@ export class AgentApplication<TState extends TurnState> {
     handler: (context: TurnContext) => Promise<any>
   ) {
     const activity = Activity.fromObject(context.activity)
-    this.continueConversationAsync(context.identity, activity.getConversationReference(), async (ctx) => {
-      try {
-        Object.assign(ctx.activity, activity)
-        await handler(ctx)
-      } catch (err) {
-        if (this.adapter.onTurnError && err instanceof Error) {
-          await this.adapter.onTurnError(ctx, err)
-        } else {
-          throw err
+    const adapter = context.adapter
+    const identity = context.identity
+    const createErrorContext = () => new TurnContext(adapter, Activity.fromObject(activity), identity)
+
+    try {
+      const reference = activity.getConversationReference()
+      this.continueConversationAsync(identity, reference, async (ctx) => {
+        try {
+          Object.assign(ctx.activity, activity)
+          await handler(ctx)
+        } catch (err) {
+          await this.handleLongRunningCallError(ctx, activity, err)
         }
-      }
-    }).catch(err => {
-      logger.error(`Unhandled error in long-running call for activity '${activity.type}' (id: ${activity.id}):`, err)
+      }).catch(async err => {
+        await this.handleLongRunningCallError(createErrorContext(), activity, err)
+      })
+    } catch (err) {
+      this.handleLongRunningCallError(createErrorContext(), activity, err).catch(handlerErr => {
+        logger.error(`Unhandled error in long-running error handler for activity '${activity.type}' (id: ${activity.id}):`, this.normalizeLongRunningCallError(handlerErr))
+      })
+    }
+  }
+
+  private async handleLongRunningCallError (
+    context: TurnContext,
+    activity: Activity,
+    err: unknown
+  ): Promise<void> {
+    const error = this.normalizeLongRunningCallError(err)
+
+    try {
+      await context.adapter.onTurnError(context, error)
+    } catch (handlerErr) {
+      logger.error(`Unhandled error in long-running error handler for activity '${activity.type}' (id: ${activity.id}):`, this.normalizeLongRunningCallError(handlerErr))
+    }
+  }
+
+  private normalizeLongRunningCallError (err: unknown): Error {
+    if (err instanceof Error) {
+      return err
+    }
+
+    return ExceptionHelper.generateException(Error, Errors.UnknownErrorType, undefined, {
+      errorMessage: this.stringifyThrownValue(err)
     })
+  }
+
+  private stringifyThrownValue (value: unknown): string {
+    if (typeof value === 'string') {
+      return value
+    }
+
+    if (value === undefined) {
+      return 'undefined'
+    }
+
+    if (value === null) {
+      return 'null'
+    }
+
+    if (typeof value === 'object') {
+      try {
+        return JSON.stringify(value) ?? Object.prototype.toString.call(value)
+      } catch {
+        return Object.prototype.toString.call(value)
+      }
+    }
+
+    return String(value)
   }
 
   /**

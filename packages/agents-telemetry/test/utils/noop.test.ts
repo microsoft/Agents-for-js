@@ -14,6 +14,28 @@ describe('noopTrace', () => {
     assert.strictEqual(typeof result.record, 'function')
     assert.strictEqual(typeof result.end, 'function')
     assert.strictEqual(typeof result.fail, 'function')
+    assert.strictEqual(typeof result.child, 'function')
+  })
+
+  it('managed child returns another noop managed context', () => {
+    const { result } = callNoopTrace({ name: 'agents.adapter.process', record: {}, end: () => {} })
+    const child = result.child({ name: 'agents.storage.read', record: {}, end: () => {} })
+
+    assert.strictEqual(typeof child.record, 'function')
+    assert.strictEqual(typeof child.end, 'function')
+  })
+
+  it('managed child invokes callback and returns its result', () => {
+    const { result } = callNoopTrace({ name: 'agents.adapter.process', record: {}, end: () => {} })
+    const childResult = result.child(
+      { name: 'agents.storage.read', record: {}, end: () => {} },
+      (ctx: any) => {
+        assert.strictEqual(typeof ctx.record, 'function')
+        return 'child-result'
+      }
+    )
+
+    assert.strictEqual(childResult, 'child-result')
   })
 
   it('end is callable and does nothing', () => {
@@ -82,6 +104,7 @@ describe('noopContext', () => {
     assert.strictEqual(typeof result.record, 'function')
     assert.strictEqual(typeof result.end, 'function')
     assert.strictEqual(typeof result.fail, 'function')
+    assert.strictEqual(typeof result.child, 'function')
     assert.ok(result.actions)
   })
 

@@ -13,7 +13,7 @@
     "url": "https://aka.ms/Agents"
   },
   "description": "Microsoft 365 Agents SDK State Cosmos Storage support.",
-  "main": "dist/index.js",
+  "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
   "dependencies": {
     "@azure/cosmos": "4.9.3",

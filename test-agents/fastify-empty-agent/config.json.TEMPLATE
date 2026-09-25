@@ -1,0 +1,24 @@
+{
+  "$schema": "../../docs/schemas/agents-configuration.schema.json",
+  "connections": {
+    "serviceConnection": {
+      "settings": {
+        "authType": "ClientSecret",
+        "clientId": "",
+        "clientSecret": "",
+        "tenantId": ""
+      }
+    }
+  },
+  "connectionsMap": [
+    {
+      "serviceUrl": "*",
+      "connection": "serviceConnection"
+    }
+  ],
+  "outboundHostValidator": {
+    "enabled": false,
+    "includeDefaultMicrosoftHosts": true,
+    "hosts": []
+  }
+}

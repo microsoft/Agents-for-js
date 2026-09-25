@@ -15,7 +15,7 @@ describe('MemoryStorage', () => {
         async () => await memoryStorage.read([]),
         {
           name: 'ReferenceError',
-          message: 'Keys are required when reading.'
+          message: /Keys are required when reading\./
         }
       )
     })
@@ -26,7 +26,7 @@ describe('MemoryStorage', () => {
         async () => await memoryStorage.read(null),
         {
           name: 'ReferenceError',
-          message: 'Keys are required when reading.'
+          message: /Keys are required when reading\./
         }
       )
     })
@@ -49,7 +49,7 @@ describe('MemoryStorage', () => {
         async () => await memoryStorage.write([]),
         {
           name: 'ReferenceError',
-          message: 'Changes are required when writing.'
+          message: /Changes are required when writing\./
         }
       )
     })
@@ -60,7 +60,7 @@ describe('MemoryStorage', () => {
         async () => await memoryStorage.write(null),
         {
           name: 'ReferenceError',
-          message: 'Changes are required when writing.'
+          message: /Changes are required when writing\./
         }
       )
     })
@@ -69,6 +69,40 @@ describe('MemoryStorage', () => {
       await memoryStorage.write({ key1: { value: 'test', eTag: '*' } })
       const result = await memoryStorage.read(['key1'])
       assert.deepStrictEqual(result, { key1: { value: 'test', eTag: '1' } })
+    })
+
+    it('should read items before ttl expires', async () => {
+      await memoryStorage.write({ key1: { value: 'test', eTag: '*' } }, { ttl: 60 })
+      const result = await memoryStorage.read(['key1'])
+      assert.deepStrictEqual(result, { key1: { value: 'test', eTag: '1' } })
+    })
+
+    it('should omit items after ttl expires', async () => {
+      await memoryStorage.write({ key1: { value: 'test', eTag: '*' } }, { ttl: 0.01 })
+      await new Promise(resolve => setTimeout(resolve, 20))
+      const result = await memoryStorage.read(['key1'])
+      assert.deepStrictEqual(result, {})
+    })
+
+    it('should clear ttl when rewriting without ttl', async () => {
+      await memoryStorage.write({ key1: { value: 'test', eTag: '*' } }, { ttl: 0.01 })
+      const initialRead = await memoryStorage.read(['key1'])
+      await memoryStorage.write({ key1: { value: 'persistent', eTag: initialRead.key1.eTag } })
+      await new Promise(resolve => setTimeout(resolve, 20))
+      const result = await memoryStorage.read(['key1'])
+      assert.deepStrictEqual(result, { key1: { value: 'persistent', eTag: '2' } })
+    })
+
+    it('should reject invalid ttl values', async () => {
+      await assert.rejects(
+        async () => await memoryStorage.write({ key1: { value: 'test', eTag: '*' } }, { ttl: 0 }),
+        (err: any) => {
+          assert.strictEqual(err.name, 'RangeError')
+          assert.strictEqual(err.code, -120703)
+          assert.match(err.message, /StorageWriteOptions\.ttl must be a finite number greater than zero\./)
+          return true
+        }
+      )
     })
 
     it('should update items with matching eTags', async () => {
@@ -86,7 +120,7 @@ describe('MemoryStorage', () => {
           await memoryStorage.write({ key1: { value: 'conflict', eTag: 'invalid' } }),
         {
           name: 'Error',
-          message: 'Storage: error writing "key1" due to eTag conflict.'
+          message: /Storage: error writing "key1" due to eTag conflict\./
         }
       )
     })

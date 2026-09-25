@@ -4,9 +4,17 @@
 
 ```ts
 
+import { AgentError } from '@microsoft/agents-activity';
+import { AgentErrorDefinition } from '@microsoft/agents-activity';
 import { CosmosClientOptions } from '@azure/cosmos';
+import { ExceptionHelper } from '@microsoft/agents-activity';
 import { Storage as Storage_2 } from '@microsoft/agents-hosting';
+import { StorageWriteOptions } from '@microsoft/agents-hosting';
 import { StoreItems } from '@microsoft/agents-hosting';
+
+export { AgentError }
+
+export { AgentErrorDefinition }
 
 // @public
 export class CosmosDbPartitionedStorage implements Storage_2 {
@@ -16,7 +24,7 @@ export class CosmosDbPartitionedStorage implements Storage_2 {
     delete(keys: string[]): Promise<void>;
     length: number;
     read(keys: string[]): Promise<StoreItems>;
-    write(changes: StoreItems): Promise<void>;
+    write(changes: StoreItems, options?: StorageWriteOptions): Promise<void>;
 }
 
 // @public
@@ -28,6 +36,13 @@ export interface CosmosDbPartitionedStorageOptions {
     databaseId: string;
     keySuffix?: string;
 }
+
+// @public
+export const Errors: {
+    [key: string]: AgentErrorDefinition;
+};
+
+export { ExceptionHelper }
 
 // (No @packageDocumentation comment for this package)
 

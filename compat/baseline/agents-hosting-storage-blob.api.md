@@ -5,11 +5,13 @@
 ```ts
 
 import { Activity } from '@microsoft/agents-activity';
+import { AgentErrorDefinition } from '@microsoft/agents-activity';
 import { AnonymousCredential } from '@azure/storage-blob';
 import { PagedResult } from '@microsoft/agents-hosting';
 import { Storage as Storage_2 } from '@microsoft/agents-hosting';
 import { StoragePipelineOptions } from '@azure/storage-blob';
 import { StorageSharedKeyCredential } from '@azure/storage-blob';
+import { StorageWriteOptions } from '@microsoft/agents-hosting';
 import { StoreItems } from '@microsoft/agents-hosting';
 import { TokenCredential } from '@azure/core-auth';
 import { TranscriptInfo } from '@microsoft/agents-hosting';
@@ -20,13 +22,18 @@ export class BlobsStorage implements Storage_2 {
     constructor(containerName: string, connectionString?: string, options?: BlobsStorageOptions, url?: string, credential?: StorageSharedKeyCredential | AnonymousCredential | TokenCredential);
     delete(keys: string[]): Promise<void>;
     read(keys: string[]): Promise<StoreItems>;
-    write(changes: StoreItems): Promise<void>;
+    write(changes: StoreItems, options?: StorageWriteOptions): Promise<void>;
 }
 
 // @public
 export interface BlobsStorageOptions {
     storagePipelineOptions?: StoragePipelineOptions;
 }
+
+// @public
+export const BlobStorageErrors: {
+    [key: string]: AgentErrorDefinition;
+};
 
 // @public
 export class BlobsTranscriptStore implements TranscriptStore {

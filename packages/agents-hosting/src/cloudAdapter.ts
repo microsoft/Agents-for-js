@@ -6,13 +6,13 @@
 import { AgentHandler, INVOKE_RESPONSE_KEY } from './activityHandler'
 import { BaseAdapter } from './baseAdapter'
 import { TurnContext } from './turnContext'
-import { Response } from 'express'
 import { Request } from './auth/request'
+import { NextFunction, WebResponse } from './interfaces/webResponse'
 import { ConnectorClient } from './connector-client/connectorClient'
 import { AuthConfiguration, getAuthConfigWithDefaults } from './auth/authConfiguration'
 import { AuthProvider } from './auth/authProvider'
 import { ApxProductionScope } from './auth/authConstants'
-import { MsalConnectionManager } from './auth/msalConnectionManager'
+import { MsalConnectionManager } from './auth/msal/msalConnectionManager'
 import { Activity, ActivityEventNames, ActivityTypes, Channels, ConversationReference, DeliveryModes, ConversationParameters, RoleTypes, ExceptionHelper } from '@microsoft/agents-activity'
 import { Errors } from './errorHelper'
 import { ResourceResponse } from './connector-client/resourceResponse'
@@ -28,10 +28,17 @@ import { HeaderPropagation, HeaderPropagationCollection, HeaderPropagationDefini
 import { JwtPayload } from 'jsonwebtoken'
 import { getTokenServiceEndpoint } from './oauth/customUserTokenAPI'
 import { Connections } from './auth/connections'
-import { parseBooleanEnv, suggestClosest } from './utils/env'
 import { trace } from '@microsoft/agents-telemetry'
 import { AdapterTraceDefinitions } from './observability'
 import { applyAgenticHeaders } from './getProductInfo'
+import {
+  createOutboundHostValidator,
+  OutboundUrlPolicy
+} from './outboundHostValidator'
+import { authorizeJWT } from './auth/jwt-middleware'
+import { ConfigurationContext, getConfigurationSnapshot } from './configuration/configuration'
+import { loadModernEnvironmentConfiguration } from './configuration/environmentConfiguration'
+import { mergeDefined } from './utils'
 
 const logger = debug('agents:cloud-adapter')
 
@@ -61,6 +68,11 @@ const logger = debug('agents:cloud-adapter')
  */
 export interface CloudAdapterOptions {
   /**
+   * Optional host-scoped external configuration.
+   */
+  configurationContext?: ConfigurationContext
+
+  /**
    * When `true`, the default `onTurnError` handler includes `error.stack` in
    * its log output. Defaults to `false`.
    *
@@ -80,114 +92,18 @@ export interface CloudAdapterOptions {
    * for one service URL tries to send activities targeting a different one.
    *
    * Env var: `CloudAdapterOptions__validateServiceUrl`.
+   *
+   * @deprecated Configure {@link OutboundUrlPolicy} instead. This option
+   * remains available for backward compatibility with claim-only validation.
    */
   validateServiceUrl?: boolean
 }
 
-const DEFAULT_CLOUD_ADAPTER_OPTIONS: Required<CloudAdapterOptions> = {
+type ResolvedCloudAdapterOptions = Required<Pick<CloudAdapterOptions, 'emitStackTrace' | 'validateServiceUrl'>>
+
+const DEFAULT_CLOUD_ADAPTER_OPTIONS: ResolvedCloudAdapterOptions = {
   emitStackTrace: false,
   validateServiceUrl: false
-}
-
-/** Env-var prefix for {@link CloudAdapterOptions} (matches .NET config section). */
-const CLOUD_ADAPTER_OPTIONS_ENV_PREFIX = 'CloudAdapterOptions__'
-const CLOUD_ADAPTER_OPTIONS_ENV_PREFIX_UPPER = CLOUD_ADAPTER_OPTIONS_ENV_PREFIX.toUpperCase()
-
-/**
- * Declarative env-var parser for {@link CloudAdapterOptions}.
- *
- * Shape mirrors `envParser<K>` introduced in PR #1119
- * (`packages/agents-hosting/src/auth/settings.ts`) so this loader can be
- * swapped for the shared utility once that lands. Each entry is a
- * `(rawValue) => parsedValue | undefined` function. Lookups are
- * case-insensitive via the `upperKeys` map, matching the upstream
- * convention and accommodating hosts that uppercase env-var names.
- *
- * Adding a new option to `CloudAdapterOptions` only requires adding an
- * entry here.
- */
-const cloudAdapterOptionsParser = (() => {
-  const schema: {
-    [K in keyof Required<CloudAdapterOptions>]: (raw: string | undefined) => CloudAdapterOptions[K]
-  } = {
-    emitStackTrace: parseBooleanEnv,
-    validateServiceUrl: parseBooleanEnv
-  }
-  const keys = Object.keys(schema) as Array<keyof CloudAdapterOptions>
-  const upperKeys = keys.reduce<Record<string, keyof CloudAdapterOptions>>((acc, key) => {
-    acc[key.toUpperCase()] = key
-    return acc
-  }, {})
-  return {
-    schema,
-    keys,
-    /**
-     * Resolves an env-var property name (case-insensitive) to its canonical
-     * `CloudAdapterOptions` key, or `undefined` when the name is unknown.
-     */
-    resolveKey (property: string): keyof CloudAdapterOptions | undefined {
-      return upperKeys[property.toUpperCase()]
-    }
-  }
-})()
-
-/**
- * Per-process dedup set for configuration warnings. Without this, every
- * `new CloudAdapter()` re-scans `process.env` and re-emits warnings for any
- * typo'd `CloudAdapterOptions__*` key (or unparseable value), which spams
- * stderr in multi-adapter scenarios (tests, proactive flows, DI containers).
- */
-const warnedConfigKeys = new Set<string>()
-
-function emitConfigWarning (envKey: string, message: string): void {
-  if (warnedConfigKeys.has(envKey)) return
-  warnedConfigKeys.add(envKey)
-  // Visible by default (writes synchronously to stderr) so users see typos
-  // and bad values without having to opt in via `DEBUG=agents:cloud-adapter:*`.
-  // Hosts that want to route or suppress can intercept `console.warn` or
-  // subscribe to the `agents:cloud-adapter:warn` debug namespace below.
-  console.warn(`[agents:cloud-adapter] ${message}`)
-  logger.warn(message)
-}
-
-/**
- * Scans `process.env` for keys with the `CloudAdapterOptions__` prefix
- * (case-insensitive) and returns the parsed partial options. Unknown keys
- * and values that fail to parse are warned about once per process via
- * `console.warn` (so they are visible by default without enabling debug)
- * and through the `agents:cloud-adapter:warn` debug channel for log
- * aggregators. Hosts that want to route or suppress these diagnostics can
- * intercept `console.warn` or filter the debug namespace.
- */
-function loadCloudAdapterOptionsFromEnv (): CloudAdapterOptions {
-  const result: CloudAdapterOptions = {}
-  for (const [envKey, rawValue] of Object.entries(process.env)) {
-    const upper = envKey.toUpperCase()
-    if (!upper.startsWith(CLOUD_ADAPTER_OPTIONS_ENV_PREFIX_UPPER)) continue
-    const property = envKey.substring(CLOUD_ADAPTER_OPTIONS_ENV_PREFIX.length)
-    const canonical = cloudAdapterOptionsParser.resolveKey(property)
-    if (!canonical) {
-      const suggestion = suggestClosest(property, cloudAdapterOptionsParser.keys as readonly string[], 4)
-      const hint = suggestion ? ` Did you mean "${CLOUD_ADAPTER_OPTIONS_ENV_PREFIX}${suggestion}"?` : ''
-      emitConfigWarning(envKey, `Unknown CloudAdapterOptions env var: ${envKey} (ignored).${hint}`)
-      continue
-    }
-    const parsed = cloudAdapterOptionsParser.schema[canonical](rawValue) as any
-    if (parsed !== undefined) {
-      (result as any)[canonical] = parsed
-    } else if (rawValue !== undefined && rawValue.trim() !== '') {
-      // Known key, recognized but unparseable value (e.g. `yes`, `on`, `enabled`).
-      // For a security-relevant flag like `validateServiceUrl`, silent
-      // fallthrough is the dangerous failure mode — surface it.
-      // Note: parseBooleanEnv treats whitespace-only as unset, so don't warn
-      // on `'   '`; only warn when the user actually typed something.
-      emitConfigWarning(
-        `${envKey}=${rawValue}`,
-        `Ignored ${envKey}=${rawValue}; expected one of true/false/1/0.`
-      )
-    }
-  }
-  return result
 }
 
 /**
@@ -195,12 +111,23 @@ function loadCloudAdapterOptionsFromEnv (): CloudAdapterOptions {
  * absent, from environment variables. Values supplied in the explicit object
  * win over env vars.
  */
-function resolveCloudAdapterOptions (options?: CloudAdapterOptions): Required<CloudAdapterOptions> {
-  const fromEnv = loadCloudAdapterOptionsFromEnv()
-  return {
-    emitStackTrace: options?.emitStackTrace ?? fromEnv.emitStackTrace ?? DEFAULT_CLOUD_ADAPTER_OPTIONS.emitStackTrace,
-    validateServiceUrl: options?.validateServiceUrl ?? fromEnv.validateServiceUrl ?? DEFAULT_CLOUD_ADAPTER_OPTIONS.validateServiceUrl
-  }
+function resolveCloudAdapterOptions (options?: CloudAdapterOptions): ResolvedCloudAdapterOptions {
+  const external = getConfigurationSnapshot(options?.configurationContext)
+  const fromEnv = loadModernEnvironmentConfiguration(
+    process.env,
+    { reportCloudAdapterDiagnostics: true }
+  ).cloudAdapterOptions
+  return mergeDefined<ResolvedCloudAdapterOptions>(
+    DEFAULT_CLOUD_ADAPTER_OPTIONS,
+    external.fallback.cloudAdapterOptions,
+    fromEnv,
+    external.overrideEnvironment.cloudAdapterOptions,
+    {
+      emitStackTrace: options?.emitStackTrace,
+      validateServiceUrl: options?.validateServiceUrl
+    },
+    external.enforce.cloudAdapterOptions
+  )
 }
 
 /**
@@ -238,6 +165,7 @@ function truncateActivityForLog (activity: unknown, max = 1024): string {
 
 export class CloudAdapter extends BaseAdapter {
   protected readonly authConfig: AuthConfiguration
+  private readonly jwtMiddleware: ReturnType<typeof authorizeJWT>
   protected _agentName?: string
 
   /**
@@ -245,7 +173,8 @@ export class CloudAdapter extends BaseAdapter {
    */
   connectionManager: Connections
 
-  private readonly _options: Required<CloudAdapterOptions>
+  private readonly _options: ResolvedCloudAdapterOptions
+  private readonly _hostValidator: OutboundUrlPolicy
 
   /**
    * Creates an instance of CloudAdapter.
@@ -253,12 +182,20 @@ export class CloudAdapter extends BaseAdapter {
    * @param authProvider - No longer used.
    * @param userTokenClient - No longer used.
    * @param options - Optional runtime behavior overrides. See {@link CloudAdapterOptions}.
+   * @param outboundHostValidator - Optional policy for validating outbound `Activity.serviceUrl` hosts.
+   * When omitted, the policy is loaded from `OutboundHostValidator__*` environment variables
+   * and remains disabled by default.
    */
-  constructor (authConfig?: AuthConfiguration, authProvider?: AuthProvider, userTokenClient?: UserTokenClient, options?: CloudAdapterOptions) {
+  constructor (authConfig?: AuthConfiguration, authProvider?: AuthProvider, userTokenClient?: UserTokenClient, options?: CloudAdapterOptions, outboundHostValidator?: OutboundUrlPolicy) {
     super()
-    this.authConfig = authConfig = getAuthConfigWithDefaults(authConfig)
+    this.authConfig = authConfig = getAuthConfigWithDefaults(authConfig, {
+      configurationContext: options?.configurationContext
+    })
+    this.jwtMiddleware = authorizeJWT(authConfig)
     this.connectionManager = new MsalConnectionManager(undefined, undefined, authConfig)
     this._options = resolveCloudAdapterOptions(options)
+    this._hostValidator = outboundHostValidator ??
+      createOutboundHostValidator({ configurationContext: options?.configurationContext })
 
     // Install a CloudAdapter-aware default `onTurnError` that honors
     // `emitStackTrace`. The base class default only logs the message; we
@@ -289,7 +226,7 @@ export class CloudAdapter extends BaseAdapter {
    */
   protected resolveIfConnectorClientIsNeeded (activity: Activity): boolean {
     if (!activity) {
-      throw new TypeError('`activity` parameter required')
+      throw ExceptionHelper.generateException(TypeError, Errors.ActivityParameterRequired)
     }
 
     switch (activity.deliveryMode) {
@@ -321,6 +258,8 @@ export class CloudAdapter extends BaseAdapter {
     identity: JwtPayload,
     headers?: HeaderPropagationCollection
   ): Promise<ConnectorClient> {
+    this.ensureOutboundServiceUrlAllowed(serviceUrl)
+
     return trace(AdapterTraceDefinitions.createConnectorClient, async ({ record }) => {
       record({ serviceUrl, scopes: [scope] })
 
@@ -349,6 +288,8 @@ export class CloudAdapter extends BaseAdapter {
     identity: JwtPayload,
     activity: Activity,
     headers?: HeaderPropagationCollection) {
+    this.ensureOutboundServiceUrlAllowed(activity.serviceUrl)
+
     return trace(AdapterTraceDefinitions.createConnectorClient, async ({ record }) => {
       if (!identity?.aud) {
         // anonymous
@@ -392,7 +333,7 @@ export class CloudAdapter extends BaseAdapter {
             headers
           )
         } else {
-          throw new Error('Could not create connector client for agentic user')
+          throw ExceptionHelper.generateException(Error, Errors.CannotCreateConnectorClientForAgenticUser)
         }
       } else {
         // ABS tokens will not have an azp/appid so use the botframework scope.
@@ -423,6 +364,24 @@ export class CloudAdapter extends BaseAdapter {
     return {
       aud: appId
     } as JwtPayload
+  }
+
+  /**
+   * Authorizes an incoming web request using this adapter's resolved authentication configuration.
+   * @param req The incoming request.
+   * @param res The outgoing response.
+   * @param next Callback invoked after successful authorization.
+   */
+  public async authorizeRequest (req: Request, res: WebResponse, next: NextFunction): Promise<void> {
+    await this.jwtMiddleware(req, res, next)
+  }
+
+  /**
+   * Gets the client ID used by this adapter's default authentication connection.
+   * @returns The configured client ID, or `undefined` for anonymous development configuration.
+   */
+  public getClientId (): string | undefined {
+    return this.authConfig.clientId
   }
 
   /**
@@ -580,7 +539,7 @@ export class CloudAdapter extends BaseAdapter {
    */
   public async process (
     request: Request,
-    res: Response,
+    res: WebResponse,
     logic: (context: TurnContext) => Promise<void>,
     headerPropagation?: HeaderPropagationDefinition): Promise<void> {
     return trace(AdapterTraceDefinitions.process, async ({ record }) => {
@@ -609,7 +568,7 @@ export class CloudAdapter extends BaseAdapter {
         res.end()
       }
       if (!request.body) {
-        throw new TypeError('`request.body` parameter required, make sure express.json() is used as middleware')
+        throw ExceptionHelper.generateException(TypeError, Errors.MissingRequestBody)
       }
       const incoming = normalizeIncomingActivity(request.body!)
       const activity = Activity.fromObject(incoming)
@@ -692,6 +651,8 @@ export class CloudAdapter extends BaseAdapter {
    * should be rejected with a 400.
    */
   private validateServiceUrl (identity: JwtPayload | undefined, activity: Activity): boolean {
+    if (!this.isOutboundServiceUrlAllowed(activity.serviceUrl)) return false
+
     if (!identity) return true
     if (!activity.serviceUrl) return true
 
@@ -709,12 +670,29 @@ export class CloudAdapter extends BaseAdapter {
 
     const safeClaim = sanitizeForLog(claimValue)
     const safeServiceUrl = sanitizeForLog(activity.serviceUrl)
-    if (this._options.validateServiceUrl) {
+    if (this._hostValidator.enabled || this._options.validateServiceUrl) {
       logger.error(`Invalid service URL Claim='${safeClaim}', ServiceUrl='${safeServiceUrl}'`)
       return false
     }
     logger.warn(`Invalid service URL Claim='${safeClaim}', ServiceUrl='${safeServiceUrl}'`)
     return true
+  }
+
+  /**
+   * Applies the shared outbound host policy.
+   */
+  private isOutboundServiceUrlAllowed (serviceUrl: string | undefined): boolean {
+    if (!this._hostValidator.enabled || !serviceUrl || this._hostValidator.isAllowed(serviceUrl)) return true
+
+    logger.warn(`ServiceUrl host is not in the configured allowed hosts. ServiceUrl='${sanitizeForLog(serviceUrl)}'`)
+    return false
+  }
+
+  /** Ensures connector-client creation cannot bypass the outbound host policy. */
+  private ensureOutboundServiceUrlAllowed (serviceUrl: string | undefined): void {
+    if (!this.isOutboundServiceUrlAllowed(serviceUrl)) {
+      throw ExceptionHelper.generateException(Error, Errors.OutboundServiceUrlNotAllowed)
+    }
   }
 
   /**
@@ -726,11 +704,11 @@ export class CloudAdapter extends BaseAdapter {
   async updateActivity (context: TurnContext, activity: Activity): Promise<ResourceResponse | void> {
     return trace(AdapterTraceDefinitions.updateActivity, async ({ record }) => {
       if (!context) {
-        throw new TypeError('`context` parameter required')
+        throw ExceptionHelper.generateException(TypeError, Errors.ContextParameterRequired)
       }
 
       if (!activity) {
-        throw new TypeError('`activity` parameter required')
+        throw ExceptionHelper.generateException(TypeError, Errors.ActivityParameterRequired)
       }
 
       record({ activity })
@@ -758,7 +736,7 @@ export class CloudAdapter extends BaseAdapter {
   async deleteActivity (context: TurnContext, reference: Partial<ConversationReference>): Promise<void> {
     return trace(AdapterTraceDefinitions.deleteActivity, async ({ record }) => {
       if (!context) {
-        throw new TypeError('`context` parameter required')
+        throw ExceptionHelper.generateException(TypeError, Errors.ContextParameterRequired)
       }
 
       if (!reference || !reference.serviceUrl || (reference.conversation == null) || !reference.conversation.id || !reference.activityId) {
@@ -791,7 +769,7 @@ export class CloudAdapter extends BaseAdapter {
       }
 
       if (!botAppIdOrIdentity) {
-        throw new TypeError('continueConversation: botAppIdOrIdentity is required')
+        throw ExceptionHelper.generateException(TypeError, Errors.ContinueConversationBotAppIdOrIdentityRequired)
       }
       const botAppId = typeof botAppIdOrIdentity === 'string' ? botAppIdOrIdentity : botAppIdOrIdentity.aud as string
 
@@ -911,10 +889,10 @@ export class CloudAdapter extends BaseAdapter {
     logic: (context: TurnContext) => Promise<void>
   ): Promise<void> {
     if (typeof serviceUrl !== 'string' || !serviceUrl) {
-      throw new TypeError('`serviceUrl` must be a non-empty string')
+      throw ExceptionHelper.generateException(TypeError, Errors.ServiceUrlRequired)
     }
-    if (!conversationParameters) throw new TypeError('`conversationParameters` must be defined')
-    if (!logic) throw new TypeError('`logic` must be defined')
+    if (!conversationParameters) throw ExceptionHelper.generateException(TypeError, Errors.ConversationParametersRequired)
+    if (!logic) throw ExceptionHelper.generateException(TypeError, Errors.LogicParameterRequired)
 
     const identity = CloudAdapter.createIdentity(audience)
     const restClient = await this.createConnectorClient(serviceUrl, audience, identity)

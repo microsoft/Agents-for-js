@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import type { Metric, TraceCallback, TraceContext, TraceFunction, TraceManagedContext } from '../types.js'
+import type { Metric, TraceCallback, TraceChildFunction, TraceContext, TraceFunction, TraceManagedContext } from '../types.js'
 
 const noopFn = () => {}
 
@@ -45,6 +45,7 @@ export function noopContext<TRecord extends object, TActions extends object, TRe
   const managedContext: TraceManagedContext<TRecord, TActions> = {
     record: context.record,
     actions: context.actions,
+    child: ((_definition, callback) => noopContext(callback)) as TraceChildFunction,
     end: noopFn,
     fail<T extends unknown> (error: T): T {
       return error

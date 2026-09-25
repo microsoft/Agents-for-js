@@ -1,4 +1,4 @@
-# microsoft/agents-hosting-express
+# @microsoft/agents-hosting-express
 
 ## Overview
 
@@ -50,6 +50,10 @@ startServer(agent, {
 
 If you manage your own Express app (or another framework with an adapter that exposes Express-compatible request/response objects), use `createAgentRequestHandler` to get a handler that includes JWT authorization and activity processing:
 
+The handler resolves its explicit or environment authentication independently
+from activity processing. An `AgentApplication`'s existing adapter is reused,
+preserving its middleware, connection state, runtime policies, and identity.
+
 ```ts
 import express from 'express';
 import { AgentApplication, TurnState } from '@microsoft/agents-hosting';
@@ -68,6 +72,8 @@ app.listen(3978);
 ### Advanced — `createCloudAdapter`
 
 For full control, use `createCloudAdapter` to obtain the `CloudAdapter` directly. This is useful when you need to customize request processing and can provide the request/response shape expected by `CloudAdapter.process`.
+
+> `createCloudAdapter` is now exported from `@microsoft/agents-hosting`; the re-export below is preserved for backward compatibility. New code may import it directly from `@microsoft/agents-hosting` to avoid taking a dependency on Express.
 
 `CloudAdapter.process` expects:
 

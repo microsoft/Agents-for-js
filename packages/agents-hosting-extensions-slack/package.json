@@ -20,7 +20,8 @@
   "types": "dist/src/index.d.ts",
   "dependencies": {
     "@microsoft/agents-hosting": "file:../agents-hosting",
-    "@microsoft/agents-activity": "file:../agents-activity"
+    "@microsoft/agents-activity": "file:../agents-activity",
+    "@microsoft/agents-telemetry": "file:../agents-telemetry"
   },
   "license": "MIT",
   "files": [
@@ -30,6 +31,7 @@
   ],
   "exports": {
     ".": {
+      "types": "./dist/src/index.d.ts",
       "import": "./dist/src/index.js",
       "require": "./dist/src/index.js"
     },

@@ -5,17 +5,25 @@
 
 import express, { Response } from 'express'
 import rateLimit from 'express-rate-limit'
-import { ActivityHandler, AgentApplication, AuthConfiguration, authorizeJWT, getAuthConfigWithDefaults, Request, TurnState } from '@microsoft/agents-hosting'
+import {
+  ActivityHandler,
+  AgentApplication,
+  AuthConfiguration,
+  authorizeJWT,
+  getAuthConfigWithDefaults,
+  Request,
+  TurnState
+} from '@microsoft/agents-hosting'
 import { version } from '@microsoft/agents-hosting/package.json'
 import { debug } from '@microsoft/agents-telemetry'
-import { createCloudAdapter } from './createCloudAdapter'
+import { createCloudAdapter, type CreateCloudAdapterOptions } from './createCloudAdapter'
 
 const logger = debug('agents:hosting-express')
 
 /**
  * Options for configuring the Express server started by `startServer`.
  */
-export interface StartServerOptions {
+export interface StartServerOptions extends CreateCloudAdapterOptions {
   /**
    * Optional custom authentication configuration.
    * If not provided, configuration will be loaded from environment variables using loadAuthConfigFromEnv().
@@ -111,12 +119,20 @@ export function startServer (agent: AgentApplication<TurnState<any, any>> | Acti
 export function startServer (agent: AgentApplication<TurnState<any, any>> | ActivityHandler, authConfiguration?: AuthConfiguration): express.Express
 export function startServer (agent: AgentApplication<TurnState<any, any>> | ActivityHandler, optionsOrAuth?: StartServerOptions | AuthConfiguration): express.Express {
   const isOptions = typeof optionsOrAuth === 'object' && optionsOrAuth !== null &&
-    ('authConfig' in optionsOrAuth || 'port' in optionsOrAuth || 'routePath' in optionsOrAuth || 'rateLimitOptions' in optionsOrAuth || 'beforeListen' in optionsOrAuth)
+    ('authConfig' in optionsOrAuth || 'port' in optionsOrAuth || 'routePath' in optionsOrAuth ||
+      'rateLimitOptions' in optionsOrAuth || 'beforeListen' in optionsOrAuth || 'configurationContext' in optionsOrAuth)
 
-  const opts: StartServerOptions = isOptions ? optionsOrAuth as StartServerOptions : { authConfig: optionsOrAuth as AuthConfiguration | undefined }
-  const authConfig: AuthConfiguration = getAuthConfigWithDefaults(opts.authConfig)
+  // Legacy overload: the second argument is a raw AuthConfiguration. An empty object carries no auth
+  // settings, so treat it like no argument and load defaults from the environment (matching startServer(agent)).
+  const hasAuthSettings = !isOptions && optionsOrAuth != null && Object.keys(optionsOrAuth).length > 0
+  const opts: StartServerOptions = isOptions
+    ? optionsOrAuth as StartServerOptions
+    : { authConfig: hasAuthSettings ? optionsOrAuth as AuthConfiguration : undefined }
   const routePath = opts.routePath ?? '/api/messages'
-  const { adapter, headerPropagation } = createCloudAdapter(agent, authConfig)
+  const configurationContext = opts.configurationContext ??
+    (agent instanceof AgentApplication ? agent.options.configurationContext : undefined)
+  const authConfig = getAuthConfigWithDefaults(opts.authConfig, { configurationContext })
+  const { adapter, headerPropagation } = createCloudAdapter(agent, authConfig, { configurationContext: opts.configurationContext })
 
   const server = express()
   server.use(express.json())
@@ -125,7 +141,9 @@ export function startServer (agent: AgentApplication<TurnState<any, any>> | Acti
     opts.beforeListen(server)
   }
 
-  const middlewares: express.RequestHandler[] = [authorizeJWT(authConfig)]
+  const middlewares: express.RequestHandler[] = [
+    authorizeJWT(authConfig)
+  ]
   if (opts.rateLimitOptions) {
     const messagesRateLimiter = rateLimit({
       windowMs: opts.rateLimitOptions.windowMs,

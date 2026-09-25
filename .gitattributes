@@ -1,0 +1,23 @@
+# Normalize line endings. Text files are stored with LF in the repository and
+# checked out with LF on every platform. This file does not retroactively
+# renormalize existing files; run `git add --renormalize .` if you want that.
+* text=auto eol=lf
+
+# Windows-only scripts are kept as CRLF.
+*.ps1   text eol=crlf
+*.cmd   text eol=crlf
+*.bat   text eol=crlf
+
+# Binary assets: never modify their contents or line endings.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.webp  binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.eot   binary
+*.pdf   binary
+*.zip   binary

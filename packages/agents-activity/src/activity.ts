@@ -543,7 +543,14 @@ export class Activity {
       }
     } else {
       this.from = reference.agent ?? undefined
-      this.recipient = reference.user
+      // Targeted activities should have the recipient set to the intended user instead of the
+      // incoming Activity's sender.  This allows for proper routing of the outgoing activity
+      // to the user even if the incoming activity was sent to a different user (e.g. in group chat scenarios).
+      // Preserve an explicitly-set targeted recipient, but fall back to the conversation reference's
+      // user when the recipient has not been populated.
+      if (!this.isTargetedActivity() || !this.recipient) {
+        this.recipient = reference.user
+      }
       if (reference.activityId) {
         this.replyToId = reference.activityId
       }

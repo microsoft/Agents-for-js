@@ -8,7 +8,6 @@ import { Activity } from '@microsoft/agents-activity';
 import { ActivityTypes } from '@microsoft/agents-activity';
 import { AdaptiveCardInvokeAction } from '@microsoft/agents-activity';
 import { AgentErrorDefinition } from '@microsoft/agents-activity';
-import { Application } from 'express';
 import { Attachment } from '@microsoft/agents-activity';
 import { CardAction } from '@microsoft/agents-activity';
 import { ChannelAccount } from '@microsoft/agents-activity';
@@ -19,8 +18,6 @@ import { ConversationReference } from '@microsoft/agents-activity';
 import { GetTokenOptions } from '@azure/core-auth';
 import { InputHints } from '@microsoft/agents-activity';
 import { JwtPayload } from 'jsonwebtoken';
-import { NextFunction } from 'express';
-import { Response as Response_2 } from 'express';
 import { SensitivityUsageInfo } from '@microsoft/agents-activity';
 import { TokenCredential } from '@azure/core-auth';
 import { z } from 'zod';
@@ -115,6 +112,7 @@ export interface AdaptiveCardInvokeValue {
     action: AdaptiveCardInvokeAction;
     authentication: AdaptiveCardAuthentication;
     state: string;
+    trigger?: 'automatic' | 'manual';
 }
 
 // @public
@@ -148,12 +146,15 @@ export const adaptiveCardsSearchParamsZodSchema: z.ZodObject<{
     queryText: z.ZodString;
     dataset: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    dataset: string;
     queryText: string;
+    dataset: string;
 }, {
-    dataset: string;
     queryText: string;
+    dataset: string;
 }>;
+
+// @public
+export const AGENT_RESPONSE_ROUTE_PATH = "/api/agentresponse/v3/conversations/:conversationId/activities/:activityId";
 
 // @public
 export class AgentApplication<TState extends TurnState> {
@@ -167,6 +168,7 @@ export class AgentApplication<TState extends TurnState> {
     // (undocumented)
     protected readonly _beforeTurn: ApplicationEventHandler<TState>[];
     protected callEventHandlers(context: TurnContext, state: TState, handlers: ApplicationEventHandler<TState>[]): Promise<boolean>;
+    static readonly ConnectionsKey: unique symbol;
     protected continueConversationAsync(botAppIdOrIdentity: string | JwtPayload, conversationReferenceOrContext: ConversationReference | TurnContext, logic: (context: TurnContext) => Promise<void>): Promise<void>;
     // (undocumented)
     protected readonly _extensions: AgentExtension<TState>[];
@@ -195,6 +197,7 @@ export class AgentApplication<TState extends TurnState> {
     // @deprecated
     stopTypingTimer(): void;
     stopTypingTimer(context: TurnContext): void;
+    static readonly UserAuthorizationKey: unique symbol;
 }
 
 // @public
@@ -207,7 +210,7 @@ export class AgentApplicationBuilder<TState extends TurnState = TurnState> {
     withAuthorization(authHandlers: AuthorizationOptions): this;
     withProactive(options: ProactiveOptions): this;
     withRateLimit(rules: RateLimitRule[]): this;
-    withStorage(storage: Storage_2): this;
+    withStorage(storage: Storage): this;
     withTurnStateFactory(turnStateFactory: () => TState): this;
     withTyping(typing: TypingOptions): this;
 }
@@ -219,6 +222,7 @@ export interface AgentApplicationOptions<TState extends TurnState> {
     agentAppId?: string;
     agentName?: string;
     authorization?: AuthorizationOptions;
+    configurationContext?: ConfigurationContext;
     connections?: Connections;
     fileDownloaders?: InputFileDownloader<TState>[];
     headerPropagation?: HeaderPropagationDefinition;
@@ -228,7 +232,7 @@ export interface AgentApplicationOptions<TState extends TurnState> {
     rateLimit?: RateLimitRule[];
     removeRecipientMention?: boolean;
     startTypingTimer: boolean;
-    storage?: Storage_2;
+    storage?: Storage;
     transcriptLogger?: TranscriptLogger;
     turnStateFactory: () => TState;
     typing?: TypingOptions;
@@ -262,8 +266,26 @@ export class AgentExtension<TState extends TurnState> {
 export type AgentHandler = (context: TurnContext, next: () => Promise<void>) => Promise<any>;
 
 // @public
+export interface AgenticAuthorizationOptions {
+    altBlueprintConnectionName?: string;
+    scopes?: string[];
+    type: 'AgenticUserAuthorization' | 'agentic';
+}
+
+// @public
+export type AgentResponseHandler = (req: Request_2, res: WebResponse, params: AgentResponseHandlerParams) => Promise<void>;
+
+// @public
+export interface AgentResponseHandlerParams {
+    // (undocumented)
+    activityId: string;
+    // (undocumented)
+    conversationId: string;
+}
+
+// @public
 export class AgentState {
-    constructor(storage: Storage_2, storageKey: StorageKeyFactory);
+    constructor(storage: Storage, storageKey: StorageKeyFactory);
     clear(context: TurnContext): Promise<void>;
     createProperty<T = any>(name: string): AgentStatePropertyAccessor<T>;
     delete(context: TurnContext, customKey?: CustomKey): Promise<void>;
@@ -271,7 +293,7 @@ export class AgentState {
     load(context: TurnContext, force?: boolean, customKey?: CustomKey): Promise<any>;
     saveChanges(context: TurnContext, force?: boolean, customKey?: CustomKey): Promise<void>;
     // (undocumented)
-    protected storage: Storage_2;
+    protected storage: Storage;
     // (undocumented)
     protected storageKey: StorageKeyFactory;
 }
@@ -356,7 +378,7 @@ export interface AttachmentData {
 
 // @public
 export class AttachmentDownloader<TState extends TurnState = TurnState> implements InputFileDownloader<TState> {
-    constructor(stateKey?: string);
+    constructor(stateKey?: string, outboundHostValidator?: OutboundUrlPolicy);
     downloadAndStoreFiles(context: TurnContext, state: TState): Promise<void>;
     downloadFiles(context: TurnContext): Promise<InputFile[]>;
 }
@@ -391,33 +413,15 @@ export interface AudioCard {
 }
 
 // @public
-export interface AuthConfiguration {
-    altBlueprintConnectionName?: string;
-    // @deprecated (undocumented)
-    authority?: string;
-    authorityEndpoint?: string;
-    authType?: AuthType | string;
-    azureRegion?: string;
-    certKeyFile?: string;
-    certPemFile?: string;
-    clientId?: string;
-    clientSecret?: string;
-    connectionName?: string;
+export interface AuthConfiguration extends ConnectionSettings {
     connections?: Map<string, AuthConfiguration>;
     connectionsMap?: ConnectionMapItem[];
-    federatedClientId?: string;
-    federatedTokenFile?: string;
-    // @deprecated (undocumented)
-    FICClientId?: string;
-    idpmResource?: string;
-    issuers?: string[];
-    // @deprecated (undocumented)
-    scope?: string;
-    scopes?: string[];
-    sendX5C?: boolean;
-    tenantId?: string;
-    // @deprecated (undocumented)
-    WIDAssertionFile?: string;
+}
+
+// @public
+export interface AuthConfigurationResolutionOptions {
+    // (undocumented)
+    configurationContext?: ConfigurationContext;
 }
 
 // @public (undocumented)
@@ -427,7 +431,11 @@ export interface Authorization {
     // (undocumented)
     exchangeToken(context: TurnContext, authHandlerId: string, options?: AuthorizationHandlerTokenOptions): Promise<TokenResponse>;
     // (undocumented)
+    exchangeTokenAsTokenCredential?(context: TurnContext, authHandlerId: string, options?: AuthorizationHandlerTokenOptions): TokenCredential;
+    // (undocumented)
     getToken(context: TurnContext, authHandlerId: string): Promise<TokenResponse>;
+    // (undocumented)
+    getTokenAsTokenCredential?(context: TurnContext, authHandlerId: string): TokenCredential;
     // (undocumented)
     onSignInFailure(handler: (context: TurnContext, state: TurnState, authHandlerId?: string, errorMessage?: string) => Promise<void>): void;
     // (undocumented)
@@ -437,7 +445,16 @@ export interface Authorization {
 }
 
 // @public
-export const authorizeJWT: (authConfig: AuthConfiguration) => (req: Request_2, res: Response_2, next: NextFunction) => Promise<void>;
+export interface AuthorizationHandlerTokenOptions {
+    connection?: string;
+    scopes?: string[];
+}
+
+// @public
+export type AuthorizationOptions = Record<string, (AzureBotAuthorizationOptions & AzureBotAuthorizationOptionsLegacy) | AgenticAuthorizationOptions>;
+
+// @public
+export const authorizeJWT: (authConfig: AuthConfiguration) => (req: Request_2, res: WebResponse, next: NextFunction) => Promise<void>;
 
 // @public
 export interface AuthProvider {
@@ -459,6 +476,9 @@ export interface AuthProvider {
 }
 
 // @public
+export type AuthProviderFactory = (config: AuthConfiguration) => AuthProvider;
+
+// @public
 export enum AuthType {
     // (undocumented)
     Certificate = "Certificate",
@@ -466,6 +486,8 @@ export enum AuthType {
     CertificateSubjectName = "CertificateSubjectName",
     // (undocumented)
     ClientSecret = "ClientSecret",
+    // (undocumented)
+    EntraAuthSideCar = "EntraAuthSideCar",
     // (undocumented)
     FederatedCredentials = "FederatedCredentials",
     // (undocumented)
@@ -476,6 +498,51 @@ export enum AuthType {
     UserManagedIdentity = "UserManagedIdentity",
     // (undocumented)
     WorkloadIdentity = "WorkloadIdentity"
+}
+
+// @public
+export interface AzureBotAuthorizationOptions {
+    azureBotOAuthConnectionName?: string;
+    enableSso?: boolean;
+    invalidSignInRetryMax?: number;
+    invalidSignInRetryMaxExceededMessage?: string;
+    invalidSignInRetryMessage?: string;
+    invalidSignInRetryMessageFormat?: string;
+    oboConnectionName?: string;
+    oboScopes?: string[];
+    text?: string;
+    title?: string;
+    type?: 'AzureBotUserAuthorization' | undefined;
+}
+
+// @public
+export interface AzureBotAuthorizationOptionsLegacy {
+    // @deprecated
+    maxAttempts?: number;
+    // @deprecated
+    messages?: AzureBotAuthorizationOptionsMessages;
+    // @deprecated
+    name?: string;
+    // @deprecated
+    obo?: AzureBotAuthorizationOptionsOBO;
+}
+
+// @public @deprecated (undocumented)
+export interface AzureBotAuthorizationOptionsMessages {
+    // @deprecated (undocumented)
+    invalidCode?: string;
+    // @deprecated (undocumented)
+    invalidCodeFormat?: string;
+    // @deprecated (undocumented)
+    maxAttemptsExceeded?: string;
+}
+
+// @public @deprecated (undocumented)
+export interface AzureBotAuthorizationOptionsOBO {
+    // @deprecated (undocumented)
+    connection?: string;
+    // @deprecated (undocumented)
+    scopes?: string[];
 }
 
 // @public
@@ -546,13 +613,17 @@ export interface Citation {
     url: string | null;
 }
 
+// @public
+export function clearJwksClients(): void;
+
 // @public (undocumented)
 export class CloudAdapter extends BaseAdapter {
-    constructor(authConfig?: AuthConfiguration, authProvider?: AuthProvider, userTokenClient?: UserTokenClient, options?: CloudAdapterOptions);
+    constructor(authConfig?: AuthConfiguration, authProvider?: AuthProvider, userTokenClient?: UserTokenClient, options?: CloudAdapterOptions, outboundHostValidator?: OutboundUrlPolicy);
     // (undocumented)
     protected _agentName?: string;
     // (undocumented)
     protected readonly authConfig: AuthConfiguration;
+    authorizeRequest(req: Request_2, res: WebResponse, next: NextFunction): Promise<void>;
     connectionManager: Connections;
     continueConversation(botAppIdOrIdentity: string | JwtPayload, reference: ConversationReference, logic: (revocableContext: TurnContext) => Promise<void>, isResponse?: Boolean): Promise<void>;
     protected createConnectorClient(serviceUrl: string, scope: string, identity: JwtPayload, headers?: HeaderPropagationCollection): Promise<ConnectorClient>;
@@ -568,7 +639,8 @@ export class CloudAdapter extends BaseAdapter {
     getAttachment(context: TurnContext, attachmentId: string, viewId: string): Promise<NodeJS.ReadableStream>;
     // @deprecated (undocumented)
     getAttachmentInfo(context: TurnContext, attachmentId: string): Promise<AttachmentInfo>;
-    process(request: Request_2, res: Response_2, logic: (context: TurnContext) => Promise<void>, headerPropagation?: HeaderPropagationDefinition): Promise<void>;
+    getClientId(): string | undefined;
+    process(request: Request_2, res: WebResponse, logic: (context: TurnContext) => Promise<void>, headerPropagation?: HeaderPropagationDefinition): Promise<void>;
     protected processTurnResults(context: TurnContext): InvokeResponse | undefined;
     protected resolveIfConnectorClientIsNeeded(activity: Activity): boolean;
     sendActivities(context: TurnContext, activities: Activity[]): Promise<ResourceResponse[]>;
@@ -582,14 +654,80 @@ export class CloudAdapter extends BaseAdapter {
 
 // @public
 export interface CloudAdapterOptions {
+    configurationContext?: ConfigurationContext;
     emitStackTrace?: boolean;
+    // @deprecated
     validateServiceUrl?: boolean;
 }
 
 // @public
-export const configureResponseController: (app: Application, adapter: CloudAdapter, agent: ActivityHandler, conversationState: ConversationState) => void;
+export interface CloudAdapterResult {
+    // (undocumented)
+    adapter: CloudAdapter;
+    // (undocumented)
+    headerPropagation: HeaderPropagationDefinition | undefined;
+}
 
-// @public (undocumented)
+// @public
+export class ConfigurationContext {
+}
+
+// @public
+export interface ConfigurationDocument {
+    // (undocumented)
+    readonly [key: string]: ConfigurationDocumentValue;
+}
+
+// @public
+export type ConfigurationDocumentValue = string | number | boolean | readonly ConfigurationDocumentValue[] | ConfigurationDocument;
+
+// @public
+export interface ConfigurationSource {
+    load(): Promise<ConfigurationSourceResult>;
+    readonly name: string;
+}
+
+// @public
+export type ConfigurationSourceMode = 'fallback' | 'overrideEnvironment' | 'enforce';
+
+// @public
+export interface ConfigurationSourceRegistration {
+    readonly mode: ConfigurationSourceMode;
+    readonly source: ConfigurationSource;
+}
+
+// @public
+export type ConfigurationSourceResult = Readonly<Record<string, string>> | {
+    readonly format: 'canonical';
+    readonly values: Readonly<Record<string, string>>;
+} | {
+    readonly format: 'document';
+    readonly value: Readonly<ConfigurationDocument>;
+};
+
+// @public
+export const configureResponseController: (app: WebApp, adapter: CloudAdapter, agent: ActivityHandler, conversationState: ConversationState) => void;
+
+// @public
+export class ConnectionManager implements Connections {
+    constructor(providerFactory?: AuthProviderFactory, connectionsConfigurations?: Map<string, AuthConfiguration>, connectionsMap?: ConnectionMapItem[], configuration?: AuthConfiguration);
+    protected applyConnectionDefaults(conn: AuthProvider): AuthProvider;
+    // (undocumented)
+    protected _connections: Map<string, AuthProvider>;
+    // (undocumented)
+    protected _connectionsMap: ConnectionMapItem[];
+    // (undocumented)
+    protected static readonly DEFAULT_CONNECTION = "serviceConnection";
+    getConnection(connectionName: string): AuthProvider;
+    getDefaultConnection(): AuthProvider;
+    getDefaultConnectionConfiguration(): AuthConfiguration;
+    getTokenProvider(identity: JwtPayload, serviceUrl: string): AuthProvider;
+    getTokenProviderFromActivity(identity: JwtPayload, activity: Activity): AuthProvider;
+    // (undocumented)
+    protected _serviceConnectionConfiguration: AuthConfiguration;
+}
+
+// @public
 export interface ConnectionMapItem {
     // (undocumented)
     audience?: string;
@@ -597,6 +735,37 @@ export interface ConnectionMapItem {
     connection: string;
     // (undocumented)
     serviceUrl: string;
+}
+
+// @public (undocumented)
+export interface Connections {
+    getConnection: (name: string) => AuthProvider;
+    getDefaultConnection: () => AuthProvider;
+    getDefaultConnectionConfiguration: () => AuthConfiguration;
+    getTokenProvider: (identity: JwtPayload, serviceUrl: string) => AuthProvider;
+    getTokenProviderFromActivity: (identity: JwtPayload, activity: Activity) => AuthProvider;
+}
+
+// @public
+export interface ConnectionSettings extends MsalConnectionSettings, SidecarConnectionSettings {
+}
+
+// @public
+export interface ConnectionSettingsBase {
+    altBlueprintConnectionName?: string;
+    alternateBlueprintConnectionName?: string;
+    // @deprecated (undocumented)
+    authority?: string;
+    authorityEndpoint?: string;
+    authType?: AuthType | string;
+    clientId?: string;
+    connectionName?: string;
+    issuers?: string[];
+    // @deprecated (undocumented)
+    scope?: string;
+    scopes?: string[];
+    tenantId?: string;
+    validateIssuer?: boolean;
 }
 
 // @public
@@ -668,6 +837,7 @@ export interface ConversationClaims {
 // @public
 export interface ConversationData {
     conversationReference: ConversationReference;
+    expectedAgentClientId?: string;
     nameRequested: boolean;
 }
 
@@ -707,11 +877,25 @@ export interface ConversationsResult {
 
 // @public
 export class ConversationState extends AgentState {
-    constructor(storage: Storage_2, namespace?: string);
+    constructor(storage: Storage, namespace?: string);
 }
 
 // @public
 export type ConversationUpdateEvents = 'membersAdded' | 'membersRemoved';
+
+// @public
+export const createAgentResponseHandler: (adapter: CloudAdapter, agent: ActivityHandler, conversationState: ConversationState) => AgentResponseHandler;
+
+// @public
+export const createCloudAdapter: (agent: AgentApplication<TurnState<any, any>> | ActivityHandler, authConfig?: AuthConfiguration, options?: CreateCloudAdapterOptions) => CloudAdapterResult;
+
+// @public
+export interface CreateCloudAdapterOptions {
+    configurationContext?: ConfigurationContext;
+}
+
+// @public
+export function createConfigurationContext(registrations: readonly ConfigurationSourceRegistration[]): Promise<ConfigurationContext>;
 
 // @public
 export interface CreateConversationOptions {
@@ -742,10 +926,20 @@ export class CreateConversationOptionsBuilder {
 }
 
 // @public
+export function createJsonFileConfigurationSource(filePath: string): ConfigurationSource;
+
+// @public
+export function createOutboundHostValidator(options?: OutboundHostValidatorOptions): OutboundHostValidator;
+
+// @public
 export interface CustomKey {
     channelId: string;
     conversationId: string;
+    namespace?: string;
 }
+
+// @public
+export const defaultAuthProviderFactory: AuthProviderFactory;
 
 // @public
 export interface DefaultConversationState {
@@ -765,18 +959,21 @@ export interface Fact {
 }
 
 // @public
-export class FileStorage implements Storage_2 {
+export class FileStorage implements Storage {
     constructor(folder: string);
     delete(keys: string[]): Promise<void>;
     read(keys: string[]): Promise<StoreItem>;
-    write(changes: StoreItem): Promise<void>;
+    write(changes: StoreItem, options?: StorageWriteOptions): Promise<void>;
 }
 
 // @public
-export function getAuthConfigWithDefaults(config?: AuthConfiguration): AuthConfiguration;
+export function getAuthConfigWithDefaults(config?: AuthConfiguration, options?: AuthConfigurationResolutionOptions): AuthConfiguration;
 
 // @public
 export const getProductInfo: () => string;
+
+// @public (undocumented)
+export function getStorageWriteExpiry(options?: StorageWriteOptions): number | undefined;
 
 // @public
 export class HeaderPropagation implements HeaderPropagationCollection {
@@ -929,14 +1126,17 @@ export interface InvokeResponse<T = any> {
 }
 
 // @public
-export const loadAuthConfigFromEnv: (cnxName?: string) => AuthConfiguration;
+export const loadAuthConfigFromEnv: (cnxName?: string, options?: AuthConfigurationResolutionOptions) => AuthConfiguration;
 
 // @public
-export const loadPrevAuthConfigFromEnv: () => AuthConfiguration;
+export function loadOutboundHostValidatorOptionsFromEnv(): OutboundHostValidatorOptions;
+
+// @public
+export const loadPrevAuthConfigFromEnv: (options?: AuthConfigurationResolutionOptions) => AuthConfiguration;
 
 // @public
 export class M365AttachmentDownloader<TState extends TurnState = TurnState> implements InputFileDownloader<TState> {
-    constructor(stateKey?: string);
+    constructor(stateKey?: string, outboundHostValidator?: OutboundUrlPolicy);
     downloadAndStoreFiles(context: TurnContext, state: TState): Promise<void>;
     downloadFiles(context: TurnContext): Promise<InputFile[]>;
 }
@@ -948,14 +1148,14 @@ export interface MediaUrl {
 }
 
 // @public
-export class MemoryStorage implements Storage_2 {
+export class MemoryStorage implements Storage {
     constructor(memory?: {
         [k: string]: string;
     });
     delete(keys: string[]): Promise<void>;
     static getSingleInstance(): MemoryStorage;
     read(keys: string[]): Promise<StoreItem>;
-    write(changes: StoreItem): Promise<void>;
+    write(changes: StoreItem, options?: StorageWriteOptions): Promise<void>;
 }
 
 // @public
@@ -985,14 +1185,28 @@ export class MiddlewareSet implements Middleware {
     use(...middlewares: Array<MiddlewareHandler | Middleware>): this;
 }
 
-// @public (undocumented)
-export class MsalConnectionManager implements Connections {
+// @public
+export class MsalConnectionManager extends ConnectionManager {
     constructor(connectionsConfigurations?: Map<string, AuthConfiguration>, connectionsMap?: ConnectionMapItem[], configuration?: AuthConfiguration);
-    getConnection(connectionName: string): MsalTokenProvider;
-    getDefaultConnection(): MsalTokenProvider;
-    getDefaultConnectionConfiguration(): AuthConfiguration;
-    getTokenProvider(identity: JwtPayload, serviceUrl: string): MsalTokenProvider;
-    getTokenProviderFromActivity(identity: JwtPayload, activity: Activity): MsalTokenProvider;
+    // (undocumented)
+    protected applyConnectionDefaults(conn: AuthProvider): AuthProvider;
+}
+
+// @public
+export interface MsalConnectionSettings extends ConnectionSettingsBase {
+    azureRegion?: string;
+    certKeyFile?: string;
+    certPemFile?: string;
+    clientSecret?: string;
+    federatedClientId?: string;
+    federatedTokenFile?: string;
+    // @deprecated (undocumented)
+    FICClientId?: string;
+    idpmResource?: string;
+    msalRetryCount?: number;
+    sendX5C?: boolean;
+    // @deprecated (undocumented)
+    WIDAssertionFile?: string;
 }
 
 // @public
@@ -1011,6 +1225,7 @@ export class MsalTokenProvider implements AuthProvider {
     acquireTokenOnBehalfOf(scopes: string[], oboAssertion: string): Promise<string>;
     // (undocumented)
     acquireTokenOnBehalfOf(authConfig: AuthConfiguration, scopes: string[], oboAssertion: string): Promise<string>;
+    static clearSharedCaches(): void;
     // (undocumented)
     readonly connectionSettings?: AuthConfiguration;
     getAccessToken(scope: string): Promise<string>;
@@ -1022,6 +1237,9 @@ export class MsalTokenProvider implements AuthProvider {
     // (undocumented)
     getAgenticUserToken(tenantId: string, agentAppInstanceId: string, agenticUserId: string, scopes: string[]): Promise<string>;
 }
+
+// @public
+export type NextFunction = (err?: any) => void;
 
 // @public
 export interface O365ConnectorCard {
@@ -1080,10 +1298,38 @@ export interface OAuthCard {
 }
 
 // @public
+export class OutboundHostValidator implements OutboundUrlPolicy {
+    constructor(options?: OutboundHostValidatorOptions);
+    // (undocumented)
+    readonly enabled: boolean;
+    // (undocumented)
+    isAllowed(input: string | URL | null | undefined): boolean;
+}
+
+// @public
+export interface OutboundHostValidatorOptions {
+    configurationContext?: ConfigurationContext;
+    enabled?: boolean;
+    hosts?: readonly string[];
+    includeDefaultMicrosoftHosts?: boolean;
+}
+
+// @public
+export interface OutboundUrlPolicy {
+    // (undocumented)
+    readonly enabled: boolean;
+    // (undocumented)
+    isAllowed(url: string | URL | null | undefined): boolean;
+}
+
+// @public
 export interface PagedResult<T> {
     continuationToken?: string;
     items: T[];
 }
+
+// @public
+export function preloadConfigurationSources(registrations: readonly ConfigurationSourceRegistration[]): Promise<void>;
 
 // @public
 export class Proactive<TState extends TurnState> {
@@ -1104,7 +1350,7 @@ export class Proactive<TState extends TurnState> {
 // @public
 export interface ProactiveOptions {
     failOnUnsignedInConnections?: boolean;
-    storage?: Storage_2;
+    storage?: Storage;
 }
 
 // @public
@@ -1127,12 +1373,12 @@ export interface RateLimitResult {
 // @public
 export interface RateLimitRule {
     activityTypes?: ActivityTypes[];
+    appliesTo?: (context: TurnContext) => boolean | Promise<boolean>;
     limit: number;
     maxStorageRetries?: number;
     message?: string | Activity | RateLimitMessageFactory;
     scope: RateLimitScope;
-    appliesTo?: (context: TurnContext) => boolean | Promise<boolean>;
-    storage?: Storage_2;
+    storage?: Storage;
     storageErrorBehavior?: RateLimitStorageErrorBehavior;
     windowMs: number;
 }
@@ -1177,6 +1423,9 @@ export { Request_2 as Request }
 
 // @public
 export function resolveAuthority(authority?: string, tenantId?: string): string;
+
+// @public
+export function resolveAuthType(authConfig?: AuthConfiguration): AuthType | string;
 
 // @public
 export interface ResourceResponse {
@@ -1229,6 +1478,32 @@ export type Selector = (context: TurnContext) => Promise<boolean>;
 export type SendActivitiesHandler = (context: TurnContext, activities: Activity[], next: () => Promise<ResourceResponse[]>) => Promise<ResourceResponse[]>;
 
 // @public
+export class SidecarAuthProvider implements AuthProvider {
+    constructor(connectionSettings?: AuthConfiguration);
+    acquireTokenOnBehalfOf(scopes: string[], oboAssertion: string): Promise<string>;
+    // (undocumented)
+    acquireTokenOnBehalfOf(authConfig: AuthConfiguration, scopes: string[], oboAssertion: string): Promise<string>;
+    // (undocumented)
+    readonly connectionSettings?: AuthConfiguration;
+    getAccessToken(scope: string): Promise<string>;
+    getAccessToken(authConfig: AuthConfiguration, scope: string): Promise<string>;
+    getAgenticApplicationToken(tenantId: string, agentAppInstanceId: string): Promise<string>;
+    getAgenticInstanceToken(tenantId: string, agentAppInstanceId: string): Promise<string>;
+    getAgenticUserToken(tenantId: string, agentAppInstanceId: string, upn: string, scopes: string[]): Promise<string>;
+    isHealthy(): Promise<boolean>;
+}
+
+// @public
+export interface SidecarConnectionSettings extends ConnectionSettingsBase {
+    blueprintServiceName?: string;
+    bypassLocalNetworkRestriction?: boolean;
+    requestTimeout?: number;
+    retryCount?: number;
+    serviceName?: string;
+    sidecarBaseUrl?: string;
+}
+
+// @public
 export interface SignInResource {
     signInLink: string;
     tokenExchangeResource: TokenExchangeResource;
@@ -1262,15 +1537,19 @@ export enum StatusCodes {
 }
 
 // @public
-interface Storage_2 {
+export interface Storage {
     delete: (keys: string[]) => Promise<void>;
     read: (keys: string[]) => Promise<StoreItem>;
-    write: (changes: StoreItem) => Promise<void>;
+    write: (changes: StoreItem, options?: StorageWriteOptions) => Promise<void>;
 }
-export { Storage_2 as Storage }
 
 // @public
 export type StorageKeyFactory = (context: TurnContext) => string | Promise<string>;
+
+// @public
+export interface StorageWriteOptions {
+    ttl?: number;
+}
 
 // @public
 export interface StoreItem {
@@ -1295,6 +1574,7 @@ export class StreamingResponse {
     queueInformativeUpdate(text: string): void;
     queueTextChunk(text: string, citations?: Citation[]): void;
     reset(): Promise<void>;
+    sendStreamTimedOutNotification(message: string): Promise<boolean>;
     setAttachments(attachments: Attachment[]): void;
     setCitations(citations: Citation[]): void;
     setDelayInMs(delayInMs: number): void;
@@ -1304,6 +1584,8 @@ export class StreamingResponse {
     setGeneratedByAILabel(enableGeneratedByAILabel: boolean): void;
     setSensitivityLabel(sensitivityLabel: SensitivityUsageInfo): void;
     get streamId(): string | undefined;
+    get streamingTakingTooLongMessage(): string;
+    set streamingTakingTooLongMessage(message: string);
     get updatesSent(): number;
 }
 
@@ -1334,10 +1616,10 @@ export class TeamsAttachmentDownloader extends M365AttachmentDownloader {
 
 // @public
 export const TeamsServiceEndpoints: {
-    readonly publicGlobal: "https://smba.trafficmanager.net/teams/";
-    readonly gcc: "https://smba.infra.gcc.teams.microsoft.com/teams";
-    readonly gccHigh: "https://smba.infra.gov.teams.microsoft.us/teams";
-    readonly dod: "https://smba.infra.dod.teams.microsoft.us/teams";
+    readonly publicGlobal: 'https://smba.trafficmanager.net/teams/';
+    readonly gcc: 'https://smba.infra.gcc.teams.microsoft.com/teams';
+    readonly gccHigh: 'https://smba.infra.gov.teams.microsoft.us/teams';
+    readonly dod: 'https://smba.infra.dod.teams.microsoft.us/teams';
 };
 
 // @public
@@ -1487,9 +1769,9 @@ export class TurnState<TConversationState = DefaultConversationState, TUserState
     getValue<TValue = unknown>(path: string): TValue;
     hasValue(path: string): boolean;
     get isLoaded(): boolean;
-    load(context: TurnContext, storage?: Storage_2, force?: boolean): Promise<boolean>;
+    load(context: TurnContext, storage?: Storage, force?: boolean): Promise<boolean>;
     protected onComputeStorageKeys(context: TurnContext): Promise<Record<string, string>>;
-    save(context: TurnContext, storage?: Storage_2): Promise<void>;
+    save(context: TurnContext, storage?: Storage): Promise<void>;
     setValue(path: string, value: unknown): void;
     get user(): TUserState;
     set user(value: TUserState);
@@ -1522,13 +1804,14 @@ export type UpdateActivityHandler = (context: TurnContext, activity: Activity, n
 
 // @public
 export class UserState extends AgentState {
-    constructor(storage: Storage_2, namespace?: string);
+    constructor(storage: Storage, namespace?: string);
 }
 
 // @public
 export class UserTokenClient {
     constructor(msAppId: string);
     constructor(httpClient: HttpClient);
+    constructor(httpClient: HttpClient, authProvider?: AuthProvider, authScope?: string);
     // (undocumented)
     client: HttpClient;
     static createClientWithScope(baseURL: string, authProvider: AuthProvider, scope: string, headers?: HeaderPropagationCollection): Promise<UserTokenClient>;
@@ -1557,6 +1840,34 @@ export interface VideoCard {
     text: string;
     title: string;
     value: any;
+}
+
+// @public
+export interface WebApp {
+    // (undocumented)
+    post(path: string, handler: (req: any, res: any) => unknown | Promise<unknown>): unknown;
+}
+
+// @public
+export interface WebRequestParamsCarrier {
+    // (undocumented)
+    params?: Record<string, string | undefined>;
+}
+
+// @public
+export interface WebResponse {
+    // (undocumented)
+    end(): this;
+    // (undocumented)
+    headersSent: boolean;
+    // (undocumented)
+    send(body?: unknown): this;
+    // (undocumented)
+    setHeader(name: string, value: string): this;
+    // (undocumented)
+    status(code: number): this;
+    // (undocumented)
+    writableEnded: boolean;
 }
 
 // (No @packageDocumentation comment for this package)

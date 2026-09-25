@@ -23,7 +23,7 @@ export class PublishedBotStrategy implements Strategy {
     const { schema, host } = settings
 
     this.baseURL = new URL(
-      `/copilotstudio/dataverse-backed/authenticated/bots/${schema}`,
+      `/copilotstudio/dataverse-backed/authenticated/bots/${encodeURIComponent(schema)}`,
       host
     )
     this.baseURL.searchParams.append('api-version', this.API_VERSION)
@@ -34,7 +34,7 @@ export class PublishedBotStrategy implements Strategy {
     conversationUrl.pathname = `${conversationUrl.pathname}/conversations`
 
     if (conversationId) {
-      conversationUrl.pathname = `${conversationUrl.pathname}/${conversationId}`
+      conversationUrl.pathname = `${conversationUrl.pathname}/${encodeURIComponent(conversationId)}`
     }
 
     return conversationUrl.href

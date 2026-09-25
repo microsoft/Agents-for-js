@@ -4,9 +4,11 @@
  */
 
 import { AgentType } from './agentType'
+import { ExceptionHelper } from '@microsoft/agents-activity'
 import { CopilotStudioConnectionSettings } from './copilotStudioConnectionSettings'
 import { PowerPlatformCloud } from './powerPlatformCloud'
-import { debug, redactUrl } from '@microsoft/agents-telemetry'
+import { debug, redactString, redactUrl } from '@microsoft/agents-telemetry'
+import { Errors } from './errorHelper'
 
 const logger = debug('copilot-studio:settings')
 
@@ -49,6 +51,8 @@ abstract class ConnectionOptions implements Omit<CopilotStudioConnectionSettings
   public useExperimentalEndpoint?: boolean = false
   /** Flag to enable diagnostic logging. Default is false. */
   public enableDiagnostics?: boolean = false
+  /** Optional secret used to keep diagnostic conversation pseudonyms stable across restarts. */
+  public diagnosticsPseudonymKey?: string
 }
 
 /**
@@ -86,11 +90,17 @@ export class ConnectionSettings extends ConnectionOptions {
     const authority = options.authority?.trim() || 'https://login.microsoftonline.com'
 
     if (!Object.values(PowerPlatformCloud).includes(cloud as PowerPlatformCloud)) {
-      throw new Error(`Invalid PowerPlatformCloud: '${cloud}'. Supported values: ${Object.values(PowerPlatformCloud).join(', ')}`)
+      throw ExceptionHelper.generateException(Error, Errors.InvalidPowerPlatformCloud, undefined, {
+        cloud,
+        supportedValues: Object.values(PowerPlatformCloud).join(', ')
+      })
     }
 
     if (!Object.values(AgentType).includes(copilotAgentType as AgentType)) {
-      throw new Error(`Invalid AgentType: '${copilotAgentType}'. Supported values: ${Object.values(AgentType).join(', ')}`)
+      throw ExceptionHelper.generateException(Error, Errors.InvalidAgentType, undefined, {
+        agentType: copilotAgentType,
+        supportedValues: Object.values(AgentType).join(', ')
+      })
     }
 
     logger.info('Copilot Studio connection settings loaded', {
@@ -102,6 +112,7 @@ export class ConnectionSettings extends ConnectionOptions {
       directConnectUrl: redactUrl(options.directConnectUrl),
       useExperimentalEndpoint: options.useExperimentalEndpoint,
       enableDiagnostics: options.enableDiagnostics,
+      diagnosticsPseudonymKey: redactString(options.diagnosticsPseudonymKey),
     })
 
     Object.assign(this, { ...options, cloud, copilotAgentType, authority })
@@ -125,6 +136,7 @@ export const loadCopilotStudioConnectionSettingsFromEnv: () => ConnectionSetting
     copilotAgentType: process.env.copilotAgentType as AgentType,
     directConnectUrl: process.env.directConnectUrl,
     useExperimentalEndpoint: process.env.useExperimentalEndpoint?.toLowerCase() === 'true',
-    enableDiagnostics: process.env.enableDiagnostics?.toLowerCase() === 'true'
+    enableDiagnostics: process.env.enableDiagnostics?.toLowerCase() === 'true',
+    diagnosticsPseudonymKey: process.env.diagnosticsPseudonymKey ?? ''
   })
 }

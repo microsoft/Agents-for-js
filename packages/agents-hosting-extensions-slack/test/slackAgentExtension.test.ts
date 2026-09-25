@@ -65,7 +65,8 @@ describe('SlackAgentExtension', () => {
 
   describe('constructor', () => {
     it('registers a beforeTurn handler', () => {
-      sinon.assert.calledOnceWithMatch(app.onTurn as sinon.SinonStub, 'beforeTurn', sinon.match.func)
+      const onTurn = app.onTurn as sinon.SinonStub
+      sinon.assert.calledOnceWithMatch(onTurn, 'beforeTurn', sinon.match.func)
     })
 
     it('injects SlackApi when ApiToken is in channelData', async () => {

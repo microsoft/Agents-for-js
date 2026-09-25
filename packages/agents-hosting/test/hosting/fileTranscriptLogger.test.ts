@@ -28,7 +28,7 @@ describe('FileTranscriptLogger', () => {
     it('should throw error when logging null activity', async () => {
       await assert.rejects(
         async () => await store.logActivity(null as any),
-        /activity is required/
+        /Activity is required\./
       )
     })
 

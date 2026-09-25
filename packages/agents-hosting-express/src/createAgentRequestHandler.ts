@@ -3,22 +3,37 @@
  * Licensed under the MIT License.
  */
 
-import { type Response } from 'express'
-import { ActivityHandler, AgentApplication, AuthConfiguration, authorizeJWT, getAuthConfigWithDefaults, Request, TurnState } from '@microsoft/agents-hosting'
-import { createCloudAdapter } from './createCloudAdapter'
+import { type Response as ExpressResponse } from 'express'
+import {
+  ActivityHandler,
+  AgentApplication,
+  AuthConfiguration,
+  authorizeJWT,
+  getAuthConfigWithDefaults,
+  WebResponse,
+  Request,
+  TurnState
+} from '@microsoft/agents-hosting'
+import { createCloudAdapter, type CreateCloudAdapterOptions } from './createCloudAdapter'
 
 /**
- * Minimal response interface describing the methods used by the Agent request handler.
- * Any framework whose response object satisfies this shape is compatible.
+ * Compile-time contract guard — no runtime effect; type-checked by `npm run build`.
+ *
+ * Locks in the structural relationship the Express integration relies on: Express's
+ * `Response` must remain assignable to `WebResponse` (the response parameter of
+ * `CloudAdapter.process` and `authorizeJWT`). If `WebResponse` ever drifts — e.g. it
+ * gains a member that Express's `Response` does not provide — this line fails to
+ * compile, surfacing the break here at build time rather than in consumer code.
  */
-export interface WebResponse {
-  status (code: number): this
-  setHeader (name: string, value: string): this
-  send (body?: unknown): this
-  end (): this
-  headersSent: boolean
-  writableEnded: boolean
-}
+type AssertAssignable<Target, Source extends Target> = Source
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type _ExpressResponseSatisfiesWebResponse = AssertAssignable<WebResponse, ExpressResponse>
+
+/**
+ * Re-export of `WebResponse` from `@microsoft/agents-hosting` for backward compatibility.
+ * New code should import `WebResponse` directly from `@microsoft/agents-hosting`.
+ */
+export type { WebResponse }
 
 /**
  * A request handler function signature that does not import Express types in its public API.
@@ -42,6 +57,10 @@ export type AgentRequestHandler = (req: Request, res: WebResponse) => Promise<vo
  * @param agent - The AgentApplication or ActivityHandler instance to process incoming activities.
  * @param authConfiguration - Optional custom authentication configuration. If not provided,
  * configuration will be loaded from environment variables using loadAuthConfigFromEnv().
+ * @param options - Optional additional settings, such as a host-scoped `ConfigurationContext`.
+ * For an `AgentApplication`, this defaults to its own `configurationContext` option when omitted;
+ * a plain `ActivityHandler` has no built-in context and must be supplied here to participate in
+ * host-scoped configuration.
  * @returns A request handler function `(req, res) => Promise<void>`.
  *
  * @example
@@ -62,17 +81,20 @@ export type AgentRequestHandler = (req: Request, res: WebResponse) => Promise<vo
  */
 export const createAgentRequestHandler = (
   agent: AgentApplication<TurnState<any, any>> | ActivityHandler,
-  authConfiguration?: AuthConfiguration
+  authConfiguration?: AuthConfiguration,
+  options?: CreateCloudAdapterOptions
 ): AgentRequestHandler => {
-  const authConfig = getAuthConfigWithDefaults(authConfiguration)
-  const { adapter, headerPropagation } = createCloudAdapter(agent, authConfig)
+  const configurationContext = options?.configurationContext ??
+    (agent instanceof AgentApplication ? agent.options.configurationContext : undefined)
+  const authConfig = getAuthConfigWithDefaults(authConfiguration, { configurationContext })
   const jwtMiddleware = authorizeJWT(authConfig)
+  const { adapter, headerPropagation } = createCloudAdapter(agent, authConfig, options)
 
   return async (req: Request, res: WebResponse): Promise<void> => {
     let middlewareError: any
     let nextCalled = false
 
-    await jwtMiddleware(req, res as Response, (err?: any) => {
+    await jwtMiddleware(req, res, (err?: any) => {
       nextCalled = true
       middlewareError = err
     })
@@ -86,6 +108,6 @@ export const createAgentRequestHandler = (
       return
     }
 
-    await adapter.process(req, res as Response, (context) => agent.run(context), headerPropagation)
+    await adapter.process(req, res, (context) => agent.run(context), headerPropagation)
   }
 }
