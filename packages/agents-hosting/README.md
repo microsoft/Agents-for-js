@@ -259,6 +259,28 @@ app.post('/api/messages', async (req: Request, res: Response) => {
 
 ```
 
+## Inbound token issuer validation
+
+Inbound JWT signature, audience, lifetime, and tenant-claim consistency checks
+are always applied. Issuer allow-list validation is opt-in because AgentID
+blueprint identities can use runtime-selected tenant issuers that are not known
+when the host configuration is created.
+
+Enable issuer validation only when every accepted issuer is represented by the
+connection's configured tenant or `issuers` list:
+
+```dotenv
+validateIssuer=true
+
+# Latest connection configuration format
+Connections__serviceConnection__Settings__ValidateIssuer=true
+```
+
+Accepted boolean values are `true`, `false`, `1`, and `0` (case-insensitive,
+with surrounding whitespace ignored). Any other non-empty value causes
+configuration loading to fail with a structured error that identifies the
+configuration source and accepted values.
+
 ## Outbound request host validation
 
 `OutboundHostValidator` provides an opt-in allowlist for server-side requests made
