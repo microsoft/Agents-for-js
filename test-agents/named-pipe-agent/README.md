@@ -12,7 +12,7 @@ Compared to [empty-agent](../empty-agent/README.md), this sample:
 
 ## Prerequisites
 
-- [Node.js 20+](https://nodejs.org/)
+- [Node.js 22+](https://nodejs.org/)
 - **Windows** — `@microsoft/agents-hosting-directline-namedpipes` is Windows-only. Running this sample on macOS or Linux will throw `PipePlatformNotSupported` (-180019) at startup. See the [package README](../../packages/agents-hosting-directline-namedpipes/README.md#platform-support) for details.
 - The repo built (`npm run build` from root)
 

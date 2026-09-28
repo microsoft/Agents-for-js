@@ -17,7 +17,7 @@ function fixture (mutate = () => {}) {
   const remove = file => rmSync(path.join(root, file), { force: true, recursive: true })
   const repository = { type: 'git', url: 'https://example.test/repo.git' }
   const author = { name: 'Example' }
-  write('package.json', JSON.stringify({ name: 'repo', version: '1.0.0', private: true, type: 'module', scripts: { 'repo:doctor': 'node scripts/repo-doctor.mjs' }, workspaces: ['packages/*', 'test-agents/*'], engines: { node: '>=20.0.0' }, devDependencies: { '@types/node': '20.1.0' }, license: 'MIT', homepage: 'https://example.test', repository, author }))
+  write('package.json', JSON.stringify({ name: 'repo', version: '1.0.0', private: true, type: 'module', scripts: { 'repo:doctor': 'node scripts/repo-doctor.mjs' }, workspaces: ['packages/*', 'test-agents/*'], engines: { node: '>=22.0.0' }, devDependencies: { '@types/node': '22.1.0' }, license: 'MIT', homepage: 'https://example.test', repository, author }))
   write('.nvmrc', 'v24.0.0\n')
   write('tsconfig.build.json', JSON.stringify({ references: [{ path: 'packages/agents-example' }, { path: 'test-agents/example' }] }))
   write('README.md', '# Repo\n\n## Packages Overview\n\n| Package Name | Description |\n|---|---|\n| `@microsoft/agents-example` | Example |\n')
@@ -26,7 +26,7 @@ function fixture (mutate = () => {}) {
   write('.github/workflows/api-docs.yml', 'node-version: 24\n')
   write('.azdo/ci-pr.yaml', "customCommand: 'ci'\nversion: '24.x'\nscript: npm run repo:doctor\nscript: npm run build\n")
   write('.devcontainer/devcontainer.json', '"image": "javascript-node:1-24-bookworm"\n')
-  const packageManifest = { name: '@microsoft/agents-example', version: '1.0.0', description: 'Example', license: 'MIT', repository, homepage: 'https://example.test', author, engines: { node: '>=20.0.0' }, main: './dist/index.js', types: './dist/index.d.ts', exports: { '.': { require: './dist/index.js', import: './dist/index.js', types: './dist/index.d.ts' }, './package.json': './package.json' }, files: ['dist'] }
+  const packageManifest = { name: '@microsoft/agents-example', version: '1.0.0', description: 'Example', license: 'MIT', repository, homepage: 'https://example.test', author, engines: { node: '>=22.0.0' }, main: './dist/index.js', types: './dist/index.d.ts', exports: { '.': { require: './dist/index.js', import: './dist/index.js', types: './dist/index.d.ts' }, './package.json': './package.json' }, files: ['dist'] }
   write('packages/agents-example/package.json', JSON.stringify(packageManifest))
   write('packages/agents-example/README.md', '# @microsoft/agents-example\n')
   write('packages/agents-example/tsconfig.json', '{}')
