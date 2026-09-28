@@ -47,9 +47,9 @@ The nightly build contains the code from our `main` branch and may contain featu
 
 ### Environment Requirements
 
-The packages require Node.js 20 or greater, and can be used from JavaScript using CommonJS or ES6 modules, or from TypeScript.
+The packages require Node.js 22 or greater, and can be used from JavaScript using CommonJS or ES6 modules, or from TypeScript.
 
-> Note: Development and CI use Node.js 24. The [`--env-file` flag](https://nodejs.org/en/learn/command-line/how-to-read-environment-variables-from-nodejs) is available in Node.js 20.6 and later; Node.js 20.0–20.5 users should set environment variables explicitly before running.
+> Note: Development and CI use Node.js 24.
 
 ### Debugging
 

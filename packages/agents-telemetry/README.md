@@ -11,7 +11,7 @@ The package exports:
 - `metric` — histogram and counter creation via the OpenTelemetry Meter API
 - `SpanNames` / `MetricNames` — stable name constants for observability across the SDK
 
-This package supports both ESM and CommonJS consumers and requires Node.js 20 or later.
+This package supports both ESM and CommonJS consumers and requires Node.js 22 or later.
 
 ---
 
