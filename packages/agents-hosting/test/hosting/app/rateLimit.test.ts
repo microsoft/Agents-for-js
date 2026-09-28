@@ -3,7 +3,7 @@ import { describe, it } from 'node:test'
 import * as sinon from 'sinon'
 
 import { Activity, ActivityTypes } from '@microsoft/agents-activity'
-import { AgentApplication, INVOKE_RESPONSE_KEY, StatusCodes, Storage, StoreItem, TurnContext } from '../../../src'
+import { AgentApplication, INVOKE_RESPONSE_KEY, MemoryStorage, MemoryStorageV2, StatusCodes, Storage, StoreItem, TurnContext } from '../../../src'
 import { TestAdapter } from '../testStubs'
 
 class RecordingTestAdapter extends TestAdapter {
@@ -166,6 +166,29 @@ describe('AgentApplication rate limiting', () => {
   it('should not allow concurrent first turns to bypass a new counter limit', async () => {
     let called = 0
     const app = new AgentApplication({
+      rateLimit: [{
+        scope: context => context.activity.from?.id,
+        limit: 1,
+        windowMs: 60_000
+      }]
+    })
+    app.onActivity(ActivityTypes.Message, async () => {
+      called++
+    })
+
+    const results = await Promise.all([
+      app.runInternal(new TurnContext(new TestAdapter(), createTestActivity())),
+      app.runInternal(new TurnContext(new TestAdapter(), createTestActivity()))
+    ])
+
+    assert.equal(results.filter(Boolean).length, 1)
+    assert.equal(called, 1)
+  })
+
+  it('should not allow concurrent first turns to bypass a limit with legacy application storage', async () => {
+    let called = 0
+    const app = new AgentApplication({
+      storage: new MemoryStorage(),
       rateLimit: [{
         scope: context => context.activity.from?.id,
         limit: 1,
@@ -385,6 +408,21 @@ describe('AgentApplication rate limiting', () => {
     assert.equal(await app.runInternal(new TurnContext(new TestAdapter(), createTestActivity())), false)
     assert.equal(storage.readKeys.filter(key => key.startsWith('rateLimit:')).length, 2)
     assert.equal(storage.writeKeys.filter(key => key.startsWith('rateLimit:')).length, 1)
+  })
+
+  it('should use V2 application storage when rule storage is omitted', async () => {
+    const app = new AgentApplication({
+      storage: new MemoryStorageV2(),
+      rateLimit: [{
+        scope: context => context.activity.from?.id,
+        limit: 1,
+        windowMs: 60_000
+      }]
+    })
+    app.onActivity(ActivityTypes.Message, async () => {})
+
+    assert.equal(await app.runInternal(new TurnContext(new TestAdapter(), createTestActivity())), true)
+    assert.equal(await app.runInternal(new TurnContext(new TestAdapter(), createTestActivity())), false)
   })
 
   it('should prefer rule storage over application storage', async () => {
