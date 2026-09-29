@@ -19,24 +19,45 @@ import type { WebResponse } from '@microsoft/agents-hosting'
 export class FastifyReplyAdapter implements WebResponse {
   constructor (private readonly reply: FastifyReply) {}
 
+  /** Indicates whether response headers have already been sent. */
   get headersSent (): boolean {
     return this.reply.sent
   }
 
+  /** Indicates whether the response has finished writing. */
   get writableEnded (): boolean {
     return this.reply.sent
   }
 
+  /**
+   * Sets the HTTP response status code.
+   *
+   * @param code The HTTP status code.
+   * @returns This adapter for chaining.
+   */
   status (code: number): this {
     this.reply.status(code)
     return this
   }
 
+  /**
+   * Sets an HTTP response header.
+   *
+   * @param name The header name.
+   * @param value The header value.
+   * @returns This adapter for chaining.
+   */
   setHeader (name: string, value: string): this {
     this.reply.header(name, value)
     return this
   }
 
+  /**
+   * Sends the response body unless the reply has already been sent.
+   *
+   * @param body The optional response body.
+   * @returns This adapter for chaining.
+   */
   send (body?: unknown): this {
     if (!this.reply.sent) {
       this.reply.send(body)
@@ -44,6 +65,11 @@ export class FastifyReplyAdapter implements WebResponse {
     return this
   }
 
+  /**
+   * Ends the response unless the reply has already been sent.
+   *
+   * @returns This adapter for chaining.
+   */
   end (): this {
     if (!this.reply.sent) {
       this.reply.send()
