@@ -55,7 +55,7 @@
     "@microsoft/microsoft-graph-types": "2.43.1",
     "@types/debug": "4.1.13",
     "@types/express": "5.0.6",
-    "@types/node": "20.19.25",
+    "@types/node": "22.20.4",
     "@types/sinon": "22.0.0",
     "@typescript/native": "npm:typescript@7.0.2",
     "diff": "8.0.3",
@@ -80,6 +80,6 @@
     }
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=22.0.0"
   }
 }

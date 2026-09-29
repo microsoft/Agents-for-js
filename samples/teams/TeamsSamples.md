@@ -10,7 +10,7 @@ Samples use `startServer()` from `@microsoft/agents-hosting-express` which start
 
 ## Prerequisites
 
-1. **Node.js 20+**
+1. **Node.js 22+**
 2. **npm workspaces built** — from the repo root run:
    ```bash
    npm install

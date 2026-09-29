@@ -12,7 +12,7 @@ The sample uses the default `POST /api/messages` endpoint on port `3978`.
 
 ## Prerequisites
 
-- Node.js 20 or later and the repository dependencies installed.
+- Node.js 22 or later and the repository dependencies installed.
 - An Azure Bot resource with a Microsoft Entra application registration.
 - A Slack workspace where you can install and configure an app.
 - [Dev Tunnels](https://learn.microsoft.com/azure/developer/dev-tunnels/get-started?tabs=windows) for local testing.
