@@ -21,7 +21,20 @@ export interface AuthProvider {
    * @returns A promise that resolves to the access token.
    */
   getAccessToken (authConfig: AuthConfiguration, scope: string): Promise<string>
+  /**
+   * Gets an access token using this provider's connection settings.
+   *
+   * @param scope - Scope for which the access token is requested.
+   * @returns A promise that resolves to the access token.
+   */
   getAccessToken (scope: string): Promise<string>
+  /**
+   * Gets an access token using explicit or provider-level settings.
+   *
+   * @param authConfigOrScope - Authentication configuration, or the scope when using provider settings.
+   * @param scope - Scope used with an explicit authentication configuration.
+   * @returns A promise that resolves to the access token.
+   */
   getAccessToken (authConfigOrScope: AuthConfiguration | string, scope?: string): Promise<string>
 
   /**
@@ -50,8 +63,31 @@ export interface AuthProvider {
    */
   getAgenticUserToken: (tenantId: string, agentAppInstanceId: string, upn: string, scopes: string[]) => Promise<string>
 
+  /**
+   * Acquires a token on behalf of a user using this provider's connection settings.
+   *
+   * @param scopes - Scopes requested for the delegated token.
+   * @param oboAssertion - User assertion exchanged for the token.
+   * @returns A promise that resolves to the delegated access token.
+   */
   acquireTokenOnBehalfOf (scopes: string[], oboAssertion: string): Promise<string>
+  /**
+   * Acquires a token on behalf of a user using explicit authentication settings.
+   *
+   * @param authConfig - Authentication configuration.
+   * @param scopes - Scopes requested for the delegated token.
+   * @param oboAssertion - User assertion exchanged for the token.
+   * @returns A promise that resolves to the delegated access token.
+   */
   acquireTokenOnBehalfOf (authConfig: AuthConfiguration, scopes: string[], oboAssertion: string): Promise<string>
+  /**
+   * Acquires a delegated token using explicit or provider-level settings.
+   *
+   * @param authConfigOrScopes - Authentication configuration, or requested scopes when using provider settings.
+   * @param scopesOrOboAssertion - Requested scopes or the user assertion, depending on the overload.
+   * @param oboAssertion - User assertion used with explicit authentication settings.
+   * @returns A promise that resolves to the delegated access token.
+   */
   acquireTokenOnBehalfOf (
     authConfigOrScopes: AuthConfiguration | string[],
     scopesOrOboAssertion?: string[] | string,

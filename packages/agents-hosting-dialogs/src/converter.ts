@@ -10,6 +10,12 @@
  * @typeParam To - The type of the output value after conversion.
  */
 export interface Converter<From = unknown, To = unknown> {
+  /**
+   * Converts a value to the converter's output type.
+   *
+   * @param value The value to convert.
+   * @returns The converted value.
+   */
   convert(value: From | To): To;
 }
 
@@ -20,5 +26,10 @@ export interface Converter<From = unknown, To = unknown> {
  * @typeParam To - The type of the output value after conversion.
  */
 export type ConverterFactory<From = unknown, To = unknown> = {
+  /**
+   * Creates a converter instance.
+   *
+   * @param args Arguments passed to the converter constructor.
+   */
   new (...args: unknown[]): Converter<From, To>;
 }

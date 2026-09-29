@@ -17,14 +17,21 @@ export class HeaderPropagation implements HeaderPropagationCollection {
 
   private _protectedHeaders = ['x-ms-correlation-id']
 
+  /** Gets the normalized headers received on the incoming request. */
   public get incoming (): Record<string, string> {
     return this._incomingRequests
   }
 
+  /** Gets the headers selected for propagation to outgoing requests. */
   public get outgoing (): Record<string, string> {
     return this._outgoingHeaders
   }
 
+  /**
+   * Creates a header propagation collection from incoming request headers.
+   *
+   * @param headers The incoming headers, including optional multi-value headers.
+   */
   constructor (headers: Record<string, string | string[] | undefined>) {
     if (!headers) {
       throw ExceptionHelper.generateException(Error, Errors.HeadersRequired)
@@ -39,6 +46,11 @@ export class HeaderPropagation implements HeaderPropagationCollection {
     this._protectedHeaders = protectedHeaders // Restore protected headers list after propagation
   }
 
+  /**
+   * Copies existing incoming header values to the outgoing collection.
+   *
+   * @param headers The header names to propagate.
+   */
   propagate (headers: string[]) {
     this.process(headers.map(h => [h, '']), key => {
       if (this._incomingRequests[key] && !this._outgoingHeaders[key]) {
@@ -47,6 +59,11 @@ export class HeaderPropagation implements HeaderPropagationCollection {
     })
   }
 
+  /**
+   * Adds headers that do not already exist in either collection.
+   *
+   * @param headers The headers to add.
+   */
   add (headers: Record<string, string>) {
     this.process(Object.entries(headers ?? {}), (key, value) => {
       if (!this._incomingRequests[key] && !this._outgoingHeaders[key]) {
@@ -55,6 +72,11 @@ export class HeaderPropagation implements HeaderPropagationCollection {
     })
   }
 
+  /**
+   * Appends values to headers that already exist in either collection.
+   *
+   * @param headers The values to append.
+   */
   concat (headers: Record<string, string>) {
     this.process(Object.entries(headers ?? {}), (key, value) => {
       if (this._incomingRequests[key] || this._outgoingHeaders[key]) {
@@ -63,12 +85,23 @@ export class HeaderPropagation implements HeaderPropagationCollection {
     })
   }
 
+  /**
+   * Sets outgoing header values unless the headers are protected.
+   *
+   * @param headers The headers to set.
+   */
   override (headers: Record<string, string>) {
     this.process(Object.entries(headers ?? {}), (key, value) => {
       this._outgoingHeaders[key] = value
     })
   }
 
+  /**
+   * Finds a known header name without regard to casing.
+   *
+   * @param key The header name to find.
+   * @returns The original-cased header name, or `undefined` when it is unknown.
+   */
   key (key: string) {
     return this._keys.find(k => k.toLowerCase() === key.toLowerCase())
   }
@@ -113,6 +146,11 @@ export class HeaderPropagation implements HeaderPropagationCollection {
  * A function type that defines how headers should be propagated.
  */
 export interface HeaderPropagationDefinition {
+  /**
+   * Configures outgoing headers for a request.
+   *
+   * @param headers The collection to configure.
+   */
   (headers: HeaderPropagationCollection): void
 }
 

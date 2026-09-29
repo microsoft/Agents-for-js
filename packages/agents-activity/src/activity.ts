@@ -559,6 +559,10 @@ export class Activity {
     return this
   }
 
+  /**
+   * Creates a deep copy of the activity using its JSON representation.
+   * @returns A new activity containing the copied data.
+   */
   public clone (): Activity {
     const activityCopy = JSON.parse(JSON.stringify(this))
 

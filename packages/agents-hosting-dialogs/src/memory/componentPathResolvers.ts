@@ -10,6 +10,11 @@ import { PathResolver } from './pathResolvers'
  * Interface for declaring path resolvers.
  */
 export interface ComponentPathResolvers {
+  /**
+   * Gets the path resolvers registered by the component.
+   *
+   * @returns The registered path resolvers.
+   */
   getPathResolvers(): PathResolver[];
 }
 
