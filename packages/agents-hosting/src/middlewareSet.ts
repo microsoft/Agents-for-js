@@ -10,6 +10,12 @@ const logger = debug('agents:middleware')
  * Interface for middleware.
  */
 export interface Middleware {
+  /**
+   * Processes a turn and optionally continues the middleware chain.
+   *
+   * @param context The current turn context.
+   * @param next The callback that continues the middleware chain.
+   */
   onTurn: (context: TurnContext, next: () => Promise<void>) => Promise<void>
 }
 

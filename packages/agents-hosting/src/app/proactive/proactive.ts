@@ -49,6 +49,12 @@ export class Proactive<TState extends TurnState> {
   private readonly _options: ProactiveOptions
   private readonly _storage?: StorageV2
 
+  /**
+   * Creates a proactive conversation manager.
+   *
+   * @param app - Application that owns the proactive operations.
+   * @param options - Proactive messaging configuration.
+   */
   constructor (app: AgentApplication<TState>, options: ProactiveOptions) {
     this._app = app
     this._options = options
@@ -113,6 +119,12 @@ export class Proactive<TState extends TurnState> {
    * ```
    */
   storeConversation (conversation: Conversation): Promise<string>
+  /**
+   * Stores a conversation captured from a turn context or supplied explicitly.
+   *
+   * @param contextOrConversation - Turn context or conversation to store.
+   * @returns The stored conversation ID.
+   */
   async storeConversation (contextOrConversation: TurnContext | Conversation): Promise<string> {
     return trace(ProactiveTraceDefinitions.storeConversation, async ({ record, actions }) => {
       const conv =
@@ -243,6 +255,14 @@ export class Proactive<TState extends TurnState> {
    * ```
    */
   sendActivity (adapter: BaseAdapter, conversation: Conversation, activity: Partial<Activity>): Promise<ResourceResponse>
+  /**
+   * Sends an activity to a stored or explicitly supplied conversation.
+   *
+   * @param adapter - Channel adapter used to continue the conversation.
+   * @param conversationOrId - Conversation or stored conversation ID.
+   * @param activity - Activity fields to send.
+   * @returns The channel resource response.
+   */
   async sendActivity (
     adapter: BaseAdapter,
     conversationOrId: Conversation | string,
@@ -359,6 +379,16 @@ export class Proactive<TState extends TurnState> {
    * ```
    */
   continueConversation (adapter: BaseAdapter, conversation: Conversation, handler: RouteHandler<TState>, autoSignInHandlers?: string[], continuationActivity?: Partial<Activity>): Promise<void>
+  /**
+   * Continues a stored or explicitly supplied conversation.
+   *
+   * @param adapter - Channel adapter used to continue the conversation.
+   * @param conversationOrId - Conversation or stored conversation ID.
+   * @param handler - Handler to execute in the continued turn.
+   * @param autoSignInHandlers - Connections for which tokens are acquired before the handler runs.
+   * @param continuationActivity - Activity fields merged into the continuation activity.
+   * @returns A promise that resolves after the continued turn completes.
+   */
   async continueConversation (
     adapter: BaseAdapter,
     conversationOrId: Conversation | string,

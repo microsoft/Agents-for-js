@@ -33,7 +33,9 @@ interface DelegatedConversationState {
  * the framework's URL path parser.
  */
 export interface AgentResponseHandlerParams {
+  /** ID of the conversation receiving the callback activity. */
   conversationId: string
+  /** ID to assign to the callback activity. */
   activityId: string
 }
 

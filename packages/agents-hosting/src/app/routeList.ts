@@ -9,9 +9,25 @@ import { RouteRank } from './routeRank'
 import { RouteSelector } from './routeSelector'
 import { TurnState } from './turnState'
 
+/**
+ * Maintains application routes in dispatch priority order.
+ *
+ * @typeParam TState - Turn state supplied to route handlers.
+ */
 export class RouteList<TState extends TurnState> {
   private _routes: Array<AppRoute<TState>> = []
 
+  /**
+   * Adds a route and orders it by route kind and rank.
+   *
+   * @param selector - Selector that determines whether the route matches.
+   * @param handler - Handler invoked for a matching route.
+   * @param isInvokeRoute - Whether the route handles invoke activities.
+   * @param rank - Rank used to order routes of the same kind.
+   * @param authHandlers - Authentication handlers required by the route.
+   * @param isAgenticRoute - Whether the route handles agentic requests.
+   * @returns This route list.
+   */
   public addRoute (
     selector: RouteSelector,
     handler: RouteHandler<TState>,
@@ -50,6 +66,11 @@ export class RouteList<TState extends TurnState> {
     return this
   }
 
+  /**
+   * Iterates over routes in dispatch priority order.
+   *
+   * @returns An iterator over the registered routes.
+   */
   public [Symbol.iterator] (): Iterator<AppRoute<TState>> {
     return this._routes[Symbol.iterator]()
   }

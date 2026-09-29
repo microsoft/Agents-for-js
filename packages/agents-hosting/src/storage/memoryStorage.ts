@@ -33,6 +33,7 @@ interface MemoryStorageState {
 class MemoryStorageInternals {
   private static readonly states = new WeakMap<object, MemoryStorageState>()
 
+  /** The shared values and metadata for this storage instance. */
   readonly state: MemoryStorageState
 
   /**
@@ -47,6 +48,14 @@ class MemoryStorageInternals {
     this.state = state
   }
 
+  /**
+   * Saves a value and updates its version and expiration metadata.
+   *
+   * @param key The storage key.
+   * @param item The value to store.
+   * @param expiresAt The optional expiration time, expressed as Unix time in milliseconds.
+   * @returns The new version.
+   */
   save (key: string, item: unknown, expiresAt?: number): string {
     const version = (this.state.etag++).toString()
     this.state.memory[key] = JSON.stringify(item)
@@ -56,15 +65,33 @@ class MemoryStorageInternals {
     return version
   }
 
+  /**
+   * Gets the version associated with a stored value.
+   *
+   * @param key The storage key.
+   * @param value The stored value.
+   * @returns The version, when available.
+   */
   getVersion (key: string, value: StoreItem): string | undefined {
     return this.state.versions[key] ?? value.eTag as string | undefined
   }
 
+  /**
+   * Determines whether a stored value has expired.
+   *
+   * @param key The storage key.
+   * @returns `true` when the value has expired; otherwise, `false`.
+   */
   isExpired (key: string): boolean {
     const expiresAt = this.state.expirations[key]
     return expiresAt !== undefined && expiresAt <= Date.now()
   }
 
+  /**
+   * Removes a value and its version and expiration metadata.
+   *
+   * @param key The storage key.
+   */
   remove (key: string): void {
     delete this.state.memory[key]
     delete this.state.versions[key]
@@ -81,6 +108,11 @@ class MemoryStorageInternals {
 export class MemoryStorage extends MemoryStorageInternals implements Storage {
   private static instance: MemoryStorage
 
+  /**
+   * Creates a legacy in-memory storage provider.
+   *
+   * @param memory Optional backing store to share with another in-memory storage instance.
+   */
   constructor (memory: { [key: string]: string } = {}) {
     super(memory)
   }
@@ -160,6 +192,7 @@ export class MemoryStorage extends MemoryStorageInternals implements Storage {
     })
   }
 
+  /** Returns the process-wide legacy memory storage instance. */
   static getSingleInstance (): MemoryStorage {
     if (!MemoryStorage.instance) MemoryStorage.instance = new MemoryStorage()
     return MemoryStorage.instance
@@ -323,6 +356,7 @@ export class MemoryStorageV2 extends StorageV2 {
     })
   }
 
+  /** Returns the process-wide V2 memory storage instance. */
   static getSingleInstance (): MemoryStorageV2 {
     if (!MemoryStorageV2.instance) MemoryStorageV2.instance = new MemoryStorageV2()
     return MemoryStorageV2.instance

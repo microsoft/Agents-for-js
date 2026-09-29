@@ -101,7 +101,14 @@ export class DialogManager extends Configurable {
     this._initialTurnState.set(DialogTurnStateConstants.dialogManager, this)
   }
 
+  /**
+   * Conversation-scoped state used to persist the dialog stack.
+   */
   conversationState: ConversationState
+
+  /**
+   * Optional user-scoped state available to dialogs.
+   */
   userState?: UserState
 
   /**
@@ -136,8 +143,19 @@ export class DialogManager extends Configurable {
     return this._rootDialogId ? this.dialogs.find(this._rootDialogId) : undefined
   }
 
+  /**
+   * Dialogs available to the manager, including the root dialog and registered containers.
+   */
   dialogs: DialogSet = new DialogSet()
+
+  /**
+   * Optional configuration applied when managing dialog state.
+   */
   stateConfiguration?: DialogStateManagerConfiguration
+
+  /**
+   * Inactivity period in milliseconds after which conversation state is cleared.
+   */
   expireAfter?: number
 
   /**
