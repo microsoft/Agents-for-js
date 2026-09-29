@@ -8,7 +8,7 @@ import type { WebResponse } from '@microsoft/agents-hosting'
 
 /**
  * Class-based adapter that wraps a `FastifyReply` so it satisfies the
- * structural {@link @microsoft/agents-hosting.WebResponse} interface expected by `CloudAdapter.process`
+ * structural {@link @microsoft/agents-hosting!WebResponse} interface expected by `CloudAdapter.process`
  * and `authorizeJWT` from `@microsoft/agents-hosting`.
  *
  * Methods are chainable (return `this`). `send()` and `end()` are no-ops after
@@ -79,10 +79,10 @@ export class FastifyReplyAdapter implements WebResponse {
 }
 
 /**
- * Adapts `FastifyReply` to the structural {@link @microsoft/agents-hosting.WebResponse} interface.
+ * Adapts `FastifyReply` to the structural {@link @microsoft/agents-hosting!WebResponse} interface.
  *
  * @param reply - The Fastify reply object.
- * @returns A reply adapter satisfying the {@link @microsoft/agents-hosting.WebResponse} contract.
+ * @returns A reply adapter satisfying the {@link @microsoft/agents-hosting!WebResponse} contract.
  */
 export const adaptReply = (reply: FastifyReply): WebResponse => new FastifyReplyAdapter(reply)
 
