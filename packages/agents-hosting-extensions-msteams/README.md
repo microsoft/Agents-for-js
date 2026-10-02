@@ -2,6 +2,8 @@
 
 Microsoft Teams extension for the Microsoft 365 Agents SDK for JavaScript.
 
+Requires Node.js 22.12 or later.
+
 ## Installation
 
 ```bash
@@ -23,9 +25,9 @@ This package provides Teams-specific functionality for building agents in Micros
 ### Basic Setup
 
 ```typescript
-import { AgentApplication, MemoryStorage, TurnContext, TurnState } from '@microsoft/agents-hosting'
+import { AgentApplication, MemoryStorage, MessageFactory, TurnContext, TurnState } from '@microsoft/agents-hosting'
 import { startServer } from '@microsoft/agents-hosting-express'
-import { TeamsAgentExtension } from '@microsoft/agents-hosting-extensions-msteams'
+import { addQuotedReply, TeamsAgentExtension, TeamsTurnContext } from '@microsoft/agents-hosting-extensions-msteams'
 
 // Create the agent application
 const app = new AgentApplication<TurnState>({ storage: new MemoryStorage() })
@@ -90,6 +92,23 @@ app.registerExtension<TeamsAgentExtension>(teamsExt, (tae) => {
 })
 ```
 
+### Targeted messages and quoted replies
+
+Send a message visible only to a specific member of a group conversation:
+
+```typescript
+const teamsContext = new TeamsTurnContext(context)
+await teamsContext.sendTargetedActivity('Only you can see this message.', member)
+```
+
+Add Teams quoted-reply metadata to an outgoing activity:
+
+```typescript
+const reply = MessageFactory.text('Here is the follow-up.')
+addQuotedReply(reply, messageId)
+await context.sendActivity(reply)
+```
+
 ### Message Extensions
 
 Work with Teams message extensions:
@@ -141,7 +160,15 @@ app.registerExtension<TeamsAgentExtension>(teamsExt, (tae) => {
 })
 ```
 
+## Migrating to Teams API 2.1
+
+This release aligns the extension with the Teams SDK 2.1 surface and includes breaking changes:
+
+- Node.js 22.12 or later is required by the Teams SDK dependency.
+- `sendTargetedActivity` now requires an explicit recipient and accepts either an activity or text; `sendTargetedActivities` was removed.
+- Meeting join and leave handlers use distinct `MeetingParticipantJoinValue` and `MeetingParticipantLeaveValue` payloads.
+- Use `addQuotedReply` for quoted responses. Replies to inbound targeted messages automatically receive prompt-preview metadata.
+
 ## License
 
 MIT
-

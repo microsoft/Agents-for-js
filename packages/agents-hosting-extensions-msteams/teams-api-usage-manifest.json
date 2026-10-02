@@ -1,6 +1,6 @@
 {
   "dependency": "@microsoft/teams.api",
-  "declaredVersion": "2.0.14",
+  "declaredVersion": "2.1.0",
   "sourceRoot": "src",
   "usages": [
     {
@@ -40,7 +40,11 @@
         "channel",
         "eventType",
         "meeting",
+        "onBehalfOf",
         "team"
+      ],
+      "propertiesWritten": [
+        "notification"
       ],
       "files": [
         "src/activity-extensions/teamsChannelData.ts",
@@ -79,6 +83,28 @@
       "upstreamSymbol": "MeetingDetails",
       "usage": "event-model",
       "exposure": "publicly-exposed",
+      "files": [
+        "src/meetings/meeting.ts"
+      ]
+    },
+    {
+      "upstreamSymbol": "IMeetingParticipantJoinEventActivity",
+      "usage": "event-model",
+      "exposure": "publicly-exposed",
+      "propertiesRead": [
+        "value"
+      ],
+      "files": [
+        "src/meetings/meeting.ts"
+      ]
+    },
+    {
+      "upstreamSymbol": "IMeetingParticipantLeaveEventActivity",
+      "usage": "event-model",
+      "exposure": "publicly-exposed",
+      "propertiesRead": [
+        "value"
+      ],
       "files": [
         "src/meetings/meeting.ts"
       ]
@@ -148,6 +174,22 @@
       ]
     },
     {
+      "upstreamSymbol": "QuotedReplyEntity",
+      "usage": "activity-entity",
+      "exposure": "publicly-exposed",
+      "files": [
+        "src/teamsActivityExtensions.ts"
+      ]
+    },
+    {
+      "upstreamSymbol": "TargetedMessageInfoEntity",
+      "usage": "activity-entity",
+      "exposure": "publicly-exposed",
+      "files": [
+        "src/teamsActivityExtensions.ts"
+      ]
+    },
+    {
       "upstreamSymbol": "TaskModuleRequest",
       "usage": "request-model",
       "exposure": "publicly-exposed",
@@ -174,14 +216,10 @@
       "files": [
         "src/teams/teamsTeam.ts"
       ]
-    },
-    {
-      "upstreamSymbol": "TeamsChannelAccount",
-      "usage": "nested-event-model",
-      "exposure": "publicly-exposed",
-      "files": [
-        "src/meetings/meeting.ts"
-      ]
     }
-  ]
+  ],
+  "sourceReview": {
+    "outcome": "no-usage-metadata-change",
+    "reason": "Adding new features: QuotedReplyEntity, TargetedMessageInfoEntity."
+  }
 }

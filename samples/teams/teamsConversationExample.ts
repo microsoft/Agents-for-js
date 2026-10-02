@@ -3,7 +3,6 @@ import { AgentApplication, CardFactory, CreateConversationOptionsBuilder, Memory
 import { addQuotedReply, parseTeamsChannelData, TeamsAgentExtension, teamsGetTeamInfo, TeamsTurnContext } from '@microsoft/agents-hosting-extensions-msteams'
 import { startServer } from '@microsoft/agents-hosting-express'
 import { ChannelInfo, PagedMembersResult, TeamInfo, TeamsChannelAccount } from '@microsoft/teams.api'
-// import { addQuotedReply } from '../../packages/agents-hosting-extensions-msteams/src/index.js'
 
 const app = new AgentApplication<TurnState>({ storage: new MemoryStorage() })
 
