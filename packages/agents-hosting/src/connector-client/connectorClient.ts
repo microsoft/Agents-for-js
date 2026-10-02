@@ -191,15 +191,33 @@ export class ConnectorClient {
       }
 
       const trimmedConversationId: string = this.conditionallyTruncateConversationId(conversationId, body)
+      const isTeamsActivity = body.channelId === Channels.Msteams
+      const isPersonalTargetedTeamsActivity = isTeamsActivity &&
+        body.conversation?.conversationType === 'personal' &&
+        body.isTargetedActivity()
+      const payload = normalizeOutgoingActivity(body)
+
+      // Teams routes replies from replyToId in the activity body. Personal targeted
+      // messages must use the targeted create operation instead: including replyToId
+      // makes the service interpret the request as a targeted 1:1 thread reply.
+      if (isTeamsActivity && payload) {
+        if (isPersonalTargetedTeamsActivity) {
+          Reflect.deleteProperty(payload, 'replyToId')
+        } else {
+          Object.assign(payload, { replyToId: activityId })
+        }
+      }
 
       const config: HttpRequestConfig = {
         method: 'post',
-        url: `v3/conversations/${trimmedConversationId}/activities/${encodeURIComponent(activityId)}`,
+        url: isTeamsActivity
+          ? `v3/conversations/${trimmedConversationId}/activities`
+          : `v3/conversations/${trimmedConversationId}/activities/${encodeURIComponent(activityId)}`,
         headers: {
           'Content-Type': 'application/json'
         },
-        data: normalizeOutgoingActivity(body),
-        ...(body.channelId === Channels.Msteams && body.isTargetedActivity() ? { params: { isTargetedActivity: 'true' } } : {})
+        data: payload,
+        ...(isTeamsActivity && body.isTargetedActivity() ? { params: { isTargetedActivity: 'true' } } : {})
       }
       const response = await this.executeRequest<ResourceResponse>(config)
       record({ httpStatusCode: response.status?.toString() })

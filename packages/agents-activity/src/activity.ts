@@ -724,7 +724,7 @@ export class Activity {
    * @returns This activity.
    */
   public withTargetedRecipient (recipient: ChannelAccount | string): this {
-    if (recipient == null) {
+    if (recipient == null || (typeof recipient === 'string' && recipient.trim().length === 0)) {
       throw ExceptionHelper.generateException(
         TypeError,
         Errors.ActivityRecipientUndefined

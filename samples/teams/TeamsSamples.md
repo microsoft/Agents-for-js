@@ -221,7 +221,7 @@ Add `composeExtensions` to the base manifest:
           "title": "Create Card",
           "description": "Create a card from user input",
           "initialRun": false,
-          "fetchTask": false,
+          "fetchTask": true,
           "context": [
             "commandBox",
             "compose",

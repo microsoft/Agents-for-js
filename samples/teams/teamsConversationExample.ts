@@ -102,6 +102,9 @@ app
       continuationToken = currentPage.continuationToken ?? undefined
       for (const teamMember of currentPage.members) {
         if (!teamMember) { throw new Error('The Teams members response contained a null member.') }
+        if (teamMember.id === context.activity.recipient?.id) {
+          continue
+        }
         const member = teamMember
         const teamsContext = new TeamsTurnContext(context)
         const recipient = {
@@ -202,7 +205,7 @@ app
     response.withTargetedRecipient(context.activity.from as ChannelAccount)
 
     // TeamsTurnContext adds TargetedMessageInfoEntity when the incoming slash command is targeted.
-    await context.sendActivity(response)
+    await new TeamsTurnContext(context).sendActivity(response)
   })
   .onActivity('message', async (context: TurnContext) => {
     await context.sendActivity(MessageFactory.attachment(createConversationCard('Welcome!', 'Choose a Teams conversation demo action.', 0)))

@@ -84,7 +84,7 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   },
 
   /**
-   * Error thrown when Activity ChannelId is undefined.
+   * Error thrown when a targeted activity has no recipient.
    */
   ActivityTargetedRecipientUndefined: {
     code: -110009,

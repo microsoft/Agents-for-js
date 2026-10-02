@@ -126,7 +126,7 @@ export function addQuotedReply (activity: Activity, messageId: string, text?: st
     type: QUOTED_REPLY_ENTITY_TYPE,
     quotedReply: { messageId }
   })
-  activity.text = `${activity.text ?? ''}<quoted messageId="${escapeXmlAttribute(messageId)}"/>${text !== undefined ? ` ${text}` : ''}`
+  activity.text = `<quoted messageId="${escapeXmlAttribute(messageId)}"/>${activity.text ? ` ${activity.text}` : ''}${text !== undefined ? ` ${text}` : ''}`
   return activity
 }
 

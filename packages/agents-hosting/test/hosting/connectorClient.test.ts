@@ -107,9 +107,9 @@ describe('ConnectorClient', () => {
       sinon.assert.calledOnce(mockRequest)
       const config = mockRequest.getCall(0).args[0]
       assert.equal(config.method, 'post')
-      assert.equal(config.url, `v3/conversations/${conversationId350chars}/activities/activityId`)
+      assert.equal(config.url, `v3/conversations/${conversationId350chars}/activities`)
       assert.deepEqual(config.headers, { 'Content-Type': 'application/json' })
-      assert.deepEqual(config.data, { type: 'message', channelId: Channels.Msteams, from: { role: RoleTypes.AgenticUser } })
+      assert.deepEqual(config.data, { type: 'message', channelId: Channels.Msteams, from: { role: RoleTypes.AgenticUser }, replyToId: 'activityId' })
     })
 
     /** ************************************************ */
@@ -256,28 +256,45 @@ describe('ConnectorClient', () => {
       assert.strictEqual(config.params, undefined)
     })
 
-    it('replyToActivity adds isTargetedActivity param for msteams targeted activity', async () => {
-      const activity = Activity.fromObject({ type: 'message', channelId: Channels.Msteams, conversation: { id: 'conv-id', isGroup: true } })
+    it('replyToActivity omits replyToId when creating a msteams targeted personal activity', async () => {
+      const activity = Activity.fromObject({ type: 'message', channelId: Channels.Msteams, conversation: { id: 'conv-id', conversationType: 'personal', isGroup: false }, replyToId: 'inbound-id' })
       activity.withTargetedRecipient('user-id')
 
       await client.replyToActivity('conv-id', 'act-id', activity)
 
       sinon.assert.calledOnce(mockRequest)
       const config = mockRequest.getCall(0).args[0]
+      assert.strictEqual(config.url, 'v3/conversations/conv-id/activities')
+      assert.strictEqual(Object.hasOwn(config.data, 'replyToId'), false)
       assert.deepStrictEqual(config.params, { isTargetedActivity: 'true' })
     })
 
-    it('replyToActivity does NOT add param for msteams non-targeted activity', async () => {
+    it('replyToActivity preserves replyToId for a msteams targeted group activity', async () => {
+      const activity = Activity.fromObject({ type: 'message', channelId: Channels.Msteams, conversation: { id: 'conv-id', conversationType: 'groupChat', isGroup: true } })
+      activity.withTargetedRecipient('user-id')
+
+      await client.replyToActivity('conv-id', 'act-id', activity)
+
+      sinon.assert.calledOnce(mockRequest)
+      const config = mockRequest.getCall(0).args[0]
+      assert.strictEqual(config.url, 'v3/conversations/conv-id/activities')
+      assert.strictEqual(config.data.replyToId, 'act-id')
+      assert.deepStrictEqual(config.params, { isTargetedActivity: 'true' })
+    })
+
+    it('replyToActivity posts a msteams non-targeted reply to the conversation endpoint', async () => {
       const activity = Activity.fromObject({ type: 'message', channelId: Channels.Msteams })
 
       await client.replyToActivity('conv-id', 'act-id', activity)
 
       sinon.assert.calledOnce(mockRequest)
       const config = mockRequest.getCall(0).args[0]
+      assert.strictEqual(config.url, 'v3/conversations/conv-id/activities')
+      assert.strictEqual(config.data.replyToId, 'act-id')
       assert.strictEqual(config.params, undefined)
     })
 
-    it('replyToActivity does NOT add param for non-msteams targeted activity', async () => {
+    it('replyToActivity keeps the activity endpoint for a non-msteams targeted activity', async () => {
       const activity = Activity.fromObject({ type: 'message', channelId: 'webchat', conversation: { id: 'conv-id', isGroup: true } })
       activity.withTargetedRecipient('user-id')
 
@@ -285,6 +302,7 @@ describe('ConnectorClient', () => {
 
       sinon.assert.calledOnce(mockRequest)
       const config = mockRequest.getCall(0).args[0]
+      assert.strictEqual(config.url, 'v3/conversations/conv-id/activities/act-id')
       assert.strictEqual(config.params, undefined)
     })
 
