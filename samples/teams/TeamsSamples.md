@@ -58,7 +58,7 @@ Comprehensive sample demonstrating core Teams conversation features using `Agent
 
 **Features illustrated:**
 - Proactive messaging to all team members (`messageall`) via `CreateConversationOptionsBuilder`
-- Targeted messages visible only to specific users (`targeted`) via `makeTargetedActivity()`
+- Targeted messages visible only to specific users (`targeted`) via `TeamsTurnContext.sendTargetedActivity()`
 - @mention a user (`mentionme` / `atmention`)
 - Identify the current user via the Teams API client (`whoami`)
 - Update an existing card in-place (`update`)
@@ -67,6 +67,8 @@ Comprehensive sample demonstrating core Teams conversation features using `Agent
 - Team renamed event
 - Member added / removed events
 - Hero cards with `MessageBack` actions
+- Quoted replies
+- Custom Feedback
 
 **How to test:**
 1. Install the sample in a **team channel** or **groupChat**.
@@ -81,7 +83,19 @@ Comprehensive sample demonstrating core Teams conversation features using `Agent
 
 **Manifest — additional sections:**
 
-The base manifest already includes everything needed. No additional sections required.
+Set `"supportsTargetedMessages": true` on the bot entry in the base manifest:
+
+```json
+{
+  "bots": [
+    {
+      "botId": "<your-app-id>",
+      "scopes": ["personal", "team", "groupChat"],
+      "supportsTargetedMessages": true
+    }
+  ]
+}
+```
 
 ---
 
@@ -107,13 +121,13 @@ The base manifest already includes everything needed. No additional sections req
 
 ### `meetingsExample.ts` — Teams Meetings
 
-Handles Teams meeting lifecycle events using `TeamsAgentExtension.meetings`. Handlers receive strongly-typed `MeetingDetails` and `MeetingParticipantsEventDetails` objects from `@microsoft/teams.api`.
+Handles Teams meeting lifecycle events using `TeamsAgentExtension.meetings`. Handlers receive `MeetingDetails` plus distinct `MeetingParticipantJoinValue` and `MeetingParticipantLeaveValue` payloads from `@microsoft/teams.api`.
 
 **Features illustrated:**
 - `meetings.onStart(context, state, details: MeetingDetails)` — triggered when a meeting begins, receives meeting details.
 - `meetings.onEnd(context, state, details: MeetingDetails)` — triggered when a meeting ends, receives meeting details.
-- `meetings.onParticipantsJoin(context, state, details: MeetingParticipantsEventDetails)` — triggered when participants join, receives participant info.
-- `meetings.onParticipantsLeave(context, state, details: MeetingParticipantsEventDetails)` — triggered when participants leave, receives participant info.
+- `meetings.onParticipantsJoin(context, state, details: MeetingParticipantJoinValue)` — triggered when participants join, receives participant info.
+- `meetings.onParticipantsLeave(context, state, details: MeetingParticipantLeaveValue)` — triggered when participants leave, receives participant info.
 - Basic message handling with `help` and `meeting info` commands.
 
 **How to test:**
@@ -187,6 +201,11 @@ Add `composeExtensions` to the base manifest:
           "title": "Search",
           "description": "Search for items",
           "initialRun": true,
+          "fetchTask": false,
+          "context": [
+            "commandBox",
+            "compose"
+          ],
           "parameters": [
             {
               "name": "query",
@@ -201,7 +220,13 @@ Add `composeExtensions` to the base manifest:
           "type": "action",
           "title": "Create Card",
           "description": "Create a card from user input",
-          "fetchTask": true,
+          "initialRun": false,
+          "fetchTask": false,
+          "context": [
+            "commandBox",
+            "compose",
+            "message"
+          ],
           "parameters": [
             { "name": "title", "title": "Title", "inputType": "text" },
             { "name": "description", "title": "Description", "inputType": "text" }

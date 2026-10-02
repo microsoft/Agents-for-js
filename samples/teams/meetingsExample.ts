@@ -1,6 +1,6 @@
 import { AgentApplication, MemoryStorage, TurnContext, TurnState } from '@microsoft/agents-hosting'
 import { startServer } from '@microsoft/agents-hosting-express'
-import { TeamsAgentExtension, MeetingParticipantsEventDetails, TeamsTurnContext } from '@microsoft/agents-hosting-extensions-msteams'
+import { MeetingParticipantJoinValue, MeetingParticipantLeaveValue, TeamsAgentExtension, TeamsTurnContext } from '@microsoft/agents-hosting-extensions-msteams'
 import { MeetingDetails } from '@microsoft/teams.api'
 
 const app = new AgentApplication<TurnState>({ storage: new MemoryStorage() })
@@ -17,12 +17,12 @@ app.registerExtension<TeamsAgentExtension>(teamsExt, (tae) => {
       console.log('Meeting ended:', details)
       await context.sendActivity('The meeting has ended. Thanks for participating!')
     })
-    .onParticipantsJoin(async (context: TeamsTurnContext, state: TurnState, details: MeetingParticipantsEventDetails) => {
+    .onParticipantsJoin(async (context: TeamsTurnContext, state: TurnState, details: MeetingParticipantJoinValue) => {
       const participantInfo = details
       console.log('Participants joined:', participantInfo)
       await context.sendActivity('Welcome to the meeting!')
     })
-    .onParticipantsLeave(async (context: TeamsTurnContext, state: TurnState, details: MeetingParticipantsEventDetails) => {
+    .onParticipantsLeave(async (context: TeamsTurnContext, state: TurnState, details: MeetingParticipantLeaveValue) => {
       const participantInfo = details
       console.log('Participants left:', participantInfo)
       await context.sendActivity('Goodbye from the meeting!')
