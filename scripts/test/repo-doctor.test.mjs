@@ -47,6 +47,25 @@ describe('repo:doctor', () => {
     assert.equal(report.findings.length, 0)
   })
 
+  it('enforces the approved package-specific Node engine', () => {
+    const approvedRoot = fixture(({ write, readJson }) => {
+      const manifest = readJson('packages/agents-example/package.json')
+      manifest.name = '@microsoft/agents-hosting-extensions-msteams'
+      manifest.engines.node = '>=22.12.0'
+      write('packages/agents-example/package.json', JSON.stringify(manifest))
+    })
+    assert.equal(checkRepository(approvedRoot).findings.some(finding => finding.ruleId === 'runtime/engine-mismatch'), false)
+
+    const outdatedRoot = fixture(({ write, readJson }) => {
+      const manifest = readJson('packages/agents-example/package.json')
+      manifest.name = '@microsoft/agents-hosting-extensions-msteams'
+      write('packages/agents-example/package.json', JSON.stringify(manifest))
+    })
+    const finding = checkRepository(outdatedRoot).findings.find(item => item.ruleId === 'runtime/engine-mismatch')
+    assert.equal(finding?.message, 'Package Node engine must match its approved engine >=22.12.0.')
+    assert.equal(finding?.fix, 'Change engines.node from ">=22.0.0" to ">=22.12.0".')
+  })
+
   it('formats every rule definition in the rule guide', () => {
     const guide = formatRuleGuide()
     for (const [ruleId, definition] of Object.entries(ruleDefinitions)) {
