@@ -151,7 +151,7 @@ describe('TeamsTurnContext', () => {
     assert.strictEqual(context.responded, true)
   })
 
-  it('should send a cloned targeted activity without mutating the caller activity', async () => {
+  it('should send a cloned targeted activity to the explicit recipient without mutating the caller activity', async () => {
     const sentActivities: Activity[] = []
     const context = createContext()
     context.adapter.sendActivities = async (_context: TurnContext, activities: Activity[]) => {
@@ -161,47 +161,127 @@ describe('TeamsTurnContext', () => {
 
     setTeamsApiClient(context)
     const teamsContext = new TeamsTurnContext(context)
-    const activity = Activity.fromObject({ type: 'message', channelId: 'msteams', conversation: { id: 'conversation-id', isGroup: true }, text: 'hello' })
+    const activity = Activity.fromObject({
+      type: 'message',
+      channelId: 'msteams',
+      conversation: { id: 'conversation-id', isGroup: true },
+      recipient: { id: 'original-user' },
+      text: 'hello'
+    })
 
-    const response = await teamsContext.sendTargetedActivity(activity)
+    const response = await teamsContext.sendTargetedActivity(activity, { id: 'target-user', name: 'Target User' })
 
     assert.strictEqual(response?.id, 'sent-id')
     assert.strictEqual(activity.isTargetedActivity(), false)
+    assert.strictEqual(activity.recipient?.id, 'original-user')
     assert.strictEqual(sentActivities[0].isTargetedActivity(), true)
+    assert.deepStrictEqual(sentActivities[0].recipient, { id: 'target-user', name: 'Target User' })
   })
 
-  it('should send cloned targeted activities without mutating caller activities', async () => {
+  it('should send text as a targeted message to a recipient ID', async () => {
     const sentActivities: Activity[] = []
     const context = createContext()
     context.adapter.sendActivities = async (_context: TurnContext, activities: Activity[]) => {
       sentActivities.push(...activities)
-      return activities.map((_activity, index) => ({ id: `sent-${index}` }))
+      return [{ id: 'sent-id' }]
     }
 
     setTeamsApiClient(context)
     const teamsContext = new TeamsTurnContext(context)
-    const activities = [
-      Activity.fromObject({ type: 'message', channelId: 'msteams', conversation: { id: 'conversation-id', isGroup: true }, text: 'one' }),
-      Activity.fromObject({ type: 'message', channelId: 'msteams', conversation: { id: 'conversation-id', isGroup: true }, text: 'two' })
-    ]
 
-    const responses = await teamsContext.sendTargetedActivities(activities)
+    await teamsContext.sendTargetedActivity('hello', 'target-user')
 
-    assert.deepStrictEqual(responses.map((response) => response.id), ['sent-0', 'sent-1'])
-    assert.deepStrictEqual(activities.map((activity) => activity.isTargetedActivity()), [false, false])
-    assert.deepStrictEqual(sentActivities.map((activity) => activity.isTargetedActivity()), [true, true])
+    assert.strictEqual(sentActivities[0].text, 'hello')
+    assert.deepStrictEqual(sentActivities[0].recipient, { id: 'target-user', role: 'user' })
+    assert.strictEqual(sentActivities[0].isTargetedActivity(), true)
   })
 
-  it('should preserve targeted activity group-only validation', async () => {
+  it('should send a targeted activity outside a group conversation', async () => {
+    const sentActivities: Activity[] = []
     const context = createContext()
+    context.adapter.sendActivities = async (_context: TurnContext, activities: Activity[]) => {
+      sentActivities.push(...activities)
+      return [{ id: 'sent-id' }]
+    }
+
     setTeamsApiClient(context)
     const teamsContext = new TeamsTurnContext(context)
     const activity = Activity.fromObject({ type: 'message', channelId: 'msteams', conversation: { id: 'conversation-id', isGroup: false } })
 
+    const response = await teamsContext.sendTargetedActivity(activity, 'target-user')
+
+    assert.strictEqual(response?.id, 'sent-id')
+    assert.strictEqual(sentActivities[0].isTargetedActivity(), true)
+    assert.deepStrictEqual(sentActivities[0].recipient, { id: 'target-user', role: 'user' })
+  })
+
+  it('should reject missing or empty targeted activity arguments', async () => {
+    const teamsContext = new TeamsTurnContext(createContext())
+
     await assert.rejects(
-      () => teamsContext.sendTargetedActivity(activity),
-      /Targeted activities can only be sent in a group chat or channel/
+      () => teamsContext.sendTargetedActivity('  ', 'target-user'),
+      /activity parameter must be a non-empty string/
     )
+    await assert.rejects(
+      () => teamsContext.sendTargetedActivity('hello', ''),
+      /recipient parameter must be a non-empty string/
+    )
+    await assert.rejects(
+      () => teamsContext.sendTargetedActivity(null as unknown as Activity, 'target-user'),
+      /activity parameter is required to send a targeted activity/
+    )
+  })
+
+  it('should normalize prompt-preview responses without mutating caller activities', async () => {
+    const sentActivities: Activity[] = []
+    const context = createContext()
+    context.activity.id = 'inbound-message'
+    context.activity.recipient = { id: 'bot', isTargeted: true }
+    context.adapter.sendActivities = async (_context: TurnContext, activities: Activity[]) => {
+      sentActivities.push(...activities)
+      return activities.map((_activity, index) => ({ id: `sent-${index}` }))
+    }
+    const teamsContext = new TeamsTurnContext(context)
+    const response = Activity.fromObject({
+      type: 'message',
+      text: '  <quoted messageId="quoted-message"/> response  ',
+      entities: [
+        { type: 'quotedReply', quotedReply: { messageId: 'quoted-message' } },
+        { type: 'custom', value: true }
+      ]
+    })
+
+    await teamsContext.sendActivity(response)
+
+    assert.strictEqual(response.text, '  <quoted messageId="quoted-message"/> response  ')
+    assert.strictEqual(response.entities?.some(entity => entity.type === 'quotedReply'), true)
+    assert.strictEqual(sentActivities[0].text, 'response')
+    assert.deepStrictEqual(sentActivities[0].entities, [
+      { type: 'custom', value: true },
+      { type: 'targetedMessageInfo', messageId: 'inbound-message' }
+    ])
+  })
+
+  it('should add prompt-preview metadata to each outgoing message without duplication', async () => {
+    const sentActivities: Activity[] = []
+    const context = createContext()
+    context.activity.id = 'inbound-message'
+    context.activity.recipient = { id: 'bot', isTargeted: true }
+    context.adapter.sendActivities = async (_context: TurnContext, activities: Activity[]) => {
+      sentActivities.push(...activities)
+      return activities.map((_activity, index) => ({ id: `sent-${index}` }))
+    }
+    const teamsContext = new TeamsTurnContext(context)
+
+    await teamsContext.sendActivities([
+      Activity.fromObject({ type: 'message', text: 'first' }),
+      Activity.fromObject({ type: 'message', text: 'second', entities: [{ type: 'targetedMessageInfo', messageId: 'existing' }] }),
+      Activity.fromObject({ type: 'event', name: 'unchanged' })
+    ])
+
+    assert.deepStrictEqual(sentActivities[0].entities, [{ type: 'targetedMessageInfo', messageId: 'inbound-message' }])
+    assert.deepStrictEqual(sentActivities[1].entities, [{ type: 'targetedMessageInfo', messageId: 'existing' }])
+    assert.strictEqual(sentActivities[2].entities, undefined)
   })
 
   it('should create a delegated Graph client using authorization from turn state', async () => {

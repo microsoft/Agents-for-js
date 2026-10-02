@@ -75,4 +75,4 @@ export const channelAccountZodSchema = z.object({
   agenticAppBlueprintId: z.string().min(1).optional(),
   role: z.union([roleTypeZodSchema, z.string().min(1)]).optional(),
   properties: z.unknown().optional()
-})
+}).passthrough()

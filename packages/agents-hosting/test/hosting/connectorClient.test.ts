@@ -226,7 +226,7 @@ describe('ConnectorClient', () => {
   describe('targeted activity query parameter', () => {
     it('sendToConversation adds isTargetedActivity param for msteams targeted activity', async () => {
       const activity = Activity.fromObject({ type: 'message', channelId: Channels.Msteams, conversation: { id: 'conv-id', isGroup: true } })
-      activity.makeTargetedActivity()
+      activity.withTargetedRecipient('user-id')
 
       await client.sendToConversation('conv-id', activity)
 
@@ -247,7 +247,7 @@ describe('ConnectorClient', () => {
 
     it('sendToConversation does NOT add param for non-msteams targeted activity', async () => {
       const activity = Activity.fromObject({ type: 'message', channelId: 'webchat', conversation: { id: 'conv-id', isGroup: true } })
-      activity.makeTargetedActivity()
+      activity.withTargetedRecipient('user-id')
 
       await client.sendToConversation('conv-id', activity)
 
@@ -258,7 +258,7 @@ describe('ConnectorClient', () => {
 
     it('replyToActivity adds isTargetedActivity param for msteams targeted activity', async () => {
       const activity = Activity.fromObject({ type: 'message', channelId: Channels.Msteams, conversation: { id: 'conv-id', isGroup: true } })
-      activity.makeTargetedActivity()
+      activity.withTargetedRecipient('user-id')
 
       await client.replyToActivity('conv-id', 'act-id', activity)
 
@@ -279,7 +279,7 @@ describe('ConnectorClient', () => {
 
     it('replyToActivity does NOT add param for non-msteams targeted activity', async () => {
       const activity = Activity.fromObject({ type: 'message', channelId: 'webchat', conversation: { id: 'conv-id', isGroup: true } })
-      activity.makeTargetedActivity()
+      activity.withTargetedRecipient('user-id')
 
       await client.replyToActivity('conv-id', 'act-id', activity)
 
@@ -290,7 +290,7 @@ describe('ConnectorClient', () => {
 
     it('updateActivity adds isTargetedActivity param for msteams targeted activity', async () => {
       const activity = Activity.fromObject({ type: 'message', channelId: Channels.Msteams, conversation: { id: 'conv-id', isGroup: true } })
-      activity.makeTargetedActivity()
+      activity.withTargetedRecipient('user-id')
 
       await client.updateActivity('conv-id', 'act-id', activity)
 
@@ -311,7 +311,7 @@ describe('ConnectorClient', () => {
 
     it('updateActivity does NOT add param for non-msteams targeted activity', async () => {
       const activity = Activity.fromObject({ type: 'message', channelId: 'webchat', conversation: { id: 'conv-id', isGroup: true } })
-      activity.makeTargetedActivity()
+      activity.withTargetedRecipient('user-id')
 
       await client.updateActivity('conv-id', 'act-id', activity)
 

@@ -1,9 +1,32 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { Activity } from '@microsoft/agents-activity'
-import type { ChannelData, OnBehalfOf } from '@microsoft/teams.api'
+import { Activity, type ChannelAccount, ExceptionHelper } from '@microsoft/agents-activity'
+import type { ChannelData, OnBehalfOf, QuotedReplyEntity, TargetedMessageInfoEntity } from '@microsoft/teams.api'
 import { parseTeamsChannelData } from './activity-extensions'
+import { Errors } from './errorHelper'
+
+const QUOTED_REPLY_ENTITY_TYPE = 'quotedReply'
+const TARGETED_MESSAGE_INFO_ENTITY_TYPE = 'targetedMessageInfo'
+
+type TeamsRecipient = ChannelAccount & {
+  isTargeted?: unknown
+}
+
+function requireNonEmptyString (value: string, parameterName: string): void {
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    throw ExceptionHelper.generateException(TypeError, Errors.ActivityParameterRequired, undefined, { parameterName })
+  }
+}
+
+function escapeXmlAttribute (value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&apos;')
+}
 
 /**
  * Gets the Teams selected channel ID from the activity's channel data settings.
@@ -76,6 +99,72 @@ export function teamsNotifyUser (activity: Activity, alertInMeeting: boolean = f
 export function teamsGetTeamOnBehalfOf (activity: Activity): OnBehalfOf[] | undefined {
   const channelData = parseTeamsChannelData(activity.channelData)
   return (channelData as any)?.onBehalfOf
+}
+
+/**
+ * Gets all quoted reply entities from an activity.
+ *
+ * @param activity - Activity containing quoted reply entities.
+ * @returns The quoted reply entities in their original order.
+ */
+export function getQuotedMessages (activity: Activity): QuotedReplyEntity[] {
+  return (activity.entities ?? []).filter(entity => entity.type === QUOTED_REPLY_ENTITY_TYPE) as QuotedReplyEntity[]
+}
+
+/**
+ * Adds a quoted reply entity and its Teams text placeholder to an activity.
+ *
+ * @param activity - Activity to update.
+ * @param messageId - ID of the message being quoted.
+ * @param text - Optional text to append after the quote placeholder.
+ * @returns The updated activity.
+ */
+export function addQuotedReply (activity: Activity, messageId: string, text?: string): Activity {
+  requireNonEmptyString(messageId, 'messageId')
+  activity.entities ??= []
+  activity.entities.push({
+    type: QUOTED_REPLY_ENTITY_TYPE,
+    quotedReply: { messageId }
+  })
+  activity.text = `${activity.text ?? ''}<quoted messageId="${escapeXmlAttribute(messageId)}"/>${text !== undefined ? ` ${text}` : ''}`
+  return activity
+}
+
+/**
+ * Gets the first targeted message information entity from an activity.
+ *
+ * @param activity - Activity containing Teams entities.
+ * @returns Targeted message information, if present.
+ */
+export function getTargetedMessageInfo (activity: Activity): TargetedMessageInfoEntity | undefined {
+  return activity.entities?.find(entity => entity.type === TARGETED_MESSAGE_INFO_ENTITY_TYPE) as TargetedMessageInfoEntity | undefined
+}
+
+/**
+ * Adds targeted message information when the activity does not already contain it.
+ *
+ * @param activity - Activity to update.
+ * @param messageId - ID of the original targeted message.
+ * @returns The updated activity.
+ */
+export function addTargetedMessageInfo (activity: Activity, messageId: string): Activity {
+  requireNonEmptyString(messageId, 'messageId')
+  if (!getTargetedMessageInfo(activity)) {
+    activity.entities ??= []
+    activity.entities.push({ type: TARGETED_MESSAGE_INFO_ENTITY_TYPE, messageId })
+  }
+  return activity
+}
+
+/**
+ * Determines whether the activity recipient is marked as targeted by Teams.
+ *
+ * @param activity - Activity to inspect.
+ * @returns True when the recipient is targeted.
+ */
+export function isRecipientTargeted (activity: Activity): boolean {
+  const recipient = activity.recipient as TeamsRecipient | undefined
+  return recipient?.isTargeted === true
 }
 
 /**

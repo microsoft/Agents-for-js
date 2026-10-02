@@ -3,40 +3,19 @@
 
 import { ActivityTypes } from '@microsoft/agents-activity'
 import { AgentApplication, RouteHandler, RouteRank, RouteSelector, TurnContext, TurnState } from '@microsoft/agents-hosting'
-import type { MeetingDetails, TeamsChannelAccount } from '@microsoft/teams.api'
+import type { IMeetingParticipantJoinEventActivity, IMeetingParticipantLeaveEventActivity, MeetingDetails } from '@microsoft/teams.api'
 import { TeamsTurnContext } from '../teamsTurnContext'
 
-/**
- * Details provided by Teams meeting participant join and leave events.
- */
-export interface MeetingParticipantsEventDetails {
-  /**
-   * Participants included in the meeting event.
-   */
-  members: {
-    /**
-     * The Teams user account for the participant.
-     */
-    user: TeamsChannelAccount
-    /**
-     * Meeting-specific participant state.
-     */
-    meeting: {
-      /**
-       * Indicates whether the participant is currently in the meeting.
-       */
-      inMeeting: boolean
-      /**
-       * Participant role in the meeting.
-       */
-      role: string
-    }
-  }[]
-}
+/** Details provided by a Teams meeting participant join event. */
+export type MeetingParticipantJoinValue = IMeetingParticipantJoinEventActivity['value']
+
+/** Details provided by a Teams meeting participant leave event. */
+export type MeetingParticipantLeaveValue = IMeetingParticipantLeaveEventActivity['value']
 
 type MeetingStartHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, details: MeetingDetails) => Promise<void>
 type MeetingEndHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, details: MeetingDetails) => Promise<void>
-type MeetingParticipantsHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, details: MeetingParticipantsEventDetails) => Promise<void>
+type MeetingParticipantsJoinHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, details: MeetingParticipantJoinValue) => Promise<void>
+type MeetingParticipantsLeaveHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, details: MeetingParticipantLeaveValue) => Promise<void>
 
 function isMeetingEvent (context: TurnContext, eventName: string): boolean {
   return (
@@ -112,12 +91,12 @@ export class Meeting<TState extends TurnState> {
    * @param authHandlers - Optional authorization handlers required by the route.
    * @returns This meeting helper for chaining.
    */
-  onParticipantsJoin (handler: MeetingParticipantsHandler<TState>, rank: number = RouteRank.Unspecified, authHandlers: string[] = []) {
+  onParticipantsJoin (handler: MeetingParticipantsJoinHandler<TState>, rank: number = RouteRank.Unspecified, authHandlers: string[] = []) {
     const routeSel: RouteSelector = (context: TurnContext) => {
       return Promise.resolve(isMeetingEvent(context, 'application/vnd.microsoft.meetingParticipantJoin'))
     }
     const routeHandler: RouteHandler<TState> = async (context: TurnContext, state: TState) => {
-      const details = context.activity.value as MeetingParticipantsEventDetails
+      const details = context.activity.value as MeetingParticipantJoinValue
       await handler(new TeamsTurnContext(context), state, details)
     }
     this._app.addRoute(routeSel, routeHandler, false, rank, authHandlers)
@@ -132,12 +111,12 @@ export class Meeting<TState extends TurnState> {
    * @param authHandlers - Optional authorization handlers required by the route.
    * @returns This meeting helper for chaining.
    */
-  onParticipantsLeave (handler: MeetingParticipantsHandler<TState>, rank: number = RouteRank.Unspecified, authHandlers: string[] = []) {
+  onParticipantsLeave (handler: MeetingParticipantsLeaveHandler<TState>, rank: number = RouteRank.Unspecified, authHandlers: string[] = []) {
     const routeSel: RouteSelector = (context: TurnContext) => {
       return Promise.resolve(isMeetingEvent(context, 'application/vnd.microsoft.meetingParticipantLeave'))
     }
     const routeHandler: RouteHandler<TState> = async (context: TurnContext, state: TState) => {
-      const details = context.activity.value as MeetingParticipantsEventDetails
+      const details = context.activity.value as MeetingParticipantLeaveValue
       await handler(new TeamsTurnContext(context), state, details)
     }
     this._app.addRoute(routeSel, routeHandler, false, rank, authHandlers)
