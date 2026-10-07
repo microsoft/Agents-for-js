@@ -10,6 +10,10 @@ schemaVersion: 1
 dependency:
   package: "@microsoft/teams.api"
 
+sourceReview:
+  outcome: "no-capability-metadata-change"
+  reason: "Reviewed the meeting participant type migration, prompt-preview normalizer, and quoted/targeted activity helpers; the existing meetings and activity-data owners and upstream areas already cover these source changes."
+
 capabilities:
   teams-api-client:
     description: "Creates, stores, and exposes the Teams API client for a Teams turn."
@@ -25,10 +29,12 @@ capabilities:
     description: "Parses Teams channel data and provides Teams-specific activity helpers."
     owners:
       - "src/activity-extensions/**"
+      - "src/promptPreviewActivityNormalizer.ts"
       - "src/teamsActivity.ts"
       - "src/teamsActivityExtensions.ts"
     upstreamAreas:
       - "models.channel-data"
+      - "models.entity"
       - "activities"
     adoptionPolicy: "strict-compatibility"
 

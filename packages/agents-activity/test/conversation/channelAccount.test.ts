@@ -20,6 +20,13 @@ describe('ChannelAccount', () => {
     assert.strictEqual(account.role, 'user')
   })
 
+  it('should preserve channel-specific extension properties during deserialization', () => {
+    const account: ChannelAccount = channelAccountZodSchema.parse({ id: '123', isTargeted: true })
+    const accountWithExtensions = account as ChannelAccount & { isTargeted?: unknown }
+
+    assert.strictEqual(accountWithExtensions.isTargeted, true)
+  })
+
   it('should not throw an error if id is missing', () => {
     const account1: ChannelAccount = { name: 'user1' }
     assert.strictEqual(account1.id, undefined)

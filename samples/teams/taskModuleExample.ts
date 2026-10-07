@@ -1,7 +1,42 @@
 import { AdaptiveCard, AgentApplication, CardFactory, MemoryStorage, MessageFactory, TurnContext, TurnState } from '@microsoft/agents-hosting'
 import { TeamsAgentExtension, teamsGetDataString, TeamsTurnContext } from '@microsoft/agents-hosting-extensions-msteams'
 import { startServer } from '@microsoft/agents-hosting-express'
-import type { TaskModuleRequest, TaskModuleResponse } from '@microsoft/teams.api'
+import type { Attachment, BaseTaskModuleTaskInfo, TaskModuleRequest, TaskModuleResponse } from '@microsoft/teams.api'
+
+const ADAPTIVE_CARD_CONTENT_TYPE = 'application/vnd.microsoft.card.adaptive'
+
+function createCardResponse (
+  card: AdaptiveCard,
+  title: string,
+  height: BaseTaskModuleTaskInfo['height'],
+  width: BaseTaskModuleTaskInfo['width']
+): TaskModuleResponse {
+  const attachment: Attachment = {
+    contentType: ADAPTIVE_CARD_CONTENT_TYPE,
+    content: card
+  }
+
+  return {
+    task: {
+      type: 'continue',
+      value: {
+        title,
+        height,
+        width,
+        card: attachment
+      }
+    }
+  }
+}
+
+function createMessageResponse (message: string): TaskModuleResponse {
+  return {
+    task: {
+      type: 'message',
+      value: message
+    }
+  }
+}
 
 const app = new AgentApplication<TurnState>({ storage: new MemoryStorage() })
 
@@ -39,29 +74,14 @@ app.registerExtension<TeamsAgentExtension<TurnState>>(teamsExt, (tae) => {
       version: '1.4'
     } as AdaptiveCard
 
-    return {
-      task: {
-        type: 'continue',
-        value: {
-          title: 'Simple Form',
-          height: 'small',
-          width: 'small',
-          card: CardFactory.adaptiveCard(formCard)
-        }
-      }
-    }
+    return createCardResponse(formCard, 'Simple Form', 'small', 'small')
   })
     .onSubmit('simple_form', async (context: TeamsTurnContext, state: TurnState, request: TaskModuleRequest): Promise<TaskModuleResponse> => {
       const name = teamsGetDataString(request, 'name', 'Unknown')
       console.log('Task module submit:', request.data)
       await context.sendActivity(`Task module submitted successfully for ${name}!`)
 
-      return {
-        task: {
-          type: 'message',
-          value: 'Form was submitted.'
-        }
-      }
+      return createMessageResponse('Form was submitted.')
     })
     .onFetch('multi_step_form', async (context: TeamsTurnContext, state: TurnState, request: TaskModuleRequest): Promise<TaskModuleResponse> => {
       const formCard = {
@@ -93,17 +113,7 @@ app.registerExtension<TeamsAgentExtension<TurnState>>(teamsExt, (tae) => {
         version: '1.4'
       } as AdaptiveCard
 
-      return {
-        task: {
-          type: 'continue',
-          value: {
-            title: 'Multi-Step Form Dialog',
-            height: 'small',
-            width: 'small',
-            card: CardFactory.adaptiveCard(formCard)
-          }
-        }
-      }
+      return createCardResponse(formCard, 'Multi-Step Form Dialog', 'small', 'small')
     })
     .onSubmit('multi_step_form_submit_name', async (context: TeamsTurnContext, state: TurnState, request: TaskModuleRequest): Promise<TaskModuleResponse> => {
       const name = teamsGetDataString(request, 'name', 'Unknown')
@@ -139,17 +149,7 @@ app.registerExtension<TeamsAgentExtension<TurnState>>(teamsExt, (tae) => {
         version: '1.4'
       } as AdaptiveCard
 
-      return {
-        task: {
-          type: 'continue',
-          value: {
-            title: `Thanks ${name} - Get Email`,
-            height: 'small',
-            width: 'small',
-            card: CardFactory.adaptiveCard(formCard)
-          }
-        }
-      }
+      return createCardResponse(formCard, `Thanks ${name} - Get Email`, 'small', 'small')
     })
     .onSubmit('multi_step_form_submit_email', async (context: TeamsTurnContext, state: TurnState, request: TaskModuleRequest): Promise<TaskModuleResponse> => {
       const name = teamsGetDataString(request, 'name', 'Unknown')
@@ -157,12 +157,7 @@ app.registerExtension<TeamsAgentExtension<TurnState>>(teamsExt, (tae) => {
 
       await context.sendActivity(`Hi ${name}, thanks for submitting the form! We got that your email is ${email}`)
 
-      return {
-        task: {
-          type: 'message',
-          value: 'Multi-step form completed successfully'
-        }
-      }
+      return createMessageResponse('Multi-step form completed successfully')
     })
 })
 

@@ -1,6 +1,6 @@
-import { ActionTypes, Channels, Entity, RoleTypes } from '@microsoft/agents-activity'
+import { ActionTypes, Activity, ChannelAccount, Channels, Entity, RoleTypes } from '@microsoft/agents-activity'
 import { AgentApplication, CardFactory, CreateConversationOptionsBuilder, MemoryStorage, MessageFactory, TurnContext, TurnState } from '@microsoft/agents-hosting'
-import { parseTeamsChannelData, TeamsAgentExtension, teamsGetTeamInfo, TeamsTurnContext } from '@microsoft/agents-hosting-extensions-msteams'
+import { addQuotedReply, parseTeamsChannelData, TeamsAgentExtension, teamsGetTeamInfo, TeamsTurnContext } from '@microsoft/agents-hosting-extensions-msteams'
 import { startServer } from '@microsoft/agents-hosting-express'
 import { ChannelInfo, PagedMembersResult, TeamInfo, TeamsChannelAccount } from '@microsoft/teams.api'
 
@@ -96,30 +96,26 @@ app
     await context.sendActivity('All messages have been sent.')
   })
   .onMessage('targeted', async (context: TurnContext) => {
-    if (!context.activity.conversation?.isGroup) {
-      await context.sendActivity('Targeted messages are only supported in group conversations.')
-      return
-    }
-
-    const currentPage = await getPagedMembers(context)
-    for (const member of currentPage.members) {
-      if (member.id === context.activity.recipient?.id) {
-        continue
+    let continuationToken: string | undefined
+    do {
+      const currentPage = await getPagedMembers(context, 100, continuationToken)
+      continuationToken = currentPage.continuationToken ?? undefined
+      for (const teamMember of currentPage.members) {
+        if (!teamMember) { throw new Error('The Teams members response contained a null member.') }
+        if (teamMember.id === context.activity.recipient?.id) {
+          continue
+        }
+        const member = teamMember
+        const teamsContext = new TeamsTurnContext(context)
+        const recipient = {
+          id: member.id,
+          name: member.name,
+          role: RoleTypes.User,
+        } as ChannelAccount
+        const activity = MessageFactory.text(`${member.name}, this is a **targeted message** - only you can see this.`)
+        await teamsContext.sendTargetedActivity(activity, recipient)
       }
-
-      const targetedActivity = MessageFactory.text(`${member.name}, this is a **targeted message** - only you can see this.`)
-      targetedActivity.channelId = context.activity.channelId ?? Channels.Msteams
-      targetedActivity.conversation = { ...context.activity.conversation }
-      targetedActivity.recipient = {
-        id: member.id,
-        name: member.name,
-        role: RoleTypes.User,
-        tenantId: member.tenantId
-      }
-      targetedActivity.makeTargetedActivity()
-
-      await context.sendActivity(targetedActivity)
-    }
+    } while (continuationToken)
   })
   .onMessage('update', async (context: TurnContext) => {
     if (!context.activity.replyToId) {
@@ -191,6 +187,26 @@ app
       await context.sendActivity('Unable to mention you in this conversation.')
     }
   })
+  .onMessage('quotedReply', async (context: TurnContext) => {
+    if (!context.activity.id) {
+      throw new Error('The incoming activity must have an ID to create a quoted reply.')
+    }
+
+    const messageId = context.activity.id
+
+    const reply = Activity.fromObject({ type: 'message', text: '' })
+
+    addQuotedReply(reply, messageId, 'This response includes a quoted reply to your message.')
+
+    await context.sendActivity(reply)
+  })
+  .onMessage('promptpreview', async (context: TurnContext) => {
+    const response = Activity.fromObject({ type: 'message', text: 'This targeted response includes Prompt Preview metadata for your slash command.' })
+    response.withTargetedRecipient(context.activity.from as ChannelAccount)
+
+    // TeamsTurnContext adds TargetedMessageInfoEntity when the incoming slash command is targeted.
+    await new TeamsTurnContext(context).sendActivity(response)
+  })
   .onActivity('message', async (context: TurnContext) => {
     await context.sendActivity(MessageFactory.attachment(createConversationCard('Welcome!', 'Choose a Teams conversation demo action.', 0)))
   })
@@ -227,6 +243,11 @@ function createConversationCard (title: string, text: string, count: number) {
       title: 'Update Card',
       text: 'update',
       value: { count }
+    },
+    {
+      type: ActionTypes.ImBack,
+      title: 'Quoted Reply',
+      value: 'quotedreply',
     }
   ])
 }

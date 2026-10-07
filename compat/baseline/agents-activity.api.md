@@ -98,6 +98,7 @@ export class Activity {
     type: ActivityTypes | string;
     value?: unknown;
     valueType?: string;
+    withTargetedRecipient(recipient: ChannelAccount | string): this;
 }
 
 // @public
@@ -161,27 +162,27 @@ export const activityZodSchema: z.ZodObject<{
         agenticAppBlueprintId: z.ZodOptional<z.ZodString>;
         role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
         properties: z.ZodOptional<z.ZodUnknown>;
-    }, "strip", z.ZodTypeAny, {
-        id?: string | undefined;
-        name?: string | undefined;
-        aadObjectId?: string | undefined;
-        tenantId?: string | undefined;
-        agenticUserId?: string | undefined;
-        agenticAppId?: string | undefined;
-        agenticAppBlueprintId?: string | undefined;
-        role?: string | undefined;
-        properties?: unknown;
-    }, {
-        id?: string | undefined;
-        name?: string | undefined;
-        aadObjectId?: string | undefined;
-        tenantId?: string | undefined;
-        agenticUserId?: string | undefined;
-        agenticAppId?: string | undefined;
-        agenticAppBlueprintId?: string | undefined;
-        role?: string | undefined;
-        properties?: unknown;
-    }>>;
+    }, "passthrough", z.ZodTypeAny, z.objectOutputType<{
+        id: z.ZodOptional<z.ZodString>;
+        name: z.ZodOptional<z.ZodString>;
+        aadObjectId: z.ZodOptional<z.ZodString>;
+        tenantId: z.ZodOptional<z.ZodString>;
+        agenticUserId: z.ZodOptional<z.ZodString>;
+        agenticAppId: z.ZodOptional<z.ZodString>;
+        agenticAppBlueprintId: z.ZodOptional<z.ZodString>;
+        role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
+        properties: z.ZodOptional<z.ZodUnknown>;
+    }, z.ZodTypeAny, "passthrough">, z.objectInputType<{
+        id: z.ZodOptional<z.ZodString>;
+        name: z.ZodOptional<z.ZodString>;
+        aadObjectId: z.ZodOptional<z.ZodString>;
+        tenantId: z.ZodOptional<z.ZodString>;
+        agenticUserId: z.ZodOptional<z.ZodString>;
+        agenticAppId: z.ZodOptional<z.ZodString>;
+        agenticAppBlueprintId: z.ZodOptional<z.ZodString>;
+        role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
+        properties: z.ZodOptional<z.ZodUnknown>;
+    }, z.ZodTypeAny, "passthrough">>>;
     timestamp: z.ZodOptional<z.ZodUnion<[z.ZodDate, z.ZodEffects<z.ZodString, Date, string>]>>;
     localTimestamp: z.ZodOptional<z.ZodUnion<[z.ZodDate, z.ZodEffects<z.ZodString, Date, string>]>>;
     localTimezone: z.ZodOptional<z.ZodString>;
@@ -197,23 +198,23 @@ export const activityZodSchema: z.ZodObject<{
         role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
         properties: z.ZodOptional<z.ZodUnknown>;
     }, "strip", z.ZodTypeAny, {
+        isGroup?: boolean | undefined;
+        conversationType?: string | undefined;
+        tenantId?: string | undefined;
         id: string;
         name?: string | undefined;
         aadObjectId?: string | undefined;
-        tenantId?: string | undefined;
         role?: string | undefined;
         properties?: unknown;
-        isGroup?: boolean | undefined;
-        conversationType?: string | undefined;
     }, {
+        isGroup?: boolean | undefined;
+        conversationType?: string | undefined;
+        tenantId?: string | undefined;
         id: string;
         name?: string | undefined;
         aadObjectId?: string | undefined;
-        tenantId?: string | undefined;
         role?: string | undefined;
         properties?: unknown;
-        isGroup?: boolean | undefined;
-        conversationType?: string | undefined;
     }>>;
     recipient: z.ZodOptional<z.ZodObject<{
         id: z.ZodOptional<z.ZodString>;
@@ -225,27 +226,27 @@ export const activityZodSchema: z.ZodObject<{
         agenticAppBlueprintId: z.ZodOptional<z.ZodString>;
         role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
         properties: z.ZodOptional<z.ZodUnknown>;
-    }, "strip", z.ZodTypeAny, {
-        id?: string | undefined;
-        name?: string | undefined;
-        aadObjectId?: string | undefined;
-        tenantId?: string | undefined;
-        agenticUserId?: string | undefined;
-        agenticAppId?: string | undefined;
-        agenticAppBlueprintId?: string | undefined;
-        role?: string | undefined;
-        properties?: unknown;
-    }, {
-        id?: string | undefined;
-        name?: string | undefined;
-        aadObjectId?: string | undefined;
-        tenantId?: string | undefined;
-        agenticUserId?: string | undefined;
-        agenticAppId?: string | undefined;
-        agenticAppBlueprintId?: string | undefined;
-        role?: string | undefined;
-        properties?: unknown;
-    }>>;
+    }, "passthrough", z.ZodTypeAny, z.objectOutputType<{
+        id: z.ZodOptional<z.ZodString>;
+        name: z.ZodOptional<z.ZodString>;
+        aadObjectId: z.ZodOptional<z.ZodString>;
+        tenantId: z.ZodOptional<z.ZodString>;
+        agenticUserId: z.ZodOptional<z.ZodString>;
+        agenticAppId: z.ZodOptional<z.ZodString>;
+        agenticAppBlueprintId: z.ZodOptional<z.ZodString>;
+        role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
+        properties: z.ZodOptional<z.ZodUnknown>;
+    }, z.ZodTypeAny, "passthrough">, z.objectInputType<{
+        id: z.ZodOptional<z.ZodString>;
+        name: z.ZodOptional<z.ZodString>;
+        aadObjectId: z.ZodOptional<z.ZodString>;
+        tenantId: z.ZodOptional<z.ZodString>;
+        agenticUserId: z.ZodOptional<z.ZodString>;
+        agenticAppId: z.ZodOptional<z.ZodString>;
+        agenticAppBlueprintId: z.ZodOptional<z.ZodString>;
+        role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
+        properties: z.ZodOptional<z.ZodUnknown>;
+    }, z.ZodTypeAny, "passthrough">>>;
     textFormat: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["markdown", "plain", "xml"]>, z.ZodString]>>;
     attachmentLayout: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["list", "carousel"]>, z.ZodString]>>;
     membersAdded: z.ZodOptional<z.ZodArray<z.ZodObject<{
@@ -258,27 +259,27 @@ export const activityZodSchema: z.ZodObject<{
         agenticAppBlueprintId: z.ZodOptional<z.ZodString>;
         role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
         properties: z.ZodOptional<z.ZodUnknown>;
-    }, "strip", z.ZodTypeAny, {
-        id?: string | undefined;
-        name?: string | undefined;
-        aadObjectId?: string | undefined;
-        tenantId?: string | undefined;
-        agenticUserId?: string | undefined;
-        agenticAppId?: string | undefined;
-        agenticAppBlueprintId?: string | undefined;
-        role?: string | undefined;
-        properties?: unknown;
-    }, {
-        id?: string | undefined;
-        name?: string | undefined;
-        aadObjectId?: string | undefined;
-        tenantId?: string | undefined;
-        agenticUserId?: string | undefined;
-        agenticAppId?: string | undefined;
-        agenticAppBlueprintId?: string | undefined;
-        role?: string | undefined;
-        properties?: unknown;
-    }>, "many">>;
+    }, "passthrough", z.ZodTypeAny, z.objectOutputType<{
+        id: z.ZodOptional<z.ZodString>;
+        name: z.ZodOptional<z.ZodString>;
+        aadObjectId: z.ZodOptional<z.ZodString>;
+        tenantId: z.ZodOptional<z.ZodString>;
+        agenticUserId: z.ZodOptional<z.ZodString>;
+        agenticAppId: z.ZodOptional<z.ZodString>;
+        agenticAppBlueprintId: z.ZodOptional<z.ZodString>;
+        role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
+        properties: z.ZodOptional<z.ZodUnknown>;
+    }, z.ZodTypeAny, "passthrough">, z.objectInputType<{
+        id: z.ZodOptional<z.ZodString>;
+        name: z.ZodOptional<z.ZodString>;
+        aadObjectId: z.ZodOptional<z.ZodString>;
+        tenantId: z.ZodOptional<z.ZodString>;
+        agenticUserId: z.ZodOptional<z.ZodString>;
+        agenticAppId: z.ZodOptional<z.ZodString>;
+        agenticAppBlueprintId: z.ZodOptional<z.ZodString>;
+        role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
+        properties: z.ZodOptional<z.ZodUnknown>;
+    }, z.ZodTypeAny, "passthrough">>, "many">>;
     membersRemoved: z.ZodOptional<z.ZodArray<z.ZodObject<{
         id: z.ZodOptional<z.ZodString>;
         name: z.ZodOptional<z.ZodString>;
@@ -289,27 +290,27 @@ export const activityZodSchema: z.ZodObject<{
         agenticAppBlueprintId: z.ZodOptional<z.ZodString>;
         role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
         properties: z.ZodOptional<z.ZodUnknown>;
-    }, "strip", z.ZodTypeAny, {
-        id?: string | undefined;
-        name?: string | undefined;
-        aadObjectId?: string | undefined;
-        tenantId?: string | undefined;
-        agenticUserId?: string | undefined;
-        agenticAppId?: string | undefined;
-        agenticAppBlueprintId?: string | undefined;
-        role?: string | undefined;
-        properties?: unknown;
-    }, {
-        id?: string | undefined;
-        name?: string | undefined;
-        aadObjectId?: string | undefined;
-        tenantId?: string | undefined;
-        agenticUserId?: string | undefined;
-        agenticAppId?: string | undefined;
-        agenticAppBlueprintId?: string | undefined;
-        role?: string | undefined;
-        properties?: unknown;
-    }>, "many">>;
+    }, "passthrough", z.ZodTypeAny, z.objectOutputType<{
+        id: z.ZodOptional<z.ZodString>;
+        name: z.ZodOptional<z.ZodString>;
+        aadObjectId: z.ZodOptional<z.ZodString>;
+        tenantId: z.ZodOptional<z.ZodString>;
+        agenticUserId: z.ZodOptional<z.ZodString>;
+        agenticAppId: z.ZodOptional<z.ZodString>;
+        agenticAppBlueprintId: z.ZodOptional<z.ZodString>;
+        role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
+        properties: z.ZodOptional<z.ZodUnknown>;
+    }, z.ZodTypeAny, "passthrough">, z.objectInputType<{
+        id: z.ZodOptional<z.ZodString>;
+        name: z.ZodOptional<z.ZodString>;
+        aadObjectId: z.ZodOptional<z.ZodString>;
+        tenantId: z.ZodOptional<z.ZodString>;
+        agenticUserId: z.ZodOptional<z.ZodString>;
+        agenticAppId: z.ZodOptional<z.ZodString>;
+        agenticAppBlueprintId: z.ZodOptional<z.ZodString>;
+        role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
+        properties: z.ZodOptional<z.ZodUnknown>;
+    }, z.ZodTypeAny, "passthrough">>, "many">>;
     reactionsAdded: z.ZodOptional<z.ZodArray<z.ZodObject<{
         type: z.ZodUnion<[z.ZodEnum<["like", "plusOne"]>, z.ZodString]>;
     }, "strip", z.ZodTypeAny, {
@@ -344,19 +345,19 @@ export const activityZodSchema: z.ZodObject<{
         }, "strip", z.ZodTypeAny, {
             type: string;
             title: string;
-            value?: any;
             image?: string | undefined;
             text?: string | undefined;
             displayText?: string | undefined;
+            value?: any;
             channelData?: unknown;
             imageAltText?: string | undefined;
         }, {
             type: string;
             title: string;
-            value?: any;
             image?: string | undefined;
             text?: string | undefined;
             displayText?: string | undefined;
+            value?: any;
             channelData?: unknown;
             imageAltText?: string | undefined;
         }>, "many">;
@@ -365,10 +366,10 @@ export const activityZodSchema: z.ZodObject<{
         actions: {
             type: string;
             title: string;
-            value?: any;
             image?: string | undefined;
             text?: string | undefined;
             displayText?: string | undefined;
+            value?: any;
             channelData?: unknown;
             imageAltText?: string | undefined;
         }[];
@@ -377,10 +378,10 @@ export const activityZodSchema: z.ZodObject<{
         actions: {
             type: string;
             title: string;
-            value?: any;
             image?: string | undefined;
             text?: string | undefined;
             displayText?: string | undefined;
+            value?: any;
             channelData?: unknown;
             imageAltText?: string | undefined;
         }[];
@@ -430,27 +431,27 @@ export const activityZodSchema: z.ZodObject<{
             agenticAppBlueprintId: z.ZodOptional<z.ZodString>;
             role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
             properties: z.ZodOptional<z.ZodUnknown>;
-        }, "strip", z.ZodTypeAny, {
-            id?: string | undefined;
-            name?: string | undefined;
-            aadObjectId?: string | undefined;
-            tenantId?: string | undefined;
-            agenticUserId?: string | undefined;
-            agenticAppId?: string | undefined;
-            agenticAppBlueprintId?: string | undefined;
-            role?: string | undefined;
-            properties?: unknown;
-        }, {
-            id?: string | undefined;
-            name?: string | undefined;
-            aadObjectId?: string | undefined;
-            tenantId?: string | undefined;
-            agenticUserId?: string | undefined;
-            agenticAppId?: string | undefined;
-            agenticAppBlueprintId?: string | undefined;
-            role?: string | undefined;
-            properties?: unknown;
-        }>>;
+        }, "passthrough", z.ZodTypeAny, z.objectOutputType<{
+            id: z.ZodOptional<z.ZodString>;
+            name: z.ZodOptional<z.ZodString>;
+            aadObjectId: z.ZodOptional<z.ZodString>;
+            tenantId: z.ZodOptional<z.ZodString>;
+            agenticUserId: z.ZodOptional<z.ZodString>;
+            agenticAppId: z.ZodOptional<z.ZodString>;
+            agenticAppBlueprintId: z.ZodOptional<z.ZodString>;
+            role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
+            properties: z.ZodOptional<z.ZodUnknown>;
+        }, z.ZodTypeAny, "passthrough">, z.objectInputType<{
+            id: z.ZodOptional<z.ZodString>;
+            name: z.ZodOptional<z.ZodString>;
+            aadObjectId: z.ZodOptional<z.ZodString>;
+            tenantId: z.ZodOptional<z.ZodString>;
+            agenticUserId: z.ZodOptional<z.ZodString>;
+            agenticAppId: z.ZodOptional<z.ZodString>;
+            agenticAppBlueprintId: z.ZodOptional<z.ZodString>;
+            role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
+            properties: z.ZodOptional<z.ZodUnknown>;
+        }, z.ZodTypeAny, "passthrough">>>;
         locale: z.ZodOptional<z.ZodString>;
         agent: z.ZodNullable<z.ZodOptional<z.ZodObject<{
             id: z.ZodOptional<z.ZodString>;
@@ -462,27 +463,27 @@ export const activityZodSchema: z.ZodObject<{
             agenticAppBlueprintId: z.ZodOptional<z.ZodString>;
             role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
             properties: z.ZodOptional<z.ZodUnknown>;
-        }, "strip", z.ZodTypeAny, {
-            id?: string | undefined;
-            name?: string | undefined;
-            aadObjectId?: string | undefined;
-            tenantId?: string | undefined;
-            agenticUserId?: string | undefined;
-            agenticAppId?: string | undefined;
-            agenticAppBlueprintId?: string | undefined;
-            role?: string | undefined;
-            properties?: unknown;
-        }, {
-            id?: string | undefined;
-            name?: string | undefined;
-            aadObjectId?: string | undefined;
-            tenantId?: string | undefined;
-            agenticUserId?: string | undefined;
-            agenticAppId?: string | undefined;
-            agenticAppBlueprintId?: string | undefined;
-            role?: string | undefined;
-            properties?: unknown;
-        }>>>;
+        }, "passthrough", z.ZodTypeAny, z.objectOutputType<{
+            id: z.ZodOptional<z.ZodString>;
+            name: z.ZodOptional<z.ZodString>;
+            aadObjectId: z.ZodOptional<z.ZodString>;
+            tenantId: z.ZodOptional<z.ZodString>;
+            agenticUserId: z.ZodOptional<z.ZodString>;
+            agenticAppId: z.ZodOptional<z.ZodString>;
+            agenticAppBlueprintId: z.ZodOptional<z.ZodString>;
+            role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
+            properties: z.ZodOptional<z.ZodUnknown>;
+        }, z.ZodTypeAny, "passthrough">, z.objectInputType<{
+            id: z.ZodOptional<z.ZodString>;
+            name: z.ZodOptional<z.ZodString>;
+            aadObjectId: z.ZodOptional<z.ZodString>;
+            tenantId: z.ZodOptional<z.ZodString>;
+            agenticUserId: z.ZodOptional<z.ZodString>;
+            agenticAppId: z.ZodOptional<z.ZodString>;
+            agenticAppBlueprintId: z.ZodOptional<z.ZodString>;
+            role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
+            properties: z.ZodOptional<z.ZodUnknown>;
+        }, z.ZodTypeAny, "passthrough">>>>;
         conversation: z.ZodObject<{
             isGroup: z.ZodOptional<z.ZodBoolean>;
             conversationType: z.ZodOptional<z.ZodString>;
@@ -493,99 +494,99 @@ export const activityZodSchema: z.ZodObject<{
             role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
             properties: z.ZodOptional<z.ZodUnknown>;
         }, "strip", z.ZodTypeAny, {
+            isGroup?: boolean | undefined;
+            conversationType?: string | undefined;
+            tenantId?: string | undefined;
             id: string;
             name?: string | undefined;
             aadObjectId?: string | undefined;
-            tenantId?: string | undefined;
             role?: string | undefined;
             properties?: unknown;
-            isGroup?: boolean | undefined;
-            conversationType?: string | undefined;
         }, {
+            isGroup?: boolean | undefined;
+            conversationType?: string | undefined;
+            tenantId?: string | undefined;
             id: string;
             name?: string | undefined;
             aadObjectId?: string | undefined;
-            tenantId?: string | undefined;
             role?: string | undefined;
             properties?: unknown;
-            isGroup?: boolean | undefined;
-            conversationType?: string | undefined;
         }>;
         channelId: z.ZodString;
         serviceUrl: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
+        activityId?: string | undefined;
+        user?: z.objectOutputType<{
+            id: z.ZodOptional<z.ZodString>;
+            name: z.ZodOptional<z.ZodString>;
+            aadObjectId: z.ZodOptional<z.ZodString>;
+            tenantId: z.ZodOptional<z.ZodString>;
+            agenticUserId: z.ZodOptional<z.ZodString>;
+            agenticAppId: z.ZodOptional<z.ZodString>;
+            agenticAppBlueprintId: z.ZodOptional<z.ZodString>;
+            role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
+            properties: z.ZodOptional<z.ZodUnknown>;
+        }, z.ZodTypeAny, "passthrough"> | undefined;
+        locale?: string | undefined;
+        agent?: z.objectOutputType<{
+            id: z.ZodOptional<z.ZodString>;
+            name: z.ZodOptional<z.ZodString>;
+            aadObjectId: z.ZodOptional<z.ZodString>;
+            tenantId: z.ZodOptional<z.ZodString>;
+            agenticUserId: z.ZodOptional<z.ZodString>;
+            agenticAppId: z.ZodOptional<z.ZodString>;
+            agenticAppBlueprintId: z.ZodOptional<z.ZodString>;
+            role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
+            properties: z.ZodOptional<z.ZodUnknown>;
+        }, z.ZodTypeAny, "passthrough"> | null | undefined;
         conversation: {
+            isGroup?: boolean | undefined;
+            conversationType?: string | undefined;
+            tenantId?: string | undefined;
             id: string;
             name?: string | undefined;
             aadObjectId?: string | undefined;
-            tenantId?: string | undefined;
             role?: string | undefined;
             properties?: unknown;
-            isGroup?: boolean | undefined;
-            conversationType?: string | undefined;
         };
         channelId: string;
-        user?: {
-            id?: string | undefined;
-            name?: string | undefined;
-            aadObjectId?: string | undefined;
-            tenantId?: string | undefined;
-            agenticUserId?: string | undefined;
-            agenticAppId?: string | undefined;
-            agenticAppBlueprintId?: string | undefined;
-            role?: string | undefined;
-            properties?: unknown;
-        } | undefined;
-        activityId?: string | undefined;
-        locale?: string | undefined;
-        agent?: {
-            id?: string | undefined;
-            name?: string | undefined;
-            aadObjectId?: string | undefined;
-            tenantId?: string | undefined;
-            agenticUserId?: string | undefined;
-            agenticAppId?: string | undefined;
-            agenticAppBlueprintId?: string | undefined;
-            role?: string | undefined;
-            properties?: unknown;
-        } | null | undefined;
         serviceUrl?: string | undefined;
     }, {
+        activityId?: string | undefined;
+        user?: z.objectInputType<{
+            id: z.ZodOptional<z.ZodString>;
+            name: z.ZodOptional<z.ZodString>;
+            aadObjectId: z.ZodOptional<z.ZodString>;
+            tenantId: z.ZodOptional<z.ZodString>;
+            agenticUserId: z.ZodOptional<z.ZodString>;
+            agenticAppId: z.ZodOptional<z.ZodString>;
+            agenticAppBlueprintId: z.ZodOptional<z.ZodString>;
+            role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
+            properties: z.ZodOptional<z.ZodUnknown>;
+        }, z.ZodTypeAny, "passthrough"> | undefined;
+        locale?: string | undefined;
+        agent?: z.objectInputType<{
+            id: z.ZodOptional<z.ZodString>;
+            name: z.ZodOptional<z.ZodString>;
+            aadObjectId: z.ZodOptional<z.ZodString>;
+            tenantId: z.ZodOptional<z.ZodString>;
+            agenticUserId: z.ZodOptional<z.ZodString>;
+            agenticAppId: z.ZodOptional<z.ZodString>;
+            agenticAppBlueprintId: z.ZodOptional<z.ZodString>;
+            role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
+            properties: z.ZodOptional<z.ZodUnknown>;
+        }, z.ZodTypeAny, "passthrough"> | null | undefined;
         conversation: {
+            isGroup?: boolean | undefined;
+            conversationType?: string | undefined;
+            tenantId?: string | undefined;
             id: string;
             name?: string | undefined;
             aadObjectId?: string | undefined;
-            tenantId?: string | undefined;
             role?: string | undefined;
             properties?: unknown;
-            isGroup?: boolean | undefined;
-            conversationType?: string | undefined;
         };
         channelId: string;
-        user?: {
-            id?: string | undefined;
-            name?: string | undefined;
-            aadObjectId?: string | undefined;
-            tenantId?: string | undefined;
-            agenticUserId?: string | undefined;
-            agenticAppId?: string | undefined;
-            agenticAppBlueprintId?: string | undefined;
-            role?: string | undefined;
-            properties?: unknown;
-        } | undefined;
-        activityId?: string | undefined;
-        locale?: string | undefined;
-        agent?: {
-            id?: string | undefined;
-            name?: string | undefined;
-            aadObjectId?: string | undefined;
-            tenantId?: string | undefined;
-            agenticUserId?: string | undefined;
-            agenticAppId?: string | undefined;
-            agenticAppBlueprintId?: string | undefined;
-            role?: string | undefined;
-            properties?: unknown;
-        } | null | undefined;
         serviceUrl?: string | undefined;
     }>>;
     code: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["unknown", "completedSuccessfully", "userCancelled", "agentTimedOut", "agentIssuedInvalidMessage", "channelFailed"]>, z.ZodString]>>;
@@ -628,78 +629,70 @@ export const activityZodSchema: z.ZodObject<{
     }>>;
 }, "strip", z.ZodTypeAny, {
     type: string;
-    value?: unknown;
-    code?: string | undefined;
-    id?: string | undefined;
-    entities?: z.objectOutputType<{
-        type: z.ZodString;
-    }, z.ZodTypeAny, "passthrough">[] | undefined;
     text?: string | undefined;
-    channelData?: any;
-    name?: string | undefined;
-    locale?: string | undefined;
-    conversation?: {
-        id: string;
-        name?: string | undefined;
-        aadObjectId?: string | undefined;
-        tenantId?: string | undefined;
-        role?: string | undefined;
-        properties?: unknown;
-        isGroup?: boolean | undefined;
-        conversationType?: string | undefined;
-    } | undefined;
+    id?: string | undefined;
     channelId?: string | undefined;
-    serviceUrl?: string | undefined;
-    from?: {
-        id?: string | undefined;
-        name?: string | undefined;
-        aadObjectId?: string | undefined;
-        tenantId?: string | undefined;
-        agenticUserId?: string | undefined;
-        agenticAppId?: string | undefined;
-        agenticAppBlueprintId?: string | undefined;
-        role?: string | undefined;
-        properties?: unknown;
-    } | undefined;
+    from?: z.objectOutputType<{
+        id: z.ZodOptional<z.ZodString>;
+        name: z.ZodOptional<z.ZodString>;
+        aadObjectId: z.ZodOptional<z.ZodString>;
+        tenantId: z.ZodOptional<z.ZodString>;
+        agenticUserId: z.ZodOptional<z.ZodString>;
+        agenticAppId: z.ZodOptional<z.ZodString>;
+        agenticAppBlueprintId: z.ZodOptional<z.ZodString>;
+        role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
+        properties: z.ZodOptional<z.ZodUnknown>;
+    }, z.ZodTypeAny, "passthrough"> | undefined;
     timestamp?: Date | undefined;
     localTimestamp?: Date | undefined;
     localTimezone?: string | undefined;
     callerId?: string | undefined;
-    recipient?: {
-        id?: string | undefined;
+    serviceUrl?: string | undefined;
+    conversation?: {
+        isGroup?: boolean | undefined;
+        conversationType?: string | undefined;
+        tenantId?: string | undefined;
+        id: string;
         name?: string | undefined;
         aadObjectId?: string | undefined;
-        tenantId?: string | undefined;
-        agenticUserId?: string | undefined;
-        agenticAppId?: string | undefined;
-        agenticAppBlueprintId?: string | undefined;
         role?: string | undefined;
         properties?: unknown;
     } | undefined;
+    recipient?: z.objectOutputType<{
+        id: z.ZodOptional<z.ZodString>;
+        name: z.ZodOptional<z.ZodString>;
+        aadObjectId: z.ZodOptional<z.ZodString>;
+        tenantId: z.ZodOptional<z.ZodString>;
+        agenticUserId: z.ZodOptional<z.ZodString>;
+        agenticAppId: z.ZodOptional<z.ZodString>;
+        agenticAppBlueprintId: z.ZodOptional<z.ZodString>;
+        role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
+        properties: z.ZodOptional<z.ZodUnknown>;
+    }, z.ZodTypeAny, "passthrough"> | undefined;
     textFormat?: string | undefined;
     attachmentLayout?: string | undefined;
-    membersAdded?: {
-        id?: string | undefined;
-        name?: string | undefined;
-        aadObjectId?: string | undefined;
-        tenantId?: string | undefined;
-        agenticUserId?: string | undefined;
-        agenticAppId?: string | undefined;
-        agenticAppBlueprintId?: string | undefined;
-        role?: string | undefined;
-        properties?: unknown;
-    }[] | undefined;
-    membersRemoved?: {
-        id?: string | undefined;
-        name?: string | undefined;
-        aadObjectId?: string | undefined;
-        tenantId?: string | undefined;
-        agenticUserId?: string | undefined;
-        agenticAppId?: string | undefined;
-        agenticAppBlueprintId?: string | undefined;
-        role?: string | undefined;
-        properties?: unknown;
-    }[] | undefined;
+    membersAdded?: z.objectOutputType<{
+        id: z.ZodOptional<z.ZodString>;
+        name: z.ZodOptional<z.ZodString>;
+        aadObjectId: z.ZodOptional<z.ZodString>;
+        tenantId: z.ZodOptional<z.ZodString>;
+        agenticUserId: z.ZodOptional<z.ZodString>;
+        agenticAppId: z.ZodOptional<z.ZodString>;
+        agenticAppBlueprintId: z.ZodOptional<z.ZodString>;
+        role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
+        properties: z.ZodOptional<z.ZodUnknown>;
+    }, z.ZodTypeAny, "passthrough">[] | undefined;
+    membersRemoved?: z.objectOutputType<{
+        id: z.ZodOptional<z.ZodString>;
+        name: z.ZodOptional<z.ZodString>;
+        aadObjectId: z.ZodOptional<z.ZodString>;
+        tenantId: z.ZodOptional<z.ZodString>;
+        agenticUserId: z.ZodOptional<z.ZodString>;
+        agenticAppId: z.ZodOptional<z.ZodString>;
+        agenticAppBlueprintId: z.ZodOptional<z.ZodString>;
+        role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
+        properties: z.ZodOptional<z.ZodUnknown>;
+    }, z.ZodTypeAny, "passthrough">[] | undefined;
     reactionsAdded?: {
         type: string;
     }[] | undefined;
@@ -708,6 +701,7 @@ export const activityZodSchema: z.ZodObject<{
     }[] | undefined;
     topicName?: string | undefined;
     historyDisclosed?: boolean | undefined;
+    locale?: string | undefined;
     speak?: string | undefined;
     inputHint?: string | undefined;
     summary?: string | undefined;
@@ -716,10 +710,10 @@ export const activityZodSchema: z.ZodObject<{
         actions: {
             type: string;
             title: string;
-            value?: any;
             image?: string | undefined;
             text?: string | undefined;
             displayText?: string | undefined;
+            value?: any;
             channelData?: unknown;
             imageAltText?: string | undefined;
         }[];
@@ -731,48 +725,55 @@ export const activityZodSchema: z.ZodObject<{
         name?: string | undefined;
         thumbnailUrl?: string | undefined;
     }[] | undefined;
+    entities?: z.objectOutputType<{
+        type: z.ZodString;
+    }, z.ZodTypeAny, "passthrough">[] | undefined;
+    channelData?: any;
     action?: string | undefined;
     replyToId?: string | undefined;
     label?: string | undefined;
     valueType?: string | undefined;
+    value?: unknown;
+    name?: string | undefined;
     relatesTo?: {
+        activityId?: string | undefined;
+        user?: z.objectOutputType<{
+            id: z.ZodOptional<z.ZodString>;
+            name: z.ZodOptional<z.ZodString>;
+            aadObjectId: z.ZodOptional<z.ZodString>;
+            tenantId: z.ZodOptional<z.ZodString>;
+            agenticUserId: z.ZodOptional<z.ZodString>;
+            agenticAppId: z.ZodOptional<z.ZodString>;
+            agenticAppBlueprintId: z.ZodOptional<z.ZodString>;
+            role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
+            properties: z.ZodOptional<z.ZodUnknown>;
+        }, z.ZodTypeAny, "passthrough"> | undefined;
+        locale?: string | undefined;
+        agent?: z.objectOutputType<{
+            id: z.ZodOptional<z.ZodString>;
+            name: z.ZodOptional<z.ZodString>;
+            aadObjectId: z.ZodOptional<z.ZodString>;
+            tenantId: z.ZodOptional<z.ZodString>;
+            agenticUserId: z.ZodOptional<z.ZodString>;
+            agenticAppId: z.ZodOptional<z.ZodString>;
+            agenticAppBlueprintId: z.ZodOptional<z.ZodString>;
+            role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
+            properties: z.ZodOptional<z.ZodUnknown>;
+        }, z.ZodTypeAny, "passthrough"> | null | undefined;
         conversation: {
+            isGroup?: boolean | undefined;
+            conversationType?: string | undefined;
+            tenantId?: string | undefined;
             id: string;
             name?: string | undefined;
             aadObjectId?: string | undefined;
-            tenantId?: string | undefined;
             role?: string | undefined;
             properties?: unknown;
-            isGroup?: boolean | undefined;
-            conversationType?: string | undefined;
         };
         channelId: string;
-        user?: {
-            id?: string | undefined;
-            name?: string | undefined;
-            aadObjectId?: string | undefined;
-            tenantId?: string | undefined;
-            agenticUserId?: string | undefined;
-            agenticAppId?: string | undefined;
-            agenticAppBlueprintId?: string | undefined;
-            role?: string | undefined;
-            properties?: unknown;
-        } | undefined;
-        activityId?: string | undefined;
-        locale?: string | undefined;
-        agent?: {
-            id?: string | undefined;
-            name?: string | undefined;
-            aadObjectId?: string | undefined;
-            tenantId?: string | undefined;
-            agenticUserId?: string | undefined;
-            agenticAppId?: string | undefined;
-            agenticAppBlueprintId?: string | undefined;
-            role?: string | undefined;
-            properties?: unknown;
-        } | null | undefined;
         serviceUrl?: string | undefined;
     } | undefined;
+    code?: string | undefined;
     expiration?: Date | undefined;
     importance?: string | undefined;
     deliveryMode?: string | undefined;
@@ -790,78 +791,70 @@ export const activityZodSchema: z.ZodObject<{
     } | undefined;
 }, {
     type: string;
-    value?: unknown;
-    code?: string | undefined;
-    id?: string | undefined;
-    entities?: z.objectInputType<{
-        type: z.ZodString;
-    }, z.ZodTypeAny, "passthrough">[] | undefined;
     text?: string | undefined;
-    channelData?: any;
-    name?: string | undefined;
-    locale?: string | undefined;
-    conversation?: {
-        id: string;
-        name?: string | undefined;
-        aadObjectId?: string | undefined;
-        tenantId?: string | undefined;
-        role?: string | undefined;
-        properties?: unknown;
-        isGroup?: boolean | undefined;
-        conversationType?: string | undefined;
-    } | undefined;
+    id?: string | undefined;
     channelId?: string | undefined;
-    serviceUrl?: string | undefined;
-    from?: {
-        id?: string | undefined;
-        name?: string | undefined;
-        aadObjectId?: string | undefined;
-        tenantId?: string | undefined;
-        agenticUserId?: string | undefined;
-        agenticAppId?: string | undefined;
-        agenticAppBlueprintId?: string | undefined;
-        role?: string | undefined;
-        properties?: unknown;
-    } | undefined;
+    from?: z.objectInputType<{
+        id: z.ZodOptional<z.ZodString>;
+        name: z.ZodOptional<z.ZodString>;
+        aadObjectId: z.ZodOptional<z.ZodString>;
+        tenantId: z.ZodOptional<z.ZodString>;
+        agenticUserId: z.ZodOptional<z.ZodString>;
+        agenticAppId: z.ZodOptional<z.ZodString>;
+        agenticAppBlueprintId: z.ZodOptional<z.ZodString>;
+        role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
+        properties: z.ZodOptional<z.ZodUnknown>;
+    }, z.ZodTypeAny, "passthrough"> | undefined;
     timestamp?: string | Date | undefined;
     localTimestamp?: string | Date | undefined;
     localTimezone?: string | undefined;
     callerId?: string | undefined;
-    recipient?: {
-        id?: string | undefined;
+    serviceUrl?: string | undefined;
+    conversation?: {
+        isGroup?: boolean | undefined;
+        conversationType?: string | undefined;
+        tenantId?: string | undefined;
+        id: string;
         name?: string | undefined;
         aadObjectId?: string | undefined;
-        tenantId?: string | undefined;
-        agenticUserId?: string | undefined;
-        agenticAppId?: string | undefined;
-        agenticAppBlueprintId?: string | undefined;
         role?: string | undefined;
         properties?: unknown;
     } | undefined;
+    recipient?: z.objectInputType<{
+        id: z.ZodOptional<z.ZodString>;
+        name: z.ZodOptional<z.ZodString>;
+        aadObjectId: z.ZodOptional<z.ZodString>;
+        tenantId: z.ZodOptional<z.ZodString>;
+        agenticUserId: z.ZodOptional<z.ZodString>;
+        agenticAppId: z.ZodOptional<z.ZodString>;
+        agenticAppBlueprintId: z.ZodOptional<z.ZodString>;
+        role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
+        properties: z.ZodOptional<z.ZodUnknown>;
+    }, z.ZodTypeAny, "passthrough"> | undefined;
     textFormat?: string | undefined;
     attachmentLayout?: string | undefined;
-    membersAdded?: {
-        id?: string | undefined;
-        name?: string | undefined;
-        aadObjectId?: string | undefined;
-        tenantId?: string | undefined;
-        agenticUserId?: string | undefined;
-        agenticAppId?: string | undefined;
-        agenticAppBlueprintId?: string | undefined;
-        role?: string | undefined;
-        properties?: unknown;
-    }[] | undefined;
-    membersRemoved?: {
-        id?: string | undefined;
-        name?: string | undefined;
-        aadObjectId?: string | undefined;
-        tenantId?: string | undefined;
-        agenticUserId?: string | undefined;
-        agenticAppId?: string | undefined;
-        agenticAppBlueprintId?: string | undefined;
-        role?: string | undefined;
-        properties?: unknown;
-    }[] | undefined;
+    membersAdded?: z.objectInputType<{
+        id: z.ZodOptional<z.ZodString>;
+        name: z.ZodOptional<z.ZodString>;
+        aadObjectId: z.ZodOptional<z.ZodString>;
+        tenantId: z.ZodOptional<z.ZodString>;
+        agenticUserId: z.ZodOptional<z.ZodString>;
+        agenticAppId: z.ZodOptional<z.ZodString>;
+        agenticAppBlueprintId: z.ZodOptional<z.ZodString>;
+        role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
+        properties: z.ZodOptional<z.ZodUnknown>;
+    }, z.ZodTypeAny, "passthrough">[] | undefined;
+    membersRemoved?: z.objectInputType<{
+        id: z.ZodOptional<z.ZodString>;
+        name: z.ZodOptional<z.ZodString>;
+        aadObjectId: z.ZodOptional<z.ZodString>;
+        tenantId: z.ZodOptional<z.ZodString>;
+        agenticUserId: z.ZodOptional<z.ZodString>;
+        agenticAppId: z.ZodOptional<z.ZodString>;
+        agenticAppBlueprintId: z.ZodOptional<z.ZodString>;
+        role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
+        properties: z.ZodOptional<z.ZodUnknown>;
+    }, z.ZodTypeAny, "passthrough">[] | undefined;
     reactionsAdded?: {
         type: string;
     }[] | undefined;
@@ -870,6 +863,7 @@ export const activityZodSchema: z.ZodObject<{
     }[] | undefined;
     topicName?: string | undefined;
     historyDisclosed?: boolean | undefined;
+    locale?: string | undefined;
     speak?: string | undefined;
     inputHint?: string | undefined;
     summary?: string | undefined;
@@ -878,10 +872,10 @@ export const activityZodSchema: z.ZodObject<{
         actions: {
             type: string;
             title: string;
-            value?: any;
             image?: string | undefined;
             text?: string | undefined;
             displayText?: string | undefined;
+            value?: any;
             channelData?: unknown;
             imageAltText?: string | undefined;
         }[];
@@ -893,48 +887,55 @@ export const activityZodSchema: z.ZodObject<{
         name?: string | undefined;
         thumbnailUrl?: string | undefined;
     }[] | undefined;
+    entities?: z.objectInputType<{
+        type: z.ZodString;
+    }, z.ZodTypeAny, "passthrough">[] | undefined;
+    channelData?: any;
     action?: string | undefined;
     replyToId?: string | undefined;
     label?: string | undefined;
     valueType?: string | undefined;
+    value?: unknown;
+    name?: string | undefined;
     relatesTo?: {
+        activityId?: string | undefined;
+        user?: z.objectInputType<{
+            id: z.ZodOptional<z.ZodString>;
+            name: z.ZodOptional<z.ZodString>;
+            aadObjectId: z.ZodOptional<z.ZodString>;
+            tenantId: z.ZodOptional<z.ZodString>;
+            agenticUserId: z.ZodOptional<z.ZodString>;
+            agenticAppId: z.ZodOptional<z.ZodString>;
+            agenticAppBlueprintId: z.ZodOptional<z.ZodString>;
+            role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
+            properties: z.ZodOptional<z.ZodUnknown>;
+        }, z.ZodTypeAny, "passthrough"> | undefined;
+        locale?: string | undefined;
+        agent?: z.objectInputType<{
+            id: z.ZodOptional<z.ZodString>;
+            name: z.ZodOptional<z.ZodString>;
+            aadObjectId: z.ZodOptional<z.ZodString>;
+            tenantId: z.ZodOptional<z.ZodString>;
+            agenticUserId: z.ZodOptional<z.ZodString>;
+            agenticAppId: z.ZodOptional<z.ZodString>;
+            agenticAppBlueprintId: z.ZodOptional<z.ZodString>;
+            role: z.ZodOptional<z.ZodUnion<[z.ZodEnum<["user", "bot", "skill", "agenticAppInstance", "agenticUser"]>, z.ZodString]>>;
+            properties: z.ZodOptional<z.ZodUnknown>;
+        }, z.ZodTypeAny, "passthrough"> | null | undefined;
         conversation: {
+            isGroup?: boolean | undefined;
+            conversationType?: string | undefined;
+            tenantId?: string | undefined;
             id: string;
             name?: string | undefined;
             aadObjectId?: string | undefined;
-            tenantId?: string | undefined;
             role?: string | undefined;
             properties?: unknown;
-            isGroup?: boolean | undefined;
-            conversationType?: string | undefined;
         };
         channelId: string;
-        user?: {
-            id?: string | undefined;
-            name?: string | undefined;
-            aadObjectId?: string | undefined;
-            tenantId?: string | undefined;
-            agenticUserId?: string | undefined;
-            agenticAppId?: string | undefined;
-            agenticAppBlueprintId?: string | undefined;
-            role?: string | undefined;
-            properties?: unknown;
-        } | undefined;
-        activityId?: string | undefined;
-        locale?: string | undefined;
-        agent?: {
-            id?: string | undefined;
-            name?: string | undefined;
-            aadObjectId?: string | undefined;
-            tenantId?: string | undefined;
-            agenticUserId?: string | undefined;
-            agenticAppId?: string | undefined;
-            agenticAppBlueprintId?: string | undefined;
-            role?: string | undefined;
-            properties?: unknown;
-        } | null | undefined;
         serviceUrl?: string | undefined;
     } | undefined;
+    code?: string | undefined;
     expiration?: string | Date | undefined;
     importance?: string | undefined;
     deliveryMode?: string | undefined;
@@ -968,14 +969,14 @@ export const adaptiveCardInvokeActionZodSchema: z.ZodObject<{
     data: z.ZodRecord<z.ZodString, z.ZodAny>;
 }, "strip", z.ZodTypeAny, {
     type: string;
+    id?: string | undefined;
     verb: string;
     data: Record<string, any>;
-    id?: string | undefined;
 }, {
     type: string;
+    id?: string | undefined;
     verb: string;
     data: Record<string, any>;
-    id?: string | undefined;
 }>;
 
 // @public
@@ -1097,27 +1098,27 @@ export interface ClientCitation {
 
 // @public
 export const ClientCitationIconName: {
-    readonly MicrosoftWord: "Microsoft Word";
-    readonly MicrosoftExcel: "Microsoft Excel";
-    readonly MicrosoftPowerPoint: "Microsoft PowerPoint";
-    readonly MicrosoftOneNote: "Microsoft OneNote";
-    readonly MicrosoftSharePoint: "Microsoft SharePoint";
-    readonly MicrosoftVisio: "Microsoft Visio";
-    readonly MicrosoftLoop: "Microsoft Loop";
-    readonly MicrosoftWhiteboard: "Microsoft Whiteboard";
-    readonly AdobeIllustrator: "Adobe Illustrator";
-    readonly AdobePhotoshop: "Adobe Photoshop";
-    readonly AdobeInDesign: "Adobe InDesign";
-    readonly AdobeFlash: "Adobe Flash";
-    readonly Sketch: "Sketch";
-    readonly SourceCode: "Source Code";
-    readonly Image: "Image";
-    readonly GIF: "GIF";
-    readonly Video: "Video";
-    readonly Sound: "Sound";
-    readonly ZIP: "ZIP";
-    readonly Text: "Text";
-    readonly PDF: "PDF";
+    readonly MicrosoftWord: 'Microsoft Word';
+    readonly MicrosoftExcel: 'Microsoft Excel';
+    readonly MicrosoftPowerPoint: 'Microsoft PowerPoint';
+    readonly MicrosoftOneNote: 'Microsoft OneNote';
+    readonly MicrosoftSharePoint: 'Microsoft SharePoint';
+    readonly MicrosoftVisio: 'Microsoft Visio';
+    readonly MicrosoftLoop: 'Microsoft Loop';
+    readonly MicrosoftWhiteboard: 'Microsoft Whiteboard';
+    readonly AdobeIllustrator: 'Adobe Illustrator';
+    readonly AdobePhotoshop: 'Adobe Photoshop';
+    readonly AdobeInDesign: 'Adobe InDesign';
+    readonly AdobeFlash: 'Adobe Flash';
+    readonly Sketch: 'Sketch';
+    readonly SourceCode: 'Source Code';
+    readonly Image: 'Image';
+    readonly GIF: 'GIF';
+    readonly Video: 'Video';
+    readonly Sound: 'Sound';
+    readonly ZIP: 'ZIP';
+    readonly Text: 'Text';
+    readonly PDF: 'PDF';
 };
 
 // @public
