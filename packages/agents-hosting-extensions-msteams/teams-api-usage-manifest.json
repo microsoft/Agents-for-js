@@ -220,6 +220,6 @@
   ],
   "sourceReview": {
     "outcome": "no-usage-metadata-change",
-    "reason": "Adding new features: QuotedReplyEntity, TargetedMessageInfoEntity."
+    "reason": "Reviewed the meeting event-model migration, quoted/targeted activity helpers, and TeamsTurnContext targeted-send normalization; the manifest already records the new meeting activity and entity types plus the existing Teams Client reference, so no additional usage entries are needed."
   }
 }

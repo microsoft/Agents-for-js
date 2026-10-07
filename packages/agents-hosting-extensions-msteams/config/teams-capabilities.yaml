@@ -12,7 +12,7 @@ dependency:
 
 sourceReview:
   outcome: "no-capability-metadata-change"
-  reason: "Adding new features: promptPreviewActivityNormalizer."
+  reason: "Reviewed the meeting participant type migration, prompt-preview normalizer, and quoted/targeted activity helpers; the existing meetings and activity-data owners and upstream areas already cover these source changes."
 
 capabilities:
   teams-api-client:
