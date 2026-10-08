@@ -196,6 +196,43 @@ echo.onActivity('message', async (context: TurnContext, state: TurnState) => {
 })
 ```
 
+### Handling errors from direct proactive operations
+
+`adapter.continueConversation()` sends errors from its callback to the adapter's
+`onTurnError` handler. If that handler completes normally, `continueConversation()`
+also completes normally, so a surrounding `try`/`catch` does not receive the
+original error.
+
+When the caller needs to inspect or retry a failed proactive operation, catch the
+error inside the continuation callback and throw it after `continueConversation()`
+completes:
+
+```ts
+import type { ResourceResponse } from '@microsoft/agents-hosting'
+let sendResponse: ResourceResponse | undefined
+let sendFailed = false
+let sendError: unknown
+
+await adapter.continueConversation(botAppId, reference, async (context) => {
+  try {
+    sendResponse = await context.sendActivity('Proactive message')
+  } catch (error) {
+    sendFailed = true
+    sendError = error
+  }
+})
+
+if (sendFailed) {
+  throw sendError
+}
+
+console.log('Sent activity:', sendResponse)
+```
+
+Because the callback catches the error, `onTurnError` is not called for that
+failure. Applications that want centralized handling can perform it in the
+callback's `catch` block.
+
 ## Storage providers
 
 Public `storage` options accept `StorageProvider`, which is `Storage | StorageV2`.

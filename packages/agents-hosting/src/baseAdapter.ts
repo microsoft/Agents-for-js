@@ -88,6 +88,12 @@ export abstract class BaseAdapter {
 
   /**
    * Continues a conversation.
+   *
+   * @remarks
+   * Errors thrown by `logic` are passed to {@link onTurnError}. If the error handler completes
+   * normally, this method resolves. To observe the original error in the caller, catch it inside
+   * `logic` and throw it after this method completes.
+   *
    * @param reference - The conversation reference to continue.
    * @param logic - The logic to execute.
    * @returns A promise representing the completion of the continue operation.

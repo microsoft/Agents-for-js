@@ -751,6 +751,35 @@ export class CloudAdapter extends BaseAdapter {
 
   /**
    * Continues a conversation.
+   *
+   * @remarks
+   * Errors thrown by `logic` are passed to {@link BaseAdapter.onTurnError}. If the error handler
+   * completes normally, this method resolves. A `try`/`catch` around `continueConversation` will
+   * therefore not observe the original error.
+   *
+   * To observe an error from a proactive operation, catch it inside `logic` and throw it after
+   * `continueConversation` completes:
+   *
+   * ```typescript
+   * let operationFailed = false
+   * let operationError: unknown
+   *
+   * await adapter.continueConversation(botAppId, reference, async (context) => {
+   *   try {
+   *     await context.sendActivity('Proactive message')
+   *   } catch (error) {
+   *     operationFailed = true
+   *     operationError = error
+   *   }
+   * })
+   *
+   * if (operationFailed) {
+   *   throw operationError
+   * }
+   * ```
+   *
+   * Catching the error inside `logic` prevents `onTurnError` from receiving that error.
+   *
    * @param botAppIdOrIdentity - The bot identity to use when continuing the conversation. This can be either:
    * a string containing the bot's App ID (botId) or a JwtPayload object containing identity claims (must include aud).
    * @param reference - The conversation reference to continue.
