@@ -17,11 +17,17 @@
  * longer needs to import types from `express` at compile time.
  */
 export interface WebResponse {
+  /** Sets the HTTP status code. */
   status (code: number): this
+  /** Sets a response header. */
   setHeader (name: string, value: string): this
+  /** Sends an optional response body. */
   send (body?: unknown): this
+  /** Ends the response. */
   end (): this
+  /** Indicates whether response headers have been sent. */
   headersSent: boolean
+  /** Indicates whether the response stream has ended. */
   writableEnded: boolean
 }
 
@@ -40,5 +46,6 @@ export type NextFunction = (err?: any) => void
  * (`req.params.conversationId`) without coupling to Express's `Request` type.
  */
 export interface WebRequestParamsCarrier {
+  /** Route parameters parsed from the request URL. */
   params?: Record<string, string | undefined>
 }

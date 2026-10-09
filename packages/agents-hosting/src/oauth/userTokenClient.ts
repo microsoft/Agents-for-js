@@ -34,6 +34,7 @@ function formatHttpErrorMessage (error: HttpError): string {
  * Client for managing user tokens.
  */
 export class UserTokenClient {
+  /** The HTTP client used for token service requests. */
   client: HttpClient
   private msAppId: string = ''
   private authProvider?: AuthProvider
@@ -58,6 +59,13 @@ export class UserTokenClient {
    */
   constructor (httpClient: HttpClient, authProvider?: AuthProvider, authScope?: string)
 
+  /**
+   * Initializes the client from an application ID or an HTTP client.
+   *
+   * @param param The application ID or configured HTTP client.
+   * @param authProvider The optional provider used to acquire an access token lazily.
+   * @param authScope The optional access-token scope.
+   */
   constructor (param: string | HttpClient, authProvider?: AuthProvider, authScope?: string) {
     if (typeof param === 'string') {
       const baseURL = getTokenServiceEndpoint()
@@ -260,6 +268,11 @@ export class UserTokenClient {
     })
   }
 
+  /**
+   * Replaces the bearer token used for token service requests.
+   *
+   * @param token The access token.
+   */
   public updateAuthToken (token: string): void {
     this.client.setHeader('Authorization', `Bearer ${token}`)
     this.authInitialized = true
