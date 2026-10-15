@@ -1,8 +1,8 @@
 import { ActionTypes, Activity, ChannelAccount, Channels, Entity, RoleTypes } from '@microsoft/agents-activity'
 import { AgentApplication, CardFactory, CreateConversationOptionsBuilder, MemoryStorage, MessageFactory, TurnContext, TurnState } from '@microsoft/agents-hosting'
-import { addQuotedReply, parseTeamsChannelData, TeamsAgentExtension, teamsGetTeamInfo, TeamsTurnContext } from '@microsoft/agents-hosting-extensions-msteams'
+import { addQuotedReply, isRecipientTargeted, onTeamsFeedbackLoop, parseTeamsChannelData, TeamsAgentExtension, teamsEnableFeedbackLoop, teamsGetTeamInfo, TeamsTurnContext } from '@microsoft/agents-hosting-extensions-msteams'
 import { startServer } from '@microsoft/agents-hosting-express'
-import { ChannelInfo, PagedMembersResult, TeamInfo, TeamsChannelAccount } from '@microsoft/teams.api'
+import { ChannelInfo, PagedMembersResult, TaskModuleResponse, TeamInfo, TeamsChannelAccount } from '@microsoft/teams.api'
 
 const app = new AgentApplication<TurnState>({ storage: new MemoryStorage() })
 
@@ -200,16 +200,98 @@ app
 
     await context.sendActivity(reply)
   })
-  .onMessage('promptpreview', async (context: TurnContext) => {
-    const response = Activity.fromObject({ type: 'message', text: 'This targeted response includes Prompt Preview metadata for your slash command.' })
-    response.withTargetedRecipient(context.activity.from as ChannelAccount)
+  .onMessage('customfeedback', async (context: TurnContext) => {
+    const activity = MessageFactory.text('Select thumbs up or thumbs down to open the custom feedback dialog.')
+    teamsEnableFeedbackLoop(activity, 'custom')
+    await context.sendActivity(activity)
+  })
+  // Custom feedback uses message/fetchTask, rather than the task/fetch dialog route.
+  .onActivity('invoke', async (context) => {
+    if (context.activity.channelId !== Channels.Msteams || context.activity.name !== 'message/fetchTask') {
+      return
+    }
 
-    // TeamsTurnContext adds TargetedMessageInfoEntity when the incoming slash command is targeted.
-    await new TeamsTurnContext(context).sendActivity(response)
+    const request = asRecord(context.activity.value)
+    const wrappedData = asRecord(request?.data)
+    const rootActionName = request?.actionName
+    const wrappedActionName = wrappedData?.actionName
+    const actionName = rootActionName ?? wrappedActionName
+    const conflictingActionNames = rootActionName != null && wrappedActionName != null && rootActionName !== wrappedActionName
+
+    if (actionName !== 'feedback' || conflictingActionNames) {
+      await context.sendActivity(Activity.fromObject({ type: 'invokeResponse', value: { status: 400 } }))
+      return
+    }
+
+    const reaction = asRecord(request?.actionValue)?.reaction ?? asRecord(wrappedData?.actionValue)?.reaction
+    const response: TaskModuleResponse = {
+      task: {
+        type: 'continue',
+        value: {
+          title: 'Feedback',
+          height: 'small',
+          width: 'small',
+          card: CardFactory.adaptiveCard({
+            $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
+            type: 'AdaptiveCard',
+            version: '1.4',
+            body: [
+              {
+                type: 'TextBlock',
+                text: typeof reaction === 'string'
+                  ? `You selected ${reaction}. Tell us more about your experience.`
+                  : 'Tell us more about your experience.',
+                wrap: true
+              },
+              {
+                type: 'Input.Text',
+                id: 'feedbackText',
+                label: 'Additional feedback',
+                placeholder: 'Enter your feedback here...',
+                isMultiline: true
+              }
+            ],
+            actions: [{ type: 'Action.Submit', title: 'Submit' }]
+          })
+        }
+      }
+    }
+
+    await context.sendActivity(Activity.fromObject({ type: 'invokeResponse', value: { status: 200, body: response } }))
   })
   .onActivity('message', async (context: TurnContext) => {
+    if (isRecipientTargeted(context.activity)) {
+      // this is an agent-targeted message.
+      const response = Activity.fromObject({
+        type: 'message',
+        text: [
+          '🔒 **Private response**',
+          '',
+          'Your original private message appears in the Prompt Preview above this message.',
+          'Only you can see this response.'
+        ].join('\n')
+      })
+      response.withTargetedRecipient(context.activity.from as ChannelAccount)
+
+      // TeamsTurnContext adds the targetedMessageInfo entity which enables the prompt-preview.
+      await new TeamsTurnContext(context).sendActivity(response)
+      return
+    }
+    // a normal message from the conversation
     await context.sendActivity(MessageFactory.attachment(createConversationCard('Welcome!', 'Choose a Teams conversation demo action.', 0)))
   })
+
+onTeamsFeedbackLoop(app, async (_context, _state, feedbackData) => {
+  const feedbackText = readFeedbackText(feedbackData.actionValue?.feedback)
+  // A production application can validate and persist feedback here.
+  // Avoid logging the user's free-text feedback in this sample.
+  console.info('Feedback received:', {
+    replyToId: feedbackData.replyToId,
+    reaction: feedbackData.actionValue?.reaction,
+    feedbackLength: feedbackText?.length ?? 0
+  })
+  // onTeamsFeedbackLoop sends the successful invoke response to close the dialog.
+})
 
 function createConversationCard (title: string, text: string, count: number) {
   return CardFactory.heroCard(title, text, undefined, [
@@ -248,8 +330,33 @@ function createConversationCard (title: string, text: string, count: number) {
       type: ActionTypes.ImBack,
       title: 'Quoted Reply',
       value: 'quotedreply',
+    },
+    {
+      type: ActionTypes.MessageBack,
+      title: 'Custom Feedback',
+      text: 'customfeedback'
     }
   ])
+}
+
+function asRecord (value: unknown): Record<string, unknown> | undefined {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : undefined
+}
+
+function readFeedbackText (feedback: unknown): string | undefined {
+  if (typeof feedback === 'string') {
+    if (!feedback.trim()) return undefined
+    try {
+      const text = asRecord(JSON.parse(feedback))?.feedbackText
+      return typeof text === 'string' ? text : feedback
+    } catch {
+      return feedback
+    }
+  }
+  const text = asRecord(feedback)?.feedbackText
+  return typeof text === 'string' ? text : undefined
 }
 
 function getCardCount (value: unknown): number {
@@ -261,14 +368,14 @@ async function getPagedMembers (context: TurnContext, pageSize?: number, continu
   const conversationId = getMembersConversationId(context)
   const api = teamsAgentExtension.getTeamsClient(context)
 
-  return await api.conversations.members(conversationId).getPaged(pageSize, continuationToken)
+  return await api.conversations.getPagedMembers(conversationId, pageSize, continuationToken)
 }
 
 async function getMember (context: TurnContext, userId: string): Promise<TeamsChannelAccount> {
   const conversationId = getMembersConversationId(context)
   const api = teamsAgentExtension.getTeamsClient(context)
 
-  return await api.conversations.members(conversationId).getById(userId)
+  return await api.conversations.getMemberById(conversationId, userId)
 }
 
 function getMembersConversationId (context: TurnContext): string {

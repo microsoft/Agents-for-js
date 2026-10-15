@@ -59,6 +59,7 @@ Comprehensive sample demonstrating core Teams conversation features using `Agent
 **Features illustrated:**
 - Proactive messaging to all team members (`messageall`) via `CreateConversationOptionsBuilder`
 - Targeted messages visible only to specific users (`targeted`) via `TeamsTurnContext.sendTargetedActivity()`
+- Private user-to-agent messages and targeted replies with Prompt Preview
 - @mention a user (`mentionme` / `atmention`)
 - Identify the current user via the Teams API client (`whoami`)
 - Update an existing card in-place (`update`)
@@ -68,7 +69,7 @@ Comprehensive sample demonstrating core Teams conversation features using `Agent
 - Member added / removed events
 - Hero cards with `MessageBack` actions
 - Quoted replies
-- Custom Feedback
+- Custom feedback dialog (`customfeedback`) with thumbs-up/down reactions and optional comments
 
 **How to test:**
 1. Install the sample in a **team channel** or **groupChat**.
@@ -78,12 +79,18 @@ Comprehensive sample demonstrating core Teams conversation features using `Agent
 5. Click **"Mention Me"** — the bot replies with an @mention of your name.
 6. Click **"Update Card"** — the card updates in-place showing an incrementing counter.
 7. Click **"Delete Card"** — the card is removed from the conversation.
-8. Click **"Send Targeted"** (in a group chat) — each member receives a targeted message only they can see.
-9. Add/remove members or create/rename/delete channels or rename the team to see the event handlers fire.
+8. Click **"Send Targeted"** — the agent sends a separate targeted message to each member, visible only to that member. This action sends messages from the agent; it does not trigger Prompt Preview.
+9. To see Prompt Preview, install the app with `supportsTargetedMessages: true` as shown below. Type `/` in the Teams compose box, select this agent, enter a private message, and send it. Teams delivers that message only to the agent. The agent replies privately, with a preview of your original message above its response.
+10. Add/remove members or create/rename/delete channels or rename the team to see the event handlers fire.
+11. Click **"Custom Feedback"** — select thumbs up or thumbs down on the response, enter optional comments in the dialog, and select **Submit**. The console logs the original activity ID, reaction, and feedback length without logging the comment text.
+
+Custom feedback uses `channelData.feedbackLoop.type: "custom"`. The sample handles `message/fetchTask` to return the Adaptive Card dialog, accepting either a root feedback payload or one wrapped in `data`. Submission arrives as `message/submitAction` with `actionName: "feedback"`; `onTeamsFeedbackLoop` handles it and acknowledges the invoke. The sample does not persist feedback.
+
+Teams does not store custom feedback for the application. For protocol details, see [Bot messages with AI-generated content](https://learn.microsoft.com/microsoftteams/platform/bots/how-to/bot-messages-ai-generated-content#feedback-buttons).
 
 **Manifest — additional sections:**
 
-Set `"supportsTargetedMessages": true` on the bot entry in the base manifest:
+Set `"supportsTargetedMessages": true` on the bot entry in the base manifest to let users send private messages to the agent through Teams' `/` picker.
 
 ```json
 {
