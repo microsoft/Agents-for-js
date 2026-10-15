@@ -89,6 +89,31 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
     description: 'Copilot Studio request failed with status {status}'
   },
 
+  InvalidDiscoveryResponse: {
+    code: -140033,
+    description: 'Conversation endpoint discovery returned an invalid or empty JSON response.'
+  },
+
+  InvalidDiscoveryOperationUrl: {
+    code: -140034,
+    description: 'Conversation endpoint discovery returned an invalid operation URL.'
+  },
+
+  DiscoveryConversationIdRequired: {
+    code: -140035,
+    description: 'A conversation ID is required for this operation.'
+  },
+
+  DiscoverySubscribeNotSupported: {
+    code: -140036,
+    description: 'The agent does not advertise a subscribe endpoint.'
+  },
+
+  DiscoveryAccessTokenRequired: {
+    code: -140037,
+    description: 'A non-empty access token is required for conversation endpoint discovery.'
+  },
+
   ActivityCannotBeNull: {
     code: -140040,
     description: 'Activity cannot be null.'
