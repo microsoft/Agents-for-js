@@ -1888,3 +1888,271 @@ describe('subscribeAsync', function () {
     assert.doesNotMatch(error.message, /sensitive-response-body/)
   })
 })
+
+describe('shared client conversation isolation', () => {
+  function signal () {
+    let complete!: () => void
+    const promise = new Promise<void>((resolve) => { complete = resolve })
+    return { promise, resolve: complete }
+  }
+
+  function startResponse (id?: string, activity?: object) {
+    const reading = signal()
+    const finish = signal()
+    let sentActivity = false
+    const body = new ReadableStream<Uint8Array>({
+      async pull (controller) {
+        reading.resolve()
+        if (activity && !sentActivity) {
+          sentActivity = true
+          controller.enqueue(new TextEncoder().encode(`event: activity\ndata: ${JSON.stringify(activity)}\n\n`))
+          return
+        }
+        await finish.promise
+        controller.enqueue(new TextEncoder().encode('event: end\ndata: done\n\n'))
+        controller.close()
+      }
+    })
+    return {
+      reading,
+      finish,
+      response: new Response(body, {
+        headers: { 'Content-Type': 'text/event-stream', ...(id && { 'x-ms-conversationid': id }) }
+      })
+    }
+  }
+
+  function client () {
+    return new CopilotStudioClient({ directConnectUrl: 'https://fixture.example/api' }, 'test-token')
+  }
+
+  it('streams startup activities before returning header metadata', async (t) => {
+    const response = startResponse('header-A', { type: 'message', text: 'Hello', conversation: { id: 'activity-A' } })
+    t.mock.method(globalThis, 'fetch', async () => response.response)
+    const stream = client().startConversationStreaming({ locale: 'fr-FR' })
+    try {
+      const first = await stream.next()
+      assert.equal(first.done, false)
+      assert.equal(first.value.text, 'Hello')
+      response.finish.resolve()
+      const final = await stream.next()
+      assert.equal(final.done, true)
+      assert.equal(final.value, 'header-A')
+    } finally {
+      response.finish.resolve()
+      await stream.return(undefined)
+    }
+  })
+
+  it('uses a non-message activity ID when the header is absent', async (t) => {
+    const response = startResponse(undefined, { type: 'event', name: 'ready', conversation: { id: 'event-A' } })
+    response.finish.resolve()
+    t.mock.method(globalThis, 'fetch', async () => response.response)
+    const result = await client().startConversationWithResponse(false)
+    assert.equal(result.conversationId, 'event-A')
+  })
+
+  it('closes the request when startup streaming is stopped early', async (t) => {
+    const response = startResponse('A', { type: 'message', text: 'Hello', conversation: { id: 'A' } })
+    let requestSignal: AbortSignal | null | undefined
+    t.mock.method(globalThis, 'fetch', async (_url: string | URL | Request, init?: RequestInit) => {
+      requestSignal = init?.signal
+      return response.response
+    })
+    const stream = client().startConversationStreaming()
+    try {
+      const first = await stream.next()
+      assert.equal(first.done, false)
+      assert.equal(requestSignal?.aborted, false)
+      await stream.return(undefined)
+      assert.equal(requestSignal?.aborted, true)
+    } finally {
+      response.finish.resolve()
+      await stream.return(undefined)
+    }
+  })
+
+  it('uses the supplied start ID when the response has no ID', async (t) => {
+    const response = startResponse()
+    response.finish.resolve()
+    t.mock.method(globalThis, 'fetch', async () => response.response)
+    const result = await client().startConversationWithResponse({ conversationId: 'supplied-A', emitStartConversationEvent: false })
+    assert.equal(result.conversationId, 'supplied-A')
+  })
+
+  it('prefers a response activity ID over a supplied start ID', async (t) => {
+    const response = startResponse(undefined, { type: 'message', text: 'Hello', conversation: { id: 'server-A' } })
+    response.finish.resolve()
+    t.mock.method(globalThis, 'fetch', async () => response.response)
+    const result = await client().startConversationWithResponse({ conversationId: 'requested-A' })
+    assert.equal(result.conversationId, 'server-A')
+  })
+
+  it('preserves implicit default updates for startup streaming', async (t) => {
+    const responses = [startResponse('legacy-A'), startResponse('stream-B'), startResponse('stream-B')]
+    responses.forEach(response => response.finish.resolve())
+    let index = 0
+    const fetchMock = t.mock.method(globalThis, 'fetch', async () => responses[index++].response)
+    const shared = client()
+    await shared.startConversationWithResponse(false)
+    const streamed = await shared.startConversationStreaming(false).next()
+    assert.equal(streamed.done, true)
+    assert.equal(streamed.value, 'stream-B')
+    await shared.sendActivity(Activity.fromObject({ type: 'message', text: 'Legacy follow-up' }))
+    assert.match(String(fetchMock.mock.calls[2].arguments[0]), /\/conversations\/stream-B\?/)
+  })
+
+  it('preserves empty-ID start results without borrowing a prior conversation', async (t) => {
+    const responses = [startResponse('prior-A'), startResponse()]
+    responses.forEach(response => response.finish.resolve())
+    let index = 0
+    t.mock.method(globalThis, 'fetch', async () => responses[index++].response)
+    const shared = client()
+    await shared.startConversationAsync(false)
+    const result = await shared.startConversationWithResponse(false)
+    assert.equal(result.conversationId, '')
+    assert.deepEqual(result.activities, [])
+  })
+
+  it('preserves activity-ID precedence and the header-based implicit default', async (t) => {
+    const responses = [
+      startResponse('header-A', { type: 'message', text: 'Hello', conversation: { id: 'activity-A' } }),
+      startResponse('header-A')
+    ]
+    responses.forEach(response => response.finish.resolve())
+    let index = 0
+    const fetchMock = t.mock.method(globalThis, 'fetch', async () => responses[index++].response)
+    const shared = client()
+    const result = await shared.startConversationWithResponse()
+    assert.equal(result.conversationId, 'activity-A')
+    await shared.sendActivity(Activity.fromObject({ type: 'message', text: 'Follow-up' }))
+    assert.match(String(fetchMock.mock.calls[1].arguments[0]), /\/conversations\/header-A\?/)
+  })
+
+  for (const finishFirst of [0, 1]) {
+    it(`returns request-local header IDs when start ${finishFirst + 1} finishes first`, async (t) => {
+      const responses = [startResponse('A'), startResponse('B')]
+      let index = 0
+      t.mock.method(globalThis, 'fetch', async () => responses[index++].response)
+      const shared = client()
+      const starts = [shared.startConversationWithResponse(false), shared.startConversationWithResponse(false)]
+      try {
+        await Promise.all(responses.map(response => response.reading.promise))
+        responses[finishFirst].finish.resolve()
+        await starts[finishFirst]
+        responses[1 - finishFirst].finish.resolve()
+        const [a, b] = await Promise.all(starts)
+        assert.equal(a.conversationId, 'A')
+        assert.equal(b.conversationId, 'B')
+        assert.deepEqual(a.activities, [])
+        assert.deepEqual(b.activities, [])
+      } finally {
+        responses.forEach(response => response.finish.resolve())
+        await Promise.allSettled(starts)
+      }
+    })
+  }
+
+  it('keeps a pending start ID isolated from an explicit continuation response', async (t) => {
+    const a = startResponse('A')
+    const b = startResponse('B')
+    b.finish.resolve()
+    let index = 0
+    const fetchMock = t.mock.method(globalThis, 'fetch', async () => [a, b][index++].response)
+    const shared = client()
+    const pending = shared.startConversationWithResponse(false)
+    try {
+      await a.reading.promise
+      await shared.executeWithResponse(Activity.fromObject({ type: 'message', text: 'B' }), 'B')
+      a.finish.resolve()
+      assert.equal((await pending).conversationId, 'A')
+      assert.match(String(fetchMock.mock.calls[1].arguments[0]), /\/conversations\/B\?/)
+    } finally {
+      a.finish.resolve()
+      await Promise.allSettled([pending])
+    }
+  })
+
+  it('routes concurrent explicit sends independently in the URL and request body', async (t) => {
+    const responses = [startResponse('A'), startResponse('B')]
+    let index = 0
+    const requests: { url: string, id: string }[] = []
+    t.mock.method(globalThis, 'fetch', async (url: string | URL | Request, init?: RequestInit) => {
+      requests.push({ url: String(url), id: JSON.parse(String(init?.body)).conversationId })
+      return responses[index++].response
+    })
+    const shared = client()
+    const turns = ['A', 'B'].map(id => shared.executeWithResponse(Activity.fromObject({ type: 'message', text: id }), id))
+    try {
+      await Promise.all(responses.map(response => response.reading.promise))
+      responses[1].finish.resolve()
+      await turns[1]
+      responses[0].finish.resolve()
+      assert.deepEqual((await Promise.all(turns)).map(result => result.conversationId), ['A', 'B'])
+      assert.deepEqual(requests.map(request => request.id), ['A', 'B'])
+      assert.match(requests[0].url, /\/conversations\/A\?/)
+      assert.match(requests[1].url, /\/conversations\/B\?/)
+    } finally {
+      responses.forEach(response => response.finish.resolve())
+      await Promise.allSettled(turns)
+    }
+  })
+
+  it('preserves start overrides when returning conversation metadata', async (t) => {
+    const shared = client()
+    t.mock.method(shared, 'startConversationStreaming', async function * () {
+      yield Activity.fromObject({ type: 'message', text: 'Custom start', conversation: { id: 'custom-A' } })
+    })
+    const result = await shared.startConversationWithResponse()
+    assert.equal(result.conversationId, 'custom-A')
+    assert.equal(result.activities[0].text, 'Custom start')
+  })
+
+  it('does not borrow the default when a start override discards metadata', async (t) => {
+    const response = startResponse('custom-header-A')
+    response.finish.resolve()
+    t.mock.method(globalThis, 'fetch', async () => response.response)
+    const shared = client()
+    const originalStart = shared.startConversationStreaming.bind(shared)
+    t.mock.method(shared, 'startConversationStreaming', async function * () {
+      yield * originalStart()
+    })
+
+    const result = await shared.startConversationWithResponse()
+
+    assert.equal(result.conversationId, '')
+    assert.equal(result.activities.length, 0)
+  })
+
+  for (const forwardMetadata of [false, true]) {
+    for (const finishFirst of [0, 1]) {
+      it(`isolates overridden starts with forwarding=${forwardMetadata}, first=${finishFirst}`, async (t) => {
+        const responses = [startResponse('A'), startResponse('B')]
+        let index = 0
+        t.mock.method(globalThis, 'fetch', async () => responses[index++].response)
+        const shared = client()
+        const originalStart = shared.startConversationStreaming.bind(shared)
+        t.mock.method(shared, 'startConversationStreaming', async function * () {
+          await Promise.resolve()
+          const id = yield * originalStart()
+          if (forwardMetadata) {
+            return id
+          }
+        })
+        const starts = [shared.startConversationWithResponse(), shared.startConversationWithResponse()]
+        try {
+          await Promise.all(responses.map(response => response.reading.promise))
+          responses[finishFirst].finish.resolve()
+          await starts[finishFirst]
+          responses[1 - finishFirst].finish.resolve()
+          const results = await Promise.all(starts)
+          assert.deepEqual(results.map(result => result.conversationId), forwardMetadata ? ['A', 'B'] : ['', ''])
+          assert.deepEqual(results.map(result => result.activities), [[], []])
+        } finally {
+          responses.forEach(response => response.finish.resolve())
+          await Promise.allSettled(starts)
+        }
+      })
+    }
+  }
+})
