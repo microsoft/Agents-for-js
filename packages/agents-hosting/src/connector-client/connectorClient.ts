@@ -53,6 +53,7 @@ export class ConnectorClient {
     this._httpClient = httpClient
   }
 
+  /** Gets the HTTP client used for Connector API requests. */
   public get httpClient (): HttpClient {
     return this._httpClient
   }
@@ -127,6 +128,13 @@ export class ConnectorClient {
     })
   }
 
+  /**
+   * Retrieves a member of a conversation.
+   *
+   * @param userId The member's channel user ID.
+   * @param conversationId The conversation ID.
+   * @returns The member's channel account.
+   */
   public async getConversationMember (userId: string, conversationId: string): Promise<ChannelAccount> {
     return trace(ConnectorClientTraceDefinitions.getConversationMember, async ({ record }) => {
       if (!userId || !conversationId) {

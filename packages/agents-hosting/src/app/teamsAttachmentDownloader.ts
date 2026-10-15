@@ -23,6 +23,12 @@ export class M365AttachmentDownloader<TState extends TurnState = TurnState> impl
   private _stateKey: string
   private readonly _hostValidator: OutboundUrlPolicy
 
+  /**
+   * Creates an attachment downloader.
+   *
+   * @param stateKey - Turn-state key used by {@link downloadAndStoreFiles}.
+   * @param outboundHostValidator - Policy used to validate attachment download URLs.
+   */
   public constructor (stateKey: string = 'inputFiles', outboundHostValidator?: OutboundUrlPolicy) {
     this._httpClient = new HttpClient()
     this._stateKey = stateKey

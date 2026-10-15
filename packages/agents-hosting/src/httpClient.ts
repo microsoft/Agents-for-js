@@ -11,13 +11,21 @@ import { Errors } from './errorHelper'
  * Configuration for an HTTP request.
  */
 export interface HttpRequestConfig {
+  /** The HTTP method. */
   method: string
+  /** The absolute URL or path relative to the client's base URL. */
   url: string
+  /** Headers to merge with the client's default headers. */
   headers?: Record<string, string>
+  /** The request body. */
   data?: unknown
+  /** Query parameters to append to the URL. */
   params?: Record<string, string | undefined>
+  /** The format used to read the response body. */
   responseType?: 'json' | 'arraybuffer' | 'stream'
+  /** The request timeout in milliseconds. */
   timeout?: number
+  /** A signal used to cancel the request. */
   signal?: AbortSignal
 }
 
@@ -25,10 +33,15 @@ export interface HttpRequestConfig {
  * Represents an HTTP response.
  */
 export interface HttpResponse<T = unknown> {
+  /** The parsed response body. */
   data: T
+  /** The HTTP status code. */
   status: number
+  /** The HTTP status text. */
   statusText: string
+  /** The response headers. */
   headers: Headers
+  /** The configuration used for the request. */
   config: HttpRequestConfig
 }
 
@@ -36,7 +49,9 @@ export interface HttpResponse<T = unknown> {
  * Options for creating an HttpClient instance.
  */
 export interface HttpClientOptions {
+  /** The base URL used for relative request URLs. */
   baseURL?: string
+  /** Default headers included with every request. */
   headers?: Record<string, string>
 }
 
@@ -47,27 +62,48 @@ export class HttpClient {
   private _baseURL: string
   private _defaultHeaders: Record<string, string>
 
+  /**
+   * Creates an HTTP client.
+   *
+   * @param options The base URL and default headers.
+   */
   constructor (options: HttpClientOptions = {}) {
     this._baseURL = options.baseURL ?? ''
     this._defaultHeaders = this.normalizeHeaders(options.headers)
   }
 
+  /** Gets the base URL used for relative requests. */
   get baseURL (): string {
     return this._baseURL
   }
 
+  /** Gets the normalized default request headers. */
   get defaultHeaders (): Record<string, string> {
     return this._defaultHeaders
   }
 
+  /** Replaces the default request headers. */
   set defaultHeaders (headers: Record<string, string>) {
     this._defaultHeaders = this.normalizeHeaders(headers)
   }
 
+  /**
+   * Sets a default request header.
+   *
+   * @param name The header name.
+   * @param value The header value.
+   */
   setHeader (name: string, value: string): void {
     this._defaultHeaders[name.toLowerCase()] = value
   }
 
+  /**
+   * Sends an HTTP request.
+   *
+   * @param config The request configuration.
+   * @returns The response with its parsed body.
+   * @throws An {@link HttpError} when the response status is not successful.
+   */
   async request<T = unknown> (config: HttpRequestConfig): Promise<HttpResponse<T>> {
     const url = this.buildUrl(config.url, config.params)
     const headers = this.normalizeHeaders({ ...this._defaultHeaders, ...config.headers })
@@ -142,6 +178,13 @@ export class HttpClient {
     return httpResponse
   }
 
+  /**
+   * Sends an HTTP GET request.
+   *
+   * @param url The absolute URL or path relative to the client's base URL.
+   * @param options Additional request options.
+   * @returns The response with its parsed body.
+   */
   async get<T = unknown> (url: string, options?: Partial<HttpRequestConfig>): Promise<HttpResponse<T>> {
     return this.request<T>({ method: 'get', url, ...options })
   }
@@ -192,10 +235,20 @@ export class HttpClient {
  * Error thrown when an HTTP request fails.
  */
 export class HttpError extends Error {
+  /** The unsuccessful HTTP response. */
   public readonly response: HttpResponse
+  /** The configuration used for the request. */
   public readonly config: HttpRequestConfig
+  /** The HTTP status code. */
   public readonly status: number
 
+  /**
+   * Creates an HTTP request error.
+   *
+   * @param message The error message.
+   * @param response The unsuccessful response.
+   * @param config The request configuration.
+   */
   constructor (message: string, response: HttpResponse, config: HttpRequestConfig) {
     super(message)
     this.name = 'HttpError'
@@ -204,6 +257,11 @@ export class HttpError extends Error {
     this.status = response.status
   }
 
+  /**
+   * Returns a serializable representation of the error.
+   *
+   * @returns The error, request, and response details.
+   */
   toJSON (): Record<string, unknown> {
     return {
       message: this.message,

@@ -9,6 +9,12 @@ import { CardAction } from '@microsoft/agents-activity'
  * Represents a task module action.
  */
 export class TaskModuleAction implements CardAction {
+  /**
+   * Creates an action that invokes a `task/fetch` task module.
+   *
+   * @param title The action title.
+   * @param value The action data as an object or JSON string.
+   */
   constructor (title: string, value: any) {
     this.type = 'invoke'
     this.title = title

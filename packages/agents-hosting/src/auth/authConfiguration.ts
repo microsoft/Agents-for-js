@@ -441,6 +441,7 @@ let globalEnv = loadEnv()
  * Optional host-scoped inputs used while resolving authentication settings.
  */
 export interface AuthConfigurationResolutionOptions {
+  /** Host-scoped configuration layers to include during resolution. */
   configurationContext?: ConfigurationContext
 }
 

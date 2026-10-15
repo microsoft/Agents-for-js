@@ -12,10 +12,15 @@ import { Errors } from '../../errorHelper'
  * `aud` (the agent's client ID) is required; all other fields are optional.
  */
 export interface ConversationClaims {
+  /** Audience identifying the agent client. */
   aud: string
+  /** Authorized-party client ID, when supplied by the token. */
   azp?: string
+  /** Calling application ID, when supplied by the token. */
   appid?: string
+  /** Microsoft Entra tenant ID, when supplied by the token. */
   tid?: string
+  /** Additional string-valued identity claims. */
   [key: string]: string | undefined
 }
 
@@ -28,11 +33,30 @@ export interface ConversationClaims {
  * `adapter.continueConversation()`.
  */
 export class Conversation {
+  /** Reference used to resume the conversation. */
   reference: ConversationReference
+  /** Identity claims used to authenticate proactive operations. */
   claims: ConversationClaims
 
+  /**
+   * Creates a conversation from the current turn.
+   *
+   * @param context - Turn context from which to capture the reference and identity.
+   */
   constructor (context: TurnContext)
+  /**
+   * Creates a conversation from explicit claims and a conversation reference.
+   *
+   * @param claims - Claims used to authenticate proactive operations.
+   * @param reference - Reference used to resume the conversation.
+   */
   constructor (claims: ConversationClaims, reference: ConversationReference)
+  /**
+   * Creates a conversation from a turn context or explicit claims and a reference.
+   *
+   * @param contextOrClaims - Turn context to capture, or authentication claims.
+   * @param reference - Reference paired with explicit claims.
+   */
   constructor (
     contextOrClaims: TurnContext | ConversationClaims,
     reference?: ConversationReference

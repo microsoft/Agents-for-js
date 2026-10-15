@@ -82,9 +82,16 @@ export class TurnContext {
    *
    * @param adapterOrContext The adapter that created this context, or another TurnContext to clone
    * @param request The activity for the turn (required when first parameter is an adapter)
+   * @param identity The authenticated identity for the turn.
    */
   constructor (adapterOrContext: BaseAdapter, request: Activity, identity?: JwtPayload)
+  /**
+   * Creates a context by copying another turn context.
+   *
+   * @param adapterOrContext The turn context to copy.
+   */
   constructor (adapterOrContext: TurnContext)
+  /** Implements the adapter and copy constructor overloads. */
   constructor (adapterOrContext: BaseAdapter | TurnContext, request?: Activity, identity?: JwtPayload) {
     if (adapterOrContext instanceof TurnContext) {
       adapterOrContext.copyTo(this)
@@ -367,6 +374,7 @@ export class TurnContext {
     return this._activity as Activity
   }
 
+  /** Gets the authenticated identity for the turn. */
   get identity (): JwtPayload {
     return this._identity as JwtPayload
   }
@@ -382,6 +390,7 @@ export class TurnContext {
     return this._respondedRef.responded
   }
 
+  /** Marks the turn as having sent a response. */
   set responded (value: boolean) {
     if (!value) {
       throw ExceptionHelper.generateException(Error, Errors.CannotSetRespondedToFalse)
@@ -404,6 +413,7 @@ export class TurnContext {
     return undefined
   }
 
+  /** Sets the locale stored in the turn state. */
   set locale (value: string | undefined) {
     let turnObj = this._turnState.get(this._turn)
     if (turnObj) {
@@ -426,6 +436,7 @@ export class TurnContext {
     return this._turnState
   }
 
+  /** Gets the streaming response associated with this context. */
   get streamingResponse (): StreamingResponse {
     return this._streamingResponse
   }

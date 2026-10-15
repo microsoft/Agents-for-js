@@ -14,6 +14,13 @@ import { ConnectionManager, defaultAuthProviderFactory } from '../connectionMana
  * provider factory and applies MSAL-specific connection defaults.
  */
 export class MsalConnectionManager extends ConnectionManager {
+  /**
+   * Creates an MSAL connection manager.
+   *
+   * @param connectionsConfigurations - Authentication settings keyed by connection name.
+   * @param connectionsMap - Rules that map service URLs and audiences to connections.
+   * @param configuration - Default authentication configuration.
+   */
   constructor (
     connectionsConfigurations: Map<string, AuthConfiguration> = new Map(),
     connectionsMap: ConnectionMapItem[] = [],
