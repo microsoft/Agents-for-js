@@ -6,6 +6,7 @@ import { isDeepStrictEqual } from 'node:util'
 import { fileURLToPath } from 'node:url'
 
 import { checkTeamsApiMetadata } from './teams-api-drift/validate-teams-api-metadata.mjs'
+import { loadBaseline } from './shared.mjs'
 
 const ignoredDirectories = new Set(['.git', 'node_modules', 'dist', 'coverage'])
 const ignoredDocumentPrefixes = ['compat/', 'packages/agents-hosting-dialogs/vendor/']
@@ -273,12 +274,12 @@ export const ruleDefinitions = {
   'compat/baseline-directory-missing': {
     what: 'The API compatibility baseline directory exists.',
     why: 'Keeps public API compatibility checks complete and attributable.',
-    fix: 'Create compat/baseline and generate API reports with npm run compat -- --local.',
+    fix: 'Create initial API baselines with npm run compat -- --update (builds declarations first).',
   },
   'compat/baseline-missing': {
     what: 'Each publishable package has an API baseline.',
     why: 'Keeps public API compatibility checks complete and attributable.',
-    fix: 'Generate the package API report with npm run compat -- --local.',
+    fix: 'Generate the package API report with npm run compat -- <package> --update (builds declarations first).',
   },
   'compat/baseline-orphan': {
     what: 'API baselines belong to an existing package.',
@@ -904,11 +905,16 @@ function checkCompatibilityBaselines (root, packages, findings) {
     add(findings, 'compat/baseline-directory-missing', 'compat/baseline', 'API compatibility baseline directory is missing.', 0)
     return
   }
-  const expected = new Map(packages.map(workspace => [`${path.posix.basename(workspace.path)}.api.md`, workspace]))
+  const inventory = fs.existsSync(path.join(directory, 'inventory.json')) ? loadBaseline(root) : undefined
+  const expected = new Map(packages.flatMap(workspace => {
+    const pkg = inventory?.packages.find(pkg => pkg.name === workspace.manifest.name)
+    const files = pkg ? Object.values(pkg.entries).map(entry => entry.report) : [`${path.posix.basename(workspace.path)}.api.md`]
+    return files.map(file => [file, workspace])
+  }))
   for (const [file, workspace] of expected) {
     const reportPath = path.join(directory, file)
     if (!fs.existsSync(reportPath)) {
-      add(findings, 'compat/baseline-missing', `compat/baseline/${file}`, 'Publishable package has no API compatibility baseline.', 0, workspace.manifest.name, 0, `Run npm run compat ${path.posix.basename(workspace.path)} -- --local.`)
+      add(findings, 'compat/baseline-missing', `compat/baseline/${file}`, 'Publishable package has no API compatibility baseline.', 0, workspace.manifest.name, 0, `Run npm run compat -- ${path.posix.basename(workspace.path)} --update.`)
       continue
     }
     const text = fs.readFileSync(reportPath, 'utf8')

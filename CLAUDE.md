@@ -93,11 +93,16 @@ npm run repo:doctor
 # Check API compatibility
 npm run compat
 
+# Refresh reviewed API baselines (builds declarations first)
+npm run compat -- --update
+
 # Launch agents playground (interactive testing tool)
 npm run play
 ```
 
 Run `npm run repo:doctor` after structural, package, documentation, build-reference, dependency, API-baseline, test-agent, Docker, or runtime-configuration changes. Every diagnostic includes a rule ID and a concrete fix instruction.
+
+Compatibility checks use bounded parallel package workers and semantic declaration comparison. See `docs/API-COMPATIBILITY.md` before changing baseline handling or compatibility policy. `quality` supplies `COMPAT_SKIP_BUILD=1` after its build; standalone `compat` builds first. PR CI supplies `COMPAT_BASE` for historical findings in report.json; terminal findings and review counts compare against working baselines, so adopted changes are not flagged again.
 
 Do not use implicit npm lifecycle wrappers such as `prebuild`, `postbuild`, `pretest`, or `posttest`. `npm --ignore-scripts` skips these hooks, so required work must be explicit. Install-time hooks (`preinstall`, `install`, `postinstall`, and `prepare`) are prohibited. Put dependent work directly in the explicit command, for example `npm run build && node ...`.
 

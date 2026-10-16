@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict'
+import { execFile } from 'node:child_process'
 import { EventEmitter } from 'node:events'
-import { mkdtemp, readFile, rm } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { PassThrough } from 'node:stream'
 import os from 'node:os'
 import path from 'node:path'
 import { describe, it } from 'node:test'
+import { promisify } from 'node:util'
 
 import { createNpmCheckRunner, createReporter, failureOutput, reportCheckOutput, runQualityChecks } from '../quality.mjs'
 
@@ -263,5 +265,142 @@ describe('quality runner', () => {
       '\nOutput: lint (npm run lint)\n',
       'lint output\n',
     ])
+  })
+  it('retains successful compat warnings and baseline notices without printing the full log', async () => {
+    const directory = await mkdtemp(path.join(os.tmpdir(), 'quality-compat-'))
+    try {
+      await mkdir(path.join(directory, 'compat/generated'), { recursive: true })
+      const reportFile = path.join(directory, 'compat/generated/report.json')
+      let spawnOptions
+      const runner = createNpmCheckRunner({
+        directory,
+        cwd: directory,
+        spawnProcess: (command, args, options) => {
+          spawnOptions = options
+          const child = new EventEmitter()
+          child.stdout = new PassThrough()
+          child.stderr = new PassThrough()
+          queueMicrotask(async () => {
+            await writeFile(reportFile, JSON.stringify({ schemaVersion: 1, summary: { toReview: 1, baselines: 2 } }))
+            child.stdout.end('Full compat output\n')
+            child.stderr.end()
+            child.emit('close', 0, null)
+          })
+          return child
+        },
+      })
+      const execution = await runner.run(check('compat'))
+      assert.equal(execution.exitCode, 0)
+      assert.equal(spawnOptions.env.COMPAT_SKIP_BUILD, '1')
+      assert.equal(spawnOptions.env.COMPAT_BASE, process.env.COMPAT_BASE)
+      for (const live of [false, true]) {
+        const writes = []
+        const reporter = createReporter({ live, color: false, term: 'xterm', stream: { isTTY: live, write: text => writes.push(text) } })
+        reporter.summary([{ ...check('compat'), state: 'passed', execution, startedAt: 1, durationMs: 2 }])
+        reporter.close()
+        const output = writes.join('')
+        assert.match(output, /1 package to review · 2 baselines outdated/)
+        assert.match(output, /compat\/generated\/report.json/)
+        assert.doesNotMatch(output, /Full compat output/)
+        writes.length = 0
+        reporter.summary([{ ...check('compat'), state: 'passed', execution: { compatSummary: { toReview: 0, baselines: 1 } } }])
+        assert.match(writes.join(''), /npm run compat -- --update/)
+        writes.length = 0
+        reporter.summary([{ ...check('compat'), state: 'passed', execution: { compatSummary: { toReview: 0, baselines: 0 } } }])
+        assert.doesNotMatch(writes.join(''), /API compatibility:/)
+      }
+    } finally {
+      if (path.dirname(directory) === os.tmpdir() && path.basename(directory).startsWith('quality-compat-')) {
+        await rm(directory, { recursive: true, force: true, maxRetries: 3 })
+      }
+    }
+  })
+  it('does not reuse an earlier compatibility report when the command produces none', async () => {
+    const directory = await mkdtemp(path.join(os.tmpdir(), 'quality-compat-'))
+    try {
+      await mkdir(path.join(directory, 'compat/generated'), { recursive: true })
+      await writeFile(path.join(directory, 'compat/generated/report.json'), JSON.stringify({ schemaVersion: 1, summary: { toReview: 9, baselines: 9 } }))
+      const runner = createNpmCheckRunner({
+        directory,
+        cwd: directory,
+        spawnProcess: () => {
+          const child = new EventEmitter()
+          child.stdout = new PassThrough()
+          child.stderr = new PassThrough()
+          queueMicrotask(() => {
+            child.stdout.end()
+            child.stderr.end()
+            child.emit('close', 0, null)
+          })
+          return child
+        }
+      })
+      const execution = await runner.run(check('compat'))
+      assert.equal(execution.exitCode, 2)
+      assert.equal(execution.compatSummary, undefined)
+      assert.match(execution.error.message, /missing or invalid/)
+    } finally {
+      if (path.dirname(directory) === os.tmpdir() && path.basename(directory).startsWith('quality-compat-')) {
+        await rm(directory, { recursive: true, force: true, maxRetries: 3 })
+      }
+    }
+  })
+  it('does not spawn compat if cancelled during asynchronous report cleanup', async () => {
+    let spawned = false
+    const runner = createNpmCheckRunner({
+      directory: os.tmpdir(),
+      cwd: path.join(os.tmpdir(), 'quality-cancel-nonexistent-fixture'),
+      spawnProcess: () => { spawned = true },
+    })
+    const running = runner.run(check('compat'))
+    runner.cancel()
+    assert.equal((await running).exitCode, 130)
+    assert.equal((await runner.run(check('lint'))).exitCode, 130)
+    assert.equal(spawned, false)
+  })
+
+  it('replaces stale compatibility results when a prerequisite prevents analysis', async () => {
+    const directory = await mkdtemp(path.join(os.tmpdir(), 'quality-skipped-'))
+    try {
+      await mkdir(path.join(directory, 'scripts'), { recursive: true })
+      await mkdir(path.join(directory, 'compat/generated'), { recursive: true })
+      const reportFile = path.join(directory, 'compat/generated/report.json')
+      await writeFile(reportFile, JSON.stringify({ schemaVersion: 1, summary: { toReview: 0, baselines: 0 } }))
+      const logs = path.join(directory, 'scripts/logs/quality')
+      await mkdir(logs, { recursive: true })
+      await writeFile(path.join(logs, 'build.log'), 'stale build')
+      await writeFile(path.join(logs, 'doctor.log'), 'stale doctor')
+      await writeFile(path.join(logs, 'custom.log'), 'keep')
+      await writeFile(path.join(directory, 'scripts/quality.mjs'), await readFile(new URL('../quality.mjs', import.meta.url)))
+      await writeFile(path.join(directory, 'scripts/shared.mjs'), await readFile(new URL('../shared.mjs', import.meta.url)))
+      await writeFile(path.join(directory, 'package.json'), JSON.stringify({
+        private: true,
+        scripts: {
+          'repo:doctor': 'node -e "process.exit(1)"',
+          lint: 'node -e "process.exit(0)"',
+          'lint:deps': 'node -e "process.exit(0)"',
+          'lint:deps:ci': 'node -e "process.exit(0)"',
+        },
+      }))
+      await assert.rejects(promisify(execFile)(process.execPath, ['scripts/quality.mjs'], {
+        cwd: directory,
+        env: { ...process.env, QUALITY_LOG_DIR: '', NO_COLOR: '1' },
+      }), error => {
+        assert.equal(error.code, 1)
+        assert.match(error.stdout, /SKIP\s+API compatibility/)
+        return true
+      })
+      const report = JSON.parse(await readFile(reportFile, 'utf8'))
+      assert.equal(report.skipped, true)
+      assert.match(report.error, /skipped/)
+      assert.equal(report.summary, undefined)
+      assert.doesNotMatch(await readFile(path.join(logs, 'doctor.log'), 'utf8'), /stale doctor/)
+      await assert.rejects(readFile(path.join(logs, 'build.log')), { code: 'ENOENT' })
+      assert.equal(await readFile(path.join(logs, 'custom.log'), 'utf8'), 'keep')
+    } finally {
+      if (path.dirname(directory) === os.tmpdir() && path.basename(directory).startsWith('quality-skipped-')) {
+        await rm(directory, { recursive: true, force: true, maxRetries: 3 })
+      }
+    }
   })
 })

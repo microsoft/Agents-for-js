@@ -140,10 +140,10 @@ export interface SlackStreamOptions {
 
 // @public
 export const SlackTaskStatus: {
-    readonly Pending: "pending";
-    readonly InProgress: "in_progress";
-    readonly Complete: "complete";
-    readonly Error: "error";
+    readonly Pending: 'pending';
+    readonly InProgress: 'in_progress';
+    readonly Complete: 'complete';
+    readonly Error: 'error';
 };
 
 // @public

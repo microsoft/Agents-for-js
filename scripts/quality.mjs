@@ -1,9 +1,9 @@
 import { spawn } from 'node:child_process'
 import { createWriteStream } from 'node:fs'
-import { mkdir, readFile, rm } from 'node:fs/promises'
-import os from 'node:os'
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { npmInvocation } from './shared.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -153,19 +153,26 @@ export async function runQualityChecks (checks, options = {}) {
  */
 export function createNpmCheckRunner ({ directory, cwd = root, spawnProcess = spawn }) {
   const children = new Set()
+  let cancelled = false
 
   return {
     run: async check => {
+      if (cancelled) return { exitCode: 130 }
+      const compatReport = path.join(cwd, 'compat/generated/report.json')
+      if (check.id === 'compat') await rm(compatReport, { force: true })
+      if (cancelled) return { exitCode: 130 }
       const logPath = path.join(directory, `${check.id}.log`)
       const log = createWriteStream(logPath, { flags: 'w' })
       const [command, args] = npmInvocation(check.script)
 
-      return await new Promise(resolve => {
+      const execution = await new Promise(resolve => {
         const child = spawnProcess(command, args, {
           cwd,
+          env: { ...process.env, ...(check.id === 'compat' ? { COMPAT_SKIP_BUILD: '1' } : {}) },
           shell: !process.env.npm_execpath && process.platform === 'win32',
           stdio: ['ignore', 'pipe', 'pipe'],
           windowsHide: true,
+          detached: process.platform !== 'win32',
         })
         children.add(child)
         child.stdout?.pipe(log, { end: false })
@@ -189,26 +196,33 @@ export function createNpmCheckRunner ({ directory, cwd = root, spawnProcess = sp
         child.once('error', error => finalize({ exitCode: 1, error }))
         child.once('close', (code, signal) => finalize({ exitCode: code ?? 1, signal }))
       })
+      if (check.id !== 'compat' || execution.exitCode !== 0) return execution
+      try {
+        const report = JSON.parse(await readFile(compatReport, 'utf8'))
+        if (report.schemaVersion !== 1 || report.error || !['toReview', 'baselines'].every(key => Number.isInteger(report.summary?.[key]) && report.summary[key] >= 0)) {
+          throw new Error('Invalid compatibility summary.')
+        }
+        return { ...execution, compatSummary: report.summary }
+      } catch (error) {
+        return { ...execution, exitCode: 2, error: new Error('Compatibility results are missing or invalid. Run npm run compat to investigate.', { cause: error }) }
+      }
     },
     cancel: () => {
+      cancelled = true
       for (const child of children) {
         if (child.pid === undefined) continue
         if (process.platform === 'win32') {
           spawnProcess('taskkill', ['/pid', String(child.pid), '/t', '/f'], { stdio: 'ignore', windowsHide: true })
         } else {
-          child.kill('SIGTERM')
+          try {
+            process.kill(-child.pid, 'SIGTERM')
+          } catch (error) {
+            if (error.code !== 'ESRCH') throw error
+          }
         }
       }
     },
   }
-}
-
-/** @param {string} script */
-export function npmInvocation (script) {
-  if (process.env.npm_execpath) {
-    return [process.execPath, [process.env.npm_execpath, 'run', '--silent', script]]
-  }
-  return [process.platform === 'win32' ? 'npm.cmd' : 'npm', ['run', '--silent', script]]
 }
 
 /** @param {{ write?: (line: string) => void, color?: boolean }} [options] */
@@ -220,18 +234,21 @@ export function createReporter (options = {}) {
   const write = options.write ?? (line => stream.write(`${line}\n`))
   const color = options.color ?? supportsColor(stream)
   const status = (value, state) => style(value, state, color)
+  let columns = columnWidths(qualityChecks)
 
   return {
-    started: check => write(`${status('RUN ', 'cyan')}  ${check.label.padEnd(22)} npm run ${check.script}`),
-    finished: check => write(`${status(check.state === 'passed' ? 'PASS' : 'FAIL', check.state === 'passed' ? 'green' : 'red')}  ${check.label.padEnd(22)} npm run ${check.script}  ${formatDuration(check.durationMs)}`),
-    skipped: check => write(`${status('SKIP', 'yellow')}  ${check.label.padEnd(22)} ${check.reason}`),
+    queued: checks => { columns = columnWidths(checks) },
+    started: check => write(`${status('RUN ', 'cyan')}  ${check.label.padEnd(columns.label)} npm run ${check.script}`),
+    finished: check => write(`${status(check.state === 'passed' ? 'PASS' : 'FAIL', check.state === 'passed' ? 'green' : 'red')}  ${check.label.padEnd(columns.label)} ${`npm run ${check.script}`.padEnd(columns.command)}  ${status(formatDuration(check.durationMs), 'dim')}`),
+    skipped: check => write(`${status('SKIP', 'yellow')}  ${check.label.padEnd(columns.label)} ${check.reason}`),
     summary: checks => {
       const counts = checks.reduce((summary, check) => ({ ...summary, [check.state]: (summary[check.state] ?? 0) + 1 }), {})
       const startedAt = Math.min(...checks.map(check => check.startedAt ?? Infinity))
       const completedAt = Math.max(...checks.map(check => (check.startedAt ?? 0) + (check.durationMs ?? 0)))
       const durationMs = Number.isFinite(startedAt) ? completedAt - startedAt : 0
       write('')
-      write(`${status('Quality', counts.failed ? 'red' : 'green')}: ${counts.passed ?? 0} passed, ${counts.failed ?? 0} failed, ${counts.skipped ?? 0} skipped in ${formatDuration(durationMs)}`)
+      write(`${status('Quality', counts.failed ? 'red' : 'green')}: ${counts.passed ?? 0} passed, ${counts.failed ?? 0} failed, ${counts.skipped ?? 0} skipped in ${status(formatDuration(durationMs), 'dim')}`)
+      writeCompatNotice(checks, write, status)
     },
     failure: (check, output) => {
       write('')
@@ -242,6 +259,16 @@ export function createReporter (options = {}) {
     },
     close: () => {},
   }
+}
+
+function writeCompatNotice (checks, write, status) {
+  const summary = checks.find(check => check.id === 'compat' && check.state === 'passed')?.execution?.compatSummary
+  if (!summary || (!summary.toReview && !summary.baselines)) return
+  const parts = []
+  if (summary.toReview) parts.push(status(`${summary.toReview} ${summary.toReview === 1 ? 'package' : 'packages'} to review`, 'yellow'))
+  if (summary.baselines) parts.push(status(`${summary.baselines} ${summary.baselines === 1 ? 'baseline' : 'baselines'} outdated`, 'cyan'))
+  write(`  API compatibility: ${parts.join(' · ')}`)
+  write(summary.toReview ? '  Details: compat/generated/report.json' : '  Update: npm run compat -- --update')
 }
 
 /**
@@ -290,6 +317,7 @@ function createLiveReporter (options) {
   let hasRows = false
   let runningCount = 0
   let cursorHidden = false
+  let columns = columnWidths(qualityChecks)
 
   const write = line => stream.write(`${line}\n`)
   const status = (value, state) => style(value, state, color)
@@ -313,7 +341,7 @@ function createLiveReporter (options) {
     const row = [...entries.keys()].indexOf(entry.check.id)
     if (row < 0 || !hasRows) return
     const distance = entries.size - row
-    const line = formatLiveLine(entry, now(), status)
+    const line = formatLiveLine(entry, now(), status, columns)
     const padding = ' '.repeat(Math.max(0, (entry.visibleLength ?? 0) - visibleLength(line)))
     entry.visibleLength = visibleLength(line)
     stream.write(`\u001B7\u001B[${distance}A\r${line}${padding}\u001B8`)
@@ -338,10 +366,11 @@ function createLiveReporter (options) {
 
   return {
     queued: checks => {
+      columns = columnWidths(checks)
       for (const check of checks) entries.set(check.id, { check, state: 'queued' })
       hideCursor()
       for (const entry of entries.values()) {
-        const line = formatLiveLine(entry, now(), status)
+        const line = formatLiveLine(entry, now(), status, columns)
         entry.visibleLength = visibleLength(line)
         write(line)
       }
@@ -366,7 +395,8 @@ function createLiveReporter (options) {
       const completedAt = Math.max(...checks.map(check => (check.startedAt ?? 0) + (check.durationMs ?? 0)))
       const durationMs = Number.isFinite(startedAt) ? completedAt - startedAt : 0
       write('')
-      write(`${status('Quality', counts.failed ? 'red' : 'green')}: ${counts.passed ?? 0} passed, ${counts.failed ?? 0} failed, ${counts.skipped ?? 0} skipped in ${formatDuration(durationMs)}`)
+      write(`${status('Quality', counts.failed ? 'red' : 'green')}: ${counts.passed ?? 0} passed, ${counts.failed ?? 0} failed, ${counts.skipped ?? 0} skipped in ${status(formatDuration(durationMs), 'dim')}`)
+      writeCompatNotice(checks, write, status)
     },
     failure: (check, output) => {
       write('')
@@ -383,9 +413,16 @@ function createLiveReporter (options) {
   }
 }
 
-function formatLiveLine (entry, currentTime, status) {
+function columnWidths (checks) {
+  return {
+    label: Math.max(22, ...checks.map(check => check.label.length)),
+    command: Math.max(0, ...checks.map(check => `npm run ${check.script}`.length)),
+  }
+}
+
+function formatLiveLine (entry, currentTime, status, columns) {
   const { check, state } = entry
-  const label = check.label.padEnd(22)
+  const label = check.label.padEnd(columns.label)
   const command = `npm run ${check.script}`
   if (state === 'queued') return `${status('WAIT', 'yellow')}            ${label} ${command}`
   if (state === 'skipped') return `${status('SKIP', 'yellow')}            ${label} ${check.reason}`
@@ -393,10 +430,10 @@ function formatLiveLine (entry, currentTime, status) {
     const elapsed = currentTime - check.startedAt
     const percent = estimateProgress(check.id, elapsed)
     const spinner = ['◐', '◓', '◑', '◒'][Math.floor(currentTime / 125) % 4]
-    return `${status('RUN ', 'cyan')}  ${spinner} ~${String(percent).padStart(2)}%  ${label} ${command}  ${formatDuration(elapsed)}`
+    return `${status('RUN ', 'cyan')}  ${spinner} ~${String(percent).padStart(2)}%  ${label} ${command.padEnd(columns.command)}  ${status(formatDuration(elapsed), 'dim')}`
   }
   const passed = state === 'passed'
-  return `${status(passed ? 'PASS' : 'FAIL', passed ? 'green' : 'red')}  ${passed ? '✓' : '✗'} 100%  ${label} ${command}  ${formatDuration(check.durationMs)}`
+  return `${status(passed ? 'PASS' : 'FAIL', passed ? 'green' : 'red')}  ${passed ? '✓' : '✗'} 100%  ${label} ${command.padEnd(columns.command)}  ${status(formatDuration(check.durationMs), 'dim')}`
 }
 
 function estimateProgress (checkId, elapsedMs) {
@@ -432,7 +469,7 @@ function supportsLiveOutput (stream, term = process.env.TERM) {
 
 function style (value, kind, enabled) {
   if (!enabled) return value
-  const codes = { red: '31', green: '32', yellow: '33', cyan: '36' }
+  const codes = { red: '31', green: '32', yellow: '33', cyan: '36', dim: '2' }
   return `\u001B[${codes[kind]}m${value}\u001B[0m`
 }
 
@@ -455,11 +492,12 @@ function validateChecks (checks) {
 
 async function runCli () {
   const verbose = process.argv.slice(2).includes('--verbose')
-  const persistedLogDirectory = process.env.QUALITY_LOG_DIR
-  const logDirectory = persistedLogDirectory
-    ? path.resolve(root, persistedLogDirectory)
-    : await import('node:fs/promises').then(({ mkdtemp }) => mkdtemp(path.join(os.tmpdir(), 'agents-quality-')))
-  if (persistedLogDirectory) await mkdir(logDirectory, { recursive: true })
+  const logDirectory = path.resolve(root, process.env.QUALITY_LOG_DIR || 'scripts/logs/quality')
+  await mkdir(logDirectory, { recursive: true })
+  // Clear owned logs up front so skipped checks cannot leave results from an earlier run.
+  await Promise.all(qualityChecks.map(check => rm(path.join(logDirectory, `${check.id}.log`), { force: true })))
+  const compatDirectory = path.join(root, 'compat/generated')
+  await rm(path.join(compatDirectory, 'report.json'), { force: true })
 
   const runner = createNpmCheckRunner({ directory: logDirectory })
   const reporter = createReporter()
@@ -475,6 +513,11 @@ async function runCli () {
 
   try {
     const checks = await runQualityChecks(qualityChecks, { isCancelled: () => interrupted, runCheck: runner.run, reporter })
+    const compat = checks.find(check => check.id === 'compat')
+    if (compat?.state === 'skipped') {
+      await mkdir(compatDirectory, { recursive: true })
+      await writeFile(path.join(compatDirectory, 'report.json'), `${JSON.stringify({ schemaVersion: 1, skipped: true, error: `Compatibility analysis skipped: ${compat.reason}.` }, null, 2)}\n`)
+    }
     reporter.summary(checks)
     const githubActions = process.env.GITHUB_ACTIONS === 'true'
     const outputs = new Map(await Promise.all(checks.map(async check => [
@@ -495,9 +538,6 @@ async function runCli () {
     reporter.close?.()
     process.removeListener('SIGINT', interrupt)
     process.removeListener('SIGTERM', interrupt)
-    if (!persistedLogDirectory) {
-      await rm(logDirectory, { force: true, maxRetries: 3, recursive: true, retryDelay: 100 }).catch(() => {})
-    }
   }
 }
 
@@ -507,6 +547,6 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
 
 /**
  * @typedef {{ id: string, label: string, script: string, after?: string[], requiresSuccess?: string[] }} QualityCheck
- * @typedef {{ exitCode: number, logPath?: string, signal?: NodeJS.Signals | null, error?: unknown }} CheckExecution
+ * @typedef {{ exitCode: number, logPath?: string, signal?: NodeJS.Signals | null, error?: unknown, compatSummary?: { toReview: number, baselines: number } }} CheckExecution
  * @typedef {{ started: (check: unknown) => void, finished: (check: unknown) => void, skipped: (check: unknown) => void, summary: (checks: unknown[]) => void, failure: (check: unknown, output: string) => void }} QualityReporter
  */
