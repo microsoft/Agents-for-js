@@ -477,6 +477,7 @@ export class CopilotStudioWebChat {
               subscriber.complete()
             } catch (error) {
               logger.error('Error sending Activity to Copilot Studio:', error)
+              clearTyping()
               subscriber.error(error)
             } finally {
               clearTyping()
