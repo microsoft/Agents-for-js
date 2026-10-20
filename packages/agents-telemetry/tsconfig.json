@@ -5,6 +5,8 @@
     "package.json"
   ],
   "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     "types": ["node"],
     "outDir": "dist/cjs",
     "rootDirs": [ "src/" ],

@@ -135,10 +135,32 @@ describe('agents-telemetry platform build validation', () => {
     assert.strictEqual(cjsDeclaration, esmDeclaration)
   })
 
+  it('should retain the bundled hashing dependency license', async () => {
+    const license = await readFile(resolve(dirname(require.resolve('@noble/hashes/hmac.js')), 'LICENSE'), 'utf8')
+    const bundledRedaction = await readFile(resolve(packageDir, 'dist/cjs/src/utils/redact.js'), 'utf8')
+
+    assert.ok(bundledRedaction.includes(license))
+  })
+
   it('should resolve with Node CommonJS require', async () => {
     const { stdout } = await runNode(['-p', `typeof require('${packageName}').trace`])
 
     assert.strictEqual(stdout.trim(), 'function')
+  })
+
+  it('should pseudonymize from CommonJS without require(esm)', async () => {
+    const { stdout } = await runNode([
+      '--no-experimental-require-module',
+      '-e',
+      `const assert = require('node:assert/strict');
+       const { createHmac } = require('node:crypto');
+       const { pseudonymizeConversationId } = require('${packageName}');
+       const expected = 'cid_' + createHmac('sha256', 'diagnostics-key').update('conversation-id').digest('hex').slice(0, 32);
+       assert.equal(pseudonymizeConversationId('conversation-id', 'diagnostics-key'), expected);
+       console.log('ok')`
+    ])
+
+    assert.strictEqual(stdout.trim(), 'ok')
   })
 
   it('should resolve with Node ESM import', async () => {
@@ -149,6 +171,25 @@ describe('agents-telemetry platform build validation', () => {
     ])
 
     assert.strictEqual(stdout.trim(), 'function')
+  })
+
+  it('should produce identical pseudonyms from CommonJS and ESM entry points', async () => {
+    const { stdout } = await runNode([
+      '--input-type=module',
+      '-e',
+      `import assert from 'node:assert/strict';
+       import { createRequire } from 'node:module';
+       const require = createRequire(import.meta.url);
+       const cjs = require('${packageName}');
+       const esm = await import('${packageName}');
+       assert.equal(
+         cjs.pseudonymizeConversationId('conversation-id', 'diagnostics-key'),
+         esm.pseudonymizeConversationId('conversation-id', 'diagnostics-key')
+       );
+       console.log('ok')`
+    ])
+
+    assert.strictEqual(stdout.trim(), 'ok')
   })
 
   it('should resolve the browser condition with Node import', async () => {
@@ -162,10 +203,12 @@ describe('agents-telemetry platform build validation', () => {
     assert.strictEqual(stdout.trim(), 'function')
   })
 
-  it('should bundle for the browser with esbuild', async () => {
+  it('should bundle and pseudonymize for the browser with esbuild', async () => {
     const result = await esbuild.build({
       stdin: {
-        contents: `import * as telemetry from '${packageName}';\nexport default typeof telemetry.trace`,
+        contents: `import * as telemetry from '${packageName}';
+                   export const traceType = typeof telemetry.trace;
+                   export const pseudonym = telemetry.pseudonymizeConversationId('conversation-id', 'diagnostics-key')`,
         resolveDir: repoDir,
         sourcefile: 'agents-telemetry-browser-entry.js',
         loader: 'js',
@@ -177,5 +220,12 @@ describe('agents-telemetry platform build validation', () => {
     })
 
     assert.ok(result.outputFiles.length > 0)
+
+    const browserModule = await import(`data:text/javascript;base64,${Buffer.from(result.outputFiles[0].contents).toString('base64')}`)
+    const { createHmac } = await import('node:crypto')
+    const expected = `cid_${createHmac('sha256', 'diagnostics-key').update('conversation-id').digest('hex').slice(0, 32)}`
+
+    assert.strictEqual(browserModule.traceType, 'function')
+    assert.strictEqual(browserModule.pseudonym, expected)
   })
 })
