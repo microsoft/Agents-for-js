@@ -176,6 +176,8 @@ This section covers internal APIs used to instrument SDK components. If you are 
 
 Although this package is published, it primarily serves as a shared telemetry layer for other Agents SDK packages. Some exported TypeScript types intentionally depend on OpenTelemetry packages even though runtime behavior still supports noop fallback when those optional peer dependencies are not installed.
 
+The `build:esm` command also bundles the ESM-only `@noble/hashes` dependency into the CommonJS redaction module. Run the complete `npm run build` before consuming the package; TypeScript compilation alone does not produce the final CommonJS artifact. This preserves Node.js 22.0+ and browser support without requiring Node's `require(esm)` feature.
+
 ### Using trace
 
 Use `trace` to create validated spans. Every definition requires a `name` from `SpanNames`, a `record` object for tracking state, and an `end` hook called when the span finishes.
