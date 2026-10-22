@@ -105,7 +105,9 @@ export class AttachmentDownloader<TState extends TurnState = TurnState> implemen
       }
       if (!this._hostValidator.isAllowed(attachment.contentUrl)) {
         let host = '[invalid-url]'
-        try { host = new URL(attachment.contentUrl).hostname } catch { /* invalid */ }
+        try {
+          host = new URL(attachment.contentUrl).hostname
+        } catch { /* invalid */ }
         logger.warn(`Attachment contentUrl host is not in the configured allowed hosts. Host='${host}'`)
         return undefined
       }

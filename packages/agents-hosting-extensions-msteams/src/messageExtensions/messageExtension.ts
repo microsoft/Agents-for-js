@@ -14,13 +14,17 @@ const appBasedLinkQuerySchema = z.object({
 }).passthrough()
 
 function parseAppBasedLinkQuery (value: unknown): AppBasedLinkQuery | undefined {
-  if (value == null) return undefined
+  if (value == null) {
+    return undefined
+  }
   return appBasedLinkQuerySchema.parse(value) as AppBasedLinkQuery
 }
 
 function matchesCommandId (context: TurnContext, commandId: string | RegExp): boolean {
   const activityCommandId = (context.activity.value as any)?.commandId
-  if (activityCommandId == null) return false
+  if (activityCommandId == null) {
+    return false
+  }
   return typeof commandId === 'string'
     ? activityCommandId === commandId
     : commandId.test(activityCommandId)

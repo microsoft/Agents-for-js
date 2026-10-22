@@ -137,7 +137,9 @@ describe('TeamsChannel', () => {
     const app = new AgentApplication()
     const teamsExt = new TeamsAgentExtension(app)
     app.registerExtension(teamsExt, (tae) => {
-      tae.channels.onDeleted(async () => { handled = true })
+      tae.channels.onDeleted(async () => {
+        handled = true
+      })
     })
 
     const activity = createChannelActivity('channelDeleted', { id: 'ch-deleted' })
@@ -152,7 +154,9 @@ describe('TeamsChannel', () => {
     const app = new AgentApplication()
     const teamsExt = new TeamsAgentExtension(app)
     app.registerExtension(teamsExt, (tae) => {
-      tae.channels.onRenamed(async () => { handled = true })
+      tae.channels.onRenamed(async () => {
+        handled = true
+      })
     })
 
     const activity = createChannelActivity('channelRenamed', { id: 'ch-renamed' })
@@ -167,7 +171,9 @@ describe('TeamsChannel', () => {
     const app = new AgentApplication()
     const teamsExt = new TeamsAgentExtension(app)
     app.registerExtension(teamsExt, (tae) => {
-      tae.channels.onRestored(async () => { handled = true })
+      tae.channels.onRestored(async () => {
+        handled = true
+      })
     })
 
     const activity = createChannelActivity('channelRestored', { id: 'ch-restored' })
@@ -182,7 +188,9 @@ describe('TeamsChannel', () => {
     const app = new AgentApplication()
     const teamsExt = new TeamsAgentExtension(app)
     app.registerExtension(teamsExt, (tae) => {
-      tae.channels.onShared(async () => { handled = true })
+      tae.channels.onShared(async () => {
+        handled = true
+      })
     })
 
     const activity = createChannelActivity('channelShared', { id: 'ch-shared' })
@@ -197,7 +205,9 @@ describe('TeamsChannel', () => {
     const app = new AgentApplication()
     const teamsExt = new TeamsAgentExtension(app)
     app.registerExtension(teamsExt, (tae) => {
-      tae.channels.onUnshared(async () => { handled = true })
+      tae.channels.onUnshared(async () => {
+        handled = true
+      })
     })
 
     const activity = createChannelActivity('channelUnshared', { id: 'ch-unshared' })
@@ -230,7 +240,9 @@ describe('TeamsChannel', () => {
     const app = new AgentApplication()
     const teamsExt = new TeamsAgentExtension(app)
     app.registerExtension(teamsExt, (tae) => {
-      tae.channels.onMemberAdded(async () => { handled = true })
+      tae.channels.onMemberAdded(async () => {
+        handled = true
+      })
     })
 
     const activity = createMemberActivity([{ id: 'user-new' }])
@@ -263,7 +275,9 @@ describe('TeamsChannel', () => {
     const app = new AgentApplication()
     const teamsExt = new TeamsAgentExtension(app)
     app.registerExtension(teamsExt, (tae) => {
-      tae.channels.onCreated(async () => { handled = true })
+      tae.channels.onCreated(async () => {
+        handled = true
+      })
     })
 
     const activity = createChannelActivity('channelCreated', { id: 'ch-1' })
@@ -279,7 +293,9 @@ describe('TeamsChannel', () => {
     const app = new AgentApplication()
     const teamsExt = new TeamsAgentExtension(app)
     app.registerExtension(teamsExt, (tae) => {
-      tae.channels.onCreated(async () => { handled = true })
+      tae.channels.onCreated(async () => {
+        handled = true
+      })
     })
 
     const activity = createChannelActivity('channelCreated')

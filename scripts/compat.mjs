@@ -1,329 +1,76 @@
-// @ts-check
-
-import fs from 'fs'
-import path from 'path'
+import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { parseArguments } from './compat/config.mjs'
+import { runCompat } from './compat/runner.mjs'
+import { prepareArtifacts, writeFailure } from './compat/artifacts.mjs'
 
-import { Extractor, ExtractorConfig } from '@microsoft/api-extractor'
-import { Colorize } from '@rushstack/terminal'
+function formatHelp (color) {
+  const cyan = text => (color ? `\u001B[36m${text}\u001B[39m` : text)
+  const bold = text => (color ? `\u001B[1m${text}\u001B[22m` : text)
+  const dim = text => (color ? `\u001B[2m${text}\u001B[22m` : text)
+  const row = (command, description, width) => `  ${bold(command.padEnd(width))}${dim(description)}`
 
-const folders = {
-  reports: {
-    _: 'compat',
-    baseline: 'baseline',
-    generated: 'generated',
-  },
-  packages: 'packages'
+  return `${cyan('API compatibility')}
+
+Check public TypeScript APIs for potential breaking changes.
+Builds declarations first and checks packages in parallel.
+
+${cyan('Usage:')} ${bold('npm run compat -- [package] [options]')}
+${dim('Package: short name (agents-hosting), scoped name (@microsoft/agents-hosting), or directory (packages/agents-hosting).')}
+${dim('Omit package to check all publishable packages.')}
+
+${cyan('Common commands')}
+${row('npm run compat', 'Check all packages', 40)}
+${row('npm run compat -- agents-hosting', 'Check one package', 40)}
+${row('npm run compat -- --update', 'Refresh reviewed baselines', 40)}
+${row('npm run compat -- --base origin/main', 'Compare with a Git reference', 40)}
+
+${cyan('Options')}
+${row('--update', 'Update baselines, including possible breaks; review before committing', 20)}
+${row('--base <git-ref>', 'Include Git-reference context in the report (also COMPAT_BASE)', 20)}
+${row('--no-color', 'Disable colors', 20)}
+${row('--help, -h', 'Show this help', 20)}
+
+${cyan('Advanced')}
+${row('--skip-build', 'Reuse an existing build; quality does this automatically', 20)}
+${row('--concurrency <n>', 'Parallel package limit: 1–8 (default: 2)', 20)}
+
+${cyan('Results:')} compat/generated/report.json
+${cyan('Build log:')} scripts/logs/compat/build.log
+${cyan('Review:')} ${dim('follow the baseline → generated links in the output.')}
+${cyan('Workflow:')} docs/API-COMPATIBILITY.md
+
+${cyan('Exit codes')}
+${row('0', 'Baselines current or updated; possible breaks are warnings', 5)}
+${row('1', 'Baselines need updating', 5)}
+${row('2', 'Analysis, configuration, build, or file-write error', 5)}
+${row('130', 'Interrupted (Ctrl+C or termination request)', 5)}
+`
 }
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const paths = {
-  _: root,
-  reports: {
-    _: path.join(root, folders.reports._),
-    baseline: path.join(root, folders.reports._, folders.reports.baseline),
-    generated: path.join(root, folders.reports._, folders.reports.generated),
-  },
-}
+let started = false
 
-// Load tsconfig references
-const tsconfigPath = path.join(paths._, 'tsconfig.build.json')
-if (!fs.existsSync(tsconfigPath)) {
-  console.error(Colorize.red(`Error: ${tsconfigPath} not found.`))
-  process.exit(1)
-}
-const tsconfigContent = fs.readFileSync(tsconfigPath, 'utf-8')
-let packagesFromTsConfig
 try {
-  packagesFromTsConfig = JSON.parse(tsconfigContent)
-    .references
-    .filter(ref => ref.path.startsWith(folders.packages))
-    .map(ref => ref.path)
+  const settings = parseArguments(process.argv.slice(2))
+
+  if (settings.help) {
+    const color = settings.color && !!process.stdout.isTTY && process.env.TERM !== 'dumb'
+
+    process.stdout.write(formatHelp(color))
+  } else {
+    started = true
+    process.exitCode = await runCompat(root, settings)
+  }
 } catch (error) {
-  console.error(Colorize.red(`Error parsing tsconfig.build.json: ${error.message}`))
-  process.exit(1)
-}
-
-// Ensure report directories exist
-fs.mkdirSync(paths.reports.baseline, { recursive: true })
-fs.mkdirSync(paths.reports.generated, { recursive: true })
-
-const helpMessage = `
-${Colorize.cyan('Usage:')}
-  npm run compat ${Colorize.blue('[package]')} ${Colorize.dim('[--local] [--verbose] [--diagnostics]')}
-
-${Colorize.cyan('Options:')}
-  ${Colorize.blue('[package]')}          ${Colorize.dim('Name of the package to analyze (e.g. agents-hosting). If omitted, all packages are analyzed.')}
-  -l, --local        ${Colorize.dim(`Copy temporary API report files to the final report folder (${folders.reports._}/${folders.reports.baseline}).`)}
-  -v, --verbose      ${Colorize.dim('Show verbose output from API Extractor.')}
-  -d, --diagnostics  ${Colorize.dim('Show diagnostics output from API Extractor.')}
-  -h, --help         ${Colorize.dim('Show this help message.')}
-
-${Colorize.cyan('Examples:')}
-  npm run compat
-  npm run compat agents-hosting
-  npm run compat agents-hosting ${Colorize.dim('-- --local --verbose --diagnostics')}
-`
-
-console.log(`${Colorize.magenta('API Compatibility Report')}
-
-${Colorize.cyan('Tips:')}
-  ${Colorize.dim(`- use --local to synchronize the ${folders.reports._} folder from ${folders.reports.generated} to ${folders.reports.baseline}.`)}
-  ${Colorize.dim('- run "npm run compat -- --help" for more information.')}`)
-
-const settings = loadSettings()
-
-if (settings.help) {
-  console.log(helpMessage)
-  process.exit(0)
-}
-
-const packages = settings.package ? [settings.package] : packagesFromTsConfig
-
-console.time('Total Duration')
-
-const packagesWithFailures = []
-const { _console, restore } = stubConsole()
-
-for (const projectFolder of packages) {
-  _console.log(`\n┌─ [${Colorize.blue(projectFolder)}] analyzing compatibility...`)
-  try {
-    const packageCompat = resolvePackageCompat(projectFolder)
-    const reportResult = runCompatibilityReport({
-      packageCompat,
-      projectFolder,
-      settings,
-    })
-
-    if (reportResult.updated) {
-      _console.log(`└─ ${Colorize.green('updated')}`)
-      continue
-    }
-
-    if (reportResult.succeeded) {
-      _console.log(`└─ ${Colorize.green('passed')}`)
-      continue
-    }
-
-    _console.log(`└─ ${Colorize.red(`${reportResult.errorCount} error(s)`)} ── ${Colorize.yellow(`${reportResult.warningCount} warning(s)`)}`)
-    packagesWithFailures.push(projectFolder)
-  } catch (error) {
-    _console.error(Colorize.red(error.message))
-    _console.log(`└─ ${Colorize.red('failed')}`)
-    packagesWithFailures.push(projectFolder)
-  }
-}
-
-restore()
-
-if (packagesWithFailures.length === 0) {
-  console.log(`\n${Colorize.green(`${packages.length} package(s) passed the compatibility analysis!`)}\n`)
-} else {
-  console.log(`\n${Colorize.red(`${packagesWithFailures.length} package(s) failed the compatibility analysis!`)}\n`)
-}
-
-console.timeEnd('Total Duration')
-
-if (packagesWithFailures.length === 0) {
-  process.exit(0)
-} else {
-  process.exit(1)
-}
-
-/**
- * Stub console methods to prefix messages with a pipe character.
- * Useful to make the API extractor output more readable in the terminal.
- */
-function stubConsole () {
-  const _console = { ...console }
-  console.log = (...args) => _console.log('│ ', ...args)
-  console.warn = (...args) => _console.warn('│ ', ...args)
-  console.error = (...args) => _console.error('│ ', ...args)
-  return {
-    _console,
-    restore: () => {
-      console.log = _console.log.bind(console)
-      console.warn = _console.warn.bind(console)
-      console.error = _console.error.bind(console)
-    },
-  }
-}
-
-/**
- * Load settings from command line arguments.
- */
-function loadSettings () {
-  let [, , packageName, ...args] = process.argv
-
-  packageName = packageName?.trim() ?? ''
-  args ??= []
-
-  if (packageName.startsWith('--')) {
-    args.push(packageName)
-    packageName = ''
-  } else if (packageName) {
-    packageName = packageName.startsWith(folders.packages) ? packageName : `${folders.packages}/${packageName}`
-  }
-
-  return {
-    package: packageName,
-    verbose: args.includes('--verbose') || args.includes('-v'),
-    local: args.includes('--local') || args.includes('-l'),
-    diagnostics: args.includes('--diagnostics') || args.includes('-d'),
-    help: args.includes('--help') || args.includes('-h'),
-  }
-}
-
-/**
- * Resolve the canonical public declaration entrypoint for a package.
- *
- * @param {string} projectFolder
- */
-function resolvePackageCompat (projectFolder) {
-  const packageRoot = path.resolve(paths._, projectFolder)
-  const packageJsonFullPath = path.join(packageRoot, 'package.json')
-  const packageJson = JSON.parse(fs.readFileSync(packageJsonFullPath, 'utf-8'))
-  const packageName = packageJson.name ?? projectFolder
-  const importTypes = packageJson.exports?.['.']?.import?.types
-  const requireTypes = packageJson.exports?.['.']?.require?.types
-  const topLevelTypes = packageJson.types
-
-  if (typeof importTypes === 'string' || typeof requireTypes === 'string') {
-    return {
-      packageJsonFullPath,
-      mainEntryPointFilePath: resolveCanonicalTypesPath({
-        packageRoot,
-        packageName,
-        topLevelTypes,
-        importTypes,
-        requireTypes,
-      }),
+  if (!started) {
+    try {
+      writeFailure(prepareArtifacts(root), error.message)
+    } catch (reportError) {
+      console.error(`Cannot write compatibility diagnostics: ${reportError.message}`)
     }
   }
 
-  return {
-    packageJsonFullPath,
-    mainEntryPointFilePath: resolveDeclaredTypesPath(
-      packageRoot,
-      topLevelTypes,
-      packageName,
-      'types',
-      'package.json must declare either exports["."].import.types / exports["."].require.types, or a top-level "types" entry.'
-    ),
-  }
-}
-
-/**
- * Resolve the canonical public types entrypoint for packages that declare module-specific types.
- *
- * @param {{
- *   packageRoot: string,
- *   packageName: string,
- *   topLevelTypes: string | undefined,
- *   importTypes: string | undefined,
- *   requireTypes: string | undefined,
- * }} options
- */
-function resolveCanonicalTypesPath ({ packageRoot, packageName, topLevelTypes, importTypes, requireTypes }) {
-  if (typeof topLevelTypes === 'string') {
-    return resolveDeclaredTypesPath(packageRoot, topLevelTypes, packageName, 'types')
-  }
-
-  if (typeof importTypes === 'string') {
-    return resolveDeclaredTypesPath(packageRoot, importTypes, packageName, 'exports["."].import.types')
-  }
-
-  if (typeof requireTypes === 'string') {
-    return resolveDeclaredTypesPath(packageRoot, requireTypes, packageName, 'exports["."].require.types')
-  }
-
-  throw new Error(`Compat config error for "${packageName}": could not resolve a canonical public types entrypoint.`)
-}
-
-/**
- * Resolve and validate a public types declaration path from package metadata.
- *
- * @param {string} packageRoot
- * @param {string | undefined} declaredPath
- * @param {string} packageName
- * @param {string} fieldName
- * @param {string} [missingFieldMessage]
- */
-function resolveDeclaredTypesPath (packageRoot, declaredPath, packageName, fieldName, missingFieldMessage) {
-  if (typeof declaredPath !== 'string') {
-    throw new Error(`Compat config error for "${packageName}": ${missingFieldMessage ?? `package.json ${fieldName} must be a string.`}`)
-  }
-
-  const resolvedPath = path.resolve(packageRoot, declaredPath)
-  if (!fs.existsSync(resolvedPath)) {
-    throw new Error(`Compat config error for "${packageName}": package.json ${fieldName} points to a file that does not exist: ${resolvedPath}`)
-  }
-  return resolvedPath
-}
-
-/**
- * Run API Extractor for a resolved report target.
- *
- * @param {{
- *   packageCompat: {
- *     packageJsonFullPath: string,
- *     mainEntryPointFilePath: string,
- *   },
- *   projectFolder: string,
- *   settings: {
- *     diagnostics: boolean,
- *     local: boolean,
- *     verbose: boolean,
- *   },
- * }} options
- */
-function runCompatibilityReport ({ packageCompat, projectFolder, settings }) {
-  const extractorConfig = ExtractorConfig.prepare({
-    packageJsonFullPath: packageCompat.packageJsonFullPath,
-    configObjectFullPath: undefined,
-    configObject: {
-      projectFolder,
-      mainEntryPointFilePath: packageCompat.mainEntryPointFilePath,
-      compiler: {
-        tsconfigFilePath: 'tsconfig.json'
-      },
-      apiReport: {
-        enabled: true,
-        reportFolder: paths.reports.baseline,
-        reportTempFolder: paths.reports.generated,
-      },
-      docModel: {
-        enabled: false
-      },
-      dtsRollup: {
-        enabled: false
-      },
-      tsdocMetadata: {
-        enabled: false
-      },
-    }
-  })
-
-  console.log('\r')
-
-  let updated = false
-  const extractorResult = Extractor.invoke(extractorConfig, {
-    localBuild: settings.local,
-    showVerboseMessages: settings.verbose,
-    showDiagnostics: settings.diagnostics,
-    messageCallback (message) {
-      if (message.logLevel === 'warning' && message.text.includes('Updating ')) {
-        updated = true
-      }
-    }
-  })
-
-  console.log('\r')
-
-  return {
-    updated: updated || extractorResult.apiReportChanged,
-    succeeded: extractorResult.succeeded,
-    errorCount: extractorResult.errorCount,
-    warningCount: extractorResult.warningCount,
-  }
+  console.error(`API compatibility: ${error.message}`)
+  process.exitCode = 2
 }

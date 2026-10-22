@@ -63,7 +63,9 @@ describe('CosmosDbPartitionedStorage initialization', () => {
     const storage = createStorage('https://v1-write-validation-account.documents.azure.com/')
     const internals = getInternals(storage)
     let initializeCalls = 0
-    internals.initialize = async () => { initializeCalls++ }
+    internals.initialize = async () => {
+      initializeCalls++
+    }
 
     await storage.write({})
     assert.strictEqual(initializeCalls, 0)
@@ -198,8 +200,12 @@ describe('CosmosDbPartitionedStorage initialization', () => {
     let deleteOptions: unknown
     const container = {
       item: () => ({
-        read: async () => { readCalls++ },
-        delete: async (options?: unknown) => { deleteOptions = options },
+        read: async () => {
+          readCalls++
+        },
+        delete: async (options?: unknown) => {
+          deleteOptions = options
+        },
       }),
     } as unknown as Container
     internals.client = {} as CosmosClient
@@ -232,7 +238,9 @@ describe('CosmosDbPartitionedStorage initialization', () => {
         replace: async (_document: unknown, options: { accessCondition?: { condition?: string } }) => {
           const version = options.accessCondition?.condition ?? ''
           replaceVersions.push(version)
-          if (version === 'stale') return Promise.reject(createStatusError(412))
+          if (version === 'stale') {
+            return Promise.reject(createStatusError(412))
+          }
           return { etag: 'next-version' }
         },
       }),

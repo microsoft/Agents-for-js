@@ -125,7 +125,9 @@ export class CreateConversationOptionsBuilder {
    * Only has effect on `msteams` channels.
    */
   withTeamsChannelId (teamsChannelId: string): this {
-    if (this._channelId !== Channels.Msteams) return this
+    if (this._channelId !== Channels.Msteams) {
+      return this
+    }
     this._parameters = { ...this._parameters, isGroup: true }
     this.withChannelData({ channel: { id: teamsChannelId } })
     return this

@@ -57,7 +57,9 @@ describe('Meeting', () => {
     const app = new AgentApplication()
     const teamsExt = new TeamsAgentExtension(app)
     app.registerExtension(teamsExt, (tae) => {
-      tae.meetings.onEnd(async () => { handled = true })
+      tae.meetings.onEnd(async () => {
+        handled = true
+      })
     })
 
     const activity = createMeetingActivity('APPLICATION/VND.MICROSOFT.MEETINGEND', { id: 'meeting-1' })
@@ -94,7 +96,9 @@ describe('Meeting', () => {
     const app = new AgentApplication()
     const teamsExt = new TeamsAgentExtension(app)
     app.registerExtension(teamsExt, (tae) => {
-      tae.meetings.onParticipantsLeave(async () => { handled = true })
+      tae.meetings.onParticipantsLeave(async () => {
+        handled = true
+      })
     })
 
     const activity = createMeetingActivity('APPLICATION/VND.MICROSOFT.MEETINGPARTICIPANTLEAVE', { members: [] })
@@ -109,7 +113,9 @@ describe('Meeting', () => {
     const app = new AgentApplication()
     const teamsExt = new TeamsAgentExtension(app)
     app.registerExtension(teamsExt, (tae) => {
-      tae.meetings.onStart(async () => { handled = true })
+      tae.meetings.onStart(async () => {
+        handled = true
+      })
     })
 
     const activity = createMeetingActivity('application/vnd.microsoft.meetingStart')
@@ -125,7 +131,9 @@ describe('Meeting', () => {
     const app = new AgentApplication()
     const teamsExt = new TeamsAgentExtension(app)
     app.registerExtension(teamsExt, (tae) => {
-      tae.meetings.onStart(async () => { handled = true })
+      tae.meetings.onStart(async () => {
+        handled = true
+      })
     })
 
     const activity = createMeetingActivity('application/vnd.microsoft.meetingEnd')

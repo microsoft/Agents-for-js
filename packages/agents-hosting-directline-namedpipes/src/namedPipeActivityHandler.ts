@@ -95,10 +95,20 @@ export class NamedPipeActivityHandler {
         headersSent: false,
         _status: 200,
         _body: undefined as unknown,
-        status (code: number) { this._status = code; return this },
-        setHeader () { return this },
-        send (body: unknown) { this._body = body; return this },
-        end () { this.writableEnded = true }
+        status (code: number) {
+          this._status = code
+          return this
+        },
+        setHeader () {
+          return this
+        },
+        send (body: unknown) {
+          this._body = body
+          return this
+        },
+        end () {
+          this.writableEnded = true
+        }
       }
 
       logger.info('[ActivityHandler] Calling adapter.process()...')
@@ -140,7 +150,9 @@ export class NamedPipeActivityHandler {
     try {
       const clientId = this._adapter.connectionManager?.getDefaultConnection()?.connectionSettings?.clientId ?? ''
       // 'local-named-pipe' is the sentinel used by createLocalAdapter() — treat it as anonymous
-      if (clientId === 'local-named-pipe') return ''
+      if (clientId === 'local-named-pipe') {
+        return ''
+      }
       return clientId
     } catch {
       // No connections configured — named pipes don't require auth

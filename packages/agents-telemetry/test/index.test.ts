@@ -6,8 +6,12 @@ import type { OTel, OTelLogs } from '../src/types.js'
 
 function createMissingLoader () {
   return {
-    otel (): never { throw new Error('not found') },
-    logs (): never { throw new Error('not found') },
+    otel (): never {
+      throw new Error('not found')
+    },
+    logs (): never {
+      throw new Error('not found')
+    },
   }
 }
 
@@ -98,7 +102,9 @@ describe('index', () => {
 
     const factory = index({
       otel: () => mockOTel as unknown as OTel,
-      logs: () => { throw new Error('not found') },
+      logs: () => {
+        throw new Error('not found')
+      },
     })
 
     assert.strictEqual(typeof factory.trace, 'function')
@@ -116,8 +122,12 @@ describe('index', () => {
 
   it('returns a Promise<Factory> when loader returns promises', async () => {
     const result = index({
-      otel: async () => { throw new Error('not found') },
-      logs: async () => { throw new Error('not found') },
+      otel: async () => {
+        throw new Error('not found')
+      },
+      logs: async () => {
+        throw new Error('not found')
+      },
     })
 
     assert.ok(result instanceof Promise)

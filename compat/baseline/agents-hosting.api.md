@@ -210,7 +210,7 @@ export class AgentApplicationBuilder<TState extends TurnState = TurnState> {
     withAuthorization(authHandlers: AuthorizationOptions): this;
     withProactive(options: ProactiveOptions): this;
     withRateLimit(rules: RateLimitRule[]): this;
-    withStorage(storage: Storage): this;
+    withStorage(storage: StorageProvider): this;
     withTurnStateFactory(turnStateFactory: () => TState): this;
     withTyping(typing: TypingOptions): this;
 }
@@ -232,7 +232,7 @@ export interface AgentApplicationOptions<TState extends TurnState> {
     rateLimit?: RateLimitRule[];
     removeRecipientMention?: boolean;
     startTypingTimer: boolean;
-    storage?: Storage;
+    storage?: StorageProvider;
     transcriptLogger?: TranscriptLogger;
     turnStateFactory: () => TState;
     typing?: TypingOptions;
@@ -285,7 +285,7 @@ export interface AgentResponseHandlerParams {
 
 // @public
 export class AgentState {
-    constructor(storage: Storage, storageKey: StorageKeyFactory);
+    constructor(storage: StorageProvider, storageKey: StorageKeyFactory);
     clear(context: TurnContext): Promise<void>;
     createProperty<T = any>(name: string): AgentStatePropertyAccessor<T>;
     delete(context: TurnContext, customKey?: CustomKey): Promise<void>;
@@ -293,7 +293,7 @@ export class AgentState {
     load(context: TurnContext, force?: boolean, customKey?: CustomKey): Promise<any>;
     saveChanges(context: TurnContext, force?: boolean, customKey?: CustomKey): Promise<void>;
     // (undocumented)
-    protected storage: Storage;
+    protected storage: StorageProvider;
     // (undocumented)
     protected storageKey: StorageKeyFactory;
 }
@@ -575,9 +575,11 @@ export function buildJwksUri(iss: string, authConfig: AuthConfiguration): string
 // @public
 export interface CachedAgentState {
     hash: string;
+    isNew?: boolean;
     state: {
         [id: string]: any;
     };
+    version?: string;
 }
 
 // @public
@@ -877,7 +879,7 @@ export interface ConversationsResult {
 
 // @public
 export class ConversationState extends AgentState {
-    constructor(storage: Storage, namespace?: string);
+    constructor(storage: StorageProvider, namespace?: string);
 }
 
 // @public
@@ -959,11 +961,18 @@ export interface Fact {
 }
 
 // @public
-export class FileStorage implements Storage {
-    constructor(folder: string);
+export class FileStorage extends FileStorageInternals implements Storage_2 {
     delete(keys: string[]): Promise<void>;
     read(keys: string[]): Promise<StoreItem>;
-    write(changes: StoreItem, options?: StorageWriteOptions): Promise<void>;
+    write(changes: StoreItem): Promise<void>;
+}
+
+// @public
+export class FileStorageV2 extends StorageV2 {
+    constructor(folder: string);
+    delete(keys: string[], options?: StorageDeleteOptions): Promise<StorageDeleteResults>;
+    read<T extends object = Record<string, unknown>>(keys: string[]): Promise<StorageReadResults<T>>;
+    write<T extends object = Record<string, unknown>>(changes: Record<string, T>, options?: StorageWriteOptions): Promise<StorageWriteResults>;
 }
 
 // @public
@@ -1148,14 +1157,27 @@ export interface MediaUrl {
 }
 
 // @public
-export class MemoryStorage implements Storage {
+export class MemoryStorage extends MemoryStorageInternals implements Storage_2 {
     constructor(memory?: {
-        [k: string]: string;
+        [key: string]: string;
     });
     delete(keys: string[]): Promise<void>;
+    // (undocumented)
     static getSingleInstance(): MemoryStorage;
     read(keys: string[]): Promise<StoreItem>;
-    write(changes: StoreItem, options?: StorageWriteOptions): Promise<void>;
+    write(changes: StoreItem): Promise<void>;
+}
+
+// @public
+export class MemoryStorageV2 extends StorageV2 {
+    constructor(memory?: {
+        [key: string]: string;
+    });
+    delete(keys: string[], options?: StorageDeleteOptions): Promise<StorageDeleteResults>;
+    // (undocumented)
+    static getSingleInstance(): MemoryStorageV2;
+    read<T extends object = Record<string, unknown>>(keys: string[]): Promise<StorageReadResults<T>>;
+    write<T extends object = Record<string, unknown>>(changes: Record<string, T>, options?: StorageWriteOptions): Promise<StorageWriteResults>;
 }
 
 // @public
@@ -1350,7 +1372,7 @@ export class Proactive<TState extends TurnState> {
 // @public
 export interface ProactiveOptions {
     failOnUnsignedInConnections?: boolean;
-    storage?: Storage;
+    storage?: StorageProvider;
 }
 
 // @public
@@ -1378,7 +1400,7 @@ export interface RateLimitRule {
     maxStorageRetries?: number;
     message?: string | Activity | RateLimitMessageFactory;
     scope: RateLimitScope;
-    storage?: Storage;
+    storage?: StorageProvider;
     storageErrorBehavior?: RateLimitStorageErrorBehavior;
     windowMs: number;
 }
@@ -1537,19 +1559,103 @@ export enum StatusCodes {
 }
 
 // @public
-export interface Storage {
+interface Storage_2 {
     delete: (keys: string[]) => Promise<void>;
     read: (keys: string[]) => Promise<StoreItem>;
-    write: (changes: StoreItem, options?: StorageWriteOptions) => Promise<void>;
+    write: (changes: StoreItem) => Promise<void>;
 }
+export { Storage_2 as Storage }
+
+// @public
+export interface StorageDeleteOptions {
+    // (undocumented)
+    expectedVersion?: string;
+}
+
+// @public
+export interface StorageDeleteResult {
+    // (undocumented)
+    key: string;
+    // (undocumented)
+    status: StorageOperationStatus;
+    // (undocumented)
+    version?: string;
+}
+
+// @public
+export type StorageDeleteResults = Record<string, StorageDeleteResult>;
 
 // @public
 export type StorageKeyFactory = (context: TurnContext) => string | Promise<string>;
 
 // @public
+export enum StorageOperationStatus {
+    // (undocumented)
+    ConditionNotMet = "conditionNotMet",
+    // (undocumented)
+    Conflict = "conflict",
+    // (undocumented)
+    NotFound = "notFound",
+    // (undocumented)
+    Succeeded = "succeeded"
+}
+
+// @public
+export type StorageProvider = Storage_2 | StorageV2;
+
+// @public
+export interface StorageReadResult<T extends object = Record<string, unknown>> {
+    // (undocumented)
+    key: string;
+    // (undocumented)
+    status: StorageOperationStatus;
+    // (undocumented)
+    value?: T;
+    // (undocumented)
+    version?: string;
+}
+
+// @public
+export type StorageReadResults<T extends object = Record<string, unknown>> = Record<string, StorageReadResult<T>>;
+
+// @public
+export abstract class StorageV2 {
+    abstract delete(keys: string[], options?: StorageDeleteOptions): Promise<StorageDeleteResults>;
+    abstract read<T extends object = Record<string, unknown>>(keys: string[]): Promise<StorageReadResults<T>>;
+    abstract write<T extends object = Record<string, unknown>>(changes: Record<string, T>, options?: StorageWriteOptions): Promise<StorageWriteResults>;
+}
+
+// @public
+export enum StorageWriteMode {
+    // (undocumented)
+    CreateOnly = "createOnly",
+    // (undocumented)
+    Replace = "replace",
+    // (undocumented)
+    Upsert = "upsert"
+}
+
+// @public
 export interface StorageWriteOptions {
+    // (undocumented)
+    expectedVersion?: string;
+    // (undocumented)
+    mode?: StorageWriteMode;
     ttl?: number;
 }
+
+// @public
+export interface StorageWriteResult {
+    // (undocumented)
+    key: string;
+    // (undocumented)
+    status: StorageOperationStatus;
+    // (undocumented)
+    version?: string;
+}
+
+// @public
+export type StorageWriteResults = Record<string, StorageWriteResult>;
 
 // @public
 export interface StoreItem {
@@ -1769,9 +1875,9 @@ export class TurnState<TConversationState = DefaultConversationState, TUserState
     getValue<TValue = unknown>(path: string): TValue;
     hasValue(path: string): boolean;
     get isLoaded(): boolean;
-    load(context: TurnContext, storage?: Storage, force?: boolean): Promise<boolean>;
+    load(context: TurnContext, storage?: StorageProvider, force?: boolean): Promise<boolean>;
     protected onComputeStorageKeys(context: TurnContext): Promise<Record<string, string>>;
-    save(context: TurnContext, storage?: Storage): Promise<void>;
+    save(context: TurnContext, storage?: StorageProvider): Promise<void>;
     setValue(path: string, value: unknown): void;
     get user(): TUserState;
     set user(value: TUserState);
@@ -1804,7 +1910,7 @@ export type UpdateActivityHandler = (context: TurnContext, activity: Activity, n
 
 // @public
 export class UserState extends AgentState {
-    constructor(storage: Storage, namespace?: string);
+    constructor(storage: StorageProvider, namespace?: string);
 }
 
 // @public

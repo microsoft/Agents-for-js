@@ -1,0 +1,244 @@
+{
+  "schemaVersion": 1,
+  "toolchain": {
+    "extractor": "7.59.0",
+    "checker": "0.8.0",
+    "typescript": "6.0.2"
+  },
+  "packages": [
+    {
+      "name": "@microsoft/agents-activity",
+      "directory": "packages/agents-activity",
+      "entries": {
+        ".": {
+          "types": "./dist/src/index.d.ts",
+          "report": "agents-activity.api.md"
+        }
+      },
+      "dependencies": {
+        "zod": "3.25.75"
+      },
+      "unsupported": []
+    },
+    {
+      "name": "@microsoft/agents-copilotstudio-client",
+      "directory": "packages/agents-copilotstudio-client",
+      "entries": {
+        ".": {
+          "types": "./dist/src/index.d.ts",
+          "report": "agents-copilotstudio-client.api.md"
+        }
+      },
+      "dependencies": {
+        "@microsoft/agents-activity": "file:../agents-activity",
+        "@microsoft/agents-telemetry": "file:../agents-telemetry",
+        "eventsource-client": "1.2.0",
+        "rxjs": "7.8.2"
+      },
+      "unsupported": []
+    },
+    {
+      "name": "@microsoft/agents-hosting",
+      "directory": "packages/agents-hosting",
+      "entries": {
+        ".": {
+          "types": "./dist/src/index.d.ts",
+          "report": "agents-hosting.api.md"
+        }
+      },
+      "dependencies": {
+        "@azure/core-auth": "1.10.1",
+        "@azure/msal-node": "5.6.0",
+        "@microsoft/agents-activity": "file:../agents-activity",
+        "@microsoft/agents-telemetry": "file:../agents-telemetry",
+        "jsonwebtoken": "9.0.3",
+        "jwks-rsa": "4.0.1",
+        "zod": "3.25.75"
+      },
+      "unsupported": []
+    },
+    {
+      "name": "@microsoft/agents-hosting-dialogs",
+      "directory": "packages/agents-hosting-dialogs",
+      "entries": {
+        ".": {
+          "types": "./dist/src/index.d.ts",
+          "report": "agents-hosting-dialogs.api.md"
+        }
+      },
+      "dependencies": {
+        "@microsoft/agents-activity": "file:../agents-activity",
+        "@microsoft/agents-hosting": "file:../agents-hosting",
+        "@microsoft/agents-telemetry": "file:../agents-telemetry",
+        "@microsoft/recognizers-text-choice": "1.3.1",
+        "@microsoft/recognizers-text-date-time": "1.3.2",
+        "@microsoft/recognizers-text-number": "1.3.1",
+        "@microsoft/recognizers-text-suite": "1.3.1",
+        "dependency-graph": "1.0.0",
+        "globalize": "1.7.1",
+        "zod": "3.25.75"
+      },
+      "unsupported": []
+    },
+    {
+      "name": "@microsoft/agents-hosting-directline-namedpipes",
+      "directory": "packages/agents-hosting-directline-namedpipes",
+      "entries": {
+        ".": {
+          "types": "./dist/src/index.d.ts",
+          "report": "agents-hosting-directline-namedpipes.api.md"
+        }
+      },
+      "dependencies": {
+        "@microsoft/agents-hosting": "file:../agents-hosting",
+        "@microsoft/agents-activity": "file:../agents-activity",
+        "@microsoft/agents-telemetry": "file:../agents-telemetry",
+        "jsonwebtoken": "9.0.3"
+      },
+      "unsupported": []
+    },
+    {
+      "name": "@microsoft/agents-hosting-express",
+      "directory": "packages/agents-hosting-express",
+      "entries": {
+        ".": {
+          "types": "./dist/src/index.d.ts",
+          "report": "agents-hosting-express.api.md"
+        }
+      },
+      "dependencies": {
+        "@microsoft/agents-hosting": "file:../agents-hosting",
+        "@microsoft/agents-telemetry": "file:../agents-telemetry",
+        "express": "5.2.1",
+        "express-rate-limit": "8.6.2"
+      },
+      "unsupported": []
+    },
+    {
+      "name": "@microsoft/agents-hosting-extensions-msteams",
+      "directory": "packages/agents-hosting-extensions-msteams",
+      "entries": {
+        ".": {
+          "types": "./dist/src/index.d.ts",
+          "report": "agents-hosting-extensions-msteams.api.md"
+        }
+      },
+      "dependencies": {
+        "@microsoft/agents-activity": "file:../agents-activity",
+        "@microsoft/agents-hosting": "file:../agents-hosting",
+        "@microsoft/microsoft-graph-client": "3.0.7",
+        "@microsoft/teams.api": "2.1.0",
+        "zod": "3.25.75"
+      },
+      "unsupported": []
+    },
+    {
+      "name": "@microsoft/agents-hosting-extensions-slack",
+      "directory": "packages/agents-hosting-extensions-slack",
+      "entries": {
+        ".": {
+          "types": "./dist/src/index.d.ts",
+          "report": "agents-hosting-extensions-slack.api.md"
+        }
+      },
+      "dependencies": {
+        "@microsoft/agents-hosting": "file:../agents-hosting",
+        "@microsoft/agents-activity": "file:../agents-activity",
+        "@microsoft/agents-telemetry": "file:../agents-telemetry"
+      },
+      "unsupported": []
+    },
+    {
+      "name": "@microsoft/agents-hosting-extensions-teams",
+      "directory": "packages/agents-hosting-extensions-teams",
+      "entries": {
+        ".": {
+          "types": "./dist/src/index.d.ts",
+          "report": "agents-hosting-extensions-teams.api.md"
+        }
+      },
+      "dependencies": {
+        "@microsoft/agents-hosting": "file:../agents-hosting",
+        "@microsoft/agents-activity": "file:../agents-activity",
+        "@microsoft/agents-telemetry": "file:../agents-telemetry",
+        "zod": "3.25.75"
+      },
+      "unsupported": []
+    },
+    {
+      "name": "@microsoft/agents-hosting-fastify",
+      "directory": "packages/agents-hosting-fastify",
+      "entries": {
+        ".": {
+          "types": "./dist/src/index.d.ts",
+          "report": "agents-hosting-fastify.api.md"
+        }
+      },
+      "dependencies": {
+        "@microsoft/agents-hosting": "file:../agents-hosting",
+        "@microsoft/agents-telemetry": "file:../agents-telemetry",
+        "@fastify/rate-limit": "10.3.0",
+        "fastify": ">=5.0.0"
+      },
+      "unsupported": []
+    },
+    {
+      "name": "@microsoft/agents-hosting-storage-blob",
+      "directory": "packages/agents-hosting-storage-blob",
+      "entries": {
+        ".": {
+          "types": "./dist/src/index.d.ts",
+          "report": "agents-hosting-storage-blob.api.md"
+        }
+      },
+      "dependencies": {
+        "@azure/core-auth": "1.10.1",
+        "@azure/storage-blob": "12.31.0",
+        "@microsoft/agents-hosting": "file:../../packages/agents-hosting",
+        "@microsoft/agents-activity": "file:../../packages/agents-activity",
+        "@microsoft/agents-telemetry": "file:../agents-telemetry",
+        "zod": "3.25.75"
+      },
+      "unsupported": []
+    },
+    {
+      "name": "@microsoft/agents-hosting-storage-cosmos",
+      "directory": "packages/agents-hosting-storage-cosmos",
+      "entries": {
+        ".": {
+          "types": "./dist/src/index.d.ts",
+          "report": "agents-hosting-storage-cosmos.api.md"
+        }
+      },
+      "dependencies": {
+        "@azure/cosmos": "4.9.3",
+        "@microsoft/agents-hosting": "file:../../packages/agents-hosting",
+        "@microsoft/agents-activity": "file:../../packages/agents-activity",
+        "@microsoft/agents-telemetry": "file:../agents-telemetry"
+      },
+      "unsupported": []
+    },
+    {
+      "name": "@microsoft/agents-telemetry",
+      "directory": "packages/agents-telemetry",
+      "entries": {
+        ".#import": {
+          "types": "./dist/cjs/src/index.d.mts",
+          "report": "agents-telemetry.api.md"
+        },
+        ".#require": {
+          "types": "./dist/cjs/src/index.d.cts",
+          "report": "agents-telemetry-require.api.md"
+        }
+      },
+      "dependencies": {
+        "@microsoft/agents-activity": "file:../agents-activity",
+        "@noble/hashes": "1.8.0",
+        "debug": "4.4.3",
+        "@opentelemetry/api": "1",
+        "@opentelemetry/api-logs": ">=0.214.0 <1"
+      },
+      "unsupported": []
+    }
+  ]
+}

@@ -158,17 +158,29 @@ export class SidecarHttpClient {
     if (b.length !== 4 || b.some((n) => Number.isNaN(n) || n < 0 || n > 255)) {
       return false
     }
-    if (b[0] === 127) return true // 127.0.0.0/8 loopback
-    if (b[0] === 10) return true // 10.0.0.0/8
-    if (b[0] === 172 && b[1] >= 16 && b[1] <= 31) return true // 172.16.0.0/12
-    if (b[0] === 192 && b[1] === 168) return true // 192.168.0.0/16
-    if (b[0] === 169 && b[1] === 254) return true // 169.254.0.0/16 link-local
+    if (b[0] === 127) {
+      return true
+    } // 127.0.0.0/8 loopback
+    if (b[0] === 10) {
+      return true
+    } // 10.0.0.0/8
+    if (b[0] === 172 && b[1] >= 16 && b[1] <= 31) {
+      return true
+    } // 172.16.0.0/12
+    if (b[0] === 192 && b[1] === 168) {
+      return true
+    } // 192.168.0.0/16
+    if (b[0] === 169 && b[1] === 254) {
+      return true
+    } // 169.254.0.0/16 link-local
     return false
   }
 
   private static isPrivateOrLoopbackIPv6 (host: string): boolean {
     const lower = host.toLowerCase()
-    if (lower === '::1' || lower === '0:0:0:0:0:0:0:1') return true // loopback (`::` is the unspecified address, not loopback)
+    if (lower === '::1' || lower === '0:0:0:0:0:0:0:1') {
+      return true
+    } // loopback (`::` is the unspecified address, not loopback)
     // IPv4-mapped/-translated addresses in either dotted (::ffff:127.0.0.1)
     // or hex-compressed (::ffff:7f00:1) form.
     const mappedIPv4 = SidecarHttpClient.extractMappedIPv4(lower)
@@ -177,9 +189,15 @@ export class SidecarHttpClient {
     }
     const firstHextet = parseInt(lower.split(':')[0], 16)
     if (!Number.isNaN(firstHextet)) {
-      if ((firstHextet & 0xfe00) === 0xfc00) return true // fc00::/7 unique local
-      if ((firstHextet & 0xffc0) === 0xfe80) return true // fe80::/10 link-local
-      if ((firstHextet & 0xffc0) === 0xfec0) return true // fec0::/10 site-local (deprecated)
+      if ((firstHextet & 0xfe00) === 0xfc00) {
+        return true
+      } // fc00::/7 unique local
+      if ((firstHextet & 0xffc0) === 0xfe80) {
+        return true
+      } // fe80::/10 link-local
+      if ((firstHextet & 0xffc0) === 0xfec0) {
+        return true
+      } // fec0::/10 site-local (deprecated)
     }
     return false
   }

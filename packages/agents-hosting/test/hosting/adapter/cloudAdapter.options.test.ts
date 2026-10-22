@@ -78,8 +78,11 @@ describe('CloudAdapter options (PR #838 parity)', () => {
 
   function assertStatus (res: Partial<Response>, statusCode: number, shouldBeCalled: boolean) {
     const status = (res as any).status
-    if (shouldBeCalled) sinon.assert.calledWith(status, statusCode)
-    else sinon.assert.neverCalledWith(status, statusCode)
+    if (shouldBeCalled) {
+      sinon.assert.calledWith(status, statusCode)
+    } else {
+      sinon.assert.neverCalledWith(status, statusCode)
+    }
   }
 
   function getAdapterOptions (adapter: CloudAdapter): CloudAdapterOptions {
@@ -153,7 +156,9 @@ describe('CloudAdapter options (PR #838 parity)', () => {
       for (const { debug, namespaces, formatArgs } of previousSettings) {
         debug.formatArgs = formatArgs
         debug.disable()
-        if (namespaces) debug.enable(namespaces)
+        if (namespaces) {
+          debug.enable(namespaces)
+        }
       }
     }
     return calls.join('')
@@ -320,8 +325,11 @@ describe('CloudAdapter options (PR #838 parity)', () => {
         await processWithServiceUrl(adapter, 'https://evil.example.com/callback/', res)
         assertStatus(res, 400, true)
       } finally {
-        if (prev === undefined) delete process.env.CloudAdapterOptions__validateServiceUrl
-        else process.env.CloudAdapterOptions__validateServiceUrl = prev
+        if (prev === undefined) {
+          delete process.env.CloudAdapterOptions__validateServiceUrl
+        } else {
+          process.env.CloudAdapterOptions__validateServiceUrl = prev
+        }
       }
     })
 
@@ -336,8 +344,11 @@ describe('CloudAdapter options (PR #838 parity)', () => {
         await processWithServiceUrl(adapter, 'https://evil.example.com/callback/', res)
         assertStatus(res, 400, false)
       } finally {
-        if (prev === undefined) delete process.env.CloudAdapterOptions__validateServiceUrl
-        else process.env.CloudAdapterOptions__validateServiceUrl = prev
+        if (prev === undefined) {
+          delete process.env.CloudAdapterOptions__validateServiceUrl
+        } else {
+          process.env.CloudAdapterOptions__validateServiceUrl = prev
+        }
       }
     })
 
@@ -349,8 +360,11 @@ describe('CloudAdapter options (PR #838 parity)', () => {
         const resolvedOptions = getResolvedOptions(adapter)
         assert.equal(resolvedOptions.validateServiceUrl, true)
       } finally {
-        if (prev === undefined) delete process.env.CloudAdapterOptions__validateServiceUrl
-        else process.env.CloudAdapterOptions__validateServiceUrl = prev
+        if (prev === undefined) {
+          delete process.env.CloudAdapterOptions__validateServiceUrl
+        } else {
+          process.env.CloudAdapterOptions__validateServiceUrl = prev
+        }
       }
     })
 
@@ -382,8 +396,11 @@ describe('CloudAdapter options (PR #838 parity)', () => {
           validateServiceUrl: true
         })
       } finally {
-        if (previous === undefined) delete process.env.CloudAdapterOptions__validateServiceUrl
-        else process.env.CloudAdapterOptions__validateServiceUrl = previous
+        if (previous === undefined) {
+          delete process.env.CloudAdapterOptions__validateServiceUrl
+        } else {
+          process.env.CloudAdapterOptions__validateServiceUrl = previous
+        }
       }
     })
 
@@ -422,8 +439,11 @@ describe('CloudAdapter options (PR #838 parity)', () => {
         await processWithServiceUrl(adapter, 'https://evil.example.com/callback/', res)
         assertStatus(res, 400, false)
       } finally {
-        if (prev === undefined) delete process.env.CloudAdapterOptions__unknownOption
-        else process.env.CloudAdapterOptions__unknownOption = prev
+        if (prev === undefined) {
+          delete process.env.CloudAdapterOptions__unknownOption
+        } else {
+          process.env.CloudAdapterOptions__unknownOption = prev
+        }
       }
     })
 
@@ -440,8 +460,11 @@ describe('CloudAdapter options (PR #838 parity)', () => {
         await processWithServiceUrl(adapter, 'https://evil.example.com/callback/', res)
         assertStatus(res, 400, true)
       } finally {
-        if (prev === undefined) delete process.env.CloudAdapterOptions__VALIDATESERVICEURL
-        else process.env.CloudAdapterOptions__VALIDATESERVICEURL = prev
+        if (prev === undefined) {
+          delete process.env.CloudAdapterOptions__VALIDATESERVICEURL
+        } else {
+          process.env.CloudAdapterOptions__VALIDATESERVICEURL = prev
+        }
       }
     })
   })
@@ -701,8 +724,11 @@ describe('CloudAdapter options (PR #838 parity)', () => {
         const out = await captureDebugLog(() => invokeDefaultOnTurnError(adapter, err))
         assert.ok(out.includes('ENV-STACK-MARKER'), `env var should enable stack trace, got: ${out}`)
       } finally {
-        if (prev === undefined) delete process.env.CloudAdapterOptions__emitStackTrace
-        else process.env.CloudAdapterOptions__emitStackTrace = prev
+        if (prev === undefined) {
+          delete process.env.CloudAdapterOptions__emitStackTrace
+        } else {
+          process.env.CloudAdapterOptions__emitStackTrace = prev
+        }
       }
     })
   })
@@ -756,18 +782,25 @@ describe('CloudAdapter options (PR #838 parity)', () => {
       ;(debugModule.default as any).enable('agents:cloud-adapter:*')
       const calls: string[] = []
       const origStderr = process.stderr.write.bind(process.stderr)
-      ;(process.stderr.write as any) = (chunk: any) => { calls.push(String(chunk)); return true }
+      ;(process.stderr.write as any) = (chunk: any) => {
+        calls.push(String(chunk))
+        return true
+      }
       // console.warn writes to stderr by default, but stub it too in case the
       // test runner has redirected it.
       const origConsoleWarn = console.warn
-      console.warn = (...args: any[]) => { calls.push(args.map(String).join(' ') + '\n') }
+      console.warn = (...args: any[]) => {
+        calls.push(args.map(String).join(' ') + '\n')
+      }
       try {
         await fn()
       } finally {
         console.warn = origConsoleWarn
         ;(process.stderr.write as any) = origStderr
         ;(debugModule.default as any).disable()
-        if (prev) (debugModule.default as any).enable(prev)
+        if (prev) {
+          (debugModule.default as any).enable(prev)
+        }
       }
       return calls.join('')
     }
@@ -786,13 +819,18 @@ describe('CloudAdapter options (PR #838 parity)', () => {
       const prev = process.env.CloudAdapterOptions__validateServiceUrls
       process.env.CloudAdapterOptions__validateServiceUrls = 'true'
       try {
-        const out = await captureLogDuring(() => { buildAdapter() })
+        const out = await captureLogDuring(() => {
+          buildAdapter()
+        })
         assert.ok(out.includes('Unknown CloudAdapterOptions env var'), `should warn on unknown env var, got: ${out}`)
         assert.ok(out.includes('Did you mean'), `should include suggestion hint, got: ${out}`)
         assert.ok(out.includes('CloudAdapterOptions__validateServiceUrl'), `should suggest validateServiceUrl, got: ${out}`)
       } finally {
-        if (prev === undefined) delete process.env.CloudAdapterOptions__validateServiceUrls
-        else process.env.CloudAdapterOptions__validateServiceUrls = prev
+        if (prev === undefined) {
+          delete process.env.CloudAdapterOptions__validateServiceUrls
+        } else {
+          process.env.CloudAdapterOptions__validateServiceUrls = prev
+        }
       }
     })
 
@@ -800,12 +838,17 @@ describe('CloudAdapter options (PR #838 parity)', () => {
       const prev = process.env.CloudAdapterOptions__totallyMadeUpOption
       process.env.CloudAdapterOptions__totallyMadeUpOption = 'true'
       try {
-        const out = await captureLogDuring(() => { buildAdapter() })
+        const out = await captureLogDuring(() => {
+          buildAdapter()
+        })
         assert.ok(out.includes('Unknown CloudAdapterOptions env var'), `should warn on unknown env var, got: ${out}`)
         assert.ok(!out.includes('Did you mean'), `should NOT suggest anything for distant names, got: ${out}`)
       } finally {
-        if (prev === undefined) delete process.env.CloudAdapterOptions__totallyMadeUpOption
-        else process.env.CloudAdapterOptions__totallyMadeUpOption = prev
+        if (prev === undefined) {
+          delete process.env.CloudAdapterOptions__totallyMadeUpOption
+        } else {
+          process.env.CloudAdapterOptions__totallyMadeUpOption = prev
+        }
       }
     })
 
@@ -813,12 +856,17 @@ describe('CloudAdapter options (PR #838 parity)', () => {
       const prev = process.env.CloudAdapterOptions__validServiceUrl
       process.env.CloudAdapterOptions__validServiceUrl = 'true'
       try {
-        const out = await captureLogDuring(() => { buildAdapter() })
+        const out = await captureLogDuring(() => {
+          buildAdapter()
+        })
         assert.ok(out.includes('Unknown CloudAdapterOptions env var'), `should warn on unknown env var, got: ${out}`)
         assert.ok(out.includes('Did you mean "CloudAdapterOptions__validateServiceUrl"'), `should suggest validateServiceUrl, got: ${out}`)
       } finally {
-        if (prev === undefined) delete process.env.CloudAdapterOptions__validServiceUrl
-        else process.env.CloudAdapterOptions__validServiceUrl = prev
+        if (prev === undefined) {
+          delete process.env.CloudAdapterOptions__validServiceUrl
+        } else {
+          process.env.CloudAdapterOptions__validServiceUrl = prev
+        }
       }
     })
 
@@ -831,8 +879,11 @@ describe('CloudAdapter options (PR #838 parity)', () => {
         // No warning should fire; option should be picked up.
         assert.equal(getAdapterOptions(adapter).validateServiceUrl, true)
       } finally {
-        if (prev === undefined) delete process.env[key]
-        else process.env[key] = prev
+        if (prev === undefined) {
+          delete process.env[key]
+        } else {
+          process.env[key] = prev
+        }
       }
     })
 
@@ -840,14 +891,19 @@ describe('CloudAdapter options (PR #838 parity)', () => {
       const prev = process.env.CloudAdapterOptions__validateServiceUrl
       process.env.CloudAdapterOptions__validateServiceUrl = 'yes'
       try {
-        const out = await captureLogDuring(() => { buildAdapter() })
+        const out = await captureLogDuring(() => {
+          buildAdapter()
+        })
         assert.ok(out.includes('Ignored CloudAdapterOptions__validateServiceUrl=yes'),
           `should warn on unparseable boolean value, got: ${out}`)
         assert.ok(out.includes('expected one of true/false/1/0'),
           `should describe expected values, got: ${out}`)
       } finally {
-        if (prev === undefined) delete process.env.CloudAdapterOptions__validateServiceUrl
-        else process.env.CloudAdapterOptions__validateServiceUrl = prev
+        if (prev === undefined) {
+          delete process.env.CloudAdapterOptions__validateServiceUrl
+        } else {
+          process.env.CloudAdapterOptions__validateServiceUrl = prev
+        }
       }
     })
 
@@ -881,12 +937,17 @@ describe('CloudAdapter options (PR #838 parity)', () => {
       const prev = process.env.CloudAdapterOptions__validateServiceUrl
       process.env.CloudAdapterOptions__validateServiceUrl = '   '
       try {
-        const out = await captureLogDuring(() => { buildAdapter() })
+        const out = await captureLogDuring(() => {
+          buildAdapter()
+        })
         assert.ok(!out.includes('Ignored CloudAdapterOptions__validateServiceUrl'),
           `whitespace-only value should not produce an "Ignored" warning, got: ${out}`)
       } finally {
-        if (prev === undefined) delete process.env.CloudAdapterOptions__validateServiceUrl
-        else process.env.CloudAdapterOptions__validateServiceUrl = prev
+        if (prev === undefined) {
+          delete process.env.CloudAdapterOptions__validateServiceUrl
+        } else {
+          process.env.CloudAdapterOptions__validateServiceUrl = prev
+        }
       }
     })
 

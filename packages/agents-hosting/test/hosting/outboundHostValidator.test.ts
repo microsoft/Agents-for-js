@@ -17,14 +17,19 @@ describe('OutboundHostValidator', () => {
   const changedEnvironmentKeys = new Map<string, string | undefined>()
 
   function setEnvironment (key: string, value: string): void {
-    if (!changedEnvironmentKeys.has(key)) changedEnvironmentKeys.set(key, process.env[key])
+    if (!changedEnvironmentKeys.has(key)) {
+      changedEnvironmentKeys.set(key, process.env[key])
+    }
     process.env[key] = value
   }
 
   afterEach(() => {
     for (const [key, value] of changedEnvironmentKeys) {
-      if (value === undefined) delete process.env[key]
-      else process.env[key] = value
+      if (value === undefined) {
+        delete process.env[key]
+      } else {
+        process.env[key] = value
+      }
     }
     changedEnvironmentKeys.clear()
     resetConfigurationSourcesForTest()
