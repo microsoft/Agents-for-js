@@ -10,6 +10,9 @@ import { checkTeamsApiMetadata } from './teams-api-drift/validate-teams-api-meta
 const ignoredDirectories = new Set(['.git', 'node_modules', 'dist', 'coverage'])
 const ignoredDocumentPrefixes = ['compat/', 'packages/agents-hosting-dialogs/vendor/']
 const workspaceRoots = ['packages', 'test-agents']
+const packageNodeEngineOverrides = new Map([
+  ['@microsoft/agents-hosting-extensions-msteams', '>=22.12.0'],
+])
 
 export const ruleDefinitions = {
   'repository/root-private': {
@@ -128,9 +131,9 @@ export const ruleDefinitions = {
     fix: 'Replace the value with the canonical root package.json value.',
   },
   'runtime/engine-mismatch': {
-    what: 'Package engines.node matches the root Node range.',
-    why: 'Keeps local, CI, container, and type-level runtime support aligned.',
-    fix: 'Replace engines.node with the root package Node range.',
+    what: 'Package engines.node matches its approved Node range.',
+    why: 'Keeps package runtime support aligned with the root or stricter dependency requirements.',
+    fix: 'Replace engines.node with the root Node range or the approved package-specific range.',
   },
   'package/private': {
     what: 'Publishable packages are not marked private.',
@@ -713,9 +716,10 @@ function checkPackages (root, packages, rootManifest, findings) {
       const location = jsonPropertyLocation(workspace.text, 'engines')
       add(findings, 'package/metadata-invalid', manifestFile, 'Package engines must be a non-empty object.', location.line, manifest.name, location.column, `Set "engines" to ${JSON.stringify(rootManifest.engines)}.`)
     }
-    if (manifest.engines?.node !== rootManifest.engines?.node) {
+    const expectedNodeEngine = packageNodeEngineOverrides.get(manifest.name) ?? rootManifest.engines?.node
+    if (manifest.engines?.node !== expectedNodeEngine) {
       const location = jsonPropertyLocation(workspace.text, 'node')
-      add(findings, 'runtime/engine-mismatch', manifestFile, `Package Node engine must match root engine ${rootManifest.engines?.node}.`, location.line, manifest.name, location.column, `Change engines.node from "${manifest.engines?.node}" to "${rootManifest.engines?.node}".`)
+      add(findings, 'runtime/engine-mismatch', manifestFile, `Package Node engine must match its approved engine ${expectedNodeEngine}.`, location.line, manifest.name, location.column, `Change engines.node from "${manifest.engines?.node}" to "${expectedNodeEngine}".`)
     }
     if (manifest.private === true) {
       const location = jsonPropertyLocation(workspace.text, 'private')

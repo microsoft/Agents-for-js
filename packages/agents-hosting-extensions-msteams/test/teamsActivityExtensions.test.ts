@@ -2,13 +2,18 @@ import assert from 'node:assert'
 import { describe, it } from 'node:test'
 import { Activity } from '@microsoft/agents-activity'
 import {
-  teamsGetSelectedChannelId,
+  addQuotedReply,
+  addTargetedMessageInfo,
+  teamsEnableFeedbackLoop,
   teamsGetChannelId,
   teamsGetMeetingInfo,
-  teamsGetTeamInfo,
-  teamsNotifyUser,
   teamsGetTeamOnBehalfOf,
-  teamsEnableFeedbackLoop
+  getQuotedMessages,
+  getTargetedMessageInfo,
+  teamsGetTeamInfo,
+  isRecipientTargeted,
+  teamsNotifyUser,
+  teamsGetSelectedChannelId
 } from '../src/teamsActivityExtensions'
 
 describe('teamsActivityExtensions', () => {
@@ -152,6 +157,62 @@ describe('teamsActivityExtensions', () => {
       const result = teamsEnableFeedbackLoop(activity)
       assert.strictEqual(result, false)
       assert.deepStrictEqual(activity.channelData, { existing: true })
+    })
+  })
+
+  describe('QuotedReply', () => {
+    it('should add a quoted reply entity and XML-escaped placeholder', () => {
+      const activity = Activity.fromObject({ type: 'message', text: '' })
+
+      const result = addQuotedReply(activity, 'message&"id', 'response')
+
+      assert.strictEqual(result, activity)
+      assert.deepStrictEqual(getQuotedMessages(activity), [{
+        type: 'quotedReply',
+        quotedReply: { messageId: 'message&"id' }
+      }])
+      assert.strictEqual(activity.text, '<quoted messageId="message&amp;&quot;id"/> response')
+    })
+
+    it('should return all wire-format quoted reply entities', () => {
+      const activity = Activity.fromObject({
+        type: 'message',
+        entities: [
+          { type: 'quotedReply', quotedReply: { messageId: 'one' } },
+          { type: 'mention', text: '<at>User</at>' },
+          { type: 'quotedReply', quotedReply: { messageId: 'two', preview: 'preview' } }
+        ]
+      })
+
+      assert.deepStrictEqual(getQuotedMessages(activity).map(entity => entity.quotedReply.messageId), ['one', 'two'])
+    })
+
+    it('should reject an empty quoted reply message ID', () => {
+      const activity = Activity.fromObject({ type: 'message' })
+      assert.throws(() => addQuotedReply(activity, '  '), /messageId parameter must be a non-empty string/)
+    })
+  })
+
+  describe('TargetedMessageInfo', () => {
+    it('should add targeted message information idempotently', () => {
+      const activity = Activity.fromObject({ type: 'message' })
+      assert.strictEqual(addTargetedMessageInfo(activity, 'first-message'), activity)
+
+      addTargetedMessageInfo(activity, 'second-message')
+
+      assert.deepStrictEqual(getTargetedMessageInfo(activity), {
+        type: 'targetedMessageInfo',
+        messageId: 'first-message'
+      })
+      assert.strictEqual(activity.entities?.length, 1)
+    })
+
+    it('should recognize a recipient marked as targeted', () => {
+      const targeted = Activity.fromObject({ type: 'message', recipient: { id: 'user', isTargeted: true } })
+      const regular = Activity.fromObject({ type: 'message', recipient: { id: 'user' } })
+
+      assert.strictEqual(isRecipientTargeted(targeted), true)
+      assert.strictEqual(isRecipientTargeted(regular), false)
     })
   })
 })

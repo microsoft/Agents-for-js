@@ -1,7 +1,55 @@
 import { AdaptiveCard, AgentApplication, MemoryStorage, TurnContext, TurnState } from '@microsoft/agents-hosting'
 import { startServer } from '@microsoft/agents-hosting-express'
 import { TeamsAgentExtension, TeamsTurnContext } from '@microsoft/agents-hosting-extensions-msteams'
-import { AppBasedLinkQuery, MessagingExtensionAction, MessagingExtensionActionResponse, MessagingExtensionQuery, MessagingExtensionResponse } from '@microsoft/teams.api'
+import {
+  AppBasedLinkQuery,
+  Attachment,
+  MessagingExtensionAction,
+  MessagingExtensionActionResponse,
+  MessagingExtensionQuery,
+  MessagingExtensionResponse,
+  ThumbnailCard
+} from '@microsoft/teams.api'
+
+const ADAPTIVE_CARD_CONTENT_TYPE = 'application/vnd.microsoft.card.adaptive'
+const THUMBNAIL_CARD_CONTENT_TYPE = 'application/vnd.microsoft.card.thumbnail'
+
+function createMessageResponse (text: string): MessagingExtensionResponse {
+  return {
+    composeExtension: {
+      type: 'message',
+      text
+    }
+  }
+}
+
+function createResultResponse (...attachments: Attachment[]): MessagingExtensionResponse {
+  return {
+    composeExtension: {
+      type: 'result',
+      attachmentLayout: 'list',
+      attachments
+    }
+  }
+}
+
+function createAdaptiveCardAttachment (card: AdaptiveCard, preview?: ThumbnailCard): Attachment {
+  const attachment: Attachment = {
+    contentType: ADAPTIVE_CARD_CONTENT_TYPE,
+    content: card
+  }
+
+  if (!preview) {
+    return attachment
+  }
+
+  const previewAttachment: Attachment = {
+    contentType: THUMBNAIL_CARD_CONTENT_TYPE,
+    content: preview
+  }
+
+  return Object.assign(attachment, { preview: previewAttachment })
+}
 
 const app = new AgentApplication<TurnState>({ storage: new MemoryStorage() })
 
@@ -12,47 +60,49 @@ app.registerExtension<TeamsAgentExtension>(teamsExt, tae => {
 
   tae.messageExtensions
     .onQueryLink(async (context: TeamsTurnContext, state: TurnState, query: AppBasedLinkQuery | undefined) : Promise<MessagingExtensionResponse> => {
-      await context.sendActivity(`Received a message with the link: ${query?.url}`)
-      return {
-        composeExtension: {
-          attachmentLayout: 'list',
-          type: 'result',
-          attachments: [
-            {
-              contentType: 'application/vnd.microsoft.card.thumbnail',
-              content: {
-                title: 'Link Preview',
-                text: `You clicked on a link: ${query?.url}`,
-                tap: {
-                  type: 'invoke',
-                  value: {
-                    title: 'Link Clicked',
-                    text: `You clicked on the link: ${query?.url}`
-                  }
-                }
-              }
-            }
-          ]
-        }
+      const url = query?.url
+      console.log('Link query received:', url)
+      if (!url) {
+        return createMessageResponse('No URL provided')
       }
+
+      const card = {
+        type: 'AdaptiveCard',
+        body: [
+          {
+            type: 'TextBlock',
+            text: 'Link Preview',
+            size: 'Large',
+            weight: 'Bolder'
+          },
+          {
+            type: 'TextBlock',
+            text: url,
+            wrap: true
+          }
+        ],
+        $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
+        version: '1.4'
+      } as AdaptiveCard
+
+      const previewCard: ThumbnailCard = {
+        title: 'Link Preview',
+        text: url
+      }
+
+      return createResultResponse(createAdaptiveCardAttachment(card, previewCard))
     })
     .onQuery('searchQuery', async (context: TeamsTurnContext, state: TurnState, query: MessagingExtensionQuery) : Promise<MessagingExtensionResponse> => {
       console.log('Received message extension query:', query)
 
       const initialRun = query.parameters?.find(p => p.name === 'initialRun')?.value?.toString() === 'true'
       if (initialRun) {
-        return Promise.resolve(
-          {
-            composeExtension: {
-              type: 'message',
-              text: 'Enter search query'
-            }
-          })
+        return createMessageResponse('Enter search query')
       }
 
-      const searchQuery = query.parameters?.find(p => p.name === 'searchQuery')?.value?.toString() ?? ''
+      const searchQuery = query.parameters?.find(p => p.name === 'query')?.value?.toString() ?? ''
 
-      const attachments = []
+      const attachments: Attachment[] = []
 
       for (let i = 1; i <= 5; i++) {
         const card = {
@@ -75,36 +125,20 @@ app.registerExtension<TeamsAgentExtension>(teamsExt, tae => {
           version: '1.4'
         } as AdaptiveCard
 
-        const previewCard = {
-          contentType: 'application/vnd.microsoft.card.thumbnail',
-          content: {
+        const previewCard: ThumbnailCard = {
+          title: `Result ${i}`,
+          text: `This is a preview of result ${i} for query '${searchQuery}'.`,
+          tap: {
+            type: 'invoke',
             title: `Result ${i}`,
-            text: `This is a preview of result ${i} for query '${searchQuery}'.`,
-            tap: {
-              type: 'invoke',
-              value: { index: i, query: searchQuery }
-            }
+            value: { index: i, query: searchQuery }
           }
         }
 
-        const attachment = {
-          contentType: 'application/vnd.microsoft.card.adaptive',
-          content: card,
-          preview: previewCard
-        }
-
-        attachments.push(attachment)
+        attachments.push(createAdaptiveCardAttachment(card, previewCard))
       }
 
-      const msgExtResponse: MessagingExtensionResponse = {
-        composeExtension: {
-          type: 'result',
-          attachmentLayout: 'list',
-          attachments
-        }
-      }
-
-      return Promise.resolve(msgExtResponse)
+      return createResultResponse(...attachments)
     })
 
     .onSelectItem(async (context: TeamsTurnContext, state: TurnState, item: any) : Promise<MessagingExtensionResponse> => {
@@ -132,20 +166,62 @@ app.registerExtension<TeamsAgentExtension>(teamsExt, tae => {
         version: '1.4'
       } as AdaptiveCard
 
-      const msgExtResponse: MessagingExtensionResponse = {
-        composeExtension: {
-          type: 'result',
-          attachmentLayout: 'list',
-          attachments: [{ contentType: 'application/vnd.microsoft.card.adaptive', content: card }]
+      return createResultResponse(createAdaptiveCardAttachment(card))
+    })
+
+    .onFetchAction('createCard', async (context: TeamsTurnContext, state: TurnState, action: MessagingExtensionAction): Promise<MessagingExtensionActionResponse> => {
+      console.log('Create card task requested:', action.commandId)
+
+      const card = {
+        type: 'AdaptiveCard',
+        body: [
+          {
+            type: 'Input.Text',
+            id: 'title',
+            label: 'Title',
+            placeholder: 'Enter a title',
+            isRequired: true,
+            errorMessage: 'A title is required.'
+          },
+          {
+            type: 'Input.Text',
+            id: 'description',
+            label: 'Description',
+            placeholder: 'Enter a description',
+            isMultiline: true,
+            isRequired: true,
+            errorMessage: 'A description is required.'
+          }
+        ],
+        actions: [
+          {
+            type: 'Action.Submit',
+            title: 'Create Card',
+            data: {
+              submitLocation: 'messagingExtensionFetchTask'
+            }
+          }
+        ],
+        $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
+        version: '1.4'
+      } as AdaptiveCard
+
+      return {
+        task: {
+          type: 'continue',
+          value: {
+            title: 'Create Card',
+            height: 'small',
+            width: 'small',
+            card: createAdaptiveCardAttachment(card)
+          }
         }
       }
-
-      return Promise.resolve(msgExtResponse)
     })
 
     .onSubmitAction('createCard', async (context: TeamsTurnContext, state: TurnState, action: MessagingExtensionAction) : Promise<MessagingExtensionActionResponse> => {
-      const title = action.data.title || 'No Title'
-      const description = action.data.description || 'No Description'
+      const title = action.data.title
+      const description = action.data.description
       console.log(`Creating card with Title: ${title} and Description: ${description}`)
 
       const card = {
@@ -175,14 +251,7 @@ app.registerExtension<TeamsAgentExtension>(teamsExt, tae => {
         version: '1.4'
       } as AdaptiveCard
 
-      const msgExtActionResponse: MessagingExtensionActionResponse = {
-        composeExtension: {
-          type: 'result',
-          attachmentLayout: 'list',
-          attachments: [{ contentType: 'application/vnd.microsoft.card.adaptive', content: card }]
-        }
-      }
-      return Promise.resolve(msgExtActionResponse)
+      return createResultResponse(createAdaptiveCardAttachment(card))
     })
 
   tae.messageExtensions.onQuerySettingUrl(async (context: TeamsTurnContext, state: TurnState): Promise<MessagingExtensionResponse> => {

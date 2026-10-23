@@ -4,7 +4,7 @@ This is a base sample that responds in the Teams demo env for Agentic AI.
 
 ## Prerequisites
 
-- [Node.js](https://nodejs.org/en) version 20 or higher
+- [Node.js](https://nodejs.org/en) version 22 or higher
 - [dev tunnel](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started?tabs=windows)
 - [Microsoft 365 Agents Toolkit](https://github.com/OfficeDev/microsoft-365-agents-toolkit)
 

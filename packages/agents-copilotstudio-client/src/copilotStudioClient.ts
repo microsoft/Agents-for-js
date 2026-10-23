@@ -16,6 +16,8 @@ import { StartResponse, ExecuteTurnResponse, createStartResponse, createExecuteT
 import { SubscribeEvent } from './subscribeEvent'
 import { CopilotStudioClientTraceDefinitions } from './observability'
 import { Errors } from './errorHelper'
+import { AgentType } from './agentType'
+import { ConversationEndpoints, ConversationOperation, discoverConversationEndpoints, getConversationEndpointsDiscoveryUrl } from './conversationEndpointDiscovery'
 
 const logger = debug('copilot-studio:client')
 
@@ -35,6 +37,9 @@ export class CopilotStudioClient {
   private readonly settings: ConnectionSettings
   /** The authenticaton token. */
   private readonly token: string
+  private discoveryPromise?: Promise<void>
+  private discoveredDirectConnectUrl?: string
+  private discoveredEndpoints?: ConversationEndpoints
 
   /**
    * Returns the scope URL needed to connect to Copilot Studio from the connection settings.
@@ -71,6 +76,50 @@ export class CopilotStudioClient {
     if (this.settings.enableDiagnostics) {
       logger.info(`[DIAGNOSTICS] ${message}`, ...args)
     }
+  }
+
+  private async resolveConnectionUrl (conversationId?: string, subscribe: boolean = false): Promise<string> {
+    const configuredUrl = (): string => subscribe
+      ? getCopilotStudioSubscribeUrl(this.settings, conversationId!)
+      : getCopilotStudioConnectionUrl(this.settings, conversationId)
+
+    if (this.settings.copilotAgentType === AgentType.Prebuilt) {
+      return configuredUrl()
+    }
+    if (this.settings.directConnectUrl?.trim()) {
+      if (this.discoveredEndpoints && this.settings.directConnectUrl === this.discoveredDirectConnectUrl) {
+        const operation: ConversationOperation = subscribe ? 'subscribe' : conversationId ? 'executeTurn' : 'createConversation'
+        return this.discoveredEndpoints.getUrl(operation, conversationId)
+      }
+      return configuredUrl()
+    }
+
+    if (!this.discoveryPromise) {
+      this.discoveryPromise = this.discoverConnectionUrl().finally(() => {
+        this.discoveryPromise = undefined
+      })
+    }
+    await this.discoveryPromise
+    return this.resolveConnectionUrl(conversationId, subscribe)
+  }
+
+  private async discoverConnectionUrl (): Promise<void> {
+    const discoveryUrl = getConversationEndpointsDiscoveryUrl(this.settings)
+    const endpoints = await discoverConversationEndpoints(discoveryUrl, (url, init) => this.sendRequestAsync(url, init), this.token)
+    if (!this.settings.directConnectUrl?.trim() && this.settings.copilotAgentType !== AgentType.Prebuilt) {
+      this.discoveredEndpoints = endpoints
+      this.discoveredDirectConnectUrl = endpoints.createConversation
+      this.settings.directConnectUrl = endpoints.createConversation
+    }
+  }
+
+  private async sendRequestAsync (url: string | URL | Request, init?: RequestInit): Promise<Response> {
+    const response = await fetch(url, init)
+    const error = CopilotStudioClient.getFailedResponseError(response)
+    if (error) {
+      throw error
+    }
+    return response
   }
 
   /**
@@ -290,7 +339,7 @@ export class CopilotStudioClient {
       // previous conversation so a headerless response can populate it from an activity.
       this.conversationId = request.conversationId ?? ''
 
-      const uriStart: string = getCopilotStudioConnectionUrl(this.settings, request.conversationId)
+      const uriStart = await this.resolveConnectionUrl(request.conversationId)
       const body: any = {
         emitStartConversationEvent: request.emitStartConversationEvent ?? true
       }
@@ -325,7 +374,7 @@ export class CopilotStudioClient {
     })
     try {
       const localConversationId = activity.conversation?.id ?? conversationId
-      const uriExecute = getCopilotStudioConnectionUrl(this.settings, localConversationId)
+      const uriExecute = await this.resolveConnectionUrl(localConversationId)
       const qbody: ExecuteTurnRequest = new ExecuteTurnRequest(activity)
 
       logger.info('Sending activity...', redactDiagnosticObject(activity, this.settings.diagnosticsPseudonymKey))
@@ -362,7 +411,7 @@ export class CopilotStudioClient {
       // Explicit execution changes the current conversation used by subsequent calls.
       this.conversationId = conversationId
 
-      const uriExecute = getCopilotStudioConnectionUrl(this.settings, conversationId)
+      const uriExecute = await this.resolveConnectionUrl(conversationId)
       const request: ExecuteTurnRequest = new ExecuteTurnRequest(activity, conversationId)
 
       logger.info('Executing turn with conversation ID:', pseudonymizeConversationId(conversationId, this.settings.diagnosticsPseudonymKey))
@@ -528,7 +577,7 @@ export class CopilotStudioClient {
         throw ExceptionHelper.generateException(Error, Errors.SubscribeAsyncConversationIdRequired)
       }
 
-      const url = getCopilotStudioSubscribeUrl(this.settings, conversationId)
+      const url = await this.resolveConnectionUrl(conversationId, true)
 
       logger.info('Subscribing to conversation:', pseudonymizeConversationId(conversationId, this.settings.diagnosticsPseudonymKey))
       this.logDiagnostic('Subscribe request:', { conversationId: pseudonymizeConversationId(conversationId, this.settings.diagnosticsPseudonymKey), lastReceivedEventId, url: redactUrl(url) })

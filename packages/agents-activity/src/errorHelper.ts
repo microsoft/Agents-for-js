@@ -84,10 +84,10 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   },
 
   /**
-   * Error thrown when makeTargetedActivity is called on a non-group
+   * Error thrown when a targeted activity has no recipient.
    */
-  TargetedActivityIsGroupOnly: {
-    code: -110008,
-    description: 'Targeted activities can only be sent in a group chat or channel.'
-  }
+  ActivityTargetedRecipientUndefined: {
+    code: -110009,
+    description: 'Cannot mark activity as targeted because the Activity.Recipient is null.'
+  },
 }

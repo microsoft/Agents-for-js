@@ -10,7 +10,7 @@ Two additional HTTP endpoints allow external callers to initiate proactive turns
 
 ## Prerequisites
 
-- [Node.js](https://nodejs.org/en) version 20 or higher
+- [Node.js](https://nodejs.org/en) version 22 or higher
 - A registered Azure Bot (App ID, secret, tenant ID)
 - A tunneling tool such as [dev tunnels](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started?tabs=windows) for local testing
 
