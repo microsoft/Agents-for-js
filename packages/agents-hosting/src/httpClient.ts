@@ -179,10 +179,10 @@ export class HttpClient {
   }
 
   /**
-   * Sends an HTTP GET request.
+   * Sends an HTTP request, defaulting to GET.
    *
    * @param url The absolute URL or path relative to the client's base URL.
-   * @param options Additional request options.
+   * @param options Additional request options. The `method` and `url` options override the defaults.
    * @returns The response with its parsed body.
    */
   async get<T = unknown> (url: string, options?: Partial<HttpRequestConfig>): Promise<HttpResponse<T>> {
