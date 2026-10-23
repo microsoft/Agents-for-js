@@ -81,6 +81,8 @@ export class CreateConversationOptionsBuilder {
 
   /** Adds a member (the target user) to `parameters.members`. */
   withUser (userId: string, userName?: string): this
+
+  /** Adds a channel account as a member in `parameters.members`. */
   withUser (account: ChannelAccount): this
   withUser (userIdOrAccount: string | ChannelAccount, userName?: string): this {
     const account: ChannelAccount =

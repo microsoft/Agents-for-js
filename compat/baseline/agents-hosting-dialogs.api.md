@@ -95,7 +95,6 @@ export class ChoiceFactory {
     static heroCard(choices: (string | Choice)[], text?: string, speak?: string): Activity;
     static inline(choices: (string | Choice)[], text?: string, speak?: string, options?: ChoiceFactoryOptions): Activity;
     static list(choices: (string | Choice)[], text?: string, speak?: string, options?: ChoiceFactoryOptions): Activity;
-    // (undocumented)
     static readonly MAX_ACTION_TITLE_LENGTH = 20;
     static suggestedActions(choices: (string | Choice)[], text?: string, speak?: string): Activity;
     static toChoices(choices: (string | Choice)[] | undefined): Choice[];
@@ -146,13 +145,11 @@ export class ComponentDialog<O extends object = {}> extends DialogContainer<O> {
 
 // @public
 export interface ComponentMemoryScopes {
-    // (undocumented)
     getMemoryScopes(): MemoryScope[];
 }
 
 // @public
 export interface ComponentPathResolvers {
-    // (undocumented)
     getPathResolvers(): PathResolver[];
 }
 
@@ -164,9 +161,7 @@ export abstract class Configurable {
 
 // @public
 export interface Configuration {
-    // (undocumented)
     get<T = unknown>(path?: string[]): T | undefined;
-    // (undocumented)
     set(path: string[], value: unknown): void;
 }
 
@@ -190,7 +185,6 @@ export class ConversationMemoryScope extends AgentStateMemoryScope {
 
 // @public
 export interface Converter<From = unknown, To = unknown> {
-    // (undocumented)
     convert(value: From | To): To;
 }
 
@@ -338,19 +332,14 @@ export interface DialogInstance<T = any> {
 export class DialogManager extends Configurable {
     constructor(rootDialog?: Dialog, dialogStateProperty?: string);
     configure(config: Partial<DialogManagerConfiguration>): this;
-    // (undocumented)
     conversationState: ConversationState;
-    // (undocumented)
     dialogs: DialogSet;
-    // (undocumented)
     expireAfter?: number;
     get initialTurnState(): TurnContextStateCollection;
     onTurn(context: TurnContext): Promise<DialogManagerResult>;
     set rootDialog(value: Dialog);
     get rootDialog(): Dialog;
-    // (undocumented)
     stateConfiguration?: DialogStateManagerConfiguration;
-    // (undocumented)
     userState?: UserState;
 }
 
@@ -399,7 +388,6 @@ export enum DialogReason {
 
 // @public
 export class DialogsAgentComponent extends AgentComponent {
-    // (undocumented)
     configureServices(services: ServiceCollection, configuration: Configuration): void;
 }
 
@@ -532,10 +520,8 @@ export abstract class MemoryScope {
     constructor(name: string, includeInSnapshot?: boolean);
     delete(_dialogContext: DialogContext): Promise<void>;
     abstract getMemory(dialogContext: DialogContext): object;
-    // (undocumented)
     readonly includeInSnapshot: boolean;
     load(_dialogContext: DialogContext): Promise<void>;
-    // (undocumented)
     readonly name: string;
     saveChanges(_dialogContext: DialogContext): Promise<void>;
     setMemory(_dialogContext: DialogContext, _memory: object): void;
@@ -670,7 +656,6 @@ export class ServiceCollection {
 export class SettingsMemoryScope extends MemoryScope {
     constructor(initialSettings?: Record<string, unknown>);
     getMemory(dialogContext: DialogContext): Record<string, unknown>;
-    // (undocumented)
     load(dialogContext: DialogContext): Promise<void>;
     protected static loadSettings(configuration: Record<string, string>): Record<string, unknown>;
 }

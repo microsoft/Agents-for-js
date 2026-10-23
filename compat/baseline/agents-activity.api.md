@@ -38,7 +38,6 @@ export class Activity {
     get channelIdChannel(): string | undefined;
     get channelIdSubChannel(): unknown;
     set channelIdSubChannel(value: unknown);
-    // (undocumented)
     clone(): Activity;
     code?: EndOfConversationCodes | string;
     conversation?: ConversationAccount;
@@ -1061,7 +1060,6 @@ export enum Channels {
     Facebook = "facebook",
     Groupme = "groupme",
     Line = "line",
-    // (undocumented)
     M365Copilot = "msteams:COPILOT",
     M365CopilotSubChannel = "COPILOT",
     Msteams = "msteams",

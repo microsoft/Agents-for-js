@@ -16,14 +16,72 @@ import { AuthorizationHandlerTokenOptions } from './types'
 
 const logger = debug('agents:authorization')
 
+/** Provides user authorization, token exchange, and sign-in lifecycle operations. */
 export interface Authorization {
+  /**
+   * Gets the user token for an authorization handler.
+   *
+   * @param context - Context for the current turn.
+   * @param authHandlerId - Authorization handler ID.
+   * @returns The token response.
+   */
   getToken(context: TurnContext, authHandlerId: string): Promise<TokenResponse>
+  /**
+   * Creates a credential backed by the current turn's user token.
+   *
+   * @param context - Context for the current turn.
+   * @param authHandlerId - Authorization handler ID.
+   * @returns A turn-scoped token credential.
+   */
   getTokenAsTokenCredential?(context: TurnContext, authHandlerId: string): TokenCredential
+  /**
+   * Exchanges the user token for the requested scopes.
+   *
+   * @param context - Context for the current turn.
+   * @param scopes - Scopes requested for the exchanged token.
+   * @param authHandlerId - Authorization handler ID.
+   * @returns The exchanged token response.
+   * @deprecated Use the overload that accepts an authorization handler ID followed by options.
+   */
   exchangeToken(context: TurnContext, scopes: string[], authHandlerId: string): Promise<TokenResponse>
+  /**
+   * Exchanges the user token using an authorization handler.
+   *
+   * @param context - Context for the current turn.
+   * @param authHandlerId - Authorization handler ID.
+   * @param options - Optional connection and scope overrides.
+   * @returns The exchanged token response.
+   */
   exchangeToken(context: TurnContext, authHandlerId: string, options?: AuthorizationHandlerTokenOptions): Promise<TokenResponse>
+  /**
+   * Creates a credential that exchanges the current turn's user token.
+   *
+   * @param context - Context for the current turn.
+   * @param authHandlerId - Authorization handler ID.
+   * @param options - Optional connection and scope overrides.
+   * @returns A turn-scoped token credential.
+   */
   exchangeTokenAsTokenCredential?(context: TurnContext, authHandlerId: string, options?: AuthorizationHandlerTokenOptions): TokenCredential
+  /**
+   * Signs out the user from one or all authorization handlers.
+   *
+   * @param context - Context for the current turn.
+   * @param state - State for the current turn.
+   * @param authHandlerId - Handler to sign out from, or `undefined` for all handlers.
+   * @returns A promise that resolves after sign-out completes.
+   */
   signOut(context: TurnContext, state: TurnState, authHandlerId?: string): Promise<void>
+  /**
+   * Registers a callback for successful sign-in.
+   *
+   * @param handler - Callback invoked after sign-in succeeds.
+   */
   onSignInSuccess(handler: (context: TurnContext, state: TurnState, authHandlerId?: string) => Promise<void>): void
+  /**
+   * Registers a callback for failed sign-in.
+   *
+   * @param handler - Callback invoked after sign-in fails.
+   */
   onSignInFailure(handler: (context: TurnContext, state: TurnState, authHandlerId?: string, errorMessage?: string) => Promise<void>): void
 }
 

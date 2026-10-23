@@ -67,8 +67,10 @@ export class SettingsMemoryScope extends MemoryScope {
   }
 
   /**
-     * @param dialogContext Current dialog context.
-     */
+   * Loads the configured settings into turn state.
+   *
+   * @param dialogContext Current dialog context.
+   */
   async load (dialogContext: DialogContext): Promise<void> {
     if (this.initialSettings) {
       // filter initialSettings

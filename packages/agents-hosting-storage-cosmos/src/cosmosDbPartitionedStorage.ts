@@ -119,8 +119,15 @@ function isNotFoundError (err: unknown): boolean {
 }
 
 class CosmosDbPartitionedStorageInternals {
+  /**
+   * Cosmos DB container used for storage operations after initialization.
+   */
   container!: Container
   private client!: CosmosClient
+
+  /**
+   * Indicates whether the container uses the legacy `/_partitionKey` partition key.
+   */
   compatibilityModePartitionKey = false;
   [key: string]: any;
 
@@ -135,6 +142,7 @@ class CosmosDbPartitionedStorageInternals {
    *
    */
   constructor (
+    /** Options used to connect to and configure Cosmos DB storage. */
     readonly cosmosDbStorageOptions: CosmosDbPartitionedStorageOptions
   ) {
     if (!cosmosDbStorageOptions) {
@@ -302,14 +310,33 @@ class CosmosDbPartitionedStorageInternals {
     }
   }
 
+  /**
+   * Gets the partition key used to address a document.
+   *
+   * @param key The escaped document key.
+   * @returns The document key, or `undefined` for legacy compatibility containers.
+   */
   getPartitionKey (key: string) {
     return this.compatibilityModePartitionKey ? undefined : key
   }
 
+  /**
+   * Determines whether a stored item has passed its expiration time.
+   *
+   * @param item The item to inspect.
+   * @returns `true` when the item has expired; otherwise, `false`.
+   */
   isExpired (item: DocumentStoreItem): boolean {
     return item.expiresAt !== undefined && item.expiresAt <= Date.now()
   }
 
+  /**
+   * Checks serialized data for nesting beyond the Cosmos DB limit.
+   *
+   * @param json The data being written.
+   * @param err The serialization or storage error that triggered the check.
+   * @throws When the data exceeds the supported nesting depth.
+   */
   checkForNestingError (json: object, err: Error | Record<'message', string> | string): void {
     const ancestors = new WeakSet<object>()
 
