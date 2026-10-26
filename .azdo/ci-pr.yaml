@@ -18,10 +18,6 @@ steps:
 - script: echo "registry=https://pkgs.dev.azure.com/dynamicscrm/OneCRM/_packaging/DPX-Tools-Upstream/npm/registry/" > .npmrc
   displayName: 'Set NPM registry'
 
-- task: npmAuthenticate@0
-  inputs:
-    workingFile: .npmrc
-
 - task: Npm@1
   inputs:
     command: custom
