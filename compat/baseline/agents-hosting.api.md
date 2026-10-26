@@ -1304,10 +1304,12 @@ export class OutboundHostValidator implements OutboundUrlPolicy {
     readonly enabled: boolean;
     // (undocumented)
     isAllowed(input: string | URL | null | undefined): boolean;
+    isAllowedAsync(input: string | URL | null | undefined): Promise<boolean>;
 }
 
 // @public
 export interface OutboundHostValidatorOptions {
+    allowPrivateNetworkAddresses?: boolean;
     configurationContext?: ConfigurationContext;
     enabled?: boolean;
     hosts?: readonly string[];

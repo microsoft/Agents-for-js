@@ -9,6 +9,7 @@ import {
 } from './configuration/configuration'
 import { loadModernEnvironmentConfiguration } from './configuration/environmentConfiguration'
 import { mergeDefined } from './utils'
+import { getHttpsUrl, hasAllowedOutboundAddresses, isLocalOrBlockedHost } from './utils/outboundUrl'
 
 /** Hosts used by Microsoft channel callbacks and hosted attachments. */
 const DEFAULT_MICROSOFT_HOSTS = Object.freeze([
@@ -37,6 +38,12 @@ export interface OutboundHostValidatorOptions {
    */
   includeDefaultMicrosoftHosts?: boolean
 
+  /**
+   * Allows allowlisted HTTPS destinations to use private, loopback, link-local,
+   * or unspecified addresses. Defaults to `false`.
+   */
+  allowPrivateNetworkAddresses?: boolean
+
   /** Additional exact hosts or host suffixes to allow.
    * An entry matches a request host when the host equals the entry or is a subdomain of it (e.g. `contoso.com` matches `contoso.com` and `files.contoso.com`).
    * A leading `*.` is accepted and ignored (treated as a suffix). Ports and paths are ignored if provided.
@@ -54,17 +61,21 @@ export interface OutboundUrlPolicy {
  * Shared allowlist policy for server-side outbound requests.
  *
  * A configured suffix matches both the exact host and its subdomains. The
- * policy is disabled by default to preserve existing SDK behavior.
+ * policy is disabled by default to preserve existing SDK behavior. Enabled
+ * policies require HTTPS without userinfo and restrict private addresses.
+ * Attachment downloaders additionally validate DNS answers and redirect hops.
  */
 export class OutboundHostValidator implements OutboundUrlPolicy {
   public readonly enabled: boolean
   private readonly suffixes: ReadonlySet<string>
+  private readonly allowPrivateNetworkAddresses: boolean
 
   public constructor (options: OutboundHostValidatorOptions = {}) {
     const resolved = options.configurationContext
       ? resolveOutboundHostValidatorOptions(options)
       : options
     this.enabled = resolved.enabled ?? false
+    this.allowPrivateNetworkAddresses = resolved.allowPrivateNetworkAddresses ?? false
 
     const suffixes = new Set<string>()
     if (resolved.includeDefaultMicrosoftHosts ?? true) {
@@ -82,14 +93,27 @@ export class OutboundHostValidator implements OutboundUrlPolicy {
   public isAllowed (input: string | URL | null | undefined): boolean {
     if (!this.enabled) return true
 
-    const host = getUrlHost(input)
-    if (!host) return false
+    const url = getHttpsUrl(input)
+    if (!url) return false
+    const host = normalizeHostname(url.hostname)
+    if (!host || (!this.allowPrivateNetworkAddresses && isLocalOrBlockedHost(host))) return false
 
     for (const suffix of this.suffixes) {
       if (host === suffix || host.endsWith(`.${suffix}`)) return true
     }
 
     return false
+  }
+
+  /**
+   * Checks the host policy and all resolved destination addresses before an attachment request.
+   * DNS prevalidation does not pin the HTTP connection to the checked addresses.
+   */
+  public async isAllowedAsync (input: string | URL | null | undefined): Promise<boolean> {
+    if (!this.isAllowed(input)) return false
+    if (!this.enabled) return true
+    const url = getHttpsUrl(input)
+    return url !== undefined && await hasAllowedOutboundAddresses(url, this.allowPrivateNetworkAddresses)
   }
 }
 
@@ -120,6 +144,9 @@ function resolveOutboundHostValidatorOptions (
     direct.includeDefaultMicrosoftHosts = options.includeDefaultMicrosoftHosts
   }
   if (options.hosts !== undefined) direct.hosts = options.hosts
+  if (options.allowPrivateNetworkAddresses !== undefined) {
+    direct.allowPrivateNetworkAddresses = options.allowPrivateNetworkAddresses
+  }
   return mergeDefined<OutboundHostValidatorOptions>(
     external.fallback.outboundHostValidator,
     fromEnv,
@@ -127,17 +154,6 @@ function resolveOutboundHostValidatorOptions (
     direct,
     external.enforce.outboundHostValidator
   )
-}
-
-function getUrlHost (input: string | URL | null | undefined): string | undefined {
-  if (!input) return undefined
-
-  try {
-    const url = input instanceof URL ? input : new URL(input)
-    return normalizeHostname(url.hostname)
-  } catch {
-    return undefined
-  }
 }
 
 function normalizeConfiguredHost (input: string): string | undefined {
