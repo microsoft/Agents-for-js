@@ -13,6 +13,7 @@ import { AdaptiveCard } from '../../cards/adaptiveCard'
 import { Query } from './query'
 import { Errors } from '../../errorHelper'
 
+/** Invoke activity name used for Adaptive Card actions. */
 export const ACTION_INVOKE_NAME = 'adaptiveCard/action'
 const ACTION_EXECUTE_TYPE = 'Action.Execute'
 const DEFAULT_ACTION_SUBMIT_FILTER = 'verb'

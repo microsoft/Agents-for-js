@@ -10,6 +10,11 @@ import { MemoryScope } from './scopes'
  * Interface for enumerating memory scopes.
  */
 export interface ComponentMemoryScopes {
+  /**
+   * Gets the memory scopes registered by the component.
+   *
+   * @returns The registered memory scopes.
+   */
   getMemoryScopes(): MemoryScope[];
 }
 

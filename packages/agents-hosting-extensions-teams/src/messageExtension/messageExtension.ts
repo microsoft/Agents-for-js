@@ -67,6 +67,12 @@ export class MessageExtension<TState extends TurnState> {
     return this
   }
 
+  /**
+   * Registers a handler for messaging extension item selections.
+   *
+   * @param handler The handler to invoke when an item is selected.
+   * @returns This message extension for chaining.
+   */
   onSelectItem (handler: SelectItemHandler<TurnState>) {
     const routeSel: RouteSelector = (context: TurnContext) => {
       return Promise.resolve(

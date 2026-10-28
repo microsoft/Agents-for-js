@@ -53,7 +53,14 @@ export interface OutboundHostValidatorOptions {
 
 /** A policy that decides whether an outbound URL is safe to request. */
 export interface OutboundUrlPolicy {
+  /** Indicates whether URL validation is enforced. */
   readonly enabled: boolean
+  /**
+   * Determines whether an outbound URL is allowed.
+   *
+   * @param url The URL to validate.
+   * @returns `true` when the URL is allowed.
+   */
   isAllowed(url: string | URL | null | undefined): boolean
 }
 
@@ -66,10 +73,16 @@ export interface OutboundUrlPolicy {
  * Attachment downloaders additionally validate DNS answers and redirect hops.
  */
 export class OutboundHostValidator implements OutboundUrlPolicy {
+  /** Indicates whether allowlist enforcement is enabled. */
   public readonly enabled: boolean
   private readonly suffixes: ReadonlySet<string>
   private readonly allowPrivateNetworkAddresses: boolean
 
+  /**
+   * Creates an outbound host validator.
+   *
+   * @param options The allowlist configuration.
+   */
   public constructor (options: OutboundHostValidatorOptions = {}) {
     const resolved = options.configurationContext
       ? resolveOutboundHostValidatorOptions(options)
@@ -94,6 +107,12 @@ export class OutboundHostValidator implements OutboundUrlPolicy {
     this.suffixes = suffixes
   }
 
+  /**
+   * Determines whether a URL's host matches the configured allowlist.
+   *
+   * @param input The absolute URL to validate.
+   * @returns `true` when validation is disabled or the host is allowed.
+   */
   public isAllowed (input: string | URL | null | undefined): boolean {
     if (!this.enabled) {
       return true

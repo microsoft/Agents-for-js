@@ -24,16 +24,28 @@ const AUTHORITY_DEFAULT = 'https://login.microsoftonline.com'
  * (matched by audience and/or serviceUrl) to a named connection.
  */
 export interface ConnectionMapItem {
+  /** Service URL pattern matched by this route. */
   serviceUrl: string
+  /** Optional token audience matched by this route. */
   audience?: string
+  /** Name of the connection selected by this route. */
   connection: string
 }
 
+/** Default route that selects the standard service connection. */
 export const DEFAULT_CONNECTION_MAP: ConnectionMapItem = { serviceUrl: '*', connection: DEFAULT_CONNECTION }
 
+/** Property names accepted as connection-level settings. */
 export type ConnectionKeys = keyof Omit<AuthConfiguration, 'connections' | 'connectionsMap'>
+/** Property names accepted in a connection-map entry. */
 export type ConnectionMapKeys = keyof ConnectionMapItem
 
+/**
+ * Applies authority, issuer, alias, and connection-map defaults to a configuration.
+ *
+ * @param config - Authentication configuration to normalize.
+ * @returns A normalized copy of the configuration.
+ */
 export function applyDefaultSettings (config: AuthConfiguration) {
   const settings = { ...config }
   settings.authorityEndpoint ??= settings.authority ?? AUTHORITY_DEFAULT
@@ -106,6 +118,13 @@ function trimTrailingSlashes (value: string): string {
   return end === value.length ? value : value.slice(0, end)
 }
 
+/**
+ * Builds the default trusted issuer list for a tenant and authority.
+ *
+ * @param tenantId - Microsoft Entra tenant ID.
+ * @param authority - Authority URL used to determine the cloud and effective tenant.
+ * @returns Trusted Bot Framework and Microsoft Entra issuer URLs.
+ */
 export function getDefaultIssuers (tenantId: string, authority: string) : string[] {
   // Convert empty string to undefined so resolveAuthority applies its 'botframework.com' default
   const t = getEffectiveTenant(tenantId || undefined, authority)
@@ -268,14 +287,23 @@ export interface AuthConfiguration extends ConnectionSettings {
  * Supported authentication types for agent connections.
  */
 export enum AuthType {
+  /** Client authentication using an X.509 certificate. */
   Certificate = 'Certificate',
+  /** Client authentication using a certificate subject name. */
   CertificateSubjectName = 'CertificateSubjectName',
+  /** Client authentication using a client secret. */
   ClientSecret = 'ClientSecret',
+  /** Authentication using a user-assigned managed identity. */
   UserManagedIdentity = 'UserManagedIdentity',
+  /** Authentication using a system-assigned managed identity. */
   SystemManagedIdentity = 'SystemManagedIdentity',
+  /** Authentication using federated identity credentials. */
   FederatedCredentials = 'FederatedCredentials',
+  /** Authentication using a workload identity token. */
   WorkloadIdentity = 'WorkloadIdentity',
+  /** Authentication through Identity Proxy Manager. */
   IdentityProxyManager = 'IdentityProxyManager',
+  /** Authentication through the Microsoft Entra authentication sidecar. */
   EntraAuthSideCar = 'EntraAuthSideCar'
 }
 

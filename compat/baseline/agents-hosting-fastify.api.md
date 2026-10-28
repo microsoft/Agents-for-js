@@ -56,17 +56,11 @@ export type FastifyAgentRequestHandler = (request: FastifyRequest, reply: Fastif
 // @public
 export class FastifyReplyAdapter implements WebResponse {
     constructor(reply: FastifyReply);
-    // (undocumented)
     end(): this;
-    // (undocumented)
     get headersSent(): boolean;
-    // (undocumented)
     send(body?: unknown): this;
-    // (undocumented)
     setHeader(name: string, value: string): this;
-    // (undocumented)
     status(code: number): this;
-    // (undocumented)
     get writableEnded(): boolean;
 }
 

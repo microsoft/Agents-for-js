@@ -12,10 +12,49 @@ export type MeetingParticipantJoinValue = IMeetingParticipantJoinEventActivity['
 /** Details provided by a Teams meeting participant leave event. */
 export type MeetingParticipantLeaveValue = IMeetingParticipantLeaveEventActivity['value']
 
-type MeetingStartHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, details: MeetingDetails) => Promise<void>
-type MeetingEndHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, details: MeetingDetails) => Promise<void>
-type MeetingParticipantsJoinHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, details: MeetingParticipantJoinValue) => Promise<void>
-type MeetingParticipantsLeaveHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, details: MeetingParticipantLeaveValue) => Promise<void>
+/**
+ * Handles meeting start events registered with {@link Meeting.onStart}.
+ *
+ * @typeParam TState - The application's turn state type.
+ * @param context - The Teams turn context for the meeting event.
+ * @param state - The current application turn state.
+ * @param details - Meeting details from the event's activity value.
+ * @returns A promise that resolves when meeting start processing is complete.
+ */
+export type MeetingStartHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, details: MeetingDetails) => Promise<void>
+
+/**
+ * Handles meeting end events registered with {@link Meeting.onEnd}.
+ *
+ * @typeParam TState - The application's turn state type.
+ * @param context - The Teams turn context for the meeting event.
+ * @param state - The current application turn state.
+ * @param details - Meeting details from the event's activity value.
+ * @returns A promise that resolves when meeting end processing is complete.
+ */
+export type MeetingEndHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, details: MeetingDetails) => Promise<void>
+
+/**
+ * Handles participant join events registered with {@link Meeting.onParticipantsJoin}.
+ *
+ * @typeParam TState - The application's turn state type.
+ * @param context - The Teams turn context for the participant event.
+ * @param state - The current application turn state.
+ * @param details - The Teams participant join payload, distinct from the participant leave payload.
+ * @returns A promise that resolves when participant join processing is complete.
+ */
+export type MeetingParticipantsJoinHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, details: MeetingParticipantJoinValue) => Promise<void>
+
+/**
+ * Handles participant leave events registered with {@link Meeting.onParticipantsLeave}.
+ *
+ * @typeParam TState - The application's turn state type.
+ * @param context - The Teams turn context for the participant event.
+ * @param state - The current application turn state.
+ * @param details - The Teams participant leave payload, distinct from the participant join payload.
+ * @returns A promise that resolves when participant leave processing is complete.
+ */
+export type MeetingParticipantsLeaveHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, details: MeetingParticipantLeaveValue) => Promise<void>
 
 function isMeetingEvent (context: TurnContext, eventName: string): boolean {
   return (
