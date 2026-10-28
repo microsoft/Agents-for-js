@@ -121,71 +121,13 @@ export const messagingExtensionQueryZodSchema: z.ZodObject<{
     parameters: z.ZodOptional<z.ZodArray<z.ZodObject<{
         name: z.ZodOptional<z.ZodString>;
         value: z.ZodOptional<z.ZodAny>;
-    }, "strip", z.ZodTypeAny, {
-        name?: string | undefined;
-        value?: any;
-    }, {
-        name?: string | undefined;
-        value?: any;
-    }>, "many">>;
+    }, z.core.$strip>>>;
     queryOptions: z.ZodOptional<z.ZodObject<{
         skip: z.ZodOptional<z.ZodNumber>;
         count: z.ZodOptional<z.ZodNumber>;
-    }, "strip", z.ZodTypeAny, {
-        skip?: number | undefined;
-        count?: number | undefined;
-    }, {
-        skip?: number | undefined;
-        count?: number | undefined;
-    }>>;
+    }, z.core.$strip>>;
     state: z.ZodOptional<z.ZodString>;
-}, "passthrough", z.ZodTypeAny, z.objectOutputType<{
-    commandId: z.ZodOptional<z.ZodString>;
-    parameters: z.ZodOptional<z.ZodArray<z.ZodObject<{
-        name: z.ZodOptional<z.ZodString>;
-        value: z.ZodOptional<z.ZodAny>;
-    }, "strip", z.ZodTypeAny, {
-        name?: string | undefined;
-        value?: any;
-    }, {
-        name?: string | undefined;
-        value?: any;
-    }>, "many">>;
-    queryOptions: z.ZodOptional<z.ZodObject<{
-        skip: z.ZodOptional<z.ZodNumber>;
-        count: z.ZodOptional<z.ZodNumber>;
-    }, "strip", z.ZodTypeAny, {
-        skip?: number | undefined;
-        count?: number | undefined;
-    }, {
-        skip?: number | undefined;
-        count?: number | undefined;
-    }>>;
-    state: z.ZodOptional<z.ZodString>;
-}, z.ZodTypeAny, "passthrough">, z.objectInputType<{
-    commandId: z.ZodOptional<z.ZodString>;
-    parameters: z.ZodOptional<z.ZodArray<z.ZodObject<{
-        name: z.ZodOptional<z.ZodString>;
-        value: z.ZodOptional<z.ZodAny>;
-    }, "strip", z.ZodTypeAny, {
-        name?: string | undefined;
-        value?: any;
-    }, {
-        name?: string | undefined;
-        value?: any;
-    }>, "many">>;
-    queryOptions: z.ZodOptional<z.ZodObject<{
-        skip: z.ZodOptional<z.ZodNumber>;
-        count: z.ZodOptional<z.ZodNumber>;
-    }, "strip", z.ZodTypeAny, {
-        skip?: number | undefined;
-        count?: number | undefined;
-    }, {
-        skip?: number | undefined;
-        count?: number | undefined;
-    }>>;
-    state: z.ZodOptional<z.ZodString>;
-}, z.ZodTypeAny, "passthrough">>;
+}, z.core.$loose>;
 
 // @public
 export function onTeamsActivity<TState extends TurnState>(app: AgentApplication<TState>, type: string | RegExp, handler: TeamsRouteHandler<TState>, rank?: number, authHandlers?: string[], isAgenticRoute?: boolean): AgentApplication<TState>;
