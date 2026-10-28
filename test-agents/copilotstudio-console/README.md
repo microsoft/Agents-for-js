@@ -115,6 +115,29 @@ This sample lets you configure the following settings in the .env file:
 
 ### Running the Sample
 
+For endpoint discovery, leave `directConnectUrl` empty and supply `environmentId` and
+`schemaName`. The client discovers the published agent's conversation URLs on its first
+request and reuses them for later turns. Set `cloud` explicitly for non-production environments;
+this controls both the discovery host and the token audience.
+
+For example, to reproduce the Test-cloud delegated discovery request:
+
+```dotenv
+environmentId=your-environment-id
+schemaName=your-agent-schema-name
+cloud=Test
+directConnectUrl=""
+tenantId=your-tenant-id
+appClientId=your-app-client-id
+useS2SConnection=false
+appClientSecret=""
+```
+
+Interactive login requires the **delegated** `CopilotStudio.Copilots.Invoke` permission.
+An app-only token with the corresponding application role is not equivalent to a delegated
+user token; assigning that role alone does not enable service-principal access. The
+service-principal restrictions above still apply. Do not log or share bearer tokens or secrets.
+
 1. Install dependencies:
    ```bash
    npm install

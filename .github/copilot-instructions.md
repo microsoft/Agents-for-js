@@ -1,6 +1,6 @@
 # Copilot instructions for microsoft/Agents-for-js
 
-The **Microsoft 365 Agents SDK for JavaScript/TypeScript** (successor to BotFramework SDK v4) — a framework for building agents across M365, Teams, Copilot Studio, and Webchat. It is an **npm-workspaces monorepo** (`packages/*` and `test-agents/*`) using **ES modules** (`"type": "module"`, `module: node16`) and TypeScript project references. Requires **Node.js 20+** (CI runs Node 24; `--env-file` requires Node 20.6+).
+The **Microsoft 365 Agents SDK for JavaScript/TypeScript** (successor to BotFramework SDK v4) — a framework for building agents across M365, Teams, Copilot Studio, and Webchat. It is an **npm-workspaces monorepo** (`packages/*` and `test-agents/*`) using **ES modules** (`"type": "module"`, `module: node16`) and TypeScript project references. Requires **Node.js 22+** (development and CI use Node 24).
 
 ## Commands
 
@@ -53,7 +53,7 @@ Core request flow: `CloudAdapter.process()` authenticates an incoming HTTP reque
   The returned `AgentError` exposes `.code`, `.helpLink`, `.innerException` — the description is only embedded in the formatted `.message`. New errors continue the package's numeric sequence.
 - **Public API is contract-checked.** api-extractor compares each package's generated declarations against `compat/baseline/<pkg>.api.md`. After an intentional public-API change, regenerate the baseline: `npm run compat <pkg> -- --local` (e.g. `npm run compat agents-hosting -- --local`), then commit the updated `.api.md`. Prefer backward-compatible changes (additive exports, parameter widening, overloads, structural shims) over breaking ones.
 - **Tests** live in each package's `test/` dir as `*.test.ts`, use `node:test` (`describe`/`it`) + `node:assert`. `tsx` transpiles without type-checking — type-level assertions only count if compiled by `npm run build` (i.e. placed in `src/`, not `test/`).
-- **ESM**: built output uses explicit file extensions; `engines.node >= 20`. Sample/test-agents load config via Node's `--env-file .env`.
+- **ESM**: built output uses explicit file extensions; `engines.node >= 22`. Sample/test-agents load config via Node's `--env-file .env`.
 - **Logging**: uses the `debug` library. `debug('agents:<subsystem>')` returns a `Logger` with `.info()/.warn()/.error()/.debug()` (it is not directly callable). Enable with the `DEBUG` env var (e.g. `DEBUG=agents:cloud-adapter:*`); namespaces are documented in `README.md`.
 - **test-agents/** are internal samples for testing, not learning examples — those live at https://github.com/microsoft/Agents.
 - **Git**: main branch is `main`; feature branches `users/<alias>/<feature>`. Do not auto-commit; commit only when explicitly asked.

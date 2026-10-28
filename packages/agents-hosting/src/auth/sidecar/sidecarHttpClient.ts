@@ -23,7 +23,7 @@ const DEFAULT_RETRY_BACKOFF_BASE_MS = 2000
 /**
  * Reusable HTTP client for communicating with the Microsoft Entra Agent ID sidecar (agent container).
  * Handles URL construction, query parameter building, response parsing, retry, and SSRF-safe base
- * URL validation. Uses the native `fetch` API (Node.js 20+).
+ * URL validation.
  */
 export class SidecarHttpClient {
   /** Default per-attempt request timeout (milliseconds). */

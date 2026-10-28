@@ -10,7 +10,7 @@ Samples use `startServer()` from `@microsoft/agents-hosting-express` which start
 
 ## Prerequisites
 
-1. **Node.js 20+**
+1. **Node.js 22+**
 2. **npm workspaces built** — from the repo root run:
    ```bash
    npm install
@@ -58,7 +58,8 @@ Comprehensive sample demonstrating core Teams conversation features using `Agent
 
 **Features illustrated:**
 - Proactive messaging to all team members (`messageall`) via `CreateConversationOptionsBuilder`
-- Targeted messages visible only to specific users (`targeted`) via `makeTargetedActivity()`
+- Targeted messages visible only to specific users (`targeted`) via `TeamsTurnContext.sendTargetedActivity()`
+- Private user-to-agent messages and targeted replies with Prompt Preview
 - @mention a user (`mentionme` / `atmention`)
 - Identify the current user via the Teams API client (`whoami`)
 - Update an existing card in-place (`update`)
@@ -67,6 +68,8 @@ Comprehensive sample demonstrating core Teams conversation features using `Agent
 - Team renamed event
 - Member added / removed events
 - Hero cards with `MessageBack` actions
+- Quoted replies
+- Custom feedback dialog (`customfeedback`) with thumbs-up/down reactions and optional comments
 
 **How to test:**
 1. Install the sample in a **team channel** or **groupChat**.
@@ -76,12 +79,30 @@ Comprehensive sample demonstrating core Teams conversation features using `Agent
 5. Click **"Mention Me"** — the bot replies with an @mention of your name.
 6. Click **"Update Card"** — the card updates in-place showing an incrementing counter.
 7. Click **"Delete Card"** — the card is removed from the conversation.
-8. Click **"Send Targeted"** (in a group chat) — each member receives a targeted message only they can see.
-9. Add/remove members or create/rename/delete channels or rename the team to see the event handlers fire.
+8. Click **"Send Targeted"** — the agent sends a separate targeted message to each member, visible only to that member. This action sends messages from the agent; it does not trigger Prompt Preview.
+9. To see Prompt Preview, install the app with `supportsTargetedMessages: true` as shown below. Type `/` in the Teams compose box, select this agent, enter a private message, and send it. Teams delivers that message only to the agent. The agent replies privately, with a preview of your original message above its response.
+10. Add/remove members or create/rename/delete channels or rename the team to see the event handlers fire.
+11. Click **"Custom Feedback"** — select thumbs up or thumbs down on the response, enter optional comments in the dialog, and select **Submit**. The console logs the original activity ID, reaction, and feedback length without logging the comment text.
+
+Custom feedback uses `channelData.feedbackLoop.type: "custom"`. The sample handles `message/fetchTask` to return the Adaptive Card dialog, accepting either a root feedback payload or one wrapped in `data`. Submission arrives as `message/submitAction` with `actionName: "feedback"`; `onTeamsFeedbackLoop` handles it and acknowledges the invoke. The sample does not persist feedback.
+
+Teams does not store custom feedback for the application. For protocol details, see [Bot messages with AI-generated content](https://learn.microsoft.com/microsoftteams/platform/bots/how-to/bot-messages-ai-generated-content#feedback-buttons).
 
 **Manifest — additional sections:**
 
-The base manifest already includes everything needed. No additional sections required.
+Set `"supportsTargetedMessages": true` on the bot entry in the base manifest to let users send private messages to the agent through Teams' `/` picker.
+
+```json
+{
+  "bots": [
+    {
+      "botId": "<your-app-id>",
+      "scopes": ["personal", "team", "groupChat"],
+      "supportsTargetedMessages": true
+    }
+  ]
+}
+```
 
 ---
 
@@ -107,13 +128,13 @@ The base manifest already includes everything needed. No additional sections req
 
 ### `meetingsExample.ts` — Teams Meetings
 
-Handles Teams meeting lifecycle events using `TeamsAgentExtension.meetings`. Handlers receive strongly-typed `MeetingDetails` and `MeetingParticipantsEventDetails` objects from `@microsoft/teams.api`.
+Handles Teams meeting lifecycle events using `TeamsAgentExtension.meetings`. Handlers receive `MeetingDetails` plus distinct `MeetingParticipantJoinValue` and `MeetingParticipantLeaveValue` payloads from `@microsoft/teams.api`.
 
 **Features illustrated:**
 - `meetings.onStart(context, state, details: MeetingDetails)` — triggered when a meeting begins, receives meeting details.
 - `meetings.onEnd(context, state, details: MeetingDetails)` — triggered when a meeting ends, receives meeting details.
-- `meetings.onParticipantsJoin(context, state, details: MeetingParticipantsEventDetails)` — triggered when participants join, receives participant info.
-- `meetings.onParticipantsLeave(context, state, details: MeetingParticipantsEventDetails)` — triggered when participants leave, receives participant info.
+- `meetings.onParticipantsJoin(context, state, details: MeetingParticipantJoinValue)` — triggered when participants join, receives participant info.
+- `meetings.onParticipantsLeave(context, state, details: MeetingParticipantLeaveValue)` — triggered when participants leave, receives participant info.
 - Basic message handling with `help` and `meeting info` commands.
 
 **How to test:**
@@ -187,6 +208,11 @@ Add `composeExtensions` to the base manifest:
           "title": "Search",
           "description": "Search for items",
           "initialRun": true,
+          "fetchTask": false,
+          "context": [
+            "commandBox",
+            "compose"
+          ],
           "parameters": [
             {
               "name": "query",
@@ -201,7 +227,13 @@ Add `composeExtensions` to the base manifest:
           "type": "action",
           "title": "Create Card",
           "description": "Create a card from user input",
+          "initialRun": false,
           "fetchTask": true,
+          "context": [
+            "commandBox",
+            "compose",
+            "message"
+          ],
           "parameters": [
             { "name": "title", "title": "Title", "inputType": "text" },
             { "name": "description", "title": "Description", "inputType": "text" }

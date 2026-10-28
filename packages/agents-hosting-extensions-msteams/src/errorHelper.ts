@@ -100,5 +100,21 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   TeamsApiClientSetupFailed: {
     code: -150011,
     description: 'Teams API client setup failed: missing {missing}.'
+  },
+
+  /**
+   * Error thrown when a required Teams activity helper parameter is missing.
+   */
+  ActivityParameterRequired: {
+    code: -150020,
+    description: 'The {parameterName} parameter must be a non-empty string.'
+  },
+
+  /**
+   * Error thrown when a required targeted activity parameter is missing.
+   */
+  TargetedActivityParameterRequired: {
+    code: -150021,
+    description: 'The {parameterName} parameter is required to send a targeted activity.'
   }
 }

@@ -138,7 +138,6 @@ describe('TeamsAgentExtension', () => {
     assert.ok(handlerContext)
     assert.strictEqual(handlerContext.client.serviceUrl, 'https://service.example.com')
     assert.strictEqual(typeof handlerContext.sendTargetedActivity, 'function')
-    assert.strictEqual(typeof handlerContext.sendTargetedActivities, 'function')
   })
 
   it('should configure header propagation with the Teams user-agent product token', () => {

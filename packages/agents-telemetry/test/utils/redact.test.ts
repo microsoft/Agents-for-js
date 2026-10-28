@@ -1,4 +1,5 @@
 import assert from 'assert'
+import { createHmac } from 'node:crypto'
 import { describe, it } from 'node:test'
 import { pseudonymizeConversationId, redactScopes, redactString, redactUrl, redactDiagnosticObject } from '../../src/utils/redact'
 
@@ -115,6 +116,16 @@ describe('redactDiagnosticObject', () => {
 })
 
 describe('pseudonymizeConversationId', () => {
+  it('preserves HMAC-SHA256 pseudonyms for existing diagnostics keys', () => {
+    for (const conversationId of ['conversation-id-secret', 'conversation-\u00e9-\ud83d\ude00']) {
+      const key = 'customer-managed-diagnostics-key'
+      const expected = `cid_${createHmac('sha256', key).update(conversationId).digest('hex').slice(0, 32)}`
+
+      assert.equal(pseudonymizeConversationId(conversationId, key), expected)
+      assert.equal(pseudonymizeConversationId(conversationId, ` ${key} `), expected)
+    }
+  })
+
   it('creates a stable process-local pseudonym without exposing the conversation ID', () => {
     const conversationId = 'conversation-id-secret'
     const first = pseudonymizeConversationId(conversationId)
