@@ -8,7 +8,7 @@ const codes = {
   italic: '2;3',
   warning: '33',
   error: '31',
-  outdated: '36',
+  outdated: '33',
   success: '32',
   link: '4;34'
 }
@@ -26,7 +26,19 @@ function paint (text, kind, enabled) {
 
 const packageName = name => cleanText(name.replace('@microsoft/', ''))
 const duration = milliseconds => `${((milliseconds ?? 0) / 1000).toFixed(1)}s`
-const needsReview = result => result.findings.some(finding => finding.kind !== 'compatible')
+const isBreak = finding => finding.kind === 'breaking' || finding.kind === 'possible'
+const needsReview = result => result.findings.some(isBreak)
+const dependencyChanges = result => result.findings
+  .filter(finding => finding.code === 'dependencies.changed')
+  .flatMap(finding => {
+    const before = JSON.parse(finding.before)
+    const after = JSON.parse(finding.after)
+
+    return [...new Set([...Object.keys(before), ...Object.keys(after)])]
+      .sort()
+      .filter(name => before[name] !== after[name])
+      .map(name => `${name}  ${before[name] ?? 'added'} → ${after[name] ?? 'removed'}`)
+  })
 
 export function summarize (results) {
   return {
@@ -40,9 +52,11 @@ export function summarize (results) {
         (count, result) =>
           count +
           (result.breaks?.length ??
-            result.findings.filter(finding => finding.kind !== 'compatible').length),
+            result.findings.filter(isBreak).length),
         0
       ),
+    dependencyNotices: results.filter(result => !result.error && !result.skipped)
+      .reduce((count, result) => count + dependencyChanges(result).length, 0),
     errors: results.filter(result => result.error).length,
     skipped: results.filter(result => result.skipped).length,
     baselines: results.filter(result => result.baselineChanged).length
@@ -66,7 +80,7 @@ function status (result, updateCompleted = false) {
     ]
   }
 
-  if (result.findings.some(finding => finding.kind !== 'compatible')) {
+  if (needsReview(result)) {
     return ['Possible breaks', 'warning']
   }
 
@@ -74,7 +88,7 @@ function status (result, updateCompleted = false) {
     return ['Baseline outdated', 'outdated']
   }
 
-  if (result.reference?.findings.some(finding => finding.kind !== 'compatible')) {
+  if (result.reference?.findings.some(isBreak)) {
     return ['Baseline current', 'dim']
   }
 
@@ -155,6 +169,10 @@ export function formatReport (
     if (result.error || result.skipped) {
       lines.push(`    ${link('details', { file: 'compat/generated/report.json' })}`)
     } else {
+      for (const change of dependencyChanges(result)) {
+        lines.push(`    ${style(`dependency: ${change}`, 'accent')}`)
+      }
+
       const comparisons = (result.breaks ?? []).map(group => {
         const { baseline, generated } = group.sources
 
@@ -189,6 +207,10 @@ export function formatReport (
   const skipped = summary.skipped ? ` · ${summary.skipped} skipped` : ''
   const breaks = `${summary.possibleBreaks} possible ${summary.possibleBreaks === 1 ? 'break' : 'breaks'}`
 
+  const notices = summary.dependencyNotices
+    ? `${summary.dependencyNotices} dependency ${summary.dependencyNotices === 1 ? 'notice' : 'notices'}`
+    : ''
+
   if (updateCompleted) {
     const current = results.filter(
       result => !result.error && !result.skipped && !result.baselineChanged
@@ -206,14 +228,20 @@ export function formatReport (
     lines.push(
       '',
       style(
-        `${summary.analyzed} analyzed · ${summary.toReview} to review · ${breaks} · ${summary.errors} errors${skipped} · ${duration(durationMs)}`,
+        `${summary.analyzed} analyzed${summary.toReview ? ` · ${summary.toReview} to review` : ''} · ${breaks} · ${summary.errors} errors${skipped} · ${duration(durationMs)}`,
         'dim'
       )
     )
 
-    if (summary.baselines) {
-      lines.push(style(`${summary.baselines} baselines need updating`, 'dim'))
+    const baselineNotice = summary.baselines ? `${summary.baselines} baselines need updating` : ''
+
+    if (notices || baselineNotice) {
+      lines.push(style([notices, baselineNotice].filter(Boolean).join(' · '), 'dim'))
     }
+  }
+
+  if (updateCompleted && notices) {
+    lines.push(style(notices, 'dim'))
   }
 
   if (updateError) {
@@ -235,6 +263,8 @@ export function formatReport (
     tip = 'Review the updated baseline files with git diff.'
   } else if (summary.toReview) {
     tip = 'Review linked declarations; details: compat/generated/report.json.'
+  } else if (summary.dependencyNotices) {
+    tip = 'Dependency notices are informational; no API breaks detected.'
   } else if (summary.baselines) {
     tip = 'Refresh outdated baselines: npm run compat -- --update.'
   }
@@ -244,7 +274,7 @@ export function formatReport (
   }
 
   if (
-    summary.toReview &&
+    (summary.toReview || summary.dependencyNotices) &&
     summary.baselines &&
     !updateCompleted &&
     !summary.errors &&

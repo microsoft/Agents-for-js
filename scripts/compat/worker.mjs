@@ -179,7 +179,7 @@ function analyzeComparison ({ root, task, directory, extractedReports }) {
   if (task.baseline && !isDeepStrictEqual(task.baseline.dependencies, task.current.dependencies)) {
     result.baselineChanged = true
     result.findings.push({
-      kind: 'possible',
+      kind: 'informational',
       code: 'dependencies.changed',
       symbol: '<dependencies>',
       message:

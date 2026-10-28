@@ -231,7 +231,9 @@ export function writeReports (
     )
     const groups = new Map()
 
-    for (const finding of result.findings.filter(finding => finding.kind !== 'compatible')) {
+    for (const finding of result.findings.filter(
+      finding => finding.kind === 'breaking' || finding.kind === 'possible'
+    )) {
       // Package/dependency metadata is already preserved in the JSON finding's before/after fields.
       const candidates =
         finding.code === 'dependencies.changed' || finding.code === 'package.removed'

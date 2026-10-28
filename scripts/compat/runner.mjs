@@ -397,7 +397,7 @@ async function executeCompat (root, settings, generated) {
           }
         }
 
-        const order = { breaking: 0, possible: 1, compatible: 2 }
+        const order = { breaking: 0, possible: 1, informational: 2, compatible: 3 }
 
         result.findings.sort(
           (a, b) => order[a.kind] - order[b.kind] || a.symbol.localeCompare(b.symbol)

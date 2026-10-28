@@ -117,9 +117,11 @@ describe('compatibility execution', () => {
       JSON.stringify({ ...manifest, dependencies: { 'example-dependency': '^2.0.0' } })
     )
     assert.equal(await run(root), 1)
-    assert.equal(report(root).summary.toReview, 1)
+    assert.equal(report(root).summary.toReview, 0)
+    assert.equal(report(root).summary.possibleBreaks, 0)
+    assert.equal(report(root).summary.dependencyNotices, 1)
     assert.ok(
-      report(root).results[0].findings.some(finding => finding.code === 'dependencies.changed')
+      report(root).results[0].findings.some(finding => finding.code === 'dependencies.changed' && finding.kind === 'informational')
     )
     fs.writeFileSync(manifestPath, JSON.stringify(manifest))
 
@@ -357,4 +359,23 @@ describe('compatibility execution', () => {
       await running
     }
   })
+})
+
+it('acknowledges dependency-only notices with an explicit baseline update', async () => {
+  const root = fixture()
+
+  assert.equal(await run(root, ['--update']), 0)
+  const manifestPath = path.join(root, 'packages/example/package.json')
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
+
+  fs.writeFileSync(manifestPath, JSON.stringify({ ...manifest, dependencies: { dep: '2' } }))
+  assert.equal(await run(root), 1)
+  assert.equal(report(root).summary.possibleBreaks, 0)
+  assert.equal(report(root).summary.dependencyNotices, 1)
+  assert.equal(report(root).summary.baselines, 1)
+  assert.deepEqual(report(root).results[0].breaks, [])
+  assert.equal(await run(root, ['--update']), 0)
+  assert.equal(await run(root), 0)
+  assert.equal(report(root).summary.dependencyNotices, 0)
+  assert.equal(report(root).summary.baselines, 0)
 })

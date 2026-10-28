@@ -910,7 +910,7 @@ describe('compatibility comparison artifacts', () => {
     const findings = compareDeclarations(before, after, scratch())
 
     findings.push({
-      kind: 'possible',
+      kind: 'informational',
       code: 'dependencies.changed',
       symbol: '<dependencies>',
       before: '{}',
@@ -943,7 +943,7 @@ describe('compatibility comparison artifacts', () => {
     assert.equal(removed.sources.generated, undefined)
     const dependencies = findings.find(finding => finding.code === 'dependencies.changed')
 
-    assert.deepEqual(dependencies.sources, {})
+    assert.equal(dependencies.sources, undefined)
     assert.equal(dependencies.before, '{}')
     assert.equal(dependencies.after, '{"dep":"2"}')
     assert.ok(entry.comparisons['.'].generated.file.endsWith('example.api.md'))
@@ -1172,5 +1172,35 @@ describe('compatibility terminal output', () => {
       assert.ok(text.includes('\u001B[?25l'))
       assert.equal(text.split('\u001B[?25h').length, 2)
     }
+  })
+})
+
+describe('dependency notices', () => {
+  it('shows changed, added, and removed dependencies without counting API breaks', () => {
+    const notice = {
+      kind: 'informational',
+      code: 'dependencies.changed',
+      before: JSON.stringify({ changed: '1', removed: '1', unchanged: '1' }),
+      after: JSON.stringify({ changed: '2', added: '1', unchanged: '1' })
+    }
+    const entry = result('example', [notice], { baselineChanged: true })
+    const text = formatReport([entry])
+
+    assert.match(text, /Baseline outdated/)
+    assert.match(text, /dependency: changed {2}1 → 2/)
+    assert.match(text, /dependency: added {2}added → 1/)
+    assert.match(text, /dependency: removed {2}1 → removed/)
+    assert.doesNotMatch(text, /unchanged|Possible breaks|details:/)
+    assert.match(text, /3 dependency notices · 1 baselines need updating/)
+    assert.equal(summarize([entry]).possibleBreaks, 0)
+    assert.equal(exitCode([entry]), 1)
+    const updated = formatReport([entry], { updated: 1 })
+
+    assert.match(updated, /Baseline updated/)
+    assert.doesNotMatch(updated, /Warning:|Possible breaks/)
+    entry.findings.push({ kind: 'breaking', symbol: 'f' })
+    assert.equal(summarize([entry]).possibleBreaks, 1)
+    assert.match(formatReport([entry]), /Possible breaks/)
+    assert.doesNotMatch(formatReport([entry]), /no API breaks detected/)
   })
 })
