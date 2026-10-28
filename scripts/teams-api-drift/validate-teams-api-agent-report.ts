@@ -60,75 +60,148 @@ function parseSettings (args: string[]): Settings {
     report: join(defaultArtifactDirectory, 'agent-report.md'),
     help: false
   }
+
   for (let index = 0; index < args.length; index++) {
     const argument = args[index]
-    if (argument === '--help' || argument === '-h') return { ...settings, help: true }
-    if (argument === '--findings' || argument === '--report' || argument === '--output' || argument === '-o') {
+
+    if (argument === '--help' || argument === '-h') {
+      return { ...settings, help: true }
+    }
+
+    if (
+      argument === '--findings' ||
+      argument === '--report' ||
+      argument === '--output' ||
+      argument === '-o'
+    ) {
       const value = args[++index]
-      if (!value) throw new Error(`${argument} requires a file path.`)
-      if (argument === '--findings') settings.findings = value
-      else if (argument === '--report') settings.report = value
-      else settings.output = value
+
+      if (!value) {
+        throw new Error(`${argument} requires a file path.`)
+      }
+
+      if (argument === '--findings') {
+        settings.findings = value
+      } else if (argument === '--report') {
+        settings.report = value
+      } else {
+        settings.output = value
+      }
+
       continue
     }
+
     throw new Error(`Unknown option: ${argument}`)
   }
+
   return settings
 }
 
 function readText (filePath: string): string {
   const fullPath = resolve(filePath)
-  if (!existsSync(fullPath)) throw new Error(`File not found: ${fullPath}`)
+
+  if (!existsSync(fullPath)) {
+    throw new Error(`File not found: ${fullPath}`)
+  }
+
   return readFileSync(fullPath, 'utf8')
 }
 
 function actionSections (report: string): string[] {
-  const names = ['Compatibility breaks', 'Required adaptations', 'Feature-review candidates', 'Internal implementation opportunities', 'Maintainer decisions', 'No action', 'Suggested implementation issues']
+  const names = [
+    'Compatibility breaks',
+    'Required adaptations',
+    'Feature-review candidates',
+    'Internal implementation opportunities',
+    'Maintainer decisions',
+    'No action',
+    'Suggested implementation issues'
+  ]
   const normalized = report.replace(/\r\n/g, '\n')
+
   return names.flatMap(name => {
     const start = normalized.indexOf(`## ${name}\n`)
-    if (start < 0) return []
+
+    if (start < 0) {
+      return []
+    }
+
     const contentStart = start + `## ${name}\n`.length
     const nextHeading = normalized.indexOf('\n## ', contentStart)
+
     return normalized.slice(contentStart, nextHeading < 0 ? undefined : nextHeading)
   })
 }
 
-export function validateAgentReport (report: string, findings: FindingsResult): AgentReportValidation {
+export function validateAgentReport (
+  report: string,
+  findings: FindingsResult
+): AgentReportValidation {
   const errors: string[] = []
   const normalizedReport = report.replace(/\r\n/g, '\n')
-  if (!normalizedReport.startsWith('# teams.api Impact Report\n')) errors.push('Report must start with "# teams.api Impact Report".')
+
+  if (!normalizedReport.startsWith('# teams.api Impact Report\n')) {
+    errors.push('Report must start with "# teams.api Impact Report".')
+  }
+
   let previousSectionIndex = -1
+
   for (const section of requiredSections) {
     const heading = `## ${section}\n`
     const index = normalizedReport.indexOf(heading)
+
     if (index < 0) {
       errors.push(`Missing required section: ${section}.`)
       continue
     }
-    if (normalizedReport.indexOf(heading, index + heading.length) >= 0) errors.push(`Section must appear exactly once: ${section}.`)
-    if (index < previousSectionIndex) errors.push('Sections must appear in the required order.')
+
+    if (normalizedReport.indexOf(heading, index + heading.length) >= 0) {
+      errors.push(`Section must appear exactly once: ${section}.`)
+    }
+
+    if (index < previousSectionIndex) {
+      errors.push('Sections must appear in the required order.')
+    }
+
     previousSectionIndex = index
   }
-  const requiredSummarySentence = 'This is an advisory report; it does not make or authorize implementation decisions.'
+
+  const requiredSummarySentence =
+    'This is an advisory report; it does not make or authorize implementation decisions.'
   const summaryMatch = normalizedReport.match(/^## Summary[ \t]*\n([\s\S]*)/m)
   const summaryContent = summaryMatch?.[1] ?? ''
-  const firstSummaryLine = summaryContent.split('\n').map(line => line.trim()).find(line => line.length > 0)
+  const firstSummaryLine = summaryContent
+    .split('\n')
+    .map(line => line.trim())
+    .find(line => line.length > 0)
+
   if (!firstSummaryLine?.startsWith(requiredSummarySentence)) {
     errors.push(`Summary section must start with: "${requiredSummarySentence}".`)
   }
 
   const knownIds = new Set(findings.findings.map(finding => finding.id))
-  const referencedFindingIds = [...new Set(report.match(/\b(?:TSAPI|EXTAPI)-[A-Za-z0-9-]+\b/g) ?? [])].sort()
+  const referencedFindingIds = [
+    ...new Set(report.match(/\b(?:TSAPI|EXTAPI)-[A-Za-z0-9-]+\b/g) ?? [])
+  ].sort()
   const unknownFindingIds = referencedFindingIds.filter(id => !knownIds.has(id))
-  if (unknownFindingIds.length > 0) errors.push(`Unknown finding ID(s): ${unknownFindingIds.join(', ')}.`)
+
+  if (unknownFindingIds.length > 0) {
+    errors.push(`Unknown finding ID(s): ${unknownFindingIds.join(', ')}.`)
+  }
 
   const missingMandatoryFindingIds = findings.findings
-    .filter(finding => finding.classification === 'blocking' || finding.classification === 'required')
+    .filter(
+      finding => finding.classification === 'blocking' || finding.classification === 'required'
+    )
     .map(finding => finding.id)
     .filter(id => !referencedFindingIds.includes(id))
     .sort()
-  if (missingMandatoryFindingIds.length > 0) errors.push(`Missing blocking or required finding ID(s): ${missingMandatoryFindingIds.join(', ')}.`)
+
+  if (missingMandatoryFindingIds.length > 0) {
+    errors.push(
+      `Missing blocking or required finding ID(s): ${missingMandatoryFindingIds.join(', ')}.`
+    )
+  }
 
   for (const section of actionSections(report)) {
     for (const line of section.split(/\r?\n/).filter(line => /^[-*+] /.test(line))) {
@@ -150,27 +223,52 @@ export function validateAgentReport (report: string, findings: FindingsResult): 
 
 function outputPathFor (destination: string): string {
   const fullPath = resolve(destination)
-  return extname(fullPath).toLowerCase() === '.json' ? fullPath : join(fullPath, 'agent-report-validation.json')
+
+  return extname(fullPath).toLowerCase() === '.json'
+    ? fullPath
+    : join(fullPath, 'agent-report-validation.json')
 }
 
 function main (): void {
   const settings = parseSettings(process.argv.slice(2))
+
   if (settings.help) {
     console.log(help)
+
     return
   }
+
   const findings = JSON.parse(readText(settings.findings)) as FindingsResult
-  if (findings.schemaVersion !== 1 || findings.dependency !== '@microsoft/teams.api') throw new Error('Findings must be a schemaVersion 1 result for @microsoft/teams.api.')
+
+  if (findings.schemaVersion !== 1 || findings.dependency !== '@microsoft/teams.api') {
+    throw new Error('Findings must be a schemaVersion 1 result for @microsoft/teams.api.')
+  }
+
   const validation = validateAgentReport(readText(settings.report), findings)
-  console.log(validation.valid ? 'Agent report validation passed.' : `Agent report validation failed: ${validation.errors.join(' ')}`)
+
+  console.log(
+    validation.valid
+      ? 'Agent report validation passed.'
+      : `Agent report validation failed: ${validation.errors.join(' ')}`
+  )
+
   if (settings.output) {
     const outputPath = outputPathFor(settings.output)
+
     mkdirSync(dirname(outputPath), { recursive: true })
     writeFileSync(outputPath, `${JSON.stringify(validation, undefined, 2)}\n`)
-    console.log(`Wrote agent report validation to ${relative(process.cwd(), outputPath) || basename(outputPath)}`)
+    console.log(
+      `Wrote agent report validation to ${relative(process.cwd(), outputPath) || basename(outputPath)}`
+    )
   }
-  if (!validation.valid) process.exitCode = 1
+
+  if (!validation.valid) {
+    process.exitCode = 1
+  }
 }
 
 const invokedPath = process.argv[1] ? resolve(process.argv[1]) : undefined
-if (invokedPath === fileURLToPath(import.meta.url)) main()
+
+if (invokedPath === fileURLToPath(import.meta.url)) {
+  main()
+}

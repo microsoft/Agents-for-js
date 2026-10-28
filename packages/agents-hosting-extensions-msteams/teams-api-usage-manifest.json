@@ -220,6 +220,6 @@
   ],
   "sourceReview": {
     "outcome": "no-usage-metadata-change",
-    "reason": "Reviewed the meeting event-model migration, quoted/targeted activity helpers, and TeamsTurnContext targeted-send normalization; the manifest already records the new meeting activity and entity types plus the existing Teams Client reference, so no additional usage entries are needed."
+    "reason": "Reviewed the ESLint formatting changes in src/messageExtensions/messageExtension.ts and src/taskModules/taskModule.ts: single-line guard clauses now use multiline blocks with braces. Conditions, return values, Teams API imports, model validation, and public exposure are unchanged, so the existing usage metadata remains accurate."
   }
 }

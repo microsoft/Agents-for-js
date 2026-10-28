@@ -9,7 +9,7 @@ import { AgentErrorDefinition } from '@microsoft/agents-activity';
 import { Container } from '@azure/cosmos';
 import { CosmosClientOptions } from '@azure/cosmos';
 import { ExceptionHelper } from '@microsoft/agents-activity';
-import { Storage } from '@microsoft/agents-hosting';
+import { Storage as Storage_2 } from '@microsoft/agents-hosting';
 import { StorageDeleteOptions } from '@microsoft/agents-hosting';
 import { StorageDeleteResults } from '@microsoft/agents-hosting';
 import { StorageReadResults } from '@microsoft/agents-hosting';
@@ -23,7 +23,7 @@ export { AgentError }
 export { AgentErrorDefinition }
 
 // @public
-export class CosmosDbPartitionedStorage extends CosmosDbPartitionedStorageInternals implements Storage {
+export class CosmosDbPartitionedStorage extends CosmosDbPartitionedStorageInternals implements Storage_2 {
     delete(keys: string[]): Promise<void>;
     read(keys: string[]): Promise<StoreItems>;
     write(changes: StoreItems): Promise<void>;

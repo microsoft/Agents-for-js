@@ -101,7 +101,9 @@ app
       const currentPage = await getPagedMembers(context, 100, continuationToken)
       continuationToken = currentPage.continuationToken ?? undefined
       for (const teamMember of currentPage.members) {
-        if (!teamMember) { throw new Error('The Teams members response contained a null member.') }
+        if (!teamMember) {
+          throw new Error('The Teams members response contained a null member.')
+        }
         if (teamMember.id === context.activity.recipient?.id) {
           continue
         }
@@ -347,7 +349,10 @@ function asRecord (value: unknown): Record<string, unknown> | undefined {
 
 function readFeedbackText (feedback: unknown): string | undefined {
   if (typeof feedback === 'string') {
-    if (!feedback.trim()) return undefined
+    if (!feedback.trim()) {
+      return undefined
+    }
+
     try {
       const text = asRecord(JSON.parse(feedback))?.feedbackText
       return typeof text === 'string' ? text : feedback

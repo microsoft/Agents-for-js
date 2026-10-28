@@ -22,7 +22,8 @@
   "workspaces": {
     // Root
     ".": {
-      "project": ["*.{js,mjs,ts}"],
+      "entry": ["scripts/compat/worker.mjs"],
+      "project": ["*.{js,mjs,ts}", "scripts/**/*.{mjs,ts}"],
       "ignoreDependencies": [
         "@microsoft/microsoft-graph-client",
         "@microsoft/microsoft-graph-types"

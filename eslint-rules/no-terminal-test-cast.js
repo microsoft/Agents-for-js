@@ -19,7 +19,9 @@ export default {
     ])
 
     const isTestCall = (node) => {
-      if (node.callee.type === 'Identifier') return testFunctionNames.has(node.callee.name)
+      if (node.callee.type === 'Identifier') {
+        return testFunctionNames.has(node.callee.name)
+      }
       return node.callee.type === 'MemberExpression' &&
         !node.callee.computed &&
         node.callee.object.type === 'Identifier' &&
@@ -33,15 +35,21 @@ export default {
       typeof value.type === 'string'
 
     const containsCast = (node, root) => {
-      if (!isAstNode(node)) return false
-      if (node.type === 'TSAsExpression' || node.type === 'TSTypeAssertion') return true
+      if (!isAstNode(node)) {
+        return false
+      }
+      if (node.type === 'TSAsExpression' || node.type === 'TSTypeAssertion') {
+        return true
+      }
       if (node !== root && [
         'ArrowFunctionExpression',
         'ClassDeclaration',
         'ClassExpression',
         'FunctionDeclaration',
         'FunctionExpression'
-      ].includes(node.type)) return false
+      ].includes(node.type)) {
+        return false
+      }
       return (sourceCode.visitorKeys[node.type] ?? []).some((key) => {
         const value = node[key]
         return Array.isArray(value)
@@ -51,17 +59,23 @@ export default {
     }
 
     const findTerminalNode = (body) => {
-      if (body.type !== 'BlockStatement') return body
+      if (body.type !== 'BlockStatement') {
+        return body
+      }
       return body.body.findLast(statement => !nonExecutableStatements.has(statement.type))
     }
 
     return {
       CallExpression (node) {
-        if (!isTestCall(node)) return
+        if (!isTestCall(node)) {
+          return
+        }
         const callback = [...node.arguments].reverse().find((argument) =>
           argument.type === 'ArrowFunctionExpression' || argument.type === 'FunctionExpression'
         )
-        if (!callback) return
+        if (!callback) {
+          return
+        }
 
         const terminalNode = findTerminalNode(callback.body)
         if (terminalNode && containsCast(terminalNode, terminalNode)) {

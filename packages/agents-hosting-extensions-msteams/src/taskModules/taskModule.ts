@@ -10,9 +10,13 @@ const DEFAULT_TASK_DATA_KEY = 'task'
 
 function matchesTaskKeyValue (context: TurnContext, value: string | RegExp, key: string): boolean {
   const taskData = (context.activity.value as any)?.data
-  if (!taskData || typeof taskData !== 'object') return false
+  if (!taskData || typeof taskData !== 'object') {
+    return false
+  }
   const dataValue = taskData[normalizeTaskDataKey(key)]
-  if (typeof dataValue !== 'string') return false
+  if (typeof dataValue !== 'string') {
+    return false
+  }
   return typeof value === 'string' ? dataValue === value : value.test(dataValue)
 }
 

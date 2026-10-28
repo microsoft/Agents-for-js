@@ -18,7 +18,9 @@ export const mergeDefined = <T extends Record<string, any>>(
 ): T => {
   const result: Partial<T> = {}
   for (const layer of layers) {
-    if (layer) Object.assign(result, prune(layer))
+    if (layer) {
+      Object.assign(result, prune(layer))
+    }
   }
   return result as T
 }

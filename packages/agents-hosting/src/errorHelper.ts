@@ -295,6 +295,16 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
     description: 'HttpClient requires baseURL when using a relative URL: {url}'
   },
 
+  AttachmentDownloadRedirectLimit: {
+    code: -120292,
+    description: 'Attachment download exceeded the maximum of 50 redirects.'
+  },
+
+  AttachmentDownloadInvalidRedirect: {
+    code: -120293,
+    description: 'Attachment download returned an invalid redirect URL.'
+  },
+
   // ============================================================================
   // Connection and Authentication Errors (-120300 to -120599)
   // ============================================================================

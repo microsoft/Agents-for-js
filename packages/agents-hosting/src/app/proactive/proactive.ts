@@ -285,7 +285,9 @@ export class Proactive<TState extends TurnState> {
         logger.warn('sendActivity: failed for conversation=%s: %s', id, caughtError)
         throw caughtError
       }
-      if (response === undefined) throw ExceptionHelper.generateException(Error, Errors.ProactiveSendActivityNoResponse)
+      if (response === undefined) {
+        throw ExceptionHelper.generateException(Error, Errors.ProactiveSendActivityNoResponse)
+      }
       logger.debug('sendActivity: sent activity id=%s', response.id)
       return response
     })

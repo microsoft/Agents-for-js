@@ -30,13 +30,29 @@ function createSpan (): TestSpan {
   return {
     attributes,
     spanContext: () => ({ traceId: '', spanId: '', traceFlags: 0 }),
-    setAttribute (name, value) { attributes[name] = value; return this },
-    setAttributes (values) { Object.assign(attributes, values); return this },
-    addEvent () { return this },
-    addLink () { return this },
-    addLinks () { return this },
-    setStatus () { return this },
-    updateName () { return this },
+    setAttribute (name, value) {
+      attributes[name] = value
+      return this
+    },
+    setAttributes (values) {
+      Object.assign(attributes, values)
+      return this
+    },
+    addEvent () {
+      return this
+    },
+    addLink () {
+      return this
+    },
+    addLinks () {
+      return this
+    },
+    setStatus () {
+      return this
+    },
+    updateName () {
+      return this
+    },
     end () {},
     isRecording: () => true,
     recordException () {},

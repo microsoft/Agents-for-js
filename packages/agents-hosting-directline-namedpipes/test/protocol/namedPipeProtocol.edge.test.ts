@@ -53,10 +53,14 @@ function parseFirstFrame (buffer: Buffer): { header: Header, payload: Buffer } {
 async function waitForFrame (chunks: Buffer[], timeoutMs = 1000): Promise<{ header: Header, payload: Buffer }> {
   return await waitFor(() => {
     const combined = Buffer.concat(chunks)
-    if (combined.length < 48) return undefined
+    if (combined.length < 48) {
+      return undefined
+    }
     const header = deserializeHeader(combined.subarray(0, 48))
     const totalLength = 48 + header.payloadLength
-    if (combined.length < totalLength) return undefined
+    if (combined.length < totalLength) {
+      return undefined
+    }
     return parseFirstFrame(combined)
   }, timeoutMs)
 }
@@ -175,7 +179,9 @@ describe('NamedPipeProtocol edge cases', () => {
     const written: Buffer[] = []
     writerStream.on('data', (chunk: Buffer) => written.push(Buffer.from(chunk)))
 
-    protocol.onRequestReceived = async () => { throw new Error('boom') }
+    protocol.onRequestReceived = async () => {
+      throw new Error('boom')
+    }
     protocol.start()
 
     const payload = Buffer.from(JSON.stringify({ verb: 'POST', path: '/throws', streams: null }), 'utf8')

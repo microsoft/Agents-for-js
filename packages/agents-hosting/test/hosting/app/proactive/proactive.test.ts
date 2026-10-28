@@ -241,8 +241,13 @@ describe('Proactive', () => {
 
       const loadOrig = TurnState.prototype.load
       const saveOrig = TurnState.prototype.save
-      TurnState.prototype.load = async function () { stateLoadCalled = true; return this }
-      TurnState.prototype.save = async function () { stateSaveCalled = true }
+      TurnState.prototype.load = async function () {
+        stateLoadCalled = true
+        return this
+      }
+      TurnState.prototype.save = async function () {
+        stateSaveCalled = true
+      }
 
       try {
         await proactive.continueConversation(adapter, conv, async (_ctx, _state) => {})
@@ -393,7 +398,9 @@ describe('Proactive', () => {
         () => proactive.createConversation(
           cloudAdapter as any,
           makeCreateOpts() as any,
-          async () => { throw new Error('handler-error') }
+          async () => {
+            throw new Error('handler-error')
+          }
         ),
         /handler-error/
       )

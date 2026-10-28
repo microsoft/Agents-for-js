@@ -27,6 +27,7 @@ export type CloudAdapterConfigurationPatch = Partial<{
 export type OutboundHostValidatorConfigurationPatch = Partial<{
   enabled: boolean
   includeDefaultMicrosoftHosts: boolean
+  allowPrivateNetworkAddresses: boolean
   hosts: readonly string[]
 }>
 export type AuthorizationHandlerPatch = Record<string, unknown>
@@ -105,6 +106,7 @@ const connectionMapParsers = {
 const outboundHostValidatorParsers = {
   enabled: asBoolean,
   includeDefaultMicrosoftHosts: asBoolean,
+  allowPrivateNetworkAddresses: asBoolean,
   hosts: asList
 } satisfies Record<string, (value: string) => unknown>
 
@@ -489,7 +491,7 @@ function parseValue (
     ? parseDocumentValue(parser, value)
     : typeof value === 'string' ? parser(value) : undefined
   if (parsed === undefined) {
-    if (key === 'validateIssuer') {
+    if (key === 'validateIssuer' || key === 'allowPrivateNetworkAddresses') {
       throw ExceptionHelper.generateException(
         TypeError,
         Errors.InvalidBooleanConfigurationValue,
@@ -598,7 +600,7 @@ export function setConfigurationValue (
     if (parsed.key === 'hosts') {
       ;(target.outboundHostValidator as OutboundHostValidatorConfigurationPatch).hosts = parsed.value as string[]
     } else {
-      ;(target.outboundHostValidator as OutboundHostValidatorConfigurationPatch)[parsed.key as 'enabled' | 'includeDefaultMicrosoftHosts'] = parsed.value as boolean
+      ;(target.outboundHostValidator as OutboundHostValidatorConfigurationPatch)[parsed.key as 'enabled' | 'includeDefaultMicrosoftHosts' | 'allowPrivateNetworkAddresses'] = parsed.value as boolean
     }
     return
   }

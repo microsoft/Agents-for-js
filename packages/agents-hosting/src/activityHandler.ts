@@ -255,9 +255,15 @@ export class ActivityHandler {
    * @throws Error if context is missing, activity is missing, or activity type is missing
    */
   async run (context: TurnContext): Promise<void> {
-    if (!context) throw ExceptionHelper.generateException(Error, Errors.MissingTurnContext)
-    if (!context.activity) throw ExceptionHelper.generateException(Error, Errors.TurnContextMissingActivity)
-    if (!context.activity.type) throw ExceptionHelper.generateException(Error, Errors.ActivityMissingType)
+    if (!context) {
+      throw ExceptionHelper.generateException(Error, Errors.MissingTurnContext)
+    }
+    if (!context.activity) {
+      throw ExceptionHelper.generateException(Error, Errors.TurnContextMissingActivity)
+    }
+    if (!context.activity.type) {
+      throw ExceptionHelper.generateException(Error, Errors.ActivityMissingType)
+    }
 
     await this.handle(context, 'Turn', async () => {
       await this.onTurnActivity(context)

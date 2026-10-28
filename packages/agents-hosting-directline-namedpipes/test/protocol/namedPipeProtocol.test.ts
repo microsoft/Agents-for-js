@@ -297,7 +297,9 @@ describe('NamedPipeProtocol', () => {
         end: true
       }))
 
-      await assert.rejects(async () => { await promise }, /CancelAll/)
+      await assert.rejects(async () => {
+        await promise
+      }, /CancelAll/)
 
       await protocol.dispose()
     })
@@ -309,8 +311,15 @@ describe('NamedPipeProtocol', () => {
       let abortSignalAborted = false
       protocol.onRequestReceived = async (_request, signal) => {
         await new Promise<void>((resolve) => {
-          if (signal?.aborted) { abortSignalAborted = true; resolve(); return }
-          signal?.addEventListener('abort', () => { abortSignalAborted = true; resolve() })
+          if (signal?.aborted) {
+            abortSignalAborted = true
+            resolve()
+            return
+          }
+          signal?.addEventListener('abort', () => {
+            abortSignalAborted = true
+            resolve()
+          })
           setTimeout(resolve, 2000)
         })
         return { statusCode: 200, body: null }
@@ -414,7 +423,9 @@ describe('NamedPipeProtocol', () => {
       await protocol.dispose()
 
       // Verify the send did fail
-      await assert.rejects(async () => { await sendPromise })
+      await assert.rejects(async () => {
+        await sendPromise
+      })
     })
   })
 })

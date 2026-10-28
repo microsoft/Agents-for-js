@@ -34,14 +34,21 @@ jobs:
       - name: Run quality checks
         run: npm run quality
         env:
-          QUALITY_LOG_DIR: quality-logs
+          QUALITY_LOG_DIR: scripts/logs/quality
+          COMPAT_BASE: ${{ github.event.pull_request.base.sha }}
 
       - name: Upload quality logs
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: quality-logs
-          path: quality-logs/
+          path: |
+            scripts/logs/
+            compat/generated/report.json
+            compat/generated/*.api.md
+            compat/generated/baseline-reference/
+            compat/baseline/
+            docs/API-COMPATIBILITY.md
           if-no-files-found: warn
           retention-days: 7
 
