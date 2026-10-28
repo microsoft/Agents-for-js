@@ -152,9 +152,7 @@ export const trace: TraceFunction;
 
 // @public
 export interface TraceDefinition<TRecord extends object = Record<string, never>, TActions extends object = Record<string, Function>> {
-    // (undocumented)
     actions?(context: TraceActionsContext): TActions;
-    // (undocumented)
     end(context: TraceEndContext<TRecord>): void;
     // (undocumented)
     name: SpanName;

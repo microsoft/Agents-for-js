@@ -1091,7 +1091,6 @@ export class MemoryStorage extends MemoryStorageInternals implements Storage_2 {
         [key: string]: string;
     });
     delete(keys: string[]): Promise<void>;
-    // (undocumented)
     static getSingleInstance(): MemoryStorage;
     read(keys: string[]): Promise<StoreItem>;
     write(changes: StoreItem): Promise<void>;
@@ -1103,7 +1102,6 @@ export class MemoryStorageV2 extends StorageV2 {
         [key: string]: string;
     });
     delete(keys: string[], options?: StorageDeleteOptions): Promise<StorageDeleteResults>;
-    // (undocumented)
     static getSingleInstance(): MemoryStorageV2;
     read<T extends object = Record<string, unknown>>(keys: string[]): Promise<StorageReadResults<T>>;
     write<T extends object = Record<string, unknown>>(changes: Record<string, T>, options?: StorageWriteOptions): Promise<StorageWriteResults>;
@@ -1485,17 +1483,13 @@ export { Storage_2 as Storage }
 
 // @public
 export interface StorageDeleteOptions {
-    // (undocumented)
     expectedVersion?: string;
 }
 
 // @public
 export interface StorageDeleteResult {
-    // (undocumented)
     key: string;
-    // (undocumented)
     status: StorageOperationStatus;
-    // (undocumented)
     version?: string;
 }
 
@@ -1507,13 +1501,9 @@ export type StorageKeyFactory = (context: TurnContext) => string | Promise<strin
 
 // @public
 export enum StorageOperationStatus {
-    // (undocumented)
     ConditionNotMet = "conditionNotMet",
-    // (undocumented)
     Conflict = "conflict",
-    // (undocumented)
     NotFound = "notFound",
-    // (undocumented)
     Succeeded = "succeeded"
 }
 
@@ -1522,13 +1512,9 @@ export type StorageProvider = Storage_2 | StorageV2;
 
 // @public
 export interface StorageReadResult<T extends object = Record<string, unknown>> {
-    // (undocumented)
     key: string;
-    // (undocumented)
     status: StorageOperationStatus;
-    // (undocumented)
     value?: T;
-    // (undocumented)
     version?: string;
 }
 
@@ -1544,30 +1530,22 @@ export abstract class StorageV2 {
 
 // @public
 export enum StorageWriteMode {
-    // (undocumented)
     CreateOnly = "createOnly",
-    // (undocumented)
     Replace = "replace",
-    // (undocumented)
     Upsert = "upsert"
 }
 
 // @public
 export interface StorageWriteOptions {
-    // (undocumented)
     expectedVersion?: string;
-    // (undocumented)
     mode?: StorageWriteMode;
     ttl?: number;
 }
 
 // @public
 export interface StorageWriteResult {
-    // (undocumented)
     key: string;
-    // (undocumented)
     status: StorageOperationStatus;
-    // (undocumented)
     version?: string;
 }
 

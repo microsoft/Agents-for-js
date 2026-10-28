@@ -330,7 +330,6 @@ export class MessageExtension<TState extends TurnState> {
     onMessagePreviewSend(handler: MessagePreviewSendHandler<TurnState>): this;
     onQuery(handler: RouteQueryHandler<TState>): this;
     onQueryLink(handler: QueryLinkHandler<TurnState>): this;
-    // (undocumented)
     onSelectItem(handler: SelectItemHandler<TurnState>): this;
     onSubmitAction(handler: SubmitActionHandler<TurnState>): this;
 }
@@ -679,47 +678,26 @@ export class TeamsActivityHandler extends ActivityHandler {
 // @public (undocumented)
 export class TeamsAgentExtension<TState extends TurnState = TurnState> extends AgentExtension<TState> {
     constructor(app: AgentApplication<TState>);
-    // (undocumented)
     get meeting(): Meeting<TState>;
-    // (undocumented)
     get messageExtension(): MessageExtension<TState>;
-    // (undocumented)
     onFeedback(handler: RouteHandler<TurnState>): this;
-    // (undocumented)
     onMessageDelete(handler: RouteHandler<TurnState>): this;
-    // (undocumented)
     onMessageEdit(handler: RouteHandler<TurnState>): this;
-    // (undocumented)
     onMessageUndelete(handler: RouteHandler<TurnState>): this;
-    // (undocumented)
     onTeamsChannelCreated(handler: RouteHandler<TurnState>): this;
-    // (undocumented)
     onTeamsChannelDeleted(handler: RouteHandler<TurnState>): this;
-    // (undocumented)
     onTeamsChannelRenamed(handler: RouteHandler<TurnState>): this;
-    // (undocumented)
     onTeamsChannelRestored(handler: RouteHandler<TurnState>): this;
-    // (undocumented)
     onTeamsChannelShared(handler: RouteHandler<TurnState>): this;
-    // (undocumented)
     onTeamsChannelUnshared(handler: RouteHandler<TurnState>): this;
-    // (undocumented)
     onTeamsMembersAdded(handler: RouteHandler<TurnState>): this;
-    // (undocumented)
     onTeamsMembersRemoved(handler: RouteHandler<TurnState>): this;
-    // (undocumented)
     onTeamsTeamArchived(handler: RouteHandler<TurnState>): this;
-    // (undocumented)
     onTeamsTeamDeleted(handler: RouteHandler<TurnState>): this;
-    // (undocumented)
     onTeamsTeamHardDeleted(handler: RouteHandler<TurnState>): this;
-    // (undocumented)
     onTeamsTeamRenamed(handler: RouteHandler<TurnState>): this;
-    // (undocumented)
     onTeamsTeamRestored(handler: RouteHandler<TurnState>): this;
-    // (undocumented)
     onTeamsTeamUnarchived(handler: RouteHandler<TurnState>): this;
-    // (undocumented)
     get taskModule(): TaskModule<TState>;
 }
 

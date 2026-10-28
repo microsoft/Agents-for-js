@@ -44,6 +44,18 @@ export function addQuotedReply(activity: Activity, messageId: string, text?: str
 export function addTargetedMessageInfo(activity: Activity, messageId: string): Activity;
 
 // @public
+export type CardButtonClickedHandler<TState extends TurnState, TData = unknown> = (context: TeamsTurnContext, state: TState, cardData: TData) => Promise<void>;
+
+// @public
+export type ChannelUpdateHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, data: ChannelInfo) => Promise<void>;
+
+// @public
+export type ConfigHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, configData: unknown) => Promise<ConfigResponse>;
+
+// @public
+export type ExecuteActionRouteHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, query: O365ConnectorCardActionQuery) => Promise<void>;
+
+// @public
 export interface FeedbackActionValue {
     feedback?: string | Record<string, unknown>;
     reaction?: string;
@@ -57,11 +69,20 @@ export interface FeedbackData {
 }
 
 // @public
+export type FetchActionHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, action: MessagingExtensionAction) => Promise<MessagingExtensionActionResponse>;
+
+// @public
+export type FetchHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, request: TaskModuleRequest) => Promise<TaskModuleResponse>;
+
+// @public
 export class FileConsent<TState extends TurnState = TurnState> {
     constructor(app: AgentApplication<TState>);
     onAccept(handler: FileConsentHandler<TState>, rank?: number, authHandlers?: string[]): this;
     onDecline(handler: FileConsentHandler<TState>, rank?: number, authHandlers?: string[]): this;
 }
+
+// @public
+export type FileConsentHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, response: FileConsentCardResponse) => Promise<void>;
 
 // @public
 export function getQuotedMessages(activity: Activity): QuotedReplyEntity[];
@@ -82,10 +103,22 @@ export class Meeting<TState extends TurnState> {
 }
 
 // @public
+export type MeetingEndHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, details: MeetingDetails) => Promise<void>;
+
+// @public
 export type MeetingParticipantJoinValue = IMeetingParticipantJoinEventActivity['value'];
 
 // @public
 export type MeetingParticipantLeaveValue = IMeetingParticipantLeaveEventActivity['value'];
+
+// @public
+export type MeetingParticipantsJoinHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, details: MeetingParticipantJoinValue) => Promise<void>;
+
+// @public
+export type MeetingParticipantsLeaveHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, details: MeetingParticipantLeaveValue) => Promise<void>;
+
+// @public
+export type MeetingStartHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, details: MeetingDetails) => Promise<void>;
 
 // @public
 export class Message<TState extends TurnState = TurnState> {
@@ -114,6 +147,12 @@ export class MessageExtension<TState extends TurnState> {
     onSetting(handler: SettingHandler<TState>, rank?: number, authHandlers?: string[]): this;
     onSubmitAction(commandId: string | RegExp, handler: SubmitActionHandler<TState>, rank?: number, authHandlers?: string[]): this;
 }
+
+// @public
+export type MessagePreviewEditHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, activity: Activity | undefined) => Promise<MessagingExtensionActionResponse>;
+
+// @public
+export type MessagePreviewSendHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, activity: Activity | undefined) => Promise<void>;
 
 // @public
 export const messagingExtensionQueryZodSchema: z.ZodObject<{
@@ -221,12 +260,36 @@ export function parseTeamsChannelData(o: unknown): ChannelData;
 export function parseValueMessagingExtensionQuery(value: unknown): MessagingExtensionQuery;
 
 // @public
+export type QueryLinkHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, query: AppBasedLinkQuery | undefined) => Promise<MessagingExtensionResponse>;
+
+// @public
+export type QuerySettingUrlHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState) => Promise<MessagingExtensionResponse>;
+
+// @public
+export type ReadReceiptHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, data: ReadReceiptInfo) => Promise<void>;
+
+// @public
 export class ReadReceiptInfo {
     constructor(lastReadMessageId?: string);
     static isMessageRead(compareMessageId: string, lastReadMessageId: string): boolean;
     isMessageRead(compareMessageId: string): boolean;
     lastReadMessageId: string;
 }
+
+// @public
+export type RouteQueryHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, query: MessagingExtensionQuery) => Promise<MessagingExtensionResponse>;
+
+// @public
+export type SelectItemHandler<TState extends TurnState, TData = unknown> = (context: TeamsTurnContext, state: TState, item: TData) => Promise<MessagingExtensionResponse>;
+
+// @public
+export type SettingHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, settings: MessagingExtensionQuery) => Promise<MessagingExtensionResponse>;
+
+// @public
+export type SubmitActionHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, action: MessagingExtensionAction) => Promise<MessagingExtensionActionResponse>;
+
+// @public
+export type SubmitHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, request: TaskModuleRequest) => Promise<TaskModuleResponse>;
 
 // @public
 export class TaskModule<TState extends TurnState> {
@@ -357,6 +420,9 @@ export class TeamsTurnContext extends TurnContext {
     // (undocumented)
     sendTargetedActivity(activity: string, recipient: string): Promise<ResourceResponse | undefined>;
 }
+
+// @public
+export type TeamUpdateHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, data: TeamInfo) => Promise<void>;
 
 // (No @packageDocumentation comment for this package)
 
