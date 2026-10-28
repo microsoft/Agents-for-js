@@ -39,7 +39,9 @@ class FileStorageInternals {
     this.statePath = path.join(folder, 'state.json')
     this.versionsPath = path.join(folder, 'state.versions.json')
     this.expirationsPath = path.join(folder, 'state.expirations.json')
-    if (!fs.existsSync(this.statePath)) fs.writeFileSync(this.statePath, '{}')
+    if (!fs.existsSync(this.statePath)) {
+      fs.writeFileSync(this.statePath, '{}')
+    }
     this.state = JSON.parse(fs.readFileSync(this.statePath, 'utf8')) as Record<string, unknown>
     this.versions = fs.existsSync(this.versionsPath)
       ? JSON.parse(fs.readFileSync(this.versionsPath, 'utf8')) as Record<string, string>
@@ -232,7 +234,9 @@ export class FileStorageV2 extends StorageV2 {
           version: version ?? this.internals.getOrCreateVersion(key),
         }]
       }))
-      if (createdVersion) this.internals.flush()
+      if (createdVersion) {
+        this.internals.flush()
+      }
       return results
     })
   }
@@ -277,13 +281,18 @@ export class FileStorageV2 extends StorageV2 {
           const version = randomUUID()
           this.internals.state[key] = structuredClone(value)
           this.internals.versions[key] = version
-          if (expiresAt === undefined) delete this.internals.expirations[key]
-          else this.internals.expirations[key] = expiresAt
+          if (expiresAt === undefined) {
+            delete this.internals.expirations[key]
+          } else {
+            this.internals.expirations[key] = expiresAt
+          }
           results[key] = { key, status: StorageOperationStatus.Succeeded, version }
           changed = true
         }
       }
-      if (changed || createdVersion) this.internals.flush()
+      if (changed || createdVersion) {
+        this.internals.flush()
+      }
       return results
     })
   }
@@ -325,7 +334,9 @@ export class FileStorageV2 extends StorageV2 {
           changed = true
         }
       }
-      if (changed || createdVersion) this.internals.flush()
+      if (changed || createdVersion) {
+        this.internals.flush()
+      }
       return results
     })
   }

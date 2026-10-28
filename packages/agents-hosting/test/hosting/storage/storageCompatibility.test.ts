@@ -107,9 +107,13 @@ describe('Storage compatibility', () => {
   it('does not add a read dependency to legacy deletes', async () => {
     let deleted = false
     const legacy: Storage = {
-      read: async () => { assert.fail('read should not be called') },
+      read: async () => {
+        assert.fail('read should not be called')
+      },
       write: async () => {},
-      delete: async () => { deleted = true },
+      delete: async () => {
+        deleted = true
+      },
     }
 
     const result = await asStorageV2(legacy).delete(['key'])

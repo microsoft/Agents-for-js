@@ -4,6 +4,14 @@ import terminalTestCastRule from './eslint-rules/no-terminal-test-cast.js'
 export default [
   ...neostandard({ ts: true, ignores: ['node_modules', '**/dist/**'] }),
   {
+    files: ['**/*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}'],
+    rules: {
+      curly: ['error', 'all'],
+      '@stylistic/brace-style': ['error', '1tbs', { allowSingleLine: false }],
+      '@stylistic/max-statements-per-line': ['error', { max: 1 }]
+    }
+  },
+  {
     files: ['packages/**/test/**/*.{ts,cts,mts}', 'test-agents/**/test/**/*.{ts,cts,mts}'],
     plugins: {
       local: {

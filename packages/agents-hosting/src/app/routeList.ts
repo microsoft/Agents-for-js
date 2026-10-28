@@ -30,9 +30,15 @@ export class RouteList<TState extends TurnState> {
     // Then by Rank
     this._routes.sort((a, b) => {
       const getPriority = (route: AppRoute<TState>) => {
-        if (route.isAgenticRoute && route.isInvokeRoute) return 0
-        if (route.isInvokeRoute) return 1
-        if (route.isAgenticRoute) return 2
+        if (route.isAgenticRoute && route.isInvokeRoute) {
+          return 0
+        }
+        if (route.isInvokeRoute) {
+          return 1
+        }
+        if (route.isAgenticRoute) {
+          return 2
+        }
         return 3
       }
 

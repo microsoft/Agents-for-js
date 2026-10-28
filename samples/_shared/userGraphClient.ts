@@ -2,8 +2,13 @@ import { AuthenticationProvider, Client } from '@microsoft/microsoft-graph-clien
 import { User } from '@microsoft/microsoft-graph-types'
 
 class CachedAuthProvider implements AuthenticationProvider {
-  constructor (private readonly token: string) { this.token = token }
-  public async getAccessToken (): Promise<string> { return this.token }
+  constructor (private readonly token: string) {
+    this.token = token
+  }
+
+  public async getAccessToken (): Promise<string> {
+    return this.token
+  }
 }
 
 export const getUserInfo = async (token: string): Promise<any> => {

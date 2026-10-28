@@ -93,11 +93,16 @@ npm run repo:doctor
 # Check API compatibility
 npm run compat
 
+# Refresh reviewed API baselines (builds declarations first)
+npm run compat -- --update
+
 # Launch agents playground (interactive testing tool)
 npm run play
 ```
 
 Run `npm run repo:doctor` after structural, package, documentation, build-reference, dependency, API-baseline, test-agent, Docker, or runtime-configuration changes. Every diagnostic includes a rule ID and a concrete fix instruction.
+
+Compatibility checks use bounded parallel package workers and semantic declaration comparison. See `docs/API-COMPATIBILITY.md` before changing baseline handling or compatibility policy. `quality` supplies `COMPAT_SKIP_BUILD=1` after its build; standalone `compat` builds first. PR CI supplies `COMPAT_BASE` for historical findings in report.json; terminal findings and review counts compare against working baselines, so adopted changes are not flagged again.
 
 Do not use implicit npm lifecycle wrappers such as `prebuild`, `postbuild`, `pretest`, or `posttest`. `npm --ignore-scripts` skips these hooks, so required work must be explicit. Install-time hooks (`preinstall`, `install`, `postinstall`, and `prepare`) are prohibited. Put dependent work directly in the explicit command, for example `npm run build && node ...`.
 
@@ -166,6 +171,18 @@ Use `authorizeJWT()` middleware for Express applications to validate incoming re
 - **Source Maps**: Generated for debugging
 
 Each package has its own `tsconfig.json` that extends the root configuration.
+
+## Code Formatting and Readability
+
+When writing or editing code, optimize for human readability and ease of review. Apply these conventions across the repository, including source files, scripts, and tests:
+
+- Follow the existing Neostandard ESLint style: two-space indentation, single quotes, and no unnecessary semicolons.
+- Use braces and multiline bodies for control statements and functions. Put each statement on its own line; do not compress several operations into a single line.
+- Separate logical steps with a single blank line, such as setup, validation, execution, and reporting. Separate function declarations and add a blank line before a return that follows other work.
+- Keep related imports and variable declarations grouped together. Avoid inserting blank lines between every statement.
+- Wrap long argument lists, object literals, arrays, compound conditions, and chained operations across multiple lines. Aim for roughly 100 characters per line where practical, with indentation that makes nesting clear.
+- Preserve string, regular-expression, and template-literal contents when wrapping surrounding code; formatting must not change messages, generated output, or fixtures.
+- For formatting-only tasks, preserve names, expressions, evaluation order, and control flow. Do not introduce refactors or functionality changes. Verify that the code still passes ESLint and the relevant existing checks.
 
 ## Testing Guidelines
 

@@ -87,11 +87,19 @@ export const envParserUtils = {
  *   unrecognized.
  */
 export function parseBooleanEnv (value: string | undefined): boolean | undefined {
-  if (value === undefined) return undefined
+  if (value === undefined) {
+    return undefined
+  }
   const v = value.trim().toLowerCase()
-  if (v === 'true' || v === '1') return true
-  if (v === '') return undefined
-  if (v === 'false' || v === '0') return false
+  if (v === 'true' || v === '1') {
+    return true
+  }
+  if (v === '') {
+    return undefined
+  }
+  if (v === 'false' || v === '0') {
+    return false
+  }
   return undefined
 }
 
@@ -104,7 +112,9 @@ export function parseBooleanEnv (value: string | undefined): boolean | undefined
  * @returns A finite integer, or `fallback` when the input cannot be parsed.
  */
 export function parseIntEnv (value: string | undefined, fallback: number): number {
-  if (value === undefined || value.trim() === '') return fallback
+  if (value === undefined || value.trim() === '') {
+    return fallback
+  }
   const parsed = parseInt(value, 10)
   return Number.isNaN(parsed) ? fallback : parsed
 }
@@ -132,7 +142,9 @@ export function suggestClosest (
   candidates: readonly string[],
   maxDistance = 2
 ): string | undefined {
-  if (!input) return undefined
+  if (!input) {
+    return undefined
+  }
   const a = input.toLowerCase()
   const cutoff = Math.min(maxDistance, Math.max(1, Math.ceil(a.length / 2)))
   let best: { name: string, distance: number } | undefined
@@ -140,7 +152,9 @@ export function suggestClosest (
     const d = levenshtein(a, candidate.toLowerCase())
     if (d <= cutoff && (!best || d < best.distance)) {
       best = { name: candidate, distance: d }
-      if (d === 0) break
+      if (d === 0) {
+        break
+      }
     }
   }
   return best?.name
@@ -148,11 +162,19 @@ export function suggestClosest (
 
 /** Standard Levenshtein edit distance using a single-row dynamic-programming table. */
 function levenshtein (a: string, b: string): number {
-  if (a === b) return 0
-  if (a.length === 0) return b.length
-  if (b.length === 0) return a.length
+  if (a === b) {
+    return 0
+  }
+  if (a.length === 0) {
+    return b.length
+  }
+  if (b.length === 0) {
+    return a.length
+  }
   const row = new Array<number>(b.length + 1)
-  for (let j = 0; j <= b.length; j++) row[j] = j
+  for (let j = 0; j <= b.length; j++) {
+    row[j] = j
+  }
   for (let i = 1; i <= a.length; i++) {
     let prev = i - 1
     row[0] = i

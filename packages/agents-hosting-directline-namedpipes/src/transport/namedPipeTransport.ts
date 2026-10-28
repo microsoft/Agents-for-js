@@ -41,7 +41,9 @@ export class NamedPipeTransport {
 
     return new Promise((resolve) => {
       const onData = (chunk: Buffer) => {
-        if (remaining <= 0) return
+        if (remaining <= 0) {
+          return
+        }
 
         if (chunk.length >= remaining) {
           chunks.push(chunk.subarray(0, remaining))
@@ -70,7 +72,9 @@ export class NamedPipeTransport {
         // readExact would start mid-frame. Destroy the stream so callers
         // observe a clean disconnect rather than a corrupted frame stream.
         if (chunks.length > 0) {
-          try { stream.destroy() } catch { /* already destroyed */ }
+          try {
+            stream.destroy()
+          } catch { /* already destroyed */ }
         }
         resolve({ success: false, data: Buffer.alloc(0) })
       }
@@ -81,7 +85,9 @@ export class NamedPipeTransport {
         stream.pause()
         // Same rationale as onError: don't leave a half-read frame behind.
         if (chunks.length > 0) {
-          try { stream.destroy() } catch { /* already destroyed */ }
+          try {
+            stream.destroy()
+          } catch { /* already destroyed */ }
         }
         resolve({ success: false, data: Buffer.alloc(0) })
       }
@@ -129,7 +135,9 @@ export class NamedPipeTransport {
       }, timeoutMs)
 
       const onData = (chunk: Buffer) => {
-        if (remaining <= 0 || timedOut) return
+        if (remaining <= 0 || timedOut) {
+          return
+        }
 
         if (chunk.length >= remaining) {
           chunks.push(chunk.subarray(0, remaining))

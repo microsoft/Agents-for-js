@@ -37,7 +37,9 @@ describe('TeamsTeam', () => {
     const app = new AgentApplication()
     const teamsExt = new TeamsAgentExtension(app)
     app.registerExtension(teamsExt, (tae) => {
-      tae.teams.onTeamEventReceived(async () => { handled = true })
+      tae.teams.onTeamEventReceived(async () => {
+        handled = true
+      })
     })
 
     const activity = createTeamActivity('teamArchived', { id: 'team-1' })
@@ -52,7 +54,9 @@ describe('TeamsTeam', () => {
     const app = new AgentApplication()
     const teamsExt = new TeamsAgentExtension(app)
     app.registerExtension(teamsExt, (tae) => {
-      tae.teams.onTeamEventReceived(async () => { handled = true })
+      tae.teams.onTeamEventReceived(async () => {
+        handled = true
+      })
     })
 
     const activity = createTeamActivity('channelCreated', { id: 'team-1' })
@@ -85,7 +89,9 @@ describe('TeamsTeam', () => {
     const app = new AgentApplication()
     const teamsExt = new TeamsAgentExtension(app)
     app.registerExtension(teamsExt, (tae) => {
-      tae.teams.onUnarchived(async () => { handled = true })
+      tae.teams.onUnarchived(async () => {
+        handled = true
+      })
     })
 
     const activity = createTeamActivity('teamUnarchived', { id: 'team-u' })
@@ -100,7 +106,9 @@ describe('TeamsTeam', () => {
     const app = new AgentApplication()
     const teamsExt = new TeamsAgentExtension(app)
     app.registerExtension(teamsExt, (tae) => {
-      tae.teams.onRenamed(async () => { handled = true })
+      tae.teams.onRenamed(async () => {
+        handled = true
+      })
     })
 
     const activity = createTeamActivity('teamRenamed', { id: 'team-r' })
@@ -115,7 +123,9 @@ describe('TeamsTeam', () => {
     const app = new AgentApplication()
     const teamsExt = new TeamsAgentExtension(app)
     app.registerExtension(teamsExt, (tae) => {
-      tae.teams.onRestored(async () => { handled = true })
+      tae.teams.onRestored(async () => {
+        handled = true
+      })
     })
 
     const activity = createTeamActivity('teamRestored', { id: 'team-restored' })
@@ -130,7 +140,9 @@ describe('TeamsTeam', () => {
     const app = new AgentApplication()
     const teamsExt = new TeamsAgentExtension(app)
     app.registerExtension(teamsExt, (tae) => {
-      tae.teams.onDeleted(async () => { handled = true })
+      tae.teams.onDeleted(async () => {
+        handled = true
+      })
     })
 
     const activity = createTeamActivity('teamDeleted', { id: 'team-deleted' })
@@ -145,7 +157,9 @@ describe('TeamsTeam', () => {
     const app = new AgentApplication()
     const teamsExt = new TeamsAgentExtension(app)
     app.registerExtension(teamsExt, (tae) => {
-      tae.teams.onHardDeleted(async () => { handled = true })
+      tae.teams.onHardDeleted(async () => {
+        handled = true
+      })
     })
 
     const activity = createTeamActivity('teamHardDeleted', { id: 'team-hard-deleted' })
@@ -160,7 +174,9 @@ describe('TeamsTeam', () => {
     const app = new AgentApplication()
     const teamsExt = new TeamsAgentExtension(app)
     app.registerExtension(teamsExt, (tae) => {
-      tae.teams.onArchived(async () => { handled = true })
+      tae.teams.onArchived(async () => {
+        handled = true
+      })
     })
 
     const activity = createTeamActivity('teamArchived', { id: 'team-1' })
@@ -176,7 +192,9 @@ describe('TeamsTeam', () => {
     const app = new AgentApplication()
     const teamsExt = new TeamsAgentExtension(app)
     app.registerExtension(teamsExt, (tae) => {
-      tae.teams.onArchived(async () => { handled = true })
+      tae.teams.onArchived(async () => {
+        handled = true
+      })
     })
 
     const activity = createTeamActivity('teamArchived')

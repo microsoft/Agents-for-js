@@ -117,7 +117,9 @@ export class NamedPipeProtocol {
   constructor (reader: NamedPipeTransport, writer: NamedPipeTransport) {
     this._reader = reader
     this._writer = writer
-    this._completion = new Promise((resolve) => { this._completionResolve = resolve })
+    this._completion = new Promise((resolve) => {
+      this._completionResolve = resolve
+    })
   }
 
   /** Promise that resolves when the protocol loop ends. */
@@ -127,7 +129,9 @@ export class NamedPipeProtocol {
 
   /** Starts the read loop. */
   start (): void {
-    if (this._running) return
+    if (this._running) {
+      return
+    }
     this._running = true
     this._startDiagnosticInterval()
     this._readLoop().catch((err) => {
@@ -255,7 +259,9 @@ export class NamedPipeProtocol {
 
     // Abort all in-flight dispatches
     for (const [, controller] of this._inflightDispatches) {
-      try { controller.abort() } catch { /* already aborted */ }
+      try {
+        controller.abort()
+      } catch { /* already aborted */ }
     }
     this._inflightDispatches.clear()
     this._inflightDispatchSizes.clear()
@@ -341,7 +347,9 @@ export class NamedPipeProtocol {
             logger.debug(`Unknown frame type: ${header.type}`)
         }
 
-        if (!connected) break
+        if (!connected) {
+          break
+        }
 
         // Try dispatching any pending requests/responses whose streams are now complete
         this._tryDispatchPendingRequests(streamBuffers, streamSizes, completedStreams, expectedStreamLengths, pendingDispatches)
@@ -379,10 +387,14 @@ export class NamedPipeProtocol {
     expectedStreamLengths: Map<string, number>,
     pendingDispatches: Map<string, PendingDispatch>
   ): void {
-    if (!payload) return
+    if (!payload) {
+      return
+    }
 
     const requestPayload = JSON.parse(payload.toString('utf8')) as RequestPayload
-    if (!requestPayload) return
+    if (!requestPayload) {
+      return
+    }
 
     logger.debug(`Inbound Request id=${header.id} verb=${requestPayload.verb} path=${requestPayload.path} streamCount=${requestPayload.streams?.length ?? 0}`)
 
@@ -516,20 +528,26 @@ export class NamedPipeProtocol {
     // Cancel in-flight dispatch if the id matches a request id
     const dispatchController = this._inflightDispatches.get(streamId)
     if (dispatchController) {
-      try { dispatchController.abort() } catch { /* already aborted */ }
+      try {
+        dispatchController.abort()
+      } catch { /* already aborted */ }
       this._inflightDispatches.delete(streamId)
       this._inflightDispatchSizes.delete(streamId)
     }
 
     for (const [requestId, dispatch] of pendingDispatches) {
-      if (!this._payloadReferencesStream(dispatch.payload.streams, streamId)) continue
+      if (!this._payloadReferencesStream(dispatch.payload.streams, streamId)) {
+        continue
+      }
       pendingDispatches.delete(requestId)
       this._removeStreamsState(dispatch.payload.streams, streamBuffers, streamSizes, completedStreams, expectedStreamLengths)
       logger.info(`Dropped pending request ${requestId} due to CancelStream for stream ${streamId}`)
     }
 
     for (const [responseId, dispatch] of pendingResponses) {
-      if (!this._payloadReferencesStream(dispatch.payload.streams, streamId)) continue
+      if (!this._payloadReferencesStream(dispatch.payload.streams, streamId)) {
+        continue
+      }
       pendingResponses.delete(responseId)
       this._removeStreamsState(dispatch.payload.streams, streamBuffers, streamSizes, completedStreams, expectedStreamLengths)
 
@@ -560,7 +578,9 @@ export class NamedPipeProtocol {
 
     // Cancel all in-flight dispatches
     for (const [, controller] of this._inflightDispatches) {
-      try { controller.abort() } catch { /* already aborted */ }
+      try {
+        controller.abort()
+      } catch { /* already aborted */ }
     }
     this._inflightDispatches.clear()
     this._inflightDispatchSizes.clear()
@@ -661,8 +681,12 @@ export class NamedPipeProtocol {
     completedStreams: Set<string>
   ): boolean {
     for (const descriptor of streams) {
-      if (!descriptor?.id) continue
-      if (!completedStreams.has(descriptor.id)) return false
+      if (!descriptor?.id) {
+        continue
+      }
+      if (!completedStreams.has(descriptor.id)) {
+        return false
+      }
     }
     return true
   }
@@ -671,7 +695,9 @@ export class NamedPipeProtocol {
     streams: PayloadDescription[] | null | undefined,
     expectedStreamLengths: Map<string, number>
   ): void {
-    if (!streams) return
+    if (!streams) {
+      return
+    }
     for (const descriptor of streams) {
       if (descriptor?.id && descriptor.length != null && descriptor.length >= 0) {
         if (descriptor.length > MAX_STREAM_SIZE) {
@@ -696,9 +722,13 @@ export class NamedPipeProtocol {
     completedStreams: Set<string>,
     expectedStreamLengths: Map<string, number>
   ): void {
-    if (!streams) return
+    if (!streams) {
+      return
+    }
     for (const descriptor of streams) {
-      if (!descriptor?.id) continue
+      if (!descriptor?.id) {
+        continue
+      }
       this._removeStreamState(descriptor.id, streamBuffers, streamSizes, completedStreams, expectedStreamLengths)
     }
   }
@@ -733,7 +763,9 @@ export class NamedPipeProtocol {
         this._startDispatch(dispatch.header, dispatch.payload, extracted)
       }
     }
-    for (const id of dispatched) pendingDispatches.delete(id)
+    for (const id of dispatched) {
+      pendingDispatches.delete(id)
+    }
   }
 
   private _tryCompletePendingResponses (
@@ -751,7 +783,9 @@ export class NamedPipeProtocol {
         this._completeResponse(responseId, dispatch.payload, extracted)
       }
     }
-    for (const id of completed) pendingResponses.delete(id)
+    for (const id of completed) {
+      pendingResponses.delete(id)
+    }
   }
 
   // ─── Payload Extraction ────────────────────────────────────────────────
@@ -801,7 +835,9 @@ export class NamedPipeProtocol {
     completedStreams: Set<string>,
     expectedStreamLengths: Map<string, number>
   ): Buffer | null {
-    if (!descriptor?.id) return null
+    if (!descriptor?.id) {
+      return null
+    }
     const streamId = descriptor.id
 
     const chunks = streamBuffers.get(streamId)
@@ -810,7 +846,9 @@ export class NamedPipeProtocol {
     completedStreams.delete(streamId)
     expectedStreamLengths.delete(streamId)
 
-    if (!chunks || chunks.length === 0) return null
+    if (!chunks || chunks.length === 0) {
+      return null
+    }
     return Buffer.concat(chunks)
   }
 
@@ -822,12 +860,16 @@ export class NamedPipeProtocol {
     completedStreams: Set<string>,
     expectedStreamLengths: Map<string, number>
   ): NamedPipeAttachment[] {
-    if (streams.length <= 1) return []
+    if (streams.length <= 1) {
+      return []
+    }
 
     const attachments: NamedPipeAttachment[] = []
     for (let i = 1; i < streams.length; i++) {
       const descriptor = streams[i]
-      if (!descriptor?.id) continue
+      if (!descriptor?.id) {
+        continue
+      }
 
       const chunks = streamBuffers.get(descriptor.id)
       streamBuffers.delete(descriptor.id)
@@ -1017,7 +1059,9 @@ export class NamedPipeProtocol {
     attachments: NamedPipeAttachment[] | null | undefined,
     attachmentIds: string[]
   ): Promise<void> {
-    if (!attachments || attachments.length === 0) return
+    if (!attachments || attachments.length === 0) {
+      return
+    }
     for (let i = 0; i < attachments.length; i++) {
       const body = attachments[i]?.body ?? Buffer.alloc(0)
       await this._sendStreamFrames(attachmentIds[i], body)
@@ -1033,7 +1077,9 @@ export class NamedPipeProtocol {
     primaryContentType?: string | null
   ): PayloadDescription[] | null {
     const totalStreams = (bodyStreamId ? 1 : 0) + attachmentIds.length
-    if (totalStreams === 0) return null
+    if (totalStreams === 0) {
+      return null
+    }
 
     const descriptors: PayloadDescription[] = []
 
@@ -1069,7 +1115,9 @@ export class NamedPipeProtocol {
    * peer waiting for a stream that never completes.
    */
   private _materializeAttachmentIds (attachments: NamedPipeAttachment[] | null | undefined): string[] {
-    if (!attachments || attachments.length === 0) return []
+    if (!attachments || attachments.length === 0) {
+      return []
+    }
     return attachments.map(a => {
       if (a?.id) {
         if (!ATTACHMENT_ID_PATTERN.test(a.id)) {
@@ -1130,7 +1178,9 @@ export class NamedPipeProtocol {
    * hosted service observes completion and triggers a reconnect.
    */
   private _handleWriteFailure (err: unknown): void {
-    if (this._writeFailed) return
+    if (this._writeFailed) {
+      return
+    }
     this._writeFailed = true
     logger.warn(`Write failed; tearing down protocol to trigger reconnect: ${err}`)
     this._running = false
@@ -1192,7 +1242,9 @@ export class NamedPipeProtocol {
   private _startDiagnosticInterval (): void {
     // Every 5s, check health and log diagnostics
     this._diagnosticInterval = setInterval(() => {
-      if (!this._running) return
+      if (!this._running) {
+        return
+      }
       const now = Date.now()
       const pending = this._pendingRequests.size
       const inflight = this._inflightDispatches.size
@@ -1201,7 +1253,9 @@ export class NamedPipeProtocol {
       this._checkHealth()
 
       // Only log diagnostics when something is pending (reduce noise)
-      if (pending === 0 && inflight === 0) return
+      if (pending === 0 && inflight === 0) {
+        return
+      }
 
       logger.info(`[DIAGNOSTICS] pendingOutbound=${pending} inflightDispatches=${inflight} writeFailed=${this._writeFailed} silenceMs=${now - this._lastFrameAt}`)
 
