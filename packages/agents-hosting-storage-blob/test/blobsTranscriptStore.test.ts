@@ -244,6 +244,15 @@ describe('BlobsTranscriptStore.deleteTranscript', () => {
 })
 
 describe('BlobsTranscriptStore.logActivity', () => {
+  it('rejects values that are not activity objects', async () => {
+    const store = new BlobsTranscriptStore('UseDevelopmentStorage=true;', 'transcripts')
+    const invalidActivities = [null, undefined, [], 'message'] as unknown as Activity[]
+
+    for (const activity of invalidActivities) {
+      await assert.rejects(store.logActivity(activity), { name: 'ZodError' })
+    }
+  })
+
   it('preserves the per-call transcript key option', async () => {
     const store = new BlobsTranscriptStore('UseDevelopmentStorage=true;', 'transcripts')
     let uploadedBlobName = ''

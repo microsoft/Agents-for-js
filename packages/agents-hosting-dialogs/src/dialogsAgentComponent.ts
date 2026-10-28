@@ -29,7 +29,7 @@ import {
   PercentPathResolver,
 } from './memory/pathResolvers'
 
-const InitialSettings = z.record(z.unknown())
+const InitialSettings = z.record(z.string(), z.unknown())
 
 /**
  * Agent component for agent Dialogs.

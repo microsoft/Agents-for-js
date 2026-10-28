@@ -101,7 +101,7 @@ export class BlobsStorage extends BlobsStorageInternals implements Storage {
   async write (changes: StoreItems): Promise<void> {
     return trace(BlobsStorageTraceDefinitions.write, async ({ record }) => {
       record({ keyCount: changes ? Object.keys(changes).length : 0 })
-      z.record(z.unknown()).parse(changes)
+      z.record(z.string(), z.unknown()).parse(changes)
       await this._initialize()
       await Promise.all(Object.entries(changes).map(async ([key, { eTag = '', ...change }]) => {
         try {

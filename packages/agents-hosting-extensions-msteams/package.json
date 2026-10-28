@@ -23,7 +23,7 @@
     "@microsoft/agents-hosting": "file:../agents-hosting",
     "@microsoft/microsoft-graph-client": "3.0.7",
     "@microsoft/teams.api": "2.1.0",
-    "zod": "3.25.75"
+    "zod": "4.6.6"
   },
   "license": "MIT",
   "files": [

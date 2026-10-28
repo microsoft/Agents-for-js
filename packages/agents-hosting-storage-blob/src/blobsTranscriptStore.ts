@@ -415,7 +415,7 @@ export class BlobsTranscriptStore implements TranscriptStore {
    * @returns A promise that resolves when the activity is logged.
    */
   async logActivity (activity: Activity, options?: BlobsTranscriptStoreOptions): Promise<void> {
-    z.object({ activity: z.record(z.unknown()) }).parse({ activity })
+    z.object({ activity: z.object({}).passthrough() }).parse({ activity })
 
     if (!(activity.timestamp instanceof Date)) {
       activity.timestamp = activity.timestamp ? new Date(activity.timestamp) : new Date()
