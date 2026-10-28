@@ -366,7 +366,9 @@ describe('CopilotStudioWebChat.createConnection', function () {
 describe('WebChat conversation isolation', () => {
   function signal () {
     let complete!: () => void
-    const promise = new Promise<void>((resolve) => { complete = resolve })
+    const promise = new Promise<void>((resolve) => {
+      complete = resolve
+    })
     return { promise, resolve: complete }
   }
 
