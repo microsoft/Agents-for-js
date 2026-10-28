@@ -3,10 +3,10 @@
  * Licensed under the MIT License.
  */
 
-import { isIP } from 'node:net'
 import { debug } from '@microsoft/agents-telemetry'
 import { ExceptionHelper } from '@microsoft/agents-activity'
 import { Errors } from '../../errorHelper'
+import { isPrivateOrLoopbackAddress } from '../../utils/ipAddress'
 import {
   DEFAULT_REQUEST_TIMEOUT_MS,
   DEFAULT_RETRY_COUNT,
@@ -139,68 +139,8 @@ export class SidecarHttpClient {
   }
 
   private static isLoopbackOrPrivateHost (host: string): boolean {
-    // URL.hostname wraps IPv6 literals in brackets (e.g. "[::1]"); strip them before classification.
-    const normalized = host.startsWith('[') && host.endsWith(']') ? host.slice(1, -1) : host
-    const ipVersion = isIP(normalized)
-    if (ipVersion === 0) {
-      // DNS host: only "localhost" (and subdomains) is treated as safe.
-      const lower = normalized.toLowerCase()
-      return lower === 'localhost' || lower.endsWith('.localhost')
-    }
-    if (ipVersion === 4) {
-      return SidecarHttpClient.isPrivateOrLoopbackIPv4(normalized)
-    }
-    return SidecarHttpClient.isPrivateOrLoopbackIPv6(normalized)
-  }
-
-  private static isPrivateOrLoopbackIPv4 (host: string): boolean {
-    const b = host.split('.').map((p) => parseInt(p, 10))
-    if (b.length !== 4 || b.some((n) => Number.isNaN(n) || n < 0 || n > 255)) {
-      return false
-    }
-    if (b[0] === 127) return true // 127.0.0.0/8 loopback
-    if (b[0] === 10) return true // 10.0.0.0/8
-    if (b[0] === 172 && b[1] >= 16 && b[1] <= 31) return true // 172.16.0.0/12
-    if (b[0] === 192 && b[1] === 168) return true // 192.168.0.0/16
-    if (b[0] === 169 && b[1] === 254) return true // 169.254.0.0/16 link-local
-    return false
-  }
-
-  private static isPrivateOrLoopbackIPv6 (host: string): boolean {
     const lower = host.toLowerCase()
-    if (lower === '::1' || lower === '0:0:0:0:0:0:0:1') return true // loopback (`::` is the unspecified address, not loopback)
-    // IPv4-mapped/-translated addresses in either dotted (::ffff:127.0.0.1)
-    // or hex-compressed (::ffff:7f00:1) form.
-    const mappedIPv4 = SidecarHttpClient.extractMappedIPv4(lower)
-    if (mappedIPv4) {
-      return SidecarHttpClient.isPrivateOrLoopbackIPv4(mappedIPv4)
-    }
-    const firstHextet = parseInt(lower.split(':')[0], 16)
-    if (!Number.isNaN(firstHextet)) {
-      if ((firstHextet & 0xfe00) === 0xfc00) return true // fc00::/7 unique local
-      if ((firstHextet & 0xffc0) === 0xfe80) return true // fe80::/10 link-local
-      if ((firstHextet & 0xffc0) === 0xfec0) return true // fec0::/10 site-local (deprecated)
-    }
-    return false
-  }
-
-  /**
-   * Extracts the embedded IPv4 address from an IPv4-mapped/-translated IPv6 literal, returning it
-   * in dotted-quad form, or `undefined` if `host` is not such an address. Handles both the dotted
-   * form (`::ffff:127.0.0.1`) and the hex-compressed form Node emits (`::ffff:7f00:1`).
-   */
-  private static extractMappedIPv4 (host: string): string | undefined {
-    const dotted = host.match(/^::ffff:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/)
-    if (dotted) {
-      return dotted[1]
-    }
-    const hex = host.match(/^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/)
-    if (hex) {
-      const high = parseInt(hex[1], 16)
-      const low = parseInt(hex[2], 16)
-      return `${high >> 8}.${high & 0xff}.${low >> 8}.${low & 0xff}`
-    }
-    return undefined
+    return lower === 'localhost' || lower.endsWith('.localhost') || isPrivateOrLoopbackAddress(host)
   }
 
   /**

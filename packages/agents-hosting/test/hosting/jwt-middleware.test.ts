@@ -209,7 +209,9 @@ describe('authorizeJWT', () => {
     req.headers.authorization = 'Bearer some-token'
     // A thrown value without `.description` or `.message` must not serialize to {}.
     const thrown: any = { kind: 'not-an-error' }
-    const decodeStub = sinon.stub(jwt, 'decode').callsFake(() => { throw thrown })
+    const decodeStub = sinon.stub(jwt, 'decode').callsFake(() => {
+      throw thrown
+    })
 
     await authorizeJWT(config)(req as Request, res as Response, next)
 
@@ -340,7 +342,9 @@ describe('authorizeJWT issuer validation', () => {
     const req = { headers: { authorization: 'Bearer token' }, method: 'POST', user: {} } as unknown as Request
     sinon.stub(jwt, 'decode').returns({ aud: effectiveConnection.clientId, iss, tid } as unknown as Record<string, unknown>)
     sinon.stub(jwt, 'verify').callsFake((_t, _k, _o, cb) => {
-      if (typeof cb === 'function') cb(null, { aud: effectiveConnection.clientId, iss, tid })
+      if (typeof cb === 'function') {
+        cb(null, { aud: effectiveConnection.clientId, iss, tid })
+      }
     })
     await authorizeJWT(config)(req, res as Response, next)
     return req
@@ -501,7 +505,9 @@ describe('authorizeJWT tenant binding (signing key issuer validation)', () => {
     const req = { headers: { authorization: 'Bearer token' }, method: 'POST', user: {} } as unknown as Request
     sinon.stub(jwt, 'decode').returns({ aud: connection.clientId, iss, tid } as unknown as Record<string, unknown>)
     sinon.stub(jwt, 'verify').callsFake((_t, _k, _o, cb) => {
-      if (typeof cb === 'function') cb(null, { aud: connection.clientId, iss: verifiedIss, tid: verifiedTid })
+      if (typeof cb === 'function') {
+        cb(null, { aud: connection.clientId, iss: verifiedIss, tid: verifiedTid })
+      }
     })
     await authorizeJWT(config)(req, res as Response, next)
     return req
@@ -651,7 +657,9 @@ describe('authorizeJWT multi-tenant (blueprint) issuer validation', () => {
     const req = { headers: { authorization: 'Bearer token' }, method: 'POST', user: {} } as unknown as Request
     sinon.stub(jwt, 'decode').returns({ aud: effectiveConnection.clientId, iss, tid } as unknown as Record<string, unknown>)
     sinon.stub(jwt, 'verify').callsFake((_t, _k, _o, cb) => {
-      if (typeof cb === 'function') cb(null, { aud: effectiveConnection.clientId, iss, tid })
+      if (typeof cb === 'function') {
+        cb(null, { aud: effectiveConnection.clientId, iss, tid })
+      }
     })
     await authorizeJWT(config)(req, res as Response, next)
     return req

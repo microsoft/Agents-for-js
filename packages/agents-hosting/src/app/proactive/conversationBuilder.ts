@@ -55,7 +55,9 @@ export class ConversationBuilder {
     requestorId?: string
   ): ConversationBuilder {
     const claims: ConversationClaims = { aud: agentClientId }
-    if (requestorId) claims.appid = requestorId
+    if (requestorId) {
+      claims.appid = requestorId
+    }
     return new ConversationBuilder(agentClientId, channelId, serviceUrl ?? '', claims, ConversationReferenceBuilder.create(agentClientId, channelId, serviceUrl).build())
   }
 

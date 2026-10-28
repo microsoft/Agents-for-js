@@ -161,7 +161,9 @@ describe('Message', () => {
     const app = new AgentApplication()
     const teamsExt = new TeamsAgentExtension(app)
     app.registerExtension(teamsExt, (tae) => {
-      tae.messages.onMessageEdit(async () => { handled = true })
+      tae.messages.onMessageEdit(async () => {
+        handled = true
+      })
     })
 
     const activity = Activity.fromObject({

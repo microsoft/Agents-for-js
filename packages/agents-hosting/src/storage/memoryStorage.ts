@@ -60,8 +60,11 @@ class MemoryStorageInternals {
     const version = (this.state.etag++).toString()
     this.state.memory[key] = JSON.stringify(item)
     this.state.versions[key] = version
-    if (expiresAt === undefined) delete this.state.expirations[key]
-    else this.state.expirations[key] = expiresAt
+    if (expiresAt === undefined) {
+      delete this.state.expirations[key]
+    } else {
+      this.state.expirations[key] = expiresAt
+    }
     return version
   }
 
@@ -194,7 +197,9 @@ export class MemoryStorage extends MemoryStorageInternals implements Storage {
 
   /** Returns the process-wide legacy memory storage instance. */
   static getSingleInstance (): MemoryStorage {
-    if (!MemoryStorage.instance) MemoryStorage.instance = new MemoryStorage()
+    if (!MemoryStorage.instance) {
+      MemoryStorage.instance = new MemoryStorage()
+    }
     return MemoryStorage.instance
   }
 }
@@ -358,7 +363,9 @@ export class MemoryStorageV2 extends StorageV2 {
 
   /** Returns the process-wide V2 memory storage instance. */
   static getSingleInstance (): MemoryStorageV2 {
-    if (!MemoryStorageV2.instance) MemoryStorageV2.instance = new MemoryStorageV2()
+    if (!MemoryStorageV2.instance) {
+      MemoryStorageV2.instance = new MemoryStorageV2()
+    }
     return MemoryStorageV2.instance
   }
 }
