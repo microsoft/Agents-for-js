@@ -15,7 +15,9 @@ import { TurnState } from './app/turnState'
  * Result of creating a CloudAdapter from an agent.
  */
 export interface CloudAdapterResult {
+  /** The adapter to use for processing requests. */
   adapter: CloudAdapter
+  /** The application's outbound header propagation callback, when configured. */
   headerPropagation: HeaderPropagationDefinition | undefined
 }
 

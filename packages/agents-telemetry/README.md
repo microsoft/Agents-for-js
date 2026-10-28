@@ -11,7 +11,7 @@ The package exports:
 - `metric` — histogram and counter creation via the OpenTelemetry Meter API
 - `SpanNames` / `MetricNames` — stable name constants for observability across the SDK
 
-This package supports both ESM and CommonJS consumers and requires Node.js 20 or later.
+This package supports both ESM and CommonJS consumers and requires Node.js 22 or later.
 
 ---
 
@@ -175,6 +175,8 @@ MetricNames.AUTH_TOKEN_REQUEST_COUNT   // 'agents.auth.token.request.count'
 This section covers internal APIs used to instrument SDK components. If you are contributing to the Agents SDK packages, use `trace`, `debug`, and `metric` to add observability to your code.
 
 Although this package is published, it primarily serves as a shared telemetry layer for other Agents SDK packages. Some exported TypeScript types intentionally depend on OpenTelemetry packages even though runtime behavior still supports noop fallback when those optional peer dependencies are not installed.
+
+The `build:esm` command also bundles the ESM-only `@noble/hashes` dependency into the CommonJS redaction module. Run the complete `npm run build` before consuming the package; TypeScript compilation alone does not produce the final CommonJS artifact. This preserves Node.js 22.0+ and browser support without requiring Node's `require(esm)` feature.
 
 ### Using trace
 

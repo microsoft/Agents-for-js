@@ -9,6 +9,7 @@ import {
 } from './configuration/configuration'
 import { loadModernEnvironmentConfiguration } from './configuration/environmentConfiguration'
 import { mergeDefined } from './utils'
+import { getHttpsUrl, hasAllowedOutboundAddresses, isLocalOrBlockedHost } from './utils/outboundUrl'
 
 /** Hosts used by Microsoft channel callbacks and hosted attachments. */
 const DEFAULT_MICROSOFT_HOSTS = Object.freeze([
@@ -37,6 +38,12 @@ export interface OutboundHostValidatorOptions {
    */
   includeDefaultMicrosoftHosts?: boolean
 
+  /**
+   * Allows allowlisted HTTPS destinations to use private, shared (RFC 6598),
+   * loopback, link-local, or unspecified addresses. Defaults to `false`.
+   */
+  allowPrivateNetworkAddresses?: boolean
+
   /** Additional exact hosts or host suffixes to allow.
    * An entry matches a request host when the host equals the entry or is a subdomain of it (e.g. `contoso.com` matches `contoso.com` and `files.contoso.com`).
    * A leading `*.` is accepted and ignored (treated as a suffix). Ports and paths are ignored if provided.
@@ -46,7 +53,14 @@ export interface OutboundHostValidatorOptions {
 
 /** A policy that decides whether an outbound URL is safe to request. */
 export interface OutboundUrlPolicy {
+  /** Indicates whether URL validation is enforced. */
   readonly enabled: boolean
+  /**
+   * Determines whether an outbound URL is allowed.
+   *
+   * @param url The URL to validate.
+   * @returns `true` when the URL is allowed.
+   */
   isAllowed(url: string | URL | null | undefined): boolean
 }
 
@@ -54,42 +68,87 @@ export interface OutboundUrlPolicy {
  * Shared allowlist policy for server-side outbound requests.
  *
  * A configured suffix matches both the exact host and its subdomains. The
- * policy is disabled by default to preserve existing SDK behavior.
+ * policy is disabled by default to preserve existing SDK behavior. Enabled
+ * policies require HTTPS without userinfo and restrict private addresses.
+ * Attachment downloaders additionally validate DNS answers and redirect hops.
  */
 export class OutboundHostValidator implements OutboundUrlPolicy {
+  /** Indicates whether allowlist enforcement is enabled. */
   public readonly enabled: boolean
   private readonly suffixes: ReadonlySet<string>
+  private readonly allowPrivateNetworkAddresses: boolean
 
+  /**
+   * Creates an outbound host validator.
+   *
+   * @param options The allowlist configuration.
+   */
   public constructor (options: OutboundHostValidatorOptions = {}) {
     const resolved = options.configurationContext
       ? resolveOutboundHostValidatorOptions(options)
       : options
     this.enabled = resolved.enabled ?? false
+    this.allowPrivateNetworkAddresses = resolved.allowPrivateNetworkAddresses ?? false
 
     const suffixes = new Set<string>()
     if (resolved.includeDefaultMicrosoftHosts ?? true) {
-      for (const host of DEFAULT_MICROSOFT_HOSTS) suffixes.add(host)
+      for (const host of DEFAULT_MICROSOFT_HOSTS) {
+        suffixes.add(host)
+      }
     }
 
     for (const host of resolved.hosts ?? []) {
       const normalized = normalizeConfiguredHost(host)
-      if (normalized) suffixes.add(normalized)
+      if (normalized) {
+        suffixes.add(normalized)
+      }
     }
 
     this.suffixes = suffixes
   }
 
+  /**
+   * Determines whether a URL's host matches the configured allowlist.
+   *
+   * @param input The absolute URL to validate.
+   * @returns `true` when validation is disabled or the host is allowed.
+   */
   public isAllowed (input: string | URL | null | undefined): boolean {
-    if (!this.enabled) return true
+    if (!this.enabled) {
+      return true
+    }
 
-    const host = getUrlHost(input)
-    if (!host) return false
+    const url = getHttpsUrl(input)
+    if (!url) {
+      return false
+    }
+    const host = normalizeHostname(url.hostname)
+    if (!host || (!this.allowPrivateNetworkAddresses && isLocalOrBlockedHost(host))) {
+      return false
+    }
 
     for (const suffix of this.suffixes) {
-      if (host === suffix || host.endsWith(`.${suffix}`)) return true
+      if (host === suffix || host.endsWith(`.${suffix}`)) {
+        return true
+      }
     }
 
     return false
+  }
+
+  /**
+   * Checks the host policy and all resolved destination addresses before an attachment request.
+   * DNS prevalidation does not pin the HTTP connection to the checked addresses.
+   */
+  public async isAllowedAsync (input: string | URL | null | undefined): Promise<boolean> {
+    if (!this.isAllowed(input)) {
+      return false
+    }
+    if (!this.enabled) {
+      return true
+    }
+    const url = getHttpsUrl(input)
+    return url !== undefined && await hasAllowedOutboundAddresses(url, this.allowPrivateNetworkAddresses)
   }
 }
 
@@ -115,11 +174,18 @@ function resolveOutboundHostValidatorOptions (
   const external = getConfigurationSnapshot(options.configurationContext)
   const fromEnv = loadOutboundHostValidatorOptionsFromEnv()
   const direct: OutboundHostValidatorOptions = {}
-  if (options.enabled !== undefined) direct.enabled = options.enabled
+  if (options.enabled !== undefined) {
+    direct.enabled = options.enabled
+  }
   if (options.includeDefaultMicrosoftHosts !== undefined) {
     direct.includeDefaultMicrosoftHosts = options.includeDefaultMicrosoftHosts
   }
-  if (options.hosts !== undefined) direct.hosts = options.hosts
+  if (options.hosts !== undefined) {
+    direct.hosts = options.hosts
+  }
+  if (options.allowPrivateNetworkAddresses !== undefined) {
+    direct.allowPrivateNetworkAddresses = options.allowPrivateNetworkAddresses
+  }
   return mergeDefined<OutboundHostValidatorOptions>(
     external.fallback.outboundHostValidator,
     fromEnv,
@@ -129,25 +195,20 @@ function resolveOutboundHostValidatorOptions (
   )
 }
 
-function getUrlHost (input: string | URL | null | undefined): string | undefined {
-  if (!input) return undefined
-
-  try {
-    const url = input instanceof URL ? input : new URL(input)
-    return normalizeHostname(url.hostname)
-  } catch {
-    return undefined
-  }
-}
-
 function normalizeConfiguredHost (input: string): string | undefined {
   let candidate = input?.trim()
-  if (!candidate) return undefined
-  if (candidate.startsWith('*.')) candidate = candidate.slice(2)
+  if (!candidate) {
+    return undefined
+  }
+  if (candidate.startsWith('*.')) {
+    candidate = candidate.slice(2)
+  }
 
   try {
     const absolute = new URL(candidate)
-    if (absolute.hostname) return normalizeHostname(absolute.hostname)
+    if (absolute.hostname) {
+      return normalizeHostname(absolute.hostname)
+    }
   } catch {
     // A bare host, host:port, or host/path is handled below.
   }

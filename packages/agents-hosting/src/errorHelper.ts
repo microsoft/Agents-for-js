@@ -3,6 +3,7 @@
 
 import { AgentErrorDefinition } from '@microsoft/agents-activity'
 
+/** Error definitions used by the hosting package. */
 export const Errors: { [key: string]: AgentErrorDefinition } = {
   // ============================================================================
   // TurnContext and Activity Errors (-120000 to -120090)
@@ -293,6 +294,16 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   HttpClientRelativeUrlRequiresBaseUrl: {
     code: -120291,
     description: 'HttpClient requires baseURL when using a relative URL: {url}'
+  },
+
+  AttachmentDownloadRedirectLimit: {
+    code: -120292,
+    description: 'Attachment download exceeded the maximum of 50 redirects.'
+  },
+
+  AttachmentDownloadInvalidRedirect: {
+    code: -120293,
+    description: 'Attachment download returned an invalid redirect URL.'
   },
 
   // ============================================================================

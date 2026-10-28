@@ -559,6 +559,10 @@ export class Activity {
     return this
   }
 
+  /**
+   * Creates a deep copy of the activity using its JSON representation.
+   * @returns A new activity containing the copied data.
+   */
   public clone (): Activity {
     const activityCopy = JSON.parse(JSON.stringify(this))
 
@@ -711,10 +715,52 @@ export class Activity {
    * @returns true if the activity contains an activityTreatment entity with treatment 'targeted'.
    */
   public isTargetedActivity (): boolean {
-    if (!this.entities?.length) return false
+    if (!this.entities?.length) {
+      return false
+    }
     return this.entities.some(
       e => e.type === 'activityTreatment' && e.treatment === ActivityTreatments.Targeted
     )
+  }
+
+  /**
+   * Sets the recipient and marks this activity as visible only to that recipient.
+   * Existing duplicate targeted activity treatments are collapsed to one.
+   * @param recipient The recipient account or recipient ID.
+   * @returns This activity.
+   */
+  public withTargetedRecipient (recipient: ChannelAccount | string): this {
+    if (recipient == null || (typeof recipient === 'string' && recipient.trim().length === 0)) {
+      throw ExceptionHelper.generateException(
+        TypeError,
+        Errors.ActivityRecipientUndefined
+      )
+    }
+
+    this.recipient = typeof recipient === 'string'
+      ? { id: recipient, role: RoleTypes.User }
+      : recipient
+
+    let foundTargetedTreatment = false
+    if (this.entities) {
+      for (let index = this.entities.length - 1; index >= 0; index--) {
+        const entity = this.entities[index]
+        if (entity.type === 'activityTreatment' && entity.treatment === ActivityTreatments.Targeted) {
+          if (foundTargetedTreatment) {
+            this.entities.splice(index, 1)
+          } else {
+            foundTargetedTreatment = true
+          }
+        }
+      }
+    }
+
+    if (!foundTargetedTreatment) {
+      this.entities ??= []
+      this.entities.push({ type: 'activityTreatment', treatment: ActivityTreatments.Targeted })
+    }
+
+    return this
   }
 
   /**
@@ -722,17 +768,13 @@ export class Activity {
    * Idempotent — has no effect if the activity is already targeted.
    */
   public makeTargetedActivity (): void {
-    // only available in group contexts
-    if (!this.conversation?.isGroup) {
+    if (!this.recipient) {
       throw ExceptionHelper.generateException(
-        Error,
-        Errors.TargetedActivityIsGroupOnly
+        TypeError,
+        Errors.ActivityTargetedRecipientUndefined
       )
     }
-
-    if (this.isTargetedActivity()) return
-    this.entities ??= []
-    this.entities.push({ type: 'activityTreatment', treatment: ActivityTreatments.Targeted })
+    this.withTargetedRecipient(this.recipient)
   }
 
   /**

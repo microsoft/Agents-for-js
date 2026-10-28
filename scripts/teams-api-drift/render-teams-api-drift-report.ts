@@ -94,36 +94,72 @@ Examples:
 `
 
 function parseSettings (args: string[]): Settings {
-  const settings: Settings = { findings: defaultFindingsPath, output: defaultOutputPath, help: false }
+  const settings: Settings = {
+    findings: defaultFindingsPath,
+    output: defaultOutputPath,
+    help: false
+  }
+
   for (let index = 0; index < args.length; index++) {
     const argument = args[index]
-    if (argument === '--help' || argument === '-h') return { ...settings, help: true }
-    if (argument === '--findings' || argument === '-f' || argument === '--test-summary' || argument === '--output' || argument === '-o') {
+
+    if (argument === '--help' || argument === '-h') {
+      return { ...settings, help: true }
+    }
+
+    if (
+      argument === '--findings' ||
+      argument === '-f' ||
+      argument === '--test-summary' ||
+      argument === '--output' ||
+      argument === '-o'
+    ) {
       const value = args[++index]
-      if (!value) throw new Error(`${argument} requires a file path.`)
-      if (argument === '--findings' || argument === '-f') settings.findings = value
-      else if (argument === '--test-summary') settings.testSummary = value
-      else settings.output = value
+
+      if (!value) {
+        throw new Error(`${argument} requires a file path.`)
+      }
+
+      if (argument === '--findings' || argument === '-f') {
+        settings.findings = value
+      } else if (argument === '--test-summary') {
+        settings.testSummary = value
+      } else {
+        settings.output = value
+      }
+
       continue
     }
+
     throw new Error(`Unknown option: ${argument}`)
   }
+
   return settings
 }
 
 function readJson<T> (filePath: string): T {
   const fullPath = resolve(filePath)
-  if (!existsSync(fullPath)) throw new Error(`File not found: ${fullPath}`)
+
+  if (!existsSync(fullPath)) {
+    throw new Error(`File not found: ${fullPath}`)
+  }
+
   return JSON.parse(readFileSync(fullPath, 'utf8')) as T
 }
 
 function outputPathFor (destination: string): string {
   const fullPath = resolve(destination)
-  return extname(fullPath).toLowerCase() === '.md' ? fullPath : join(fullPath, 'deterministic-report.md')
+
+  return extname(fullPath).toLowerCase() === '.md'
+    ? fullPath
+    : join(fullPath, 'deterministic-report.md')
 }
 
 function markdownCell (value: string): string {
-  return value.replace(/\\/g, '\\\\').replace(/\|/g, '\\|').replace(/[\r\n]+/g, ' ')
+  return value
+    .replace(/\\/g, '\\\\')
+    .replace(/\|/g, '\\|')
+    .replace(/[\r\n]+/g, ' ')
 }
 
 function displayPath (path: string): string {
@@ -132,37 +168,56 @@ function displayPath (path: string): string {
 
 function artifactLink (path: string, outputPath: string): string {
   const target = relative(dirname(outputPath), resolve(path)) || basename(path)
+
   return `[${basename(path)}](${displayPath(target)})`
 }
 
 function sortedFindings (findings: Finding[]): Finding[] {
   return [...findings].sort((left, right) => {
     const capability = (left.capability ?? 'Unmapped').localeCompare(right.capability ?? 'Unmapped')
+
     return capability !== 0 ? capability : left.id.localeCompare(right.id)
   })
 }
 
 function renderFindings (findings: Finding[], emptyMessage: string): string[] {
-  if (findings.length === 0) return [emptyMessage]
+  if (findings.length === 0) {
+    return [emptyMessage]
+  }
+
   const groups = new Map<string, Finding[]>()
+
   for (const finding of sortedFindings(findings)) {
     const capability = finding.capability ?? 'Unmapped'
+
     groups.set(capability, [...(groups.get(capability) ?? []), finding])
   }
 
   const lines: string[] = []
-  for (const [capability, groupedFindings] of [...groups].sort(([left], [right]) => left.localeCompare(right))) {
+
+  for (const [capability, groupedFindings] of [...groups].sort(([left], [right]) =>
+    left.localeCompare(right)
+  )) {
     lines.push(`### ${capability}`)
     lines.push('')
+
     for (const finding of groupedFindings) {
       const symbol = `${finding.upstreamSymbol}${finding.member ? `.${finding.member}` : ''}`
-      const files = finding.affectedFiles.length > 0 ? finding.affectedFiles.map(displayPath).join(', ') : 'No direct source file'
-      lines.push(`- **${finding.id}** — \`${symbol}\` (${finding.kind}; ${finding.exposure}). ${finding.recommendedAction}`)
+      const files =
+        finding.affectedFiles.length > 0
+          ? finding.affectedFiles.map(displayPath).join(', ')
+          : 'No direct source file'
+
+      lines.push(
+        `- **${finding.id}** — \`${symbol}\` (${finding.kind}; ${finding.exposure}). ${finding.recommendedAction}`
+      )
       lines.push(`  - Files: ${files}`)
       lines.push(`  - Evidence: ${finding.evidence.join(', ') || 'None recorded'}`)
     }
+
     lines.push('')
   }
+
   return lines
 }
 
@@ -170,10 +225,32 @@ function checkEntries (checks: Record<string, string>): [string, string][] {
   return Object.entries(checks).sort(([left], [right]) => left.localeCompare(right))
 }
 
-function getSectionFindings (findings: Finding[], section: 'blocking' | 'required' | 'feature-review' | 'internal-opportunity' | 'maintainer-decision' | 'no-action'): Finding[] {
-  if (section === 'feature-review') return findings.filter(finding => finding.category === 'feature-review')
-  if (section === 'internal-opportunity') return findings.filter(finding => finding.category === 'internal-opportunity')
-  if (section === 'maintainer-decision') return findings.filter(finding => finding.category === 'maintainer-decision' || (finding.classification === 'review' && !finding.category))
+function getSectionFindings (
+  findings: Finding[],
+  section:
+    | 'blocking'
+    | 'required'
+    | 'feature-review'
+    | 'internal-opportunity'
+    | 'maintainer-decision'
+    | 'no-action'
+): Finding[] {
+  if (section === 'feature-review') {
+    return findings.filter(finding => finding.category === 'feature-review')
+  }
+
+  if (section === 'internal-opportunity') {
+    return findings.filter(finding => finding.category === 'internal-opportunity')
+  }
+
+  if (section === 'maintainer-decision') {
+    return findings.filter(
+      finding =>
+        finding.category === 'maintainer-decision' ||
+        (finding.classification === 'review' && !finding.category)
+    )
+  }
+
   return findings.filter(finding => finding.classification === section)
 }
 
@@ -183,15 +260,28 @@ function summaryLine (summary: Record<Classification, number>): string {
 
 function suggestedChecklist (findings: FindingsResult): string[] {
   const actionable = findings.findings.filter(finding => finding.classification !== 'no-action')
-  if (actionable.length === 0) return ['- [x] No direct compatibility or public API work is required for this comparison.']
+
+  if (actionable.length === 0) {
+    return ['- [x] No direct compatibility or public API work is required for this comparison.']
+  }
+
   return actionable
     .sort((left, right) => left.id.localeCompare(right.id))
     .map(finding => `- [ ] **${finding.id}** — ${finding.recommendedAction}`)
 }
 
-export function renderDeterministicReport (findings: FindingsResult, context: RenderContext): string {
-  if (findings.schemaVersion !== 1) throw new Error('Findings must use schemaVersion 1.')
-  if (findings.dependency !== dependency) throw new Error(`Findings must describe ${dependency}.`)
+export function renderDeterministicReport (
+  findings: FindingsResult,
+  context: RenderContext
+): string {
+  if (findings.schemaVersion !== 1) {
+    throw new Error('Findings must use schemaVersion 1.')
+  }
+
+  if (findings.dependency !== dependency) {
+    throw new Error(`Findings must describe ${dependency}.`)
+  }
+
   const lines: string[] = [
     '# teams.api Deterministic Impact Report',
     '',
@@ -214,52 +304,98 @@ export function renderDeterministicReport (findings: FindingsResult, context: Re
   ]
 
   const checks = checkEntries(context.checks)
-  if (checks.length === 0) lines.push('No build or test summary was supplied.')
-  else {
+
+  if (checks.length === 0) {
+    lines.push('No build or test summary was supplied.')
+  } else {
     lines.push('| Check | Status |')
     lines.push('| --- | --- |')
-    for (const [name, status] of checks) lines.push(`| ${markdownCell(name)} | ${markdownCell(status)} |`)
+
+    for (const [name, status] of checks) {
+      lines.push(`| ${markdownCell(name)} | ${markdownCell(status)} |`)
+    }
   }
 
   const sections: Array<[string, Parameters<typeof getSectionFindings>[1], string]> = [
-    ['Blocking compatibility issues', 'blocking', 'No blocking compatibility issues were detected.'],
+    [
+      'Blocking compatibility issues',
+      'blocking',
+      'No blocking compatibility issues were detected.'
+    ],
     ['Required adaptations', 'required', 'No required adaptations were detected.'],
-    ['Feature-review candidates', 'feature-review', 'No feature-review candidates were identified.'],
-    ['Internal implementation opportunities', 'internal-opportunity', 'No internal implementation opportunities were identified.'],
-    ['Maintainer decisions required', 'maintainer-decision', 'No maintainer decisions are required.'],
+    [
+      'Feature-review candidates',
+      'feature-review',
+      'No feature-review candidates were identified.'
+    ],
+    [
+      'Internal implementation opportunities',
+      'internal-opportunity',
+      'No internal implementation opportunities were identified.'
+    ],
+    [
+      'Maintainer decisions required',
+      'maintainer-decision',
+      'No maintainer decisions are required.'
+    ],
     ['No-action upstream changes', 'no-action', 'No no-action upstream changes were recorded.']
   ]
+
   for (const [title, section, emptyMessage] of sections) {
-    lines.push('', `## ${title}`, '', ...renderFindings(getSectionFindings(findings.findings, section), emptyMessage))
+    lines.push(
+      '',
+      `## ${title}`,
+      '',
+      ...renderFindings(getSectionFindings(findings.findings, section), emptyMessage)
+    )
   }
 
   lines.push('', '## Public API impact', '')
-  if (!findings.publicApi) lines.push('Public API impact was not evaluated. Re-run detect:teams-api-drifts with --public-api-report <file> to include it.')
-  else {
-    lines.push(`Public API status: **${findings.publicApi.status}**. Suggested release decision: **${findings.publicApi.releaseDecision}**.`)
+
+  if (!findings.publicApi) {
+    lines.push(
+      'Public API impact was not evaluated. Re-run detect:teams-api-drifts with --public-api-report <file> to include it.'
+    )
+  } else {
+    lines.push(
+      `Public API status: **${findings.publicApi.status}**. Suggested release decision: **${findings.publicApi.releaseDecision}**.`
+    )
     lines.push('')
-    if (findings.publicApi.upstreamTypeLeaks.length === 0) lines.push('No @microsoft/teams.api types leak through the public extension API.')
-    else {
+
+    if (findings.publicApi.upstreamTypeLeaks.length === 0) {
+      lines.push('No @microsoft/teams.api types leak through the public extension API.')
+    } else {
       lines.push('| Exposed upstream type | Import kind | Public extension exports |')
       lines.push('| --- | --- | --- |')
+
       for (const leak of findings.publicApi.upstreamTypeLeaks) {
-        lines.push(`| ${markdownCell(leak.upstreamSymbol)} | ${leak.importKind} | ${markdownCell(leak.publicExports.join(', '))} |`)
+        lines.push(
+          `| ${markdownCell(leak.upstreamSymbol)} | ${leak.importKind} | ${markdownCell(leak.publicExports.join(', '))} |`
+        )
       }
     }
   }
 
   lines.push('', '## Evidence and artifact links', '')
   lines.push(`- ${artifactLink(context.findingsPath, context.outputPath)} — classified findings.`)
+
   for (const artifactPath of [...new Set(context.artifactPaths)].sort()) {
-    if (resolve(artifactPath) === resolve(context.findingsPath)) continue
+    if (resolve(artifactPath) === resolve(context.findingsPath)) {
+      continue
+    }
+
     lines.push(`- ${artifactLink(artifactPath, context.outputPath)}`)
   }
 
   lines.push('', '## Suggested checklist', '', ...suggestedChecklist(findings), '')
+
   return lines.join('\n')
 }
 
-function collectChecks (findings: FindingsResult, testSummary?: TestSummary): Record<string, string> {
+function collectChecks (
+  findings: FindingsResult,
+  testSummary?: TestSummary
+): Record<string, string> {
   return {
     ...(findings.checks ?? {}),
     ...(testSummary?.checks ?? {}),
@@ -276,8 +412,10 @@ function existingArtifacts (paths: Array<string | undefined>): string[] {
 
 function main (): void {
   const settings = parseSettings(process.argv.slice(2))
+
   if (settings.help) {
     console.log(help)
+
     return
   }
 
@@ -298,10 +436,16 @@ function main (): void {
       'packages/agents-hosting-extensions-msteams/teams-api-usage-manifest.json'
     ])
   })
+
   mkdirSync(dirname(outputPath), { recursive: true })
   writeFileSync(outputPath, report)
-  console.log(`Wrote deterministic report to ${relative(process.cwd(), outputPath) || basename(outputPath)}`)
+  console.log(
+    `Wrote deterministic report to ${relative(process.cwd(), outputPath) || basename(outputPath)}`
+  )
 }
 
 const invokedPath = process.argv[1] ? resolve(process.argv[1]) : undefined
-if (invokedPath === fileURLToPath(import.meta.url)) main()
+
+if (invokedPath === fileURLToPath(import.meta.url)) {
+  main()
+}

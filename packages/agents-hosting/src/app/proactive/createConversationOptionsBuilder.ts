@@ -81,6 +81,8 @@ export class CreateConversationOptionsBuilder {
 
   /** Adds a member (the target user) to `parameters.members`. */
   withUser (userId: string, userName?: string): this
+
+  /** Adds a channel account as a member in `parameters.members`. */
   withUser (account: ChannelAccount): this
   withUser (userIdOrAccount: string | ChannelAccount, userName?: string): this {
     const account: ChannelAccount =
@@ -125,7 +127,9 @@ export class CreateConversationOptionsBuilder {
    * Only has effect on `msteams` channels.
    */
   withTeamsChannelId (teamsChannelId: string): this {
-    if (this._channelId !== Channels.Msteams) return this
+    if (this._channelId !== Channels.Msteams) {
+      return this
+    }
     this._parameters = { ...this._parameters, isGroup: true }
     this.withChannelData({ channel: { id: teamsChannelId } })
     return this

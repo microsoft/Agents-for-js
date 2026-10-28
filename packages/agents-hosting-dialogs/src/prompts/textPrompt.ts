@@ -16,6 +16,12 @@ import { InputHints } from '@microsoft/agents-activity'
  *
  */
 export class TextPrompt extends Prompt<string> {
+  /**
+   * Creates a text prompt.
+   *
+   * @param dialogId Optional unique identifier for the prompt.
+   * @param validator Optional validator for recognized text.
+   */
   // eslint-disable-next-line @typescript-eslint/no-useless-constructor
   constructor (dialogId?: string, validator?: PromptValidator<string>) {
     super(dialogId, validator)

@@ -32,10 +32,22 @@ const makeRes = (): WebResponse => {
     writableEnded: false,
     statusCode: undefined,
     body: undefined,
-    status (code: number) { r.statusCode = code; return r },
-    setHeader () { return r },
-    send (body: unknown) { r.body = body; r.headersSent = true; return r },
-    end () { r.writableEnded = true; return r }
+    status (code: number) {
+      r.statusCode = code
+      return r
+    },
+    setHeader () {
+      return r
+    },
+    send (body: unknown) {
+      r.body = body
+      r.headersSent = true
+      return r
+    },
+    end () {
+      r.writableEnded = true
+      return r
+    }
   }
   return r
 }

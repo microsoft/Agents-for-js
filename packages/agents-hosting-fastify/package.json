@@ -31,7 +31,7 @@
   "devDependencies": {
     "@microsoft/agents-hosting-express": "file:../agents-hosting-express",
     "express": "5.2.1",
-    "fastify": "5.12.1"
+    "fastify": "5.12.5"
   },
   "license": "MIT",
   "files": [
@@ -49,6 +49,6 @@
     "./package.json": "./package.json"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=22.0.0"
   }
 }

@@ -9,6 +9,7 @@ import { AgentApplication } from '@microsoft/agents-hosting';
 import { AgentErrorDefinition } from '@microsoft/agents-activity';
 import { AgentExtension } from '@microsoft/agents-hosting';
 import type { AppBasedLinkQuery } from '@microsoft/teams.api';
+import { ChannelAccount } from '@microsoft/agents-activity';
 import type { ChannelData } from '@microsoft/teams.api';
 import type { ChannelInfo } from '@microsoft/teams.api';
 import { Client } from '@microsoft/teams.api';
@@ -16,6 +17,8 @@ import { Client as Client_2 } from '@microsoft/microsoft-graph-client';
 import type { ConfigResponse } from '@microsoft/teams.api';
 import { ConversationUpdateEvents } from '@microsoft/agents-hosting';
 import type { FileConsentCardResponse } from '@microsoft/teams.api';
+import type { IMeetingParticipantJoinEventActivity } from '@microsoft/teams.api';
+import type { IMeetingParticipantLeaveEventActivity } from '@microsoft/teams.api';
 import type { MeetingDetails } from '@microsoft/teams.api';
 import type { MessagingExtensionAction } from '@microsoft/teams.api';
 import type { MessagingExtensionActionResponse } from '@microsoft/teams.api';
@@ -23,15 +26,34 @@ import type { MessagingExtensionQuery } from '@microsoft/teams.api';
 import type { MessagingExtensionResponse } from '@microsoft/teams.api';
 import type { O365ConnectorCardActionQuery } from '@microsoft/teams.api';
 import type { OnBehalfOf } from '@microsoft/teams.api';
+import type { QuotedReplyEntity } from '@microsoft/teams.api';
 import { ResourceResponse } from '@microsoft/agents-hosting';
 import { RouteSelector } from '@microsoft/agents-hosting';
+import type { TargetedMessageInfoEntity } from '@microsoft/teams.api';
 import type { TaskModuleRequest } from '@microsoft/teams.api';
 import type { TaskModuleResponse } from '@microsoft/teams.api';
 import type { TeamInfo } from '@microsoft/teams.api';
-import type { TeamsChannelAccount } from '@microsoft/teams.api';
 import { TurnContext } from '@microsoft/agents-hosting';
 import { TurnState } from '@microsoft/agents-hosting';
 import { z } from 'zod';
+
+// @public
+export function addQuotedReply(activity: Activity, messageId: string, text?: string): Activity;
+
+// @public
+export function addTargetedMessageInfo(activity: Activity, messageId: string): Activity;
+
+// @public
+export type CardButtonClickedHandler<TState extends TurnState, TData = unknown> = (context: TeamsTurnContext, state: TState, cardData: TData) => Promise<void>;
+
+// @public
+export type ChannelUpdateHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, data: ChannelInfo) => Promise<void>;
+
+// @public
+export type ConfigHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, configData: unknown) => Promise<ConfigResponse>;
+
+// @public
+export type ExecuteActionRouteHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, query: O365ConnectorCardActionQuery) => Promise<void>;
 
 // @public
 export interface FeedbackActionValue {
@@ -47,6 +69,12 @@ export interface FeedbackData {
 }
 
 // @public
+export type FetchActionHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, action: MessagingExtensionAction) => Promise<MessagingExtensionActionResponse>;
+
+// @public
+export type FetchHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, request: TaskModuleRequest) => Promise<TaskModuleResponse>;
+
+// @public
 export class FileConsent<TState extends TurnState = TurnState> {
     constructor(app: AgentApplication<TState>);
     onAccept(handler: FileConsentHandler<TState>, rank?: number, authHandlers?: string[]): this;
@@ -54,24 +82,43 @@ export class FileConsent<TState extends TurnState = TurnState> {
 }
 
 // @public
+export type FileConsentHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, response: FileConsentCardResponse) => Promise<void>;
+
+// @public
+export function getQuotedMessages(activity: Activity): QuotedReplyEntity[];
+
+// @public
+export function getTargetedMessageInfo(activity: Activity): TargetedMessageInfoEntity | undefined;
+
+// @public
+export function isRecipientTargeted(activity: Activity): boolean;
+
+// @public
 export class Meeting<TState extends TurnState> {
     constructor(app: AgentApplication<TState>);
     onEnd(handler: MeetingEndHandler<TState>, rank?: number, authHandlers?: string[]): this;
-    onParticipantsJoin(handler: MeetingParticipantsHandler<TState>, rank?: number, authHandlers?: string[]): this;
-    onParticipantsLeave(handler: MeetingParticipantsHandler<TState>, rank?: number, authHandlers?: string[]): this;
+    onParticipantsJoin(handler: MeetingParticipantsJoinHandler<TState>, rank?: number, authHandlers?: string[]): this;
+    onParticipantsLeave(handler: MeetingParticipantsLeaveHandler<TState>, rank?: number, authHandlers?: string[]): this;
     onStart(handler: MeetingStartHandler<TState>, rank?: number, authHandlers?: string[]): this;
 }
 
 // @public
-export interface MeetingParticipantsEventDetails {
-    members: {
-        user: TeamsChannelAccount;
-        meeting: {
-            inMeeting: boolean;
-            role: string;
-        };
-    }[];
-}
+export type MeetingEndHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, details: MeetingDetails) => Promise<void>;
+
+// @public
+export type MeetingParticipantJoinValue = IMeetingParticipantJoinEventActivity['value'];
+
+// @public
+export type MeetingParticipantLeaveValue = IMeetingParticipantLeaveEventActivity['value'];
+
+// @public
+export type MeetingParticipantsJoinHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, details: MeetingParticipantJoinValue) => Promise<void>;
+
+// @public
+export type MeetingParticipantsLeaveHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, details: MeetingParticipantLeaveValue) => Promise<void>;
+
+// @public
+export type MeetingStartHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, details: MeetingDetails) => Promise<void>;
 
 // @public
 export class Message<TState extends TurnState = TurnState> {
@@ -102,17 +149,23 @@ export class MessageExtension<TState extends TurnState> {
 }
 
 // @public
+export type MessagePreviewEditHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, activity: Activity | undefined) => Promise<MessagingExtensionActionResponse>;
+
+// @public
+export type MessagePreviewSendHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, activity: Activity | undefined) => Promise<void>;
+
+// @public
 export const messagingExtensionQueryZodSchema: z.ZodObject<{
     commandId: z.ZodOptional<z.ZodString>;
     parameters: z.ZodOptional<z.ZodArray<z.ZodObject<{
         name: z.ZodOptional<z.ZodString>;
         value: z.ZodOptional<z.ZodAny>;
     }, "strip", z.ZodTypeAny, {
-        value?: any;
         name?: string | undefined;
+        value?: any;
     }, {
-        value?: any;
         name?: string | undefined;
+        value?: any;
     }>, "many">>;
     queryOptions: z.ZodOptional<z.ZodObject<{
         skip: z.ZodOptional<z.ZodNumber>;
@@ -131,11 +184,11 @@ export const messagingExtensionQueryZodSchema: z.ZodObject<{
         name: z.ZodOptional<z.ZodString>;
         value: z.ZodOptional<z.ZodAny>;
     }, "strip", z.ZodTypeAny, {
-        value?: any;
         name?: string | undefined;
+        value?: any;
     }, {
-        value?: any;
         name?: string | undefined;
+        value?: any;
     }>, "many">>;
     queryOptions: z.ZodOptional<z.ZodObject<{
         skip: z.ZodOptional<z.ZodNumber>;
@@ -154,11 +207,11 @@ export const messagingExtensionQueryZodSchema: z.ZodObject<{
         name: z.ZodOptional<z.ZodString>;
         value: z.ZodOptional<z.ZodAny>;
     }, "strip", z.ZodTypeAny, {
-        value?: any;
         name?: string | undefined;
+        value?: any;
     }, {
-        value?: any;
         name?: string | undefined;
+        value?: any;
     }>, "many">>;
     queryOptions: z.ZodOptional<z.ZodObject<{
         skip: z.ZodOptional<z.ZodNumber>;
@@ -207,12 +260,36 @@ export function parseTeamsChannelData(o: unknown): ChannelData;
 export function parseValueMessagingExtensionQuery(value: unknown): MessagingExtensionQuery;
 
 // @public
+export type QueryLinkHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, query: AppBasedLinkQuery | undefined) => Promise<MessagingExtensionResponse>;
+
+// @public
+export type QuerySettingUrlHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState) => Promise<MessagingExtensionResponse>;
+
+// @public
+export type ReadReceiptHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, data: ReadReceiptInfo) => Promise<void>;
+
+// @public
 export class ReadReceiptInfo {
     constructor(lastReadMessageId?: string);
     static isMessageRead(compareMessageId: string, lastReadMessageId: string): boolean;
     isMessageRead(compareMessageId: string): boolean;
     lastReadMessageId: string;
 }
+
+// @public
+export type RouteQueryHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, query: MessagingExtensionQuery) => Promise<MessagingExtensionResponse>;
+
+// @public
+export type SelectItemHandler<TState extends TurnState, TData = unknown> = (context: TeamsTurnContext, state: TState, item: TData) => Promise<MessagingExtensionResponse>;
+
+// @public
+export type SettingHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, settings: MessagingExtensionQuery) => Promise<MessagingExtensionResponse>;
+
+// @public
+export type SubmitActionHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, action: MessagingExtensionAction) => Promise<MessagingExtensionActionResponse>;
+
+// @public
+export type SubmitHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, request: TaskModuleRequest) => Promise<TaskModuleResponse>;
 
 // @public
 export class TaskModule<TState extends TurnState> {
@@ -306,10 +383,10 @@ export function teamsNotifyUser(activity: Activity, alertInMeeting?: boolean, ex
 
 // @public
 export const TeamsProactiveServiceEndpoints: {
-    readonly publicGlobal: "https://smba.trafficmanager.net/teams/";
-    readonly gcc: "https://smba.infra.gcc.teams.microsoft.com/teams";
-    readonly gccHigh: "https://smba.infra.gov.teams.microsoft.us/teams";
-    readonly dod: "https://smba.infra.dod.teams.microsoft.us/teams";
+    readonly publicGlobal: 'https://smba.trafficmanager.net/teams/';
+    readonly gcc: 'https://smba.infra.gcc.teams.microsoft.com/teams';
+    readonly gccHigh: 'https://smba.infra.gov.teams.microsoft.us/teams';
+    readonly dod: 'https://smba.infra.dod.teams.microsoft.us/teams';
 };
 
 // @public
@@ -334,9 +411,18 @@ export class TeamsTurnContext extends TurnContext {
     getAppGraphClient(graphBaseUrl?: string): Client_2;
     getAppGraphClientForConnection(connectionName: string, graphBaseUrl?: string): Client_2;
     getGraphClient(handlerName?: string, graphBaseUrl?: string): Client_2;
-    sendTargetedActivities(activities: Activity[]): Promise<ResourceResponse[]>;
-    sendTargetedActivity(activity: Activity): Promise<ResourceResponse | undefined>;
+    sendActivities(activities: Activity[]): Promise<ResourceResponse[]>;
+    sendTargetedActivity(activity: Activity, recipient: ChannelAccount): Promise<ResourceResponse | undefined>;
+    // (undocumented)
+    sendTargetedActivity(activity: Activity, recipient: string): Promise<ResourceResponse | undefined>;
+    // (undocumented)
+    sendTargetedActivity(activity: string, recipient: ChannelAccount): Promise<ResourceResponse | undefined>;
+    // (undocumented)
+    sendTargetedActivity(activity: string, recipient: string): Promise<ResourceResponse | undefined>;
 }
+
+// @public
+export type TeamUpdateHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, data: TeamInfo) => Promise<void>;
 
 // (No @packageDocumentation comment for this package)
 

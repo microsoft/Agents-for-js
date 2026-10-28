@@ -113,7 +113,20 @@ export interface TraceManagedContext<TRecord extends object, TActions extends ob
 export interface TraceDefinition<TRecord extends object = Record<string, never>, TActions extends object = Record<string, Function>> {
   name: SpanName
   record: TRecord
+
+  /**
+   * Creates actions that can enrich the active span.
+   *
+   * @param context The active trace actions context.
+   * @returns The actions available while the span is active.
+   */
   actions?(context: TraceActionsContext): TActions
+
+  /**
+   * Finalizes the span with its collected record, duration, and error state.
+   *
+   * @param context The context available when the span ends.
+   */
   end(context: TraceEndContext<TRecord>): void
 }
 

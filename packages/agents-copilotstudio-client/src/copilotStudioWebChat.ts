@@ -15,6 +15,10 @@ import { Errors } from './errorHelper'
 import { createPostAnswerActivityFilter } from './postAnswerActivityFilter'
 
 const logger = debug('copilot-studio:webchat')
+const webChatConnectionStatus = {
+  online: 2,
+  failedToConnect: 4,
+} as const
 
 /**
  * Configuration settings for the Copilot Studio WebChat connection.
@@ -76,6 +80,7 @@ export interface CopilotStudioWebChatConnection {
    * - 0: Disconnected - No active connection to the service
    * - 1: Connecting - Attempting to establish connection
    * - 2: Connected - Successfully connected and ready for communication
+   * - 4: Failed to connect - The initial connection attempt failed
    */
   connectionStatus$: BehaviorSubject<number>;
 
@@ -284,63 +289,101 @@ export class CopilotStudioWebChat {
       let pseudomizedConversationId: string | undefined
       let ended = false
       let started = false
+      let startPromise: Promise<void> | undefined
+      let connectionError: unknown
 
       const connectionStatus$ = new BehaviorSubject(0)
       const activity$ = createObservable<Partial<Activity>>(async (subscriber) => {
         activitySubscriber = subscriber
 
         const handleAcknowledgementOnce = once(async (): Promise<void> => {
-          connectionStatus$.next(2)
+          connectionStatus$.next(webChatConnectionStatus.online)
           await Promise.resolve() // Webchat requires an extra tick to process the connection status change
         })
 
+        if (connectionError) {
+          activitySubscriber = undefined
+          subscriber.error(connectionError)
+          return
+        }
+
         // When resuming (shouldStart === false), transition straight to connected
         if (!shouldStart || started) {
+          await startPromise
           await handleAcknowledgementOnce()
           return
         }
 
         logger.debug('--> Connection established.')
         started = true
-        const clearTyping = notifyTyping()
+        let clearTyping = () => {}
+        try {
+          startPromise = trace(CopilotStudioClientTraceDefinitions.webchatStartConversation, async ({ record }) => {
+            let activityCount = 0
+            let receivedConversationId = false
+            const shouldForward = createPostAnswerActivityFilter()
+            const stream = client.startConversationStreaming()
+            try {
+              let result = await stream.next()
+              while (!result.done) {
+                const activity = result.value
+                delete activity.replyToId
+                if (!conversation && activity.conversation) {
+                  conversation = activity.conversation
+                }
+                if (activity.conversation?.id) {
+                  receivedConversationId = true
+                  activeConversationId = activity.conversation.id
+                  pseudomizedConversationId = pseudonymizeConversationId(activeConversationId, client.diagnosticsPseudonymKey)
+                }
+                activityCount++
+                record({
+                  activityCount,
+                  conversationId: pseudomizedConversationId
+                })
+                await handleAcknowledgementOnce()
+                if (shouldForward(activity)) {
+                  if (activity.type === 'typing' || activity.type === 'message') {
+                    clearTyping()
+                  }
+                  notifyActivity(activity)
+                }
 
-        await trace(CopilotStudioClientTraceDefinitions.webchatStartConversation, async ({ record }) => {
-          let activityCount = 0
-          const shouldForward = createPostAnswerActivityFilter()
-
-          for await (const activity of client.startConversationStreaming()) {
-            delete activity.replyToId
-            if (!conversation && activity.conversation) {
-              conversation = activity.conversation
-            }
-            if (activity.conversation?.id) {
-              activeConversationId = activity.conversation.id
-              pseudomizedConversationId = pseudonymizeConversationId(activeConversationId, client.diagnosticsPseudonymKey)
-            }
-            activityCount++
-            record({
-              activityCount,
-              conversationId: pseudomizedConversationId
-            })
-            await handleAcknowledgementOnce()
-            if (shouldForward(activity)) {
-              if (activity.type === 'typing' || activity.type === 'message') {
-                clearTyping()
+                trace(CopilotStudioClientTraceDefinitions.webchatReceiveActivity, ({ record }) => {
+                  record({
+                    activityId: activity.id,
+                    activityType: activity.type,
+                    conversationId: pseudonymizeConversationId(activity.conversation?.id ?? activeConversationId, client.diagnosticsPseudonymKey)
+                  })
+                })
+                result = await stream.next()
               }
-              notifyActivity(activity)
+              // The built-in stream carries request-local metadata in its internal return value.
+              // Existing overrides may return nothing; keep the ID captured from their activities.
+              if (!receivedConversationId && typeof result.value === 'string' && result.value) {
+                activeConversationId = result.value
+              }
+              pseudomizedConversationId = pseudonymizeConversationId(activeConversationId, client.diagnosticsPseudonymKey)
+            } finally {
+              await stream.return(undefined)
             }
-
-            trace(CopilotStudioClientTraceDefinitions.webchatReceiveActivity, ({ record }) => {
-              record({
-                activityId: activity.id,
-                activityType: activity.type,
-                conversationId: pseudonymizeConversationId(activity.conversation?.id ?? activeConversationId, client.diagnosticsPseudonymKey)
-              })
-            })
+            // If no activities received from bot, we should still acknowledge.
+            await handleAcknowledgementOnce()
+          })
+          // Assign the startup task before publishing typing: subscribers may post synchronously.
+          clearTyping = notifyTyping()
+          await startPromise
+        } catch (error) {
+          connectionError = error
+          if (connectionStatus$.value !== webChatConnectionStatus.online) {
+            connectionStatus$.next(webChatConnectionStatus.failedToConnect)
           }
-          // If no activities received from bot, we should still acknowledge.
-          await handleAcknowledgementOnce()
-        }).finally(clearTyping)
+          activitySubscriber = undefined
+          logger.error('Failed to start Copilot Studio WebChat connection:', error)
+          throw error
+        } finally {
+          clearTyping()
+        }
       })
 
       const notifyActivity = (activity: Partial<Activity>, subscriber = activitySubscriber) => {
@@ -420,6 +463,10 @@ export class CopilotStudioWebChat {
           const result = createObservable<string>(async (subscriber) => {
             let clearTyping = () => {}
             try {
+              await startPromise
+              if (ended) {
+                throw ExceptionHelper.generateException(Error, Errors.ConnectionAlreadyEnded)
+              }
               await trace(CopilotStudioClientTraceDefinitions.webchatPostActivity, async ({ record, actions }) => {
                 logger.info('--> Sending activity to Copilot Studio ...')
                 const newActivity = Activity.fromObject({
@@ -427,6 +474,14 @@ export class CopilotStudioWebChat {
                   id: randomUUID(),
                   attachments: await processAttachments(activity)
                 })
+                // An ID-less start must not fall back to another connection's client default.
+                // Keep implicit routing only for connections that skipped startup.
+                const conversationId = newActivity.conversation?.id?.trim() ||
+                  activeConversationId ||
+                  (shouldStart ? '' : undefined)
+                if (conversationId !== undefined) {
+                  newActivity.conversation = { ...newActivity.conversation, id: conversationId }
+                }
                 let responseActivityCount = 0
                 record({
                   activityId: newActivity.id,
@@ -448,7 +503,7 @@ export class CopilotStudioWebChat {
 
                 // Stream the agent's response, passing activeConversationId for URL routing
                 const shouldForward = createPostAnswerActivityFilter()
-                for await (const responseActivity of client.sendActivityStreaming(newActivity, activeConversationId)) {
+                for await (const responseActivity of client.sendActivityStreaming(newActivity, conversationId)) {
                   if (!activeConversationId && responseActivity.conversation?.id) {
                     activeConversationId = responseActivity.conversation.id
                   }

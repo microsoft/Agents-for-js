@@ -18,10 +18,6 @@ steps:
 - script: echo "registry=https://pkgs.dev.azure.com/dynamicscrm/OneCRM/_packaging/DPX-Tools-Upstream/npm/registry/" > .npmrc
   displayName: 'Set NPM registry'
 
-- task: npmAuthenticate@0
-  inputs:
-    workingFile: .npmrc
-
 - task: Npm@1
   inputs:
     command: custom
@@ -32,8 +28,39 @@ steps:
     workingDir: .
   displayName: 'npm ci'
 
-- script: npm run quality
+- script: |
+    set -euo pipefail
+    if [ "$BUILD_REASON" = "PullRequest" ]; then
+      git fetch origin "$SYSTEM_PULLREQUEST_TARGETBRANCH"
+      COMPAT_BASE="$(git rev-parse --verify FETCH_HEAD)"
+      export COMPAT_BASE
+    fi
+    npm run quality
   displayName: quality checks
+  env:
+    QUALITY_LOG_DIR: scripts/logs/quality
+
+- task: CopyFiles@2
+  displayName: 'Collect quality logs and compatibility reports'
+  condition: always()
+  inputs:
+    SourceFolder: '$(Build.SourcesDirectory)'
+    Contents: |
+      scripts/logs/**
+      compat/generated/report.json
+      compat/generated/*.api.md
+      compat/generated/baseline-reference/**
+      compat/baseline/**
+      docs/API-COMPATIBILITY.md
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/quality-logs'
+    flattenFolders: false
+
+- task: PublishPipelineArtifact@1
+  displayName: 'Publish quality logs and compatibility reports'
+  condition: always()
+  inputs:
+    targetPath: '$(Build.ArtifactStagingDirectory)/quality-logs'
+    artifact: quality-logs
 
 - script: node scripts/set-version.mjs
   displayName: set version

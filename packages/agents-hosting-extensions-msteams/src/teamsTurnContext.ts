@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { Activity, ExceptionHelper } from '@microsoft/agents-activity'
+import { Activity, ActivityTypes, type ChannelAccount, ExceptionHelper, RoleTypes } from '@microsoft/agents-activity'
 import { Client as GraphClient } from '@microsoft/microsoft-graph-client'
 import { AgentApplication, type Authorization, type Connections, ResourceResponse, TurnContext } from '@microsoft/agents-hosting'
 import { Client as TeamsClient } from '@microsoft/teams.api'
@@ -9,6 +9,8 @@ import { Errors } from './errorHelper'
 import type { TeamsActivity } from './teamsActivity'
 import { TeamsClientKey } from './teamsApiClientExtensions'
 import { createAppGraphClient, createUserGraphClient } from './graphClientFactory'
+import { normalizePromptPreviewActivity } from './promptPreviewActivityNormalizer'
+import { isRecipientTargeted } from './teamsActivityExtensions'
 
 const DEFAULT_GRAPH_BASE_URL = 'https://graph.microsoft.com/v1.0'
 
@@ -42,30 +44,63 @@ export class TeamsTurnContext extends TurnContext {
   }
 
   /**
-   * Sends a cloned copy of an activity as a Teams targeted activity.
+   * Sends an activity or text as a Teams targeted activity to an explicit recipient.
    *
-   * @param activity - The activity to send to the targeted recipient.
+   * @param activity - The activity or text to send.
+   * @param recipient - The recipient account or recipient ID.
    * @returns The resource response for the sent activity, if provided by the adapter.
    */
-  async sendTargetedActivity (activity: Activity): Promise<ResourceResponse | undefined> {
-    const targetedActivity = Activity.fromObject(activity)
-    targetedActivity.makeTargetedActivity()
+  async sendTargetedActivity (activity: Activity, recipient: ChannelAccount): Promise<ResourceResponse | undefined>
+  async sendTargetedActivity (activity: Activity, recipient: string): Promise<ResourceResponse | undefined>
+  async sendTargetedActivity (activity: string, recipient: ChannelAccount): Promise<ResourceResponse | undefined>
+  async sendTargetedActivity (activity: string, recipient: string): Promise<ResourceResponse | undefined>
+  async sendTargetedActivity (activity: Activity | string, recipient: ChannelAccount | string): Promise<ResourceResponse | undefined> {
+    if (activity == null) {
+      throw ExceptionHelper.generateException(TypeError, Errors.TargetedActivityParameterRequired, undefined, { parameterName: 'activity' })
+    }
+    if (recipient == null) {
+      throw ExceptionHelper.generateException(TypeError, Errors.TargetedActivityParameterRequired, undefined, { parameterName: 'recipient' })
+    }
+    if (typeof activity === 'string' && activity.trim().length === 0) {
+      throw ExceptionHelper.generateException(TypeError, Errors.ActivityParameterRequired, undefined, { parameterName: 'activity' })
+    }
+    if (typeof recipient === 'string' && recipient.trim().length === 0) {
+      throw ExceptionHelper.generateException(TypeError, Errors.ActivityParameterRequired, undefined, { parameterName: 'recipient' })
+    }
+
+    const targetedActivity = typeof activity === 'string'
+      ? Activity.fromObject({ type: ActivityTypes.Message, text: activity })
+      : Activity.fromObject(activity)
+    targetedActivity.conversation ??= this.activity.conversation ? { ...this.activity.conversation } : undefined
+    const targetedRecipient = typeof recipient === 'string'
+      ? { id: recipient, role: RoleTypes.User }
+      : { ...recipient }
+    targetedActivity.withTargetedRecipient(targetedRecipient)
     return await this.sendActivity(targetedActivity)
   }
 
   /**
-   * Sends cloned copies of activities as Teams targeted activities.
+   * Sends activities after applying Teams prompt-preview metadata when the incoming message is targeted.
    *
-   * @param activities - The activities to send to targeted recipients.
+   * @param activities - Activities to send.
    * @returns Resource responses for the sent activities.
    */
-  async sendTargetedActivities (activities: Activity[]): Promise<ResourceResponse[]> {
-    const targetedActivities = activities.map((activity) => {
-      const targetedActivity = Activity.fromObject(activity)
-      targetedActivity.makeTargetedActivity()
-      return targetedActivity
+  override async sendActivities (activities: Activity[]): Promise<ResourceResponse[]> {
+    const inboundMessageId = this.activity.type === ActivityTypes.Message &&
+      isRecipientTargeted(this.activity) &&
+      this.activity.id
+      ? this.activity.id
+      : undefined
+
+    const preparedActivities = activities.map(activity => {
+      const preparedActivity = Activity.fromObject(activity)
+      if (inboundMessageId && preparedActivity.type === ActivityTypes.Message) {
+        normalizePromptPreviewActivity(preparedActivity, inboundMessageId)
+      }
+      return preparedActivity
     })
-    return await this.sendActivities(targetedActivities)
+
+    return await super.sendActivities(preparedActivities)
   }
 
   /**

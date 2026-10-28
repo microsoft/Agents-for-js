@@ -25,10 +25,16 @@ import { TurnState } from '@microsoft/agents-hosting';
 import { z } from 'zod';
 
 // @public
+export type Action = 'accept' | 'decline';
+
+// @public
 export interface AppBasedLinkQuery {
     state?: string;
     url?: string;
 }
+
+// @public
+export type ApplicationIdentityType = 'aadApplication' | 'bot' | 'tenantBot' | 'office365Connector' | 'webhook';
 
 // @public
 export type AttachmentLayout = 'list' | 'grid';
@@ -58,9 +64,6 @@ export interface BatchOperationStateResponse {
     totalEntriesCount: number;
 }
 
-// @public (undocumented)
-export type CardButtonClickedHandler<TState extends TurnState> = (context: TurnContext, state: TState, cardData: unknown) => Promise<void>;
-
 // @public
 export type CancelOperationResponse = {
     _response: Response & {
@@ -68,6 +71,9 @@ export type CancelOperationResponse = {
         parsedBody: {};
     };
 };
+
+// @public (undocumented)
+export type CardButtonClickedHandler<TState extends TurnState> = (context: TurnContext, state: TState, cardData: unknown) => Promise<void>;
 
 // @public
 export interface ChannelInfo {
@@ -83,6 +89,9 @@ export enum ChannelTypes {
     Standard = "standard"
 }
 
+// @public
+export type CommandContext = 'message' | 'compose' | 'commandbox';
+
 // @public (undocumented)
 export type ConfigureQuerySettingUrlHandler<TState extends TurnState> = (context: TurnContext, state: TState, settings: unknown) => Promise<MessagingExtensionResponse>;
 
@@ -90,7 +99,10 @@ export type ConfigureQuerySettingUrlHandler<TState extends TurnState> = (context
 export type ConfigureSettingsHandler<TState extends TurnState> = (context: TurnContext, state: TState, settings: unknown) => Promise<void>;
 
 // @public
-export type CommandContext = 'message' | 'compose' | 'commandbox';
+export type ContentType = 'html' | 'text';
+
+// @public
+export type ConversationIdentityType = 'team' | 'channel';
 
 // @public
 export interface FeedbackLoopData {
@@ -120,6 +132,9 @@ export interface FileUploadInfo {
     uniqueId?: string;
     uploadUrl?: string;
 }
+
+// @public
+export type Importance = 'normal' | 'high' | 'urgent';
 
 // @public
 export class Meeting<TState extends TurnState> {
@@ -301,7 +316,7 @@ export interface MessageActionsPayloadUser {
     userIdentityType?: UserIdentityType;
 }
 
-// @public
+// @public @deprecated (undocumented)
 export class MessageExtension<TState extends TurnState> {
     constructor(app: AgentApplication<TState>);
     // (undocumented)
@@ -315,7 +330,6 @@ export class MessageExtension<TState extends TurnState> {
     onMessagePreviewSend(handler: MessagePreviewSendHandler<TurnState>): this;
     onQuery(handler: RouteQueryHandler<TState>): this;
     onQueryLink(handler: QueryLinkHandler<TurnState>): this;
-    // (undocumented)
     onSelectItem(handler: SelectItemHandler<TurnState>): this;
     onSubmitAction(handler: SubmitActionHandler<TurnState>): this;
 }
@@ -664,47 +678,26 @@ export class TeamsActivityHandler extends ActivityHandler {
 // @public (undocumented)
 export class TeamsAgentExtension<TState extends TurnState = TurnState> extends AgentExtension<TState> {
     constructor(app: AgentApplication<TState>);
-    // (undocumented)
     get meeting(): Meeting<TState>;
-    // (undocumented)
     get messageExtension(): MessageExtension<TState>;
-    // (undocumented)
     onFeedback(handler: RouteHandler<TurnState>): this;
-    // (undocumented)
     onMessageDelete(handler: RouteHandler<TurnState>): this;
-    // (undocumented)
     onMessageEdit(handler: RouteHandler<TurnState>): this;
-    // (undocumented)
     onMessageUndelete(handler: RouteHandler<TurnState>): this;
-    // (undocumented)
     onTeamsChannelCreated(handler: RouteHandler<TurnState>): this;
-    // (undocumented)
     onTeamsChannelDeleted(handler: RouteHandler<TurnState>): this;
-    // (undocumented)
     onTeamsChannelRenamed(handler: RouteHandler<TurnState>): this;
-    // (undocumented)
     onTeamsChannelRestored(handler: RouteHandler<TurnState>): this;
-    // (undocumented)
     onTeamsChannelShared(handler: RouteHandler<TurnState>): this;
-    // (undocumented)
     onTeamsChannelUnshared(handler: RouteHandler<TurnState>): this;
-    // (undocumented)
     onTeamsMembersAdded(handler: RouteHandler<TurnState>): this;
-    // (undocumented)
     onTeamsMembersRemoved(handler: RouteHandler<TurnState>): this;
-    // (undocumented)
     onTeamsTeamArchived(handler: RouteHandler<TurnState>): this;
-    // (undocumented)
     onTeamsTeamDeleted(handler: RouteHandler<TurnState>): this;
-    // (undocumented)
     onTeamsTeamHardDeleted(handler: RouteHandler<TurnState>): this;
-    // (undocumented)
     onTeamsTeamRenamed(handler: RouteHandler<TurnState>): this;
-    // (undocumented)
     onTeamsTeamRestored(handler: RouteHandler<TurnState>): this;
-    // (undocumented)
     onTeamsTeamUnarchived(handler: RouteHandler<TurnState>): this;
-    // (undocumented)
     get taskModule(): TaskModule<TState>;
 }
 

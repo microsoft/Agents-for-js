@@ -9,7 +9,12 @@ const require = createRequire(import.meta.url)
 const nativePackageJsonPath = require.resolve('@typescript/native/package.json')
 const nativePackageJson = JSON.parse(readFileSync(nativePackageJsonPath, 'utf8'))
 const tscPath = resolve(dirname(nativePackageJsonPath), nativePackageJson.bin.tsc)
-const result = spawnSync(process.execPath, [tscPath, ...process.argv.slice(2)], { stdio: 'inherit' })
+const result = spawnSync(process.execPath, [tscPath, ...process.argv.slice(2)], {
+  stdio: 'inherit'
+})
 
-if (result.error) throw result.error
+if (result.error) {
+  throw result.error
+}
+
 process.exitCode = result.status ?? 1

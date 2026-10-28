@@ -31,8 +31,12 @@ export function asStorageV2 (storage: StorageProvider): StorageV2 {
 /** Returns a successful V2 read value, maps not-found to undefined, and rejects invalid results. */
 export function getStorageReadValue<T extends object> (results: StorageReadResults<T> | null | undefined, key: string): T | undefined {
   const result = results?.[key]
-  if (result?.status === StorageOperationStatus.NotFound) return undefined
-  if (result?.status === StorageOperationStatus.Succeeded) return result.value
+  if (result?.status === StorageOperationStatus.NotFound) {
+    return undefined
+  }
+  if (result?.status === StorageOperationStatus.Succeeded) {
+    return result.value
+  }
   throwStorageResultError('read', key, result?.status)
 }
 
@@ -44,7 +48,9 @@ class StorageToStorageV2Adapter extends StorageV2 {
 
   async read<T extends object = Record<string, unknown>> (keys: string[]): Promise<StorageReadResults<T>> {
     validateKeys(keys)
-    if (keys.length === 0) return {}
+    if (keys.length === 0) {
+      return {}
+    }
 
     const items = await this.storage.read(keys)
     return Object.fromEntries(keys.map(key => {
@@ -64,7 +70,9 @@ class StorageToStorageV2Adapter extends StorageV2 {
       throwUnsupportedOption('ttl')
     }
     validateExpectedVersion(options?.expectedVersion)
-    if (Object.keys(changes).length === 0) return {}
+    if (Object.keys(changes).length === 0) {
+      return {}
+    }
     const legacyChanges = Object.fromEntries(Object.entries(changes).map(([key, value]) => [
       key,
       options?.expectedVersion === undefined
@@ -81,7 +89,9 @@ class StorageToStorageV2Adapter extends StorageV2 {
     if (options?.expectedVersion !== undefined) {
       throwUnsupportedOption('expectedVersion')
     }
-    if (keys.length === 0) return {}
+    if (keys.length === 0) {
+      return {}
+    }
 
     await this.storage.delete(keys)
     return Object.fromEntries(keys.map(key => [key, { key, status: StorageOperationStatus.Succeeded }]))
@@ -116,7 +126,9 @@ function validateChanges (changes: Record<string, unknown>): void {
 }
 
 function removeLegacyETag<T> (value: T): T {
-  if (value === null || typeof value !== 'object' || Array.isArray(value)) return value
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+    return value
+  }
   const { eTag: _eTag, ...withoutETag } = value as Record<string, unknown>
   return withoutETag as T
 }

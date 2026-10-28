@@ -36,9 +36,11 @@ const InitialSettings = z.record(z.unknown())
  */
 export class DialogsAgentComponent extends AgentComponent {
   /**
-     * @param services Services Collection to register.
-     * @param configuration Configuration for the agent component.
-     */
+   * Registers the dialog memory scopes and path resolvers.
+   *
+   * @param services Services Collection to register.
+   * @param configuration Configuration for the agent component.
+   */
   configureServices (services: ServiceCollection, configuration: Configuration): void {
     services.composeFactory<MemoryScope[]>('memoryScopes', (memoryScopes) => {
       const rootConfiguration = configuration.get()

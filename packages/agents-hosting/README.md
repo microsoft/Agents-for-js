@@ -196,6 +196,43 @@ echo.onActivity('message', async (context: TurnContext, state: TurnState) => {
 })
 ```
 
+### Handling errors from direct proactive operations
+
+`adapter.continueConversation()` sends errors from its callback to the adapter's
+`onTurnError` handler. If that handler completes normally, `continueConversation()`
+also completes normally, so a surrounding `try`/`catch` does not receive the
+original error.
+
+When the caller needs to inspect or retry a failed proactive operation, catch the
+error inside the continuation callback and throw it after `continueConversation()`
+completes:
+
+```ts
+import type { ResourceResponse } from '@microsoft/agents-hosting'
+let sendResponse: ResourceResponse | undefined
+let sendFailed = false
+let sendError: unknown
+
+await adapter.continueConversation(botAppId, reference, async (context) => {
+  try {
+    sendResponse = await context.sendActivity('Proactive message')
+  } catch (error) {
+    sendFailed = true
+    sendError = error
+  }
+})
+
+if (sendFailed) {
+  throw sendError
+}
+
+console.log('Sent activity:', sendResponse)
+```
+
+Because the callback catches the error, `onTurnError` is not called for that
+failure. Applications that want centralized handling can perform it in the
+callback's `catch` block.
+
 ## Storage providers
 
 Public `storage` options accept `StorageProvider`, which is `Storage | StorageV2`.
@@ -290,6 +327,7 @@ It can be configured with environment variables:
 ```dotenv
 OutboundHostValidator__Enabled=true
 OutboundHostValidator__IncludeDefaultMicrosoftHosts=true
+OutboundHostValidator__AllowPrivateNetworkAddresses=false
 OutboundHostValidator__Hosts=contoso.com,fabrikam.com
 ```
 
@@ -325,5 +363,43 @@ const agent = new AgentApplication({
 })
 ```
 
-The validator checks the URL supplied to the downloader. Redirects retain native
-`fetch` behavior.
+When enforcement is enabled, URLs must use HTTPS and must not contain userinfo.
+Both attachment downloaders validate the actual download destination and every
+redirect before requesting it. They check all DNS answers and reject private,
+shared (RFC 6598 `100.64.0.0/10`), loopback, link-local, unique-local,
+IPv4-mapped forms of blocked IPv4 addresses, and unspecified addresses by default.
+DNS failures and empty DNS answers also block the download.
+Rejected attachments are skipped with a warning; no request is sent to the
+rejected destination. Warnings use `DEBUG=agents:attachmentDownloader:*` or
+`DEBUG=agents:outboundHostValidator:*` and do not include URL query strings or
+credentials.
+
+To deliberately access an allowlisted private or shared-network attachment destination,
+set `allowPrivateNetworkAddresses: true` (or the equivalent environment variable
+above). This exception does not bypass HTTPS, userinfo checks, or the host
+allowlist. Existing custom `OutboundUrlPolicy` implementations remain supported;
+enabled custom policies are checked at every hop and receive the same HTTPS and
+public-address safeguards, without the built-in private-network exception.
+
+Initial request headers, including authorization, are not forwarded to any
+redirect, even on the same origin. Services requiring authorization on a
+redirected endpoint must supply a directly accessible, allowed download URL.
+Redirects are limited to 50 hops.
+
+Enforcement remains **disabled by default**. With enforcement disabled, existing
+downloads retain native `fetch` redirects and their initial authentication
+behavior, and do not perform the new DNS checks. Applications already enabling
+validation may need to replace HTTP URLs and explicitly allow intended private
+destinations. The synchronous `isAllowed()` check validates URL/host/literal
+address policy; `isAllowedAsync()` additionally checks DNS answers and is used
+by the attachment downloaders. Adapter service-URL checks remain synchronous.
+
+**Security boundaries:** DNS checks occur before the request, but do not pin the
+connection to a validated address; use network egress controls as additional
+protection against DNS rebinding. Host allowlisting is not credential-audience
+authorization: an allowed Microsoft-hosted domain may contain tenant-controlled
+content. These controls do not change which initial attachment requests receive
+Connector credentials. In particular, legacy/default downloads can still send
+credentials to an activity-selected destination. Separating preauthenticated
+Teams/OneDrive downloads from authenticated Connector attachment operations is
+a separate compatibility-sensitive change.

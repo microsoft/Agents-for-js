@@ -21,9 +21,19 @@ const createFakeReply = (): FakeReply => {
   const reply: FakeReply = {
     sent: false,
     headers: {},
-    status (code) { this.statusCode = code; return this },
-    header (name, value) { this.headers[name] = value; return this },
-    send (body) { this.body = body; this.sent = true; return this }
+    status (code) {
+      this.statusCode = code
+      return this
+    },
+    header (name, value) {
+      this.headers[name] = value
+      return this
+    },
+    send (body) {
+      this.body = body
+      this.sent = true
+      return this
+    }
   }
   return reply
 }

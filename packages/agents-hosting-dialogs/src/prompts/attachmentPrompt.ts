@@ -14,6 +14,12 @@ import { Attachment, InputHints } from '@microsoft/agents-activity'
  *
  */
 export class AttachmentPrompt extends Prompt<Attachment[]> {
+  /**
+   * Creates an attachment prompt.
+   *
+   * @param dialogId Unique identifier for the prompt.
+   * @param validator Optional validator for recognized attachments.
+   */
   // eslint-disable-next-line @typescript-eslint/no-useless-constructor
   constructor (dialogId: string, validator?: PromptValidator<Attachment[]>) {
     super(dialogId, validator)

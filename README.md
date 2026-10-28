@@ -47,9 +47,9 @@ The nightly build contains the code from our `main` branch and may contain featu
 
 ### Environment Requirements
 
-The packages require Node.js 20 or greater, and can be used from JavaScript using CommonJS or ES6 modules, or from TypeScript.
+The packages require Node.js 22 or greater, and can be used from JavaScript using CommonJS or ES6 modules, or from TypeScript.
 
-> Note: Development and CI use Node.js 24. The [`--env-file` flag](https://nodejs.org/en/learn/command-line/how-to-read-environment-variables-from-nodejs) is available in Node.js 20.6 and later; Node.js 20.0–20.5 users should set environment variables explicitly before running.
+> Note: Development and CI use Node.js 24.
 
 ### Debugging
 
@@ -137,9 +137,13 @@ Before submitting a change, run:
 npm run quality
 ```
 
-`quality` runs the repository doctor, ESLint, dependency lint, build, tests, API compatibility checks, and sample build. It reports each check's status and duration, while printing command output only when that check fails.
+`quality` runs the repository doctor, ESLint, dependency lint, build, tests, API compatibility checks, and sample build. It reports each check's status and duration, while printing command output only when that check fails. Successful compatibility checks still show a compact notice for packages needing review or outdated baselines.
 
-Use `npm run quality -- --verbose` to print the complete captured output for every check after the concise report. In GitHub Actions, each command log is available in a folded group and as the `quality-logs` artifact for seven days.
+`npm run compat` checks public TypeScript compatibility, builds declarations first, and analyzes packages in parallel. Run `npm run compat -- agents-hosting` for one package or `npm run compat -- --base origin/main` to retain a Git-reference comparison in the JSON report. Terminal findings compare against the working baseline; previously adopted changes are excluded from pending review. The compact output links directly to saved baseline/generated source lines, counts possible breaks, and marks harmless baseline drift as outdated. Detailed findings and finding IDs are in `compat/generated/report.json`. Possible breaks are warnings; outdated baselines and analysis errors fail the check. Use `--update` to adopt the current API, including possible breaks, and review the baseline diff before committing. See [API compatibility](docs/API-COMPATIBILITY.md) for the workflow and limitations.
+
+Use `npm run quality -- --verbose` to print the complete captured output for every check after the concise report. GitHub Actions and Azure Pipelines retain command logs and compatibility reports in the `quality-logs` artifact. GitHub Actions also shows folded command logs and retains the artifact for seven days.
+
+Local command logs remain in `scripts/logs/quality/` after execution; `QUALITY_LOG_DIR` can override that directory. Standalone compat build logs are in `scripts/logs/compat/build.log`. These folders are Git-ignored. Each run replaces its own logs and removes old logs for skipped checks.
 
 For a structural, package, documentation, build-reference, or runtime-configuration change, you can run the focused doctor check directly:
 

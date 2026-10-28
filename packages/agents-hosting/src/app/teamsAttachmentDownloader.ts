@@ -12,17 +12,26 @@ import { TurnState } from './turnState'
 import { HttpClient } from '../httpClient'
 import { z } from 'zod'
 import { createOutboundHostValidator, OutboundUrlPolicy } from '../outboundHostValidator'
+import { AttachmentDownloadHttpClient } from './attachmentDownloadHttpClient'
 
 const logger = debug('agents:M365AttachmentDownloader')
 
 /**
  * Downloads attachments from Teams and M365 using the bots access token.
+ * Enabled outbound validation requires HTTPS and validates addresses at every redirect.
+ * Initial request credentials are not forwarded to redirects when validation is enabled.
  */
 export class M365AttachmentDownloader<TState extends TurnState = TurnState> implements InputFileDownloader<TState> {
   private _httpClient: HttpClient
   private _stateKey: string
   private readonly _hostValidator: OutboundUrlPolicy
 
+  /**
+   * Creates an attachment downloader.
+   *
+   * @param stateKey - Turn-state key used by {@link downloadAndStoreFiles}.
+   * @param outboundHostValidator - Policy used to validate attachment download URLs.
+   */
   public constructor (stateKey: string = 'inputFiles', outboundHostValidator?: OutboundUrlPolicy) {
     this._httpClient = new HttpClient()
     this._stateKey = stateKey
@@ -46,11 +55,11 @@ export class M365AttachmentDownloader<TState extends TurnState = TurnState> impl
     }
 
     const connectorClient : ConnectorClient = context.turnState.get<ConnectorClient>(context.adapter.ConnectorClientKey)
-    this._httpClient.defaultHeaders = { ...connectorClient.httpClient.defaultHeaders }
+    const headers = { ...connectorClient.httpClient.defaultHeaders }
 
     const files: InputFile[] = []
     for (const attachment of attachments) {
-      const file = await this.downloadFile(attachment)
+      const file = await this.downloadFile(attachment, headers)
       if (file) {
         files.push(file)
       }
@@ -64,7 +73,7 @@ export class M365AttachmentDownloader<TState extends TurnState = TurnState> impl
    * @param {Attachment} attachment - Attachment to download.
    * @returns {Promise<InputFile>} - Promise that resolves to the downloaded input file.
    */
-  private async downloadFile (attachment: Attachment): Promise<InputFile | undefined> {
+  private async downloadFile (attachment: Attachment, headers: Record<string, string> = {}): Promise<InputFile | undefined> {
     let inputFile: InputFile | undefined
 
     if (attachment.contentUrl && attachment.contentUrl.startsWith('https://')) {
@@ -72,21 +81,19 @@ export class M365AttachmentDownloader<TState extends TurnState = TurnState> impl
         const contentSchema = z.object({ downloadUrl: z.string().url() })
         const parsed = contentSchema.safeParse(attachment.content)
         const downloadUrl = parsed.success ? parsed.data.downloadUrl : attachment.contentUrl
-        if (!this._hostValidator.isAllowed(downloadUrl)) {
-          let host = '[invalid-url]'
-          try { host = new URL(downloadUrl).hostname } catch { /* invalid */ }
-          logger.warn(`Attachment downloadUrl host is not in the configured allowed hosts. Host='${host}'`)
+        const response = await new AttachmentDownloadHttpClient(this._httpClient, this._hostValidator)
+          .get(downloadUrl, headers)
+        if (!response) {
           return undefined
         }
-
-        const response = await this._httpClient.get(downloadUrl, { responseType: 'arraybuffer' })
 
         const content = Buffer.from(response.data as ArrayBuffer)
         const contentTypeHeader = response.headers.get('content-type')
         const contentType = typeof contentTypeHeader === 'string' ? contentTypeHeader : 'application/octet-stream'
         inputFile = { content, contentType, contentUrl: attachment.contentUrl }
       } catch (error) {
-        logger.error(`Failed to download Teams attachment: ${error}`)
+        const code = error instanceof Error && 'code' in error && typeof error.code === 'number' ? error.code : 'unavailable'
+        logger.error(`Failed to download Teams attachment. Error type='${error instanceof Error ? error.name : 'unknown'}', Code='${code}'`)
         return undefined
       }
     } else {

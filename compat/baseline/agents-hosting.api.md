@@ -27,7 +27,7 @@ export interface AadResourceUrls {
     resourceUrls: string[];
 }
 
-// @public (undocumented)
+// @public
 export const ACTION_INVOKE_NAME = "adaptiveCard/action";
 
 // @public
@@ -210,7 +210,7 @@ export class AgentApplicationBuilder<TState extends TurnState = TurnState> {
     withAuthorization(authHandlers: AuthorizationOptions): this;
     withProactive(options: ProactiveOptions): this;
     withRateLimit(rules: RateLimitRule[]): this;
-    withStorage(storage: Storage): this;
+    withStorage(storage: StorageProvider): this;
     withTurnStateFactory(turnStateFactory: () => TState): this;
     withTyping(typing: TypingOptions): this;
 }
@@ -232,7 +232,7 @@ export interface AgentApplicationOptions<TState extends TurnState> {
     rateLimit?: RateLimitRule[];
     removeRecipientMention?: boolean;
     startTypingTimer: boolean;
-    storage?: Storage;
+    storage?: StorageProvider;
     transcriptLogger?: TranscriptLogger;
     turnStateFactory: () => TState;
     typing?: TypingOptions;
@@ -277,15 +277,13 @@ export type AgentResponseHandler = (req: Request_2, res: WebResponse, params: Ag
 
 // @public
 export interface AgentResponseHandlerParams {
-    // (undocumented)
     activityId: string;
-    // (undocumented)
     conversationId: string;
 }
 
 // @public
 export class AgentState {
-    constructor(storage: Storage, storageKey: StorageKeyFactory);
+    constructor(storage: StorageProvider, storageKey: StorageKeyFactory);
     clear(context: TurnContext): Promise<void>;
     createProperty<T = any>(name: string): AgentStatePropertyAccessor<T>;
     delete(context: TurnContext, customKey?: CustomKey): Promise<void>;
@@ -293,7 +291,7 @@ export class AgentState {
     load(context: TurnContext, force?: boolean, customKey?: CustomKey): Promise<any>;
     saveChanges(context: TurnContext, force?: boolean, customKey?: CustomKey): Promise<void>;
     // (undocumented)
-    protected storage: Storage;
+    protected storage: StorageProvider;
     // (undocumented)
     protected storageKey: StorageKeyFactory;
 }
@@ -347,25 +345,25 @@ export interface AppRoute<TState extends TurnState> {
     selector: RouteSelector;
 }
 
-// @public (undocumented)
+// @public
 export const ApxDevScope: string;
 
-// @public (undocumented)
+// @public
 export const ApxDoDScope: string;
 
-// @public (undocumented)
+// @public
 export const ApxGallatinScope: string;
 
-// @public (undocumented)
+// @public
 export const ApxGCCHScope: string;
 
-// @public (undocumented)
+// @public
 export const ApxGCCScope: string;
 
 // @public
 export const ApxLocalScope: string;
 
-// @public (undocumented)
+// @public
 export const ApxProductionScope: string;
 
 // @public
@@ -420,27 +418,19 @@ export interface AuthConfiguration extends ConnectionSettings {
 
 // @public
 export interface AuthConfigurationResolutionOptions {
-    // (undocumented)
     configurationContext?: ConfigurationContext;
 }
 
-// @public (undocumented)
+// @public
 export interface Authorization {
-    // (undocumented)
+    // @deprecated
     exchangeToken(context: TurnContext, scopes: string[], authHandlerId: string): Promise<TokenResponse>;
-    // (undocumented)
     exchangeToken(context: TurnContext, authHandlerId: string, options?: AuthorizationHandlerTokenOptions): Promise<TokenResponse>;
-    // (undocumented)
     exchangeTokenAsTokenCredential?(context: TurnContext, authHandlerId: string, options?: AuthorizationHandlerTokenOptions): TokenCredential;
-    // (undocumented)
     getToken(context: TurnContext, authHandlerId: string): Promise<TokenResponse>;
-    // (undocumented)
     getTokenAsTokenCredential?(context: TurnContext, authHandlerId: string): TokenCredential;
-    // (undocumented)
     onSignInFailure(handler: (context: TurnContext, state: TurnState, authHandlerId?: string, errorMessage?: string) => Promise<void>): void;
-    // (undocumented)
     onSignInSuccess(handler: (context: TurnContext, state: TurnState, authHandlerId?: string) => Promise<void>): void;
-    // (undocumented)
     signOut(context: TurnContext, state: TurnState, authHandlerId?: string): Promise<void>;
 }
 
@@ -458,17 +448,12 @@ export const authorizeJWT: (authConfig: AuthConfiguration) => (req: Request_2, r
 
 // @public
 export interface AuthProvider {
-    // (undocumented)
     acquireTokenOnBehalfOf(scopes: string[], oboAssertion: string): Promise<string>;
-    // (undocumented)
     acquireTokenOnBehalfOf(authConfig: AuthConfiguration, scopes: string[], oboAssertion: string): Promise<string>;
-    // (undocumented)
     acquireTokenOnBehalfOf(authConfigOrScopes: AuthConfiguration | string[], scopesOrOboAssertion?: string[] | string, oboAssertion?: string): Promise<string>;
     connectionSettings?: AuthConfiguration;
     getAccessToken(authConfig: AuthConfiguration, scope: string): Promise<string>;
-    // (undocumented)
     getAccessToken(scope: string): Promise<string>;
-    // (undocumented)
     getAccessToken(authConfigOrScope: AuthConfiguration | string, scope?: string): Promise<string>;
     getAgenticApplicationToken: (tenantId: string, agentAppInstanceId: string) => Promise<string>;
     getAgenticInstanceToken: (tenantId: string, agentAppInstanceId: string) => Promise<string>;
@@ -480,23 +465,14 @@ export type AuthProviderFactory = (config: AuthConfiguration) => AuthProvider;
 
 // @public
 export enum AuthType {
-    // (undocumented)
     Certificate = "Certificate",
-    // (undocumented)
     CertificateSubjectName = "CertificateSubjectName",
-    // (undocumented)
     ClientSecret = "ClientSecret",
-    // (undocumented)
     EntraAuthSideCar = "EntraAuthSideCar",
-    // (undocumented)
     FederatedCredentials = "FederatedCredentials",
-    // (undocumented)
     IdentityProxyManager = "IdentityProxyManager",
-    // (undocumented)
     SystemManagedIdentity = "SystemManagedIdentity",
-    // (undocumented)
     UserManagedIdentity = "UserManagedIdentity",
-    // (undocumented)
     WorkloadIdentity = "WorkloadIdentity"
 }
 
@@ -575,9 +551,11 @@ export function buildJwksUri(iss: string, authConfig: AuthConfiguration): string
 // @public
 export interface CachedAgentState {
     hash: string;
+    isNew?: boolean;
     state: {
         [id: string]: any;
     };
+    version?: string;
 }
 
 // @public
@@ -662,9 +640,7 @@ export interface CloudAdapterOptions {
 
 // @public
 export interface CloudAdapterResult {
-    // (undocumented)
     adapter: CloudAdapter;
-    // (undocumented)
     headerPropagation: HeaderPropagationDefinition | undefined;
 }
 
@@ -729,15 +705,12 @@ export class ConnectionManager implements Connections {
 
 // @public
 export interface ConnectionMapItem {
-    // (undocumented)
     audience?: string;
-    // (undocumented)
     connection: string;
-    // (undocumented)
     serviceUrl: string;
 }
 
-// @public (undocumented)
+// @public
 export interface Connections {
     getConnection: (name: string) => AuthProvider;
     getDefaultConnection: () => AuthProvider;
@@ -777,10 +750,8 @@ export class ConnectorClient {
     deleteActivity(conversationId: string, activityId: string, isTargetedActivity?: boolean): Promise<void>;
     getAttachment(attachmentId: string, viewId: string): Promise<NodeJS.ReadableStream>;
     getAttachmentInfo(attachmentId: string): Promise<AttachmentInfo>;
-    // (undocumented)
     getConversationMember(userId: string, conversationId: string): Promise<ChannelAccount>;
     getConversations(continuationToken?: string): Promise<ConversationsResult>;
-    // (undocumented)
     get httpClient(): HttpClient;
     // (undocumented)
     protected readonly _httpClient: HttpClient;
@@ -799,10 +770,8 @@ export class ConsoleTranscriptLogger implements TranscriptLogger {
 export class Conversation {
     constructor(context: TurnContext);
     constructor(claims: ConversationClaims, reference: ConversationReference);
-    // (undocumented)
     claims: ConversationClaims;
     get identity(): JwtPayload;
-    // (undocumented)
     reference: ConversationReference;
     toJson(): string;
     validate(): void;
@@ -822,15 +791,10 @@ export class ConversationBuilder {
 
 // @public
 export interface ConversationClaims {
-    // (undocumented)
     [key: string]: string | undefined;
-    // (undocumented)
     appid?: string;
-    // (undocumented)
     aud: string;
-    // (undocumented)
     azp?: string;
-    // (undocumented)
     tid?: string;
 }
 
@@ -877,7 +841,7 @@ export interface ConversationsResult {
 
 // @public
 export class ConversationState extends AgentState {
-    constructor(storage: Storage, namespace?: string);
+    constructor(storage: StorageProvider, namespace?: string);
 }
 
 // @public
@@ -921,7 +885,6 @@ export class CreateConversationOptionsBuilder {
     withTenantId(tenantId: string): this;
     withTopicName(name: string): this;
     withUser(userId: string, userName?: string): this;
-    // (undocumented)
     withUser(account: ChannelAccount): this;
 }
 
@@ -959,11 +922,18 @@ export interface Fact {
 }
 
 // @public
-export class FileStorage implements Storage {
-    constructor(folder: string);
+export class FileStorage extends FileStorageInternals implements Storage_2 {
     delete(keys: string[]): Promise<void>;
     read(keys: string[]): Promise<StoreItem>;
-    write(changes: StoreItem, options?: StorageWriteOptions): Promise<void>;
+    write(changes: StoreItem): Promise<void>;
+}
+
+// @public
+export class FileStorageV2 extends StorageV2 {
+    constructor(folder: string);
+    delete(keys: string[], options?: StorageDeleteOptions): Promise<StorageDeleteResults>;
+    read<T extends object = Record<string, unknown>>(keys: string[]): Promise<StorageReadResults<T>>;
+    write<T extends object = Record<string, unknown>>(changes: Record<string, T>, options?: StorageWriteOptions): Promise<StorageWriteResults>;
 }
 
 // @public
@@ -972,25 +942,18 @@ export function getAuthConfigWithDefaults(config?: AuthConfiguration, options?: 
 // @public
 export const getProductInfo: () => string;
 
-// @public (undocumented)
+// @public
 export function getStorageWriteExpiry(options?: StorageWriteOptions): number | undefined;
 
 // @public
 export class HeaderPropagation implements HeaderPropagationCollection {
     constructor(headers: Record<string, string | string[] | undefined>);
-    // (undocumented)
     add(headers: Record<string, string>): void;
-    // (undocumented)
     concat(headers: Record<string, string>): void;
-    // (undocumented)
     get incoming(): Record<string, string>;
-    // (undocumented)
     key(key: string): string | undefined;
-    // (undocumented)
     get outgoing(): Record<string, string>;
-    // (undocumented)
     override(headers: Record<string, string>): void;
-    // (undocumented)
     propagate(headers: string[]): void;
 }
 
@@ -1007,7 +970,6 @@ export interface HeaderPropagationCollection {
 
 // @public
 export interface HeaderPropagationDefinition {
-    // (undocumented)
     (headers: HeaderPropagationCollection): void;
 }
 
@@ -1021,7 +983,7 @@ export interface HeroCard {
     title: string;
 }
 
-// @public (undocumented)
+// @public
 export const HostingErrors: {
     [key: string]: AgentErrorDefinition;
 };
@@ -1029,71 +991,47 @@ export const HostingErrors: {
 // @public
 export class HttpClient {
     constructor(options?: HttpClientOptions);
-    // (undocumented)
     get baseURL(): string;
-    // (undocumented)
     get defaultHeaders(): Record<string, string>;
     set defaultHeaders(headers: Record<string, string>);
-    // (undocumented)
     get<T = unknown>(url: string, options?: Partial<HttpRequestConfig>): Promise<HttpResponse<T>>;
-    // (undocumented)
     request<T = unknown>(config: HttpRequestConfig): Promise<HttpResponse<T>>;
-    // (undocumented)
     setHeader(name: string, value: string): void;
 }
 
 // @public
 export interface HttpClientOptions {
-    // (undocumented)
     baseURL?: string;
-    // (undocumented)
     headers?: Record<string, string>;
 }
 
 // @public
 export class HttpError extends Error {
     constructor(message: string, response: HttpResponse, config: HttpRequestConfig);
-    // (undocumented)
     readonly config: HttpRequestConfig;
-    // (undocumented)
     readonly response: HttpResponse;
-    // (undocumented)
     readonly status: number;
-    // (undocumented)
     toJSON(): Record<string, unknown>;
 }
 
 // @public
 export interface HttpRequestConfig {
-    // (undocumented)
     data?: unknown;
-    // (undocumented)
     headers?: Record<string, string>;
-    // (undocumented)
     method: string;
-    // (undocumented)
     params?: Record<string, string | undefined>;
-    // (undocumented)
     responseType?: 'json' | 'arraybuffer' | 'stream';
-    // (undocumented)
     signal?: AbortSignal;
-    // (undocumented)
     timeout?: number;
-    // (undocumented)
     url: string;
 }
 
 // @public
 export interface HttpResponse<T = unknown> {
-    // (undocumented)
     config: HttpRequestConfig;
-    // (undocumented)
     data: T;
-    // (undocumented)
     headers: Headers;
-    // (undocumented)
     status: number;
-    // (undocumented)
     statusText: string;
 }
 
@@ -1148,14 +1086,25 @@ export interface MediaUrl {
 }
 
 // @public
-export class MemoryStorage implements Storage {
+export class MemoryStorage extends MemoryStorageInternals implements Storage_2 {
     constructor(memory?: {
-        [k: string]: string;
+        [key: string]: string;
     });
     delete(keys: string[]): Promise<void>;
     static getSingleInstance(): MemoryStorage;
     read(keys: string[]): Promise<StoreItem>;
-    write(changes: StoreItem, options?: StorageWriteOptions): Promise<void>;
+    write(changes: StoreItem): Promise<void>;
+}
+
+// @public
+export class MemoryStorageV2 extends StorageV2 {
+    constructor(memory?: {
+        [key: string]: string;
+    });
+    delete(keys: string[], options?: StorageDeleteOptions): Promise<StorageDeleteResults>;
+    static getSingleInstance(): MemoryStorageV2;
+    read<T extends object = Record<string, unknown>>(keys: string[]): Promise<StorageReadResults<T>>;
+    write<T extends object = Record<string, unknown>>(changes: Record<string, T>, options?: StorageWriteOptions): Promise<StorageWriteResults>;
 }
 
 // @public
@@ -1170,7 +1119,6 @@ export class MessageFactory {
 
 // @public
 export interface Middleware {
-    // (undocumented)
     onTurn: (context: TurnContext, next: () => Promise<void>) => Promise<void>;
 }
 
@@ -1221,20 +1169,14 @@ export class MsalTokenCredential implements TokenCredential {
 // @public
 export class MsalTokenProvider implements AuthProvider {
     constructor(connectionSettings?: AuthConfiguration);
-    // (undocumented)
     acquireTokenOnBehalfOf(scopes: string[], oboAssertion: string): Promise<string>;
-    // (undocumented)
     acquireTokenOnBehalfOf(authConfig: AuthConfiguration, scopes: string[], oboAssertion: string): Promise<string>;
     static clearSharedCaches(): void;
-    // (undocumented)
     readonly connectionSettings?: AuthConfiguration;
     getAccessToken(scope: string): Promise<string>;
     getAccessToken(authConfig: AuthConfiguration, scope: string): Promise<string>;
-    // (undocumented)
     getAgenticApplicationToken(tenantId: string, agentAppInstanceId: string): Promise<string>;
-    // (undocumented)
     getAgenticInstanceToken(tenantId: string, agentAppInstanceId: string): Promise<string>;
-    // (undocumented)
     getAgenticUserToken(tenantId: string, agentAppInstanceId: string, agenticUserId: string, scopes: string[]): Promise<string>;
 }
 
@@ -1300,14 +1242,14 @@ export interface OAuthCard {
 // @public
 export class OutboundHostValidator implements OutboundUrlPolicy {
     constructor(options?: OutboundHostValidatorOptions);
-    // (undocumented)
     readonly enabled: boolean;
-    // (undocumented)
     isAllowed(input: string | URL | null | undefined): boolean;
+    isAllowedAsync(input: string | URL | null | undefined): Promise<boolean>;
 }
 
 // @public
 export interface OutboundHostValidatorOptions {
+    allowPrivateNetworkAddresses?: boolean;
     configurationContext?: ConfigurationContext;
     enabled?: boolean;
     hosts?: readonly string[];
@@ -1316,9 +1258,7 @@ export interface OutboundHostValidatorOptions {
 
 // @public
 export interface OutboundUrlPolicy {
-    // (undocumented)
     readonly enabled: boolean;
-    // (undocumented)
     isAllowed(url: string | URL | null | undefined): boolean;
 }
 
@@ -1350,7 +1290,7 @@ export class Proactive<TState extends TurnState> {
 // @public
 export interface ProactiveOptions {
     failOnUnsignedInConnections?: boolean;
-    storage?: Storage;
+    storage?: StorageProvider;
 }
 
 // @public
@@ -1378,7 +1318,7 @@ export interface RateLimitRule {
     maxStorageRetries?: number;
     message?: string | Activity | RateLimitMessageFactory;
     scope: RateLimitScope;
-    storage?: Storage;
+    storage?: StorageProvider;
     storageErrorBehavior?: RateLimitStorageErrorBehavior;
     windowMs: number;
 }
@@ -1435,11 +1375,9 @@ export interface ResourceResponse {
 // @public
 export type RouteHandler<TState extends TurnState> = (context: TurnContext, state: TState) => Promise<void>;
 
-// @public (undocumented)
+// @public
 export class RouteList<TState extends TurnState> {
-    // (undocumented)
     [Symbol.iterator](): Iterator<AppRoute<TState>>;
-    // (undocumented)
     addRoute(selector: RouteSelector, handler: RouteHandler<TState>, isInvokeRoute?: boolean, rank?: number, authHandlers?: string[], isAgenticRoute?: boolean): this;
 }
 
@@ -1481,7 +1419,6 @@ export type SendActivitiesHandler = (context: TurnContext, activities: Activity[
 export class SidecarAuthProvider implements AuthProvider {
     constructor(connectionSettings?: AuthConfiguration);
     acquireTokenOnBehalfOf(scopes: string[], oboAssertion: string): Promise<string>;
-    // (undocumented)
     acquireTokenOnBehalfOf(authConfig: AuthConfiguration, scopes: string[], oboAssertion: string): Promise<string>;
     // (undocumented)
     readonly connectionSettings?: AuthConfiguration;
@@ -1537,19 +1474,83 @@ export enum StatusCodes {
 }
 
 // @public
-export interface Storage {
+interface Storage_2 {
     delete: (keys: string[]) => Promise<void>;
     read: (keys: string[]) => Promise<StoreItem>;
-    write: (changes: StoreItem, options?: StorageWriteOptions) => Promise<void>;
+    write: (changes: StoreItem) => Promise<void>;
 }
+export { Storage_2 as Storage }
+
+// @public
+export interface StorageDeleteOptions {
+    expectedVersion?: string;
+}
+
+// @public
+export interface StorageDeleteResult {
+    key: string;
+    status: StorageOperationStatus;
+    version?: string;
+}
+
+// @public
+export type StorageDeleteResults = Record<string, StorageDeleteResult>;
 
 // @public
 export type StorageKeyFactory = (context: TurnContext) => string | Promise<string>;
 
 // @public
+export enum StorageOperationStatus {
+    ConditionNotMet = "conditionNotMet",
+    Conflict = "conflict",
+    NotFound = "notFound",
+    Succeeded = "succeeded"
+}
+
+// @public
+export type StorageProvider = Storage_2 | StorageV2;
+
+// @public
+export interface StorageReadResult<T extends object = Record<string, unknown>> {
+    key: string;
+    status: StorageOperationStatus;
+    value?: T;
+    version?: string;
+}
+
+// @public
+export type StorageReadResults<T extends object = Record<string, unknown>> = Record<string, StorageReadResult<T>>;
+
+// @public
+export abstract class StorageV2 {
+    abstract delete(keys: string[], options?: StorageDeleteOptions): Promise<StorageDeleteResults>;
+    abstract read<T extends object = Record<string, unknown>>(keys: string[]): Promise<StorageReadResults<T>>;
+    abstract write<T extends object = Record<string, unknown>>(changes: Record<string, T>, options?: StorageWriteOptions): Promise<StorageWriteResults>;
+}
+
+// @public
+export enum StorageWriteMode {
+    CreateOnly = "createOnly",
+    Replace = "replace",
+    Upsert = "upsert"
+}
+
+// @public
 export interface StorageWriteOptions {
+    expectedVersion?: string;
+    mode?: StorageWriteMode;
     ttl?: number;
 }
+
+// @public
+export interface StorageWriteResult {
+    key: string;
+    status: StorageOperationStatus;
+    version?: string;
+}
+
+// @public
+export type StorageWriteResults = Record<string, StorageWriteResult>;
 
 // @public
 export interface StoreItem {
@@ -1727,7 +1728,6 @@ export class TurnContext {
     getAttachment(attachmentId: string, viewId: string): Promise<NodeJS.ReadableStream>;
     // @deprecated (undocumented)
     getAttachmentInfo(attachmentId: string): Promise<AttachmentInfo>;
-    // (undocumented)
     get identity(): JwtPayload;
     get locale(): string | undefined;
     set locale(value: string | undefined);
@@ -1739,7 +1739,6 @@ export class TurnContext {
     sendActivities(activities: Activity[]): Promise<ResourceResponse[]>;
     sendActivity(activityOrText: string | Activity, speak?: string, inputHint?: string): Promise<ResourceResponse | undefined>;
     sendTraceActivity(name: string, value?: any, valueType?: string, label?: string): Promise<ResourceResponse | undefined>;
-    // (undocumented)
     get streamingResponse(): StreamingResponse;
     get turnState(): TurnContextStateCollection;
     updateActivity(activity: Activity): Promise<void>;
@@ -1769,9 +1768,9 @@ export class TurnState<TConversationState = DefaultConversationState, TUserState
     getValue<TValue = unknown>(path: string): TValue;
     hasValue(path: string): boolean;
     get isLoaded(): boolean;
-    load(context: TurnContext, storage?: Storage, force?: boolean): Promise<boolean>;
+    load(context: TurnContext, storage?: StorageProvider, force?: boolean): Promise<boolean>;
     protected onComputeStorageKeys(context: TurnContext): Promise<Record<string, string>>;
-    save(context: TurnContext, storage?: Storage): Promise<void>;
+    save(context: TurnContext, storage?: StorageProvider): Promise<void>;
     setValue(path: string, value: unknown): void;
     get user(): TUserState;
     set user(value: TUserState);
@@ -1804,7 +1803,7 @@ export type UpdateActivityHandler = (context: TurnContext, activity: Activity, n
 
 // @public
 export class UserState extends AgentState {
-    constructor(storage: Storage, namespace?: string);
+    constructor(storage: StorageProvider, namespace?: string);
 }
 
 // @public
@@ -1812,7 +1811,6 @@ export class UserTokenClient {
     constructor(msAppId: string);
     constructor(httpClient: HttpClient);
     constructor(httpClient: HttpClient, authProvider?: AuthProvider, authScope?: string);
-    // (undocumented)
     client: HttpClient;
     static createClientWithScope(baseURL: string, authProvider: AuthProvider, scope: string, headers?: HeaderPropagationCollection): Promise<UserTokenClient>;
     exchangeTokenAsync(userId: string, connectionName: string, channelIdComposite: string, tokenExchangeRequest: TokenExchangeRequest): Promise<TokenResponse>;
@@ -1822,7 +1820,6 @@ export class UserTokenClient {
     getTokenStatus(userId: string, channelIdComposite: string, include?: string): Promise<TokenStatus[]>;
     getUserToken(connectionName: string, channelIdComposite: string, userId: string, code?: string): Promise<TokenResponse>;
     signOut(userId: string, connectionName: string, channelIdComposite: string): Promise<void>;
-    // (undocumented)
     updateAuthToken(token: string): void;
 }
 
@@ -1844,29 +1841,21 @@ export interface VideoCard {
 
 // @public
 export interface WebApp {
-    // (undocumented)
     post(path: string, handler: (req: any, res: any) => unknown | Promise<unknown>): unknown;
 }
 
 // @public
 export interface WebRequestParamsCarrier {
-    // (undocumented)
     params?: Record<string, string | undefined>;
 }
 
 // @public
 export interface WebResponse {
-    // (undocumented)
     end(): this;
-    // (undocumented)
     headersSent: boolean;
-    // (undocumented)
     send(body?: unknown): this;
-    // (undocumented)
     setHeader(name: string, value: string): this;
-    // (undocumented)
     status(code: number): this;
-    // (undocumented)
     writableEnded: boolean;
 }
 

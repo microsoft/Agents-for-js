@@ -6,7 +6,18 @@ import { AgentApplication, RouteHandler, RouteRank, RouteSelector, TurnContext, 
 import type { FileConsentCardResponse } from '@microsoft/teams.api'
 import { TeamsTurnContext } from '../teamsTurnContext'
 
-type FileConsentHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, response: FileConsentCardResponse) => Promise<void>
+/**
+ * Handles file consent decisions registered with {@link FileConsent.onAccept} or
+ * {@link FileConsent.onDecline}.
+ *
+ * @typeParam TState - The application's turn state type.
+ * @param context - The Teams turn context for the file consent invoke.
+ * @param state - The current application turn state.
+ * @param response - The consent decision and its associated context or upload information.
+ * @returns A promise that resolves after processing. The extension then acknowledges the invoke
+ * without a response body; the handler is responsible for any file upload.
+ */
+export type FileConsentHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, response: FileConsentCardResponse) => Promise<void>
 
 function isFileConsentAction (context: TurnContext, action: 'accept' | 'decline'): boolean {
   const activityAction = (context.activity.value as any)?.action

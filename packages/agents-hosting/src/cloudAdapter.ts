@@ -152,7 +152,9 @@ function sanitizeForLog (value: string, max = 256): string {
 function truncateActivityForLog (activity: unknown, max = 1024): string {
   try {
     const json = JSON.stringify(activity)
-    if (!json) return '<unserializable>'
+    if (!json) {
+      return '<unserializable>'
+    }
     // Strip C0/DEL/C1 controls + U+2028/U+2029 from the serialized form so
     // attacker-controlled fields (e.g. activity.text) can't forge log lines.
     // eslint-disable-next-line no-control-regex
@@ -651,18 +653,30 @@ export class CloudAdapter extends BaseAdapter {
    * should be rejected with a 400.
    */
   private validateServiceUrl (identity: JwtPayload | undefined, activity: Activity): boolean {
-    if (!this.isOutboundServiceUrlAllowed(activity.serviceUrl)) return false
+    if (!this.isOutboundServiceUrlAllowed(activity.serviceUrl)) {
+      return false
+    }
 
-    if (!identity) return true
-    if (!activity.serviceUrl) return true
+    if (!identity) {
+      return true
+    }
+    if (!activity.serviceUrl) {
+      return true
+    }
 
     const claimValue = identity.serviceurl
-    if (typeof claimValue !== 'string') return true
+    if (typeof claimValue !== 'string') {
+      return true
+    }
 
     let claimHost: string | undefined
     let activityHost: string | undefined
-    try { claimHost = new URL(claimValue).hostname.toLowerCase() } catch { /* invalid */ }
-    try { activityHost = new URL(activity.serviceUrl).hostname.toLowerCase() } catch { /* invalid */ }
+    try {
+      claimHost = new URL(claimValue).hostname.toLowerCase()
+    } catch { /* invalid */ }
+    try {
+      activityHost = new URL(activity.serviceUrl).hostname.toLowerCase()
+    } catch { /* invalid */ }
 
     if (claimHost && activityHost && claimHost === activityHost) {
       return true
@@ -682,7 +696,9 @@ export class CloudAdapter extends BaseAdapter {
    * Applies the shared outbound host policy.
    */
   private isOutboundServiceUrlAllowed (serviceUrl: string | undefined): boolean {
-    if (!this._hostValidator.enabled || !serviceUrl || this._hostValidator.isAllowed(serviceUrl)) return true
+    if (!this._hostValidator.enabled || !serviceUrl || this._hostValidator.isAllowed(serviceUrl)) {
+      return true
+    }
 
     logger.warn(`ServiceUrl host is not in the configured allowed hosts. ServiceUrl='${sanitizeForLog(serviceUrl)}'`)
     return false
@@ -751,6 +767,35 @@ export class CloudAdapter extends BaseAdapter {
 
   /**
    * Continues a conversation.
+   *
+   * @remarks
+   * Errors thrown by `logic` are passed to {@link BaseAdapter.onTurnError}. If the error handler
+   * completes normally, this method resolves. A `try`/`catch` around `continueConversation` will
+   * therefore not observe the original error.
+   *
+   * To observe an error from a proactive operation, catch it inside `logic` and throw it after
+   * `continueConversation` completes:
+   *
+   * ```typescript
+   * let operationFailed = false
+   * let operationError: unknown
+   *
+   * await adapter.continueConversation(botAppId, reference, async (context) => {
+   *   try {
+   *     await context.sendActivity('Proactive message')
+   *   } catch (error) {
+   *     operationFailed = true
+   *     operationError = error
+   *   }
+   * })
+   *
+   * if (operationFailed) {
+   *   throw operationError
+   * }
+   * ```
+   *
+   * Catching the error inside `logic` prevents `onTurnError` from receiving that error.
+   *
    * @param botAppIdOrIdentity - The bot identity to use when continuing the conversation. This can be either:
    * a string containing the bot's App ID (botId) or a JwtPayload object containing identity claims (must include aud).
    * @param reference - The conversation reference to continue.
@@ -891,8 +936,12 @@ export class CloudAdapter extends BaseAdapter {
     if (typeof serviceUrl !== 'string' || !serviceUrl) {
       throw ExceptionHelper.generateException(TypeError, Errors.ServiceUrlRequired)
     }
-    if (!conversationParameters) throw ExceptionHelper.generateException(TypeError, Errors.ConversationParametersRequired)
-    if (!logic) throw ExceptionHelper.generateException(TypeError, Errors.LogicParameterRequired)
+    if (!conversationParameters) {
+      throw ExceptionHelper.generateException(TypeError, Errors.ConversationParametersRequired)
+    }
+    if (!logic) {
+      throw ExceptionHelper.generateException(TypeError, Errors.LogicParameterRequired)
+    }
 
     const identity = CloudAdapter.createIdentity(audience)
     const restClient = await this.createConnectorClient(serviceUrl, audience, identity)
