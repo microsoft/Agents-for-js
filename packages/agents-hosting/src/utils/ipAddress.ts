@@ -42,8 +42,12 @@ export function isPrivateOrLoopbackAddress (address: string): boolean {
 
 export function isBlockedOutboundAddress (address: string): boolean {
   const normalized = normalizeAddress(address)
-  return !normalized ||
-    normalized === '::' ||
-    (mappedIPv4(normalized) ?? normalized) === '0.0.0.0' ||
+  if (!normalized) return true
+  const ipv4 = mappedIPv4(normalized) ?? normalized
+  const [first, second] = ipv4.split('.').map(Number)
+  // RFC 6598 shared space is outbound-only; it must not become trusted sidecar space.
+  return normalized === '::' ||
+    ipv4 === '0.0.0.0' ||
+    (first === 100 && second >= 64 && second <= 127) ||
     isPrivateOrLoopbackAddress(normalized)
 }

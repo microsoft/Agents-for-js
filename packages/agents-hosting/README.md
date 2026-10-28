@@ -366,14 +366,15 @@ const agent = new AgentApplication({
 When enforcement is enabled, URLs must use HTTPS and must not contain userinfo.
 Both attachment downloaders validate the actual download destination and every
 redirect before requesting it. They check all DNS answers and reject private,
-loopback, link-local, unique-local, IPv4-mapped private, and unspecified addresses
-by default. DNS failures and empty DNS answers also block the download.
+shared (RFC 6598 `100.64.0.0/10`), loopback, link-local, unique-local,
+IPv4-mapped forms of blocked IPv4 addresses, and unspecified addresses by default.
+DNS failures and empty DNS answers also block the download.
 Rejected attachments are skipped with a warning; no request is sent to the
 rejected destination. Warnings use `DEBUG=agents:attachmentDownloader:*` or
 `DEBUG=agents:outboundHostValidator:*` and do not include URL query strings or
 credentials.
 
-To deliberately access an allowlisted private-network attachment destination,
+To deliberately access an allowlisted private or shared-network attachment destination,
 set `allowPrivateNetworkAddresses: true` (or the equivalent environment variable
 above). This exception does not bypass HTTPS, userinfo checks, or the host
 allowlist. Existing custom `OutboundUrlPolicy` implementations remain supported;

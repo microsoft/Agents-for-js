@@ -115,6 +115,11 @@ describe('OutboundHostValidator', () => {
     assertDisabledValidatorAllows('https://169.254.169.254/latest/meta-data')
   })
 
+  it('preserves shared-network access when enforcement is disabled', () => {
+    assertDisabledValidatorAllows('https://100.64.0.1/file')
+    assertDisabledValidatorAllows('https://[::ffff:100.64.0.1]/file')
+  })
+
   it('allows localhost when enforcement is disabled', () => {
     assertDisabledValidatorAllows('http://localhost/admin')
   })
@@ -240,7 +245,9 @@ describe('OutboundHostValidator', () => {
 
   for (const host of [
     '127.0.0.1', '10.1.2.3', '169.254.169.254', '0.0.0.0', '[::]', '[::1]',
-    '[fd12::1]', '[fe80::1]', '[::ffff:127.0.0.1]', 'localhost'
+    '[fd12::1]', '[fe80::1]', '[::ffff:127.0.0.1]', 'localhost',
+    '100.64.0.0', '100.64.0.1', '100.127.255.255',
+    '[::ffff:100.64.0.1]', '[::ffff:100.127.255.255]'
   ]) {
     it(`blocks allowlisted private address ${host} unless explicitly permitted`, async () => {
       const lookup = sinon.stub(dns, 'lookup')
@@ -271,6 +278,9 @@ describe('OutboundHostValidator', () => {
     [{ address: '10.0.0.1', family: 4 }],
     [{ address: '93.184.216.34', family: 4 }, { address: '::1', family: 6 }],
     [{ address: '::ffff:169.254.169.254', family: 6 }],
+    [{ address: '100.64.0.1', family: 4 }],
+    [{ address: '::ffff:100.64.0.1', family: 6 }],
+    [{ address: '93.184.216.34', family: 4 }, { address: '100.127.255.255', family: 4 }],
     [{ address: '::', family: 6 }],
     []
   ]) {
@@ -289,6 +299,17 @@ describe('OutboundHostValidator', () => {
     const validator = new OutboundHostValidator({ enabled: true, hosts: ['files.example'] })
     assert.equal(await validator.isAllowedAsync('https://files.example/file'), true)
     sinon.assert.calledOnceWithExactly(lookup, 'files.example', { all: true })
+  })
+
+  it('does not block DNS answers immediately outside RFC 6598 shared space', async () => {
+    sinon.stub(dns, 'lookup').resolves([
+      { address: '100.63.255.255', family: 4 },
+      { address: '100.128.0.0', family: 4 },
+      { address: '::ffff:100.63.255.255', family: 6 },
+      { address: '::ffff:100.128.0.0', family: 6 }
+    ])
+    const validator = new OutboundHostValidator({ enabled: true, hosts: ['files.example'] })
+    assert.equal(await validator.isAllowedAsync('https://files.example/file'), true)
   })
 
   it('fails closed on DNS errors and skips DNS entirely while disabled', async () => {

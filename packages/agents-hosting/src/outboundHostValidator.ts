@@ -39,8 +39,8 @@ export interface OutboundHostValidatorOptions {
   includeDefaultMicrosoftHosts?: boolean
 
   /**
-   * Allows allowlisted HTTPS destinations to use private, loopback, link-local,
-   * or unspecified addresses. Defaults to `false`.
+   * Allows allowlisted HTTPS destinations to use private, shared (RFC 6598),
+   * loopback, link-local, or unspecified addresses. Defaults to `false`.
    */
   allowPrivateNetworkAddresses?: boolean
 

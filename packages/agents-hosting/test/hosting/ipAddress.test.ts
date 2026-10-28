@@ -29,8 +29,20 @@ describe('shared IP address classification', () => {
   }
 
   for (const address of [
+    '100.64.0.0', '100.64.0.1', '100.127.255.255',
+    '::ffff:100.64.0.0', '::ffff:100.64.0.1', '::ffff:100.127.255.255',
+    '::ffff:6440:1', '0:0:0:0:0:ffff:647f:ffff', '[::ffff:6440:1]'
+  ]) {
+    it(`blocks RFC 6598 shared address ${address} without changing sidecar classification`, () => {
+      assert.equal(isPrivateOrLoopbackAddress(address), false)
+      assert.equal(isBlockedOutboundAddress(address), true)
+    })
+  }
+
+  for (const address of [
     '8.8.8.8', '172.15.255.255', '172.32.0.0', '192.169.0.1', '169.255.0.1',
-    '2001:4860:4860::8888', '::ffff:8.8.8.8', '0:0:0:0:0:ffff:808:808'
+    '2001:4860:4860::8888', '::ffff:8.8.8.8', '0:0:0:0:0:ffff:808:808',
+    '100.63.255.255', '100.128.0.0', '::ffff:100.63.255.255', '::ffff:100.128.0.0'
   ]) {
     it(`allows public address ${address} only in the outbound classifier`, () => {
       assert.equal(isPrivateOrLoopbackAddress(address), false)

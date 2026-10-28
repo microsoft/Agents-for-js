@@ -330,7 +330,7 @@
           "default": true
         },
         "allowPrivateNetworkAddresses": {
-          "description": "Allow allowlisted HTTPS attachment destinations to use private, loopback, link-local, or unspecified addresses. Does not bypass host validation.",
+          "description": "Allow allowlisted HTTPS attachment destinations to use private, shared (RFC 6598), loopback, link-local, or unspecified addresses. Does not bypass host validation.",
           "type": "boolean",
           "default": false
         },

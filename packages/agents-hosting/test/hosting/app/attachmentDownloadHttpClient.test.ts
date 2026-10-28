@@ -87,6 +87,32 @@ describe('validated attachment fetching', () => {
     sinon.assert.calledTwice(lookup)
   })
 
+  for (const address of ['100.64.0.1', '::ffff:100.64.0.1']) {
+    it(`rejects literal and DNS-resolved shared address ${address} before fetching`, async () => {
+      const host = address.includes(':') ? `[${address}]` : address
+      const policy = new OutboundHostValidator({
+        enabled: true, includeDefaultMicrosoftHosts: false, hosts: [host, 'files.example']
+      })
+      const fetchStub = sinon.stub(globalThis, 'fetch')
+      const downloader = client(policy)
+      assert.equal(await downloader.get(`https://${host}/file`, headers), undefined)
+
+      lookup.resolves([{ address, family: address.includes(':') ? 6 : 4 }])
+      assert.equal(await downloader.get('https://files.example/file', headers), undefined)
+      sinon.assert.notCalled(fetchStub)
+    })
+
+    it(`blocks redirect DNS resolving to shared address ${address}`, async () => {
+      lookup.onSecondCall().resolves([{ address, family: address.includes(':') ? 6 : 4 }])
+      const fetchStub = sinon.stub(globalThis, 'fetch').resolves(new Response(null, {
+        status: 302, headers: { location: '/next' }
+      }))
+      assert.equal(await client().get('https://files.example/file', headers), undefined)
+      sinon.assert.calledOnce(fetchStub)
+      sinon.assert.calledTwice(lookup)
+    })
+  }
+
   it('fails closed on invalid redirect locations and cancels the intermediate body', async () => {
     const redirect = new Response('redirect', { status: 302, headers: { location: 'https://[' } })
     const cancel = sinon.spy(redirect.body!, 'cancel')
