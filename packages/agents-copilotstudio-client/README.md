@@ -82,6 +82,15 @@ const settings: ConnectionSettings = {
 };
 ```
 
+For published agents without a `directConnectUrl`, the client first sends an authenticated
+`GET /copilotstudio/agents/{schemaName}/conversation-endpoints` to the environment's
+Power Platform API. It validates the returned HTTPS operation URLs and uses them unchanged,
+including operation-specific query parameters. Concurrent requests on one client share discovery.
+The discovered `createConversation` URL is stored in the supplied settings' `directConnectUrl`;
+clearing it triggers rediscovery. Prebuilt agents and explicitly
+configured direct URLs retain their existing routing behavior. Subscription requires the agent
+to advertise a `subscribe` endpoint.
+
 Using the DirectConnectUrl:
 
 ```ts

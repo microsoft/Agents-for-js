@@ -63,7 +63,7 @@ export interface StoreItems {
 export type StorageKeyFactory = (context: TurnContext) => string | Promise<string>
 
 /**
- * Defines the interface for storage operations in the Agents platform.
+ * Defines the version 1 interface for storage operations in the Agents platform.
  *
  * @remarks
  * Storage providers persist state data across conversation turns, enabling
@@ -72,7 +72,9 @@ export type StorageKeyFactory = (context: TurnContext) => string | Promise<strin
  *
  * The interface is designed to be simple with just three core operations:
  * read, write, and delete. All operations are asynchronous to support both
- * in-memory and remote storage providers.
+ * in-memory and remote storage providers. New implementations should use
+ * {@link StorageV2}; this V1 interface remains supported by
+ * {@link StorageProvider} through a compatibility adapter.
  */
 export interface Storage {
   /**
@@ -101,3 +103,113 @@ export interface Storage {
    */
   delete: (keys: string[]) => Promise<void>;
 }
+
+/**
+ * The result of a version 2 storage read operation.
+ *
+ * A result is returned for every requested key. `value` and `version` are
+ * available when `status` is {@link StorageOperationStatus.Succeeded}.
+ */
+export interface StorageReadResult<T extends object = Record<string, unknown>> {
+  key: string;
+  status: StorageOperationStatus;
+  value?: T;
+  version?: string;
+}
+
+/**
+ * The result of a version 2 storage write operation.
+ */
+export interface StorageWriteResult {
+  key: string;
+  status: StorageOperationStatus;
+  version?: string;
+}
+
+/**
+ * The result of a version 2 storage delete operation.
+ */
+export interface StorageDeleteResult {
+  key: string;
+  status: StorageOperationStatus;
+  version?: string;
+}
+
+/** A keyed set of storage read results. */
+export type StorageReadResults<T extends object = Record<string, unknown>> = Record<string, StorageReadResult<T>>
+
+/** A keyed set of storage write results. */
+export type StorageWriteResults = Record<string, StorageWriteResult>
+
+/** A keyed set of storage delete results. */
+export type StorageDeleteResults = Record<string, StorageDeleteResult>
+
+/** The outcome of one version 2 storage operation. */
+export enum StorageOperationStatus {
+  Succeeded = 'succeeded',
+  NotFound = 'notFound',
+  Conflict = 'conflict',
+  ConditionNotMet = 'conditionNotMet',
+}
+
+/** The write mode for a version 2 storage operation. */
+export enum StorageWriteMode {
+  Upsert = 'upsert',
+  CreateOnly = 'createOnly',
+  Replace = 'replace',
+}
+
+/** Options applied to every item in a version 2 write operation. */
+export interface StorageWriteOptions {
+  /**
+   * Optional time to live, in seconds, for written items.
+   *
+   * When set, storage providers stop returning the written items after this
+   * duration has elapsed. Values must be finite numbers greater than zero.
+   */
+  ttl?: number;
+  mode?: StorageWriteMode;
+  expectedVersion?: string;
+}
+
+/** Options applied to every item in a version 2 delete operation. */
+export interface StorageDeleteOptions {
+  expectedVersion?: string;
+}
+
+/**
+ * The version 2 storage contract.
+ *
+ * This does not extend {@link Storage}: JavaScript cannot overload methods by
+ * return type at runtime. V2 providers are exposed as separately named classes.
+ */
+export abstract class StorageV2 {
+  /**
+   * Reads stored values and returns one result for every requested key.
+   *
+   * @param keys The keys to read. An empty array is valid.
+   * @returns Keyed results containing a value and storage version when found.
+   */
+  abstract read<T extends object = Record<string, unknown>> (keys: string[]): Promise<StorageReadResults<T>>
+
+  /**
+   * Writes values with optional create, replace, or version conditions.
+   *
+   * @param changes Values indexed by their storage keys.
+   * @param options Conditions applied to every value in the batch.
+   * @returns One result for every supplied key.
+   */
+  abstract write<T extends object = Record<string, unknown>> (changes: Record<string, T>, options?: StorageWriteOptions): Promise<StorageWriteResults>
+
+  /**
+   * Deletes values with an optional version condition.
+   *
+   * @param keys The keys to delete. An empty array is valid.
+   * @param options Conditions applied to every key in the batch.
+   * @returns One result for every supplied key.
+   */
+  abstract delete (keys: string[], options?: StorageDeleteOptions): Promise<StorageDeleteResults>
+}
+
+/** A storage implementation supported by public hosting interfaces. */
+export type StorageProvider = Storage | StorageV2

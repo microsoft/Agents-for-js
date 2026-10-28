@@ -4,7 +4,7 @@
  */
 
 import { Activity } from '@microsoft/agents-activity'
-import { Storage, StoreItem } from '../../storage'
+import { StorageProvider, StoreItem } from '../../storage'
 import { TurnContext } from '../../turnContext'
 import { AgenticAuthorizationOptions, AzureBotAuthorizationOptions } from './handlers'
 import { TokenResponse } from '../../oauth'
@@ -97,7 +97,7 @@ export interface AuthorizationHandlerSettings {
   /**
    * Storage instance for persisting handler state.
    */
-  storage: Storage
+  storage: StorageProvider
   /**
    * Connections instance for managing authentication connections.
    */

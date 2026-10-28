@@ -4,7 +4,7 @@
  */
 
 import { AgentState } from './agentState'
-import { Storage } from '../storage/storage'
+import { StorageProvider } from '../storage/storage'
 import { TurnContext } from '../turnContext'
 import { Activity, ExceptionHelper } from '@microsoft/agents-activity'
 import { Errors } from '../errorHelper'
@@ -17,7 +17,7 @@ export class ConversationState extends AgentState {
    * Creates a new instance of ConversationState.
    * @param storage The storage provider.
    */
-  constructor (storage: Storage, private readonly namespace: string = '') {
+  constructor (storage: StorageProvider, private readonly namespace: string = '') {
     super(storage, (context: TurnContext) => {
       const key: string = this.getStorageKey(context)
 

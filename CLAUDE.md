@@ -155,7 +155,7 @@ Use `authorizeJWT()` middleware for Express applications to validate incoming re
 
 ### Module System
 
-**Important**: This project uses ES6 modules (`"type": "module"` in package.json). All imports must use explicit file extensions in the built output, and the code targets Node.js 20+.
+**Important**: This project uses ES6 modules (`"type": "module"` in package.json). All imports must use explicit file extensions in the built output, and the code targets Node.js 22+.
 
 ## TypeScript Configuration
 
@@ -244,18 +244,12 @@ Each package keeps its error definitions in a local `errorHelper.ts` (e.g. `pack
 
 The CI pipeline (`.github/workflows/ci.yml`) runs:
 1. npm ci (clean install)
-2. npm run repo:doctor
-3. npm run lint
-4. npm run lint:deps:ci
-5. npm run build
-6. npm test
-7. npm run compat
-8. npm run build:samples
-9. node scripts/set-version.mjs (version management)
+2. npm run quality (doctor, lint, dependency lint, build, tests, compatibility, and samples; logs are folded in GitHub Actions and retained as a seven-day `quality-logs` artifact)
+3. node scripts/set-version.mjs (version management)
 
 ## Node Version
 
-**Requires Node.js 20+**. The repo uses Node 24 features like `--env-file` flag for loading `.env` files without the `dotenv` package.
+**Requires Node.js 22+**. Development and CI use Node.js 24. Test agents and samples use the native `--env-file` flag to load `.env` files without the `dotenv` package.
 
 ## Environment Variables
 

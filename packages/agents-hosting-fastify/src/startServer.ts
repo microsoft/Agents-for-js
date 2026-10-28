@@ -3,28 +3,25 @@
  * Licensed under the MIT License.
  */
 
-import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest, type FastifyServerOptions } from 'fastify'
+import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastify'
 import rateLimit, { type RateLimitPluginOptions } from '@fastify/rate-limit'
 import {
   ActivityHandler,
   AgentApplication,
   AuthConfiguration,
-  authorizeJWT,
-  getAuthConfigWithDefaults,
-  Request,
   TurnState
 } from '@microsoft/agents-hosting'
-import { createCloudAdapter } from '@microsoft/agents-hosting'
+import { type CreateCloudAdapterOptions } from '@microsoft/agents-hosting'
 import { version } from '@microsoft/agents-hosting/package.json'
 import { debug } from '@microsoft/agents-telemetry'
-import { adaptReply } from './replyAdapter'
+import { createAgentRequestHandlerInternal } from './createAgentRequestHandlerInternal'
 
 const logger = debug('agents:hosting-fastify')
 
 /**
  * Options for configuring the Fastify server started by `startServer`.
  */
-export interface StartServerOptions {
+export interface StartServerOptions extends CreateCloudAdapterOptions {
   /**
    * Optional custom authentication configuration.
    * If not provided, configuration will be loaded from environment variables using loadAuthConfigFromEnv().
@@ -139,7 +136,7 @@ export async function startServer (
   const isOptions = typeof optionsOrAuth === 'object' && optionsOrAuth !== null &&
     ('authConfig' in optionsOrAuth || 'port' in optionsOrAuth || 'routePath' in optionsOrAuth ||
       'rateLimit' in optionsOrAuth || 'beforeListen' in optionsOrAuth || 'fastifyOptions' in optionsOrAuth ||
-      'bodyLimit' in optionsOrAuth)
+      'bodyLimit' in optionsOrAuth || 'configurationContext' in optionsOrAuth)
 
   // Legacy overload: the second argument is a raw AuthConfiguration. An empty object carries no auth
   // settings, so treat it like no argument and load defaults from the environment (matching startServer(agent)).
@@ -149,9 +146,6 @@ export async function startServer (
     : { authConfig: hasAuthSettings ? optionsOrAuth as AuthConfiguration : undefined }
 
   const routePath = opts.routePath ?? '/api/messages'
-  const authConfig = getAuthConfigWithDefaults(opts.authConfig)
-  const { adapter, headerPropagation } = createCloudAdapter(agent, authConfig)
-  const jwtMiddleware = authorizeJWT(authConfig)
   const fastify = Fastify(opts.fastifyOptions)
 
   if (opts.rateLimit) {
@@ -161,39 +155,15 @@ export async function startServer (
   }
 
   const bodyLimit = opts.bodyLimit ?? 102400
+  const { adapter, authConfig, handler, headerPropagation } = createAgentRequestHandlerInternal(
+    agent,
+    opts.authConfig,
+    { configurationContext: opts.configurationContext }
+  )
   fastify.post(routePath, {
     config: opts.rateLimit ? { rateLimit: opts.rateLimit } : {},
     bodyLimit
-  }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const adaptedReq: Request = {
-      method: request.method,
-      headers: request.headers as Record<string, string | string[] | undefined>,
-      body: (request.body ?? undefined) as Record<string, unknown> | undefined
-    }
-    const adaptedRes = adaptReply(reply)
-
-    let middlewareError: any
-    let nextCalled = false
-    await jwtMiddleware(adaptedReq, adaptedRes, (err?: any) => {
-      nextCalled = true
-      middlewareError = err
-    })
-    if (middlewareError) {
-      throw middlewareError
-    }
-    if (!nextCalled || adaptedRes.headersSent) {
-      return
-    }
-    if (adaptedReq.user !== undefined) {
-      ;(request as FastifyRequest & { user?: unknown }).user = adaptedReq.user
-    }
-    await adapter.process(
-      adaptedReq,
-      adaptedRes,
-      (context) => agent.run(context),
-      headerPropagation
-    )
-  })
+  }, handler)
 
   if (opts.beforeListen && typeof opts.beforeListen === 'function') {
     await opts.beforeListen(fastify)
@@ -201,6 +171,7 @@ export async function startServer (
 
   const port = opts.port ?? process.env.PORT ?? 3978
   const className = (obj: any) => obj?.constructor?.name ?? (obj ? 'custom' : undefined)
+  const usesCreatedAdapter = agent instanceof ActivityHandler || !agent.adapter
   logger.info('Fastify server settings loaded', {
     messageEndpoint: `POST ${routePath}`,
     port: {
@@ -210,7 +181,7 @@ export async function startServer (
     rateLimit: opts.rateLimit ? 'enabled' : 'disabled',
     adapter: {
       className: className(adapter),
-      source: agent instanceof ActivityHandler || !agent.adapter ? 'created' : 'agent.adapter'
+      source: usesCreatedAdapter ? 'created' : 'agent.adapter'
     },
     headerPropagation: headerPropagation !== undefined ? 'enabled' : 'disabled'
   })

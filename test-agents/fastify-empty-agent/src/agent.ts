@@ -2,8 +2,36 @@
 // Licensed under the MIT License.
 
 import { startServer } from '@microsoft/agents-hosting-fastify'
-import { AgentApplication, MemoryStorage, TurnContext, TurnState } from '@microsoft/agents-hosting'
+import {
+  AgentApplication,
+  createJsonFileConfigurationSource,
+  MemoryStorage,
+  preloadConfigurationSources,
+  TurnContext,
+  TurnState
+} from '@microsoft/agents-hosting'
 import { version } from '@microsoft/agents-hosting/package.json'
+import { parseArgs } from 'node:util'
+
+async function preloadJsonConfiguration (): Promise<void> {
+  const { values } = parseArgs({
+    options: {
+      'config-file': {
+        type: 'string'
+      }
+    }
+  })
+  const configFile = values['config-file']
+  if (!configFile) {
+    return
+  }
+
+  await preloadConfigurationSources([{
+    source: createJsonFileConfigurationSource(configFile),
+    mode: 'overrideEnvironment'
+  }])
+}
+
 class EmptyAgent extends AgentApplication<TurnState> {
   constructor () {
     super({ startTypingTimer: true, storage: new MemoryStorage() })
@@ -31,5 +59,6 @@ class EmptyAgent extends AgentApplication<TurnState> {
 }
 
 ;(async () => {
+  await preloadJsonConfiguration()
   await startServer(new EmptyAgent())
 })()

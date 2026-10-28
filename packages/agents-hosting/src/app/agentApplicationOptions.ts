@@ -4,7 +4,7 @@
  */
 
 import { CloudAdapter } from '../cloudAdapter'
-import { Storage } from '../storage'
+import { StorageProvider } from '../storage'
 import { TranscriptLogger } from '../transcript'
 import { AdaptiveCardsOptions } from './adaptiveCards'
 import { InputFileDownloader } from './inputFileDownloader'
@@ -13,6 +13,8 @@ import { HeaderPropagationDefinition } from '../headerPropagation'
 import { AuthorizationOptions } from './auth/types'
 import { Connections } from '../auth/connections'
 import { ProactiveOptions } from './proactive'
+import { RateLimitRule } from './rateLimit'
+import { ConfigurationContext } from '../configuration/configuration'
 
 /**
  * Typing timer settings for a specific channel or the global default.
@@ -53,6 +55,12 @@ export interface TypingOptions extends TypingTimingOptions {
  */
 export interface AgentApplicationOptions<TState extends TurnState> {
   /**
+   * Optional host-scoped external configuration used by the application's
+   * default adapter and authorization handlers.
+   */
+  configurationContext?: ConfigurationContext;
+
+  /**
    * The adapter used for handling bot interactions with various messaging platforms.
    * This adapter manages the communication layer between your agent and the Bot Framework.
    * If not provided, a default CloudAdapter will be created automatically.
@@ -72,12 +80,12 @@ export interface AgentApplicationOptions<TState extends TurnState> {
 
   /**
    * The storage mechanism for persisting conversation and user state across turns.
-   * This can be any implementation of the Storage interface, such as memory storage
-   * for development or blob storage for production scenarios.
+   * This can be a legacy Storage implementation, a StorageV2 implementation,
+   * or a built-in storage provider.
    *
    * @default undefined (no persistence)
    */
-  storage?: Storage;
+  storage?: StorageProvider;
 
   /**
    * Whether to start a typing indicator timer when the bot begins processing a message.
@@ -201,4 +209,10 @@ export interface AgentApplicationOptions<TState extends TurnState> {
    * When provided, `app.proactive` will be available.
    */
   proactive?: ProactiveOptions
+
+  /**
+   * Optional. Rate limit rules for incoming turns.
+   * When omitted or empty, no rate limiting is applied.
+   */
+  rateLimit?: RateLimitRule[]
 }

@@ -5,6 +5,7 @@
 ```ts
 
 import { Activity } from '@microsoft/agents-activity';
+import { ActivityTypes } from '@microsoft/agents-activity';
 import { AdaptiveCardInvokeAction } from '@microsoft/agents-activity';
 import { AgentErrorDefinition } from '@microsoft/agents-activity';
 import { Attachment } from '@microsoft/agents-activity';
@@ -208,7 +209,8 @@ export class AgentApplicationBuilder<TState extends TurnState = TurnState> {
     setStartTypingTimer(startTypingTimer: boolean): this;
     withAuthorization(authHandlers: AuthorizationOptions): this;
     withProactive(options: ProactiveOptions): this;
-    withStorage(storage: Storage_2): this;
+    withRateLimit(rules: RateLimitRule[]): this;
+    withStorage(storage: Storage): this;
     withTurnStateFactory(turnStateFactory: () => TState): this;
     withTyping(typing: TypingOptions): this;
 }
@@ -220,15 +222,17 @@ export interface AgentApplicationOptions<TState extends TurnState> {
     agentAppId?: string;
     agentName?: string;
     authorization?: AuthorizationOptions;
+    configurationContext?: ConfigurationContext;
     connections?: Connections;
     fileDownloaders?: InputFileDownloader<TState>[];
     headerPropagation?: HeaderPropagationDefinition;
     longRunningMessages: boolean;
     normalizeMentions?: boolean;
     proactive?: ProactiveOptions;
+    rateLimit?: RateLimitRule[];
     removeRecipientMention?: boolean;
     startTypingTimer: boolean;
-    storage?: Storage_2;
+    storage?: Storage;
     transcriptLogger?: TranscriptLogger;
     turnStateFactory: () => TState;
     typing?: TypingOptions;
@@ -266,6 +270,7 @@ export interface AgenticAuthorizationOptions {
     altBlueprintConnectionName?: string;
     scopes?: string[];
     type: 'AgenticUserAuthorization' | 'agentic';
+}
 
 // @public
 export type AgentResponseHandler = (req: Request_2, res: WebResponse, params: AgentResponseHandlerParams) => Promise<void>;
@@ -280,7 +285,7 @@ export interface AgentResponseHandlerParams {
 
 // @public
 export class AgentState {
-    constructor(storage: Storage_2, storageKey: StorageKeyFactory);
+    constructor(storage: Storage, storageKey: StorageKeyFactory);
     clear(context: TurnContext): Promise<void>;
     createProperty<T = any>(name: string): AgentStatePropertyAccessor<T>;
     delete(context: TurnContext, customKey?: CustomKey): Promise<void>;
@@ -288,7 +293,7 @@ export class AgentState {
     load(context: TurnContext, force?: boolean, customKey?: CustomKey): Promise<any>;
     saveChanges(context: TurnContext, force?: boolean, customKey?: CustomKey): Promise<void>;
     // (undocumented)
-    protected storage: Storage_2;
+    protected storage: Storage;
     // (undocumented)
     protected storageKey: StorageKeyFactory;
 }
@@ -411,6 +416,12 @@ export interface AudioCard {
 export interface AuthConfiguration extends ConnectionSettings {
     connections?: Map<string, AuthConfiguration>;
     connectionsMap?: ConnectionMapItem[];
+}
+
+// @public
+export interface AuthConfigurationResolutionOptions {
+    // (undocumented)
+    configurationContext?: ConfigurationContext;
 }
 
 // @public (undocumented)
@@ -643,6 +654,7 @@ export class CloudAdapter extends BaseAdapter {
 
 // @public
 export interface CloudAdapterOptions {
+    configurationContext?: ConfigurationContext;
     emitStackTrace?: boolean;
     // @deprecated
     validateServiceUrl?: boolean;
@@ -655,6 +667,43 @@ export interface CloudAdapterResult {
     // (undocumented)
     headerPropagation: HeaderPropagationDefinition | undefined;
 }
+
+// @public
+export class ConfigurationContext {
+}
+
+// @public
+export interface ConfigurationDocument {
+    // (undocumented)
+    readonly [key: string]: ConfigurationDocumentValue;
+}
+
+// @public
+export type ConfigurationDocumentValue = string | number | boolean | readonly ConfigurationDocumentValue[] | ConfigurationDocument;
+
+// @public
+export interface ConfigurationSource {
+    load(): Promise<ConfigurationSourceResult>;
+    readonly name: string;
+}
+
+// @public
+export type ConfigurationSourceMode = 'fallback' | 'overrideEnvironment' | 'enforce';
+
+// @public
+export interface ConfigurationSourceRegistration {
+    readonly mode: ConfigurationSourceMode;
+    readonly source: ConfigurationSource;
+}
+
+// @public
+export type ConfigurationSourceResult = Readonly<Record<string, string>> | {
+    readonly format: 'canonical';
+    readonly values: Readonly<Record<string, string>>;
+} | {
+    readonly format: 'document';
+    readonly value: Readonly<ConfigurationDocument>;
+};
 
 // @public
 export const configureResponseController: (app: WebApp, adapter: CloudAdapter, agent: ActivityHandler, conversationState: ConversationState) => void;
@@ -828,7 +877,7 @@ export interface ConversationsResult {
 
 // @public
 export class ConversationState extends AgentState {
-    constructor(storage: Storage_2, namespace?: string);
+    constructor(storage: Storage, namespace?: string);
 }
 
 // @public
@@ -838,7 +887,15 @@ export type ConversationUpdateEvents = 'membersAdded' | 'membersRemoved';
 export const createAgentResponseHandler: (adapter: CloudAdapter, agent: ActivityHandler, conversationState: ConversationState) => AgentResponseHandler;
 
 // @public
-export const createCloudAdapter: (agent: AgentApplication<TurnState<any, any>> | ActivityHandler, authConfig?: AuthConfiguration) => CloudAdapterResult;
+export const createCloudAdapter: (agent: AgentApplication<TurnState<any, any>> | ActivityHandler, authConfig?: AuthConfiguration, options?: CreateCloudAdapterOptions) => CloudAdapterResult;
+
+// @public
+export interface CreateCloudAdapterOptions {
+    configurationContext?: ConfigurationContext;
+}
+
+// @public
+export function createConfigurationContext(registrations: readonly ConfigurationSourceRegistration[]): Promise<ConfigurationContext>;
 
 // @public
 export interface CreateConversationOptions {
@@ -869,13 +926,12 @@ export class CreateConversationOptionsBuilder {
 }
 
 // @public
+export function createJsonFileConfigurationSource(filePath: string): ConfigurationSource;
+
+// @public
 export function createOutboundHostValidator(options?: OutboundHostValidatorOptions): OutboundHostValidator;
 
 // @public
-export interface CustomKey {
-    channelId: string;
-    conversationId: string;
-}
 export interface CustomKey {
     channelId: string;
     conversationId: string;
@@ -903,18 +959,21 @@ export interface Fact {
 }
 
 // @public
-export class FileStorage implements Storage_2 {
+export class FileStorage implements Storage {
     constructor(folder: string);
     delete(keys: string[]): Promise<void>;
     read(keys: string[]): Promise<StoreItem>;
-    write(changes: StoreItem): Promise<void>;
+    write(changes: StoreItem, options?: StorageWriteOptions): Promise<void>;
 }
 
 // @public
-export function getAuthConfigWithDefaults(config?: AuthConfiguration): AuthConfiguration;
+export function getAuthConfigWithDefaults(config?: AuthConfiguration, options?: AuthConfigurationResolutionOptions): AuthConfiguration;
 
 // @public
 export const getProductInfo: () => string;
+
+// @public (undocumented)
+export function getStorageWriteExpiry(options?: StorageWriteOptions): number | undefined;
 
 // @public
 export class HeaderPropagation implements HeaderPropagationCollection {
@@ -1067,13 +1126,13 @@ export interface InvokeResponse<T = any> {
 }
 
 // @public
-export const loadAuthConfigFromEnv: (cnxName?: string) => AuthConfiguration;
+export const loadAuthConfigFromEnv: (cnxName?: string, options?: AuthConfigurationResolutionOptions) => AuthConfiguration;
 
 // @public
 export function loadOutboundHostValidatorOptionsFromEnv(): OutboundHostValidatorOptions;
 
 // @public
-export const loadPrevAuthConfigFromEnv: () => AuthConfiguration;
+export const loadPrevAuthConfigFromEnv: (options?: AuthConfigurationResolutionOptions) => AuthConfiguration;
 
 // @public
 export class M365AttachmentDownloader<TState extends TurnState = TurnState> implements InputFileDownloader<TState> {
@@ -1089,14 +1148,14 @@ export interface MediaUrl {
 }
 
 // @public
-export class MemoryStorage implements Storage_2 {
+export class MemoryStorage implements Storage {
     constructor(memory?: {
         [k: string]: string;
     });
     delete(keys: string[]): Promise<void>;
     static getSingleInstance(): MemoryStorage;
     read(keys: string[]): Promise<StoreItem>;
-    write(changes: StoreItem): Promise<void>;
+    write(changes: StoreItem, options?: StorageWriteOptions): Promise<void>;
 }
 
 // @public
@@ -1144,6 +1203,7 @@ export interface MsalConnectionSettings extends ConnectionSettingsBase {
     // @deprecated (undocumented)
     FICClientId?: string;
     idpmResource?: string;
+    msalRetryCount?: number;
     sendX5C?: boolean;
     // @deprecated (undocumented)
     WIDAssertionFile?: string;
@@ -1248,6 +1308,7 @@ export class OutboundHostValidator implements OutboundUrlPolicy {
 
 // @public
 export interface OutboundHostValidatorOptions {
+    configurationContext?: ConfigurationContext;
     enabled?: boolean;
     hosts?: readonly string[];
     includeDefaultMicrosoftHosts?: boolean;
@@ -1268,6 +1329,9 @@ export interface PagedResult<T> {
 }
 
 // @public
+export function preloadConfigurationSources(registrations: readonly ConfigurationSourceRegistration[]): Promise<void>;
+
+// @public
 export class Proactive<TState extends TurnState> {
     constructor(app: AgentApplication<TState>, options: ProactiveOptions);
     continueConversation(adapter: BaseAdapter, conversationId: string, handler: RouteHandler<TState>, autoSignInHandlers?: string[], continuationActivity?: Partial<Activity>): Promise<void>;
@@ -1286,7 +1350,7 @@ export class Proactive<TState extends TurnState> {
 // @public
 export interface ProactiveOptions {
     failOnUnsignedInConnections?: boolean;
-    storage?: Storage_2;
+    storage?: Storage;
 }
 
 // @public
@@ -1295,6 +1359,35 @@ export interface Query<TParams extends Record<string, any>> {
     parameters: TParams;
     skip: number;
 }
+
+// @public
+export type RateLimitMessageFactory = (context: TurnContext, result: RateLimitResult) => string | Activity | Promise<string | Activity>;
+
+// @public
+export interface RateLimitResult {
+    key?: string;
+    retryAfterMs: number;
+    ruleIndex: number;
+}
+
+// @public
+export interface RateLimitRule {
+    activityTypes?: ActivityTypes[];
+    appliesTo?: (context: TurnContext) => boolean | Promise<boolean>;
+    limit: number;
+    maxStorageRetries?: number;
+    message?: string | Activity | RateLimitMessageFactory;
+    scope: RateLimitScope;
+    storage?: Storage;
+    storageErrorBehavior?: RateLimitStorageErrorBehavior;
+    windowMs: number;
+}
+
+// @public
+export type RateLimitScope = (context: TurnContext) => string | undefined | Promise<string | undefined>;
+
+// @public
+export type RateLimitStorageErrorBehavior = 'throttle' | 'allow' | 'throw';
 
 // @public
 export interface ReceiptCard {
@@ -1438,20 +1531,25 @@ export enum StatusCodes {
     NOT_IMPLEMENTED = 501,
     OK = 200,
     PRECONDITION_FAILED = 412,
+    TOO_MANY_REQUESTS = 429,
     UNAUTHORIZED = 401,
     UPGRADE_REQUIRED = 426
 }
 
 // @public
-interface Storage_2 {
+export interface Storage {
     delete: (keys: string[]) => Promise<void>;
     read: (keys: string[]) => Promise<StoreItem>;
-    write: (changes: StoreItem) => Promise<void>;
+    write: (changes: StoreItem, options?: StorageWriteOptions) => Promise<void>;
 }
-export { Storage_2 as Storage }
 
 // @public
 export type StorageKeyFactory = (context: TurnContext) => string | Promise<string>;
+
+// @public
+export interface StorageWriteOptions {
+    ttl?: number;
+}
 
 // @public
 export interface StoreItem {
@@ -1518,10 +1616,10 @@ export class TeamsAttachmentDownloader extends M365AttachmentDownloader {
 
 // @public
 export const TeamsServiceEndpoints: {
-    readonly publicGlobal: "https://smba.trafficmanager.net/teams/";
-    readonly gcc: "https://smba.infra.gcc.teams.microsoft.com/teams";
-    readonly gccHigh: "https://smba.infra.gov.teams.microsoft.us/teams";
-    readonly dod: "https://smba.infra.dod.teams.microsoft.us/teams";
+    readonly publicGlobal: 'https://smba.trafficmanager.net/teams/';
+    readonly gcc: 'https://smba.infra.gcc.teams.microsoft.com/teams';
+    readonly gccHigh: 'https://smba.infra.gov.teams.microsoft.us/teams';
+    readonly dod: 'https://smba.infra.dod.teams.microsoft.us/teams';
 };
 
 // @public
@@ -1671,9 +1769,9 @@ export class TurnState<TConversationState = DefaultConversationState, TUserState
     getValue<TValue = unknown>(path: string): TValue;
     hasValue(path: string): boolean;
     get isLoaded(): boolean;
-    load(context: TurnContext, storage?: Storage_2, force?: boolean): Promise<boolean>;
+    load(context: TurnContext, storage?: Storage, force?: boolean): Promise<boolean>;
     protected onComputeStorageKeys(context: TurnContext): Promise<Record<string, string>>;
-    save(context: TurnContext, storage?: Storage_2): Promise<void>;
+    save(context: TurnContext, storage?: Storage): Promise<void>;
     setValue(path: string, value: unknown): void;
     get user(): TUserState;
     set user(value: TUserState);
@@ -1706,7 +1804,7 @@ export type UpdateActivityHandler = (context: TurnContext, activity: Activity, n
 
 // @public
 export class UserState extends AgentState {
-    constructor(storage: Storage_2, namespace?: string);
+    constructor(storage: Storage, namespace?: string);
 }
 
 // @public

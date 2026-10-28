@@ -8,6 +8,7 @@ export { authorizeJWT, buildJwksUri, clearJwksClients } from './auth/jwt-middlew
 
 export * from './app'
 export * from './cards'
+export * from './configuration'
 export * from './connector-client'
 export { Errors as HostingErrors } from './errorHelper'
 export * from './invoke'

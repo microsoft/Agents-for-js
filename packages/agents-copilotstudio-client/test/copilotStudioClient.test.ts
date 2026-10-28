@@ -91,6 +91,7 @@ describe('CopilotStudioClient', function () {
       tenantId: 'test-tenant-id',
       environmentId: 'test-env-id',
       agentIdentifier: 'test-agent',
+      directConnectUrl: 'https://testenv.id.environment.api.powerplatform.com/copilotstudio/dataverse-backed/authenticated/bots/test-agent/conversations',
       cloud: PowerPlatformCloud.Prod,
       copilotAgentType: AgentType.Published
     })
@@ -1707,6 +1708,7 @@ describe('subscribeAsync', function () {
       tenantId: 'test-tenant-id',
       environmentId: 'test-env-id',
       agentIdentifier: 'test-agent',
+      directConnectUrl: 'https://testenv.id.environment.api.powerplatform.com/copilotstudio/dataverse-backed/authenticated/bots/test-agent/conversations',
       cloud: PowerPlatformCloud.Prod,
       copilotAgentType: AgentType.Published
     })

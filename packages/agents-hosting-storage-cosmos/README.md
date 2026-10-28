@@ -4,6 +4,10 @@
 
 This package allows to configure Azure CosmosDB Storage as the backend for Agents conversation State
 
+`CosmosDbPartitionedStorage` retains the legacy `Storage` contract. Use
+`CosmosDbPartitionedStorageV2` for the separate `StorageV2` contract; V2 calls
+return keyed operation results with `value`, `status`, and `version`.
+
 ## Usage
 
 ```ts
@@ -18,4 +22,8 @@ const cosmosDbStorageOptions = {
 const cosmosStorage = new CosmosDbPartitionedStorage(cosmosDbStorageOptions)
 const conversationState = new ConversationState(cosmosStorage)
 const userState = new UserState(cosmosStorage)
+```
+
+```ts
+const cosmosStorageV2 = new CosmosDbPartitionedStorageV2(cosmosDbStorageOptions)
 ```

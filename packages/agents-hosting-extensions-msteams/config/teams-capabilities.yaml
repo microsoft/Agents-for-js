@@ -2,10 +2,17 @@
 # This package consumes selected Teams API types and clients; it is not a wrapper
 # for the full upstream package. Direct compatibility findings take precedence
 # over these advisory adoption policies.
+
+# For capability metadata maintenance and sourceReview acknowledgments, see:
+# scripts/teams-api-drift/README.md#source-review-acknowledgments
 schemaVersion: 1
 
 dependency:
   package: "@microsoft/teams.api"
+
+sourceReview:
+  outcome: "no-capability-metadata-change"
+  reason: "Reviewed the meeting participant type migration, prompt-preview normalizer, and quoted/targeted activity helpers; the existing meetings and activity-data owners and upstream areas already cover these source changes."
 
 capabilities:
   teams-api-client:
@@ -22,10 +29,12 @@ capabilities:
     description: "Parses Teams channel data and provides Teams-specific activity helpers."
     owners:
       - "src/activity-extensions/**"
+      - "src/promptPreviewActivityNormalizer.ts"
+      - "src/teamsActivity.ts"
       - "src/teamsActivityExtensions.ts"
-      - "src/teamsModelExtensions.ts"
     upstreamAreas:
       - "models.channel-data"
+      - "models.entity"
       - "activities"
     adoptionPolicy: "strict-compatibility"
 
@@ -62,6 +71,7 @@ capabilities:
     description: "Handles message extension invokes, query parsing, actions, and responses."
     owners:
       - "src/messageExtensions/**"
+      - "src/teamsModelExtensions.ts"
     upstreamAreas:
       - "models.messaging-extension"
       - "models.app-based-link-query"
@@ -72,6 +82,7 @@ capabilities:
     description: "Handles Teams task module fetch and submit invokes."
     owners:
       - "src/taskModules/**"
+      - "src/teamsModelExtensions.ts"
     upstreamAreas:
       - "models.task-module"
       - "activities.invoke"

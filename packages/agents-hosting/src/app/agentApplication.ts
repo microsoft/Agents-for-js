@@ -20,6 +20,7 @@ import { TranscriptLoggerMiddleware } from '../transcript'
 import { CloudAdapter } from '../cloudAdapter'
 import { Authorization, UserAuthorization, AuthorizationManager } from './auth'
 import { Proactive } from './proactive'
+import { AgentApplicationRateLimiter } from './rateLimit'
 import { JwtPayload } from 'jsonwebtoken'
 import { trace, debug, redactString } from '@microsoft/agents-telemetry'
 import { AgentApplicationTraceDefinitions } from '../observability'
@@ -104,6 +105,7 @@ export class AgentApplication<TState extends TurnState> {
   private readonly _proactive?: Proactive<TState>
   protected readonly _extensions: AgentExtension<TState>[] = []
   private readonly _adaptiveCards: AdaptiveCardsActions<TState>
+  private readonly _rateLimiter?: AgentApplicationRateLimiter
 
   /**
    * Creates a new instance of AgentApplication.
@@ -141,6 +143,7 @@ export class AgentApplication<TState extends TurnState> {
       longRunningMessages: options?.longRunningMessages !== undefined ? options.longRunningMessages : false,
       removeRecipientMention: options?.removeRecipientMention !== undefined ? options.removeRecipientMention : true,
       transcriptLogger: options?.transcriptLogger || undefined,
+      rateLimit: options?.rateLimit || undefined,
     }
 
     this._adaptiveCards = new AdaptiveCardsActions<TState>(this)
@@ -148,10 +151,19 @@ export class AgentApplication<TState extends TurnState> {
     if (this._options.adapter) {
       this._adapter = this._options.adapter
     } else {
-      this._adapter = new CloudAdapter()
+      this._adapter = new CloudAdapter(
+        undefined,
+        undefined,
+        undefined,
+        { configurationContext: this._options.configurationContext }
+      )
     }
 
     this._adapter.setAgentName(this._options.agentName)
+
+    if (this._options.rateLimit && this._options.rateLimit.length > 0) {
+      this._rateLimiter = new AgentApplicationRateLimiter(this._options.rateLimit, this._options.storage)
+    }
 
     // Create Proactive whenever proactive options are explicitly configured or a storage
     // backend is available — no explicit `proactive` option is required.
@@ -201,6 +213,7 @@ export class AgentApplication<TState extends TurnState> {
       fileDownloaders: this._options.fileDownloaders ? 'configured' : undefined,
       turnStateFactory: options?.turnStateFactory ? 'custom' : 'default',
       adaptiveCardsOptions: this._options.adaptiveCardsOptions,
+      rateLimitRules: this._options.rateLimit?.length,
     })
   }
 
@@ -208,7 +221,7 @@ export class AgentApplication<TState extends TurnState> {
    * Gets the authorization instance for the application.
    *
    * @returns The authorization instance.
-   * @throws Error if no authentication options were configured.
+   * @throws Error if no authorization handlers were resolved.
    */
   public get authorization (): Authorization {
     if (this._authorizationManager.handlers.length === 0) {
@@ -495,7 +508,7 @@ export class AgentApplication<TState extends TurnState> {
    *
    * @param handler - The handler function to be called after successful sign-in.
    * @returns The current instance of the application.
-   * @throws Error if authentication options were not configured.
+   * @throws Error if no authorization handlers were resolved.
    *
    * @remarks
    * This method allows you to perform actions after a user has successfully authenticated.
@@ -510,11 +523,7 @@ export class AgentApplication<TState extends TurnState> {
    *
    */
   public onSignInSuccess (handler: (context: TurnContext, state: TurnState, id?: string) => Promise<void>): this {
-    if (this.options.authorization) {
-      this.authorization.onSignInSuccess(handler)
-    } else {
-      throw ExceptionHelper.generateException(Error, Errors.AuthorizationOptionNotAvailable)
-    }
+    this.authorization.onSignInSuccess(handler)
     return this
   }
 
@@ -523,7 +532,7 @@ export class AgentApplication<TState extends TurnState> {
    *
    * @param handler - The handler function to be called after a failed sign-in attempt.
    * @returns The current instance of the application.
-   * @throws Error if authentication options were not configured.
+   * @throws Error if no authorization handlers were resolved.
    *
    * @remarks
    * This method allows you to handle cases where a user fails to authenticate,
@@ -538,11 +547,7 @@ export class AgentApplication<TState extends TurnState> {
    *
    */
   public onSignInFailure (handler: (context: TurnContext, state: TurnState, id?: string) => Promise<void>): this {
-    if (this.options.authorization) {
-      this.authorization.onSignInFailure(handler)
-    } else {
-      throw ExceptionHelper.generateException(Error, Errors.AuthorizationOptionNotAvailable)
-    }
+    this.authorization.onSignInFailure(handler)
     return this
   }
 
@@ -675,6 +680,14 @@ export class AgentApplication<TState extends TurnState> {
    * ```
    */
   public async runInternal (turnContext: TurnContext): Promise<boolean> {
+    if (this._rateLimiter) {
+      const rateLimitDecision = await this._rateLimiter.shouldAllowTurn(turnContext)
+      if (!rateLimitDecision.allowed) {
+        await this._rateLimiter.handleThrottledTurn(turnContext, rateLimitDecision.rule!, rateLimitDecision.result!)
+        return false
+      }
+    }
+
     const { authorized, context } = await this.handleAuthorization(turnContext)
 
     if (!authorized) {

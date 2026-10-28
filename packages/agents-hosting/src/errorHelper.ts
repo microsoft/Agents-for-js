@@ -448,6 +448,14 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
     description: 'MSAL returned an unparsable response body'
   },
 
+  /**
+   * Error thrown when a security-sensitive boolean configuration value is invalid.
+   */
+  InvalidBooleanConfigurationValue: {
+    code: -120394,
+    description: 'Configuration source "{sourceName}" returned an invalid boolean for "{path}". Expected one of true/false/1/0.'
+  },
+
   FailedToAcquireTokenUsingCertificate: {
     code: -120395,
     description: 'Failed to acquire token using certificate'
@@ -578,11 +586,11 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   },
 
   /**
-     * Error thrown when authorization option is not available in app options.
+     * Error thrown when no authorization handlers were resolved.
      */
   AuthorizationOptionNotAvailable: {
     code: -120530,
-    description: 'The Application.authorization property is unavailable because no authorization options were configured.'
+    description: 'The Application.authorization property is unavailable because no authorization handlers were resolved.'
   },
 
   /**
@@ -790,12 +798,58 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
     description: 'Changes are required when writing.'
   },
 
-  /**
-     * Error thrown when storage option is not available in app options.
-     */
+  /** Error thrown when a V2 storage key is empty or whitespace. */
+  StorageV2KeyRequired: {
+    code: -120703,
+    description: 'Storage V2 keys must be non-empty strings.'
+  },
+
+  /** Error thrown when the legacy storage adapter cannot honor a V2 option. */
+  StorageV2UnsupportedOption: {
+    code: -120704,
+    description: 'The legacy storage adapter does not support the V2 storage option "{option}".'
+  },
+
+  /** Error thrown when an empty V2 storage version token is provided. */
+  StorageV2ExpectedVersionEmpty: {
+    code: -120706,
+    description: 'Storage V2 expectedVersion cannot be empty.'
+  },
+
+  /** Error thrown when a V2 storage operation returns a failed or missing result. */
+  StorageV2OperationFailed: {
+    code: -120707,
+    description: 'Storage V2 {operation} failed for key "{key}" with status "{status}".'
+  },
+
+  /** Error thrown when a V2 value is not a non-array object. */
+  StorageV2ValueRequired: {
+    code: -120708,
+    description: 'Storage V2 values must be non-null, non-array objects.'
+  },
+
+  /** Error thrown when keys are required for storage delete operations. */
+  StorageDeleteKeysRequired: {
+    code: -120709,
+    description: 'Keys are required when deleting.'
+  },
+
+  /** Error thrown when storage option is not available in app options. */
   StorageOptionNotAvailable: {
     code: -120710,
     description: "The 'storage' option is not available in the app options. Ensure that the app is properly configured.",
+  },
+
+  /** Error thrown when a V2 write mode is not supported. */
+  StorageV2WriteModeUnsupported: {
+    code: -120711,
+    description: 'Storage V2 write mode "{mode}" is not supported.'
+  },
+
+  /** Error thrown when another turn saved state after this turn loaded it. */
+  AgentStateWriteConflict: {
+    code: -120712,
+    description: "AgentState '{name}' could not save key '{key}' because another turn updated the state first (status: {status}). This turn's state changes were not saved."
   },
 
   /**
@@ -1041,6 +1095,90 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   SidecarUnsupportedAuthScheme: {
     code: -120811,
     description: 'The Entra Agent ID sidecar returned an unsupported authorization scheme `{scheme}`. Only the Bearer scheme is supported'
+  },
+
+  // ============================================================================
+  // Configuration Source Errors (-120812 to -120827)
+  // ============================================================================
+
+  ConfigurationAlreadyConsumed: {
+    code: -120812,
+    description: 'Configuration sources must be preloaded before the first configuration consumer is created.'
+  },
+
+  ConfigurationSourceNameRequired: {
+    code: -120813,
+    description: 'Configuration source name must be a non-empty string.'
+  },
+
+  DuplicateConfigurationSource: {
+    code: -120814,
+    description: 'Configuration source name `{sourceName}` is registered more than once.'
+  },
+
+  ConfigurationSourceLoadFailed: {
+    code: -120815,
+    description: 'Configuration source `{sourceName}` failed to load.'
+  },
+
+  InvalidConfigurationPath: {
+    code: -120816,
+    description: 'Configuration source `{sourceName}` returned unsupported canonical path `{path}`.'
+  },
+
+  InvalidConfigurationValue: {
+    code: -120817,
+    description: 'Configuration source `{sourceName}` returned an invalid value for canonical path `{path}`.'
+  },
+
+  ConfigurationPreloadInProgress: {
+    code: -120818,
+    description: 'Another configuration preload is already in progress.'
+  },
+
+  InvalidConnectionMapEntry: {
+    code: -120819,
+    description: 'Connection map entry at index {index} must define both serviceUrl and connection.'
+  },
+
+  ConfigurationAlreadyPreloaded: {
+    code: -120820,
+    description: 'Configuration sources have already been preloaded for this process.'
+  },
+
+  UnsupportedRuntimeConfigurationField: {
+    code: -120821,
+    description: 'Configuration source `{sourceName}` returned field `{path}`, which is not supported by the JavaScript SDK.'
+  },
+
+  InvalidConfigurationSourceResult: {
+    code: -120822,
+    description: 'Configuration source `{sourceName}` returned an invalid source result.'
+  },
+
+  InvalidConfigurationContext: {
+    code: -120823,
+    description: 'The configuration context is invalid. Create contexts with createConfigurationContext().'
+  },
+
+  InvalidConfigurationSourceMode: {
+    code: -120824,
+    description: 'Configuration source `{sourceName}` uses unsupported mode `{mode}`. Use `fallback`, `overrideEnvironment`, or `enforce`.'
+  },
+
+  JsonConfigurationFileReadFailed: {
+    code: -120825,
+    description: 'JSON configuration file `{filePath}` could not be read.'
+  },
+
+  InvalidJsonConfigurationFile: {
+    code: -120826,
+    description: 'JSON configuration file `{filePath}` does not contain valid JSON.'
+  },
+
+  JsonConfigurationDocumentRequired: {
+    code: -120827,
+    description: 'JSON configuration file `{filePath}` must contain an object at the document root.'
   },
 
   // ============================================================================

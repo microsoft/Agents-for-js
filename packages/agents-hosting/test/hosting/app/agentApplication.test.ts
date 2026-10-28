@@ -14,6 +14,7 @@ import { CloudAdapter } from '../../../src/cloudAdapter'
 import { createStubInstance, SinonStub } from 'sinon'
 import { ConsoleTranscriptLogger } from '../../../src/transcript/consoleTranscriptLogger'
 import type { Connections } from '../../../src/auth/connections'
+import { MemoryStorageV2 } from '../../../src/storage'
 
 class RecordingTestAdapter extends TestAdapter {
   public readonly sentActivities: Activity[] = []
@@ -100,6 +101,45 @@ describe('Application', () => {
     await context.sendActivity('test')
     assert.equal(called, true)
     assert.equal(handled, true)
+  })
+
+  it('rejects a delayed turn when a faster turn saves the same V2 conversation state', async () => {
+    const storage = new MemoryStorageV2()
+    const storageKey = 'test/test/conversations/test'
+    await storage.write({ [storageKey]: { counter: 0 } })
+
+    let releaseSlowTurn: () => void
+    const slowTurnCanFinish = new Promise<void>(resolve => {
+      releaseSlowTurn = resolve
+    })
+    let signalSlowTurnStarted: () => void
+    const slowTurnStarted = new Promise<void>(resolve => {
+      signalSlowTurnStarted = resolve
+    })
+    const localApp = new AgentApplication<TurnState>({ storage })
+    localApp.onActivity(ActivityTypes.Message, async (context, state) => {
+      state.setValue('conversation.lastWriter', context.activity.text)
+      if (context.activity.text === 'slow') {
+        signalSlowTurnStarted()
+        await slowTurnCanFinish
+      }
+    })
+    localApp.onTurn('afterTurn', async () => true)
+
+    const slowActivity = createTestActivity()
+    slowActivity.text = 'slow'
+    const slowTurn = localApp.runInternal(new TurnContext(testAdapter, slowActivity))
+    await slowTurnStarted
+
+    const fastActivity = createTestActivity()
+    fastActivity.text = 'fast'
+    await localApp.runInternal(new TurnContext(testAdapter, fastActivity))
+    releaseSlowTurn!()
+
+    await assert.rejects(
+      slowTurn,
+      /AgentState 'conversation' could not save key 'test\/test\/conversations\/test' because another turn updated the state first \(status: conditionNotMet\)\. This turn's state changes were not saved\./
+    )
   })
 
   it('should register configured connections in turn state', async () => {

@@ -24,39 +24,32 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Node.js 24
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Validate repository structure
-        run: npm run repo:doctor
+      - name: Run quality checks
+        run: npm run quality
+        env:
+          QUALITY_LOG_DIR: quality-logs
 
-      - name: Lint codebase
-        run: npm run lint
-
-      - name: Validate unused dependencies, exports, and files
-        run: npm run lint:deps:ci
-
-      - name: Build TS
-        run: npm run build
-
-      - name: Run tests
-        run: npm test
-
-      - name: Run compat
-        run: npm run compat
-
-      - name: Build samples
-        run: npm run build:samples
+      - name: Upload quality logs
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: quality-logs
+          path: quality-logs/
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Set Version
         run: node scripts/set-version.mjs
 
       - name: Publish Test Report
-        uses: dorny/test-reporter@a53e41438c2381e621dc719a47a57180e30c7075 # v1
+        uses: dorny/test-reporter@cc52f364a405169afe07bb00dab3d375b451229d
         if: success() || failure()
         with:
           name: Node Tests 

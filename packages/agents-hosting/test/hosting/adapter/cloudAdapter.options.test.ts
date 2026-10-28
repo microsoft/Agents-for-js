@@ -17,7 +17,13 @@ import {
   TurnContext,
   UserTokenClient
 } from '../../../src'
+import {
+  createConfigurationContext,
+  preloadConfigurationSources,
+  resetConfigurationSourcesForTest
+} from '../../../src/configuration/configuration'
 import { ConnectorClient } from '../../../src/connector-client/connectorClient'
+import { Errors } from '../../../src/errorHelper'
 import { Response } from 'express'
 import { JwtPayload } from 'jsonwebtoken'
 
@@ -50,6 +56,13 @@ describe('CloudAdapter options (PR #838 parity)', () => {
     sinon.stub(adapterAny, 'createUserTokenClient').returns(mockUserTokenClient)
     sinon.stub(adapterAny, 'createConnectorClientWithIdentity').returns(mockConnectorClient)
     return adapter
+  }
+
+  function getResolvedOptions (
+    adapter: CloudAdapter
+  ): Required<Pick<CloudAdapterOptions, 'emitStackTrace' | 'validateServiceUrl'>> {
+    const adapterAny = adapter as any
+    return adapterAny._options
   }
 
   function buildRes (): Partial<Response> {
@@ -102,6 +115,7 @@ describe('CloudAdapter options (PR #838 parity)', () => {
       stubFromObject = undefined
     }
     sinon.restore()
+    resetConfigurationSourcesForTest()
   })
 
   async function captureDebugLog (fn: () => void | Promise<void>): Promise<string> {
@@ -327,6 +341,74 @@ describe('CloudAdapter options (PR #838 parity)', () => {
       }
     })
 
+    it('undefined direct options do not override environment values', () => {
+      const prev = process.env.CloudAdapterOptions__validateServiceUrl
+      process.env.CloudAdapterOptions__validateServiceUrl = 'true'
+      try {
+        const adapter = buildAdapter({ validateServiceUrl: undefined })
+        const resolvedOptions = getResolvedOptions(adapter)
+        assert.equal(resolvedOptions.validateServiceUrl, true)
+      } finally {
+        if (prev === undefined) delete process.env.CloudAdapterOptions__validateServiceUrl
+        else process.env.CloudAdapterOptions__validateServiceUrl = prev
+      }
+    })
+
+    it('preloaded overrideEnvironment configuration applies before direct options', async () => {
+      const previous = process.env.CloudAdapterOptions__validateServiceUrl
+      process.env.CloudAdapterOptions__validateServiceUrl = 'false'
+      try {
+        await preloadConfigurationSources([
+          {
+            source: {
+              name: 'central-options',
+              async load () {
+                return {
+                  format: 'canonical',
+                  values: {
+                    'cloudAdapterOptions.validateServiceUrl': 'true',
+                    'cloudAdapterOptions.emitStackTrace': 'true'
+                  }
+                }
+              }
+            },
+            mode: 'overrideEnvironment'
+          }
+        ])
+
+        const adapter = buildAdapter({ emitStackTrace: false })
+        assert.deepEqual(getAdapterOptions(adapter), {
+          emitStackTrace: false,
+          validateServiceUrl: true
+        })
+      } finally {
+        if (previous === undefined) delete process.env.CloudAdapterOptions__validateServiceUrl
+        else process.env.CloudAdapterOptions__validateServiceUrl = previous
+      }
+    })
+
+    it('enforce configuration overrides explicit options', async () => {
+      await preloadConfigurationSources([
+        {
+          source: {
+            name: 'policy-options',
+            async load () {
+              return {
+                format: 'canonical',
+                values: {
+                  'cloudAdapterOptions.validateServiceUrl': 'true'
+                }
+              }
+            }
+          },
+          mode: 'enforce'
+        }
+      ])
+
+      const adapter = buildAdapter({ validateServiceUrl: false })
+      assert.equal(getAdapterOptions(adapter).validateServiceUrl, true)
+    })
+
     it('unknown CloudAdapterOptions__* env var is ignored (no throw, no enforcement)', async () => {
       // Defends against silent typos: an unrecognized property name
       // (here a genuinely unknown option) must not affect behavior.
@@ -365,6 +447,110 @@ describe('CloudAdapter options (PR #838 parity)', () => {
   })
 
   describe('outboundHostValidator', () => {
+    it('isolates structured settings between host-scoped contexts', async () => {
+      const firstContext = await createConfigurationContext([{
+        source: {
+          name: 'first-host',
+          async load () {
+            return {
+              format: 'document',
+              value: {
+                cloudAdapterOptions: { emitStackTrace: true },
+                outboundHostValidator: {
+                  enabled: true,
+                  includeDefaultMicrosoftHosts: false,
+                  hosts: ['first.contoso.com']
+                }
+              }
+            } as const
+          }
+        },
+        mode: 'overrideEnvironment'
+      }])
+      const secondContext = await createConfigurationContext([{
+        source: {
+          name: 'second-host',
+          async load () {
+            return {
+              format: 'document',
+              value: {
+                cloudAdapterOptions: { emitStackTrace: false },
+                outboundHostValidator: {
+                  enabled: true,
+                  includeDefaultMicrosoftHosts: false,
+                  hosts: ['second.contoso.com']
+                }
+              }
+            } as const
+          }
+        },
+        mode: 'overrideEnvironment'
+      }])
+
+      const first = buildAdapter({ configurationContext: firstContext })
+      const second = buildAdapter({ configurationContext: secondContext })
+      const firstPolicy = (first as any)._hostValidator as OutboundUrlPolicy
+      const secondPolicy = (second as any)._hostValidator as OutboundUrlPolicy
+
+      assert.equal((first as any)._options.emitStackTrace, true)
+      assert.equal((second as any)._options.emitStackTrace, false)
+      assert.equal(firstPolicy.isAllowed('https://first.contoso.com'), true)
+      assert.equal(firstPolicy.isAllowed('https://second.contoso.com'), false)
+      assert.equal(secondPolicy.isAllowed('https://second.contoso.com'), true)
+      assert.equal(secondPolicy.isAllowed('https://first.contoso.com'), false)
+    })
+
+    it('loads structured options from an external configuration source', async () => {
+      await preloadConfigurationSources([{
+        source: {
+          name: 'outbound-policy',
+          async load () {
+            return {
+              format: 'document',
+              value: {
+                outboundHostValidator: {
+                  enabled: true,
+                  includeDefaultMicrosoftHosts: false,
+                  hosts: ['api.contoso.com']
+                }
+              }
+            } as const
+          }
+        },
+        mode: 'overrideEnvironment'
+      }])
+
+      const adapter = buildAdapter()
+      const policy = (adapter as any)._hostValidator as OutboundUrlPolicy
+
+      assert.equal(policy.enabled, true)
+      assert.equal(policy.isAllowed('https://api.contoso.com/path'), true)
+      assert.equal(policy.isAllowed('https://api.botframework.com/path'), false)
+    })
+
+    it('keeps an explicitly injected outbound policy opaque and highest priority', async () => {
+      await preloadConfigurationSources([{
+        source: {
+          name: 'enforced-outbound-policy',
+          async load () {
+            return {
+              format: 'canonical',
+              values: {
+                'outboundHostValidator.enabled': 'true'
+              }
+            } as const
+          }
+        },
+        mode: 'enforce'
+      }])
+      const explicitPolicy = new OutboundHostValidator({ enabled: false })
+
+      const adapter = buildAdapter(undefined, explicitPolicy)
+      const actualPolicy: OutboundUrlPolicy = (adapter as any)._hostValidator
+
+      assert.strictEqual(actualPolicy, explicitPolicy)
+    })
+
     it('rejects a disallowed ServiceUrl even when there is no serviceurl claim', async () => {
       const adapter = buildAdapter(undefined, new OutboundHostValidator({ enabled: true }))
       const activity = makeActivity(ActivityTypes.Message, 'https://evil.example.com/relay/')
@@ -663,6 +849,32 @@ describe('CloudAdapter options (PR #838 parity)', () => {
         if (prev === undefined) delete process.env.CloudAdapterOptions__validateServiceUrl
         else process.env.CloudAdapterOptions__validateServiceUrl = prev
       }
+    })
+
+    it('redacts raw values from invalid external CloudAdapter configuration errors', async () => {
+      const rawValue = 'super-secret-invalid-bool'
+      await assert.rejects(
+        preloadConfigurationSources([{
+          source: {
+            name: 'invalid-external-options',
+            async load () {
+              return {
+                format: 'canonical',
+                values: {
+                  'cloudAdapterOptions.validateServiceUrl': rawValue
+                }
+              }
+            }
+          },
+          mode: 'overrideEnvironment'
+        }]),
+        (error: Error & { code?: number }) => {
+          assert.strictEqual(error.code, Errors.InvalidConfigurationValue.code)
+          assert.match(error.message, /cloudAdapterOptions\.validateServiceUrl/)
+          assert.doesNotMatch(error.message, new RegExp(rawValue))
+          return true
+        }
+      )
     })
 
     it('does NOT warn for a whitespace-only value on a known CloudAdapterOptions__ key (parseBooleanEnv treats it as unset)', async () => {

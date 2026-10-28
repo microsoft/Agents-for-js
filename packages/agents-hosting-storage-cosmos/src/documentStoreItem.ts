@@ -28,6 +28,14 @@ export class DocumentStoreItem {
    * The ETag of the document.
    */
   eTag: string
+  /**
+   * Cosmos DB item-level time to live in seconds.
+   */
+  ttl?: number
+  /**
+   * SDK-managed absolute expiry timestamp in milliseconds.
+   */
+  expiresAt?: number
 
   /**
    * Gets the partition key.
@@ -40,10 +48,12 @@ export class DocumentStoreItem {
    * Initializes a new instance of the DocumentStoreItem class.
    * @param storeItem The store item to initialize.
    */
-  constructor (storeItem: { id: string; realId: string; document: object; eTag?: string }) {
+  constructor (storeItem: { id: string; realId: string; document: object; eTag?: string; ttl?: number; expiresAt?: number }) {
     this.id = storeItem.id
     this.realId = storeItem.realId || ''
     this.document = storeItem.document || {}
     this.eTag = storeItem.eTag || ''
+    this.ttl = storeItem.ttl
+    this.expiresAt = storeItem.expiresAt
   }
 }

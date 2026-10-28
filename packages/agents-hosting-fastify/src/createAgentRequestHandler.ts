@@ -4,17 +4,9 @@
  */
 
 import type { FastifyReply, FastifyRequest } from 'fastify'
-import {
-  ActivityHandler,
-  AgentApplication,
-  AuthConfiguration,
-  authorizeJWT,
-  getAuthConfigWithDefaults,
-  Request,
-  TurnState
-} from '@microsoft/agents-hosting'
-import { createCloudAdapter } from '@microsoft/agents-hosting'
-import { adaptReply } from './replyAdapter'
+import { ActivityHandler, AgentApplication, AuthConfiguration, TurnState } from '@microsoft/agents-hosting'
+import { type CreateCloudAdapterOptions } from '@microsoft/agents-hosting'
+import { createAgentRequestHandlerInternal } from './createAgentRequestHandlerInternal'
 
 /**
  * Fastify-native handler signature. Receives a `FastifyRequest` and
@@ -39,6 +31,11 @@ export type FastifyAgentRequestHandler = (
  * @param authConfiguration - Optional custom authentication configuration. If
  * not provided, configuration will be loaded from environment variables using
  * `loadAuthConfigFromEnv()`.
+ * @param options - Optional additional settings, such as a host-scoped
+ * `ConfigurationContext`. For an `AgentApplication`, this defaults to its own
+ * `configurationContext` option when omitted; a plain `ActivityHandler` has no
+ * built-in context and must be supplied here to participate in host-scoped
+ * configuration.
  * @returns A Fastify route handler function `(request, reply) => Promise<void>`.
  *
  * @example
@@ -57,48 +54,8 @@ export type FastifyAgentRequestHandler = (
  */
 export const createAgentRequestHandler = (
   agent: AgentApplication<TurnState<any, any>> | ActivityHandler,
-  authConfiguration?: AuthConfiguration
+  authConfiguration?: AuthConfiguration,
+  options?: CreateCloudAdapterOptions
 ): FastifyAgentRequestHandler => {
-  const authConfig = getAuthConfigWithDefaults(authConfiguration)
-  const { adapter, headerPropagation } = createCloudAdapter(agent, authConfig)
-  const jwtMiddleware = authorizeJWT(authConfig)
-
-  return async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
-    const adaptedReq: Request = {
-      method: request.method,
-      headers: request.headers as Record<string, string | string[] | undefined>,
-      body: (request.body ?? undefined) as Record<string, unknown> | undefined
-    }
-    const adaptedRes = adaptReply(reply)
-
-    let middlewareError: any
-    let nextCalled = false
-
-    await jwtMiddleware(adaptedReq, adaptedRes, (err?: any) => {
-      nextCalled = true
-      middlewareError = err
-    })
-
-    if (middlewareError) {
-      throw middlewareError
-    }
-
-    // If the middleware handled the response without calling next (e.g., 401), don't process the activity.
-    if (!nextCalled || adaptedRes.headersSent) {
-      return
-    }
-
-    // Propagate JwtPayload mutation from middleware to the original request so
-    // downstream Fastify hooks can read `request.user`.
-    if (adaptedReq.user !== undefined) {
-      ;(request as FastifyRequest & { user?: unknown }).user = adaptedReq.user
-    }
-
-    await adapter.process(
-      adaptedReq,
-      adaptedRes,
-      (context) => agent.run(context),
-      headerPropagation
-    )
-  }
+  return createAgentRequestHandlerInternal(agent, authConfiguration, options).handler
 }

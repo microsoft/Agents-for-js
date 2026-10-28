@@ -7,7 +7,13 @@ import type { BaseAdapter } from '../../baseAdapter'
 import type { TurnContext } from '../../turnContext'
 import type { TurnState } from '../turnState'
 import type { RouteHandler } from '../routeHandler'
-import type { Storage } from '../../storage/storage'
+import type { StorageV2 } from '../../storage/storage'
+import {
+  asStorageV2,
+  assertStorageDeleteSucceeded,
+  assertStorageWriteSucceeded,
+  getStorageReadValue,
+} from '../../storage/storageCompatibility'
 import type { AgentApplication } from '../agentApplication'
 import type { ProactiveOptions } from './proactiveOptions'
 import type { CreateConversationOptions } from './createConversationOptions'
@@ -41,31 +47,31 @@ export class Proactive<TState extends TurnState> {
 
   private readonly _app: AgentApplication<TState>
   private readonly _options: ProactiveOptions
-  private readonly _storage?: Storage
+  private readonly _storage?: StorageV2
 
   constructor (app: AgentApplication<TState>, options: ProactiveOptions) {
     this._app = app
     this._options = options
-    this._storage = options.storage
+    this._storage = options.storage ? asStorageV2(options.storage) : undefined
   }
 
   private _storageKey (conversationId: string): string {
     return `${STORAGE_KEY_PREFIX}${conversationId}`
   }
 
-  private requireStorage (): Storage {
+  private requireStorage (): StorageV2 {
     if (!this._storage) {
       throw ExceptionHelper.generateException(Error, Errors.ProactiveStorageRequired)
     }
     return this._storage
   }
 
-  private requireAppStorage (): Storage {
+  private requireAppStorage (): StorageV2 {
     const storage = this._app.options.storage
     if (!storage) {
       throw ExceptionHelper.generateException(Error, Errors.ProactiveAppStorageRequired)
     }
-    return storage
+    return asStorageV2(storage)
   }
 
   // ---------------------------------------------------------------------------
@@ -120,7 +126,8 @@ export class Proactive<TState extends TurnState> {
       const key = this._storageKey(id)
       record({ conversationId: id })
       const linkedItem = await actions.link(storage, key)
-      await storage.write({ [key]: { ...linkedItem, reference: conv.reference, claims: conv.claims } })
+      const results = await storage.write({ [key]: { ...linkedItem, reference: conv.reference, claims: conv.claims } })
+      assertStorageWriteSucceeded(results, [key])
       return id
     })
   }
@@ -142,7 +149,8 @@ export class Proactive<TState extends TurnState> {
     return trace(ProactiveTraceDefinitions.getConversation, async ({ record }) => {
       record({ conversationId })
       const storageKey = this._storageKey(conversationId)
-      const stored = (await this.requireStorage().read([storageKey]))?.[storageKey]
+      const results = await this.requireStorage().read<Conversation>([storageKey])
+      const stored = getStorageReadValue(results, storageKey)
       if (!stored) {
         record({ found: false })
         return undefined
@@ -193,7 +201,9 @@ export class Proactive<TState extends TurnState> {
   async deleteConversation (conversationId: string): Promise<void> {
     return trace(ProactiveTraceDefinitions.deleteConversation, async ({ record }) => {
       record({ conversationId })
-      await this.requireStorage().delete([this._storageKey(conversationId)])
+      const key = this._storageKey(conversationId)
+      const results = await this.requireStorage().delete([key])
+      assertStorageDeleteSucceeded(results, [key])
     })
   }
 

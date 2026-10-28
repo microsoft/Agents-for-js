@@ -19,7 +19,7 @@ exposes framework-agnostic primitives that the
 [`@microsoft/agents-hosting-express`](../agents-hosting-express) and
 [`@microsoft/agents-hosting-fastify`](../agents-hosting-fastify) packages build on:
 
-- `createCloudAdapter(agent, authConfig)` — returns `{ adapter, headerPropagation }` for processing incoming activities. Use this from any web framework.
+- `createCloudAdapter(agent, authConfig, options?)` — returns `{ adapter, headerPropagation }` for processing incoming activities. It preserves an `AgentApplication`'s existing adapter; `authConfig` is used only when creating an adapter. Use `options.configurationContext` to scope preloaded configuration to this host. Use this from any web framework.
 - `CloudAdapterResult` — return type of `createCloudAdapter`.
 - `createAgentResponseHandler(adapter, agent, conversationState)` — framework-agnostic handler `(req, res, params) => Promise<void>` for the authenticated SDK-specific Activity callback route.
 - `AgentResponseHandler`, `AgentResponseHandlerParams`, `AGENT_RESPONSE_ROUTE_PATH` — supporting types and the canonical route path.
@@ -43,6 +43,143 @@ Anonymous callbacks are supported only for unconfigured development hosts
 outside production and emit a registration warning because peer ownership cannot
 be verified. Pre-upgrade conversations must be restarted.
 
+## Pluggable configuration sources
+
+Existing environment variables and direct runtime options continue to work
+without changes. Additional asynchronous sources can be loaded into an
+immutable host-scoped context and then consumed synchronously by auth
+configuration, `CloudAdapterOptions`, outbound host validation, and
+`AgentApplication` user authorization:
+
+```ts
+import {
+  AttachmentDownloader,
+  CloudAdapter,
+  createConfigurationContext,
+  createOutboundHostValidator,
+  ConfigurationSource,
+} from '@microsoft/agents-hosting'
+
+const source: ConfigurationSource = {
+  name: 'central-configuration',
+  async load () {
+    return {
+      format: 'document',
+      value: {
+        cloudAdapterOptions: {
+          validateServiceUrl: true
+        },
+        outboundHostValidator: {
+          enabled: true,
+          hosts: ['api.contoso.com']
+        }
+      }
+    }
+  }
+}
+
+const configurationContext = await createConfigurationContext([{
+  source,
+  mode: 'overrideEnvironment'
+}])
+
+const adapter = new CloudAdapter(
+  undefined,
+  undefined,
+  undefined,
+  { configurationContext }
+)
+
+// Reuse the same policy for code-level outbound consumers such as attachment
+// downloaders.
+const outboundPolicy = createOutboundHostValidator({ configurationContext })
+const downloader = new AttachmentDownloader('inputFiles', outboundPolicy)
+```
+
+For an explicitly selected JSON file, use the built-in file source:
+
+```ts
+import {
+  createConfigurationContext,
+  createJsonFileConfigurationSource
+} from '@microsoft/agents-hosting'
+
+const configurationContext = await createConfigurationContext([{
+  source: createJsonFileConfigurationSource('config.DEVELOPMENT.json'),
+  mode: 'overrideEnvironment'
+}])
+```
+
+The helper loads strict JSON using the hierarchical document shape. It does not
+discover files, select environment-specific names, parse command-line options,
+or choose precedence. The application owns those policies and supplies the
+source mode. Missing files, malformed JSON, and non-object document roots fail
+loading without including file contents in diagnostics.
+
+Context creation is atomic: if a source fails, no partial values are applied.
+Create separate contexts for independently configured agents in one process.
+Pass the same context to each agent's `CloudAdapter` and
+`AgentApplication`. Existing applications may instead call
+`preloadConfigurationSources` once before constructing consumers; that API is
+the compatibility wrapper over the default process context.
+
+Load the default context before constructing any configuration consumer.
+Default-context loading is atomic and retryable after failure, but a successful
+load can occur only once and cannot run concurrently. Constructing a consumer
+first consumes an empty default snapshot and prevents later preload. To adopt
+updated or rotated values, create a new immutable context and reconstruct its
+consumers; existing contexts and consumers are not mutated.
+
+Every source must select an explicit mode:
+
+- `fallback`: below Bot Framework compatibility variables and supported modern
+  `__` environment configuration.
+- `overrideEnvironment`: above environment configuration and below direct
+  runtime options.
+- `enforce`: above direct runtime options.
+
+Sources in the same mode are applied in registration order, with later values
+winning. `enforce` can override values supplied directly by application code
+and should be reserved for deliberate central policy enforcement.
+
+Within the environment band, a modern `Connections__*` registry replaces flat
+or prefixed Bot Framework authentication variables; the two representations
+are not merged property by property. When no modern registry exists, the
+legacy flat or prefixed variables remain supported. When a modern environment
+registry has no `ConnectionsMap__*` entries, the environment auth loader
+preserves backward compatibility by creating a wildcard/default route for the
+first connection; connection insertion order determines the default only in
+that case. External sources may omit `connectionsMap` when they define exactly
+one connection, which is treated as the wildcard/default. External sources
+that define multiple connections must provide an explicit wildcard/default
+route.
+
+Supported canonical path families are:
+
+- `connections.<id>.settings.<property>`
+- `connectionsMap.<index>.serviceUrl`
+- `connectionsMap.<index>.audience`
+- `connectionsMap.<index>.connection`
+- `cloudAdapterOptions.<property>`
+- `outboundHostValidator.<property>`
+- `agentApplication.userAuthorization.handlers.<id>.settings.<property>`
+
+Sources return either `{ format: 'canonical', values }` for canonical string
+paths or `{ format: 'document', value }` for hierarchical typed JSON.
+Existing sources that return a bare canonical record remain supported for
+backward compatibility; new sources should use the explicit tagged form.
+Canonical paths use current property names only, except for the retained
+`WIDAssertionFile` compatibility spelling (prefer `federatedTokenFile`).
+Schema-shaped `__`
+environment variables are also a permanent first-class input and bind to the
+same hierarchy. Bot Framework-era `MicrosoftApp*`, prefixed connection, and
+`<handlerId>_*` aliases remain supported through an isolated compatibility
+adapter, but are not valid external-source paths. Invalid paths or values fail
+loading without including the supplied value in diagnostics.
+
+The provider-neutral hierarchical document shape is defined by
+[`agents-configuration.schema.json`](../../docs/schemas/agents-configuration.schema.json).
+
 ## Example Usage based on the AgentApplication object
 
 ```ts
@@ -58,6 +195,62 @@ echo.onActivity('message', async (context: TurnContext, state: TurnState) => {
   state.setValue('conversation.counter', counter)
 })
 ```
+
+### Handling errors from direct proactive operations
+
+`adapter.continueConversation()` sends errors from its callback to the adapter's
+`onTurnError` handler. If that handler completes normally, `continueConversation()`
+also completes normally, so a surrounding `try`/`catch` does not receive the
+original error.
+
+When the caller needs to inspect or retry a failed proactive operation, catch the
+error inside the continuation callback and throw it after `continueConversation()`
+completes:
+
+```ts
+import type { ResourceResponse } from '@microsoft/agents-hosting'
+let sendResponse: ResourceResponse | undefined
+let sendFailed = false
+let sendError: unknown
+
+await adapter.continueConversation(botAppId, reference, async (context) => {
+  try {
+    sendResponse = await context.sendActivity('Proactive message')
+  } catch (error) {
+    sendFailed = true
+    sendError = error
+  }
+})
+
+if (sendFailed) {
+  throw sendError
+}
+
+console.log('Sent activity:', sendResponse)
+```
+
+Because the callback catches the error, `onTurnError` is not called for that
+failure. Applications that want centralized handling can perform it in the
+callback's `catch` block.
+
+## Storage providers
+
+Public `storage` options accept `StorageProvider`, which is `Storage | StorageV2`.
+Providers can implement either contract. Custom V2 providers extend `StorageV2`,
+so hosting can identify the structured contract with `instanceof`.
+Hosting adapts a legacy `Storage` provider for default upsert operations. The
+adapter cannot support create-only, replace, or version conditions.
+Built-in V1 and V2 providers have separately named classes, avoiding overloaded
+JavaScript methods while preserving every legacy constructor and return type:
+
+```ts
+const legacyStorage = new MemoryStorage()
+const storageV2 = new MemoryStorageV2()
+const fileStorageV2 = new FileStorageV2('./data')
+```
+
+V2 calls return keyed operation results. Read values are at
+`results[key].value`; inspect `status` and `version` for operation outcomes.
 
 ## Example Usage based on bot framework Activity Handler
 
@@ -102,6 +295,28 @@ app.post('/api/messages', async (req: Request, res: Response) => {
 })
 
 ```
+
+## Inbound token issuer validation
+
+Inbound JWT signature, audience, lifetime, and tenant-claim consistency checks
+are always applied. Issuer allow-list validation is opt-in because AgentID
+blueprint identities can use runtime-selected tenant issuers that are not known
+when the host configuration is created.
+
+Enable issuer validation only when every accepted issuer is represented by the
+connection's configured tenant or `issuers` list:
+
+```dotenv
+validateIssuer=true
+
+# Latest connection configuration format
+Connections__serviceConnection__Settings__ValidateIssuer=true
+```
+
+Accepted boolean values are `true`, `false`, `1`, and `0` (case-insensitive,
+with surrounding whitespace ignored). Any other non-empty value causes
+configuration loading to fail with a structured error that identifies the
+configuration source and accepted values.
 
 ## Outbound request host validation
 
