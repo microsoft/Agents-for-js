@@ -29,8 +29,9 @@ export interface CosmosDbPartitionedStorageOptions {
   compatibilityMode?: boolean;
 
   /**
-   * The options for the Cosmos client.
+   * The options for the Cosmos client. Use `aadCredentials` to supply an Azure
+   * TokenCredential, including a managed identity credential. When used without
+   * a key or tokenProvider, the database and container must already exist.
    */
   cosmosClientOptions?: CosmosClientOptions;
-  // tokenCredential?: TokenCredential;
 }
