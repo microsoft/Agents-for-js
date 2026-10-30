@@ -2,7 +2,7 @@ import { strict as assert } from 'assert'
 import { describe, it, beforeEach, afterEach } from 'node:test'
 import sinon from 'sinon'
 import { AuthenticationResult, ConfidentialClientApplication, ManagedIdentityApplication } from '@azure/msal-node'
-import { MsalTokenProvider, ConnectorClient, AuthConfiguration, CloudAdapter, AuthType } from '../../src'
+import { MsalTokenProvider, ConnectorClient, AuthConfiguration, CloudAdapter, AuthType, loadAuthConfigFromEnv } from '../../src'
 import fs from 'fs'
 import crypto from 'crypto'
 import jwt from 'jsonwebtoken'
@@ -92,6 +92,41 @@ describe('MsalTokenProvider', () => {
     assert.strictEqual(await firstProvider.getAccessToken('scope'), accessToken)
     assert.strictEqual(await secondProvider.getAccessToken('scope'), accessToken)
     assert.strictEqual(acquireTokenStub.calledOnce, true)
+  })
+
+  it('should reuse tokens and confidential clients across independent environment loads', async () => {
+    const originalEnv = process.env
+    process.env = {
+      NODE_ENV: 'development',
+      Connections__primary__Settings__ClientId: 'shared-client-id',
+      Connections__primary__Settings__ClientSecret: 'shared-secret',
+      Connections__primary__Settings__TenantId: 'shared-tenant-id'
+    }
+    const accessToken = createExpiringJwtToken()
+    const clientInstances = new Set<unknown>()
+    const acquireTokenStub = sinon.stub(ConfidentialClientApplication.prototype, 'acquireTokenByClientCredential')
+      .callsFake(async function (this: unknown) {
+        clientInstances.add(this)
+        return { accessToken } as AuthenticationResult
+      })
+
+    try {
+      const first = loadAuthConfigFromEnv()
+      const second = loadAuthConfigFromEnv()
+      const firstProvider = new MsalTokenProvider(first.connections?.get('primary'))
+      const secondProvider = new MsalTokenProvider(second.connections?.get('primary'))
+
+      assert.notStrictEqual(first.connections, second.connections)
+      assert.strictEqual(await firstProvider.getAccessToken('scope-one'), accessToken)
+      assert.strictEqual(await secondProvider.getAccessToken('scope-one'), accessToken)
+      assert.strictEqual(acquireTokenStub.callCount, 1)
+
+      await secondProvider.getAccessToken('scope-two')
+      assert.strictEqual(acquireTokenStub.callCount, 2)
+      assert.strictEqual(clientInstances.size, 1)
+    } finally {
+      process.env = originalEnv
+    }
   })
 
   it('should reacquire shared access tokens after the JWT-derived cache TTL expires', async () => {

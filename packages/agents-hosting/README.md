@@ -43,6 +43,35 @@ Anonymous callbacks are supported only for unconfigured development hosts
 outside production and emit a registration warning because peer ownership cannot
 be verified. Pre-upgrade conversations must be restarted.
 
+## Authentication configuration lifetime
+
+`loadAuthConfigFromEnv()`, `loadPrevAuthConfigFromEnv()`, and environment
+fallback in `getAuthConfigWithDefaults()` read the current environment each
+time they are called. You can import the SDK before asynchronously retrieving
+credentials, then populate the environment before constructing your adapter:
+
+```ts
+import { CloudAdapter, loadAuthConfigFromEnv } from '@microsoft/agents-hosting'
+
+async function createAdapter () {
+  // Application-owned integration with your secrets manager.
+  const credentials = await retrieveAgentCredentials()
+  process.env.clientId = credentials.clientId
+  process.env.clientSecret = credentials.clientSecret
+  process.env.tenantId = credentials.tenantId
+
+  const authConfig = loadAuthConfigFromEnv()
+  return new CloudAdapter(authConfig)
+}
+```
+
+You can also supply credentials directly as an authentication configuration.
+Each environment load owns its connection registry and routing. Later loads
+reflect environment changes without rewriting earlier results. Existing
+adapters retain their resolved settings; to adopt changed credentials,
+reconstruct the relevant consumers deliberately. MSAL client and token caches
+continue to be reused for equivalent settings.
+
 ## Pluggable configuration sources
 
 Existing environment variables and direct runtime options continue to work

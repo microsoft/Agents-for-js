@@ -284,7 +284,6 @@ describe('agents-configuration.schema.json / JavaScript consistency', () => {
 
   it('accepts the documented __Settings__ environment nesting in real JavaScript consumers', () => {
     process.env = {
-      TEST_MODE: 'true',
       NODE_ENV: 'development',
       Connections__serviceConnection__Settings__clientId: 'schema-env-client-id',
       ConnectionsMap__0__ServiceUrl: '*',

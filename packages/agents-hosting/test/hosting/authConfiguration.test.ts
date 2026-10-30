@@ -1,6 +1,6 @@
 import { strict as assert } from 'assert'
 import { describe, it, beforeEach, afterEach } from 'node:test'
-import { AuthConfiguration, getAuthConfigWithDefaults, loadAuthConfigFromEnv, loadPrevAuthConfigFromEnv, resolveAuthority } from '../../src'
+import { AuthConfiguration, CloudAdapter, getAuthConfigWithDefaults, loadAuthConfigFromEnv, loadPrevAuthConfigFromEnv, resolveAuthority } from '../../src'
 import {
   AuthType,
   envParser,
@@ -30,7 +30,6 @@ describe('AuthConfiguration', () => {
     resetConfigurationSourcesForTest()
     originalEnv = process.env
     process.env = {
-      TEST_MODE: 'true',
       NODE_ENV: 'development',
       tenantId: 'test-tenant-id',
       clientId: 'test-client-id',
@@ -55,6 +54,122 @@ describe('AuthConfiguration', () => {
     assert.strictEqual(loadEnvSettings, sharedLoadEnvSettings)
     const indexed: LoadEnv = loadEnvSettings(() => {}, { Existing_Key: 'value' })
     assert.deepEqual(indexed.EXISTING_KEY, { key: 'Existing_Key', value: 'value' })
+  })
+
+  describe('environment loading lifecycle', () => {
+    function assertEnvironmentLifecycle (
+      load: () => AuthConfiguration,
+      clientIdKey: string,
+      secretKey: string
+    ) {
+      process.env = { NODE_ENV: 'development' }
+      assert.strictEqual(load().clientId, undefined)
+
+      process.env[clientIdKey] = 'first-client-id'
+      process.env[secretKey] = 'first-secret'
+      const first = load()
+
+      process.env[clientIdKey] = 'second-client-id'
+      process.env[secretKey] = 'second-secret'
+      const second = load()
+
+      delete process.env[secretKey]
+      const withoutSecret = load()
+
+      assert.strictEqual(first.clientId, 'first-client-id')
+      assert.strictEqual(first.clientSecret, 'first-secret')
+      assert.strictEqual(second.clientId, 'second-client-id')
+      assert.strictEqual(second.clientSecret, 'second-secret')
+      assert.strictEqual(withoutSecret.clientId, 'second-client-id')
+      assert.strictEqual(withoutSecret.clientSecret, undefined)
+    }
+
+    it('should read injected, changed, and deleted flat settings', () => {
+      assertEnvironmentLifecycle(loadAuthConfigFromEnv, 'clientId', 'clientSecret')
+    })
+
+    it('should read injected, changed, and deleted previous Bot Framework settings', () => {
+      assertEnvironmentLifecycle(loadPrevAuthConfigFromEnv, 'MicrosoftAppId', 'MicrosoftAppPassword')
+    })
+
+    it('should read injected, changed, and deleted modern connections', () => {
+      assertEnvironmentLifecycle(
+        loadAuthConfigFromEnv,
+        'Connections__primary__Settings__ClientId',
+        'Connections__primary__Settings__ClientSecret'
+      )
+    })
+
+    it('should read injected, changed, and deleted runtime environment fallback settings', () => {
+      assertEnvironmentLifecycle(getAuthConfigWithDefaults, 'clientId', 'clientSecret')
+    })
+
+    it('should keep an adapter and its routing stable when later loads replace modern connections', () => {
+      process.env = {
+        NODE_ENV: 'development',
+        Connections__primary__Settings__ClientId: 'first-client-id',
+        Connections__primary__Settings__Scopes: 'first-scope second-scope',
+        Connections__primary__Settings__Issuers: 'https://first.example',
+        ConnectionsMap__0__ServiceUrl: '*',
+        ConnectionsMap__0__Connection: 'primary'
+      }
+      const first = loadAuthConfigFromEnv()
+      const adapter = new CloudAdapter(first)
+      const firstProvider = adapter.connectionManager.getDefaultConnection()
+
+      process.env = {
+        NODE_ENV: 'development',
+        Connections__secondary__Settings__ClientId: 'second-client-id',
+        Connections__secondary__Settings__Scopes: 'replacement-scope',
+        ConnectionsMap__0__ServiceUrl: '*',
+        ConnectionsMap__0__Connection: 'secondary'
+      }
+      const second = getAuthConfigWithDefaults()
+
+      assert.strictEqual(adapter.getClientId(), 'first-client-id')
+      assert.strictEqual(adapter.connectionManager.getDefaultConnection(), firstProvider)
+      assert.strictEqual(firstProvider.connectionSettings?.clientId, 'first-client-id')
+      assert.deepStrictEqual(first.connectionsMap, [{ serviceUrl: '*', connection: 'primary' }])
+      assert.deepStrictEqual(first.scopes, ['first-scope', 'second-scope'])
+      assert.deepStrictEqual(first.issuers, ['https://first.example'])
+      assert.strictEqual(first.connections?.get('primary')?.clientId, 'first-client-id')
+      assert.deepStrictEqual([...second.connections?.keys() ?? []], ['secondary'])
+      assert.deepStrictEqual(second.connectionsMap, [{ serviceUrl: '*', connection: 'secondary' }])
+      assert.strictEqual(second.clientId, 'second-client-id')
+    })
+
+    it('should resolve updated modern settings through both legacy and runtime entry points', () => {
+      process.env = {
+        NODE_ENV: 'development',
+        Connections__primary__Settings__ClientId: 'first-client-id'
+      }
+      const firstLegacy = loadPrevAuthConfigFromEnv()
+      const firstRuntime = getAuthConfigWithDefaults()
+
+      process.env.Connections__primary__Settings__ClientId = 'second-client-id'
+
+      assert.strictEqual(loadPrevAuthConfigFromEnv().clientId, 'second-client-id')
+      assert.strictEqual(getAuthConfigWithDefaults().clientId, 'second-client-id')
+      assert.strictEqual(firstLegacy.connections?.get('primary')?.clientId, 'first-client-id')
+      assert.strictEqual(firstRuntime.connections?.get('primary')?.clientId, 'first-client-id')
+    })
+
+    it('should read updated named legacy settings without changing an earlier result', () => {
+      process.env = {
+        NODE_ENV: 'development',
+        named_clientId: 'first-client-id',
+        named_clientSecret: 'first-secret'
+      }
+      const first = loadAuthConfigFromEnv('named')
+      process.env.named_clientId = 'second-client-id'
+      delete process.env.named_clientSecret
+      const second = loadAuthConfigFromEnv('named')
+
+      assert.strictEqual(first.clientId, 'first-client-id')
+      assert.strictEqual(first.clientSecret, 'first-secret')
+      assert.strictEqual(second.clientId, 'second-client-id')
+      assert.strictEqual(second.clientSecret, undefined)
+    })
   })
 
   describe('loadAuthConfigFromEnv without connection name', () => {
@@ -279,7 +394,6 @@ describe('AuthConfiguration', () => {
   describe('configuration source behavior', () => {
     it('should load modern connections env without inheriting legacy flat env', () => {
       process.env = {
-        TEST_MODE: 'true',
         NODE_ENV: 'development',
         clientId: 'legacy-client-id',
         clientSecret: 'legacy-client-secret',
@@ -309,9 +423,8 @@ describe('AuthConfiguration', () => {
       assert.deepStrictEqual([...(config.connections?.keys() ?? [])], ['modern'])
     })
 
-    it('should preserve modern environment registry identity across repeated loads', () => {
+    it('should return independent modern environment registries across repeated loads', () => {
       process.env = {
-        TEST_MODE: 'true',
         NODE_ENV: 'development',
         Connections__modern__Settings__ClientId: 'modern-client-id',
         ConnectionsMap__0__ServiceUrl: '*',
@@ -321,14 +434,15 @@ describe('AuthConfiguration', () => {
       const first = loadAuthConfigFromEnv()
       const second = loadAuthConfigFromEnv()
 
-      assert.strictEqual(second.connections, first.connections)
-      assert.strictEqual(second.connectionsMap, first.connectionsMap)
+      assert.notStrictEqual(second.connections, first.connections)
+      assert.deepStrictEqual(second.connections, first.connections)
+      assert.notStrictEqual(second.connectionsMap, first.connectionsMap)
+      assert.deepStrictEqual(second.connectionsMap, first.connectionsMap)
       assert.strictEqual(second.connections?.get('modern')?.clientId, 'modern-client-id')
     })
 
     it('should isolate named environment projections from later default loads', () => {
       process.env = {
-        TEST_MODE: 'true',
         NODE_ENV: 'development',
         Connections__primary__Settings__ClientId: 'primary-client-id',
         Connections__secondary__Settings__ClientId: 'secondary-client-id',
@@ -349,9 +463,8 @@ describe('AuthConfiguration', () => {
       assert.deepStrictEqual(defaultConfig.connectionsMap, [{ serviceUrl: '*', connection: 'primary' }])
     })
 
-    it('should preserve environment registry identity with a non-auth configuration context', async () => {
+    it('should return independent environment registries with a non-auth configuration context', async () => {
       process.env = {
-        TEST_MODE: 'true',
         NODE_ENV: 'development',
         Connections__modern__Settings__ClientId: 'modern-client-id',
         ConnectionsMap__0__ServiceUrl: '*',
@@ -377,14 +490,15 @@ describe('AuthConfiguration', () => {
       const first = loadAuthConfigFromEnv(undefined, { configurationContext })
       const second = loadAuthConfigFromEnv(undefined, { configurationContext })
 
-      assert.strictEqual(second.connections, first.connections)
-      assert.strictEqual(second.connectionsMap, first.connectionsMap)
+      assert.notStrictEqual(second.connections, first.connections)
+      assert.deepStrictEqual(second.connections, first.connections)
+      assert.notStrictEqual(second.connectionsMap, first.connectionsMap)
+      assert.deepStrictEqual(second.connectionsMap, first.connectionsMap)
       assert.strictEqual(second.connections?.get('modern')?.clientId, 'modern-client-id')
     })
 
-    it('should not let a direct registry mutate the memoized environment registry', () => {
+    it('should not let a direct registry mutate an independent environment result', () => {
       process.env = {
-        TEST_MODE: 'true',
         NODE_ENV: 'development',
         Connections__modern__Settings__ClientId: 'modern-client-id',
         ConnectionsMap__0__ServiceUrl: '*',
@@ -406,7 +520,7 @@ describe('AuthConfiguration', () => {
     })
 
     it('should apply defaults to direct flat JSON without environment configuration', () => {
-      process.env = { TEST_MODE: 'true', NODE_ENV: 'development' }
+      process.env = { NODE_ENV: 'development' }
       const directConfig = JSON.parse(JSON.stringify({
         tenantId: 'direct-tenant-id',
         clientId: 'direct-client-id',
@@ -427,7 +541,7 @@ describe('AuthConfiguration', () => {
     })
 
     it('should use direct connections JSON and its wildcard connection', () => {
-      process.env = { TEST_MODE: 'true', NODE_ENV: 'development' }
+      process.env = { NODE_ENV: 'development' }
       const directJson = JSON.parse(JSON.stringify({
         connections: {
           primary: {
@@ -461,7 +575,7 @@ describe('AuthConfiguration', () => {
     })
 
     it('should resolve direct connection references case-insensitively', () => {
-      process.env = { TEST_MODE: 'true', NODE_ENV: 'development' }
+      process.env = { NODE_ENV: 'development' }
       const connections = new Map<string, AuthConfiguration>([
         ['Primary', { clientId: 'primary-client-id' }]
       ])
@@ -476,7 +590,6 @@ describe('AuthConfiguration', () => {
 
     it('should ignore direct flat JSON when modern connections env is present', () => {
       process.env = {
-        TEST_MODE: 'true',
         NODE_ENV: 'development',
         tenantId: 'legacy-tenant-id',
         Connections__modern__Settings__TenantId: 'modern-tenant-id',
@@ -501,7 +614,6 @@ describe('AuthConfiguration', () => {
 
     it('should retain legacy fallback fields when modern env causes direct flat JSON to be ignored', () => {
       process.env = {
-        TEST_MODE: 'true',
         NODE_ENV: 'development',
         tenantId: 'legacy-tenant-id',
         Connections__modern__Settings__ClientId: 'modern-client-id',
@@ -517,7 +629,6 @@ describe('AuthConfiguration', () => {
 
     it('should merge legacy flat env into direct JSON while preferring direct values', () => {
       process.env = {
-        TEST_MODE: 'true',
         NODE_ENV: 'development',
         tenantId: 'legacy-tenant-id',
         clientId: 'legacy-client-id',
@@ -611,7 +722,6 @@ describe('AuthConfiguration', () => {
 
     it('should layer preloaded values between environment and direct JSON', async () => {
       process.env = {
-        TEST_MODE: 'true',
         NODE_ENV: 'development',
         clientId: 'legacy-client-id',
         tenantId: 'legacy-tenant-id'
@@ -640,7 +750,6 @@ describe('AuthConfiguration', () => {
 
     it('should allow enforce-mode preloaded values to enforce an auth setting', async () => {
       process.env = {
-        TEST_MODE: 'true',
         NODE_ENV: 'development'
       }
       await preloadConfigurationSources([{
@@ -665,7 +774,6 @@ describe('AuthConfiguration', () => {
 
     it('should validate modern connections env in production', () => {
       process.env = {
-        TEST_MODE: 'true',
         NODE_ENV: 'production',
         Connections__modern__Settings__TenantId: 'modern-tenant-id',
         ConnectionsMap__0__ServiceUrl: '*',
@@ -677,7 +785,6 @@ describe('AuthConfiguration', () => {
 
     it('should keep below-legacy external values below legacy env fallbacks', async () => {
       process.env = {
-        TEST_MODE: 'true',
         NODE_ENV: 'development',
         tenantId: 'legacy-tenant-id',
         clientId: 'legacy-client-id',
@@ -714,7 +821,6 @@ describe('AuthConfiguration', () => {
 
     it('should materialize a requested legacy connection over an unrelated fallback registry', async () => {
       process.env = {
-        TEST_MODE: 'true',
         NODE_ENV: 'development',
         named_clientId: 'named-client-id'
       }
@@ -744,7 +850,6 @@ describe('AuthConfiguration', () => {
 
     it('should apply flat auth values to both the top-level config and the selected connection', async () => {
       process.env = {
-        TEST_MODE: 'true',
         NODE_ENV: 'development'
       }
       await preloadConfigurationSources([{
@@ -779,7 +884,6 @@ describe('AuthConfiguration', () => {
 
     it('should select a preloaded named connection even when no env connections exist', async () => {
       process.env = {
-        TEST_MODE: 'true',
         NODE_ENV: 'development'
       }
       await preloadConfigurationSources([{
@@ -809,7 +913,6 @@ describe('AuthConfiguration', () => {
 
     it('should fail with an AgentError when a preloaded named connection is missing', async () => {
       process.env = {
-        TEST_MODE: 'true',
         NODE_ENV: 'development'
       }
       await preloadConfigurationSources([{
@@ -841,7 +944,6 @@ describe('AuthConfiguration', () => {
 
     it('should preserve lower connectionsMap properties when a higher layer overlays only one property', async () => {
       process.env = {
-        TEST_MODE: 'true',
         NODE_ENV: 'development'
       }
       await preloadConfigurationSources([
@@ -888,7 +990,6 @@ describe('AuthConfiguration', () => {
 
     it('should not let a non-default connection overlay hijack the wildcard default route', async () => {
       process.env = {
-        TEST_MODE: 'true',
         NODE_ENV: 'development'
       }
       await preloadConfigurationSources([
@@ -934,7 +1035,6 @@ describe('AuthConfiguration', () => {
 
     it('should resolve sparse high-index route patches when lower layers make the final route complete', async () => {
       process.env = {
-        TEST_MODE: 'true',
         NODE_ENV: 'development'
       }
       await preloadConfigurationSources([
@@ -988,7 +1088,6 @@ describe('AuthConfiguration', () => {
 
     it('should fail sparse high-index route patches with an AgentError instead of a raw TypeError', async () => {
       process.env = {
-        TEST_MODE: 'true',
         NODE_ENV: 'development'
       }
       await preloadConfigurationSources([{
@@ -1050,7 +1149,7 @@ describe('AuthConfiguration', () => {
     })
 
     it('should preserve flat direct JSON routes through the synthesized compatibility connection', () => {
-      process.env = { TEST_MODE: 'true', NODE_ENV: 'development' }
+      process.env = { NODE_ENV: 'development' }
       const connectionsMap = [
         { serviceUrl: 'https://target.example', connection: 'serviceConnection' },
         { serviceUrl: '*', connection: 'serviceConnection' }
@@ -1068,7 +1167,7 @@ describe('AuthConfiguration', () => {
     })
 
     it('should preserve flat direct routes when an external source contributes a partial route', async () => {
-      process.env = { TEST_MODE: 'true', NODE_ENV: 'development' }
+      process.env = { NODE_ENV: 'development' }
       const configurationContext = await createConfigurationContext([{
         source: {
           name: 'route-audience',
@@ -1100,7 +1199,7 @@ describe('AuthConfiguration', () => {
     })
 
     it('should resolve external connection references and overlays case-insensitively', async () => {
-      process.env = { TEST_MODE: 'true', NODE_ENV: 'development' }
+      process.env = { NODE_ENV: 'development' }
       const configurationContext = await createConfigurationContext([
         {
           source: {
@@ -1151,7 +1250,6 @@ describe('AuthConfiguration', () => {
 
     it('should retain environment routes when a direct registry omits its map', () => {
       process.env = {
-        TEST_MODE: 'true',
         NODE_ENV: 'development',
         ConnectionsMap__0__ServiceUrl: '*',
         ConnectionsMap__0__Connection: 'secondary'
@@ -1169,7 +1267,7 @@ describe('AuthConfiguration', () => {
     })
 
     it('should merge direct registry routes with lower external route properties', async () => {
-      process.env = { TEST_MODE: 'true', NODE_ENV: 'development' }
+      process.env = { NODE_ENV: 'development' }
       await preloadConfigurationSources([{
         source: {
           name: 'base-route',
@@ -1205,7 +1303,7 @@ describe('AuthConfiguration', () => {
     })
 
     it('should preserve the origin missing-default error for a direct registry without any routes', () => {
-      process.env = { TEST_MODE: 'true', NODE_ENV: 'development' }
+      process.env = { NODE_ENV: 'development' }
       const connections = new Map<string, AuthConfiguration>([
         ['primary', { clientId: 'primary-client' }],
         ['secondary', { clientId: 'secondary-client' }]
@@ -1223,7 +1321,7 @@ describe('AuthConfiguration', () => {
     })
 
     it('should infer a default route for one external connection', async () => {
-      process.env = { TEST_MODE: 'true', NODE_ENV: 'development' }
+      process.env = { NODE_ENV: 'development' }
       const configurationContext = await createConfigurationContext([{
         source: {
           name: 'single-connection',
@@ -1245,7 +1343,7 @@ describe('AuthConfiguration', () => {
     })
 
     it('should require a route for multiple external connections', async () => {
-      process.env = { TEST_MODE: 'true', NODE_ENV: 'development' }
+      process.env = { NODE_ENV: 'development' }
       const configurationContext = await createConfigurationContext([{
         source: {
           name: 'multiple-connections',
@@ -1272,7 +1370,7 @@ describe('AuthConfiguration', () => {
     })
 
     it('should discard fallback routes for connections removed by a direct registry', async () => {
-      process.env = { TEST_MODE: 'true', NODE_ENV: 'development' }
+      process.env = { NODE_ENV: 'development' }
       const configurationContext = await createConfigurationContext([{
         source: {
           name: 'fallback-routes',
@@ -1306,7 +1404,7 @@ describe('AuthConfiguration', () => {
     })
 
     it('should preserve caller registry, route, and connection references without sources', () => {
-      process.env = { TEST_MODE: 'true', NODE_ENV: 'development' }
+      process.env = { NODE_ENV: 'development' }
       const primary: AuthConfiguration = { clientId: 'primary-client' }
       const connections = new Map<string, AuthConfiguration>([['primary', primary]])
       const connectionsMap = [{ serviceUrl: '*', connection: 'primary' }]
@@ -1622,7 +1720,6 @@ describe('AuthConfiguration', () => {
 
     it('should merge partial env routes with lower external route properties without synthesizing serviceConnection', async () => {
       process.env = {
-        TEST_MODE: 'true',
         NODE_ENV: 'development',
         Connections__primary__Settings__ClientId: 'env-client-id',
         ConnectionsMap__0__Audience: 'env-audience'
@@ -1657,7 +1754,6 @@ describe('AuthConfiguration', () => {
 
     it('should fail sparse incomplete env routes with an AgentError instead of a raw TypeError', () => {
       process.env = {
-        TEST_MODE: 'true',
         NODE_ENV: 'development',
         Connections__primary__Settings__ClientId: 'env-client-id',
         ConnectionsMap__7__Audience: 'env-audience'

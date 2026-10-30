@@ -70,49 +70,44 @@ function summarizeAuthConfiguration (authConfig: AuthConfiguration) {
   }, {} as Record<string, AuthConfiguration>)
 }
 
-/**
- * Latest authentication configuration loaded from environment variables, with support for hot-reloading in test mode.
- * Environment variables for connections should be in the format Connections__<id>__Settings__<property>, e.g. Connections__MyConnection__Settings__ClientId, Connections__MyConnection__Settings__TenantId, etc.
- * Environment variables for connections map should be in the format ConnectionsMap__<index>__<property>, e.g. ConnectionsMap__0__ServiceUrl, ConnectionsMap__0__Connection, etc.
- */
-const connectionsEnv = {
-  connections: new Map<string, AuthConfiguration>()
+interface AuthEnvironment {
+  readonly connections: ReadonlyMap<string, AuthConfiguration>
+  readonly connectionsMap: ReadonlyMap<number, ConnectionMapPatch>
+  readonly legacyBotFrameworkSettings: AuthConfiguration
+  readonly legacyPrefixSettings: AuthConfiguration
 }
 
-const connectionsMapEnv = {
-  connectionsMap: new Map<number, ConnectionMapPatch>(),
-  finalized: [] as ConnectionMapItem[]
-}
-
-const loadEnv = () => {
-  const modern = loadModernEnvironmentConfiguration()
-  connectionsEnv.connections.clear()
+function loadAuthEnvironment (connectionName = ''): AuthEnvironment {
+  // Every resolution owns its inputs. Later loads must not rewrite an existing
+  // adapter's connections or routing through shared environment registries.
+  const environment = { ...process.env }
+  const modern = loadModernEnvironmentConfiguration(environment)
+  const connections = new Map<string, AuthConfiguration>()
   for (const connection of modern.connections.values()) {
-    connectionsEnv.connections.set(
+    connections.set(
       connection.id,
       { ...connection.settings } as AuthConfiguration
     )
   }
-  connectionsMapEnv.connectionsMap.clear()
+  const connectionsMap = new Map<number, ConnectionMapPatch>()
   for (const [index, item] of modern.connectionsMap) {
-    connectionsMapEnv.connectionsMap.set(index, { ...item })
+    connectionsMap.set(index, { ...item })
   }
 
-  if (connectionsEnv.connections.size === 0) {
-    logger.warn('No connections found in configuration.')
-  }
-
-  if (connectionsMapEnv.connectionsMap.size === 0 && connectionsEnv.connections.size > 0) {
-    logger.warn('No connections map found in configuration, assuming default connection map with serviceUrl "*" for the first connection.')
-    const [key] = connectionsEnv.connections.keys()
-    connectionsMapEnv.connectionsMap.set(0, { ...DEFAULT_CONNECTION_MAP, connection: key })
+  if (connectionsMap.size === 0 && connections.size > 0) {
+    logger.debug('No connections map found in configuration, assuming default connection map with serviceUrl "*" for the first connection.')
+    const [connection] = connections.keys()
+    connectionsMap.set(0, { ...DEFAULT_CONNECTION_MAP, connection })
   }
   return {
+    connections,
+    connectionsMap,
     legacyBotFrameworkSettings: configurationLayerSettings(
-      loadBotFrameworkEnvironmentConfiguration()
+      loadBotFrameworkEnvironmentConfiguration(environment)
     ),
     legacyPrefixSettings: configurationLayerSettings(
-      loadBotFrameworkPrefixedEnvironmentConfiguration('')
+      loadBotFrameworkPrefixedEnvironmentConfiguration(connectionName, environment),
+      connectionName
     )
   }
 }
@@ -190,16 +185,10 @@ function validateDirectIssuerValue (settings: AuthConfiguration, path: string): 
   }
 }
 
-function environmentRegistryOperation (): AuthOperation {
+function environmentRegistryOperation (environment: AuthEnvironment): AuthOperation {
   return {
-    connections: connectionsEnv.connections,
-    connectionsMap: connectionsMapEnv.connectionsMap
-  }
-}
-
-function environmentRouteOperation (): AuthOperation {
-  return {
-    connectionsMap: connectionsMapEnv.connectionsMap
+    connections: environment.connections,
+    connectionsMap: environment.connectionsMap
   }
 }
 
@@ -384,16 +373,15 @@ function resolveAuthOperations (
 }
 
 function environmentOperation (
+  environment: AuthEnvironment,
   legacySettings: AuthConfiguration,
   connectionName?: string
 ): AuthOperation {
-  return connectionsEnv.connections.size > 0
-    ? environmentRegistryOperation()
-    : settingsOperation(
-      legacySettings,
-      false,
-      Boolean(connectionName?.trim() && Object.keys(legacySettings).length > 0)
-    )
+  if (environment.connections.size > 0) {
+    return environmentRegistryOperation(environment)
+  }
+  const hasNamedSettings = Boolean(connectionName?.trim() && Object.keys(legacySettings).length > 0)
+  return settingsOperation(legacySettings, false, hasNamedSettings)
 }
 
 function externalOperations (context?: ConfigurationContext) {
@@ -409,34 +397,6 @@ function externalOperations (context?: ConfigurationContext) {
   }
 }
 
-function preserveEnvironmentRegistryIdentity (
-  result: AuthConfiguration,
-  external: ReturnType<typeof externalOperations>,
-  environmentRegistrySelected: boolean
-): AuthConfiguration {
-  if (external.hasAuth || !environmentRegistrySelected) {
-    return result
-  }
-
-  for (const [id, settings] of result.connections ?? []) {
-    const environmentId = findConnectionKey(connectionsEnv.connections, id)
-    if (environmentId) {
-      connectionsEnv.connections.set(environmentId, settings)
-    }
-  }
-  connectionsMapEnv.finalized.splice(
-    0,
-    connectionsMapEnv.finalized.length,
-    ...(result.connectionsMap ?? [])
-  )
-  result.connections = connectionsEnv.connections
-  result.connectionsMap = connectionsMapEnv.finalized
-  return result
-}
-
-// Initial load of environment variables
-let globalEnv = loadEnv()
-
 /**
  * Optional host-scoped inputs used while resolving authentication settings.
  */
@@ -446,13 +406,14 @@ export interface AuthConfigurationResolutionOptions {
 }
 
 /**
- * Loads the authentication configuration from environment variables.
+ * Loads the authentication configuration from current environment variables.
  *
  * @returns The authentication configuration.
  * @throws Will throw an error if clientId is not provided in production.
  *
  * @remarks
  * - `clientId` is required
+ * - Each call reads the environment independently; existing adapters retain their configuration.
  *
  * @example
  * ```
@@ -475,23 +436,14 @@ export const loadAuthConfigFromEnv = (
   cnxName?: string,
   options?: AuthConfigurationResolutionOptions
 ): AuthConfiguration => {
-  if (process.env.TEST_MODE === 'true') {
-    globalEnv = loadEnv()
-  }
-
-  const legacySettings = cnxName?.trim()
-    ? configurationLayerSettings(
-      loadBotFrameworkPrefixedEnvironmentConfiguration(cnxName),
-      cnxName
-    )
-    : globalEnv.legacyPrefixSettings
+  const environment = loadAuthEnvironment(cnxName?.trim() ? cnxName : '')
   const external = externalOperations(options?.configurationContext)
-  const result = preserveEnvironmentRegistryIdentity(resolveAuthOperations([
+  const result = resolveAuthOperations([
     external.fallback,
-    environmentOperation(legacySettings, cnxName),
+    environmentOperation(environment, environment.legacyPrefixSettings, cnxName),
     external.overrideEnvironment,
     external.enforce
-  ], cnxName), external, connectionsEnv.connections.size > 0 && !cnxName?.trim())
+  ], cnxName)
   if (cnxName && !result.clientId) {
     throw ExceptionHelper.generateException(Error, Errors.ClientIdNotFoundForConnection, undefined, { connectionName: cnxName })
   }
@@ -521,17 +473,14 @@ export const loadAuthConfigFromEnv = (
 export const loadPrevAuthConfigFromEnv = (
   options?: AuthConfigurationResolutionOptions
 ): AuthConfiguration => {
-  if (process.env.TEST_MODE === 'true') {
-    globalEnv = loadEnv()
-  }
-
+  const environment = loadAuthEnvironment()
   const external = externalOperations(options?.configurationContext)
-  const result = preserveEnvironmentRegistryIdentity(resolveAuthOperations([
+  const result = resolveAuthOperations([
     external.fallback,
-    environmentOperation(globalEnv.legacyBotFrameworkSettings),
+    environmentOperation(environment, environment.legacyBotFrameworkSettings),
     external.overrideEnvironment,
     external.enforce
-  ]), external, connectionsEnv.connections.size > 0)
+  ])
 
   logger.info('Legacy auth settings loaded from environment', summarizeAuthConfiguration(result), result.connectionsMap)
   return result
@@ -568,28 +517,25 @@ export function getAuthConfigWithDefaults (
   if (config) {
     validateDirectIssuerConfiguration(config)
   }
-  if (process.env.TEST_MODE === 'true') {
-    globalEnv = loadEnv()
-  }
-
+  const environment = loadAuthEnvironment()
   const external = externalOperations(options?.configurationContext)
   const operations: AuthOperation[] = [external.fallback]
 
   if (config?.connections?.size) {
-    operations.push(settingsOperation(globalEnv.legacyPrefixSettings))
+    operations.push(settingsOperation(environment.legacyPrefixSettings))
     if (!config.connectionsMap?.length) {
-      operations.push(environmentRouteOperation())
+      operations.push({ connectionsMap: environment.connectionsMap })
     }
     operations.push(external.overrideEnvironment)
     operations.push(registryOperation(config))
-  } else if (connectionsEnv.connections.size > 0) {
+  } else if (environment.connections.size > 0) {
     if (config) {
-      operations.push(settingsOperation(globalEnv.legacyPrefixSettings))
+      operations.push(settingsOperation(environment.legacyPrefixSettings))
     }
-    operations.push(environmentRegistryOperation())
+    operations.push(environmentRegistryOperation(environment))
     operations.push(external.overrideEnvironment)
   } else {
-    operations.push(settingsOperation(globalEnv.legacyPrefixSettings))
+    operations.push(settingsOperation(environment.legacyPrefixSettings))
     operations.push(external.overrideEnvironment)
     if (config) {
       operations.push(settingsOperation(config, true))
@@ -597,13 +543,9 @@ export function getAuthConfigWithDefaults (
   }
   operations.push(external.enforce)
 
-  const result = preserveEnvironmentRegistryIdentity(
-    resolveAuthOperations(operations),
-    external,
-    !config?.connections?.size && connectionsEnv.connections.size > 0
-  )
+  const result = resolveAuthOperations(operations)
   const directParticipates = Boolean(config?.connections?.size) ||
-    connectionsEnv.connections.size === 0
+    environment.connections.size === 0
   if (!external.hasAuth && config && directParticipates) {
     if (config.connections?.size) {
       result.connections = config.connections

@@ -3,7 +3,7 @@ import { describe, it, beforeEach, afterEach } from 'node:test'
 import sinon from 'sinon'
 import jwt from 'jsonwebtoken'
 import { Response, NextFunction } from 'express'
-import { authorizeJWT, buildJwksUri, clearJwksClients, AuthConfiguration, Request } from '../../src'
+import { authorizeJWT, buildJwksUri, clearJwksClients, AuthConfiguration, Request, loadAuthConfigFromEnv } from '../../src'
 import { getAuthorizedAudience, getJwksClient } from '../../src/auth/jwt-middleware'
 
 describe('authorizeJWT', () => {
@@ -46,6 +46,40 @@ describe('authorizeJWT', () => {
   afterEach(() => {
     clearJwksClients()
     sinon.restore()
+  })
+
+  it('should authenticate late environment credentials and retain them after a later load', async () => {
+    const originalEnv = process.env
+    const response = res as Response
+    const nextStub = next as sinon.SinonStub
+    const statusStub = res.status as sinon.SinonStub
+    process.env = {
+      NODE_ENV: 'development',
+      Connections__primary__Settings__ClientId: 'late-client-id',
+      Connections__primary__Settings__TenantId: 'late-tenant-id'
+    }
+
+    try {
+      const middleware = authorizeJWT(loadAuthConfigFromEnv())
+      process.env.Connections__primary__Settings__ClientId = 'replacement-client-id'
+      assert.strictEqual(loadAuthConfigFromEnv().clientId, 'replacement-client-id')
+
+      req.headers.authorization = 'Bearer valid-token'
+      const payload = { aud: 'late-client-id' }
+      sinon.stub(jwt, 'decode').returns(payload)
+      const verifyStub = sinon.stub(jwt, 'verify').callsFake((_token, _key, options, callback) => {
+        assert.deepStrictEqual(options?.audience, ['late-client-id', 'https://api.botframework.com'])
+        callback?.(null, payload)
+      })
+
+      await middleware(req, response, next)
+
+      sinon.assert.calledOnce(verifyStub)
+      sinon.assert.calledOnce(nextStub)
+      sinon.assert.notCalled(statusStub)
+    } finally {
+      process.env = originalEnv
+    }
   })
 
   it('should call next with no error if token is valid', async () => {
