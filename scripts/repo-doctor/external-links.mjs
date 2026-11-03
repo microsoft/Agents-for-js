@@ -133,7 +133,7 @@ async function checkDestination (url, context) {
           return { ...result('unverified', url, signal.reason.message), ...state }
         }
         if (error.code === 'EDESTINATION') {
-          return { ...result('broken', url, error.message, 'docs/external-link-redirect'), ...state }
+          return { ...result(state.finalUrl === url ? 'skipped' : 'broken', url, error.message, 'docs/external-link-redirect'), ...state }
         }
         if (!isExpectedRequestError(error)) {
           throw error
@@ -164,6 +164,7 @@ async function followRedirects (initialUrl, method, signal, state, context) {
   const seen = new Set()
   for (let hop = 0; hop <= context.limits.redirects; hop += 1) {
     signal.throwIfAborted()
+    state.finalUrl = current.href
     const skipReason = destinationSkipReason(current, context.allowPrivate)
     if (skipReason) {
       return { ...result('broken', initialUrl, `Redirect destination is not eligible: ${skipReason}`, 'docs/external-link-redirect'), finalUrl: current.href }

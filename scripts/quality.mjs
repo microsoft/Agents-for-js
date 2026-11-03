@@ -291,7 +291,7 @@ export function createNpmCheckRunner ({ directory, cwd = root, spawnProcess = sp
       const execution = await new Promise(resolve => {
         const child = spawnProcess(command, args, {
           cwd,
-          env: { ...process.env, ...(check.id === 'compat' ? { COMPAT_SKIP_BUILD: '1' } : {}) },
+          env: { ...process.env, ...(['doctor', 'documentation-links'].includes(check.id) ? { QUALITY_LOG_DIR: path.join(directory, check.id) } : {}), ...(check.id === 'compat' ? { COMPAT_SKIP_BUILD: '1' } : {}) },
           shell: !process.env.npm_execpath && process.platform === 'win32',
           stdio: ['ignore', 'pipe', 'pipe'],
           windowsHide: true,
@@ -607,7 +607,7 @@ function createLiveReporter (options) {
     }
 
     const distance = entries.size - row
-    const line = formatLiveLine(entry, now(), status, columns)
+    const line = fitLiveLine(formatLiveLine(entry, now(), status, columns), stream.columns)
     const padding = ' '.repeat(Math.max(0, (entry.visibleLength ?? 0) - visibleLength(line)))
 
     entry.visibleLength = visibleLength(line)
@@ -650,7 +650,7 @@ function createLiveReporter (options) {
       hideCursor()
 
       for (const entry of entries.values()) {
-        const line = formatLiveLine(entry, now(), status, columns)
+        const line = fitLiveLine(formatLiveLine(entry, now(), status, columns), stream.columns)
 
         entry.visibleLength = visibleLength(line)
         write(line)
@@ -712,6 +712,13 @@ function createLiveReporter (options) {
     },
     refresh: redraw
   }
+}
+
+function fitLiveLine (line, width) {
+  if (!width || visibleLength(line) < width) {
+    return line
+  }
+  return line.replace(ansiEscapePattern, '').slice(0, Math.max(0, width - 2)) + '…'
 }
 
 function columnWidths (checks) {

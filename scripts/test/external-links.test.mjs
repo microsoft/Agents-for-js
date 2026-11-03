@@ -24,6 +24,26 @@ function options (request, limits = {}) {
 }
 
 describe('external link validation', () => {
+  it('skips an initial private DNS destination but rejects redirected private DNS', async () => {
+    for (const redirected of [false, true]) {
+      const report = await checkExternalLinks(references('https://public.example.org/'), options(async url => {
+        if (redirected && url.pathname === '/') {
+          return { status: 302, location: '/private' }
+        }
+        throw Object.assign(new Error('DNS resolved to private infrastructure.'), { code: 'EDESTINATION' })
+      }))
+      assert.equal(report.results[0].outcome, redirected ? 'broken' : 'skipped')
+      assert.equal(report.findings.length, redirected ? 1 : 0)
+    }
+  })
+
+  it('retains rejected redirect destinations in results and findings', async () => {
+    const target = 'http://10.0.0.1/private'
+    const report = await checkExternalLinks(references('https://public.example.org/'), options(async () => ({ status: 302, location: target })))
+    assert.equal(report.results[0].finalUrl, target)
+    assert.ok(report.findings[0].message.includes(target))
+  })
+
   it('deduplicates destinations while retaining every source diagnostic', async () => {
     const calls = []
     const report = await checkExternalLinks(references(

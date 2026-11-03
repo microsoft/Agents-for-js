@@ -805,7 +805,7 @@ describe('repo:doctor', () => {
 
   it('CLI lists the rule guide without checking the repository', () => {
     const cli = path.resolve('scripts/repo-doctor.mjs')
-    const result = spawnSync(process.execPath, [cli, '--rules'], { encoding: 'utf8' })
+    const result = spawnSync(process.execPath, [cli, '--rules'], { encoding: 'utf8', env: { ...process.env, QUALITY_LOG_DIR: '' } })
 
     assert.equal(result.status, 0)
     assert.match(result.stdout, /Repo Doctor rules/)
@@ -819,7 +819,7 @@ describe('repo:doctor', () => {
     const result = spawnSync(
       process.execPath,
       [cli, '--rules', 'scripts/install-hook-disallowed', 'docs/relative-link-missing'],
-      { encoding: 'utf8' }
+      { encoding: 'utf8', env: { ...process.env, QUALITY_LOG_DIR: '' } }
     )
 
     assert.equal(result.status, 0)
@@ -833,7 +833,7 @@ describe('repo:doctor', () => {
       write('tsconfig.build.json', JSON.stringify({ references: [] }))
     )
     const cli = path.resolve('scripts/repo-doctor.mjs')
-    const result = spawnSync(process.execPath, [cli, '--root', root], { encoding: 'utf8' })
+    const result = spawnSync(process.execPath, [cli, '--root', root], { encoding: 'utf8', env: { ...process.env, QUALITY_LOG_DIR: '' } })
 
     assert.equal(result.status, 1)
     assert.match(result.stdout, /^tsconfig\.build\.json/m)
@@ -899,7 +899,7 @@ describe('repo:doctor', () => {
   it('CLI formats configuration failures and preserves the parser error', () => {
     const root = fixture(({ write }) => write('package.json', '{ invalid json'))
     const cli = path.resolve('scripts/repo-doctor.mjs')
-    const result = spawnSync(process.execPath, [cli, '--root', root], { encoding: 'utf8' })
+    const result = spawnSync(process.execPath, [cli, '--root', root], { encoding: 'utf8', env: { ...process.env, QUALITY_LOG_DIR: '' } })
 
     assert.equal(result.status, 2)
     assert.match(result.stderr, /^package\.json/m)
@@ -1053,7 +1053,7 @@ describe('repo:doctor', () => {
         assert.doesNotMatch(result.stdout, /External links: (ON|OFF)/)
       }
     }
-    const failure = spawnSync(process.execPath, ['--import', preload, cli, '--root', root, '--check-links'], { encoding: 'utf8' })
+    const failure = spawnSync(process.execPath, ['--import', preload, cli, '--root', root, '--check-links'], { encoding: 'utf8', env: { ...process.env, QUALITY_LOG_DIR: '' } })
     assert.equal(failure.status, 2)
     assert.match(failure.stderr, /Unexpected async transport failure/)
     assert.match(failure.stderr, /repo-doctor\/internal/)
@@ -1157,7 +1157,7 @@ describe('repo:doctor', () => {
     assert.doesNotMatch(logFailure.stdout, /↳ Details:|✓ No repository errors found/)
 
     writeFileSync(path.join(root, 'repo-doctor.links.json'), '{ invalid JSON')
-    const invalid = spawnSync(process.execPath, [cli, '--root', root], { encoding: 'utf8' })
+    const invalid = spawnSync(process.execPath, [cli, '--root', root], { encoding: 'utf8', env: { ...process.env, QUALITY_LOG_DIR: '' } })
     assert.equal(invalid.status, 2)
     assert.match(invalid.stderr, /repo-doctor\.links\.json/)
     assert.match(invalid.stderr, /Unable to read link exceptions/)
