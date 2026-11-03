@@ -143,7 +143,7 @@ describe('agents-configuration.schema.json / JavaScript consistency', () => {
       ],
       connectionMapItem: ['serviceUrl', 'audience', 'connection'],
       cloudAdapterOptions: ['emitStackTrace', 'validateServiceUrl'],
-      outboundHostValidator: ['enabled', 'includeDefaultMicrosoftHosts', 'hosts']
+      outboundHostValidator: ['enabled', 'includeDefaultMicrosoftHosts', 'allowPrivateNetworkAddresses', 'hosts']
     } as const
 
     for (const [definition, properties] of Object.entries(expected)) {
@@ -273,6 +273,7 @@ describe('agents-configuration.schema.json / JavaScript consistency', () => {
     assert.deepEqual(snapshot.outboundHostValidator, {
       enabled: true,
       includeDefaultMicrosoftHosts: true,
+      allowPrivateNetworkAddresses: false,
       hosts: ['api.contoso.com']
     })
     const graph = snapshot.agentApplication.userAuthorization.handlers.get('graph')

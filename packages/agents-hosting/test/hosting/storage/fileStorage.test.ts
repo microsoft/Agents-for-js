@@ -8,7 +8,9 @@ import { FileStorage, FileStorageV2, Storage, StorageOperationStatus, StorageV2,
 const folders: string[] = []
 
 afterEach(() => {
-  for (const folder of folders.splice(0)) fs.rmSync(folder, { recursive: true, force: true })
+  for (const folder of folders.splice(0)) {
+    fs.rmSync(folder, { recursive: true, force: true })
+  }
 })
 
 function createFolder (): string {

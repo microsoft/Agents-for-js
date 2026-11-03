@@ -256,7 +256,13 @@ function bindOutboundHostValidator (
       emitHierarchySuggestion(sourceName, [parts[0], suggestedProperty].join('__'), true)
     }
   }
-  trySet(layer, `outboundHostValidator.${parts[1]}`, value, sourceName)
+  trySet(
+    layer,
+    `outboundHostValidator.${parts[1]}`,
+    value,
+    sourceName,
+    parts[1].toLowerCase() === 'allowprivatenetworkaddresses'
+  )
 }
 
 function bindAuthorizationHandler (

@@ -57,7 +57,9 @@ describe('FileConsent', () => {
     const app = new AgentApplication()
     const teamsExt = new TeamsAgentExtension(app)
     app.registerExtension(teamsExt, (tae) => {
-      tae.fileConsent.onDecline(async () => { handled = true })
+      tae.fileConsent.onDecline(async () => {
+        handled = true
+      })
     })
 
     const activity = Activity.fromObject({
@@ -85,7 +87,9 @@ describe('FileConsent', () => {
     const app = new AgentApplication()
     const teamsExt = new TeamsAgentExtension(app)
     app.registerExtension(teamsExt, (tae) => {
-      tae.fileConsent.onAccept(async () => { handled = true })
+      tae.fileConsent.onAccept(async () => {
+        handled = true
+      })
     })
 
     const activity = Activity.fromObject({
@@ -108,7 +112,9 @@ describe('FileConsent', () => {
     const app = new AgentApplication()
     const teamsExt = new TeamsAgentExtension(app)
     app.registerExtension(teamsExt, (tae) => {
-      tae.fileConsent.onAccept(async () => { handled = true })
+      tae.fileConsent.onAccept(async () => {
+        handled = true
+      })
     })
 
     const activity = Activity.fromObject({

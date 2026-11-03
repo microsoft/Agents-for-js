@@ -10,8 +10,10 @@ const updateLocalDeps = (folder, version) => {
   const packageJsonPath = `${folder}/package.json`
   const packageJsonContent = fs.readFileSync(packageJsonPath, 'utf8')
   const packageJson = JSON.parse(packageJsonContent)
+
   packageJson.version = version
   const dependencies = packageJson.dependencies
+
   Object.keys(dependencies).forEach(dep => {
     if (dep.startsWith('@microsoft/agents')) {
       packageJson.dependencies[dep] = version
@@ -40,6 +42,7 @@ const handleError = err => {
 }
 
 const v = await nbgv.getVersion(root)
+
 try {
   await setPackageVersionAndBuildNumber(v)
 } catch (err) {

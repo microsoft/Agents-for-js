@@ -329,6 +329,11 @@
           "type": "boolean",
           "default": true
         },
+        "allowPrivateNetworkAddresses": {
+          "description": "Allow allowlisted HTTPS attachment destinations to use private, shared (RFC 6598), loopback, link-local, or unspecified addresses. Does not bypass host validation.",
+          "type": "boolean",
+          "default": false
+        },
         "hosts": {
           "$ref": "#/$defs/stringList"
         }
@@ -534,6 +539,7 @@
       "outboundHostValidator": {
         "enabled": true,
         "includeDefaultMicrosoftHosts": true,
+        "allowPrivateNetworkAddresses": false,
         "hosts": [
           "api.contoso.com"
         ]

@@ -830,7 +830,9 @@ describe('RouteList', () => {
     const routeList: RouteList<TurnState> = new RouteList()
 
     routeList.addRoute(
-      () => { return new Promise<true>(resolve => resolve(true)) },
+      () => {
+        return new Promise<true>(resolve => resolve(true))
+      },
       () => {
         values.push('1')
         return new Promise<void>(resolve => resolve())
@@ -840,7 +842,9 @@ describe('RouteList', () => {
     )
 
     routeList.addRoute(
-      () => { return new Promise<true>(resolve => resolve(true)) },
+      () => {
+        return new Promise<true>(resolve => resolve(true))
+      },
       () => {
         values.push('2')
         return new Promise<void>(resolve => resolve())
@@ -850,7 +854,9 @@ describe('RouteList', () => {
     )
 
     routeList.addRoute(
-      () => { return new Promise<true>(resolve => resolve(true)) },
+      () => {
+        return new Promise<true>(resolve => resolve(true))
+      },
       () => {
         values.push('3')
         return new Promise<void>(resolve => resolve())
@@ -860,7 +866,9 @@ describe('RouteList', () => {
     )
 
     routeList.addRoute(
-      () => { return new Promise<true>(resolve => resolve(true)) },
+      () => {
+        return new Promise<true>(resolve => resolve(true))
+      },
       () => {
         values.push('4')
         return new Promise<void>(resolve => resolve())
@@ -885,7 +893,9 @@ describe('RouteList', () => {
     const routeList: RouteList<TurnState> = new RouteList()
 
     routeList.addRoute(
-      () => { return new Promise<true>(resolve => resolve(true)) },
+      () => {
+        return new Promise<true>(resolve => resolve(true))
+      },
       () => {
         values.push('2')
         return new Promise<void>(resolve => resolve())
@@ -894,7 +904,9 @@ describe('RouteList', () => {
     )
 
     routeList.addRoute(
-      () => { return new Promise<true>(resolve => resolve(true)) },
+      () => {
+        return new Promise<true>(resolve => resolve(true))
+      },
       () => {
         values.push('1')
         return new Promise<void>(resolve => resolve())
@@ -903,7 +915,9 @@ describe('RouteList', () => {
     )
 
     routeList.addRoute(
-      () => { return new Promise<true>(resolve => resolve(true)) },
+      () => {
+        return new Promise<true>(resolve => resolve(true))
+      },
       () => {
         values.push('invoke')
         return new Promise<void>(resolve => resolve())
@@ -926,7 +940,9 @@ describe('RouteList', () => {
     const routeList: RouteList<TurnState> = new RouteList()
 
     routeList.addRoute(
-      () => { return new Promise<true>(resolve => resolve(true)) },
+      () => {
+        return new Promise<true>(resolve => resolve(true))
+      },
       () => {
         values.push('2')
         return new Promise<void>(resolve => resolve())
@@ -936,7 +952,9 @@ describe('RouteList', () => {
     )
 
     routeList.addRoute(
-      () => { return new Promise<true>(resolve => resolve(true)) },
+      () => {
+        return new Promise<true>(resolve => resolve(true))
+      },
       () => {
         values.push('1')
         return new Promise<void>(resolve => resolve())
@@ -946,7 +964,9 @@ describe('RouteList', () => {
     )
 
     routeList.addRoute(
-      () => { return new Promise<true>(resolve => resolve(true)) },
+      () => {
+        return new Promise<true>(resolve => resolve(true))
+      },
       () => {
         values.push('invoke1')
         return new Promise<void>(resolve => resolve())
@@ -956,7 +976,9 @@ describe('RouteList', () => {
     )
 
     routeList.addRoute(
-      () => { return new Promise<true>(resolve => resolve(true)) },
+      () => {
+        return new Promise<true>(resolve => resolve(true))
+      },
       () => {
         values.push('invoke2')
         return new Promise<void>(resolve => resolve())
@@ -981,7 +1003,9 @@ describe('RouteList', () => {
     const routeList: RouteList<TurnState> = new RouteList()
 
     routeList.addRoute(
-      () => { return new Promise<true>(resolve => resolve(true)) },
+      () => {
+        return new Promise<true>(resolve => resolve(true))
+      },
       () => {
         values.push('2')
         return new Promise<void>(resolve => resolve())
@@ -990,7 +1014,9 @@ describe('RouteList', () => {
     )
 
     routeList.addRoute(
-      () => { return new Promise<true>(resolve => resolve(true)) },
+      () => {
+        return new Promise<true>(resolve => resolve(true))
+      },
       () => {
         values.push('1')
         return new Promise<void>(resolve => resolve())
@@ -999,7 +1025,9 @@ describe('RouteList', () => {
     )
 
     routeList.addRoute(
-      () => { return new Promise<true>(resolve => resolve(true)) },
+      () => {
+        return new Promise<true>(resolve => resolve(true))
+      },
       () => {
         values.push('3')
         return new Promise<void>(resolve => resolve())
@@ -1009,7 +1037,9 @@ describe('RouteList', () => {
     )
 
     routeList.addRoute(
-      () => { return new Promise<true>(resolve => resolve(true)) },
+      () => {
+        return new Promise<true>(resolve => resolve(true))
+      },
       () => {
         values.push('invoke')
         return new Promise<void>(resolve => resolve())
@@ -1018,7 +1048,9 @@ describe('RouteList', () => {
     )
 
     routeList.addRoute(
-      () => { return new Promise<true>(resolve => resolve(true)) },
+      () => {
+        return new Promise<true>(resolve => resolve(true))
+      },
       () => {
         values.push('agenticInvoke2')
         return new Promise<void>(resolve => resolve())
@@ -1030,7 +1062,9 @@ describe('RouteList', () => {
     )
 
     routeList.addRoute(
-      () => { return new Promise<true>(resolve => resolve(true)) },
+      () => {
+        return new Promise<true>(resolve => resolve(true))
+      },
       () => {
         values.push('agenticInvoke1')
         return new Promise<void>(resolve => resolve())
@@ -1042,7 +1076,9 @@ describe('RouteList', () => {
     )
 
     routeList.addRoute(
-      () => { return new Promise<true>(resolve => resolve(true)) },
+      () => {
+        return new Promise<true>(resolve => resolve(true))
+      },
       () => {
         values.push('agentic')
         return new Promise<void>(resolve => resolve())

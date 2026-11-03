@@ -65,6 +65,10 @@ export enum Channels {
    * M365 Copilot Teams Subchannel.
    */
   M365CopilotSubChannel = 'COPILOT',
+
+  /**
+   * Represents the Microsoft 365 Copilot channel within Microsoft Teams.
+   */
   M365Copilot = `${Msteams}:${M365CopilotSubChannel}`,
 
   /**

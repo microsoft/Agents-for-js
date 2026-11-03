@@ -62,7 +62,9 @@ export class SlotFillingDialog extends Dialog {
     const values = state[PersistedValues]
 
     // Find unfilled slots by filtering the full list of slots, excluding those for which we already have a value.
-    const unfilledSlot = this.slots.filter(function (slot: SlotDetails) { return !Object.keys(values).includes(slot.name) })
+    const unfilledSlot = this.slots.filter(function (slot: SlotDetails) {
+      return !Object.keys(values).includes(slot.name)
+    })
 
     // If there are unfilled slots still left, prompt for the next one.
     if (unfilledSlot.length) {

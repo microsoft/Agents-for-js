@@ -220,6 +220,6 @@
   ],
   "sourceReview": {
     "outcome": "no-usage-metadata-change",
-    "reason": "Reviewed the meeting event-model migration, quoted/targeted activity helpers, and TeamsTurnContext targeted-send normalization; the manifest already records the new meeting activity and entity types plus the existing Teams Client reference, so no additional usage entries are needed."
+    "reason": "Reviewed documentation and type-only exports for the 22 callback aliases in channels, config, fileConsents, meetings, messageExtensions, messages, taskModules, and teams. Their signatures and Teams API imports are unchanged; the upstream models were already publicly exposed through registration methods. No consumed members, model validation, or request/response behavior changed, so the existing usage metadata remains accurate."
   }
 }

@@ -46,7 +46,9 @@ app.onActivity('message', async (context: TurnContext, state: TurnState) => {
   }
 })
 
-app.onActivity(() => { return Promise.resolve(true) }, async (context: TurnContext, state: TurnState) => {
+app.onActivity(() => {
+  return Promise.resolve(true)
+}, async (context: TurnContext, state: TurnState) => {
   console.log('Received activity:', context.activity)
   await context.sendActivity('I received your activity. How can I assist you?')
 })

@@ -74,7 +74,9 @@ export function traceFactory (otel: OTel) {
         const flow = start(otel, target, span, record)
         return attempt({
           try: () => callback({ record: flow.record, actions: flow.actions }),
-          catch: (error) => { throw flow.fail(error) },
+          catch: (error) => {
+            throw flow.fail(error)
+          },
           finally: flow.end
         })
       })

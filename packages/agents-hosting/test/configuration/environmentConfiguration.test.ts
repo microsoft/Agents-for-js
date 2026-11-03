@@ -50,6 +50,7 @@ describe('environment configuration adapters', () => {
       ConnectionsMap__7__Connection: 'Primary',
       CloudAdapterOptions__emitStackTrace: '1',
       OutboundHostValidator__Enabled: 'true',
+      OutboundHostValidator__AllowPrivateNetworkAddresses: 'false',
       OutboundHostValidator__Hosts: 'api.example, graph.example',
       OutboundHostValidator__Hosts__4: 'files.example',
       AgentApplication__UserAuthorization__Handlers__Graph__Settings__type: 'AgenticUserAuthorization',
@@ -67,6 +68,7 @@ describe('environment configuration adapters', () => {
     assert.deepEqual(layer.cloudAdapterOptions, { emitStackTrace: true })
     assert.deepEqual(layer.outboundHostValidator, {
       enabled: true,
+      allowPrivateNetworkAddresses: false,
       hosts: ['api.example', 'graph.example', 'files.example']
     })
     assert.deepEqual(
@@ -175,6 +177,12 @@ describe('environment configuration adapters', () => {
     const layer = loadModernEnvironmentConfiguration({
       AgentApplication__UserAuthorization__Handlers__foo__bar__Settings__Type: 'AgenticUserAuthorization',
       AgentApplication__UserAuthorization__Handlers__foo__bar__Settings__Scopes: 'scope-a scope-b'
+    })
+
+    it('rejects an invalid private-network exception instead of silently enabling or disabling it', () => {
+      assert.throws(() => loadModernEnvironmentConfiguration({
+        OutboundHostValidator__AllowPrivateNetworkAddresses: 'yes'
+      }), /invalid boolean.*outboundHostValidator\.AllowPrivateNetworkAddresses/)
     })
 
     assert.deepEqual(

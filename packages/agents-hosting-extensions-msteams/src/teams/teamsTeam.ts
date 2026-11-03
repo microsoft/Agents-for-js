@@ -14,7 +14,16 @@ const TEAM_RESTORED_EVENT = 'teamRestored'
 const TEAM_DELETED_EVENT = 'teamDeleted'
 const TEAM_HARD_DELETED_EVENT = 'teamHardDeleted'
 
-type TeamUpdateHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, data: TeamInfo) => Promise<void>
+/**
+ * Handles team lifecycle events registered with {@link TeamsTeam}.
+ *
+ * @typeParam TState - The application's turn state type.
+ * @param context - The Teams turn context; `activity.channelData.eventType` identifies the event.
+ * @param state - The current application turn state.
+ * @param data - Team information from the activity's Teams channel data.
+ * @returns A promise that resolves when team event processing is complete.
+ */
+export type TeamUpdateHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, data: TeamInfo) => Promise<void>
 
 function isTeamUpdateEvent (context: TurnContext, eventType?: string): boolean {
   const channelData = parseTeamsChannelData(context.activity.channelData)

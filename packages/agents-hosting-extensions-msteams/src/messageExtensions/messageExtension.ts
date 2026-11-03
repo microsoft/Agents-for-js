@@ -14,13 +14,17 @@ const appBasedLinkQuerySchema = z.object({
 }).passthrough()
 
 function parseAppBasedLinkQuery (value: unknown): AppBasedLinkQuery | undefined {
-  if (value == null) return undefined
+  if (value == null) {
+    return undefined
+  }
   return appBasedLinkQuerySchema.parse(value) as AppBasedLinkQuery
 }
 
 function matchesCommandId (context: TurnContext, commandId: string | RegExp): boolean {
   const activityCommandId = (context.activity.value as any)?.commandId
-  if (activityCommandId == null) return false
+  if (activityCommandId == null) {
+    return false
+  }
   return typeof commandId === 'string'
     ? activityCommandId === commandId
     : commandId.test(activityCommandId)
@@ -38,16 +42,122 @@ function getActivityPreview (action: MessagingExtensionAction): Activity | undef
   return activityPreview != null ? Activity.fromObject(activityPreview) : undefined
 }
 
-type RouteQueryHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, query: MessagingExtensionQuery) => Promise<MessagingExtensionResponse>
-type SelectItemHandler<TState extends TurnState, TData = unknown> = (context: TeamsTurnContext, state: TState, item: TData) => Promise<MessagingExtensionResponse>
-type QueryLinkHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, query: AppBasedLinkQuery | undefined) => Promise<MessagingExtensionResponse>
-type FetchActionHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, action: MessagingExtensionAction) => Promise<MessagingExtensionActionResponse>
-type SubmitActionHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, action: MessagingExtensionAction) => Promise<MessagingExtensionActionResponse>
-type MessagePreviewEditHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, activity: Activity | undefined) => Promise<MessagingExtensionActionResponse>
-type MessagePreviewSendHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, activity: Activity | undefined) => Promise<void>
-type QuerySettingUrlHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState) => Promise<MessagingExtensionResponse>
-type SettingHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, settings: MessagingExtensionQuery) => Promise<MessagingExtensionResponse>
-type CardButtonClickedHandler<TState extends TurnState, TData = unknown> = (context: TeamsTurnContext, state: TState, cardData: TData) => Promise<void>
+/**
+ * Handles a message extension search query registered with {@link MessageExtension.onQuery}.
+ *
+ * @typeParam TState - The application's turn state type.
+ * @param context - The Teams turn context for the query invoke.
+ * @param state - The current application turn state.
+ * @param query - The validated query, including its command ID, parameters, and query options.
+ * @returns The complete Teams messaging extension response, including its `composeExtension`
+ * property when returning results. The extension sends it as the invoke response body.
+ */
+export type RouteQueryHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, query: MessagingExtensionQuery) => Promise<MessagingExtensionResponse>
+
+/**
+ * Handles selection of a message extension result registered with {@link MessageExtension.onSelectItem}.
+ *
+ * @typeParam TState - The application's turn state type.
+ * @typeParam TData - The expected selected item payload type; no runtime validation is performed.
+ * @param context - The Teams turn context for the selection invoke.
+ * @param state - The current application turn state.
+ * @param item - The selected item payload from the incoming activity's value.
+ * @returns The complete Teams messaging extension response to send as the invoke response body,
+ * not just its `composeExtension` property.
+ */
+export type SelectItemHandler<TState extends TurnState, TData = unknown> = (context: TeamsTurnContext, state: TState, item: TData) => Promise<MessagingExtensionResponse>
+
+/**
+ * Handles link unfurling registered with {@link MessageExtension.onQueryLink} or
+ * {@link MessageExtension.onAnonymousQueryLink}.
+ *
+ * @typeParam TState - The application's turn state type.
+ * @param context - The Teams turn context for the link query invoke.
+ * @param state - The current application turn state.
+ * @param query - The parsed link query, or undefined when the invoke has no value.
+ * @returns The complete Teams messaging extension response to send as the invoke response body.
+ */
+export type QueryLinkHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, query: AppBasedLinkQuery | undefined) => Promise<MessagingExtensionResponse>
+
+/**
+ * Handles opening a message extension action registered with {@link MessageExtension.onFetchAction}.
+ *
+ * @typeParam TState - The application's turn state type.
+ * @param context - The Teams turn context for the fetch task invoke.
+ * @param state - The current application turn state.
+ * @param action - The incoming action, including its command ID and submitted data.
+ * @returns The Teams action response, such as a task module to open, to send as the invoke response body.
+ */
+export type FetchActionHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, action: MessagingExtensionAction) => Promise<MessagingExtensionActionResponse>
+
+/**
+ * Handles a message extension action submission registered with {@link MessageExtension.onSubmitAction}.
+ *
+ * @typeParam TState - The application's turn state type.
+ * @param context - The Teams turn context for the submit action invoke.
+ * @param state - The current application turn state.
+ * @param action - The incoming action containing the submitted form data.
+ * @returns The Teams action response to send as the invoke response body.
+ */
+export type SubmitActionHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, action: MessagingExtensionAction) => Promise<MessagingExtensionActionResponse>
+
+/**
+ * Handles editing a message preview registered with {@link MessageExtension.onMessagePreviewEdit}.
+ *
+ * @typeParam TState - The application's turn state type.
+ * @param context - The Teams turn context for the preview edit invoke.
+ * @param state - The current application turn state.
+ * @param activity - The first activity in `botActivityPreview`, or undefined when none is provided.
+ * @returns The Teams action response to send as the invoke response body.
+ */
+export type MessagePreviewEditHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, activity: Activity | undefined) => Promise<MessagingExtensionActionResponse>
+
+/**
+ * Handles sending a message preview registered with {@link MessageExtension.onMessagePreviewSend}.
+ *
+ * @typeParam TState - The application's turn state type.
+ * @param context - The Teams turn context for the preview send invoke.
+ * @param state - The current application turn state.
+ * @param activity - The first activity in `botActivityPreview`, or undefined when none is provided.
+ * @returns A promise that resolves after processing. The extension then acknowledges the invoke
+ * with an empty response body; any outgoing messages must be sent through the context.
+ */
+export type MessagePreviewSendHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, activity: Activity | undefined) => Promise<void>
+
+/**
+ * Handles settings URL requests registered with {@link MessageExtension.onQuerySettingUrl}.
+ *
+ * @typeParam TState - The application's turn state type.
+ * @param context - The Teams turn context for the settings URL invoke.
+ * @param state - The current application turn state.
+ * @returns The complete Teams messaging extension response containing the settings URL action,
+ * to send as the invoke response body.
+ */
+export type QuerySettingUrlHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState) => Promise<MessagingExtensionResponse>
+
+/**
+ * Handles settings updates registered with {@link MessageExtension.onSetting}.
+ *
+ * @typeParam TState - The application's turn state type.
+ * @param context - The Teams turn context for the settings invoke.
+ * @param state - The current application turn state.
+ * @param settings - The incoming settings value interpreted as a messaging extension query.
+ * @returns The complete Teams messaging extension response to send as the invoke response body.
+ */
+export type SettingHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, settings: MessagingExtensionQuery) => Promise<MessagingExtensionResponse>
+
+/**
+ * Handles card button actions registered with {@link MessageExtension.onCardButtonClicked}.
+ *
+ * @typeParam TState - The application's turn state type.
+ * @typeParam TData - The expected card action payload type; no runtime validation is performed.
+ * @param context - The Teams turn context for the card button invoke.
+ * @param state - The current application turn state.
+ * @param cardData - The card action payload from the incoming activity's value.
+ * @returns A promise that resolves after processing. The extension then acknowledges the invoke
+ * without a response body.
+ */
+export type CardButtonClickedHandler<TState extends TurnState, TData = unknown> = (context: TeamsTurnContext, state: TState, cardData: TData) => Promise<void>
 
 /**
  * Registers handlers for Microsoft Teams message extension invokes.

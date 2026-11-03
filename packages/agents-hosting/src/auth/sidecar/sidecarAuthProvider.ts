@@ -134,6 +134,10 @@ export class SidecarAuthProvider implements AuthProvider {
    * On-behalf-of token exchange — not supported by the sidecar provider in Phase 1.
    */
   async acquireTokenOnBehalfOf (scopes: string[], oboAssertion: string): Promise<string>
+
+  /**
+   * On-behalf-of token exchange with explicit authentication settings — not supported by the sidecar provider in Phase 1.
+   */
   async acquireTokenOnBehalfOf (authConfig: AuthConfiguration, scopes: string[], oboAssertion: string): Promise<string>
   async acquireTokenOnBehalfOf (
     _authConfigOrScopes: AuthConfiguration | string[],

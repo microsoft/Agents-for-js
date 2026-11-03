@@ -13,6 +13,7 @@ import { debug } from '@microsoft/agents-telemetry'
 import { loadAuthConfigFromEnv, MsalTokenProvider } from '../auth'
 import { createOutboundHostValidator, OutboundUrlPolicy } from '../outboundHostValidator'
 import { Connections } from '../auth/connections'
+import { AttachmentDownloadHttpClient } from './attachmentDownloadHttpClient'
 
 const logger = debug('agents:attachmentDownloader')
 
@@ -24,6 +25,8 @@ const logger = debug('agents:attachmentDownloader')
  * @remarks
  * This class provides functionality to filter and download attachments from a turn context,
  * supporting various content types and handling authentication for secure URLs.
+ * Enabled outbound validation requires HTTPS and validates addresses at every redirect.
+ * Initial request credentials are not forwarded to redirects when validation is enabled.
  *
  */
 export class AttachmentDownloader<TState extends TurnState = TurnState> implements InputFileDownloader<TState> {
@@ -103,17 +106,11 @@ export class AttachmentDownloader<TState extends TurnState = TurnState> implemen
       if (accessToken.length > 0) {
         headers.Authorization = `Bearer ${accessToken}`
       }
-      if (!this._hostValidator.isAllowed(attachment.contentUrl)) {
-        let host = '[invalid-url]'
-        try { host = new URL(attachment.contentUrl).hostname } catch { /* invalid */ }
-        logger.warn(`Attachment contentUrl host is not in the configured allowed hosts. Host='${host}'`)
+      const response = await new AttachmentDownloadHttpClient(this._httpClient, this._hostValidator)
+        .get(attachment.contentUrl, headers)
+      if (!response) {
         return undefined
       }
-
-      const response = await this._httpClient.get(attachment.contentUrl, {
-        headers,
-        responseType: 'arraybuffer'
-      })
 
       const content = Buffer.from(response.data as ArrayBuffer)
 

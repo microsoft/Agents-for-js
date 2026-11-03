@@ -41,7 +41,9 @@ describe('startServer', () => {
   })
 
   after(async () => {
-    if (fastify) await fastify.close()
+    if (fastify) {
+      await fastify.close()
+    }
   })
 
   it('invokes beforeListen and does not require JWT for custom routes', async () => {
@@ -165,7 +167,9 @@ describe('startServer with rate limit', () => {
   })
 
   after(async () => {
-    if (fastify) await fastify.close()
+    if (fastify) {
+      await fastify.close()
+    }
   })
 
   it('enforces rate limit after configured max requests', async () => {
@@ -204,9 +208,13 @@ describe('startServer with non-numeric PORT (socket / named pipe path)', () => {
     : path.join(os.tmpdir(), `afj-test-${process.pid}-${Date.now()}.sock`)
 
   after(async () => {
-    if (fastify) await fastify.close()
+    if (fastify) {
+      await fastify.close()
+    }
     if (process.platform !== 'win32') {
-      try { fs.unlinkSync(socketPath) } catch { /* socket already removed */ }
+      try {
+        fs.unlinkSync(socketPath)
+      } catch { /* socket already removed */ }
     }
   })
 

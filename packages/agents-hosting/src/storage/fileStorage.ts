@@ -30,16 +30,29 @@ class FileStorageInternals {
   private readonly statePath: string
   private readonly versionsPath: string
   private readonly expirationsPath: string
+
+  /** The stored values keyed by storage key. */
   readonly state: Record<string, unknown>
+
+  /** The current version associated with each storage key. */
   readonly versions: Record<string, string>
+
+  /** The expiration time associated with each storage key, expressed as Unix time in milliseconds. */
   readonly expirations: Record<string, number>
 
+  /**
+   * Creates the shared file storage implementation.
+   *
+   * @param folder The folder containing the storage files.
+   */
   constructor (folder: string) {
     fs.mkdirSync(folder, { recursive: true })
     this.statePath = path.join(folder, 'state.json')
     this.versionsPath = path.join(folder, 'state.versions.json')
     this.expirationsPath = path.join(folder, 'state.expirations.json')
-    if (!fs.existsSync(this.statePath)) fs.writeFileSync(this.statePath, '{}')
+    if (!fs.existsSync(this.statePath)) {
+      fs.writeFileSync(this.statePath, '{}')
+    }
     this.state = JSON.parse(fs.readFileSync(this.statePath, 'utf8')) as Record<string, unknown>
     this.versions = fs.existsSync(this.versionsPath)
       ? JSON.parse(fs.readFileSync(this.versionsPath, 'utf8')) as Record<string, string>
@@ -49,6 +62,7 @@ class FileStorageInternals {
       : {}
   }
 
+  /** Writes the current storage state and metadata to disk. */
   flush (): void {
     fs.writeFileSync(this.statePath, JSON.stringify(this.state, null, 2))
     if (fs.existsSync(this.versionsPath) || Object.keys(this.versions).length > 0) {
@@ -59,17 +73,34 @@ class FileStorageInternals {
     }
   }
 
+  /**
+   * Gets the current version for a key, creating one when necessary.
+   *
+   * @param key The storage key.
+   * @returns The current version.
+   */
   getOrCreateVersion (key: string): string {
     const version = this.versions[key] ?? randomUUID()
     this.versions[key] = version
     return version
   }
 
+  /**
+   * Determines whether a stored value has expired.
+   *
+   * @param key The storage key.
+   * @returns `true` when the value has expired; otherwise, `false`.
+   */
   isExpired (key: string): boolean {
     const expiresAt = this.expirations[key]
     return expiresAt !== undefined && expiresAt <= Date.now()
   }
 
+  /**
+   * Removes a value and its version and expiration metadata.
+   *
+   * @param key The storage key.
+   */
   remove (key: string): void {
     delete this.state[key]
     delete this.versions[key]
@@ -232,7 +263,9 @@ export class FileStorageV2 extends StorageV2 {
           version: version ?? this.internals.getOrCreateVersion(key),
         }]
       }))
-      if (createdVersion) this.internals.flush()
+      if (createdVersion) {
+        this.internals.flush()
+      }
       return results
     })
   }
@@ -277,13 +310,18 @@ export class FileStorageV2 extends StorageV2 {
           const version = randomUUID()
           this.internals.state[key] = structuredClone(value)
           this.internals.versions[key] = version
-          if (expiresAt === undefined) delete this.internals.expirations[key]
-          else this.internals.expirations[key] = expiresAt
+          if (expiresAt === undefined) {
+            delete this.internals.expirations[key]
+          } else {
+            this.internals.expirations[key] = expiresAt
+          }
           results[key] = { key, status: StorageOperationStatus.Succeeded, version }
           changed = true
         }
       }
-      if (changed || createdVersion) this.internals.flush()
+      if (changed || createdVersion) {
+        this.internals.flush()
+      }
       return results
     })
   }
@@ -325,7 +363,9 @@ export class FileStorageV2 extends StorageV2 {
           changed = true
         }
       }
-      if (changed || createdVersion) this.internals.flush()
+      if (changed || createdVersion) {
+        this.internals.flush()
+      }
       return results
     })
   }

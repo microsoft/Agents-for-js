@@ -72,29 +72,62 @@ function parseSettings (args: string[]): Settings {
     output: join(defaultArtifactDirectory, 'agent-context.json'),
     help: false
   }
+
   for (let index = 0; index < args.length; index++) {
     const argument = args[index]
-    if (argument === '--help' || argument === '-h') return { ...settings, help: true }
-    if (argument === '--findings' || argument === '--usage-manifest' || argument === '--capabilities' || argument === '--deterministic-report' || argument === '--test-summary' || argument === '--public-api-report' || argument === '--output' || argument === '-o') {
+
+    if (argument === '--help' || argument === '-h') {
+      return { ...settings, help: true }
+    }
+
+    if (
+      argument === '--findings' ||
+      argument === '--usage-manifest' ||
+      argument === '--capabilities' ||
+      argument === '--deterministic-report' ||
+      argument === '--test-summary' ||
+      argument === '--public-api-report' ||
+      argument === '--output' ||
+      argument === '-o'
+    ) {
       const value = args[++index]
-      if (!value) throw new Error(`${argument} requires a file path.`)
-      if (argument === '--findings') settings.findings = value
-      else if (argument === '--usage-manifest') settings.usageManifest = value
-      else if (argument === '--capabilities') settings.capabilities = value
-      else if (argument === '--deterministic-report') settings.deterministicReport = value
-      else if (argument === '--test-summary') settings.testSummary = value
-      else if (argument === '--public-api-report') settings.publicApiReport = value
-      else settings.output = value
+
+      if (!value) {
+        throw new Error(`${argument} requires a file path.`)
+      }
+
+      if (argument === '--findings') {
+        settings.findings = value
+      } else if (argument === '--usage-manifest') {
+        settings.usageManifest = value
+      } else if (argument === '--capabilities') {
+        settings.capabilities = value
+      } else if (argument === '--deterministic-report') {
+        settings.deterministicReport = value
+      } else if (argument === '--test-summary') {
+        settings.testSummary = value
+      } else if (argument === '--public-api-report') {
+        settings.publicApiReport = value
+      } else {
+        settings.output = value
+      }
+
       continue
     }
+
     throw new Error(`Unknown option: ${argument}`)
   }
+
   return settings
 }
 
 function readText (filePath: string): string {
   const fullPath = resolve(filePath)
-  if (!existsSync(fullPath)) throw new Error(`File not found: ${fullPath}`)
+
+  if (!existsSync(fullPath)) {
+    throw new Error(`File not found: ${fullPath}`)
+  }
+
   return readFileSync(fullPath, 'utf8')
 }
 
@@ -108,24 +141,34 @@ function redactSource (content: string): string {
     .replace(/((?:clientSecret|apiKey|password|token)\s*[:=]\s*['"`])[^'"`]+/gi, '$1[REDACTED]')
 }
 
-export function selectRelevantSourceFiles (findings: FindingsResult, sourceRoot: string = packageRoot): { sourceFiles: SourceSlice[], omittedFiles: string[] } {
+export function selectRelevantSourceFiles (
+  findings: FindingsResult,
+  sourceRoot: string = packageRoot
+): { sourceFiles: SourceSlice[]; omittedFiles: string[] } {
   const packageSourceRoot = resolve(sourceRoot, 'src')
-  const selectedPaths = [...new Set(findings.findings
-    .filter(finding => finding.classification !== 'no-action')
-    .flatMap(finding => finding.affectedFiles)
-    .filter(path => path.replace(/\\/g, '/').startsWith('src/')))].sort()
+  const selectedPaths = [
+    ...new Set(
+      findings.findings
+        .filter(finding => finding.classification !== 'no-action')
+        .flatMap(finding => finding.affectedFiles)
+        .filter(path => path.replace(/\\/g, '/').startsWith('src/'))
+    )
+  ].sort()
   const sourceFiles: SourceSlice[] = []
   const omittedFiles: string[] = []
 
   for (const sourcePath of selectedPaths) {
     const fullPath = resolve(sourceRoot, sourcePath)
     const containedPath = relative(packageSourceRoot, fullPath)
+
     if (containedPath.startsWith('..') || !existsSync(fullPath)) {
       omittedFiles.push(sourcePath)
       continue
     }
+
     const content = redactSource(readFileSync(fullPath, 'utf8'))
     const maximumLength = 12000
+
     sourceFiles.push({
       path: sourcePath.replace(/\\/g, '/'),
       content: content.slice(0, maximumLength),
@@ -138,20 +181,27 @@ export function selectRelevantSourceFiles (findings: FindingsResult, sourceRoot:
 
 function outputPathFor (destination: string): string {
   const fullPath = resolve(destination)
-  return extname(fullPath).toLowerCase() === '.json' ? fullPath : join(fullPath, 'agent-context.json')
+
+  return extname(fullPath).toLowerCase() === '.json'
+    ? fullPath
+    : join(fullPath, 'agent-context.json')
 }
 
 function main (): void {
   const settings = parseSettings(process.argv.slice(2))
+
   if (settings.help) {
     console.log(help)
+
     return
   }
 
   const findings = readJson(settings.findings) as FindingsResult
+
   if (findings.schemaVersion !== 1 || findings.dependency !== '@microsoft/teams.api') {
     throw new Error('Findings must be a schemaVersion 1 result for @microsoft/teams.api.')
   }
+
   const selected = selectRelevantSourceFiles(findings)
   const context: AgentContext = {
     schemaVersion: 1,
@@ -169,10 +219,16 @@ function main (): void {
     omittedSourceFiles: selected.omittedFiles
   }
   const outputPath = outputPathFor(settings.output)
+
   mkdirSync(dirname(outputPath), { recursive: true })
   writeFileSync(outputPath, `${JSON.stringify(context, undefined, 2)}\n`)
-  console.log(`Wrote agent context to ${relative(process.cwd(), outputPath) || basename(outputPath)} (${context.relevantSourceFiles.length} source file(s)).`)
+  console.log(
+    `Wrote agent context to ${relative(process.cwd(), outputPath) || basename(outputPath)} (${context.relevantSourceFiles.length} source file(s)).`
+  )
 }
 
 const invokedPath = process.argv[1] ? resolve(process.argv[1]) : undefined
-if (invokedPath === fileURLToPath(import.meta.url)) main()
+
+if (invokedPath === fileURLToPath(import.meta.url)) {
+  main()
+}

@@ -152,7 +152,9 @@ describe('BlobsStorage', () => {
     )
     const { internals } = storage as unknown as BlobsStorageV2Internals<BlobStorageInternals>
     let initializeCalls = 0
-    internals._initialize = async () => { initializeCalls++ }
+    internals._initialize = async () => {
+      initializeCalls++
+    }
 
     assert.deepStrictEqual(await storage.read([]), {})
     assert.deepStrictEqual(await storage.write({}), {})
@@ -178,7 +180,9 @@ describe('BlobsStorage', () => {
           return { etag: 'unexpected' }
         },
       }),
-      deleteBlob: async (_key, options) => { deleteOptions = options },
+      deleteBlob: async (_key, options) => {
+        deleteOptions = options
+      },
     }
 
     const results = await storage.delete(['key'])

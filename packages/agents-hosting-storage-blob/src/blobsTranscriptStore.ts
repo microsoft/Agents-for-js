@@ -310,7 +310,9 @@ export class BlobsTranscriptStore implements TranscriptStore {
         )
 
         activities.forEach((activity: Activity | null) => {
-          if (activity) result.push(activity)
+          if (activity) {
+            result.push(activity)
+          }
         })
       }
     }

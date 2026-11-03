@@ -9,7 +9,7 @@ import { AgentErrorDefinition } from '@microsoft/agents-activity';
 import { AnonymousCredential } from '@azure/storage-blob';
 import { ContainerClient } from '@azure/storage-blob';
 import { PagedResult } from '@microsoft/agents-hosting';
-import { Storage } from '@microsoft/agents-hosting';
+import { Storage as Storage_2 } from '@microsoft/agents-hosting';
 import { StorageDeleteOptions } from '@microsoft/agents-hosting';
 import { StorageDeleteResults } from '@microsoft/agents-hosting';
 import { StoragePipelineOptions } from '@azure/storage-blob';
@@ -24,7 +24,7 @@ import { TranscriptInfo } from '@microsoft/agents-hosting';
 import { TranscriptStore } from '@microsoft/agents-hosting';
 
 // @public
-export class BlobsStorage extends BlobsStorageInternals implements Storage {
+export class BlobsStorage extends BlobsStorageInternals implements Storage_2 {
     constructor(containerName: string, connectionString?: string, options?: BlobsStorageOptions, url?: string, credential?: StorageSharedKeyCredential | AnonymousCredential | TokenCredential);
     delete(keys: string[]): Promise<void>;
     read(keys: string[]): Promise<StoreItems>;

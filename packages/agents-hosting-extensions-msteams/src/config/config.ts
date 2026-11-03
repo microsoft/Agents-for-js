@@ -6,7 +6,17 @@ import { AgentApplication, RouteHandler, RouteRank, RouteSelector, TurnContext, 
 import type { ConfigResponse } from '@microsoft/teams.api'
 import { TeamsTurnContext } from '../teamsTurnContext'
 
-type ConfigHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, configData: unknown) => Promise<ConfigResponse>
+/**
+ * Handles app configuration requests registered with {@link TeamsConfig.onConfigFetch} or
+ * {@link TeamsConfig.onConfigSubmit}.
+ *
+ * @typeParam TState - The application's turn state type.
+ * @param context - The Teams turn context for the configuration invoke.
+ * @param state - The current application turn state.
+ * @param configData - The unparsed activity value from the fetch or submit invoke.
+ * @returns The Teams configuration response to send as the invoke response body.
+ */
+export type ConfigHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, configData: unknown) => Promise<ConfigResponse>
 
 /**
  * Registers handlers for Microsoft Teams app configuration invokes.

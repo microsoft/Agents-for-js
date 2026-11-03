@@ -16,10 +16,22 @@ const makeRes = (): WebResponse & { _status?: number, _body?: unknown } => {
   const r: any = {
     headersSent: false,
     writableEnded: false,
-    status (code: number) { r._status = code; return r },
-    setHeader (_n: string, _v: string) { return r },
-    send (body?: unknown) { r._body = body; r.headersSent = true; return r },
-    end () { r.writableEnded = true; return r }
+    status (code: number) {
+      r._status = code
+      return r
+    },
+    setHeader (_n: string, _v: string) {
+      return r
+    },
+    send (body?: unknown) {
+      r._body = body
+      r.headersSent = true
+      return r
+    },
+    end () {
+      r.writableEnded = true
+      return r
+    }
   }
   return r
 }
@@ -42,7 +54,9 @@ describe('authorizeJWT (WebResponse contract)', () => {
     const req: Request = { method: 'DELETE', headers: {} }
     const res = makeRes()
     let nextCalled = false
-    const next: NextFunction = () => { nextCalled = true }
+    const next: NextFunction = () => {
+      nextCalled = true
+    }
 
     await middleware(req, res, next)
 
@@ -58,7 +72,9 @@ describe('authorizeJWT (WebResponse contract)', () => {
       const req: Request = { method: 'POST', headers: {} }
       const res = makeRes()
       let nextCalled = false
-      const next: NextFunction = () => { nextCalled = true }
+      const next: NextFunction = () => {
+        nextCalled = true
+      }
 
       await middleware(req, res, next)
 
@@ -83,7 +99,9 @@ describe('authorizeJWT (WebResponse contract)', () => {
       const req: Request = { method: 'POST', headers: {} }
       const res = makeRes()
       let nextCalled = false
-      const next: NextFunction = () => { nextCalled = true }
+      const next: NextFunction = () => {
+        nextCalled = true
+      }
 
       await middleware(req, res, next)
 
@@ -102,7 +120,9 @@ describe('authorizeJWT (WebResponse contract)', () => {
     const req: Request = { method: 'POST', headers: { authorization: ['Basic abc', 'Negotiate xyz'] } }
     const res = makeRes()
     let nextCalled = false
-    const next: NextFunction = () => { nextCalled = true }
+    const next: NextFunction = () => {
+      nextCalled = true
+    }
 
     await middleware(req, res, next)
 
@@ -116,7 +136,9 @@ describe('authorizeJWT (WebResponse contract)', () => {
     const req: Request = { method: 'POST', headers: { authorization: 'Basic dXNlcjpwYXNz' } }
     const res = makeRes()
     let nextCalled = false
-    const next: NextFunction = () => { nextCalled = true }
+    const next: NextFunction = () => {
+      nextCalled = true
+    }
 
     await middleware(req, res, next)
 
@@ -130,7 +152,9 @@ describe('authorizeJWT (WebResponse contract)', () => {
     const req: Request = { method: 'POST', headers: { authorization: 'Bearer' } }
     const res = makeRes()
     let nextCalled = false
-    const next: NextFunction = () => { nextCalled = true }
+    const next: NextFunction = () => {
+      nextCalled = true
+    }
 
     await middleware(req, res, next)
 
@@ -153,7 +177,9 @@ describe('authorizeJWT (WebResponse contract)', () => {
       const req: Request = { method: 'POST', headers: { authorization: '' } }
       const res = makeRes()
       let nextCalled = false
-      const next: NextFunction = () => { nextCalled = true }
+      const next: NextFunction = () => {
+        nextCalled = true
+      }
 
       await middleware(req, res, next)
 

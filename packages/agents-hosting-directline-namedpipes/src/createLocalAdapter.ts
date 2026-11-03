@@ -223,8 +223,12 @@ class LocalPipeAdapter extends CloudAdapter {
   }
 
   private static _willSendViaPipe (activity: Activity): boolean {
-    if (activity.type === 'trace' && activity.channelId !== 'emulator') return false
-    if (activity.type === 'invokeResponse') return false
+    if (activity.type === 'trace' && activity.channelId !== 'emulator') {
+      return false
+    }
+    if (activity.type === 'invokeResponse') {
+      return false
+    }
     return !!activity.conversation?.id
   }
 
@@ -258,7 +262,9 @@ class LocalPipeAdapter extends CloudAdapter {
     if (pipeResponse.body && pipeResponse.body.length > 0) {
       try {
         const parsed = JSON.parse(pipeResponse.body.toString('utf8')) as { id?: string }
-        if (parsed.id) return { id: parsed.id }
+        if (parsed.id) {
+          return { id: parsed.id }
+        }
       } catch {
         // Non-JSON response body; treat as no resource id.
       }

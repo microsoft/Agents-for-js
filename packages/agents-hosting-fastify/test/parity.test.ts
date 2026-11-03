@@ -172,7 +172,9 @@ describe('Anonymous dev-mode parity', () => {
   after(async () => {
     await new Promise<void>((resolve) => endpoints.expressServer.close(() => resolve()))
     await endpoints.fastifyInstance.close()
-    if (originalNodeEnv !== undefined) process.env.NODE_ENV = originalNodeEnv
+    if (originalNodeEnv !== undefined) {
+      process.env.NODE_ENV = originalNodeEnv
+    }
   })
 
   it('POST with empty body → both return error status (parity allows different codes)', async () => {

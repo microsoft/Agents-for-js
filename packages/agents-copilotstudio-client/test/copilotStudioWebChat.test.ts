@@ -1,10 +1,11 @@
 import { strict as assert } from 'assert'
-import { describe, it, beforeEach, afterEach } from 'node:test'
+import { describe, it, beforeEach, afterEach, type TestContext } from 'node:test'
 import { createSandbox, SinonSandbox, SinonStub } from 'sinon'
-import { Activity } from '@microsoft/agents-activity'
+import { Activity, ExceptionHelper } from '@microsoft/agents-activity'
 import { CopilotStudioWebChat } from '../src/copilotStudioWebChat'
 import { CopilotStudioClient } from '../src/copilotStudioClient'
-import { firstValueFrom } from 'rxjs'
+import { firstValueFrom, filter } from 'rxjs'
+import { Errors } from '../src/errorHelper'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -41,10 +42,12 @@ function createMockClient (sandbox: SinonSandbox, opts: {
   ]
 
   // Async generator that yields greeting activities
-  async function * fakeStartConversationStreaming (): AsyncGenerator<Activity> {
-    for (const a of greetingActivities) {
-      yield Activity.fromObject(a)
+  async function * fakeStartConversationStreaming (): AsyncGenerator<Activity, string> {
+    const activities = greetingActivities.map(a => Activity.fromObject(a))
+    for (const activity of activities) {
+      yield activity
     }
+    return activities.find(activity => activity.conversation?.id)?.conversation?.id ?? 'header-conversation-id'
   }
 
   // Async generator that yields response activities
@@ -63,6 +66,66 @@ function createMockClient (sandbox: SinonSandbox, opts: {
     startConversationStreaming: SinonStub
     sendActivityStreaming: SinonStub
   }
+}
+
+function thought (id: string, sender = 'bot'): Activity {
+  return Activity.fromObject({
+    id,
+    type: 'typing',
+    text: '',
+    from: { id: sender, role: 'bot' },
+    channelData: { streamType: 'streaming', streamSequence: 1 },
+    entities: [{ type: 'thought', status: 'incomplete' }]
+  })
+}
+
+function answer (id: string): Activity {
+  return Activity.fromObject({
+    id,
+    type: 'message',
+    text: 'Total sales: 370 units.',
+    from: { id: 'bot', role: 'bot' },
+    channelData: { streamType: 'final', streamId: 'before-answer' }
+  })
+}
+
+function connectionFor (t: TestContext, client: CopilotStudioClient) {
+  const connection = CopilotStudioWebChat.createConnection(client, { startConversation: false, showTyping: true })
+  t.after(() => connection.end())
+  const received: Partial<Activity>[] = []
+  connection.activity$.subscribe(activity => received.push(activity))
+  const post = () => new Promise<void>((resolve, reject) => {
+    connection.postActivity(Activity.fromObject({ type: 'message', text: 'test' })).subscribe({
+      complete: resolve,
+      error: reject
+    })
+  })
+  return { received, post }
+}
+
+function createTestConnection (t: TestContext, responses: () => AsyncGenerator<Activity>, showTyping = true) {
+  const client = { sendActivityStreaming: responses } as unknown as CopilotStudioClient
+  const connection = CopilotStudioWebChat.createConnection(client, { startConversation: false, showTyping })
+  t.after(() => connection.end())
+  const received: Partial<Activity>[] = []
+  connection.activity$.subscribe(activity => received.push(activity))
+  const post = () => new Promise<void>((resolve, reject) => {
+    connection.postActivity(Activity.fromObject({ type: 'message', text: 'test' })).subscribe({
+      complete: resolve,
+      error: reject
+    })
+  })
+  return { received, post }
+}
+
+function assertFallbackClosed (received: Partial<Activity>[]) {
+  const initial = received.find(activity => activity.from?.id === 'agent' && activity.channelData?.streamType === 'streaming')
+  assert.ok(initial)
+  const finals = received.filter(activity => activity.from?.id === 'agent' && activity.channelData?.streamType === 'final')
+  assert.equal(finals.length, 1)
+  assert.equal(finals[0].channelData?.streamId, initial.id)
+  assert.equal(finals[0].text, '')
+  assert.equal(finals[0].type, 'typing')
 }
 
 // ---------------------------------------------------------------------------
@@ -292,6 +355,26 @@ describe('CopilotStudioWebChat.createConnection', function () {
   // Error handling
   // =========================================================================
   describe('error handling', function () {
+    it('should report FailedToConnect when starting a conversation fails', async function () {
+      const expectedError = new Error('Copilot Studio request failed with status 404 Not Found')
+      const client = createMockClient(sandbox)
+      client.startConversationStreaming.callsFake(async function * () {
+        throw expectedError
+      })
+      const conn = CopilotStudioWebChat.createConnection(client)
+      const statuses: number[] = []
+      conn.connectionStatus$.subscribe((status) => statuses.push(status))
+
+      const receivedError = await new Promise<unknown>((resolve) => {
+        conn.activity$.subscribe({ error: resolve })
+      })
+
+      assert.strictEqual(receivedError, expectedError)
+      assert.strictEqual(statuses.at(-1), 4, 'connection status should be FailedToConnect')
+      assert(!statuses.includes(2), 'connection status should not transition to Online')
+      conn.end()
+    })
+
     it('should throw when postActivity is called after end()', function () {
       const client = createMockClient(sandbox)
       const conn = CopilotStudioWebChat.createConnection(client)
@@ -344,35 +427,721 @@ describe('CopilotStudioWebChat.createConnection', function () {
       conn.end()
     })
 
-    it('conversationId captured from sendActivityStreaming response when not set upfront', async function () {
+    it('uses start metadata when greeting activities have no conversation ID', async function () {
       const client = createMockClient(sandbox, {
-        greetingActivities: [
-          // greeting with no conversation id
-          { type: 'message', text: 'Hello' },
-        ],
-        responseActivities: [
-          { type: 'message', text: 'Response', conversation: { id: 'captured-conv-id' } },
-        ],
+        greetingActivities: [{ type: 'message', text: 'Hello' }],
       })
-
       const conn = CopilotStudioWebChat.createConnection(client)
       conn.activity$.subscribe({})
       await new Promise((resolve) => setTimeout(resolve, 50))
-
-      // conversationId should still be undefined (greeting had no conversation)
-      assert.strictEqual(conn.conversationId, undefined, 'conversationId should be undefined before sendActivity response')
-
-      const activity = makeActivity()
-      // Wait for the postActivity observable to complete (not just first value)
+      assert.equal(conn.conversationId, 'header-conversation-id')
       await new Promise<void>((resolve, reject) => {
-        conn.postActivity(activity).subscribe({
-          complete: () => resolve(),
-          error: (e) => reject(e),
-        })
+        conn.postActivity(makeActivity()).subscribe({ complete: resolve, error: reject })
       })
-
-      assert.strictEqual(conn.conversationId, 'captured-conv-id', 'conversationId should be captured from sendActivity response')
+      assert.equal(client.sendActivityStreaming.firstCall.args[1], 'header-conversation-id')
       conn.end()
     })
+  })
+
+  describe('post-answer activity filtering', function () {
+    it('does not forward post-answer empty thoughts while the service response is still running', async (t) => {
+      let release!: () => void
+      let reachedThought!: () => void
+      const waiting = new Promise<void>(resolve => {
+        release = resolve
+      })
+      const ready = new Promise<void>(resolve => {
+        reachedThought = resolve
+      })
+      const client = {
+        async * sendActivityStreaming () {
+          yield thought('before-answer')
+          yield answer('answer')
+          yield thought('after-answer')
+          reachedThought()
+          await waiting
+        }
+      } as unknown as CopilotStudioClient
+      const connection = CopilotStudioWebChat.createConnection(client, { startConversation: false })
+      t.after(() => connection.end())
+      const received: Partial<Activity>[] = []
+      connection.activity$.subscribe(activity => received.push(activity))
+      const done = new Promise<void>((resolve, reject) => {
+        connection.postActivity(Activity.fromObject({ type: 'message', text: 'reproduce 881' })).subscribe({
+          complete: resolve,
+          error: reject
+        })
+      })
+      await ready
+      // Assert before SSE ends: end-of-response cleanup cannot satisfy this check.
+      const thoughtWasForwarded = received.some(activity => activity.id === 'after-answer')
+      release()
+      await done
+      assert.ok(received.some(activity => activity.id === 'before-answer'))
+      assert.ok(received.some(activity => activity.id === 'answer'))
+      assert.equal(thoughtWasForwarded, false, 'Empty thoughts reopen WebChat busy after the answer')
+    })
+
+    it('preserves visible progress, partial follow-up answers, cards, and stream finals', async (t) => {
+      const progress = Activity.fromObject({ ...thought('progress'), text: 'Searching another source' })
+      const partial = Activity.fromObject({ ...thought('partial'), text: 'Another answer' })
+      const erasePartial = Activity.fromObject({
+        ...thought('erase-partial'),
+        channelData: { streamType: 'streaming', streamId: 'partial', streamSequence: 2 }
+      })
+      const card = Activity.fromObject({
+        ...thought('card'),
+        attachments: [{ contentType: 'application/vnd.microsoft.card.adaptive', content: { type: 'AdaptiveCard' } }]
+      })
+      const schema = Activity.fromObject({
+        ...thought('schema'),
+        entities: [{ type: 'thought' }, { type: 'https://schema.org/Message', '@id': '', abstract: 'Working' }]
+      })
+      const final = Activity.fromObject({
+        ...thought('final'),
+        channelData: { streamType: 'final', streamId: 'partial' }
+      })
+      const entityFinal = Activity.fromObject({
+        ...thought('entity-final'),
+        channelData: undefined,
+        entities: [{ type: 'thought' }, { type: 'streaminfo', streamType: 'final', streamId: 'card' }]
+      })
+      const client = {
+        async * sendActivityStreaming () {
+          for (const activity of [answer('answer'), thought('hidden'), progress, partial, erasePartial, card, schema, final, entityFinal, answer('second-answer')]) {
+            yield activity
+          }
+        }
+      } as unknown as CopilotStudioClient
+      const { received, post } = connectionFor(t, client)
+      await post()
+      const ids = received.filter(activity => activity.from?.id === 'bot').map(activity => activity.id)
+      assert.deepEqual(ids, ['answer', 'progress', 'partial', 'erase-partial', 'card', 'schema', 'final', 'entity-final', 'second-answer'])
+    })
+
+    it('keeps senders and subsequent response requests independent', async (t) => {
+      let request = 0
+      const client = {
+        async * sendActivityStreaming () {
+          if (request++ === 0) {
+            yield answer('answer')
+            yield thought('hidden')
+            yield thought('other-sender', 'other-bot')
+          } else {
+            yield thought('next-turn')
+            yield answer('next-answer')
+          }
+        }
+      } as unknown as CopilotStudioClient
+      const { received, post } = connectionFor(t, client)
+      await post()
+      await post()
+      assert.ok(!received.some(activity => activity.id === 'hidden'))
+      assert.ok(received.some(activity => activity.id === 'other-sender'))
+      assert.ok(received.some(activity => activity.id === 'next-turn'))
+    })
+
+    it('does not treat empty message activities as delivered answers', async (t) => {
+      const client = {
+        async * sendActivityStreaming () {
+          yield Activity.fromObject({ ...answer('empty'), text: '' })
+          yield thought('still-working')
+        }
+      } as unknown as CopilotStudioClient
+      const { received, post } = connectionFor(t, client)
+      await post()
+      assert.ok(received.some(activity => activity.id === 'still-working'))
+    })
+
+    it('keeps a hidden stream hidden until it produces visible content', async (t) => {
+      const client = {
+        async * sendActivityStreaming () {
+          yield answer('answer')
+          yield thought('hidden')
+          yield Activity.fromObject({
+            ...thought('hidden-update'),
+            channelData: { streamType: 'streaming', streamId: 'hidden', streamSequence: 2 },
+            entities: []
+          })
+          yield Activity.fromObject({
+            ...thought('visible-update'),
+            text: 'Follow-up answer',
+            channelData: { streamType: 'streaming', streamId: 'hidden', streamSequence: 3 }
+          })
+          yield Activity.fromObject({
+            ...thought('erase-update'),
+            channelData: { streamType: 'streaming', streamId: 'hidden', streamSequence: 4 }
+          })
+        }
+      } as unknown as CopilotStudioClient
+      const { received, post } = connectionFor(t, client)
+      await post()
+      assert.deepEqual(received.filter(activity => activity.from?.id === 'bot').map(activity => activity.id),
+        ['answer', 'visible-update', 'erase-update'])
+    })
+
+    it('filters trailing greeting thoughts without closing the connection', async (t) => {
+      let started!: () => void
+      const ready = new Promise<void>(resolve => {
+        started = resolve
+      })
+      const client = {
+        async * startConversationStreaming () {
+          yield answer('greeting')
+          yield thought('trailing-greeting-thought')
+          started()
+        }
+      } as unknown as CopilotStudioClient
+      const connection = CopilotStudioWebChat.createConnection(client)
+      t.after(() => connection.end())
+      const received: Partial<Activity>[] = []
+      let completed = false
+      connection.activity$.subscribe({
+        next: activity => received.push(activity),
+        complete: () => {
+          completed = true
+        }
+      })
+      await ready
+      assert.deepEqual(received.map(activity => activity.id), ['greeting'])
+      assert.equal(completed, false)
+    })
+  })
+
+  describe('typing lifecycle and handoff', function () {
+    for (const scenario of ['greeting', 'request'] as const) {
+      for (const response of ['empty', 'message'] as const) {
+        it(`cleans up ${scenario} typing on the original subscriber after a response (${response})`, async (t) => {
+          let release!: () => void
+          let started!: () => void
+          const waiting = new Promise<void>(resolve => {
+            release = resolve
+          })
+          const ready = new Promise<void>(resolve => {
+            started = resolve
+          })
+          async function * activities () {
+            started()
+            await waiting
+            if (response === 'message') {
+              yield Activity.fromObject({ id: 'answer', type: 'message', text: 'Answer', from: { id: 'service-bot' } })
+            }
+          }
+          const client = {
+            startConversationStreaming: activities,
+            sendActivityStreaming: activities
+          } as unknown as CopilotStudioClient
+          const connection = CopilotStudioWebChat.createConnection(client, {
+            startConversation: scenario === 'greeting',
+            showTyping: true
+          })
+          const first: Partial<Activity>[] = []
+          const second: Partial<Activity>[] = []
+          const originalSubscription = connection.activity$.subscribe(activity => first.push(activity))
+          t.after(() => {
+            release()
+            connection.end()
+            originalSubscription.unsubscribe()
+          })
+          const done = scenario === 'request'
+            ? new Promise<void>((resolve, reject) => {
+              connection.postActivity(Activity.fromObject({ type: 'message', text: 'test' })).subscribe({
+                complete: resolve,
+                error: reject
+              })
+            })
+            : undefined
+          await ready
+          connection.activity$.subscribe(activity => second.push(activity))
+          release()
+          await done
+          // Allow greeting completion and its finally cleanup to finish too.
+          await new Promise<void>(resolve => setImmediate(resolve))
+
+          assert.equal(originalSubscription.closed, false)
+          assertFallbackClosed(first)
+          assert.ok(!second.some(activity => activity.from?.id === 'agent'))
+          assert.deepEqual(second.map(activity => activity.id), response === 'message' ? ['answer'] : [])
+          const initial = first.find(activity => activity.channelData?.streamType === 'streaming')!
+          const final = first.find(activity => activity.channelData?.streamType === 'final')!
+          assert.ok(final.timestamp)
+          assert.ok(final.channelData['webchat:sequence-id'] > initial.channelData['webchat:sequence-id'])
+        })
+      }
+    }
+
+    it('hands SDK typing over to service progress before the response ends', async (t) => {
+      let release!: () => void
+      let progressReceived!: () => void
+      const waiting = new Promise<void>(resolve => {
+        release = resolve
+      })
+      const ready = new Promise<void>(resolve => {
+        progressReceived = resolve
+      })
+      const client = {
+        async * sendActivityStreaming () {
+          yield Activity.fromObject({
+            id: 'progress',
+            type: 'typing',
+            text: 'Processing',
+            from: { id: 'service-bot', role: 'bot' },
+            channelData: { streamType: 'informative', streamSequence: 1 }
+          })
+          progressReceived()
+          await waiting
+        }
+      } as unknown as CopilotStudioClient
+      const connection = CopilotStudioWebChat.createConnection(client, { startConversation: false, showTyping: true })
+      t.after(() => connection.end())
+      const received: Partial<Activity>[] = []
+      connection.activity$.subscribe(activity => received.push(activity))
+      const done = new Promise<void>((resolve, reject) => {
+        connection.postActivity(Activity.fromObject({ type: 'message', text: 'test' })).subscribe({
+          complete: resolve,
+          error: reject
+        })
+      })
+      await ready
+      const beforeEnd = [...received]
+      release()
+      await done
+      const initial = beforeEnd.find(activity => activity.type === 'typing' && activity.from?.id === 'agent')
+      assert.ok(initial, 'Typing should be shown while waiting for the service')
+      const finalIndex = beforeEnd.findIndex(activity => activity.from?.id === initial.from?.id &&
+        activity.channelData?.streamType === 'final' && activity.channelData?.streamId === initial.id)
+      const progressIndex = beforeEnd.findIndex(activity => activity.id === 'progress')
+      assert.ok(finalIndex >= 0 && finalIndex < progressIndex, 'SDK typing must be cleared before displaying service progress')
+      assert.equal(beforeEnd[progressIndex].text, 'Processing')
+    })
+
+    for (const responseType of ['message', 'typing'] as const) {
+      it(`hands typing over to a service ${responseType} even without informative progress`, async (t) => {
+        const { received, post } = createTestConnection(t, async function * () {
+          yield Activity.fromObject({ id: 'service', type: responseType, from: { id: 'service-bot' }, text: responseType === 'message' ? 'Answer' : '' })
+        })
+        await post()
+        assertFallbackClosed(received)
+        const finalIndex = received.findIndex(activity => activity.channelData?.streamType === 'final')
+        assert.ok(finalIndex < received.findIndex(activity => activity.id === 'service'))
+      })
+    }
+
+    it('cleans up fallback typing on an empty response', async (t) => {
+      const { received, post } = createTestConnection(t, async function * () {})
+      await post()
+      assertFallbackClosed(received)
+      assert.equal(received.filter(activity => activity.type === 'message').length, 1)
+    })
+
+    it('cleans up fallback typing while preserving request errors', async (t) => {
+      const error = ExceptionHelper.generateException(Error, Errors.ConnectionAlreadyEnded)
+      const { received, post } = createTestConnection(t, async function * () {
+        throw error
+      })
+      await assert.rejects(post(), error)
+      assertFallbackClosed(received)
+    })
+
+    it('does not generate fallback activities when showTyping is disabled', async (t) => {
+      const { received, post } = createTestConnection(t, async function * () {
+        yield Activity.fromObject({ id: 'progress', type: 'typing', text: 'Processing', from: { id: 'service-bot' } })
+      }, false)
+      await post()
+      assert.ok(!received.some(activity => activity.from?.id === 'agent'))
+      assert.ok(received.some(activity => activity.id === 'progress'))
+    })
+
+    it('hands greeting typing over to service progress', async (t) => {
+      let started!: () => void
+      const ready = new Promise<void>(resolve => {
+        started = resolve
+      })
+      const client = {
+        async * startConversationStreaming () {
+          yield Activity.fromObject({
+            id: 'greeting-progress',
+            type: 'typing',
+            text: 'Processing',
+            from: { id: 'service-bot' },
+            channelData: { streamType: 'informative', streamSequence: 1 }
+          })
+          started()
+        }
+      } as unknown as CopilotStudioClient
+      const connection = CopilotStudioWebChat.createConnection(client, { showTyping: true })
+      t.after(() => connection.end())
+      const received: Partial<Activity>[] = []
+      connection.activity$.subscribe(activity => received.push(activity))
+      await ready
+      assertFallbackClosed(received)
+      assert.equal(received.at(-1)?.id, 'greeting-progress')
+    })
+
+    it('keeps overlapping fallback streams independent', async (t) => {
+      let release!: () => void
+      let started!: () => void
+      const waiting = new Promise<void>(resolve => {
+        release = resolve
+      })
+      const ready = new Promise<void>(resolve => {
+        started = resolve
+      })
+      let requests = 0
+      const { received, post } = createTestConnection(t, async function * () {
+        if (requests++ === 0) {
+          started()
+          await waiting
+        } else {
+          yield Activity.fromObject({ id: 'progress', type: 'typing', text: 'Processing', from: { id: 'service-bot' } })
+        }
+      })
+      const first = post()
+      await ready
+      await post()
+      const starts = received.filter(activity => activity.from?.id === 'agent' && activity.channelData?.streamType === 'streaming')
+      const finalsBeforeRelease = received.filter(activity => activity.from?.id === 'agent' && activity.channelData?.streamType === 'final')
+      release()
+      await first
+      assert.equal(starts.length, 2)
+      assert.equal(finalsBeforeRelease.length, 1)
+      assert.equal(finalsBeforeRelease[0].channelData?.streamId, starts[1].id)
+      assert.equal(received.at(-1)?.channelData?.streamId, starts[0].id)
+    })
+  })
+})
+
+describe('WebChat conversation isolation', () => {
+  function signal () {
+    let complete!: () => void
+    const promise = new Promise<void>((resolve) => {
+      complete = resolve
+    })
+    return { promise, resolve: complete }
+  }
+
+  function startResponse (id?: string, activity?: object) {
+    const reading = signal()
+    const finish = signal()
+    let sentActivity = false
+    const body = new ReadableStream<Uint8Array>({
+      async pull (controller) {
+        reading.resolve()
+        if (activity && !sentActivity) {
+          sentActivity = true
+          controller.enqueue(new TextEncoder().encode(`event: activity\ndata: ${JSON.stringify(activity)}\n\n`))
+          return
+        }
+        await finish.promise
+        controller.enqueue(new TextEncoder().encode('event: end\ndata: done\n\n'))
+        controller.close()
+      }
+    })
+    return {
+      reading,
+      finish,
+      response: new Response(body, {
+        headers: { 'Content-Type': 'text/event-stream', ...(id && { 'x-ms-conversationid': id }) }
+      })
+    }
+  }
+
+  function client () {
+    return new CopilotStudioClient({ directConnectUrl: 'https://fixture.example/api' }, 'test-token')
+  }
+
+  it('preserves WebChat activity-ID precedence when the header disagrees', async (t) => {
+    const responses = [
+      startResponse('header-A', { type: 'message', text: 'Hello', conversation: { id: 'activity-A' } }),
+      startResponse('activity-A')
+    ]
+    responses.forEach(response => response.finish.resolve())
+    let index = 0
+    const fetchMock = t.mock.method(globalThis, 'fetch', async () => responses[index++].response)
+    const connection = CopilotStudioWebChat.createConnection(client())
+    const subscription = connection.activity$.subscribe()
+    try {
+      // postActivity emits an acknowledgement before the request; wait for completion.
+      await new Promise<void>((resolve, reject) => {
+        connection.postActivity(Activity.fromObject({ type: 'message', text: 'Follow-up' })).subscribe({
+          complete: resolve,
+          error: reject
+        })
+      })
+      assert.match(String(fetchMock.mock.calls[1].arguments[0]), /\/conversations\/activity-A\?/)
+    } finally {
+      connection.end()
+      subscription.unsubscribe()
+    }
+  })
+
+  it('waits for startup completion before posting while greeting activities still stream', async (t) => {
+    const startup = startResponse('A', { type: 'message', text: 'Greeting', conversation: { id: 'A' } })
+    const turn = startResponse('A')
+    turn.finish.resolve()
+    const greeting = signal()
+    let requests = 0
+    t.mock.method(globalThis, 'fetch', async () => ++requests === 1 ? startup.response : turn.response)
+    const connection = CopilotStudioWebChat.createConnection(client())
+    const subscription = connection.activity$.subscribe(activity => {
+      if (activity.text === 'Greeting') {
+        greeting.resolve()
+      }
+    })
+    let posted: Promise<void> | undefined
+    try {
+      await greeting.promise
+      posted = new Promise<void>((resolve, reject) => {
+        connection.postActivity(Activity.fromObject({ type: 'message', text: 'A' })).subscribe({ complete: resolve, error: reject })
+      })
+      await new Promise<void>((resolve) => setImmediate(resolve))
+      assert.equal(requests, 1, 'A send must wait for its own startup to finish')
+      startup.finish.resolve()
+      await posted
+      assert.equal(requests, 2)
+    } finally {
+      startup.finish.resolve()
+      await Promise.allSettled(posted ? [posted] : [])
+      connection.end()
+      subscription.unsubscribe()
+    }
+  })
+
+  it('preserves implicit WebChat sends when startup is disabled', async (t) => {
+    const responses = [startResponse('prior-A'), startResponse('prior-A')]
+    responses.forEach(response => response.finish.resolve())
+    let index = 0
+    const fetchMock = t.mock.method(globalThis, 'fetch', async () => responses[index++].response)
+    const shared = client()
+    await shared.startConversationAsync(false)
+    const connection = CopilotStudioWebChat.createConnection(shared, { startConversation: false })
+    const subscription = connection.activity$.subscribe()
+    try {
+      await new Promise<void>((resolve, reject) => {
+        connection.postActivity(Activity.fromObject({ type: 'message', text: 'A' })).subscribe({ complete: resolve, error: reject })
+      })
+      assert.match(String(fetchMock.mock.calls[1].arguments[0]), /\/conversations\/prior-A\?/)
+    } finally {
+      connection.end()
+      subscription.unsubscribe()
+    }
+  })
+
+  it('preserves WebChat startup and first sends when no start ID is returned', async (t) => {
+    const responses = [startResponse(), startResponse('first-reply-A', { type: 'message', text: 'Hello', conversation: { id: 'first-reply-A' } })]
+    responses.forEach(response => response.finish.resolve())
+    let index = 0
+    t.mock.method(globalThis, 'fetch', async () => responses[index++].response)
+    const connection = CopilotStudioWebChat.createConnection(client())
+    const subscription = connection.activity$.subscribe()
+    try {
+      await firstValueFrom(connection.connectionStatus$.pipe(filter(status => status === 2)))
+      assert.equal(connection.conversationId, undefined)
+      await new Promise<void>((resolve, reject) => {
+        connection.postActivity(Activity.fromObject({ type: 'message', text: 'A' })).subscribe({ complete: resolve, error: reject })
+      })
+      assert.equal(connection.conversationId, 'first-reply-A')
+    } finally {
+      connection.end()
+      subscription.unsubscribe()
+    }
+  })
+
+  it('preserves direct implicit client continuation after WebChat startup', async (t) => {
+    const responses = [startResponse('prior-B'), startResponse('webchat-A'), startResponse('webchat-A')]
+    responses.forEach(response => response.finish.resolve())
+    let index = 0
+    const fetchMock = t.mock.method(globalThis, 'fetch', async () => responses[index++].response)
+    const shared = client()
+    await shared.startConversationAsync(false)
+    const connection = CopilotStudioWebChat.createConnection(shared)
+    const subscription = connection.activity$.subscribe()
+    try {
+      await firstValueFrom(connection.connectionStatus$.pipe(filter(status => status === 2)))
+      await shared.sendActivity(Activity.fromObject({ type: 'message', text: 'Direct follow-up' }))
+      assert.equal(connection.conversationId, 'webchat-A')
+      assert.match(String(fetchMock.mock.calls[2].arguments[0]), /\/conversations\/webchat-A\?/)
+    } finally {
+      connection.end()
+      subscription.unsubscribe()
+    }
+  })
+
+  for (const forwardMetadata of [false, true]) {
+    for (const finishFirst of [0, 1]) {
+      it(`isolates overridden WebChat starts with forwarding=${forwardMetadata}, first=${finishFirst}`, async (t) => {
+        const responses = [startResponse('A'), startResponse('B')]
+        const requests: { url: string, id: string | undefined }[] = []
+        let index = 0
+        t.mock.method(globalThis, 'fetch', async (url: string | URL | Request, init?: RequestInit) => {
+          const body = JSON.parse(String(init?.body))
+          if (!body.activity) {
+            return responses[index++].response
+          }
+          requests.push({ url: String(url), id: body.activity.conversation?.id })
+          const response = startResponse()
+          response.finish.resolve()
+          return response.response
+        })
+        const shared = client()
+        const originalStart = shared.startConversationStreaming.bind(shared)
+        t.mock.method(shared, 'startConversationStreaming', async function * () {
+          await Promise.resolve()
+          const id = yield * originalStart()
+          if (forwardMetadata) {
+            return id
+          }
+        })
+        const connections = [CopilotStudioWebChat.createConnection(shared), CopilotStudioWebChat.createConnection(shared)]
+        const subscriptions = connections.map(connection => connection.activity$.subscribe())
+        try {
+          await Promise.all(responses.map(response => response.reading.promise))
+          responses[finishFirst].finish.resolve()
+          await firstValueFrom(connections[finishFirst].connectionStatus$.pipe(filter(status => status === 2)))
+          responses[1 - finishFirst].finish.resolve()
+          await firstValueFrom(connections[1 - finishFirst].connectionStatus$.pipe(filter(status => status === 2)))
+          for (const connection of connections) {
+            await new Promise<void>((resolve, reject) => {
+              connection.postActivity(Activity.fromObject({ type: 'message', text: 'Follow-up' })).subscribe({ complete: resolve, error: reject })
+            })
+          }
+          assert.deepEqual(connections.map(connection => connection.conversationId), forwardMetadata ? ['A', 'B'] : [undefined, undefined])
+          assert.deepEqual(requests.map(request => request.id), forwardMetadata ? ['A', 'B'] : ['', ''])
+          assert.deepEqual(requests.map(request => new URL(request.url).pathname), forwardMetadata ? ['/api/conversations/A', '/api/conversations/B'] : ['/api/conversations', '/api/conversations'])
+        } finally {
+          responses.forEach(response => response.finish.resolve())
+          connections.forEach(connection => connection.end())
+          subscriptions.forEach(subscription => subscription.unsubscribe())
+        }
+      })
+    }
+  }
+
+  for (const activityId of [undefined, ' ', 'explicit-C']) {
+    it(`does not borrow another start ID after ID-less WebChat startup, activity ID=${activityId}`, async (t) => {
+      const responses = [startResponse(), startResponse('B'), startResponse()]
+      responses[1].finish.resolve()
+      responses[2].finish.resolve()
+      let index = 0
+      const fetchMock = t.mock.method(globalThis, 'fetch', async () => responses[index++].response)
+      const shared = client()
+      const connection = CopilotStudioWebChat.createConnection(shared)
+      const subscription = connection.activity$.subscribe()
+      try {
+        await responses[0].reading.promise
+        await shared.startConversationWithResponse()
+        responses[0].finish.resolve()
+        await firstValueFrom(connection.connectionStatus$.pipe(filter(status => status === 2)))
+        await new Promise<void>((resolve, reject) => {
+          connection.postActivity(Activity.fromObject({
+            type: 'message',
+            text: 'Follow-up',
+            ...(activityId !== undefined && { conversation: { id: activityId } })
+          })).subscribe({ complete: resolve, error: reject })
+        })
+        const expectedId = activityId?.trim() || ''
+        const call = fetchMock.mock.calls[2]
+        assert.equal(new URL(String(call.arguments[0])).pathname, `/api/conversations${expectedId ? '/' + expectedId : ''}`)
+        const body = JSON.parse(String(call.arguments[1]?.body))
+        assert.equal(body.activity.conversation.id, expectedId)
+      } finally {
+        responses[0].finish.resolve()
+        connection.end()
+        subscription.unsubscribe()
+      }
+    })
+  }
+
+  it('queues a send triggered synchronously by the first typing notification', async (t) => {
+    const startup = startResponse('A')
+    const turn = startResponse('A')
+    turn.finish.resolve()
+    let requests = 0
+    t.mock.method(globalThis, 'fetch', async () => ++requests === 1 ? startup.response : turn.response)
+    const connection = CopilotStudioWebChat.createConnection(client(), { showTyping: true })
+    let posted: Promise<void> | undefined
+    let postError: unknown
+    const subscription = connection.activity$.subscribe(activity => {
+      if (activity.type === 'typing' && !posted) {
+        posted = new Promise<void>((resolve) => {
+          connection.postActivity(Activity.fromObject({ type: 'message', text: 'A' })).subscribe({
+            complete: resolve,
+            error: error => {
+              postError = error
+              resolve()
+            }
+          })
+        })
+      }
+    })
+    try {
+      await new Promise<void>((resolve) => setImmediate(resolve))
+      assert.ok(posted)
+      assert.equal(postError, undefined)
+      assert.equal(requests, 1)
+      startup.finish.resolve()
+      await posted
+      assert.equal(postError, undefined)
+      assert.equal(requests, 2)
+    } finally {
+      startup.finish.resolve()
+      await Promise.allSettled(posted ? [posted] : [])
+      connection.end()
+      subscription.unsubscribe()
+    }
+  })
+
+  it('routes an activity with a whitespace ID using the configured resume ID', async (t) => {
+    const response = startResponse('A')
+    response.finish.resolve()
+    const fetchMock = t.mock.method(globalThis, 'fetch', async () => response.response)
+    const connection = CopilotStudioWebChat.createConnection(client(), { conversationId: 'A' })
+    const subscription = connection.activity$.subscribe()
+    try {
+      await new Promise<void>((resolve, reject) => {
+        connection.postActivity(Activity.fromObject({ type: 'message', text: 'A', conversation: { id: ' ' } })).subscribe({ complete: resolve, error: reject })
+      })
+      assert.match(String(fetchMock.mock.calls[0].arguments[0]), /\/conversations\/A\?/)
+      const payload = JSON.parse(String(fetchMock.mock.calls[0].arguments[1]?.body))
+      assert.equal(payload.activity.conversation.id, 'A')
+    } finally {
+      connection.end()
+      subscription.unsubscribe()
+    }
+  })
+
+  it('isolates two WebChat connections with header-only starts', async (t) => {
+    const destinations: string[] = []
+    let starts = 0
+    t.mock.method(globalThis, 'fetch', async (url: string | URL | Request, init?: RequestInit) => {
+      const request = JSON.parse(String(init?.body))
+      const id = request.activity ? new URL(String(url)).pathname.split('/').at(-1)! : `conversation-${++starts}`
+      const response = startResponse(id, request.activity && { type: 'message', text: 'echo', conversation: { id } })
+      response.finish.resolve()
+      if (request.activity) {
+        destinations.push(id)
+      }
+      return response.response
+    })
+    const shared = client()
+    const a = CopilotStudioWebChat.createConnection(shared)
+    const b = CopilotStudioWebChat.createConnection(shared)
+    const subscriptions = [a.activity$.subscribe(), b.activity$.subscribe()]
+    try {
+      await Promise.all([a, b].map(connection => firstValueFrom(connection.connectionStatus$.pipe(filter(status => status === 2)))))
+      await new Promise<void>((resolve, reject) => {
+        a.postActivity(Activity.fromObject({ type: 'message', text: 'A' })).subscribe({ complete: resolve, error: reject })
+      })
+      await new Promise<void>((resolve, reject) => {
+        b.postActivity(Activity.fromObject({ type: 'message', text: 'B' })).subscribe({ complete: resolve, error: reject })
+      })
+      assert.equal(a.conversationId, 'conversation-1')
+      assert.equal(b.conversationId, 'conversation-2')
+      assert.deepEqual(destinations, ['conversation-1', 'conversation-2'])
+    } finally {
+      a.end()
+      b.end()
+      subscriptions.forEach(subscription => subscription.unsubscribe())
+    }
   })
 })

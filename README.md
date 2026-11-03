@@ -137,13 +137,17 @@ Before submitting a change, run:
 npm run quality
 ```
 
-`quality` runs the repository doctor, ESLint, dependency lint, build, tests, API compatibility checks, and sample build. It reports each check's status and duration, while printing command output when a check fails. When external link validation is enabled, its diagnostics are also shown after success so result counts and the detailed-log path remain visible.
+`quality` runs the repository doctor, ESLint, dependency lint, build, tests, API compatibility checks, and sample build. It reports each check's status and duration, while printing command output when a check fails. Successful compatibility checks still show a compact notice for packages needing review or outdated baselines. When external link validation is enabled, its diagnostics are also shown after success so result counts and the detailed-log path remain visible.
 
 Use `npm run quality -- --check-links` to add external documentation link validation alongside these checks. Build still depends only on the offline doctor. Add `--strict-links` to fail on unverified external URLs as well as confirmed broken links.
 
 `quality` shows a dimmed external-link note beside the Repository doctor row. When disabled, the note shows `external links: off (enable: --check-links)`; when enabled, Documentation links appears directly below Repository doctor as an indented child row. Strict mode is noted beside that link check. `repo:doctor` combines its ON/OFF status and opt-in command on one line. Its compact link totals precede the final success or failure result. Local documentation paths and Markdown anchors are still checked by default.
 
-Use `npm run quality -- --verbose` to print the complete captured output for every check after the concise report. In GitHub Actions, each command log is available in a folded group and as the `quality-logs` artifact for seven days.
+`npm run compat` checks public TypeScript compatibility, builds declarations first, and analyzes packages in parallel. Run `npm run compat -- agents-hosting` for one package or `npm run compat -- --base origin/main` to retain a Git-reference comparison in the JSON report. Terminal findings compare against the working baseline; previously adopted changes are excluded from pending review. The compact output links directly to saved baseline/generated source lines, counts possible breaks, and marks harmless baseline drift as outdated. Detailed findings and finding IDs are in `compat/generated/report.json`. Possible breaks are warnings; outdated baselines and analysis errors fail the check. Use `--update` to adopt the current API, including possible breaks, and review the baseline diff before committing. See [API compatibility](docs/API-COMPATIBILITY.md) for the workflow and limitations.
+
+Use `npm run quality -- --verbose` to print the complete captured output for every check after the concise report. GitHub Actions and Azure Pipelines retain command logs and compatibility reports in the `quality-logs` artifact. GitHub Actions also shows folded command logs and retains the artifact for seven days.
+
+Local command logs remain in `scripts/logs/quality/` after execution; `QUALITY_LOG_DIR` can override that directory. Standalone compat build logs are in `scripts/logs/compat/build.log`. These folders are Git-ignored. Each run replaces its own logs and removes old logs for skipped checks.
 
 For a structural, package, documentation, build-reference, or runtime-configuration change, you can run the focused doctor check directly:
 

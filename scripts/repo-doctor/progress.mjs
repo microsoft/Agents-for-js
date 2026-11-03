@@ -24,7 +24,9 @@ export function startProgress ({ color, checkLinks }) {
   let stopped = false
 
   return async () => {
-    if (stopped) return
+    if (stopped) {
+      return
+    }
     stopped = true
     clearInterval(timer)
     process.stdout.write('\r\u001B[2K')

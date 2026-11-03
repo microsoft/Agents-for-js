@@ -559,6 +559,10 @@ export class Activity {
     return this
   }
 
+  /**
+   * Creates a deep copy of the activity using its JSON representation.
+   * @returns A new activity containing the copied data.
+   */
   public clone (): Activity {
     const activityCopy = JSON.parse(JSON.stringify(this))
 
@@ -711,7 +715,9 @@ export class Activity {
    * @returns true if the activity contains an activityTreatment entity with treatment 'targeted'.
    */
   public isTargetedActivity (): boolean {
-    if (!this.entities?.length) return false
+    if (!this.entities?.length) {
+      return false
+    }
     return this.entities.some(
       e => e.type === 'activityTreatment' && e.treatment === ActivityTreatments.Targeted
     )

@@ -10,9 +10,13 @@ const DEFAULT_TASK_DATA_KEY = 'task'
 
 function matchesTaskKeyValue (context: TurnContext, value: string | RegExp, key: string): boolean {
   const taskData = (context.activity.value as any)?.data
-  if (!taskData || typeof taskData !== 'object') return false
+  if (!taskData || typeof taskData !== 'object') {
+    return false
+  }
   const dataValue = taskData[normalizeTaskDataKey(key)]
-  if (typeof dataValue !== 'string') return false
+  if (typeof dataValue !== 'string') {
+    return false
+  }
   return typeof value === 'string' ? dataValue === value : value.test(dataValue)
 }
 
@@ -41,8 +45,29 @@ function matchesTaskInvoke (context: TurnContext, name: string, value: string | 
   return matchesTaskKeyValue(context, value, key)
 }
 
-type FetchHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, request: TaskModuleRequest) => Promise<TaskModuleResponse>
-type SubmitHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, request: TaskModuleRequest) => Promise<TaskModuleResponse>
+/**
+ * Handles task module fetch requests registered with {@link TaskModule.onFetch}.
+ *
+ * @typeParam TState - The application's turn state type.
+ * @param context - The Teams turn context for the task/fetch invoke.
+ * @param state - The current application turn state.
+ * @param request - The incoming task module request, including its `data` payload.
+ * @returns The complete Teams task module response, including its `task` property when
+ * opening a module. The extension sends it as the invoke response body.
+ */
+export type FetchHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, request: TaskModuleRequest) => Promise<TaskModuleResponse>
+
+/**
+ * Handles task module submissions registered with {@link TaskModule.onSubmit}.
+ *
+ * @typeParam TState - The application's turn state type.
+ * @param context - The Teams turn context for the task/submit invoke.
+ * @param state - The current application turn state.
+ * @param request - The incoming task module request containing submitted data.
+ * @returns The complete Teams task module response to send as the invoke response body,
+ * such as a message or another task module.
+ */
+export type SubmitHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, request: TaskModuleRequest) => Promise<TaskModuleResponse>
 
 /**
  * Registers handlers for Microsoft Teams task module invoke activities.

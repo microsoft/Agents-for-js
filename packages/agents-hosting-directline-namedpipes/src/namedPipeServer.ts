@@ -87,7 +87,9 @@ export class NamedPipeService {
    * If autoReconnect is enabled, reconnects on disconnect.
    */
   async start (): Promise<void> {
-    if (this._running) return
+    if (this._running) {
+      return
+    }
     try {
       assertWindowsPlatform()
     } catch (err) {
@@ -146,7 +148,9 @@ export class NamedPipeService {
 
       await this._disconnect()
 
-      if (!this._running || !this._autoReconnect) break
+      if (!this._running || !this._autoReconnect) {
+        break
+      }
 
       logger.info('Reconnecting in 1s...')
       await this._delay(1000)
@@ -205,21 +209,27 @@ export class NamedPipeService {
   }
 
   private _resolveReady (): void {
-    if (!this._readyResolve) return
+    if (!this._readyResolve) {
+      return
+    }
     this._readyResolve()
     this._readyResolve = null
     this._readyReject = null
   }
 
   private _rejectReady (err: Error): void {
-    if (!this._readyReject) return
+    if (!this._readyReject) {
+      return
+    }
     this._readyReject(err)
     this._readyResolve = null
     this._readyReject = null
   }
 
   private _toError (err: unknown): Error {
-    if (err instanceof Error) return err
+    if (err instanceof Error) {
+      return err
+    }
     return ExceptionHelper.generateException(Error, Errors.PipeConnectionFailed, undefined, {
       reason: String(err)
     })

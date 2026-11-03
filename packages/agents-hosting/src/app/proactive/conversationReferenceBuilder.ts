@@ -71,8 +71,12 @@ export class ConversationReferenceBuilder {
    * `https://{channelId}.botframework.com/` pattern (matching C# behavior).
    */
   static serviceUrlForChannel (channelId: string): string {
-    if (!channelId) return ''
-    if (channelId === Channels.Msteams) return TeamsServiceEndpoints.publicGlobal
+    if (!channelId) {
+      return ''
+    }
+    if (channelId === Channels.Msteams) {
+      return TeamsServiceEndpoints.publicGlobal
+    }
     if (!knownChannelIds.has(channelId)) {
       logger.warn(
         `serviceUrlForChannel: unrecognized channelId '${channelId}' — constructing fallback URL ` +
@@ -141,8 +145,12 @@ export class ConversationReferenceBuilder {
       user: this._user ?? { role: RoleTypes.User },
     }
 
-    if (this._activityId !== undefined) ref.activityId = this._activityId
-    if (this._locale !== undefined) ref.locale = this._locale
+    if (this._activityId !== undefined) {
+      ref.activityId = this._activityId
+    }
+    if (this._locale !== undefined) {
+      ref.locale = this._locale
+    }
 
     return ref
   }

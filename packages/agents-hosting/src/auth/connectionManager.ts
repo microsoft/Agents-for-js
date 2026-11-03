@@ -146,7 +146,9 @@ export class ConnectionManager implements Connections {
       audience = identity.aud
     }
 
-    if (!audience || !serviceUrl) throw ExceptionHelper.generateException(Error, Errors.AudienceAndServiceUrlRequiredForTokenProvider)
+    if (!audience || !serviceUrl) {
+      throw ExceptionHelper.generateException(Error, Errors.AudienceAndServiceUrlRequiredForTokenProvider)
+    }
 
     if (this._connectionsMap.length === 0) {
       logger.debug('no connectionsMap, using default connection for serviceUrl=%s', serviceUrl)

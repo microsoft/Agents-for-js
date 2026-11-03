@@ -25,7 +25,9 @@ function makeApp () {
     runBeforeTurn: async (context: TurnContext, state: TurnState) => {
       for (const handler of beforeTurnHandlers) {
         const result = await handler(context, state)
-        if (!result) return false
+        if (!result) {
+          return false
+        }
       }
       return true
     },

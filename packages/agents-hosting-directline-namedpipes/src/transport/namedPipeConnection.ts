@@ -119,7 +119,9 @@ export class NamedPipeConnection {
       const outgoingPath = getPipePath(`${this._pipeName}.outgoing`)
 
       logger.info(`Waiting for connection on incoming: ${incomingPath}`)
-      const incomingSocket = await this._listen(incomingPath, (server) => { this._incomingServer = server }, cancellationToken)
+      const incomingSocket = await this._listen(incomingPath, (server) => {
+        this._incomingServer = server
+      }, cancellationToken)
       this._reader = new NamedPipeTransport(incomingSocket)
       logger.info(`Incoming pipe connected from ${incomingSocket.remoteAddress || 'local'}`)
 
@@ -131,7 +133,9 @@ export class NamedPipeConnection {
       })
 
       logger.info(`Waiting for connection on outgoing: ${outgoingPath}`)
-      const outgoingSocket = await this._listen(outgoingPath, (server) => { this._outgoingServer = server }, cancellationToken)
+      const outgoingSocket = await this._listen(outgoingPath, (server) => {
+        this._outgoingServer = server
+      }, cancellationToken)
       this._writer = new NamedPipeTransport(outgoingSocket)
       logger.info(`Outgoing pipe connected from ${outgoingSocket.remoteAddress || 'local'}`)
 
@@ -203,7 +207,9 @@ export class NamedPipeConnection {
       let onAbort: (() => void) | null = null
 
       const settle = (callback: () => void) => {
-        if (settled) return
+        if (settled) {
+          return
+        }
         settled = true
         if (onAbort) {
           cancellationToken?.removeEventListener('abort', onAbort)
@@ -240,7 +246,9 @@ export class NamedPipeConnection {
   }
 
   private _closeServer (server: Server | null): Promise<void> {
-    if (!server) return Promise.resolve()
+    if (!server) {
+      return Promise.resolve()
+    }
     return new Promise((resolve) => {
       try {
         server.close(() => resolve())

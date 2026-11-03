@@ -48,7 +48,10 @@ async function drain (stream: AsyncIterable<unknown>): Promise<void> {
 
 function deferred<T> (): { promise: Promise<T>, resolve: (value: T) => void } {
   let complete!: (value: T) => void
-  const promise = new Promise<T>(resolve => { complete = resolve })
+  const promise = new Promise<T>(resolve => {
+    complete = resolve
+  })
+
   return { promise, resolve: complete }
 }
 

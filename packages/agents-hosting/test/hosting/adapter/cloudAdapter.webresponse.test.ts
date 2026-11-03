@@ -18,10 +18,23 @@ const makeRes = (): WebResponse & { _status?: number, _body?: unknown, _headers:
     headersSent: false,
     writableEnded: false,
     _headers: {},
-    status (code: number) { r._status = code; return r },
-    setHeader (n: string, v: string) { r._headers[n] = v; return r },
-    send (body?: unknown) { r._body = body; r.headersSent = true; return r },
-    end () { r.writableEnded = true; return r }
+    status (code: number) {
+      r._status = code
+      return r
+    },
+    setHeader (n: string, v: string) {
+      r._headers[n] = v
+      return r
+    },
+    send (body?: unknown) {
+      r._body = body
+      r.headersSent = true
+      return r
+    },
+    end () {
+      r.writableEnded = true
+      return r
+    }
   }
   return r
 }

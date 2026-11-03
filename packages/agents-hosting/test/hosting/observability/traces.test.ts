@@ -29,7 +29,9 @@ function endRunTrace (activity: Activity): Record<string, unknown> {
 
   AgentApplicationTraceDefinitions.run.end({
     span: {
-      setAttributes: (values: Record<string, unknown>) => { attributes = values }
+      setAttributes: (values: Record<string, unknown>) => {
+        attributes = values
+      }
     } as any,
     record: {
       authorized: true,

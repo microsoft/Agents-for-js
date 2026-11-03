@@ -138,7 +138,9 @@ describe('createAgentRequestHandler', () => {
 
     assert.strictEqual(res.statusCode, 500)
     await fastify.close()
-    if (originalEnv !== undefined) process.env.NODE_ENV = originalEnv
+    if (originalEnv !== undefined) {
+      process.env.NODE_ENV = originalEnv
+    }
   })
 
   it('uses scoped JWT auth instead of globally preloaded anonymous auth', async () => {

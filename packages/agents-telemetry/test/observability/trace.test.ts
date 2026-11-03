@@ -130,7 +130,9 @@ describe('traceFactory', () => {
     const result = trace({
       name: SpanNames.ADAPTER_PROCESS,
       record: {},
-      end: () => { endCalled = true },
+      end: () => {
+        endCalled = true
+      },
     })
 
     result.end()
@@ -229,7 +231,9 @@ describe('traceFactory', () => {
     assert.throws(() => {
       trace(
         { name: SpanNames.ADAPTER_PROCESS, record: {}, end: () => {} },
-        () => { throw error }
+        () => {
+          throw error
+        }
       )
     }, /callback-error/)
 
@@ -246,7 +250,9 @@ describe('traceFactory', () => {
       {
         name: SpanNames.ADAPTER_PROCESS,
         record: { count: 0 },
-        end: (ctx) => { captured = ctx.record },
+        end: (ctx) => {
+          captured = ctx.record
+        },
       },
       (ctx) => {
         ctx.record({ count: 5 })
@@ -269,7 +275,9 @@ describe('traceFactory', () => {
           tags: ['initial'],
           status: 'pending',
         },
-        end: (ctx) => { captured = ctx.record },
+        end: (ctx) => {
+          captured = ctx.record
+        },
       },
       (ctx) => {
         ctx.record({
@@ -308,7 +316,9 @@ describe('traceFactory', () => {
       {
         name: SpanNames.ADAPTER_PROCESS,
         record: { value: new TraceValue('default') },
-        end: (ctx) => { captured = ctx.record },
+        end: (ctx) => {
+          captured = ctx.record
+        },
       },
       (ctx) => {
         ctx.record({ value })
@@ -329,7 +339,9 @@ describe('traceFactory', () => {
       {
         name: SpanNames.ADAPTER_PROCESS,
         record: { status: 'pending', count: 0 },
-        end: (ctx) => { captured = ctx.record },
+        end: (ctx) => {
+          captured = ctx.record
+        },
       },
       () => {}
     )
@@ -347,7 +359,9 @@ describe('traceFactory', () => {
       {
         name: SpanNames.ADAPTER_PROCESS,
         record: { channelId: 'unknown', nullable: 'default' as string | null, [symbolKey]: 'default' },
-        end: ({ record }) => { captured = record },
+        end: ({ record }) => {
+          captured = record
+        },
       },
       ({ record }) => record({ channelId: undefined, nullable: null, [symbolKey]: 'updated' })
     )
@@ -365,7 +379,9 @@ describe('traceFactory', () => {
       {
         name: SpanNames.ADAPTER_PROCESS,
         record: { [symbolKey]: { before: true, nested: { before: true, after: false } } },
-        end: ({ record }) => { captured = record },
+        end: ({ record }) => {
+          captured = record
+        },
       },
       ({ record }) => record({ [symbolKey]: { nested: { after: true } } } as any)
     )
@@ -384,7 +400,9 @@ describe('traceFactory', () => {
       {
         name: SpanNames.ADAPTER_PROCESS,
         record: {},
-        end: (ctx) => { captured = ctx },
+        end: (ctx) => {
+          captured = ctx
+        },
       },
       () => {}
     )
@@ -404,9 +422,13 @@ describe('traceFactory', () => {
         {
           name: SpanNames.ADAPTER_PROCESS,
           record: {},
-          end: (ctx) => { capturedError = ctx.error },
+          end: (ctx) => {
+            capturedError = ctx.error
+          },
         },
-        () => { throw error }
+        () => {
+          throw error
+        }
       )
     })
 
@@ -422,7 +444,9 @@ describe('traceFactory', () => {
       {
         name: SpanNames.ADAPTER_PROCESS,
         record: {},
-        end: (ctx) => { capturedSpan = ctx.span },
+        end: (ctx) => {
+          capturedSpan = ctx.span
+        },
       },
       () => {}
     )
@@ -480,8 +504,10 @@ describe('traceFactory', () => {
     assert.throws(() => {
       trace(
         { name: SpanNames.ADAPTER_PROCESS, record: {}, end: () => {} },
-        // eslint-disable-next-line no-throw-literal
-        () => { throw 'string-error' }
+        () => {
+          // eslint-disable-next-line no-throw-literal
+          throw 'string-error'
+        }
       )
     })
 
@@ -499,7 +525,9 @@ describe('traceFactory', () => {
     const result = trace({
       name: SpanNames.ADAPTER_PROCESS,
       record: {},
-      end: () => { throw new Error('end-handler-error') },
+      end: () => {
+        throw new Error('end-handler-error')
+      },
     })
 
     result.end()
@@ -543,7 +571,9 @@ describe('traceFactory', () => {
     await assert.rejects(
       () => trace(
         { name: SpanNames.ADAPTER_PROCESS, record: {}, end: () => {} },
-        async () => { throw error }
+        async () => {
+          throw error
+        }
       ),
       /async-error/
     )

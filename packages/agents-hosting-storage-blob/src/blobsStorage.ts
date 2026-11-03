@@ -29,11 +29,15 @@ class BlobsStorageInternals {
     if (url.trim() !== '') {
       z.object({ url: z.string() }).parse({ url })
       this._containerClient = new ContainerClient(url, credential, options?.storagePipelineOptions)
-      if (url.trim() === 'UseDevelopmentStorage=true;') this._concurrency = 1
+      if (url.trim() === 'UseDevelopmentStorage=true;') {
+        this._concurrency = 1
+      }
     } else {
       z.object({ connectionString: z.string(), containerName: z.string() }).parse({ connectionString, containerName })
       this._containerClient = new ContainerClient(connectionString!, containerName, options?.storagePipelineOptions)
-      if (connectionString!.trim() === 'UseDevelopmentStorage=true;') this._concurrency = 1
+      if (connectionString!.trim() === 'UseDevelopmentStorage=true;') {
+        this._concurrency = 1
+      }
     }
     logger.info('BlobsStorage settings loaded', {
       container: containerName,
@@ -46,7 +50,9 @@ class BlobsStorageInternals {
   }
 
   _initialize (): Promise<unknown> {
-    if (!this._initializePromise) this._initializePromise = this._containerClient.createIfNotExists()
+    if (!this._initializePromise) {
+      this._initializePromise = this._containerClient.createIfNotExists()
+    }
     return this._initializePromise
   }
 
@@ -54,7 +60,9 @@ class BlobsStorageInternals {
     try {
       return (await this._containerClient.getBlobClient(sanitizeBlobKey(key)).getProperties()).etag
     } catch (err) {
-      if (isStatusCodeError(404)(err as Error)) return undefined
+      if (isStatusCodeError(404)(err as Error)) {
+        return undefined
+      }
       throwStorageOperationError('read version', key, err)
     }
   }
@@ -81,7 +89,9 @@ export class BlobsStorage extends BlobsStorageInternals implements Storage {
       const results = await Promise.all(keys.map(async key => {
         const result = { key, value: undefined as unknown }
         const blob = await ignoreError(this._containerClient.getBlobClient(sanitizeBlobKey(key)).download(), isStatusCodeError(404))
-        if (!blob?.readableStreamBody) return result
+        if (!blob?.readableStreamBody) {
+          return result
+        }
         const parsed = await StreamConsumers.json(blob.readableStreamBody) as Record<string, unknown>
         result.value = { ...parsed, eTag: blob.etag }
         logger.debug(`Read blob: ${key}, eTag: ${blob.etag}`)
@@ -176,7 +186,9 @@ export class BlobsStorageV2 extends StorageV2 {
     return trace(BlobsStorageTraceDefinitions.read, async ({ record }) => {
       record({ keyCount: keys?.length ?? 0 })
       validateV2Keys(keys)
-      if (keys.length === 0) return {}
+      if (keys.length === 0) {
+        return {}
+      }
       await this.internals._initialize()
       const results: StorageReadResults<T> = {}
       await Promise.all(keys.map(async key => {
@@ -226,7 +238,9 @@ export class BlobsStorageV2 extends StorageV2 {
       validateV2Changes(changes)
       const mode = options?.mode ?? StorageWriteMode.Upsert
       validateWriteMode(mode)
-      if (Object.keys(changes).length === 0) return {}
+      if (Object.keys(changes).length === 0) {
+        return {}
+      }
       await this.internals._initialize()
       const results: StorageWriteResults = {}
       const expiresAt = getStorageWriteExpiry(options)
@@ -296,7 +310,9 @@ export class BlobsStorageV2 extends StorageV2 {
       record({ keyCount: keys?.length ?? 0 })
       validateExpectedVersion(options?.expectedVersion)
       validateV2Keys(keys)
-      if (keys.length === 0) return {}
+      if (keys.length === 0) {
+        return {}
+      }
       await this.internals._initialize()
       const results: StorageDeleteResults = {}
       await Promise.all(keys.map(async key => {
@@ -337,7 +353,9 @@ export class BlobsStorageV2 extends StorageV2 {
 }
 
 function validateExpectedVersion (expectedVersion: string | undefined): void {
-  if (expectedVersion === '') throw ExceptionHelper.generateException(RangeError, Errors.StorageV2ExpectedVersionEmpty)
+  if (expectedVersion === '') {
+    throw ExceptionHelper.generateException(RangeError, Errors.StorageV2ExpectedVersionEmpty)
+  }
 }
 
 function validateWriteMode (mode: StorageWriteMode): void {
@@ -359,7 +377,9 @@ function validateV2Changes (changes: Record<string, unknown>): void {
 }
 
 function validateV2Keys (keys: string[]): void {
-  if (!Array.isArray(keys)) throw ExceptionHelper.generateException(ReferenceError, Errors.StorageV2KeysRequired)
+  if (!Array.isArray(keys)) {
+    throw ExceptionHelper.generateException(ReferenceError, Errors.StorageV2KeysRequired)
+  }
   if (keys.some(key => typeof key !== 'string' || key.trim() === '')) {
     throw ExceptionHelper.generateException(ReferenceError, Errors.StorageV2KeyRequired)
   }
@@ -370,7 +390,9 @@ function throwStorageOperationError (operation: string, key: string, error: unkn
 }
 
 function isExpired (expiresAt?: string): boolean {
-  if (expiresAt === undefined) return false
+  if (expiresAt === undefined) {
+    return false
+  }
   const timestamp = Number(expiresAt)
   return Number.isFinite(timestamp) && timestamp <= Date.now()
 }

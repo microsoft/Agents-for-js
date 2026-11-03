@@ -62,7 +62,9 @@ console.log(`Named pipe agent started, waiting for connection on '${PIPE_NAME}'.
 // during exit (EventEmitter does not await async listeners).
 let shuttingDown = false
 const shutdown = async (signal: string) => {
-  if (shuttingDown) return
+  if (shuttingDown) {
+    return
+  }
   shuttingDown = true
   console.log(`Received ${signal}, shutting down...`)
   try {
@@ -73,5 +75,9 @@ const shutdown = async (signal: string) => {
   process.exit(0)
 }
 
-process.once('SIGINT', () => { shutdown('SIGINT').catch(() => {}) })
-process.once('SIGTERM', () => { shutdown('SIGTERM').catch(() => {}) })
+process.once('SIGINT', () => {
+  shutdown('SIGINT').catch(() => {})
+})
+process.once('SIGTERM', () => {
+  shutdown('SIGTERM').catch(() => {})
+})

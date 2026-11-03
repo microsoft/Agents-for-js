@@ -19,8 +19,12 @@ export interface SlackStreamOptions {
 }
 
 function normalizeContent (content: string | Chunk | Chunk[]): Chunk[] {
-  if (typeof content === 'string') return [markdown(content)]
-  if (Array.isArray(content)) return content
+  if (typeof content === 'string') {
+    return [markdown(content)]
+  }
+  if (Array.isArray(content)) {
+    return content
+  }
   return [content]
 }
 
@@ -63,10 +67,18 @@ export class SlackStream {
       channel: this._channel,
       thread_ts: this._threadTs,
     }
-    if (this._options?.recipientUserId) body.recipient_user_id = this._options.recipientUserId
-    if (this._options?.recipientTeamId) body.recipient_team_id = this._options.recipientTeamId
-    if (this._options?.taskDisplayMode) body.task_display_mode = this._options.taskDisplayMode
-    if (initialChunks?.length) body.chunks = initialChunks
+    if (this._options?.recipientUserId) {
+      body.recipient_user_id = this._options.recipientUserId
+    }
+    if (this._options?.recipientTeamId) {
+      body.recipient_team_id = this._options.recipientTeamId
+    }
+    if (this._options?.taskDisplayMode) {
+      body.task_display_mode = this._options.taskDisplayMode
+    }
+    if (initialChunks?.length) {
+      body.chunks = initialChunks
+    }
 
     const response = await this._api.call('chat.startStream', body)
     this._messageTs = response.ts
@@ -107,8 +119,12 @@ export class SlackStream {
       channel: this._channel,
       ts: this._messageTs,
     }
-    if (finalContent !== undefined) body.chunks = normalizeContent(finalContent)
-    if (blocks !== undefined) body.blocks = blocks
+    if (finalContent !== undefined) {
+      body.chunks = normalizeContent(finalContent)
+    }
+    if (blocks !== undefined) {
+      body.blocks = blocks
+    }
 
     await this._api.call('chat.stopStream', body)
     return this

@@ -57,7 +57,9 @@ async function captureAuthorizationManagerInfoLog (fn: () => void | Promise<void
     for (const { debug, namespaces, formatArgs } of previousSettings) {
       debug.formatArgs = formatArgs
       debug.disable()
-      if (namespaces) debug.enable(namespaces)
+      if (namespaces) {
+        debug.enable(namespaces)
+      }
     }
   }
 
