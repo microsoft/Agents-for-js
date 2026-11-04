@@ -25,7 +25,6 @@ import { CosmosStorageTraceDefinitions } from './observability'
 import { debug } from '@microsoft/agents-telemetry'
 
 const logger = debug('agents:cosmos-storage')
-const maxCachedInitializations = 100
 
 async function ignoreCosmosErrors (operation: Promise<unknown>, ...ignoredCodes: number[]): Promise<void> {
   const ignored = new Set(ignoredCodes)
@@ -38,77 +37,10 @@ async function ignoreCosmosErrors (operation: Promise<unknown>, ...ignoredCodes:
   }
 }
 
-interface CachedTask<T> {
-  promise: Promise<T>;
-  settled: boolean;
-}
-
-/**
- * A utility class to ensure that a specific asynchronous task is executed only once for a given key.
- * @typeParam T The type of the result returned by the asynchronous task.
- */
-class DoOnce<T> {
-  private readonly tasks = new Map<string, CachedTask<T>>()
-
-  constructor (private readonly maxTasks: number) {}
-
-  /**
-   * Waits for the task associated with the given key to complete, or starts the task if it hasn't been started yet.
-   * @param key The unique key identifying the task.
-   * @param fn A function that returns a promise representing the task to execute.
-   * @returns A promise that resolves to the result of the task.
-   */
-  waitFor (key: string, fn: () => Promise<T>): Promise<T> {
-    const existingTask = this.tasks.get(key)
-    if (existingTask) {
-      this.tasks.delete(key)
-      this.tasks.set(key, existingTask)
-      return existingTask.promise
-    }
-
-    const cachedTask: CachedTask<T> = {
-      promise: Promise.resolve().then(fn),
-      settled: false,
-    }
-    this.tasks.set(key, cachedTask)
-    cachedTask.promise.then(() => {
-      if (this.tasks.get(key) === cachedTask) {
-        cachedTask.settled = true
-        this.evictLeastRecentlyUsed()
-      }
-    }, () => {
-      if (this.tasks.get(key) === cachedTask) {
-        this.tasks.delete(key)
-      }
-    })
-    this.evictLeastRecentlyUsed()
-
-    return cachedTask.promise
-  }
-
-  private evictLeastRecentlyUsed (): void {
-    while (this.tasks.size > this.maxTasks) {
-      let evicted = false
-      for (const [key, task] of this.tasks) {
-        if (task.settled) {
-          this.tasks.delete(key)
-          evicted = true
-          break
-        }
-      }
-      if (!evicted) {
-        return
-      }
-    }
-  }
-}
-
 interface ContainerInitialization {
   container: Container;
   compatibilityModePartitionKey: boolean;
 }
-
-const _doOnce: DoOnce<ContainerInitialization> = new DoOnce<ContainerInitialization>(maxCachedInitializations)
 
 const maxDepthAllowed = 127
 
@@ -126,6 +58,7 @@ class CosmosDbPartitionedStorageInternals {
    */
   container!: Container
   private client!: CosmosClient
+  private initializationPromise?: Promise<void>
 
   /**
    * Indicates whether the container uses the legacy `/_partitionKey` partition key.
@@ -160,7 +93,7 @@ class CosmosDbPartitionedStorageInternals {
         Errors.MissingCosmosEndpoint
       )
     }
-    if (!cosmosClientOptions?.key && !cosmosClientOptions?.tokenProvider) {
+    if (!cosmosClientOptions.key && !cosmosClientOptions.tokenProvider && !cosmosClientOptions.aadCredentials) {
       throw ExceptionHelper.generateException(
         ReferenceError,
         Errors.MissingCosmosCredentials
@@ -196,6 +129,13 @@ class CosmosDbPartitionedStorageInternals {
         )
       }
     }
+    let authenticationMode = 'connectionString'
+    if (cosmosClientOptions.aadCredentials) {
+      authenticationMode = 'tokenCredential'
+    } else if (cosmosClientOptions.tokenProvider !== undefined) {
+      authenticationMode = 'tokenProvider'
+    }
+
     logger.info('CosmosDbPartitionedStorage settings loaded', {
       container: {
         id: redactString(cosmosDbStorageOptions.containerId, true),
@@ -203,7 +143,7 @@ class CosmosDbPartitionedStorageInternals {
         throughput: cosmosDbStorageOptions.containerThroughput,
       },
       connection: {
-        mode: cosmosClientOptions.tokenProvider !== undefined ? 'tokenProvider' : 'connectionString',
+        mode: authenticationMode,
         endpoint: redactString(cosmosClientOptions.endpoint),
       },
       partitioning: {
@@ -217,24 +157,26 @@ class CosmosDbPartitionedStorageInternals {
    * Initializes the Cosmos DB container.
    */
   async initialize (): Promise<void> {
-    if (!this.container) {
-      const dbAndContainerKey = JSON.stringify([
-        this.cosmosDbStorageOptions.cosmosClientOptions!.endpoint,
-        this.cosmosDbStorageOptions.databaseId,
-        this.cosmosDbStorageOptions.containerId,
-      ])
-      const initialization = await _doOnce.waitFor(
-        dbAndContainerKey,
-        () => {
-          if (!this.client) {
-            this.client = new CosmosClient(this.cosmosDbStorageOptions.cosmosClientOptions!)
-          }
-          return this.getOrCreateContainer()
-        }
-      )
-      this.container = initialization.container
-      this.compatibilityModePartitionKey = initialization.compatibilityModePartitionKey
+    if (this.container) {
+      return
     }
+
+    // Containers retain their authenticated client. Share initialization only within this instance.
+    if (!this.initializationPromise) {
+      this.initializationPromise = Promise.resolve().then(async () => {
+        if (!this.client) {
+          this.client = new CosmosClient(this.cosmosDbStorageOptions.cosmosClientOptions!)
+        }
+        const initialization = await this.getOrCreateContainer()
+        this.compatibilityModePartitionKey = initialization.compatibilityModePartitionKey
+        this.container = initialization.container
+      }).catch((err: unknown) => {
+        this.initializationPromise = undefined
+        throw err
+      })
+    }
+
+    await this.initializationPromise
   }
 
   private async getOrCreateContainer (): Promise<ContainerInitialization> {
@@ -243,6 +185,12 @@ class CosmosDbPartitionedStorageInternals {
     let compatibilityModePartitionKey = false
 
     try {
+      const clientOptions = this.cosmosDbStorageOptions.cosmosClientOptions!
+      if (clientOptions.aadCredentials && !clientOptions.key && !clientOptions.tokenProvider) {
+        return await this.getExistingContainer()
+      }
+
+      // Keep provisioning behavior for existing key/token-provider and mixed configurations.
       const { database } = await this.client.databases.createIfNotExists({
         id: this.cosmosDbStorageOptions.databaseId
       })
@@ -310,6 +258,41 @@ class CosmosDbPartitionedStorageInternals {
         }
       )
     }
+  }
+
+  private async getExistingContainer (): Promise<ContainerInitialization> {
+    // A container-scoped data role cannot read the database or provision resources.
+    const container = this.client
+      .database(this.cosmosDbStorageOptions.databaseId)
+      .container(this.cosmosDbStorageOptions.containerId)
+
+    let paths: string[] | undefined
+    try {
+      const response = await container.read()
+      paths = response.resource?.partitionKey?.paths
+    } catch (err: any) {
+      if (isNotFoundError(err)) {
+        throw ExceptionHelper.generateException(Error, Errors.ExistingContainerNotFound, err, {
+          databaseId: this.cosmosDbStorageOptions.databaseId,
+          containerId: this.cosmosDbStorageOptions.containerId,
+        })
+      }
+      throw err
+    }
+
+    if (paths?.length === 1 && paths[0] === DocumentStoreItem.partitionKeyPath) {
+      return { container, compatibilityModePartitionKey: false }
+    }
+
+    const isLegacyPartitionKey = paths === undefined || (paths.length === 1 && paths[0] === '/_partitionKey')
+    if (this.cosmosDbStorageOptions.compatibilityMode && isLegacyPartitionKey) {
+      return { container, compatibilityModePartitionKey: true }
+    }
+
+    throw ExceptionHelper.generateException(Error, Errors.UnsupportedCustomPartitionKeyPath, undefined, {
+      containerId: this.cosmosDbStorageOptions.containerId,
+      partitionKeyPath: paths?.join(', ') || '(none)',
+    })
   }
 
   /**
