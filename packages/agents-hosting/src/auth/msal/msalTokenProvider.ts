@@ -37,8 +37,14 @@ export class MsalTokenProvider implements AuthProvider {
   private static readonly _agenticTokenCache = new MemoryCache<string>()
   private static readonly _confidentialClients = new Map<string, ConfidentialClientApplication>()
   private static readonly _maxConfidentialClients = 100
+  /** Authentication settings used by overloads that do not accept an explicit configuration. */
   public readonly connectionSettings?: AuthConfiguration
 
+  /**
+   * Creates an MSAL token provider.
+   *
+   * @param connectionSettings - Default authentication settings for token acquisition.
+   */
   constructor (connectionSettings?: AuthConfiguration) {
     this.connectionSettings = connectionSettings
   }
@@ -281,6 +287,13 @@ export class MsalTokenProvider implements AuthProvider {
    * @returns A promise that resolves to the access token.
    */
   public async getAccessToken (authConfig: AuthConfiguration, scope: string): Promise<string>
+  /**
+   * Gets an access token using explicit or provider-level settings.
+   *
+   * @param authConfigOrScope - Authentication configuration, or the scope when using provider settings.
+   * @param scope - Scope used with an explicit authentication configuration.
+   * @returns The access token.
+   */
   public async getAccessToken (authConfigOrScope: AuthConfiguration | string, scope?: string): Promise<string> {
     return trace(AuthenticationTraceDefinitions.getAccessToken, async ({ record }) => {
       let authConfig: AuthConfiguration
@@ -368,8 +381,31 @@ export class MsalTokenProvider implements AuthProvider {
     })
   }
 
+  /**
+   * Acquires a delegated token using this provider's connection settings.
+   *
+   * @param scopes - Scopes requested for the delegated token.
+   * @param oboAssertion - User assertion exchanged for the token.
+   * @returns The delegated access token.
+   */
   public async acquireTokenOnBehalfOf (scopes: string[], oboAssertion: string): Promise<string>
+  /**
+   * Acquires a delegated token using explicit authentication settings.
+   *
+   * @param authConfig - Authentication configuration.
+   * @param scopes - Scopes requested for the delegated token.
+   * @param oboAssertion - User assertion exchanged for the token.
+   * @returns The delegated access token.
+   */
   public async acquireTokenOnBehalfOf (authConfig: AuthConfiguration, scopes: string[], oboAssertion: string): Promise<string>
+  /**
+   * Acquires a delegated token using explicit or provider-level settings.
+   *
+   * @param authConfigOrScopes - Authentication configuration, or requested scopes when using provider settings.
+   * @param scopesOrOboAssertion - Requested scopes or the user assertion, depending on the overload.
+   * @param oboAssertion - User assertion used with explicit authentication settings.
+   * @returns The delegated access token.
+   */
   public async acquireTokenOnBehalfOf (
     authConfigOrScopes: AuthConfiguration | string[],
     scopesOrOboAssertion?: string[] | string,
@@ -411,6 +447,13 @@ export class MsalTokenProvider implements AuthProvider {
     })
   }
 
+  /**
+   * Gets a federated token for an agent application instance.
+   *
+   * @param tenantId - Microsoft Entra tenant ID.
+   * @param agentAppInstanceId - Agent application instance ID.
+   * @returns The agent instance token.
+   */
   public async getAgenticInstanceToken (tenantId: string, agentAppInstanceId: string): Promise<string> {
     return trace(AuthenticationTraceDefinitions.getAgenticInstanceToken, async ({ record }) => {
       logger.debug('getAgenticInstanceToken tenantId=%s agentAppInstanceId=%s', tenantId, agentAppInstanceId)
@@ -566,6 +609,15 @@ export class MsalTokenProvider implements AuthProvider {
     return token.access_token
   }
 
+  /**
+   * Gets a delegated token for an agentic user.
+   *
+   * @param tenantId - Microsoft Entra tenant ID.
+   * @param agentAppInstanceId - Agent application instance ID.
+   * @param agenticUserId - ID of the user represented by the token.
+   * @param scopes - Scopes requested for the token.
+   * @returns The agentic user token.
+   */
   public async getAgenticUserToken (tenantId: string, agentAppInstanceId: string, agenticUserId: string, scopes: string[]): Promise<string> {
     return trace(AuthenticationTraceDefinitions.getAgenticUserToken, async ({ record }) => {
       logger.debug('getAgenticUserToken tenantId=%s agentAppInstanceId=%s scopes=%o', tenantId, agentAppInstanceId, scopes)
@@ -597,6 +649,13 @@ export class MsalTokenProvider implements AuthProvider {
     })
   }
 
+  /**
+   * Gets the application token used to authenticate an agent application instance.
+   *
+   * @param tenantId - Microsoft Entra tenant ID.
+   * @param agentAppInstanceId - Agent application instance ID.
+   * @returns The agentic application token.
+   */
   public async getAgenticApplicationToken (tenantId: string, agentAppInstanceId: string): Promise<string> {
     if (!this.connectionSettings?.clientId) {
       throw ExceptionHelper.generateException(Error, Errors.ConnectionSettingsRequiredForGetAgenticApplicationToken)

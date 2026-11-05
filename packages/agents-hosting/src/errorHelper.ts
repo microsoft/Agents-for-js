@@ -3,6 +3,7 @@
 
 import { AgentErrorDefinition } from '@microsoft/agents-activity'
 
+/** Error definitions used by the hosting package. */
 export const Errors: { [key: string]: AgentErrorDefinition } = {
   // ============================================================================
   // TurnContext and Activity Errors (-120000 to -120090)

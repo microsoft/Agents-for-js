@@ -220,6 +220,6 @@
   ],
   "sourceReview": {
     "outcome": "no-usage-metadata-change",
-    "reason": "Reviewed the ESLint formatting changes in src/messageExtensions/messageExtension.ts and src/taskModules/taskModule.ts: single-line guard clauses now use multiline blocks with braces. Conditions, return values, Teams API imports, model validation, and public exposure are unchanged, so the existing usage metadata remains accurate."
+    "reason": "Reviewed documentation and type-only exports for the 22 callback aliases in channels, config, fileConsents, meetings, messageExtensions, messages, taskModules, and teams. Their signatures and Teams API imports are unchanged; the upstream models were already publicly exposed through registration methods. No consumed members, model validation, or request/response behavior changed, so the existing usage metadata remains accurate."
   }
 }

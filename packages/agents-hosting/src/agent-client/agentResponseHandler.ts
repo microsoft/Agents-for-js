@@ -24,6 +24,13 @@ import { AGENT_RESPONSE_ROUTE_PATH, createAgentResponseHandler } from './createA
  * `post(path, handler)` method structurally matches satisfies it.
  */
 export interface WebApp {
+  /**
+   * Registers a handler for HTTP POST requests at the specified path.
+   *
+   * @param path - Route path to register.
+   * @param handler - Request handler invoked for matching requests.
+   * @returns A framework-specific registration result.
+   */
   post (
     path: string,
     handler: (req: any, res: any) => unknown | Promise<unknown>

@@ -9,8 +9,28 @@ import { TeamsTurnContext } from '../teamsTurnContext'
 import type { ReadReceiptInfo } from '../models/readReceiptInfo'
 import { createTeamsRouteHandler, TeamsRouteHandler } from '../teamsRouteHandler'
 
-type ExecuteActionRouteHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, query: O365ConnectorCardActionQuery) => Promise<void>
-type ReadReceiptHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, data: ReadReceiptInfo) => Promise<void>
+/**
+ * Handles Office 365 connector card actions registered with {@link Message.onExecuteAction}.
+ *
+ * @typeParam TState - The application's turn state type.
+ * @param context - The Teams turn context for the execute action invoke.
+ * @param state - The current application turn state.
+ * @param query - The connector card action value, or an empty object when no value is supplied.
+ * @returns A promise that resolves after processing. The extension then acknowledges the invoke
+ * without a response body.
+ */
+export type ExecuteActionRouteHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, query: O365ConnectorCardActionQuery) => Promise<void>
+
+/**
+ * Handles read receipt events registered with {@link Message.onReadReceipt}.
+ *
+ * @typeParam TState - The application's turn state type.
+ * @param context - The Teams turn context for the read receipt event.
+ * @param state - The current application turn state.
+ * @param data - Read receipt information from the event's activity value.
+ * @returns A promise that resolves when read receipt processing is complete.
+ */
+export type ReadReceiptHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, data: ReadReceiptInfo) => Promise<void>
 
 function equalsIgnoreCase (actual: unknown, expected: string): boolean {
   return typeof actual === 'string' && actual.toLowerCase() === expected.toLowerCase()

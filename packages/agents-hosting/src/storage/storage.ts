@@ -111,9 +111,13 @@ export interface Storage {
  * available when `status` is {@link StorageOperationStatus.Succeeded}.
  */
 export interface StorageReadResult<T extends object = Record<string, unknown>> {
+  /** The requested storage key. */
   key: string;
+  /** The outcome of the read. */
   status: StorageOperationStatus;
+  /** The stored value when the read succeeds. */
   value?: T;
+  /** The stored version when available. */
   version?: string;
 }
 
@@ -121,8 +125,11 @@ export interface StorageReadResult<T extends object = Record<string, unknown>> {
  * The result of a version 2 storage write operation.
  */
 export interface StorageWriteResult {
+  /** The supplied storage key. */
   key: string;
+  /** The outcome of the write. */
   status: StorageOperationStatus;
+  /** The resulting or current storage version when available. */
   version?: string;
 }
 
@@ -130,8 +137,11 @@ export interface StorageWriteResult {
  * The result of a version 2 storage delete operation.
  */
 export interface StorageDeleteResult {
+  /** The supplied storage key. */
   key: string;
+  /** The outcome of the delete. */
   status: StorageOperationStatus;
+  /** The deleted or current storage version when available. */
   version?: string;
 }
 
@@ -146,16 +156,23 @@ export type StorageDeleteResults = Record<string, StorageDeleteResult>
 
 /** The outcome of one version 2 storage operation. */
 export enum StorageOperationStatus {
+  /** The operation completed successfully. */
   Succeeded = 'succeeded',
+  /** No item exists for the key. */
   NotFound = 'notFound',
+  /** A create-only operation found an existing item. */
   Conflict = 'conflict',
+  /** The expected version did not match the current version. */
   ConditionNotMet = 'conditionNotMet',
 }
 
 /** The write mode for a version 2 storage operation. */
 export enum StorageWriteMode {
+  /** Creates a new item or replaces an existing item. */
   Upsert = 'upsert',
+  /** Creates an item only when the key does not exist. */
   CreateOnly = 'createOnly',
+  /** Replaces an item only when the key exists. */
   Replace = 'replace',
 }
 
@@ -168,12 +185,15 @@ export interface StorageWriteOptions {
    * duration has elapsed. Values must be finite numbers greater than zero.
    */
   ttl?: number;
+  /** The condition controlling whether existing items may be written. */
   mode?: StorageWriteMode;
+  /** The storage version that must match before writing. */
   expectedVersion?: string;
 }
 
 /** Options applied to every item in a version 2 delete operation. */
 export interface StorageDeleteOptions {
+  /** The storage version that must match before deleting. */
   expectedVersion?: string;
 }
 

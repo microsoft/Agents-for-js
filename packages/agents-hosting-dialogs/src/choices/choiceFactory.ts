@@ -47,6 +47,9 @@ export interface ChoiceFactoryOptions {
  *
  */
 export class ChoiceFactory {
+  /**
+   * Maximum choice title length supported when rendering actions.
+   */
   static readonly MAX_ACTION_TITLE_LENGTH = 20
 
   /**

@@ -16,7 +16,16 @@ const CHANNEL_UNSHARED_EVENT = 'channelUnshared'
 const CHANNEL_MEMBER_ADDED_EVENT = 'channelMemberAdded'
 const CHANNEL_MEMBER_REMOVED_EVENT = 'channelMemberRemoved'
 
-type ChannelUpdateHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, data: ChannelInfo) => Promise<void>
+/**
+ * Handles channel lifecycle or membership events registered with {@link TeamsChannel}.
+ *
+ * @typeParam TState - The application's turn state type.
+ * @param context - The Teams turn context; `activity.channelData.eventType` identifies the event.
+ * @param state - The current application turn state.
+ * @param data - Channel information from the activity's Teams channel data.
+ * @returns A promise that resolves when channel event processing is complete.
+ */
+export type ChannelUpdateHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, data: ChannelInfo) => Promise<void>
 
 function isChannelUpdateEvent (context: TurnContext, eventType?: string): boolean {
   const channelData = parseTeamsChannelData(context.activity.channelData)

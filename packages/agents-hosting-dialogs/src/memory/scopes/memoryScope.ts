@@ -22,7 +22,14 @@ export abstract class MemoryScope {
     this.name = name
   }
 
+  /**
+   * Name used to address this memory scope.
+   */
   readonly name: string
+
+  /**
+   * Indicates whether this scope is included in memory snapshots.
+   */
   readonly includeInSnapshot: boolean
 
   /**

@@ -8,6 +8,7 @@ import { AuthConfiguration } from './authConfiguration'
 import { AuthProvider } from './authProvider'
 import { JwtPayload } from 'jsonwebtoken'
 
+/** Provides configured authentication connections and token providers. */
 export interface Connections {
   /**
  * Get the OAuth connection for the agent.
