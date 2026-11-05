@@ -33,12 +33,74 @@ export const qualityChecks = [
   }
 ]
 
+/** Add external verification without adding a prerequisite to the build graph.
+ * @param {{ checkLinks?: boolean, strictLinks?: boolean }} [options]
+ * @returns {QualityCheck[]}
+ */
+export function selectQualityChecks (options = {}) {
+  if (options.strictLinks && !options.checkLinks) {
+    throw new Error('--strict-links requires --check-links.')
+  }
+  const checks = qualityChecks.map(check => check.id === 'doctor' && !options.checkLinks
+    ? {
+        ...check,
+        note: 'external links: off (enable: --check-links)',
+      }
+    : check)
+  if (options.checkLinks) {
+    const args = ['--check-links']
+    if (options.strictLinks) {
+      args.push('--strict-links')
+    }
+    checks.push({
+      id: 'documentation-links',
+      parentId: 'doctor',
+      label: 'Documentation links',
+      script: 'repo:doctor',
+      args,
+      // Keep the result counts and retained diagnostic-log path visible after success.
+      showOutput: true,
+      ...(options.strictLinks ? { note: 'strict: unverified URLs fail' } : {}),
+    })
+  }
+  return checks
+}
+
+/** @param {string[]} argv */
+export function parseArguments (argv) {
+  const options = { verbose: false, checkLinks: false, strictLinks: false, help: false }
+  for (const argument of argv) {
+    switch (argument) {
+      case '--verbose':
+        options.verbose = true
+        break
+      case '--check-links':
+        options.checkLinks = true
+        break
+      case '--strict-links':
+        options.strictLinks = true
+        break
+      case '--help':
+      case '-h':
+        options.help = true
+        break
+      default:
+        throw new Error(`Unknown argument: ${argument}`)
+    }
+  }
+  if (!options.help && options.strictLinks && !options.checkLinks) {
+    throw new Error('--strict-links requires --check-links.')
+  }
+  return options
+}
+
 const terminalStates = new Set(['passed', 'failed', 'skipped'])
 const expectedDurationMs = {
   build: 30000,
   compat: 20000,
   dependencies: 30000,
   doctor: 5000,
+  'documentation-links': 30000,
   lint: 20000,
   samples: 10000,
   test: 30000
@@ -224,12 +286,12 @@ export function createNpmCheckRunner ({ directory, cwd = root, spawnProcess = sp
 
       const logPath = path.join(directory, `${check.id}.log`)
       const log = createWriteStream(logPath, { flags: 'w' })
-      const [command, args] = npmInvocation(check.script)
+      const [command, args] = npmInvocation(check.script, check.args)
 
       const execution = await new Promise(resolve => {
         const child = spawnProcess(command, args, {
           cwd,
-          env: { ...process.env, ...(check.id === 'compat' ? { COMPAT_SKIP_BUILD: '1' } : {}) },
+          env: { ...process.env, ...(['doctor', 'documentation-links'].includes(check.id) ? { QUALITY_LOG_DIR: path.join(directory, check.id) } : {}), ...(check.id === 'compat' ? { COMPAT_SKIP_BUILD: '1' } : {}) },
           shell: !process.env.npm_execpath && process.platform === 'win32',
           stdio: ['ignore', 'pipe', 'pipe'],
           windowsHide: true,
@@ -321,6 +383,31 @@ export function createNpmCheckRunner ({ directory, cwd = root, spawnProcess = sp
   }
 }
 
+/** Render the same arguments that the npm runner forwards to the script.
+ * @param {QualityCheck} check
+ */
+function formatCommand (check) {
+  const argumentsText = check.args?.length ? ` -- ${check.args.join(' ')}` : ''
+  return `npm run ${check.script}${argumentsText}`
+}
+
+function formatNote (check, status) {
+  return check.note ? status(`  ${check.note}`, 'dim') : ''
+}
+
+/** Parent rows group related flags visually; they do not add scheduling dependencies. */
+function displayRows (checks, parentId, depth = 0) {
+  return checks.filter(check => check.parentId === parentId).flatMap(check => [
+    { check, state: 'queued', depth },
+    ...displayRows(checks, check.id, depth + 1),
+  ])
+}
+
+function formatCheckLabel (check, depth = check.parentId ? 1 : 0) {
+  const prefix = depth > 0 ? `${'  '.repeat(depth)}↳ ` : ''
+  return `${prefix}${check.label}`.padEnd(26)
+}
+
 /** @param {{ write?: (line: string) => void, color?: boolean }} [options] */
 export function createReporter (options = {}) {
   const stream = options.stream ?? process.stdout
@@ -341,14 +428,14 @@ export function createReporter (options = {}) {
     },
     started: check =>
       write(
-        `${status('RUN ', 'cyan')}  ${check.label.padEnd(columns.label)} npm run ${check.script}`
+        `${status('RUN ', 'cyan')}  ${formatCheckLabel(check).padEnd(columns.label)} ${formatCommand(check)}${formatNote(check, status)}`
       ),
     finished: check =>
       write(
-        `${status(check.state === 'passed' ? 'PASS' : 'FAIL', check.state === 'passed' ? 'green' : 'red')}  ${check.label.padEnd(columns.label)} ${`npm run ${check.script}`.padEnd(columns.command)}  ${status(formatDuration(check.durationMs), 'dim')}`
+        `${status(check.state === 'passed' ? 'PASS' : 'FAIL', check.state === 'passed' ? 'green' : 'red')}  ${formatCheckLabel(check).padEnd(columns.label)} ${formatCommand(check).padEnd(columns.command)}  ${status(formatDuration(check.durationMs), 'dim')}${formatNote(check, status)}`
       ),
     skipped: check =>
-      write(`${status('SKIP', 'yellow')}  ${check.label.padEnd(columns.label)} ${check.reason}`),
+      write(`${status('SKIP', 'yellow')}  ${formatCheckLabel(check).padEnd(columns.label)} ${check.reason}${formatNote(check, status)}`),
     summary: checks => {
       const counts = checks.reduce(
         (summary, check) => ({ ...summary, [check.state]: (summary[check.state] ?? 0) + 1 }),
@@ -371,7 +458,7 @@ export function createReporter (options = {}) {
       write(
         `${status(`FAIL: ${check.label}`, 'red')} (${check.execution?.signal ? `signal ${check.execution.signal}` : `exit ${check.execution?.exitCode ?? 1}`})`
       )
-      write(`Command: npm run ${check.script}`)
+      write(`Command: ${formatCommand(check)}`)
 
       if (check.execution?.error) {
         write(String(check.execution.error.stack ?? check.execution.error))
@@ -422,7 +509,8 @@ function writeCompatNotice (checks, write, status) {
 }
 
 /**
- * Print captured command output when explicitly requested. GitHub Actions folds
+ * Print captured output when requested or when a check must expose warnings even
+ * after success. GitHub Actions folds
  * each check into an expandable log group; local verbose mode keeps output
  * separate from the concise progress report.
  *
@@ -434,14 +522,14 @@ export function reportCheckOutput (check, output, options = {}) {
   const githubActions = options.githubActions ?? false
   const verbose = options.verbose ?? false
 
-  if (!githubActions && !verbose) {
+  if (!githubActions && !verbose && !check.showOutput) {
     return
   }
 
   const stream = options.stream ?? process.stdout
 
   if (githubActions) {
-    stream.write(`::group::${check.label} — npm run ${check.script}\n`)
+    stream.write(`::group::${check.label} — ${formatCommand(check)}\n`)
     const safeOutput = sanitizeGitHubActionsLog(output) || '(No command output.)\n'
 
     stream.write(safeOutput)
@@ -455,7 +543,7 @@ export function reportCheckOutput (check, output, options = {}) {
     return
   }
 
-  stream.write(`\nOutput: ${check.label} (npm run ${check.script})\n`)
+  stream.write(`\nOutput: ${check.label} (${formatCommand(check)})\n`)
   stream.write(output || '(No command output.)\n')
 
   if (!output.endsWith('\n')) {
@@ -519,7 +607,7 @@ function createLiveReporter (options) {
     }
 
     const distance = entries.size - row
-    const line = formatLiveLine(entry, now(), status, columns)
+    const line = fitLiveLine(formatLiveLine(entry, now(), status, columns), stream.columns)
     const padding = ' '.repeat(Math.max(0, (entry.visibleLength ?? 0) - visibleLength(line)))
 
     entry.visibleLength = visibleLength(line)
@@ -556,15 +644,13 @@ function createLiveReporter (options) {
   return {
     queued: checks => {
       columns = columnWidths(checks)
-
-      for (const check of checks) {
-        entries.set(check.id, { check, state: 'queued' })
+      for (const entry of displayRows(checks)) {
+        entries.set(entry.check.id, entry)
       }
-
       hideCursor()
 
       for (const entry of entries.values()) {
-        const line = formatLiveLine(entry, now(), status, columns)
+        const line = fitLiveLine(formatLiveLine(entry, now(), status, columns), stream.columns)
 
         entry.visibleLength = visibleLength(line)
         write(line)
@@ -610,7 +696,7 @@ function createLiveReporter (options) {
       write(
         `${status(`FAIL: ${check.label}`, 'red')} (${check.execution?.signal ? `signal ${check.execution.signal}` : `exit ${check.execution?.exitCode ?? 1}`})`
       )
-      write(`Command: npm run ${check.script}`)
+      write(`Command: ${formatCommand(check)}`)
 
       if (check.execution?.error) {
         write(String(check.execution.error.stack ?? check.execution.error))
@@ -628,37 +714,42 @@ function createLiveReporter (options) {
   }
 }
 
+function fitLiveLine (line, width) {
+  if (!width || visibleLength(line) < width) {
+    return line
+  }
+  return line.replace(ansiEscapePattern, '').slice(0, Math.max(0, width - 2)) + '…'
+}
+
 function columnWidths (checks) {
   return {
-    label: Math.max(22, ...checks.map(check => check.label.length)),
-    command: Math.max(0, ...checks.map(check => `npm run ${check.script}`.length))
+    label: Math.max(22, ...checks.map(check => formatCheckLabel(check).length)),
+    command: Math.max(0, ...checks.map(check => formatCommand(check).length))
   }
 }
 
 function formatLiveLine (entry, currentTime, status, columns) {
   const { check, state } = entry
-  const label = check.label.padEnd(columns.label)
-  const command = `npm run ${check.script}`
-
+  const label = formatCheckLabel(check, entry.depth).padEnd(columns.label)
+  const command = formatCommand(check)
+  const note = formatNote(check, status)
   if (state === 'queued') {
-    return `${status('WAIT', 'yellow')}            ${label} ${command}`
+    return `${status('WAIT', 'yellow')}            ${label} ${command}${note}`
   }
-
   if (state === 'skipped') {
-    return `${status('SKIP', 'yellow')}            ${label} ${check.reason}`
+    return `${status('SKIP', 'yellow')}            ${label} ${check.reason}${note}`
   }
-
   if (state === 'running') {
     const elapsed = currentTime - check.startedAt
     const percent = estimateProgress(check.id, elapsed)
     const spinner = ['◐', '◓', '◑', '◒'][Math.floor(currentTime / 125) % 4]
 
-    return `${status('RUN ', 'cyan')}  ${spinner} ~${String(percent).padStart(2)}%  ${label} ${command.padEnd(columns.command)}  ${status(formatDuration(elapsed), 'dim')}`
+    return `${status('RUN ', 'cyan')}  ${spinner} ~${String(percent).padStart(2)}%  ${label} ${command.padEnd(columns.command)}  ${status(formatDuration(elapsed), 'dim')}${note}`
   }
 
   const passed = state === 'passed'
 
-  return `${status(passed ? 'PASS' : 'FAIL', passed ? 'green' : 'red')}  ${passed ? '✓' : '✗'} 100%  ${label} ${command.padEnd(columns.command)}  ${status(formatDuration(check.durationMs), 'dim')}`
+  return `${status(passed ? 'PASS' : 'FAIL', passed ? 'green' : 'red')}  ${passed ? '✓' : '✗'} 100%  ${label} ${command.padEnd(columns.command)}  ${status(formatDuration(check.durationMs), 'dim')}${note}`
 }
 
 function estimateProgress (checkId, elapsedMs) {
@@ -723,6 +814,18 @@ function validateChecks (checks) {
   }
 
   for (const check of checks) {
+    const ancestors = new Set([check.id])
+    let parentId = check.parentId
+    while (parentId) {
+      if (!ids.has(parentId)) {
+        throw new Error(`Unknown display parent "${parentId}" for quality check "${check.id}".`)
+      }
+      if (ancestors.has(parentId)) {
+        throw new Error(`Display parent cycle for quality check "${check.id}".`)
+      }
+      ancestors.add(parentId)
+      parentId = checks.find(parent => parent.id === parentId).parentId
+    }
     for (const dependency of [...(check.after ?? []), ...(check.requiresSuccess ?? [])]) {
       if (!ids.has(dependency)) {
         throw new Error(`Unknown dependency "${dependency}" for quality check "${check.id}".`)
@@ -740,13 +843,21 @@ function validateChecks (checks) {
 }
 
 async function runCli () {
-  const verbose = process.argv.slice(2).includes('--verbose')
+  const options = parseArguments(process.argv.slice(2))
+  if (options.help) {
+    console.log('Usage: npm run quality -- [--verbose] [--check-links [--strict-links]]')
+    console.log('  --check-links  Run documentation link validation alongside the offline quality checks.')
+    console.log('  --strict-links  Fail on unverified external URLs; requires --check-links.')
+    console.log('  --verbose  Print the captured output of every check.')
+    return
+  }
+  const selectedChecks = selectQualityChecks(options)
   const logDirectory = path.resolve(root, process.env.QUALITY_LOG_DIR || 'scripts/logs/quality')
 
   await mkdir(logDirectory, { recursive: true })
   // Clear owned logs up front so skipped checks cannot leave results from an earlier run.
   await Promise.all(
-    qualityChecks.map(check => rm(path.join(logDirectory, `${check.id}.log`), { force: true }))
+    selectQualityChecks({ checkLinks: true }).map(check => rm(path.join(logDirectory, `${check.id}.log`), { force: true }))
   )
   const compatDirectory = path.join(root, 'compat/generated')
 
@@ -769,7 +880,7 @@ async function runCli () {
   process.once('SIGTERM', interrupt)
 
   try {
-    const checks = await runQualityChecks(qualityChecks, {
+    const checks = await runQualityChecks(selectedChecks, {
       isCancelled: () => interrupted,
       runCheck: runner.run,
       reporter
@@ -798,7 +909,7 @@ async function runCli () {
     for (const check of checks) {
       reportCheckOutput(check, outputs.get(check.id), {
         githubActions,
-        verbose
+        verbose: options.verbose,
       })
     }
 
@@ -815,11 +926,16 @@ async function runCli () {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  await runCli()
+  try {
+    await runCli()
+  } catch (error) {
+    console.error(`Quality could not complete: ${error.message}`)
+    process.exitCode = 2
+  }
 }
 
 /**
- * @typedef {{ id: string, label: string, script: string, after?: string[], requiresSuccess?: string[] }} QualityCheck
+ * @typedef {{ id: string, label: string, script: string, args?: string[], note?: string, parentId?: string, showOutput?: boolean, after?: string[], requiresSuccess?: string[] }} QualityCheck
  * @typedef {{ exitCode: number, logPath?: string, signal?: NodeJS.Signals | null, error?: unknown, compatSummary?: { toReview: number, baselines: number } }} CheckExecution
  * @typedef {{ started: (check: unknown) => void, finished: (check: unknown) => void, skipped: (check: unknown) => void, summary: (checks: unknown[]) => void, failure: (check: unknown, output: string) => void }} QualityReporter
  */

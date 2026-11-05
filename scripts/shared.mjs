@@ -3,13 +3,16 @@ import path from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 
-/** @param {string} script */
-export function npmInvocation (script) {
-  if (process.env.npm_execpath) {
-    return [process.execPath, [process.env.npm_execpath, 'run', '--silent', script]]
+/** @param {string} script @param {string[]} [scriptArguments] */
+export function npmInvocation (script, scriptArguments = []) {
+  const args = ['run', '--silent', script]
+  if (scriptArguments.length > 0) {
+    args.push('--', ...scriptArguments)
   }
-
-  return [process.platform === 'win32' ? 'npm.cmd' : 'npm', ['run', '--silent', script]]
+  if (process.env.npm_execpath) {
+    return [process.execPath, [process.env.npm_execpath, ...args]]
+  }
+  return [process.platform === 'win32' ? 'npm.cmd' : 'npm', args]
 }
 
 // Baseline inventory and package discovery shared by compat and repository doctor.

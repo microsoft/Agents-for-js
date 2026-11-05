@@ -17,7 +17,7 @@ This is a base sample that responds in the Teams demo env for Agentic AI.
   - Test in the Kairo Teams web client
 
 1. Configuring the authentication connection in the Agent settings
-   > These instructions are for **SingleTenant, Client Secret**. For other auth type configuration, see [DotNet MSAL Authentication](https://github.com/microsoft/Agents/blob/main/docs/HowTo/MSALAuthConfigurationOptions.md).
+   > These instructions are for **SingleTenant, Client Secret**. For other auth type configuration, see [Agent authentication configuration](https://learn.microsoft.com/microsoft-365/agents-sdk/azure-bot-authentication-for-javascript).
    1. Rename env.TEMPLATE as .env.
 
    1. Find the `connections` section,  it should appear similar to this:

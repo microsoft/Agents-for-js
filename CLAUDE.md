@@ -102,6 +102,8 @@ npm run play
 
 Run `npm run repo:doctor` after structural, package, documentation, build-reference, dependency, API-baseline, test-agent, Docker, or runtime-configuration changes. Every diagnostic includes a rule ID and a concrete fix instruction.
 
+The default doctor and quality suite are network-free. Use `npm run quality -- --check-links` to add external validation alongside the quality checks; compilation still depends only on the offline doctor. Use `npm run repo:doctor -- --check-links` to verify external documentation links, or add `--strict-links` to fail on unverified results as well as confirmed broken links. Local checks include exact filename casing and Markdown anchors. External checks distinguish verified, broken, unverified, and skipped URLs; narrowly justified exceptions belong in the optional root `repo-doctor.links.json` file with a reason and either an expiry date or `permanent: true`.
+
 Compatibility checks use bounded parallel package workers and semantic declaration comparison. See `docs/API-COMPATIBILITY.md` before changing baseline handling or compatibility policy. `quality` supplies `COMPAT_SKIP_BUILD=1` after its build; standalone `compat` builds first. PR CI supplies `COMPAT_BASE` for historical findings in report.json; terminal findings and review counts compare against working baselines, so adopted changes are not flagged again.
 
 Do not use implicit npm lifecycle wrappers such as `prebuild`, `postbuild`, `pretest`, or `posttest`. `npm --ignore-scripts` skips these hooks, so required work must be explicit. Install-time hooks (`preinstall`, `install`, `postinstall`, and `prepare`) are prohibited. Put dependent work directly in the explicit command, for example `npm run build && node ...`.
@@ -261,8 +263,12 @@ Each package keeps its error definitions in a local `errorHelper.ts` (e.g. `pack
 
 The CI pipeline (`.github/workflows/ci.yml`) runs:
 1. npm ci (clean install)
-2. npm run quality (doctor, lint, dependency lint, build, tests, compatibility, and samples; logs are folded in GitHub Actions and retained as a seven-day `quality-logs` artifact)
+2. npm run quality -- --check-links (doctor, lint, dependency lint, build, tests, compatibility, samples, and external documentation links; logs are folded in GitHub Actions and retained as a seven-day `quality-logs` artifact)
 3. node scripts/set-version.mjs (version management)
+
+The quality runner adds an independent `documentation-links` check only when `--check-links` is supplied. It invokes `npm run repo:doctor -- --check-links` without adding a build prerequisite, and retains `documentation-links.log` in the shared seven-day `quality-logs` artifact. Successful link summaries and log paths remain visible. Unverified results are neutral by default, with detailed reasons in the retained log. `--strict-links` requires `--check-links` and makes those results errors.
+
+The quality report attaches a dimmed external-link note to the Repository doctor row, with the enabling flag when disabled. When enabled, Documentation links appears directly below Repository doctor as an indented child row. Strict mode is noted on the link-check row. The standalone doctor combines its ON/OFF status and opt-in command on one line, shows compact link totals, and puts the final result last. Routine skips and not-verified URLs are summarized as neutral counts. Each doctor CLI run overwrites `scripts/logs/repo-doctor/links.log` in the checked repository, or `links.log` directly under `QUALITY_LOG_DIR` when configured. The path and enabled request count are dimmed child lines beneath Links. Log-write failures exit 2; help and rule guides create no logs. Enabled reports include total HTTP request attempts across unique URLs, counting redirects, GET fallbacks, retries, and failed connection attempts; skipped and never-started URLs contribute zero. Help and rule guides do not print execution-mode notices or make requests.
 
 ## Node Version
 
