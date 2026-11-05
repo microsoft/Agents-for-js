@@ -31,5 +31,5 @@ export interface SemanticAction {
 export const semanticActionZodSchema = z.object({
   id: z.string().min(1),
   state: z.union([semanticActionStateTypesZodSchema, z.string().min(1)]),
-  entities: z.record(entityZodSchema)
+  entities: z.record(z.string(), entityZodSchema)
 })
