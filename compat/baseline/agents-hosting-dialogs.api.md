@@ -30,7 +30,7 @@ export class ActivityPrompt extends Dialog {
 // @public
 export abstract class AgentComponent {
     abstract configureServices(services: ServiceCollection, configuration: Configuration): void;
-    static z: z.ZodType<AgentComponent, z.ZodTypeDef, AgentComponent>;
+    static z: z.ZodCustom<AgentComponent, AgentComponent>;
 }
 
 // @public

@@ -145,13 +145,7 @@ export interface AdaptiveCardsSearchParams {
 export const adaptiveCardsSearchParamsZodSchema: z.ZodObject<{
     queryText: z.ZodString;
     dataset: z.ZodString;
-}, "strip", z.ZodTypeAny, {
-    queryText: string;
-    dataset: string;
-}, {
-    queryText: string;
-    dataset: string;
-}>;
+}, z.core.$strip>;
 
 // @public
 export const AGENT_RESPONSE_ROUTE_PATH = "/api/agentresponse/v3/conversations/:conversationId/activities/:activityId";
