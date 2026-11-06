@@ -14,7 +14,7 @@ import { CloudAdapter } from '../../../src/cloudAdapter'
 import { createStubInstance, SinonStub } from 'sinon'
 import { ConsoleTranscriptLogger } from '../../../src/transcript/consoleTranscriptLogger'
 import type { Connections } from '../../../src/auth/connections'
-import { MemoryStorageV2 } from '../../../src/storage'
+import { MemoryStorage, MemoryStorageV2 } from '../../../src/storage'
 
 class RecordingTestAdapter extends TestAdapter {
   public readonly sentActivities: Activity[] = []
@@ -102,6 +102,28 @@ describe('Application', () => {
     assert.equal(called, true)
     assert.equal(handled, true)
   })
+
+  for (const StorageProvider of [MemoryStorage, MemoryStorageV2]) {
+    for (const afterTurn of [undefined, true, false]) {
+      it(`persists consecutive message turns with ${StorageProvider.name} and afterTurn=${afterTurn}`, async () => {
+        const storage = new StorageProvider()
+        const localApp = new AgentApplication({ storage })
+        const counters: number[] = []
+        localApp.onActivity(ActivityTypes.Message, async (_context, state) => {
+          const counter = state.getValue<number>('conversation.counter') ?? 0
+          counters.push(counter)
+          state.setValue('conversation.counter', counter + 1)
+        })
+        if (afterTurn !== undefined) {
+          localApp.onTurn('afterTurn', async () => afterTurn)
+        }
+        for (let turn = 0; turn < 2; turn++) {
+          await localApp.runInternal(new TurnContext(testAdapter, createTestActivity()))
+        }
+        assert.deepEqual(counters, afterTurn === false ? [0, 0] : [0, 1])
+      })
+    }
+  }
 
   it('rejects a delayed turn when a faster turn saves the same V2 conversation state', async () => {
     const storage = new MemoryStorageV2()
