@@ -22,7 +22,7 @@ describe('Errors tests', () => {
     const error = Errors.MissingCosmosCredentials
 
     assert.strictEqual(error.code, -100002)
-    assert.strictEqual(error.description, 'Authentication credentials are required in cosmosClientOptions. Provide either a key (connection key) or tokenProvider (for token-based authentication).')
+    assert.strictEqual(error.description, 'Authentication credentials are required in cosmosClientOptions. Provide a key (connection key), tokenProvider (authorization token callback), or aadCredentials (Azure TokenCredential).')
     assert.strictEqual(error.helplink, undefined)
   })
 
@@ -31,10 +31,10 @@ describe('Errors tests', () => {
       val => val && typeof val === 'object' && 'code' in val && 'description' in val
     ) as AgentErrorDefinition[]
 
-    // All error codes should be negative and in the range -100000 to -100024
+    // All error codes should be negative and in the range -100000 to -100025
     errorDefinitions.forEach(errorDef => {
       assert.ok(errorDef.code < 0, `Error code ${errorDef.code} should be negative`)
-      assert.ok(errorDef.code >= -100024, `Error code ${errorDef.code} should be >= -100024`)
+      assert.ok(errorDef.code >= -100025, `Error code ${errorDef.code} should be >= -100025`)
       assert.ok(errorDef.code <= -100000, `Error code ${errorDef.code} should be <= -100000`)
     })
   })
