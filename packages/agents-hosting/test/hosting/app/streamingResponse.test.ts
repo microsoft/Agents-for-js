@@ -255,6 +255,216 @@ describe('StreamingResponse', () => {
     assert.doesNotThrow(() => streamingResponse.setSensitivityLabel(sensitivityLabel))
   })
 
+  it('should preserve a label without AI labeling in streaming responses', async () => {
+    mockContext = createContext({ channelId: 'msteams' })
+    streamingResponse = new StreamingResponse(mockContext)
+    const label: SensitivityUsageInfo = {
+      type: 'https://schema.org/Message', '@type': 'CreativeWork', '@id': 'label-id', name: 'Confidential'
+    }
+    streamingResponse.setSensitivityLabel(label)
+    streamingResponse.queueTextChunk('Labeled response')
+    const ending = streamingResponse.endStream()
+    await clock.tickAsync(3000)
+
+    assert.equal(await ending, StreamingResponseResult.Success)
+    const final = mockContext.sendActivity.lastCall.args[0] as Activity
+    const entities = final.entities!.filter(entity => entity.type === 'https://schema.org/Message')
+    assert.equal(entities.length, 1)
+    assert.deepEqual(entities[0].usageInfo, label)
+    assert.equal(entities[0].additionalType, undefined)
+  })
+
+  it('should preserve a label without AI labeling in expectReplies responses', async () => {
+    mockContext = createContext({ channelId: 'msteams', deliveryMode: 'expectReplies' })
+    streamingResponse = new StreamingResponse(mockContext)
+    const label: SensitivityUsageInfo = {
+      type: 'https://schema.org/Message', '@type': 'CreativeWork', '@id': 'label-id', name: 'Confidential'
+    }
+    streamingResponse.setSensitivityLabel(label)
+    streamingResponse.queueTextChunk('Labeled response')
+    const ending = streamingResponse.endStream()
+    await clock.tickAsync(3000)
+
+    assert.equal(await ending, StreamingResponseResult.Success)
+    const final = mockContext.sendActivity.lastCall.args[0] as Activity
+    const entities = final.entities!.filter(entity => entity.type === 'https://schema.org/Message')
+    assert.equal(entities.length, 1)
+    assert.deepEqual(entities[0].usageInfo, label)
+    assert.equal(entities[0].additionalType, undefined)
+  })
+
+  it('should merge final metadata without mutating existing entities or dropping cards and channel data', async () => {
+    const existing = Activity.fromObject({
+      type: 'message',
+      text: 'Answer [1]',
+      channelData: { custom: true },
+      attachments: [{ contentType: 'application/vnd.microsoft.card.adaptive', content: { type: 'AdaptiveCard' } }],
+      entities: [{
+        type: 'https://schema.org/Message',
+        '@type': 'Message',
+        '@context': 'https://schema.org',
+        '@id': '',
+        additionalType: Object.freeze(['CustomContent', 'AIGeneratedContent']),
+        usageInfo: { '@id': 'existing-label' },
+        custom: 'preserved'
+      }]
+    })
+    streamingResponse.setFinalMessage(existing)
+    streamingResponse.addAttachment({ contentType: 'text/plain', content: 'extra' })
+    streamingResponse.setGeneratedByAILabel(true)
+    streamingResponse.setCitations([{ title: 'Source', content: 'Summary', url: 'https://example.com', filepath: null }])
+    const ending = streamingResponse.endStream()
+    await clock.tickAsync(1000)
+
+    assert.equal(await ending, StreamingResponseResult.Success)
+    const final = mockContext.sendActivity.lastCall.args[0] as Activity
+    const entities = final.entities!.filter(entity => entity.type === 'https://schema.org/Message')
+    assert.equal(entities.length, 1)
+    assert.deepEqual(entities[0].additionalType, ['CustomContent', 'AIGeneratedContent'])
+    assert.deepEqual(entities[0].usageInfo, { '@id': 'existing-label' })
+    assert.equal(entities[0].custom, 'preserved')
+    assert.equal(entities[0].citation.length, 1)
+    assert.equal(final.channelData.custom, true)
+    assert.equal(final.attachments!.length, 2)
+    assert.equal(existing.attachments!.length, 1)
+    assert.equal(existing.entities![0].citation, undefined)
+  })
+
+  it('should include final citations without claiming AI-generated content', async () => {
+    streamingResponse.setFinalMessage(Activity.fromObject({ type: 'message', text: 'Answer [1]' }))
+    streamingResponse.setCitations([{ title: 'Source', content: 'Summary', url: 'https://example.com', filepath: null }])
+    const ending = streamingResponse.endStream()
+    await clock.tickAsync(1000)
+
+    assert.equal(await ending, StreamingResponseResult.Success)
+    const final = mockContext.sendActivity.lastCall.args[0] as Activity
+    const entity = final.entities!.find(value => value.type === 'https://schema.org/Message')!
+    assert.equal(entity.citation.length, 1)
+    assert.equal(entity.additionalType, undefined)
+  })
+
+  it('should classify a rejected msteams intermediate send correctly', async () => {
+    mockContext = createContext({ channelId: 'msteams' })
+    mockContext.sendActivity.rejects(new Error('ContentStreamNotAllowed: rejected'))
+    streamingResponse = new StreamingResponse(mockContext)
+    streamingResponse.queueInformativeUpdate('Working')
+    await clock.tickAsync(1000)
+
+    const result = await streamingResponse.endStream()
+    assert.equal(result, StreamingResponseResult.Error)
+  })
+
+  it('should classify a rejected webchat intermediate send correctly', async () => {
+    mockContext = createContext({ channelId: 'webchat' })
+    mockContext.sendActivity.rejects(new Error('ContentStreamNotAllowed: rejected'))
+    streamingResponse = new StreamingResponse(mockContext)
+    streamingResponse.queueInformativeUpdate('Working')
+    await clock.tickAsync(1000)
+
+    const result = await streamingResponse.endStream()
+    assert.equal(result, StreamingResponseResult.UserCanceled)
+  })
+
+  it('should classify a rejected msteams:copilot intermediate send correctly', async () => {
+    mockContext = createContext({ channelId: 'msteams:copilot' })
+    mockContext.sendActivity.rejects(new Error('ContentStreamNotAllowed: rejected'))
+    streamingResponse = new StreamingResponse(mockContext)
+    streamingResponse.queueInformativeUpdate('Working')
+    await clock.tickAsync(1000)
+
+    const result = await streamingResponse.endStream()
+    assert.equal(result, StreamingResponseResult.UserCanceled)
+  })
+
+  it('should report a final send failure instead of success', async () => {
+    mockContext.sendActivity.rejects(new Error('Send failed'))
+    const ending = streamingResponse.endStream()
+    await clock.tickAsync(1000)
+    assert.equal(await ending, StreamingResponseResult.Error)
+  })
+
+  it('should preserve the composed final payload when timeout recovery succeeds', async () => {
+    mockContext = createContext({ channelId: 'msteams' })
+    mockContext.sendActivity.onSecondCall().rejects(
+      new Error('ContentStreamNotAllowed: Content stream finished due to exceeded streaming time.')
+    )
+    streamingResponse = new StreamingResponse(mockContext)
+    streamingResponse.queueInformativeUpdate('Working')
+    await clock.tickAsync(1000)
+    streamingResponse.setFinalMessage(Activity.fromObject({ type: 'message', text: 'Final [1]' }))
+    streamingResponse.addAttachment({ contentType: 'text/plain', content: 'card' })
+    streamingResponse.setSensitivityLabel({
+      type: 'https://schema.org/Message', '@type': 'CreativeWork', '@id': 'label-id', name: 'Confidential'
+    })
+    streamingResponse.setCitations([{ title: 'Source', content: 'Summary', url: 'https://example.com', filepath: null }])
+    const ending = streamingResponse.endStream()
+    await clock.tickAsync(1000)
+
+    assert.equal(await ending, StreamingResponseResult.Success)
+    sinon.assert.calledOnce(mockContext.updateActivity)
+    const final = mockContext.updateActivity.firstCall.args[0] as Activity
+    assert.equal(final.id, 'test-stream-id')
+    assert.equal(final.text, 'Final [1]')
+    assert.equal(final.attachments!.length, 1)
+    assert.equal(final.entities!.some(entity => entity.type === 'streaminfo'), false)
+    const entities = final.entities!.filter(entity => entity.type === 'https://schema.org/Message')
+    assert.equal(entities.length, 1)
+    assert.equal(entities[0].usageInfo['@id'], 'label-id')
+    assert.equal(entities[0].citation.length, 1)
+  })
+
+  it('should preserve the composed final payload when timeout recovery fails', async () => {
+    mockContext = createContext({ channelId: 'msteams' })
+    mockContext.sendActivity.onSecondCall().rejects(
+      new Error('ContentStreamNotAllowed: Content stream finished due to exceeded streaming time.')
+    )
+    mockContext.updateActivity.rejects(new Error('Update failed'))
+    streamingResponse = new StreamingResponse(mockContext)
+    streamingResponse.queueInformativeUpdate('Working')
+    await clock.tickAsync(1000)
+    streamingResponse.setFinalMessage(Activity.fromObject({ type: 'message', text: 'Final [1]' }))
+    streamingResponse.addAttachment({ contentType: 'text/plain', content: 'card' })
+    streamingResponse.setSensitivityLabel({
+      type: 'https://schema.org/Message', '@type': 'CreativeWork', '@id': 'label-id', name: 'Confidential'
+    })
+    streamingResponse.setCitations([{ title: 'Source', content: 'Summary', url: 'https://example.com', filepath: null }])
+    const ending = streamingResponse.endStream()
+    await clock.tickAsync(1000)
+
+    assert.equal(await ending, StreamingResponseResult.Error)
+    sinon.assert.calledOnce(mockContext.updateActivity)
+    const final = mockContext.updateActivity.firstCall.args[0] as Activity
+    assert.equal(final.id, 'test-stream-id')
+    assert.equal(final.text, 'Final [1]')
+    assert.equal(final.attachments!.length, 1)
+    assert.equal(final.entities!.some(entity => entity.type === 'streaminfo'), false)
+    const entities = final.entities!.filter(entity => entity.type === 'https://schema.org/Message')
+    assert.equal(entities.length, 1)
+    assert.equal(entities[0].usageInfo['@id'], 'label-id')
+    assert.equal(entities[0].citation.length, 1)
+  })
+
+  it('should not change a replacement stream when an earlier buffered final send fails', async () => {
+    mockContext = createContext({ channelId: 'msteams', deliveryMode: 'expectReplies' })
+    let failSend!: (error: Error) => void
+    mockContext.sendActivity.onFirstCall().returns(new Promise((_resolve, reject) => {
+      failSend = reject
+    }))
+    streamingResponse = new StreamingResponse(mockContext)
+    const previousEnd = streamingResponse.endStream()
+    await clock.tickAsync(0)
+    await streamingResponse.reset()
+    failSend(new Error('Late send failure'))
+    assert.equal(await previousEnd, StreamingResponseResult.AlreadyEnded)
+
+    streamingResponse.setFinalMessage(Activity.fromObject({ type: 'message', text: 'Replacement' }))
+    const replacementEnd = streamingResponse.endStream()
+    await clock.tickAsync(1000)
+    assert.equal(await replacementEnd, StreamingResponseResult.Success)
+    const final = mockContext.sendActivity.lastCall.args[0] as Activity
+    assert.equal(final.text, 'Replacement')
+  })
+
   it('should convert citations to client citations', () => {
     const snippetStub = sinon.stub(CitationUtil, 'snippet').returns('snippet text')
 
