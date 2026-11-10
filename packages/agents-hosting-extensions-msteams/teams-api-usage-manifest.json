@@ -1,6 +1,6 @@
 {
   "dependency": "@microsoft/teams.api",
-  "declaredVersion": "2.1.0",
+  "declaredVersion": "2.2.0",
   "sourceRoot": "src",
   "usages": [
     {
@@ -80,9 +80,23 @@
       ]
     },
     {
-      "upstreamSymbol": "MeetingDetails",
+      "upstreamSymbol": "IMeetingStartEventActivity",
       "usage": "event-model",
       "exposure": "publicly-exposed",
+      "propertiesRead": [
+        "value"
+      ],
+      "files": [
+        "src/meetings/meeting.ts"
+      ]
+    },
+    {
+      "upstreamSymbol": "IMeetingEndEventActivity",
+      "usage": "event-model",
+      "exposure": "publicly-exposed",
+      "propertiesRead": [
+        "value"
+      ],
       "files": [
         "src/meetings/meeting.ts"
       ]

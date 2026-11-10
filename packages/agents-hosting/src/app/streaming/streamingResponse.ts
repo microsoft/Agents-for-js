@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { Activity, addAIToActivity, Attachment, Entity, ClientCitation, SensitivityUsageInfo, DeliveryModes, Channels, ExceptionHelper } from '@microsoft/agents-activity'
+import { Activity, Attachment, Entity, ClientCitation, SensitivityUsageInfo, DeliveryModes, Channels, ExceptionHelper } from '@microsoft/agents-activity'
 import { TurnContext } from '../../turnContext'
 import { Citation } from './citation'
 import { CitationUtil } from './citationUtil'
@@ -48,6 +48,9 @@ export enum StreamingResponseResult {
  * `queueInformativeUpdate()`, `queueTextChunk()`, `queueTextChunk()`, ..., `endStream()`.
  *
  * Once `endStream()` is called, the stream is considered ended and no further updates can be sent.
+ * Teams enforces a ten-minute streaming window from the first informative/content update.
+ * Service timeouts recover by updating the original message; other Teams stream rejections
+ * report Error. M365 Copilot uses separate keep-alive and duration limits.
  */
 export class StreamingResponse {
   private readonly _context: TurnContext
@@ -59,6 +62,8 @@ export class StreamingResponse {
   private _delayInMs = 250
   private _isStreamingChannel: boolean = true
   private _finalMessage?: Activity
+  private _finalActivity?: Activity
+  private _generation = 0
   private _canceled = false
   private _userCanceled = false
   private _streamTimedOut = false
@@ -222,6 +227,7 @@ export class StreamingResponse {
    * @returns {Promise<StreamingResponseResult>} - StreamingResponseResult with the result of the streaming response.
    */
   public async endStream (): Promise<StreamingResponseResult> {
+    const generation = this._generation
     if (this._ended) {
       return StreamingResponseResult.AlreadyEnded
     }
@@ -239,6 +245,10 @@ export class StreamingResponse {
       // Preserve ordering so that the completed response is always the last update.
       await this.waitForQueue()
 
+      if (generation !== this._generation || this._canceled) {
+        return this.getResult(generation)
+      }
+
       if (this._streamTimeoutNotificationSent && !this._message && !this._finalMessage && !this._attachments?.length) {
         return StreamingResponseResult.Success
       }
@@ -249,7 +259,7 @@ export class StreamingResponse {
       } else {
         await this.sendActivity(finalMessage)
       }
-      return StreamingResponseResult.Success
+      return this.getResult(generation)
     }
 
     // Queue final message
@@ -258,11 +268,24 @@ export class StreamingResponse {
     // Wait for the queue to drain
     await this.waitForQueue()
 
-    // The final streaming send itself can report that the channel timed out. In
-    // that case the queued final activity is discarded and must be applied as
-    // an update after the timeout recovery has completed.
-    if (this._streamTimedOut) {
+    if (generation !== this._generation || this._canceled) {
+      return this.getResult(generation)
+    }
+
+    // An intermediate timeout may discard the queued final message. A timeout
+    // on the final send recovers that already-composed payload in sendActivity.
+    if (this._streamTimedOut && !this._finalActivity) {
       await this.updateActivity(this.createFinalMessage())
+    }
+    return this.getResult(generation)
+  }
+
+  private getResult (generation: number): StreamingResponseResult {
+    if (generation !== this._generation) {
+      return StreamingResponseResult.AlreadyEnded
+    }
+    if (this._canceled) {
+      return this._userCanceled ? StreamingResponseResult.UserCanceled : StreamingResponseResult.Error
     }
     return StreamingResponseResult.Success
   }
@@ -274,6 +297,7 @@ export class StreamingResponse {
   public async reset () : Promise<void> {
     await this.waitForQueue()
     this.clearStreamTimers()
+    this._generation++
 
     this._queueSync = undefined
     this._queue = []
@@ -289,6 +313,7 @@ export class StreamingResponse {
     this._nextSequence = 1
     this._streamId = undefined
     this._attachments = undefined
+    this._finalActivity = undefined
   }
 
   /**
@@ -331,7 +356,8 @@ export class StreamingResponse {
   /**
    * Sets the sensitivity label to attach to the final chunk.
    *
-   * @param sensitivityLabel The sensitivty label.
+   * The label is included even when generated-by-AI labeling is disabled.
+   * @param sensitivityLabel The sensitivity label, including an optional Purview label identifier.
    */
   public setSensitivityLabel (sensitivityLabel: SensitivityUsageInfo): void {
     this._sensitivityLabel = sensitivityLabel
@@ -503,6 +529,8 @@ export class StreamingResponse {
         await this.sendActivity(activity)
       }
     } catch (err) {
+      this._canceled = true
+      this._queue = []
       logger.error(`Error occurred when draining activity queue: "${JSON.stringify(err)}".`)
     } finally {
       this._queueSync = undefined
@@ -513,15 +541,20 @@ export class StreamingResponse {
    * Creates the final message to be sent at the end of the stream.
    */
   private createFinalMessage (): Activity {
-    const activity = this._finalMessage ?? new Activity('message')
+    const activity = this._finalMessage ? Activity.fromObject(this._finalMessage) : new Activity('message')
     activity.type = 'message'
 
     if (!this._finalMessage) {
       activity.text = this._message || 'end of stream response'
     }
 
-    activity.entities ??= []
-    activity.attachments = this._attachments
+    activity.entities = (activity.entities ?? [])
+      .filter(entity => entity.type?.toLowerCase() !== 'streaminfo')
+      .map(entity => ({ ...entity }))
+    if (this._attachments?.length) {
+      activity.attachments = [...(activity.attachments ?? []), ...this._attachments]
+    }
+    this.composeFinalMetadata(activity)
     this._nextSequence++ // Increment sequence for final message, even if not streaming.
 
     if (this._streamTimedOut && this._streamId) {
@@ -536,7 +569,48 @@ export class StreamingResponse {
       })
     }
 
+    this._finalActivity = activity
     return activity
+  }
+
+  /** Compose shared final metadata once, before either sending or timeout recovery. */
+  private composeFinalMetadata (activity: Activity): void {
+    activity.channelData = {
+      ...activity.channelData,
+      feedbackLoopEnabled: this._enableFeedbackLoop,
+      ...(this._feedbackLoopType ? { type: this._feedbackLoopType } : {})
+    }
+
+    const citations = this._citations?.length
+      ? CitationUtil.getUsedCitations(activity.text ?? '', this._citations)
+      : undefined
+    if (!this._enableGeneratedByAILabel && !citations?.length && !this._sensitivityLabel) {
+      return
+    }
+
+    activity.entities ??= []
+    let entity = activity.entities.find(value =>
+      value.type === 'https://schema.org/Message' && value['@type'] === 'Message'
+    )
+    if (!entity) {
+      entity = {
+        type: 'https://schema.org/Message',
+        '@type': 'Message',
+        '@context': 'https://schema.org',
+        '@id': ''
+      }
+      activity.entities.push(entity)
+    }
+    if (citations?.length) {
+      entity.citation = citations
+    }
+    if (this._sensitivityLabel) {
+      entity.usageInfo = { ...this._sensitivityLabel }
+    }
+    if (this._enableGeneratedByAILabel) {
+      const additionalTypes = Array.isArray(entity.additionalType) ? entity.additionalType : []
+      entity.additionalType = [...new Set([...additionalTypes, 'AIGeneratedContent'])]
+    }
   }
 
   /**
@@ -613,6 +687,7 @@ export class StreamingResponse {
    * @private
    */
   private async sendActivity (activity: Activity): Promise<void> {
+    const generation = this._generation
     this.startStreamTimers()
 
     // Only streaming activities should carry stream metadata. Once streaming
@@ -636,21 +711,11 @@ export class StreamingResponse {
       } as unknown as Entity)
     }
 
-    // Add in Powered by AI feature flags
-    if (this._ended) {
-      activity.channelData = {
-        feedbackLoopEnabled: this._enableFeedbackLoop ?? false,
-        ...(this._feedbackLoopType ? { type: this._feedbackLoopType } : {})
-      }
-
-      // Add in Generated by AI
-      if (this._enableGeneratedByAILabel) {
-        addAIToActivity(activity, this._citations, this._sensitivityLabel)
-      }
-    }
-
     try {
       const response = await this._context.sendActivity(activity)
+      if (generation !== this._generation) {
+        return
+      }
       if (!this._streamId) {
         this._streamId = response?.id
       }
@@ -659,6 +724,9 @@ export class StreamingResponse {
       }
       await new Promise((resolve) => setTimeout(resolve, this.delayInMs))
     } catch (error) {
+      if (generation !== this._generation) {
+        return
+      }
       const message = error instanceof Error ? error.message : String(error)
       this._canceled = true
       this._queue = []
@@ -668,14 +736,22 @@ export class StreamingResponse {
       // MS Teams code list: https://learn.microsoft.com/en-us/microsoftteams/platform/bots/streaming-ux?tabs=jsts#error-codes
       const normalizedMessage = message.toLowerCase()
       if (normalizedMessage.includes('contentstreamnotallowed') && normalizedMessage.includes(teamsStreamTimedOut.toLowerCase())) {
-        logger.warn('Client canceled due to exceeded allowed streaming time.', { originalError: message })
+        logger.warn('Service exceeded allowed streaming time.', { originalError: message })
         this._streamTimedOut = true
         this._canceled = false
         this._isStreamingChannel = false
-        await this.updateActivity(this.createStreamTimedOutMessage())
+        if (!this._streamId) {
+          this._canceled = true
+        } else if (activity === this._finalActivity) {
+          activity.id = this._streamId
+          activity.entities = activity.entities?.filter(entity => entity.type?.toLowerCase() !== 'streaminfo')
+          await this.updateActivity(activity)
+        } else {
+          await this.updateActivity(this.createStreamTimedOutMessage())
+        }
       } else if (normalizedMessage.includes('contentstreamnotallowed')) {
         logger.warn('Streaming content is not allowed by the client side.', { originalError: message })
-        this._userCanceled = true
+        this._userCanceled = this._context.activity.channelIdChannel !== Channels.Msteams || this.isM365Copilot()
       } else if (normalizedMessage.includes('badargument') && normalizedMessage.includes('streaming api is not enabled')) {
         logger.warn('Interaction does not support streaming. Defaulting to non-streaming response.', { originalError: message })
         this._canceled = false
@@ -690,9 +766,15 @@ export class StreamingResponse {
    * Updates the existing streaming activity without allowing failures to escape the queue.
    */
   private async updateActivity (activity: Activity): Promise<void> {
+    const generation = this._generation
     try {
       await this._context.updateActivity(activity)
     } catch (error) {
+      if (generation !== this._generation) {
+        return
+      }
+      this._canceled = true
+      this._userCanceled = false
       logger.warn('Exception during StreamingResponse updateActivity.', { originalError: (error as Error).message })
     }
   }

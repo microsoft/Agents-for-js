@@ -15,6 +15,11 @@ export enum TextFormatTypes {
   Markdown = 'markdown',
 
   /**
+   * Represents extended Markdown on receiving clients that support it, including Teams.
+   */
+  ExtendedMarkdown = 'extendedmarkdown',
+
+  /**
    * Represents plain text without any formatting.
    */
   Plain = 'plain',
@@ -28,4 +33,4 @@ export enum TextFormatTypes {
 /**
  * Zod schema for validating TextFormatTypes enum values.
  */
-export const textFormatTypesZodSchema = z.enum(['markdown', 'plain', 'xml'])
+export const textFormatTypesZodSchema = z.enum(['markdown', 'extendedmarkdown', 'plain', 'xml'])
