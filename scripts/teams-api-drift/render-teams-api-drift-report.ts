@@ -17,7 +17,7 @@ export interface Finding {
   id: string
   source: 'api-diff' | 'public-api'
   classification: Classification
-  category?: 'feature-review' | 'internal-opportunity' | 'maintainer-decision'
+  category?: 'feature-review' | 'internal-opportunity' | 'maintainer-decision' | 'reviewed-compatible'
   kind: string
   upstreamSymbol: string
   member?: string
@@ -233,6 +233,7 @@ function getSectionFindings (
     | 'feature-review'
     | 'internal-opportunity'
     | 'maintainer-decision'
+    | 'reviewed-compatible'
     | 'no-action'
 ): Finding[] {
   if (section === 'feature-review') {
@@ -251,7 +252,13 @@ function getSectionFindings (
     )
   }
 
-  return findings.filter(finding => finding.classification === section)
+  if (section === 'reviewed-compatible') {
+    return findings.filter(finding => finding.category === 'reviewed-compatible')
+  }
+
+  return findings.filter(finding =>
+    finding.classification === section && finding.category !== 'reviewed-compatible'
+  )
 }
 
 function summaryLine (summary: Record<Classification, number>): string {
@@ -337,6 +344,11 @@ export function renderDeterministicReport (
       'Maintainer decisions required',
       'maintainer-decision',
       'No maintainer decisions are required.'
+    ],
+    [
+      'Reviewed compatibility changes',
+      'reviewed-compatible',
+      'No compatibility reviews matched this comparison.'
     ],
     ['No-action upstream changes', 'no-action', 'No no-action upstream changes were recorded.']
   ]

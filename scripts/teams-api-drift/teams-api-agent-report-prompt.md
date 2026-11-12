@@ -55,6 +55,9 @@ Follow these rules:
 - Use `Maintainer decisions` for other review findings that require a human
   decision, including deprecations or ambiguous migrations.
 - Use `No action` for no-action findings.
+- For findings categorized as `reviewed-compatible`, retain their review reason
+  and evidence in `No action`. These are explicitly reviewed changes, not proof
+  that the upstream API is unchanged; do not request the same adaptation again.
 - Start the `Summary` section with this exact sentence: `This is an advisory report; it does not make or authorize implementation decisions.`
 - Label every recommendation with `Advisory:`. Do not claim that code was
   changed, tests were run, or behavior was verified beyond what the supplied
