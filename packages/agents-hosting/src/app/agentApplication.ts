@@ -807,6 +807,8 @@ export class AgentApplication<TState extends TurnState> {
             await state.save(context, storage)
           }
         })
+      } else {
+        await state.save(context, storage)
       }
 
       return true
