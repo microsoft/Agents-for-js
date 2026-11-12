@@ -4,6 +4,7 @@
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { basename, dirname, extname, join, relative, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { parse } from 'yaml'
 
 const dependency = '@microsoft/teams.api'
@@ -20,7 +21,7 @@ type Exposure =
   | 'runtime-used'
   | 'type-only'
   | 'unknown'
-type FindingCategory = 'feature-review' | 'internal-opportunity' | 'maintainer-decision'
+type FindingCategory = 'feature-review' | 'internal-opportunity' | 'maintainer-decision' | 'reviewed-compatible'
 type AdoptionPolicy = 'strict-compatibility' | 'review-new-members' | 'advisory-only'
 
 interface Usage {
@@ -38,6 +39,18 @@ interface Usage {
 interface UsageManifest {
   dependency: string
   usages: Usage[]
+  compatibilityReviews?: CompatibilityReview[]
+}
+
+interface CompatibilityReview {
+  fromVersion: string
+  toVersion: string
+  upstreamSymbol: string
+  member: string | null
+  kind: string
+  before: string | null
+  after: string | null
+  reason: string
 }
 
 interface ApiChange {
@@ -147,6 +160,8 @@ const help = `Usage:
 Joins a Stage 3 raw API delta with the Teams extension's dependency usage manifest.
 The result classifies changes as blocking, required, review, or no-action and
 includes the source files affected by every direct-use finding.
+Exact compatibilityReviews entries in the manifest acknowledge reviewed blocking
+or required changes while retaining their signatures and review evidence.
 
 Defaults:
   comparison: ${defaultComparisonPath}
@@ -487,12 +502,42 @@ function recommendedAction (
   return 'No direct usage intersects this API change.'
 }
 
-function createFindings (
+function readCompatibilityReviews (value: unknown): CompatibilityReview[] {
+  if (value === undefined) {
+    return []
+  }
+  if (!Array.isArray(value)) {
+    throw new Error('compatibilityReviews must be an array.')
+  }
+
+  for (const review of value) {
+    if (
+      !review || typeof review !== 'object' || Array.isArray(review) ||
+      !['fromVersion', 'toVersion', 'upstreamSymbol', 'kind', 'reason'].every(
+        field => typeof review[field] === 'string' && review[field].trim().length > 0
+      ) ||
+      !['member', 'before', 'after'].every(
+        field => review[field] === null || typeof review[field] === 'string'
+      ) ||
+      review.member === ''
+    ) {
+      throw new Error(
+        'Every compatibility review must specify versions, an upstream symbol, a change kind, ' +
+        'member, before, after, and a non-empty reason. Use null for absent change fields.'
+      )
+    }
+  }
+
+  return value as CompatibilityReview[]
+}
+
+export function createFindings (
   comparison: ComparisonResult,
   manifest: UsageManifest,
   capabilities: CapabilitiesDocument,
   publicApiReport?: PublicApiReport
 ): FindingsResult {
+  const compatibilityReviews = readCompatibilityReviews(manifest.compatibilityReviews)
   const publiclyExposedSymbols = new Set(
     publicApiReport?.upstreamTypeLeaks.map(leak => leak.upstreamSymbol) ?? []
   )
@@ -500,8 +545,21 @@ function createFindings (
     const usages = isDirectlyRelevant(change, manifest.usages)
     const publiclyExposed = publiclyExposedSymbols.has(change.symbol)
     const capability = capabilityFor(change, capabilities)
-    const category = categoryFor(change, usages, capability)
-    const classification = category ? 'review' : classify(change, usages, publiclyExposed)
+    let category = categoryFor(change, usages, capability)
+    let classification: Classification = category ? 'review' : classify(change, usages, publiclyExposed)
+    const review = classification === 'blocking' || classification === 'required'
+      ? compatibilityReviews.find(item =>
+        item.fromVersion === comparison.fromVersion && item.toVersion === comparison.toVersion &&
+        item.upstreamSymbol === change.symbol && item.member === (change.member ?? null) &&
+        item.kind === change.kind && item.before === (change.before ?? null) &&
+        item.after === (change.after ?? null)
+      )
+      : undefined
+
+    if (review) {
+      classification = 'no-action'
+      category = 'reviewed-compatible'
+    }
 
     return {
       id: change.id,
@@ -531,10 +589,13 @@ function createFindings (
           ...change.evidence,
           'dependency-usage',
           ...(capability ? ['teams-capabilities'] : []),
-          ...(publiclyExposed ? ['public-api-report'] : [])
+          ...(publiclyExposed ? ['public-api-report'] : []),
+          ...(review ? ['compatibility-review'] : [])
         ])
       ],
-      recommendedAction: recommendedAction(classification, change, category)
+      recommendedAction: review
+        ? `Reviewed compatibility change: ${review.reason}`
+        : recommendedAction(classification, change, category)
     }
   })
 
@@ -668,4 +729,6 @@ function main (): void {
   }
 }
 
-main()
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main()
+}
