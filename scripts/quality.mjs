@@ -9,6 +9,13 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
 export const qualityChecks = [
   { id: 'doctor', label: 'Repository doctor', script: 'repo:doctor' },
+  {
+    id: 'configuration-contract',
+    label: 'Configuration contract',
+    script: 'validate:configuration-contract',
+    after: ['doctor'],
+    requiresSuccess: ['doctor']
+  },
   { id: 'lint', label: 'ESLint', script: 'lint' },
   {
     id: 'dependencies',
@@ -37,6 +44,7 @@ const terminalStates = new Set(['passed', 'failed', 'skipped'])
 const expectedDurationMs = {
   build: 30000,
   compat: 20000,
+  'configuration-contract': 15000,
   dependencies: 30000,
   doctor: 5000,
   lint: 20000,
@@ -748,6 +756,7 @@ async function runCli () {
   await Promise.all(
     qualityChecks.map(check => rm(path.join(logDirectory, `${check.id}.log`), { force: true }))
   )
+  await rm(path.join(logDirectory, 'configuration-contract.report.json'), { force: true })
   const compatDirectory = path.join(root, 'compat/generated')
 
   await rm(path.join(compatDirectory, 'report.json'), { force: true })

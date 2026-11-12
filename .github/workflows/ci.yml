@@ -2,6 +2,11 @@ name: CI
 
 on:
   workflow_dispatch:
+    inputs:
+      configuration_contract_ref:
+        description: Optional full microsoft/Agents commit SHA (defaults to main HEAD)
+        required: false
+        type: string
   pull_request:
     branches:
       - main
@@ -36,6 +41,7 @@ jobs:
         env:
           QUALITY_LOG_DIR: scripts/logs/quality
           COMPAT_BASE: ${{ github.event.pull_request.base.sha }}
+          AGENTS_CONFIGURATION_CONTRACT_REF: ${{ inputs.configuration_contract_ref }}
 
       - name: Upload quality logs
         if: always()

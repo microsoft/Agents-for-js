@@ -12,6 +12,7 @@ import {
   createNpmCheckRunner,
   createReporter,
   failureOutput,
+  qualityChecks,
   reportCheckOutput,
   runQualityChecks
 } from '../quality.mjs'
@@ -21,6 +22,23 @@ const silentReporter = () => createReporter({ live: false, write: () => {}, colo
 const tick = async () => await new Promise(resolve => setImmediate(resolve))
 
 describe('quality runner', () => {
+  it('treats configuration contract failure as a required result without blocking the offline build', async () => {
+    const invoked = []
+    const results = await runQualityChecks(qualityChecks, {
+      runCheck: async current => {
+        invoked.push(current.script)
+
+        return { exitCode: current.id === 'configuration-contract' ? 1 : 0 }
+      },
+      reporter: silentReporter()
+    })
+
+    assert.ok(invoked.includes('validate:configuration-contract'))
+    assert.ok(invoked.includes('build'))
+    assert.equal(results.find(result => result.id === 'configuration-contract').state, 'failed')
+    assert.equal(results.find(result => result.id === 'build').state, 'passed')
+  })
+
   it('starts independent checks in parallel and releases a dependent check when its prerequisite passes', async () => {
     const started = []
     const completions = new Map()
@@ -478,6 +496,8 @@ describe('quality runner', () => {
       await writeFile(path.join(logs, 'build.log'), 'stale build')
       await writeFile(path.join(logs, 'doctor.log'), 'stale doctor')
       await writeFile(path.join(logs, 'custom.log'), 'keep')
+      const contractReport = path.join(logs, 'configuration-contract.report.json')
+      await writeFile(contractReport, JSON.stringify({ status: 'passed' }))
       await writeFile(
         path.join(directory, 'scripts/quality.mjs'),
         await readFile(new URL('../quality.mjs', import.meta.url))
@@ -518,6 +538,7 @@ describe('quality runner', () => {
       assert.doesNotMatch(await readFile(path.join(logs, 'doctor.log'), 'utf8'), /stale doctor/)
       await assert.rejects(readFile(path.join(logs, 'build.log')), { code: 'ENOENT' })
       assert.equal(await readFile(path.join(logs, 'custom.log'), 'utf8'), 'keep')
+      await assert.rejects(readFile(contractReport), { code: 'ENOENT' })
     } finally {
       if (
         path.dirname(directory) === os.tmpdir() &&

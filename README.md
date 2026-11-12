@@ -137,13 +137,69 @@ Before submitting a change, run:
 npm run quality
 ```
 
-`quality` runs the repository doctor, ESLint, dependency lint, build, tests, API compatibility checks, and sample build. It reports each check's status and duration, while printing command output only when that check fails. Successful compatibility checks still show a compact notice for packages needing review or outdated baselines.
+`quality` runs the repository doctor, configuration contract validation, ESLint, dependency lint, build, tests, API compatibility checks, and sample build. It reports each check's status and duration, while printing command output only when that check fails. Successful compatibility checks still show a compact notice for packages needing review or outdated baselines.
 
 `npm run compat` checks public TypeScript compatibility, builds declarations first, and analyzes packages in parallel. Run `npm run compat -- agents-hosting` for one package or `npm run compat -- --base origin/main` to retain a Git-reference comparison in the JSON report. Terminal findings compare against the working baseline; previously adopted changes are excluded from pending review. The compact output links directly to saved baseline/generated source lines, counts possible breaks, and marks harmless baseline drift as outdated. Detailed findings and finding IDs are in `compat/generated/report.json`. Possible breaks are warnings; outdated baselines and analysis errors fail the check. Use `--update` to adopt the current API, including possible breaks, and review the baseline diff before committing. See [API compatibility](docs/API-COMPATIBILITY.md) for the workflow and limitations.
 
 Use `npm run quality -- --verbose` to print the complete captured output for every check after the concise report. GitHub Actions and Azure Pipelines retain command logs and compatibility reports in the `quality-logs` artifact. GitHub Actions also shows folded command logs and retains the artifact for seven days.
 
 Local command logs remain in `scripts/logs/quality/` after execution; `QUALITY_LOG_DIR` can override that directory. Standalone compat build logs are in `scripts/logs/compat/build.log`. These folders are Git-ignored. Each run replaces its own logs and removes old logs for skipped checks.
+
+### Configuration contract validation
+
+```powershell
+npm run validate:configuration-contract
+npm run validate:configuration-contract -- --contract-ref <40-character-commit-sha>
+```
+
+This required quality/CI check validates the tracked
+`test-agents/empty-agent/config.json.TEMPLATE` and
+`test-agents/fastify-empty-agent/config.json.TEMPLATE` documents against
+`schema/agents-configuration.schema.json` in
+[microsoft/Agents](https://github.com/microsoft/Agents/tree/main/schema).
+It does not read Git-ignored developer configuration files.
+
+The default resolves central `main` once per invocation using `git ls-remote`
+(avoiding GitHub API rate limits) and retrieves the schema at that exact commit.
+`--contract-ref` selects a full commit SHA instead; branches,
+tags, and abbreviated SHAs are not substitute revisions. To select a revision for
+`npm run quality`, set `AGENTS_CONFIGURATION_CONTRACT_REF` to the full SHA. The
+explicit command-line option takes precedence. Manual GitHub CI runs expose the
+same optional SHA input; Azure Pipelines can set the environment variable through
+a pipeline variable.
+
+The command caches the schema and its SHA-256 digest under
+`node_modules/.cache/agents-configuration-contract/`, keyed by the full commit SHA.
+An explicit cached SHA works offline; the default must still resolve current main
+and never falls back to an older cached revision. Corrupt caches fail validation;
+remove the specific reported revision's cache file to retrieve it again.
+Git revision lookup and schema retrieval are limited to 15 seconds and 1 MiB each.
+Git must be available to resolve main; no GitHub token is required.
+Upstream executable code is never downloaded or run.
+
+`scripts/logs/quality/configuration-contract.report.json` records the selected ref,
+resolved SHA, schema path/digest, and each document's result. `QUALITY_LOG_DIR`
+also relocates this report. Both CI systems retain it in the existing
+`quality-logs` artifact. Reproduce a run using its reported `resolvedSha`.
+Invalid inputs, retrieval failures, schema compilation failures, and document
+violations fail the check. Diagnostics include identifiers, validation keywords,
+and JSON pointers with dynamic names replaced by `*`, never document values or
+raw validator/network errors.
+
+For an explicitly selected local JSON document, use
+`npm run validate:configuration-contract -- --document <path>`; repeat
+`--document` for multiple files. These replace the default inventory for that
+invocation and are labeled `input-1`, `input-2`, etc. in diagnostics.
+Input `$schema` URLs are metadata and are not fetched.
+
+This is Draft 2020-12 **structural validation only**. It does not apply defaults,
+coerce values, remove properties, resolve connection references, validate
+credentials, or establish JS runtime support. The central contract is a preview;
+the richer [local proposed schema](docs/schemas/agents-configuration.schema.json)
+and its runtime regression tests remain transitional, not a second authoritative
+contract. Fixtures, capability manifests, generated JS profiles, and behavioral
+conformance are deferred. `npm run build`, ordinary unit tests, and SDK package
+startup do not fetch schemas.
 
 For a structural, package, documentation, build-reference, or runtime-configuration change, you can run the focused doctor check directly:
 
