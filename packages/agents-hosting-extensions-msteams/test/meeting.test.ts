@@ -42,7 +42,9 @@ describe('Meeting', () => {
       })
     })
 
-    const meetingDetails = { id: 'meeting-1', title: 'Standup' }
+    const meetingDetails = {
+      Id: 'meeting-1', MeetingType: 'Scheduled', Title: 'Standup', StartTime: new Date()
+    }
     const activity = createMeetingActivity('APPLICATION/VND.MICROSOFT.MEETINGSTART', meetingDetails)
     const context = new TurnContext(adapter, activity)
     addConnectorClientToTurnState(context)
@@ -54,19 +56,25 @@ describe('Meeting', () => {
 
   it('should fire onEnd when receiving a meetingEnd event', async () => {
     let handled = false
+    let receivedDetails: unknown
     const app = new AgentApplication()
     const teamsExt = new TeamsAgentExtension(app)
     app.registerExtension(teamsExt, (tae) => {
-      tae.meetings.onEnd(async () => {
+      tae.meetings.onEnd(async (_ctx, _state, details) => {
         handled = true
+        receivedDetails = details
       })
     })
 
-    const activity = createMeetingActivity('APPLICATION/VND.MICROSOFT.MEETINGEND', { id: 'meeting-1' })
+    const details = {
+      Id: 'meeting-1', MeetingType: 'Scheduled', Title: 'Standup', EndTime: new Date(), JoinUrl: null
+    }
+    const activity = createMeetingActivity('APPLICATION/VND.MICROSOFT.MEETINGEND', details)
     const context = new TurnContext(adapter, activity)
     addConnectorClientToTurnState(context)
     await app.run(context)
     assert.strictEqual(handled, true)
+    assert.deepStrictEqual(receivedDetails, details)
   })
 
   it('should fire onParticipantsJoin when participants join', async () => {

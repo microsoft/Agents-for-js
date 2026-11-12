@@ -51,7 +51,8 @@ export function teamsGetChannelId (activity: Activity): string | undefined {
 }
 
 /**
- * Gets the Teams meeting info from the activity's channel data.
+ * Gets the incoming meeting metadata from the activity's Teams channel data.
+ * Full meeting details require a separate Teams API request.
  *
  * @param activity - Activity containing Teams channel data.
  * @returns Teams meeting information, if present.

@@ -53,6 +53,7 @@
     "@microsoft/m365agentsplayground": "0.2.29",
     "@microsoft/microsoft-graph-client": "3.0.7",
     "@microsoft/microsoft-graph-types": "2.43.1",
+    "@microsoft/teams.api": "2.2.0",
     "@types/debug": "4.1.13",
     "@types/express": "5.0.6",
     "@types/node": "22.20.4",

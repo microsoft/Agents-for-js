@@ -3,8 +3,19 @@
 
 import { ActivityTypes } from '@microsoft/agents-activity'
 import { AgentApplication, RouteHandler, RouteRank, RouteSelector, TurnContext, TurnState } from '@microsoft/agents-hosting'
-import type { IMeetingParticipantJoinEventActivity, IMeetingParticipantLeaveEventActivity, MeetingDetails } from '@microsoft/teams.api'
+import type {
+  IMeetingStartEventActivity,
+  IMeetingEndEventActivity,
+  IMeetingParticipantJoinEventActivity,
+  IMeetingParticipantLeaveEventActivity
+} from '@microsoft/teams.api'
 import { TeamsTurnContext } from '../teamsTurnContext'
+
+/** Details provided by a Teams meeting start event, including an optional join URL. */
+export type MeetingStartValue = IMeetingStartEventActivity['value']
+
+/** Details provided by a Teams meeting end event, including an optional join URL. */
+export type MeetingEndValue = IMeetingEndEventActivity['value']
 
 /** Details provided by a Teams meeting participant join event. */
 export type MeetingParticipantJoinValue = IMeetingParticipantJoinEventActivity['value']
@@ -21,7 +32,7 @@ export type MeetingParticipantLeaveValue = IMeetingParticipantLeaveEventActivity
  * @param details - Meeting details from the event's activity value.
  * @returns A promise that resolves when meeting start processing is complete.
  */
-export type MeetingStartHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, details: MeetingDetails) => Promise<void>
+export type MeetingStartHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, details: MeetingStartValue) => Promise<void>
 
 /**
  * Handles meeting end events registered with {@link Meeting.onEnd}.
@@ -32,7 +43,7 @@ export type MeetingStartHandler<TState extends TurnState> = (context: TeamsTurnC
  * @param details - Meeting details from the event's activity value.
  * @returns A promise that resolves when meeting end processing is complete.
  */
-export type MeetingEndHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, details: MeetingDetails) => Promise<void>
+export type MeetingEndHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, details: MeetingEndValue) => Promise<void>
 
 /**
  * Handles participant join events registered with {@link Meeting.onParticipantsJoin}.
@@ -95,7 +106,7 @@ export class Meeting<TState extends TurnState> {
       return Promise.resolve(isMeetingEvent(context, 'application/vnd.microsoft.meetingStart'))
     }
     const routeHandler: RouteHandler<TState> = async (context: TurnContext, state: TState) => {
-      const details = context.activity.value as MeetingDetails
+      const details = context.activity.value as MeetingStartValue
       await handler(new TeamsTurnContext(context), state, details)
     }
     this._app.addRoute(routeSel, routeHandler, false, rank, authHandlers)
@@ -115,7 +126,7 @@ export class Meeting<TState extends TurnState> {
       return Promise.resolve(isMeetingEvent(context, 'application/vnd.microsoft.meetingEnd'))
     }
     const routeHandler: RouteHandler<TState> = async (context: TurnContext, state: TState) => {
-      const details = context.activity.value as MeetingDetails
+      const details = context.activity.value as MeetingEndValue
       await handler(new TeamsTurnContext(context), state, details)
     }
     this._app.addRoute(routeSel, routeHandler, false, rank, authHandlers)
