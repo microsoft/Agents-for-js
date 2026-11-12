@@ -2,28 +2,13 @@
 
 ## Overview
 
-This package allows to configure Azure CosmosDB Storage as the backend for Agents conversation State
+Azure Cosmos DB persistence for agent conversation and user state in the
+Microsoft 365 Agents SDK for JavaScript and TypeScript. Provides partitioned storage
+providers for both the legacy `Storage` contract and the version-aware `StorageV2` contract.
 
-`CosmosDbPartitionedStorage` retains the legacy `Storage` contract. Use
-`CosmosDbPartitionedStorageV2` for the separate `StorageV2` contract; V2 calls
-return keyed operation results with `value`, `status`, and `version`.
+## Documentation
 
-## Usage
-
-```ts
-const cosmosDbStorageOptions = {
-  databaseId: process.env.COSMOS_DATABASE_ID || 'agentsDB',
-  containerId: process.env.COSMOS_CONTAINER_ID || 'agentsState',
-  cosmosClientOptions: {
-    endpoint: process.env.COSMOS_ENDPOINT!,
-    key: process.env.COSMOS_KEY!,
-  }
-} as CosmosDbPartitionedStorageOptions
-const cosmosStorage = new CosmosDbPartitionedStorage(cosmosDbStorageOptions)
-const conversationState = new ConversationState(cosmosStorage)
-const userState = new UserState(cosmosStorage)
-```
-
-```ts
-const cosmosStorageV2 = new CosmosDbPartitionedStorageV2(cosmosDbStorageOptions)
-```
+- [Microsoft 365 Agents SDK documentation](https://learn.microsoft.com/microsoft-365/agents-sdk/)
+- [Storage guide](https://learn.microsoft.com/microsoft-365/agents-sdk/storage?tabs=nodejs)
+- [API reference](https://learn.microsoft.com/javascript/api/@microsoft/agents-hosting-storage-cosmos?view=agents-sdk-js-latest)
+- [Release notes](https://github.com/microsoft/Agents-for-js/releases)
