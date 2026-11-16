@@ -770,6 +770,27 @@ export interface SuggestedActions {
 }
 
 // @public
+export function supportsAnimationCard(channelId: string): boolean;
+
+// @public
+export function supportsAudioCard(channelId: string): boolean;
+
+// @public
+export function supportsDeleteActivity(channelId: string): boolean;
+
+// @public
+export function supportsReceiptCard(channelId: string): boolean;
+
+// @public
+export function supportsThumbnailCard(channelId: string): boolean;
+
+// @public
+export function supportsUpdateActivity(channelId: string): boolean;
+
+// @public
+export function supportsVideoCard(channelId: string): boolean;
+
+// @public
 export enum TextFormatTypes {
     Markdown = "markdown",
     Plain = "plain",
