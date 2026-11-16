@@ -9,5 +9,6 @@ input prompts with validation, including support for migrating Bot Framework dia
 ## Documentation
 
 - [Microsoft 365 Agents SDK documentation](https://learn.microsoft.com/microsoft-365/agents-sdk/)
+- [Dialog composition and state guide](https://github.com/microsoft/Agents-for-js/blob/main/docs/packages/agents-hosting-dialogs.md)
 - [API reference](https://learn.microsoft.com/javascript/api/@microsoft/agents-hosting-dialogs?view=agents-sdk-js-latest)
 - [Release notes](https://github.com/microsoft/Agents-for-js/releases)
