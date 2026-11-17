@@ -697,24 +697,39 @@ describe('CloudAdapter options (PR #838 parity)', () => {
       await adapter.onTurnError(context, err)
     }
 
-    for (const emitStackTrace of [false, true]) {
-      it(`controls outbound stacks with emitStackTrace=${emitStackTrace}`, async () => {
-        const adapter = buildAdapter({ emitStackTrace })
-        const error = new Error('private failure')
-        error.stack = 'STACK-ONLY-MARKER'
-        const sendTraceActivity = sinon.stub().resolves(undefined)
-        const sendActivity = sinon.stub().resolves(undefined)
-        const context = { sendTraceActivity, sendActivity } as unknown as TurnContext
+    it('omits outbound stacks when emitStackTrace is disabled', async () => {
+      const adapter = buildAdapter({ emitStackTrace: false })
+      const error = new Error('private failure')
+      error.stack = 'STACK-ONLY-MARKER'
+      const sendTraceActivity = sinon.stub().resolves(undefined)
+      const sendActivity = sinon.stub().resolves(undefined)
+      const context = { sendTraceActivity, sendActivity } as unknown as TurnContext
 
-        await adapter.onTurnError(context, error)
+      await adapter.onTurnError(context, error)
 
-        assert.equal(sendTraceActivity.firstCall.args[1].includes('STACK-ONLY-MARKER'), emitStackTrace)
-        assert.deepEqual(sendActivity.args, [
-          ['The agent encountered an error or bug.'],
-          ['To continue to run this agent, please fix the source code.']
-        ])
-      })
-    }
+      assert.equal(sendTraceActivity.firstCall.args[1].includes('STACK-ONLY-MARKER'), false)
+      assert.deepEqual(sendActivity.args, [
+        ['The agent encountered an error or bug.'],
+        ['To continue to run this agent, please fix the source code.']
+      ])
+    })
+
+    it('includes outbound stacks when emitStackTrace is enabled', async () => {
+      const adapter = buildAdapter({ emitStackTrace: true })
+      const error = new Error('private failure')
+      error.stack = 'STACK-ONLY-MARKER'
+      const sendTraceActivity = sinon.stub().resolves(undefined)
+      const sendActivity = sinon.stub().resolves(undefined)
+      const context = { sendTraceActivity, sendActivity } as unknown as TurnContext
+
+      await adapter.onTurnError(context, error)
+
+      assert.equal(sendTraceActivity.firstCall.args[1].includes('STACK-ONLY-MARKER'), true)
+      assert.deepEqual(sendActivity.args, [
+        ['The agent encountered an error or bug.'],
+        ['To continue to run this agent, please fix the source code.']
+      ])
+    })
 
     it('falls back to the error message when the stack is missing', async () => {
       const adapter = buildAdapter({ emitStackTrace: true })
