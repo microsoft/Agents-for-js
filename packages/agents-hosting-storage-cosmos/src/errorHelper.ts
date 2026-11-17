@@ -36,11 +36,11 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   },
 
   /**
-   * Error thrown when neither key nor tokenProvider is provided in cosmosClientOptions.
+   * Error thrown when key, tokenProvider, and aadCredentials are all absent from cosmosClientOptions.
    */
   MissingCosmosCredentials: {
     code: -100002,
-    description: 'Authentication credentials are required in cosmosClientOptions. Provide either a key (connection key) or tokenProvider (for token-based authentication).',
+    description: 'Authentication credentials are required in cosmosClientOptions. Provide a key (connection key), tokenProvider (authorization token callback), or aadCredentials (Azure TokenCredential).',
   },
 
   /**
@@ -201,5 +201,11 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
   StorageV2WriteModeUnsupported: {
     code: -100024,
     description: 'Storage V2 write mode "{mode}" is not supported.',
+  },
+
+  /** Error thrown when an Entra-authenticated storage container cannot be found. */
+  ExistingContainerNotFound: {
+    code: -100025,
+    description: 'The Cosmos DB database "{databaseId}" or container "{containerId}" was not found. Microsoft Entra authentication requires preprovisioned resources. Create the database and container through Azure Resource Manager, the Azure portal, or Azure CLI before using storage.',
   }
 }
