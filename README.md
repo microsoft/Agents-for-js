@@ -18,27 +18,26 @@ The best way to get started with these packages is to look at the samples availa
 
 Learn more in the [Microsoft 365 Agents SDK documentation](https://learn.microsoft.com/microsoft-365/agents-sdk/)
 
-- [Documentation](https://learn.microsoft.com/microsoft-365/agents-sdk/) Microsoft 365 Agents SDK provides an integrated environment that is purpose-built for agent development.
 - [Overview](https://learn.microsoft.com/microsoft-365/agents-sdk/agents-sdk-overview) Learn about the Microsoft 365 Agents SDK.
 - [Quickstart](https://learn.microsoft.com/microsoft-365/agents-sdk/quickstart?pivots=nodejs) Create an agent with the Microsoft 365 Agents SDK using JavaScript.
-- Key concepts
+- **Key concepts**
   - [Activity Protocol](https://learn.microsoft.com/microsoft-365/agents-sdk/activity-protocol) Learn how Activity Protocol standardizes communication between agents, users, and channels in the Microsoft 365 Agents SDK. Explore its schema and key properties.
   - [AgentApplication](https://learn.microsoft.com/microsoft-365/agents-sdk/agent-application) Learn how AgentApplication works as the central building block of an agent built with the Microsoft 365 Agents SDK. Understand routing, turn state, lifecycle hooks, and more.
   - [Manage state](https://learn.microsoft.com/microsoft-365/agents-sdk/state-concepts) Learn how to manage state in the Microsoft 365 Agents SDK.
-- Microsoft 365 Agents Toolkit
+- **Microsoft 365 Agents Toolkit**
   - [JavaScript agents in Visual Studio Code](https://learn.microsoft.com/microsoft-365/agents-sdk/create-new-toolkit-project-vsc) Learn how to create a Microsoft 365 Agents SDK agent in Visual Studio Code, using a JavaScript app template available in the Agents Toolkit.
-- Test and debug
+- **Test and debug**
   - [Agents Playground](https://learn.microsoft.com/microsoft-365/agents-sdk/test-with-toolkit-project) Learn how to test your new agent using the Microsoft 365 Agents Playground in the Toolkit
   - [Dev tunnels](https://learn.microsoft.com/microsoft-365/agents-sdk/test-with-dev-tunnel) Expose a locally running Agents SDK agent through a secure dev tunnel and connect it to Azure Bot Service for testing.
-- Provision Azure resources
+- **Provision Azure resources**
   - [Provisioning plugin](https://learn.microsoft.com/microsoft-365/agents-sdk/provision-with-agent-plugin) Use the Agents SDK provisioning plugin with an AI coding assistant to create Azure resources and configure identity for your agent.
   - [Manual Azure Bot provisioning](https://learn.microsoft.com/microsoft-365/agents-sdk/provision-azure-bot-service-manually) Learn how to provision an Azure Bot resource and related identity resources for an Agents SDK agent.
   - Provision OAuth resources manually
-- Configure your agent
+- **Configure your agent**
   - [Authentication](https://learn.microsoft.com/microsoft-365/agents-sdk/configure-authentication-msal?pivots=nodejs) Learn about configuration setting options for authentication in the Agents SDK.
   - [Storage](https://learn.microsoft.com/microsoft-365/agents-sdk/storage?tabs=javascript) Learn about the importance of storage and the different storage options available for use with the Microsoft 365 Agents SDK.
   - Make your agent production-ready
-- Add capabilities
+- **Add capabilities**
   - [AI services and orchestration](https://learn.microsoft.com/microsoft-365/agents-sdk/using-semantic-kernel-agent-framework) Learn how to build intelligent agents using the Microsoft 365 Agents SDK with Semantic Kernel or Agent Framework for AI orchestration and flexibility.
   - [OAuth user authorization](https://learn.microsoft.com/microsoft-365/agents-sdk/agent-oauth-configuration?pivots=nodejs) Learn about configuring a .NET, JavaScript, or Python agent to use Azure Bot Service OAuth
   - [Copilot Studio integration](https://learn.microsoft.com/microsoft-365/agents-sdk/integrate-with-mcs) Learn how to integrate with Copilot Studio in Microsoft 365 Agents SDK.
@@ -48,7 +47,7 @@ Learn more in the [Microsoft 365 Agents SDK documentation](https://learn.microso
   - [Adaptive cards](https://learn.microsoft.com/microsoft-365/agents-sdk/adaptive-cards?pivots=nodejs) Create adaptive cards, send them from a .NET or JavaScript Agents SDK agent, and handle Action.Execute, Action.Submit, and dynamic search requests.
   - [Telemetry](https://learn.microsoft.com/microsoft-365/agents-sdk/agent-telemetry?pivots=nodejs) Review traces, metrics, and span attributes in the Microsoft 365 Agents SDK for JavaScript, C#, and Python, and configure OpenTelemetry.
 - [Deploy to Azure](https://learn.microsoft.com/microsoft-365/agents-sdk/deploy-azure-bot-service-manually) Learn how to deploy your agent to Azure, Teams, or Microsoft 365
-- Bot Framework migration guides
+- **Bot Framework migration guides**
   - [General guidance](https://learn.microsoft.com/microsoft-365/agents-sdk/bf-migration-guidance) Migration guidance for Azure Bot Framework SDK to the Microsoft 365 Agents - [JavaScript SDK](https://learn.microsoft.com/microsoft-365/agents-sdk/bf-migration-nodejs) Migration guidance for Azure Bot Framework SDK to the Microsoft 365 Agents SDK for nodejs
 - [JavaScript API reference](https://learn.microsoft.com/javascript/api/overview/agents-overview) Reference documentation for Microsoft 365 Agents SDK
 
