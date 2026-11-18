@@ -11,6 +11,11 @@ import { TurnState } from './turnState'
  */
 export interface InputFile {
   /**
+   * Name supplied by the channel or derived from a pasted image.
+   */
+  filename?: string;
+
+  /**
    * The content of the file as a Buffer.
    */
   content: Buffer;

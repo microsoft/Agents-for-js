@@ -10,32 +10,89 @@ import { InputFile, InputFileDownloader } from './inputFileDownloader'
 import { TurnContext } from '../turnContext'
 import { TurnState } from './turnState'
 import { HttpClient } from '../httpClient'
-import { z } from 'zod'
+import { decode } from 'jsonwebtoken'
+import type { Connections } from '../auth/connections'
+import { AgentApplication } from './agentApplication'
+import { describeImage, imageHints, isServiceImage } from './m365InlineImage'
+import { getHttpsUrl } from '../utils/outboundUrl'
 import { createOutboundHostValidator, OutboundUrlPolicy } from '../outboundHostValidator'
 import { AttachmentDownloadHttpClient } from './attachmentDownloadHttpClient'
 
 const logger = debug('agents:M365AttachmentDownloader')
 
+const fileInfoType = 'application/vnd.microsoft.teams.file.download.info'
+
 /**
- * Downloads attachments from Teams and M365 using the bots access token.
- * Enabled outbound validation requires HTTPS and validates addresses at every redirect.
- * Initial request credentials are not forwarded to redirects when validation is enabled.
+ * Gets a Graph token for the current agentic user.
+ *
+ * @param context The turn context for the current conversation.
+ * @param origin The origin URL used to request the Graph token.
+ * @returns The graph token for the current agentic user, or undefined if it cannot be obtained.
+ */
+async function graphToken (context: TurnContext, origin: string): Promise<string | undefined> {
+  const activity = context.activity
+  const tenant = activity.getAgenticTenantId()
+  const instance = activity.getAgenticInstanceId()
+  const user = activity.getAgenticUser()
+  const conversationType = activity.conversation?.conversationType ?? 'personal'
+
+  if (activity.recipient?.role?.toLowerCase() !== 'agenticuser' ||
+      !tenant?.trim() || !instance?.trim() || !user?.trim() ||
+      !['personal', 'groupChat', 'channel'].includes(conversationType)) {
+    return undefined
+  }
+
+  const connections = context.turnState.get<Connections>(AgentApplication.ConnectionsKey) ??
+    (context.adapter as { connectionManager?: Connections }).connectionManager
+  const provider = connections?.getTokenProviderFromActivity(context.identity, activity)
+  const token = await provider?.getAgenticUserToken(tenant, instance, user, [origin + '/.default'])
+
+  if (!token) {
+    return undefined
+  }
+
+  // Graph authorizes the request. Skip an unnecessary download when readable claims lack a file grant.
+  const claims = decode(token)
+
+  if (claims && typeof claims === 'object') {
+    const scopes = typeof claims.scp === 'string' ? claims.scp.split(/\s+/) : []
+    const roles = Array.isArray(claims.roles) ? claims.roles : []
+
+    if (![...scopes, ...roles].some(value => typeof value === 'string' && /^(files|sites)\./i.test(value))) {
+      logger.warn('Skipping shared file because the Graph token lacks file or site permissions.')
+      return undefined
+    }
+  }
+  return token
+}
+
+/**
+ * Downloads signed files, pasted Teams images, and files shared with agentic users.
+ * The download URL and attachment type determine which turn credential is used.
  */
 export class M365AttachmentDownloader<TState extends TurnState = TurnState> implements InputFileDownloader<TState> {
-  private _httpClient: HttpClient
-  private _stateKey: string
-  private readonly _hostValidator: OutboundUrlPolicy
+  private readonly downloads: AttachmentDownloadHttpClient
+  private readonly _stateKey: string
+  private readonly graphBaseUrl?: URL
 
   /**
    * Creates an attachment downloader.
    *
    * @param stateKey - Turn-state key used by {@link downloadAndStoreFiles}.
    * @param outboundHostValidator - Policy used to validate attachment download URLs.
+   * @param graphBaseUrl - Graph HTTPS endpoint including its API version.
    */
-  public constructor (stateKey: string = 'inputFiles', outboundHostValidator?: OutboundUrlPolicy) {
-    this._httpClient = new HttpClient()
+  public constructor (
+    stateKey: string = 'inputFiles',
+    outboundHostValidator?: OutboundUrlPolicy,
+    graphBaseUrl = 'https://graph.microsoft.com/v1.0'
+  ) {
+    this.downloads = new AttachmentDownloadHttpClient(
+      new HttpClient(),
+      outboundHostValidator ?? createOutboundHostValidator()
+    )
+    this.graphBaseUrl = getHttpsUrl(graphBaseUrl)
     this._stateKey = stateKey
-    this._hostValidator = outboundHostValidator ?? createOutboundHostValidator()
   }
 
   /**
@@ -46,72 +103,104 @@ export class M365AttachmentDownloader<TState extends TurnState = TurnState> impl
    */
   public async downloadFiles (context: TurnContext): Promise<InputFile[]> {
     if (context.activity.channelId !== Channels.Msteams && context.activity.channelId !== Channels.M365Copilot) {
-      return Promise.resolve([])
+      return []
     }
-    // Filter out HTML attachments
-    const attachments = context.activity.attachments?.filter((a) => a.contentType && !a.contentType.startsWith('text/html'))
-    if (!attachments || attachments.length === 0) {
-      return Promise.resolve([])
-    }
-
-    const connectorClient : ConnectorClient = context.turnState.get<ConnectorClient>(context.adapter.ConnectorClientKey)
-    const headers = { ...connectorClient.httpClient.defaultHeaders }
-
+    const attachments = context.activity.attachments ?? []
+    const hints = imageHints(attachments)
+    let graphCredential: Promise<string | undefined> | undefined
+    const getGraphToken = (origin: string) => (graphCredential ??= graphToken(context, origin))
     const files: InputFile[] = []
     for (const attachment of attachments) {
-      const file = await this.downloadFile(attachment, headers)
-      if (file) {
-        files.push(file)
+      if (!attachment.contentType || attachment.contentType.toLowerCase().startsWith('text/html')) {
+        continue
+      }
+      try {
+        const file = await this.downloadFile(attachment, context, hints, getGraphToken)
+        if (file) {
+          files.push(file)
+        }
+      } catch (error) {
+        logger.warn('Attachment download failed.', { errorType: error instanceof Error ? error.name : 'unknown' })
       }
     }
-
     return files
   }
 
-  /**
-   * @private
-   * @param {Attachment} attachment - Attachment to download.
-   * @returns {Promise<InputFile>} - Promise that resolves to the downloaded input file.
-   */
-  private async downloadFile (attachment: Attachment, headers: Record<string, string> = {}): Promise<InputFile | undefined> {
-    let inputFile: InputFile | undefined
+  private async downloadFile (
+    attachment: Attachment,
+    context: TurnContext,
+    hints: Map<string, string>,
+    getGraphToken: (origin: string) => Promise<string | undefined>
+  ): Promise<InputFile | undefined> {
+    const { content, contentUrl, name: filename } = attachment
+    const contentType = attachment.contentType.toLowerCase()
+    const url = getHttpsUrl(contentUrl)
+    let target = url
+    let authorization: string | undefined
+    let imageId: string | undefined
+    let redirects: 'https' | 'same-origin-bearer' = 'https'
 
-    if (attachment.contentUrl && attachment.contentUrl.startsWith('https://')) {
-      try {
-        const contentSchema = z.object({ downloadUrl: z.string().url() })
-        const parsed = contentSchema.safeParse(attachment.content)
-        const downloadUrl = parsed.success ? parsed.data.downloadUrl : attachment.contentUrl
-        const response = await new AttachmentDownloadHttpClient(this._httpClient, this._hostValidator)
-          .get(downloadUrl, headers)
-        if (!response) {
+    if (content && typeof content === 'object' && 'downloadUrl' in content) {
+      target = typeof content.downloadUrl === 'string' ? getHttpsUrl(content.downloadUrl) : undefined
+    } else if (contentType === fileInfoType) {
+      const graph = this.graphBaseUrl
+
+      if (!contentUrl || !url || !filename?.trim() || !content || typeof content !== 'object' || Array.isArray(content) ||
+          !graph || graph.search || graph.hash) {
+        return undefined
+      }
+      const token = await getGraphToken(graph.origin)
+
+      if (!token) {
+        return undefined
+      }
+      const share = Buffer.from(contentUrl).toString('base64url')
+      target = new URL(graph.href.replace(/\/$/, '') + '/shares/u!' + share + '/driveItem/content')
+      authorization = 'Bearer ' + token
+      redirects = 'same-origin-bearer'
+    } else if (url) {
+      if (context.activity.channelId === Channels.Msteams && contentType.startsWith('image/')) {
+        imageId = url.pathname.match(/\/v3\/attachments\/([\w.-]+)\/views\/original$/i)?.[1]
+
+        if (imageId && !isServiceImage(url, context.activity.serviceUrl)) {
           return undefined
         }
+      }
+      const connector = context.turnState.get<ConnectorClient>(context.adapter.ConnectorClientKey)
+      authorization = new Headers(connector?.httpClient.defaultHeaders).get('authorization') ?? undefined
 
-        const content = Buffer.from(response.data as ArrayBuffer)
-        const contentTypeHeader = response.headers.get('content-type')
-        const contentType = typeof contentTypeHeader === 'string' ? contentTypeHeader : 'application/octet-stream'
-        inputFile = { content, contentType, contentUrl: attachment.contentUrl }
-      } catch (error) {
-        const code = error instanceof Error && 'code' in error && typeof error.code === 'number' ? error.code : 'unavailable'
-        logger.error(`Failed to download Teams attachment. Error type='${error instanceof Error ? error.name : 'unknown'}', Code='${code}'`)
-        return undefined
+      if (imageId) {
+        if (!authorization || !/^Bearer\s+\S+$/i.test(authorization)) {
+          return undefined
+        }
+        redirects = 'same-origin-bearer'
       }
-    } else {
-      if (!attachment.content) {
-        logger.error('Attachment missing content')
-        return undefined
-      }
-      if (!(attachment.content instanceof ArrayBuffer) && !Buffer.isBuffer(attachment.content)) {
-        logger.error('Attachment content is not ArrayBuffer or Buffer')
-        return undefined
-      }
-      inputFile = {
-        content: Buffer.from(attachment.content as ArrayBuffer),
-        contentType: attachment.contentType,
-        contentUrl: attachment.contentUrl
-      }
+    } else if (Buffer.isBuffer(content) || content instanceof ArrayBuffer) {
+      const bytes = Buffer.from(new Uint8Array(content))
+      return { content: bytes, contentType: attachment.contentType, contentUrl, filename }
     }
-    return inputFile
+
+    if (!target) {
+      return undefined
+    }
+
+    const response = await this.downloads.get(target.href, authorization ? { Authorization: authorization } : {}, redirects)
+
+    if (!response) {
+      return undefined
+    }
+    const bytes = Buffer.from(response.data)
+
+    if (imageId) {
+      return { content: bytes, contentUrl, ...describeImage(bytes, imageId, hints.get(imageId) ?? contentType) }
+    }
+
+    return {
+      content: bytes,
+      contentType: response.headers.get('content-type') ?? (contentType === fileInfoType ? 'application/octet-stream' : attachment.contentType),
+      contentUrl,
+      filename
+    }
   }
 
   /**
