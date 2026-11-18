@@ -36,7 +36,7 @@ Learn more in the [Microsoft 365 Agents SDK documentation](https://learn.microso
 - **Configure your agent**
   - [Authentication](https://learn.microsoft.com/microsoft-365/agents-sdk/configure-authentication-msal?pivots=nodejs) Learn about configuration setting options for authentication in the Agents SDK.
   - [Storage](https://learn.microsoft.com/microsoft-365/agents-sdk/storage?tabs=javascript) Learn about the importance of storage and the different storage options available for use with the Microsoft 365 Agents SDK.
-  - Make your agent production-ready
+  - [Make your agent production-ready](https://learn.microsoft.com/microsoft-365/agents-sdk/production-ready-agent/production-ready-agent) Learn how to prepare your agent for production.
 - **Add capabilities**
   - [AI services and orchestration](https://learn.microsoft.com/microsoft-365/agents-sdk/using-semantic-kernel-agent-framework) Learn how to build intelligent agents using the Microsoft 365 Agents SDK with Semantic Kernel or Agent Framework for AI orchestration and flexibility.
   - [OAuth user authorization](https://learn.microsoft.com/microsoft-365/agents-sdk/agent-oauth-configuration?pivots=nodejs) Learn about configuring a .NET, JavaScript, or Python agent to use Azure Bot Service OAuth
