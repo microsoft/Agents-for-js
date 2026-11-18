@@ -48,7 +48,8 @@ Learn more in the [Microsoft 365 Agents SDK documentation](https://learn.microso
   - [Telemetry](https://learn.microsoft.com/microsoft-365/agents-sdk/agent-telemetry?pivots=nodejs) Review traces, metrics, and span attributes in the Microsoft 365 Agents SDK for JavaScript, C#, and Python, and configure OpenTelemetry.
 - [Deploy to Azure](https://learn.microsoft.com/microsoft-365/agents-sdk/deploy-azure-bot-service-manually) Learn how to deploy your agent to Azure, Teams, or Microsoft 365
 - **Bot Framework migration guides**
-  - [General guidance](https://learn.microsoft.com/microsoft-365/agents-sdk/bf-migration-guidance) Migration guidance for Azure Bot Framework SDK to the Microsoft 365 Agents - [JavaScript SDK](https://learn.microsoft.com/microsoft-365/agents-sdk/bf-migration-nodejs) Migration guidance for Azure Bot Framework SDK to the Microsoft 365 Agents SDK for nodejs
+  - [General guidance](https://learn.microsoft.com/microsoft-365/agents-sdk/bf-migration-guidance) Migration guidance from Azure Bot Framework SDK to the Microsoft 365 Agents SDK.
+  - [JavaScript SDK](https://learn.microsoft.com/microsoft-365/agents-sdk/bf-migration-nodejs) Migration guidance from Azure Bot Framework SDK to the Microsoft 365 Agents SDK for Node.js.
 - [JavaScript API reference](https://learn.microsoft.com/javascript/api/overview/agents-overview) Reference documentation for Microsoft 365 Agents SDK
 
 
