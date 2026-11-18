@@ -81,7 +81,17 @@
     },
     "@rushstack/ts-command-line": {
       "argparse": "2.0.1"
-    }
+    },
+    "minimatch@>=7 <11.0.1": "11.0.1"
+  },
+  "overrideComments": {
+    "@microsoft/teams.common": {
+      "axios": "Pins the Axios version used by Teams common to 1.20.0, completing the dependency update in #1329. Remove when Teams common requires this version or newer without an override."
+    },
+    "@rushstack/ts-command-line": {
+      "argparse": "Uses argparse 2 to remove the vulnerable sprintf-js dependency chain from API Extractor tooling (#1333). Remove when ts-command-line drops argparse 1 and its sprintf-js dependency."
+    },
+    "minimatch@>=7 <11.0.1": "The minimatch override fixes GHSA-g3hv-75wg-m249 in development tools (API Extractor, TypeScript ESLint, and TypeDoc). Their current releases require vulnerable minimatch 10.x. Remove this override when their dependency ranges resolve to a patched version without it."
   },
   "engines": {
     "node": ">=22.0.0"
