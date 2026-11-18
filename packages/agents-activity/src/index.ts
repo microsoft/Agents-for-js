@@ -16,7 +16,16 @@ export { Attachment } from './attachment/attachment'
 export { AttachmentLayoutTypes } from './attachment/attachmentLayoutTypes'
 
 export { ChannelAccount } from './conversation/channelAccount'
-export { Channels } from './conversation/channels'
+export {
+  Channels,
+  supportsVideoCard,
+  supportsReceiptCard,
+  supportsThumbnailCard,
+  supportsAudioCard,
+  supportsAnimationCard,
+  supportsUpdateActivity,
+  supportsDeleteActivity
+} from './conversation/channels'
 export { ConversationAccount } from './conversation/conversationAccount'
 export { ConversationReference } from './conversation/conversationReference'
 export { EndOfConversationCodes } from './conversation/endOfConversationCodes'
