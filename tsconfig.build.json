@@ -14,6 +14,9 @@
         "path": "packages/agents-hosting-express"
       },
       {
+        "path": "packages/agents-hosting-runner"
+      },
+      {
         "path": "packages/agents-hosting-fastify"
       },
       {
