@@ -27,7 +27,7 @@ middleware, state, and outbound header propagation.
 ## Installation and startup
 
 Install an exact published version of this package alongside your application's
-SDK dependencies at image build time, using your approved package feed:
+SDK dependencies, using your approved package feed:
 
 ```powershell
 npm install --save-exact @microsoft/agents-hosting-runner@PUBLISHED_VERSION
@@ -43,17 +43,6 @@ Both `--agent-module` and `--port` are required; the port must be an integer fro
 1 through 65535. `--help` (`-h`) and `--version` do not start a server. Paths may
 contain spaces. ESM and CommonJS modules with a named `agent` export are supported.
 Compile TypeScript before deployment; the runner does not include a transpiler.
-
-Use the runner as the container entry point, with paths appropriate to the image.
-Include the compiled application, its private dependencies, and the complete
-installed runner dependency graph. Do not fetch packages at process startup or
-copy only the command launcher. Retain the deployment's existing proxy/network
-arrangement: the listener is intentionally loopback-only.
-
-Use the same SDK release for the runner and application, installed in a shared
-dependency graph so both resolve the same hosting package. Cross-major
-compatibility is not guaranteed. Importing customer code executes it with host
-privileges; this is **not a security sandbox**.
 
 ## Configuration and authentication
 
