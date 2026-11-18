@@ -14,7 +14,7 @@ import { CloudAdapter } from '../../../src/cloudAdapter'
 import { createStubInstance, SinonStub } from 'sinon'
 import { ConsoleTranscriptLogger } from '../../../src/transcript/consoleTranscriptLogger'
 import type { Connections } from '../../../src/auth/connections'
-import { MemoryStorageV2 } from '../../../src/storage'
+import { MemoryStorage, MemoryStorageV2 } from '../../../src/storage'
 
 class RecordingTestAdapter extends TestAdapter {
   public readonly sentActivities: Activity[] = []
@@ -101,6 +101,94 @@ describe('Application', () => {
     await context.sendActivity('test')
     assert.equal(called, true)
     assert.equal(handled, true)
+  })
+
+  it('persists consecutive message turns without after-turn handlers with MemoryStorage', async () => {
+    const storage = new MemoryStorage()
+    const localApp = new AgentApplication({ storage })
+    const counters: number[] = []
+    localApp.onActivity(ActivityTypes.Message, async (_context, state) => {
+      const counter = state.getValue<number>('conversation.counter') ?? 0
+      counters.push(counter)
+      state.setValue('conversation.counter', counter + 1)
+    })
+    await localApp.runInternal(new TurnContext(testAdapter, createTestActivity()))
+    await localApp.runInternal(new TurnContext(testAdapter, createTestActivity()))
+    assert.deepEqual(counters, [0, 1])
+  })
+
+  it('persists consecutive message turns when an after-turn handler returns true with MemoryStorage', async () => {
+    const storage = new MemoryStorage()
+    const localApp = new AgentApplication({ storage })
+    const counters: number[] = []
+    localApp.onActivity(ActivityTypes.Message, async (_context, state) => {
+      const counter = state.getValue<number>('conversation.counter') ?? 0
+      counters.push(counter)
+      state.setValue('conversation.counter', counter + 1)
+    })
+    localApp.onTurn('afterTurn', async () => true)
+    await localApp.runInternal(new TurnContext(testAdapter, createTestActivity()))
+    await localApp.runInternal(new TurnContext(testAdapter, createTestActivity()))
+    assert.deepEqual(counters, [0, 1])
+  })
+
+  it('does not persist message turns when an after-turn handler returns false with MemoryStorage', async () => {
+    const storage = new MemoryStorage()
+    const localApp = new AgentApplication({ storage })
+    const counters: number[] = []
+    localApp.onActivity(ActivityTypes.Message, async (_context, state) => {
+      const counter = state.getValue<number>('conversation.counter') ?? 0
+      counters.push(counter)
+      state.setValue('conversation.counter', counter + 1)
+    })
+    localApp.onTurn('afterTurn', async () => false)
+    await localApp.runInternal(new TurnContext(testAdapter, createTestActivity()))
+    await localApp.runInternal(new TurnContext(testAdapter, createTestActivity()))
+    assert.deepEqual(counters, [0, 0])
+  })
+
+  it('persists consecutive message turns without after-turn handlers with MemoryStorageV2', async () => {
+    const storage = new MemoryStorageV2()
+    const localApp = new AgentApplication({ storage })
+    const counters: number[] = []
+    localApp.onActivity(ActivityTypes.Message, async (_context, state) => {
+      const counter = state.getValue<number>('conversation.counter') ?? 0
+      counters.push(counter)
+      state.setValue('conversation.counter', counter + 1)
+    })
+    await localApp.runInternal(new TurnContext(testAdapter, createTestActivity()))
+    await localApp.runInternal(new TurnContext(testAdapter, createTestActivity()))
+    assert.deepEqual(counters, [0, 1])
+  })
+
+  it('persists consecutive message turns when an after-turn handler returns true with MemoryStorageV2', async () => {
+    const storage = new MemoryStorageV2()
+    const localApp = new AgentApplication({ storage })
+    const counters: number[] = []
+    localApp.onActivity(ActivityTypes.Message, async (_context, state) => {
+      const counter = state.getValue<number>('conversation.counter') ?? 0
+      counters.push(counter)
+      state.setValue('conversation.counter', counter + 1)
+    })
+    localApp.onTurn('afterTurn', async () => true)
+    await localApp.runInternal(new TurnContext(testAdapter, createTestActivity()))
+    await localApp.runInternal(new TurnContext(testAdapter, createTestActivity()))
+    assert.deepEqual(counters, [0, 1])
+  })
+
+  it('does not persist message turns when an after-turn handler returns false with MemoryStorageV2', async () => {
+    const storage = new MemoryStorageV2()
+    const localApp = new AgentApplication({ storage })
+    const counters: number[] = []
+    localApp.onActivity(ActivityTypes.Message, async (_context, state) => {
+      const counter = state.getValue<number>('conversation.counter') ?? 0
+      counters.push(counter)
+      state.setValue('conversation.counter', counter + 1)
+    })
+    localApp.onTurn('afterTurn', async () => false)
+    await localApp.runInternal(new TurnContext(testAdapter, createTestActivity()))
+    await localApp.runInternal(new TurnContext(testAdapter, createTestActivity()))
+    assert.deepEqual(counters, [0, 0])
   })
 
   it('rejects a delayed turn when a faster turn saves the same V2 conversation state', async () => {
