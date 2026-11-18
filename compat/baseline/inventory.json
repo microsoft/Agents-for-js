@@ -183,6 +183,23 @@
       "unsupported": []
     },
     {
+      "name": "@microsoft/agents-hosting-runner",
+      "directory": "packages/agents-hosting-runner",
+      "entries": {
+        ".": {
+          "types": "./dist/src/index.d.ts",
+          "report": "agents-hosting-runner.api.md"
+        }
+      },
+      "dependencies": {
+        "@microsoft/agents-activity": "file:../agents-activity",
+        "@microsoft/agents-hosting": "file:../agents-hosting",
+        "@microsoft/agents-telemetry": "file:../agents-telemetry",
+        "express": "5.2.1"
+      },
+      "unsupported": []
+    },
+    {
       "name": "@microsoft/agents-hosting-storage-blob",
       "directory": "packages/agents-hosting-storage-blob",
       "entries": {
