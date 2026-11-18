@@ -1,12 +1,14 @@
 # @microsoft/agents-hosting
 
-Package-specific guidance and examples relocated from the package README.
 Start with the [Microsoft 365 Agents SDK documentation](https://learn.microsoft.com/microsoft-365/agents-sdk/)
 for primary developer guidance. The examples below are excerpts; surrounding
 application setup, variables, or imports may be omitted.
 
-See the [package guide index](../PACKAGE-GUIDES.md) for related guides and
-the source revision used for this migration.
+See the [package guide index](../PACKAGE-GUIDES.md) for related contributor guides.
+
+For basic application, state, and Express hosting examples, see
+[AgentApplication](https://learn.microsoft.com/microsoft-365/agents-sdk/agent-application?tabs=javascript)
+and [Bot Framework migration](https://learn.microsoft.com/microsoft-365/agents-sdk/bf-migration-nodejs).
 
 ## Hosting integration APIs
 
@@ -176,23 +178,7 @@ loading without including the supplied value in diagnostics.
 The provider-neutral hierarchical document shape is defined by
 [`agents-configuration.schema.json`](../schemas/agents-configuration.schema.json).
 
-## Example Usage based on the AgentApplication object
-
-```ts
-import { AgentApplication, MemoryStorage, TurnContext, TurnState } from '@microsoft/agents-hosting'
-
-const echo = new AgentApplication<TurnState>({ storage: new MemoryStorage() })
-echo.onConversationUpdate('membersAdded', async (context: TurnContext) => {
-  await context.sendActivity('Welcome to the Echo sample, send a message to see the echo feature in action.')
-})
-echo.onActivity('message', async (context: TurnContext, state: TurnState) => {
-  let counter: number = state.getValue('conversation.counter') || 0
-  await context.sendActivity(`[${counter++}]You said: ${context.activity.text}`)
-  state.setValue('conversation.counter', counter)
-})
-```
-
-### Handling errors from direct proactive operations
+## Handling errors from direct proactive operations
 
 `adapter.continueConversation()` sends errors from its callback to the adapter's
 `onTurnError` handler. If that handler completes normally, `continueConversation()`
@@ -248,50 +234,6 @@ const fileStorageV2 = new FileStorageV2('./data')
 V2 calls return keyed operation results. Read values are at
 `results[key].value`; inspect `status` and `version` for operation outcomes.
 
-## Example Usage based on bot framework Activity Handler
-
-Create an Echo bot using the ActivityHandler
-
-```ts
-// myHandler.ts
-import { ActivityHandler, MessageFactory } from '@microsoft/agents-hosting'
-
-export class MyHandler extends ActivityHandler {
-  constructor () {
-    super()
-    this.onMessage(async (context, next) => {
-      const replyText = `Agent: ${context.activity.text}`
-      await context.sendActivity(MessageFactory.text(replyText))
-      await next()
-    })
-  }
-}
-```
-
-Host the bot with express
-
-```ts
-// index.ts
-import express, { Response } from 'express'
-import { Request, CloudAdapter, authorizeJWT, AuthConfiguration, loadAuthConfigFromEnv } from '@microsoft/agents-hosting'
-import { EchoBot } from './myHandler'
-
-const authConfig: AuthConfiguration = loadAuthConfigFromEnv()
-
-const adapter = new CloudAdapter(authConfig)
-const myHandler = new MyHandler()
-
-const app = express()
-
-app.use(express.json())
-app.use(authorizeJWT(authConfig))
-
-app.post('/api/messages', async (req: Request, res: Response) => {
-  await adapter.process(req, res, async (context) => await myHandler.run(context))
-})
-
-```
-
 ## Inbound token issuer validation
 
 Inbound JWT signature, audience, lifetime, and tenant-claim consistency checks
@@ -336,28 +278,9 @@ When enforcement is enabled, `CloudAdapter` rejects inbound activities whose
 mismatches (equivalent to `CloudAdapterOptions.validateServiceUrl=true`).
 
 For explicit configuration, reuse the same immutable policy in the adapter and
-attachment downloaders:
-
-```ts
-import {
-  AgentApplication,
-  AttachmentDownloader,
-  CloudAdapter,
-  OutboundHostValidator
-} from '@microsoft/agents-hosting'
-
-const outboundHostValidator = new OutboundHostValidator({
-  enabled: true,
-  hosts: ['contoso.com']
-})
-
-const adapter = new CloudAdapter(undefined, undefined, undefined, undefined, outboundHostValidator)
-
-const agent = new AgentApplication({
-  adapter,
-  fileDownloaders: [new AttachmentDownloader('inputFiles', outboundHostValidator)]
-})
-```
+attachment downloaders. The
+[production guide](https://learn.microsoft.com/microsoft-365/agents-sdk/production-ready-agent/production-ready-agent?pivots=nodejs#3-restrict-outbound-destinations)
+shows how to share a validator between those consumers.
 
 When enforcement is enabled, URLs must use HTTPS and must not contain userinfo.
 Both attachment downloaders validate the actual download destination and every

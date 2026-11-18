@@ -1,48 +1,18 @@
 # @microsoft/agents-telemetry
 
-Package-specific guidance and examples relocated from the package README.
 Start with the [Microsoft 365 Agents SDK documentation](https://learn.microsoft.com/microsoft-365/agents-sdk/)
 for primary developer guidance. The examples below are excerpts; surrounding
 application setup, variables, or imports may be omitted.
 
-See the [package guide index](../PACKAGE-GUIDES.md) for related guides and
-the source revision used for this migration.
+See the [package guide index](../PACKAGE-GUIDES.md) for related contributor guides.
 
-## For Agent Developers
+For basic setup, sampling, span and metric names, log records, and general span
+error handling, see the
+[JavaScript telemetry reference](https://learn.microsoft.com/microsoft-365/agents-sdk/agent-telemetry?pivots=nodejs).
 
-This section covers how to enable and configure telemetry in your agent application. The SDK automatically instruments its components — you only need to wire up OpenTelemetry exporters and, optionally, configure sampling for the spans you want to collect.
+## Application exporter examples
 
-### Peer Dependencies
-
-Install the OpenTelemetry API packages in your agent for full integration:
-
-```sh
-npm install @opentelemetry/api @opentelemetry/api-logs
-```
-
-Both are optional. If missing, the SDK falls back to noop implementations and logs a warning. Installing the official packages is recommended for full tracing, metrics, and log export.
-
-### Enabling Tracing
-
-For traces to be exported, configure the OpenTelemetry SDK with an exporter. Console exporter for development:
-
-```ts
-import { NodeSDK } from '@opentelemetry/sdk-node'
-import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-node'
-
-const sdk = new NodeSDK({
-  traceExporter: new ConsoleSpanExporter(),
-  serviceName: 'my-agent-service',
-})
-
-sdk.start()
-```
-
-Once configured, all SDK components that use `trace(...)` will emit spans through the global tracer provider.
-
-To export metrics referenced by `MetricNames`, configure a metric reader/exporter in your OpenTelemetry SDK as well.
-
-#### Production Setup with OTLP Exporter
+### Tracing with OTLP
 
 For production, use an OTLP exporter to send traces to your observability backend (Azure Monitor, Jaeger, Grafana, etc.):
 
@@ -86,81 +56,6 @@ const sdk = new NodeSDK({
 sdk.start()
 ```
 
-### Filtering Spans with a Parent-Based Sampler
-
-Configure filtering in your OpenTelemetry SDK with a custom sampler. A parent-based delegate ensures that descendants of a filtered span are also excluded while preserving the sampling decision for all other traces.
-
-The following reusable sampler filters spans by their names. This example excludes automatic typing-indicator spans and their adapter and connector descendants:
-
-```ts
-import { SpanNames } from '@microsoft/agents-telemetry'
-import { NodeSDK } from '@opentelemetry/sdk-node'
-import {
-  AlwaysOnSampler,
-  ParentBasedSampler,
-  SamplingDecision,
-  type Sampler,
-} from '@opentelemetry/sdk-trace-base'
-import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-node'
-
-class SpanNameFilteringSampler implements Sampler {
-  private readonly filteredSpanNames: ReadonlySet<string>
-  private readonly parentBased = new ParentBasedSampler({
-    root: new AlwaysOnSampler(),
-  })
-
-  constructor (spanNames: Iterable<string>) {
-    this.filteredSpanNames = new Set(spanNames)
-  }
-
-  shouldSample (...args: Parameters<Sampler['shouldSample']>) {
-    return this.filteredSpanNames.has(args[2])
-      ? { decision: SamplingDecision.NOT_RECORD }
-      : this.parentBased.shouldSample(...args)
-  }
-
-  toString () {
-    return `SpanNameFilteringSampler(${[...this.filteredSpanNames].join(',')})`
-  }
-}
-
-const sdk = new NodeSDK({
-  sampler: new SpanNameFilteringSampler([
-    SpanNames.AGENTS_APP_TYPING_INDICATOR,
-  ]),
-  traceExporter: new ConsoleSpanExporter(),
-  serviceName: 'my-agent-service',
-})
-
-sdk.start()
-```
-
-Add any other values from `SpanNames` to the sampler's list when you need to filter additional SDK spans.
-
-> [!WARNING]
-> `AGENTS_TELEMETRY_DISABLED_SPAN_CATEGORIES` is deprecated and will be removed in a future release. It remains supported temporarily for backward compatibility, but new applications should configure an OpenTelemetry sampler instead.
-
-### Span and Metric Names
-
-The SDK uses predefined constants for all span and metric names:
-
-```ts
-import { SpanNames, MetricNames } from '@microsoft/agents-telemetry'
-
-// Example span names:
-SpanNames.ADAPTER_PROCESS          // 'agents.adapter.process'
-SpanNames.AGENTS_APP_RUN           // 'agents.app.run'
-SpanNames.STORAGE_READ             // 'agents.storage.read'
-SpanNames.CONNECTOR_REPLY_TO_ACTIVITY // 'agents.connector.reply_to_activity'
-
-// Example metric names:
-MetricNames.ACTIVITIES_RECEIVED        // 'agents.activities.received'
-MetricNames.CONNECTOR_REQUEST_DURATION // 'agents.connector.request.duration'
-MetricNames.TURN_DURATION              // 'agents.turn.duration'
-MetricNames.AUTH_TOKEN_REQUEST_COUNT   // 'agents.auth.token.request.count'
-// ... and more
-```
-
 ---
 
 ## For SDK Contributors
@@ -168,6 +63,8 @@ MetricNames.AUTH_TOKEN_REQUEST_COUNT   // 'agents.auth.token.request.count'
 This section covers internal APIs used to instrument SDK components. If you are contributing to the Agents SDK packages, use `trace`, `debug`, and `metric` to add observability to your code.
 
 Although this package is published, it primarily serves as a shared telemetry layer for other Agents SDK packages. Some exported TypeScript types intentionally depend on OpenTelemetry packages even though runtime behavior still supports noop fallback when those optional peer dependencies are not installed.
+
+When optional OpenTelemetry APIs are missing, the SDK uses its fallback implementations and logs a warning.
 
 This package supports both ESM and CommonJS consumers and requires Node.js 22 or later.
 
@@ -268,8 +165,6 @@ trace(storageReadTrace, ({ record }) => {
 
 #### Behavior details
 
-- On success, the span status is set to `OK`.
-- On failure, the exception is recorded on the span, status is set to `ERROR`, and the error is rethrown.
 - Non-Error thrown values are recorded with their type name and string representation.
 - Unrecognized span names throw immediately.
 - The deprecated disabled-span categories run the callback with a noop context — no telemetry is emitted.
@@ -279,8 +174,6 @@ trace(storageReadTrace, ({ record }) => {
 
 ### Using debug
 
-Create loggers that emit to both the `debug` module and OpenTelemetry logs:
-
 ```ts
 import { debug } from '@microsoft/agents-telemetry'
 
@@ -288,8 +181,6 @@ const logger = debug('agents:mycomponent')
 logger.info('Processing request', { requestId })
 logger.error('Failed to connect', error)
 ```
-
-When `@opentelemetry/api-logs` is available, log records are emitted with severity and namespace attributes. Otherwise, only the `debug` output is produced.
 
 ### Using metric
 
@@ -310,12 +201,10 @@ When `@opentelemetry/api` is not available, the instruments are safe noops.
 ### Key Features
 
 - **Automatic span lifecycle**: Spans are started and ended automatically in callback mode
-- **Error recording**: Exceptions are recorded on the span with `ERROR` status
 - **Span name validation**: Unknown span names are rejected early
 - **Record tracking**: Accumulate structured data during a trace and access it in the `end` hook
 - **Managed child spans**: Start child spans from a managed trace context when a manual parent span stays open
 - **Custom actions**: Define span-scoped helper functions via the `actions` factory
-- **Sampler-based filtering**: Use OpenTelemetry parent-based sampling to exclude selected spans and their descendants
 - **Noop fallback**: All instrumentation calls are safe no-ops when OpenTelemetry APIs are not installed
 
 ---
@@ -362,8 +251,6 @@ Returns the `definition` object as-is. Useful for declaring reusable trace defin
 
 ### `debug(namespace)`
 
-Creates a logger for the given namespace. When `@opentelemetry/api-logs` is available, the logger bridges the `debug` module with OpenTelemetry log emission. Otherwise, it creates a `debug`-only logger.
-
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `namespace` | `string` | Logger namespace (e.g. `'agents:hosting'`). |
@@ -378,14 +265,6 @@ Provides factory methods for creating OpenTelemetry instruments. When `@opentele
 |--------|-------------|
 | `metric.histogram(name)` | Creates a histogram instrument. |
 | `metric.counter(name)` | Creates a counter instrument. |
-
-### `SpanNames`
-
-Provides stable span name constants used by Agents SDK components, including adapter, application, connector, storage, authentication, authorization, user token client, turn-processing, and Copilot Studio client operations.
-
-### `MetricNames`
-
-Provides stable metric name constants for counters and histograms used by Agents SDK components, including activity counts, request counts, turn counts, and duration metrics.
 
 ## License
 

@@ -1,12 +1,10 @@
 # @microsoft/agents-hosting-extensions-slack
 
-Package-specific guidance and examples relocated from the package README.
 Start with the [Microsoft 365 Agents SDK documentation](https://learn.microsoft.com/microsoft-365/agents-sdk/)
 for primary developer guidance. The examples below are excerpts; surrounding
 application setup, variables, or imports may be omitted.
 
-See the [package guide index](../PACKAGE-GUIDES.md) for related guides and
-the source revision used for this migration.
+See the [package guide index](../PACKAGE-GUIDES.md) for related contributor guides.
 
 ## Quick Start
 

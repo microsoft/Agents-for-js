@@ -1,12 +1,13 @@
 # @microsoft/agents-hosting-express
 
-Package-specific guidance and examples relocated from the package README.
 Start with the [Microsoft 365 Agents SDK documentation](https://learn.microsoft.com/microsoft-365/agents-sdk/)
 for primary developer guidance. The examples below are excerpts; surrounding
 application setup, variables, or imports may be omitted.
 
-See the [package guide index](../PACKAGE-GUIDES.md) for related guides and
-the source revision used for this migration.
+See the [package guide index](../PACKAGE-GUIDES.md) for related contributor guides.
+
+For basic `startServer` setup, see the
+[JavaScript quickstart](https://learn.microsoft.com/microsoft-365/agents-sdk/quickstart?pivots=nodejs).
 
 ## Hosting entry points
 
@@ -15,19 +16,6 @@ the source revision used for this migration.
 - **`createCloudAdapter`** — Low-level factory to get a `CloudAdapter` for full control over request processing.
 
 ## Usage
-
-### Basic — `startServer`
-
-```ts
-import { AgentApplication, TurnState } from '@microsoft/agents-hosting';
-import { startServer } from '@microsoft/agents-hosting-express';
-
-const app = new AgentApplication<TurnState>();
-app.onActivity('message', async (context) => {
-  await context.sendActivity('Hello, world!');
-});
-startServer(app);
-```
 
 ### Custom routes alongside the agent endpoint
 
