@@ -1034,6 +1034,7 @@ export interface InputFile {
     content: Buffer;
     contentType: string;
     contentUrl?: string;
+    filename?: string;
 }
 
 // @public
@@ -1068,7 +1069,7 @@ export const loadPrevAuthConfigFromEnv: (options?: AuthConfigurationResolutionOp
 
 // @public
 export class M365AttachmentDownloader<TState extends TurnState = TurnState> implements InputFileDownloader<TState> {
-    constructor(stateKey?: string, outboundHostValidator?: OutboundUrlPolicy);
+    constructor(stateKey?: string, outboundHostValidator?: OutboundUrlPolicy, graphBaseUrl?: string);
     downloadAndStoreFiles(context: TurnContext, state: TState): Promise<void>;
     downloadFiles(context: TurnContext): Promise<InputFile[]>;
 }

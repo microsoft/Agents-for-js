@@ -20,8 +20,12 @@ export class AttachmentDownloadHttpClient {
     private readonly hostValidator: OutboundUrlPolicy
   ) {}
 
-  public async get (url: string, headers: Record<string, string> = {}): Promise<HttpResponse<ArrayBuffer> | undefined> {
-    if (!this.hostValidator.enabled) {
+  public async get (
+    url: string,
+    headers: Record<string, string> = {},
+    redirects: 'default' | 'https' | 'same-origin-bearer' = 'default'
+  ): Promise<HttpResponse<ArrayBuffer> | undefined> {
+    if (!this.hostValidator.enabled && redirects === 'default') {
       if (!this.hostValidator.isAllowed(url)) {
         return this.blocked(url)
       }
@@ -29,25 +33,31 @@ export class AttachmentDownloadHttpClient {
     }
 
     let currentUrl = url
-    for (let redirects = 0; ; redirects++) {
+    let requestHeaders = headers
+    for (let hop = 0; ; hop++) {
       const parsed = getHttpsUrl(currentUrl)
       const allowed = parsed && (this.hostValidator instanceof OutboundHostValidator
         ? await this.hostValidator.isAllowedAsync(parsed)
-        : this.hostValidator.isAllowed(currentUrl) && await hasAllowedOutboundAddresses(parsed))
+        : this.hostValidator.isAllowed(currentUrl) &&
+          (!this.hostValidator.enabled || await hasAllowedOutboundAddresses(parsed)))
       if (!allowed) {
         return this.blocked(currentUrl)
       }
 
-      const requestHeaders = new Headers(redirects === 0 ? headers : undefined)
-      const response = await fetch(currentUrl, { method: 'GET', headers: requestHeaders, redirect: 'manual' })
+      const response = await fetch(currentUrl, { method: 'GET', headers: new Headers(requestHeaders), redirect: 'manual' })
       const location = response.headers.get('location')
+
       if (REDIRECT_STATUSES.has(response.status) && location) {
         await response.body?.cancel()
-        if (redirects >= MAX_REDIRECTS) {
+        if (hop >= MAX_REDIRECTS) {
           throw ExceptionHelper.generateException(Error, Errors.AttachmentDownloadRedirectLimit)
         }
         try {
-          currentUrl = new URL(location, currentUrl).href
+          const next = new URL(location, currentUrl)
+          if (redirects !== 'same-origin-bearer' || next.origin !== parsed.origin) {
+            requestHeaders = {}
+          }
+          currentUrl = next.href
         } catch {
           throw ExceptionHelper.generateException(Error, Errors.AttachmentDownloadInvalidRedirect)
         }
@@ -62,9 +72,11 @@ export class AttachmentDownloadHttpClient {
         headers: response.headers,
         config
       }
+
       if (!response.ok) {
         throw new HttpError(`Request failed with status ${response.status}`, result, config)
       }
+
       return result
     }
   }

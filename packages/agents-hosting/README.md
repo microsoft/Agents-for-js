@@ -381,14 +381,11 @@ allowlist. Existing custom `OutboundUrlPolicy` implementations remain supported;
 enabled custom policies are checked at every hop and receive the same HTTPS and
 public-address safeguards, without the built-in private-network exception.
 
-Initial request headers, including authorization, are not forwarded to any
-redirect, even on the same origin. Services requiring authorization on a
-redirected endpoint must supply a directly accessible, allowed download URL.
-Redirects are limited to 50 hops.
+With validation enabled, the generic downloader sends credentials only on the
+first request. It follows up to 50 redirects.
 
-Enforcement remains **disabled by default**. With enforcement disabled, existing
-downloads retain native `fetch` redirects and their initial authentication
-behavior, and do not perform the new DNS checks. Applications already enabling
+Enforcement remains **disabled by default**. With enforcement disabled, the
+generic downloader uses native `fetch` redirects. Applications already enabling
 validation may need to replace HTTP URLs and explicitly allow intended private
 destinations. The synchronous `isAllowed()` check validates URL/host/literal
 address policy; `isAllowedAsync()` additionally checks DNS answers and is used
@@ -398,8 +395,28 @@ by the attachment downloaders. Adapter service-URL checks remain synchronous.
 connection to a validated address; use network egress controls as additional
 protection against DNS rebinding. Host allowlisting is not credential-audience
 authorization: an allowed Microsoft-hosted domain may contain tenant-controlled
-content. These controls do not change which initial attachment requests receive
-Connector credentials. In particular, legacy/default downloads can still send
-credentials to an activity-selected destination. Separating preauthenticated
-Teams/OneDrive downloads from authenticated Connector attachment operations is
-a separate compatibility-sensitive change.
+content.
+
+### Teams and M365 input files
+
+Register `new M365AttachmentDownloader()` in `fileDownloaders` to read file bytes,
+MIME type, and an optional `filename` from the `inputFiles` turn-state collection.
+The downloader checks HTTPS on every request and redirect, including when host
+allowlisting is disabled.
+
+- Signed uploads use `content.downloadUrl` without credentials, including when
+  the activity omits `contentUrl`. An invalid or expired signed URL skips that file.
+- For a pasted Teams image, the Bot attachment URL must be under the inbound
+  service URL before the downloader uses the turn connector's bearer. Image
+  signatures determine the filename and MIME type. Companion HTML supplies a
+  fallback format hint and is omitted from the file collection.
+- For unsigned Teams file metadata, eligible agentic users in personal, group
+  chat, and channel conversations use their configured connection to download
+  the shared item through Graph. The file must be shared with the user, and
+  their Graph token needs file or site access. For sovereign clouds, pass the
+  versioned Graph endpoint as the third constructor argument and allow its
+  download destinations when host validation is enabled.
+
+Pasted-image and Graph requests retain the bearer across same-origin redirects.
+After crossing origins, all remaining hops are anonymous. Other direct M365
+attachment URLs use the connector credential on the first request only.
