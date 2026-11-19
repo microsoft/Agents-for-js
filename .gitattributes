@@ -3,7 +3,8 @@
 # renormalize existing files; run `git add --renormalize .` if you want that.
 * text=auto eol=lf
 
-# Preserve this legacy API report's CRLF bytes so feature PRs show only semantic API changes.
+# Preserve these legacy API reports' CRLF bytes so feature PRs show only semantic API changes.
+compat/baseline/agents-activity.api.md -text whitespace=cr-at-eol
 compat/baseline/agents-hosting.api.md -text whitespace=cr-at-eol
 
 # Windows-only scripts are kept as CRLF.
