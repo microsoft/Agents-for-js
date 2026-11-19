@@ -4,8 +4,14 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { isDeepStrictEqual } from 'node:util'
 import { fileURLToPath } from 'node:url'
+import { isMainThread, parentPort, Worker, workerData } from 'node:worker_threads'
 
 import { checkTeamsApiMetadata } from './teams-api-drift/validate-teams-api-metadata.mjs'
+import { checkDocumentationLinks, linkFinding } from './repo-doctor/documentation-links.mjs'
+import { checkExternalLinks } from './repo-doctor/external-links.mjs'
+import { configurationFile, readLinkExceptions } from './repo-doctor/link-configuration.mjs'
+import { writeLinkLog } from './repo-doctor/link-report.mjs'
+import { startProgress, supportsProgress } from './repo-doctor/progress.mjs'
 import { loadBaseline } from './shared.mjs'
 
 const ignoredDirectories = new Set(['.git', 'node_modules', 'dist', 'coverage'])
@@ -271,6 +277,41 @@ export const ruleDefinitions = {
     why: 'Keeps repository documentation accurate and navigable.',
     fix: 'Update the link to an existing repository-relative file or directory.'
   },
+  'docs/link-invalid': {
+    what: 'Documentation destinations have valid encoding and URL syntax.',
+    why: 'Malformed targets cannot be resolved reliably.',
+    fix: 'Correct the destination encoding or use a complete HTTP/HTTPS URL.',
+  },
+  'docs/link-case-mismatch': {
+    what: 'Local link spelling matches actual filename casing.',
+    why: 'Links must work on case-sensitive systems as well as Windows.',
+    fix: 'Use the exact filename spelling reported by the diagnostic.',
+  },
+  'docs/link-anchor-missing': {
+    what: 'Local Markdown fragments identify existing headings or explicit anchors.',
+    why: 'An existing file can still contain a broken section link.',
+    fix: 'Choose an existing heading fragment or add the intended anchor.',
+  },
+  'docs/external-link-http': {
+    what: 'External destinations return successful final HTTP responses.',
+    why: 'Removed pages and client errors prevent readers reaching resources.',
+    fix: 'Replace the URL or restore the referenced resource.',
+  },
+  'docs/external-link-redirect': {
+    what: 'External redirects reach eligible destinations within a bounded number of hops.',
+    why: 'Loops, invalid redirects, and private destinations cannot be validated.',
+    fix: 'Link directly to a working public HTTP/HTTPS destination.',
+  },
+  'docs/external-link-unverified': {
+    what: 'External links with access restrictions or network failures remain visibly unverified.',
+    why: 'A failed request is not evidence that a website works or is absent.',
+    fix: 'Retry and investigate the restriction or network failure; use only justified exact exceptions.',
+  },
+  'docs/link-exception-expired': {
+    what: 'Temporary external-link exceptions have not expired.',
+    why: 'Temporary exclusions must not hide broken links indefinitely.',
+    fix: 'Remove the exception or deliberately renew it after investigating the target.',
+  },
   'compat/baseline-directory-missing': {
     what: 'The API compatibility baseline directory exists.',
     why: 'Keeps public API compatibility checks complete and attributable.',
@@ -345,7 +386,10 @@ const ruleCategories = {
   compat: 'API compatibility'
 }
 
-/** @typedef {{ ruleId: keyof typeof ruleDefinitions, message: string, fix: string, path: string, line: number, column: number, subject?: string }} Finding */
+/** @typedef {{ ruleId: string, message: string, fix: string, path: string, line: number, column: number, subject?: string, severity?: 'error' | 'warning' }} Finding */
+
+// Parsing context is shared with the optional async phase without changing the public report shape.
+const linkContexts = new WeakMap()
 
 /**
  * Runs the repository consistency checks without modifying the checkout.
@@ -472,7 +516,15 @@ export function checkRepository (root, options = {}) {
   checkInternalDependencies(normalizedRoot, manifests, buildReferences, findings)
   checkCatalogs(normalizedRoot, packages, catalogAgents, findings)
   checkDocumentationImports(normalizedRoot, documents, packages, findings)
-  checkRelativeDocumentationLinks(normalizedRoot, documents, findings)
+  const links = checkDocumentationLinks(normalizedRoot, documents)
+  findings.push(...links.findings)
+  const exceptions = readLinkExceptions(normalizedRoot, DoctorConfigurationError)
+  for (const exception of exceptions.values()) {
+    if (exception.expired) {
+      findings.push(linkFinding({ path: configurationFile, line: 0, column: 0, target: exception.url },
+        'docs/link-exception-expired', `Exception expired on ${exception.expires}.`, 'Remove the exception or deliberately renew its UTC expiry after investigating the URL.'))
+    }
+  }
   checkCompatibilityBaselines(normalizedRoot, packages, findings)
 
   try {
@@ -491,15 +543,9 @@ export function checkRepository (root, options = {}) {
 
   checkRuntimeConfiguration(normalizedRoot, rootManifest, findings)
 
-  findings.sort(
-    (left, right) =>
-      left.path.localeCompare(right.path) ||
-      left.line - right.line ||
-      left.column - right.column ||
-      left.ruleId.localeCompare(right.ruleId)
-  )
+  findings.sort(compareFindings)
 
-  return {
+  const report = {
     status: findings.length > 0 ? 'fail' : 'pass',
     inventory: {
       packages: packages.map(workspace => ({
@@ -510,10 +556,55 @@ export function checkRepository (root, options = {}) {
       documentCount: documents.length
     },
     summary: {
-      errors: findings.length
+      errors: findings.length,
+      warnings: 0,
     },
-    findings
+    findings,
+    links: {
+      ...links.summary,
+      skipped: links.skipped,
+      external: {
+        requested: false,
+        unique: new Set(links.externalReferences.map(reference => reference.url)).size,
+        requests: 0,
+      },
+    },
   }
+  linkContexts.set(report, { links, exceptions })
+  return report
+}
+
+/** Run local checks first and optionally await external verification.
+ * @param {string} root
+ * @param {{ baseRef?: string, checkLinks?: boolean, strictLinks?: boolean, externalOptions?: import('./repo-doctor/external-links.mjs').ExternalOptions }} [options]
+ */
+export async function checkRepositoryWithLinks (root, options = {}) {
+  if (options.strictLinks && !options.checkLinks) {
+    throw new DoctorConfigurationError('scripts/repo-doctor.mjs', '--strict-links requires --check-links.')
+  }
+  const report = checkRepository(root, options)
+  if (!options.checkLinks) {
+    return report
+  }
+  const { links, exceptions } = linkContexts.get(report)
+  const external = await checkExternalLinks(links.externalReferences, {
+    ...options.externalOptions,
+    strict: options.strictLinks,
+    exceptions,
+  })
+  report.findings.push(...external.findings)
+  report.findings.sort(compareFindings)
+  report.summary.errors = report.findings.filter(finding => finding.severity !== 'warning').length
+  report.summary.warnings = report.findings.filter(finding => finding.severity === 'warning').length
+  report.status = report.summary.errors > 0 ? 'fail' : 'pass'
+  report.links.external = { ...external.summary, results: external.results }
+  return report
+}
+
+function compareFindings (left, right) {
+  return left.path.localeCompare(right.path) || left.line - right.line ||
+    left.column - right.column || left.ruleId.localeCompare(right.ruleId) ||
+    (left.subject ?? '').localeCompare(right.subject ?? '')
 }
 
 /** @param {string[]} argv */
@@ -521,15 +612,23 @@ export function parseArguments (argv) {
   let root = process.cwd()
   let baseRef
   let rules = false
+  let checkLinks = false
+  let strictLinks = false
   const ruleIds = []
 
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index]
-
     if (argument === '--help' || argument === '-h') {
       return { help: true }
     }
-
+    if (argument === '--check-links') {
+      checkLinks = true
+      continue
+    }
+    if (argument === '--strict-links') {
+      strictLinks = true
+      continue
+    }
     if (argument === '--rules') {
       rules = true
 
@@ -571,26 +670,19 @@ export function parseArguments (argv) {
       throw new DoctorConfigurationError('scripts/repo-doctor.mjs', `Unknown rule ID: ${ruleId}`)
     }
   }
-
-  return { help: false, rules, ruleIds, root, ...(baseRef ? { baseRef } : {}) }
+  if (strictLinks && !checkLinks) {
+    throw new DoctorConfigurationError('scripts/repo-doctor.mjs', '--strict-links requires --check-links.')
+  }
+  return { help: false, rules, ruleIds, root, ...(baseRef ? { baseRef } : {}), ...(checkLinks ? { checkLinks } : {}), ...(strictLinks ? { strictLinks } : {}) }
 }
 
 /**
  * Formats the stable, ESLint-style report shared by humans and AI agents.
  * @param {ReturnType<typeof checkRepository>} report
- * @param {{ color?: boolean }} [options]
+ * @param {{ color?: boolean, logPath?: string }} [options]
  */
 export function formatReport (report, options = {}) {
   const color = options.color ?? supportsColor(process.stdout)
-
-  if (report.findings.length === 0) {
-    return style(
-      `✓ No repository errors found — ${report.inventory.packages.length} packages, ${report.inventory.testAgents.length} test agents, ${report.inventory.documentCount} documents checked`,
-      'green',
-      color
-    )
-  }
-
   const lines = []
   const groups = new Map()
 
@@ -619,26 +711,64 @@ export function formatReport (report, options = {}) {
         ? `${style(finding.subject, 'cyan', color)}: ${finding.message}`
         : finding.message
       const ruleSpacing = ' '.repeat(messageWidth - plainMessage.length + 2)
-
-      lines.push(
-        `  ${location}  ${style('error', 'red', color)}  ${message}${ruleSpacing}${style(finding.ruleId, 'dim', color)}`
-      )
+      const severity = finding.severity ?? 'error'
+      lines.push(`  ${location}  ${style(severity, severity === 'warning' ? 'yellow' : 'red', color)}  ${message}${ruleSpacing}${style(finding.ruleId, 'dim', color)}`)
       lines.push(style('           fix    ' + finding.fix, 'dim', color))
     }
   }
+  if (lines.length > 0) {
+    lines.push('')
+  }
+  lines.push(...formatLinkSummary(report.links, color, options.logPath))
+  if (lines.length > 0) {
+    lines.push('')
+  }
 
-  const fileCount = groups.size
-
-  lines.push(
-    '',
-    style(
-      `✖ ${report.summary.errors} repository error${report.summary.errors === 1 ? '' : 's'} across ${fileCount} file${fileCount === 1 ? '' : 's'}`,
-      'red',
-      color
-    )
-  )
-
+  const errorCount = report.summary.errors
+  const warningCount = report.summary.warnings ?? 0
+  const warnings = `${warningCount} warning${warningCount === 1 ? '' : 's'}`
+  if (errorCount > 0) {
+    const fileCount = new Set(report.findings.filter(finding => finding.severity !== 'warning').map(finding => finding.path)).size
+    const warningSuffix = warningCount > 0 ? `; ${warnings} — external verification is incomplete.` : ''
+    lines.push(style(`✖ ${errorCount} repository error${errorCount === 1 ? '' : 's'} across ${fileCount} file${fileCount === 1 ? '' : 's'}${warningSuffix}`, 'red', color))
+  } else if (warningCount > 0) {
+    lines.push(style(`⚠ No repository errors found; ${warnings} — external verification is incomplete.`, 'yellow', color))
+  } else {
+    lines.push(style(`✓ No repository errors found — ${report.inventory.packages.length} packages, ${report.inventory.testAgents.length} test agents, ${report.inventory.documentCount} documents checked`, 'green', color))
+  }
   return lines.join('\n')
+}
+
+function formatLinkSummary (links, color, logPath) {
+  if (!links) {
+    return []
+  }
+
+  const external = links.external
+  const parts = [`${links.local} local checked`]
+  if (external.requested) {
+    parts.push(
+      style(`${external.verified} verified`, external.verified > 0 ? 'green' : 'dim', color),
+      style(`${external.broken} broken`, external.broken > 0 ? 'red' : 'dim', color),
+      style(`${external.unverified} not verified`, 'dim', color),
+      style(`${external.skipped} URL${external.skipped === 1 ? '' : 's'} skipped`, 'dim', color)
+    )
+  } else {
+    parts.push(style(`${external.unique} external not checked`, 'dim', color))
+  }
+  parts.push(style(`${links.skipped.length} non-web skipped`, 'dim', color))
+  if (links.unsupportedFragments > 0) {
+    parts.push(style(`${links.unsupportedFragments} unsupported fragments`, 'dim', color))
+  }
+
+  const lines = [`${style('Links:', 'cyan', color)} ${parts.join(' · ')}`]
+  if (external.requested) {
+    lines.push(style(`  ↳ HTTP requests: ${external.requests} attempts`, 'dim', color))
+  }
+  if (logPath) {
+    lines.push(style(`  ↳ Details: ${logPath}`, 'dim', color))
+  }
+  return lines
 }
 
 /** Formats the rule guide from the Doctor's rule metadata. */
@@ -678,21 +808,17 @@ export function formatRuleGuide (options = {}) {
   return lines.join('\n') + '\n'
 }
 
-function runCli () {
+async function runCli () {
+  let stopProgress = async () => {}
   try {
     const options = parseArguments(process.argv.slice(2))
 
     if (options.help) {
-      console.log(
-        'Usage: npm run repo:doctor -- [--root <path>] [--base-ref <git-ref>] [--rules [<rule-id>...]]'
-      )
-      console.log(
-        '  --rules  List every rule, or selected rule IDs, with their purpose and typical resolution.'
-      )
-      console.log(
-        '  --base-ref  Compare Teams API metadata reviews with the merge base of this Git ref.'
-      )
-
+      console.log('Usage: npm run repo:doctor -- [--root <path>] [--base-ref <git-ref>] [--check-links [--strict-links]] [--rules [<rule-id>...]]')
+      console.log('  --rules  List every rule, or selected rule IDs, with their purpose and typical resolution.')
+      console.log('  --base-ref  Compare Teams API metadata reviews with the merge base of this Git ref.')
+      console.log('  --check-links  Verify external HTTP/HTTPS links; default checks never access the network.')
+      console.log('  --strict-links  Treat unverified external links as errors; requires --check-links.')
       return
     }
 
@@ -701,15 +827,71 @@ function runCli () {
 
       return
     }
-
-    const report = checkRepository(options.root, { baseRef: options.baseRef })
-
-    console.log(formatReport(report))
-    process.exitCode = report.status === 'fail' ? 1 : 0
+    const color = supportsColor(process.stdout)
+    const linkMode = style(`External links: ${options.checkLinks ? 'ON' : 'OFF'}`, options.checkLinks ? 'cyan' : 'dim', color)
+    let modeHint = ''
+    if (!options.checkLinks) {
+      modeHint = ` · ${style('Enable:', 'dim', color)} ${style('npm run repo:doctor -- --check-links', 'cyan', color)}`
+    } else if (options.strictLinks) {
+      modeHint = style(' · Strict mode: unverified URLs fail the command.', 'yellow', color)
+    }
+    console.log(linkMode + modeHint)
+    console.log('')
+    stopProgress = startProgress({ color, checkLinks: options.checkLinks })
+    const colors = { output: color, error: supportsColor(process.stderr) }
+    const result = supportsProgress()
+      ? await runCliChecksInWorker(options, colors)
+      : await runCliChecks(options, colors)
+    await stopProgress()
+    if (result.exitCode === 2) {
+      console.error(result.output)
+    } else {
+      console.log(result.output)
+    }
+    process.exitCode = result.exitCode
   } catch (error) {
+    await stopProgress()
     console.error(formatFailure(error))
     process.exitCode = 2
   }
+}
+
+// Return text instead of writing it so the main thread owns all terminal output.
+async function runCliChecks (options, colors) {
+  try {
+    const report = await checkRepositoryWithLinks(options.root, options)
+    const { links } = linkContexts.get(report)
+    const logDirectory = process.env.QUALITY_LOG_DIR || path.join(options.root, 'scripts', 'logs', 'repo-doctor')
+    const logPath = writeLinkLog(report, links.externalReferences, logDirectory)
+    return {
+      output: formatReport(report, { color: colors.output, logPath }),
+      exitCode: report.status === 'fail' ? 1 : 0,
+    }
+  } catch (error) {
+    return { output: formatFailure(error, { color: colors.error }), exitCode: 2 }
+  }
+}
+
+/** @returns {Promise<{ output: string, exitCode: number }>} */
+function runCliChecksInWorker (options, colors) {
+  return new Promise((resolve, reject) => {
+    const worker = new Worker(new URL(import.meta.url), {
+      workerData: { repoDoctorCli: true, options, colors },
+    })
+    /** @type {{ output: string, exitCode: number } | undefined} */
+    let result
+    worker.once('message', message => {
+      result = message
+    })
+    worker.once('error', reject)
+    worker.once('exit', code => {
+      if (code === 0 && result) {
+        resolve(result)
+      } else {
+        reject(new Error(`Repository checks stopped before completing (worker exit ${code}).`))
+      }
+    })
+  })
 }
 
 function checkRepositoryConfiguration (root, manifest, manifestText, workspacePatterns, findings) {
@@ -1595,63 +1777,6 @@ function checkDocumentationImports (root, documents, packages, findings) {
           )
         }
       }
-    }
-  }
-}
-
-function checkRelativeDocumentationLinks (root, documents, findings) {
-  for (const document of documents) {
-    const fullPath = path.join(root, document)
-    const text = fs.readFileSync(fullPath, 'utf8')
-    const searchable = maskCodeFences(text)
-
-    for (const match of searchable.matchAll(/!?\[[^\]]*]\(([^)]+)\)/g)) {
-      let target = match[1]
-        .trim()
-        .replace(/^<|>$/g, '')
-        .split(/\s+["']/)[0]
-
-      if (!target || target.startsWith('#') || /^[a-z][a-z\d+.-]*:/i.test(target)) {
-        continue
-      }
-
-      target = target.split('#')[0].split('?')[0]
-
-      if (!target) {
-        continue
-      }
-
-      try {
-        target = decodeURIComponent(target)
-      } catch {
-        continue
-      }
-
-      const resolved = target.startsWith('/')
-        ? path.join(root, target.slice(1))
-        : path.resolve(path.dirname(fullPath), target)
-
-      if (fs.existsSync(resolved) && isRepositoryPath(root, resolved)) {
-        continue
-      }
-
-      const offset = match.index ?? 0
-      const message = fs.existsSync(resolved)
-        ? 'Repository-relative Markdown link resolves outside the repository.'
-        : isInside(root, resolved)
-          ? 'Repository-relative Markdown link does not resolve.'
-          : 'Repository-relative Markdown link escapes the repository.'
-
-      add(
-        findings,
-        'docs/relative-link-missing',
-        document,
-        message,
-        lineAt(text, offset),
-        match[1].trim(),
-        columnAt(text, offset),
-        `Change the link target to an existing path relative to ${path.posix.dirname(document)}.`
-      )
     }
   }
 }
@@ -2926,10 +3051,6 @@ function azureJobBlocks (text) {
   )
 }
 
-function maskCodeFences (text) {
-  return text.replace(/```[\s\S]*?```/g, value => value.replace(/[^\n]/g, ' '))
-}
-
 function stripComments (text) {
   return text
     .replace(/\/\*[\s\S]*?\*\//g, value => value.replace(/[^\n]/g, ' '))
@@ -2937,28 +3058,6 @@ function stripComments (text) {
       /(^|[^:])\/\/.*$/gm,
       (value, prefix) => prefix + ' '.repeat(value.length - prefix.length)
     )
-}
-
-function isInside (root, target) {
-  const relativePath = path.relative(root, target)
-
-  return relativePath === '' || (!relativePath.startsWith('..') && !path.isAbsolute(relativePath))
-}
-
-function isRepositoryPath (root, target) {
-  if (!isInside(root, target)) {
-    return false
-  }
-
-  try {
-    return isInside(fs.realpathSync(root), fs.realpathSync(target))
-  } catch (error) {
-    if (error && typeof error === 'object' && error.code === 'EPERM') {
-      return true
-    }
-
-    return false
-  }
 }
 
 function escapeRegExp (value) {
@@ -3037,9 +3136,7 @@ function style (value, kind, enabled) {
   if (!enabled) {
     return value
   }
-
-  const codes = { red: '31', green: '32', cyan: '36', dim: '2', heading: '1;4' }
-
+  const codes = { red: '31', yellow: '33', green: '32', cyan: '36', dim: '2', heading: '1;4' }
   return `\u001B[${codes[kind]}m${value}\u001B[0m`
 }
 
@@ -3075,6 +3172,8 @@ function byPath (left, right) {
   return left.path.localeCompare(right.path)
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (!isMainThread && workerData?.repoDoctorCli) {
+  runCliChecks(workerData.options, workerData.colors).then(result => parentPort.postMessage(result))
+} else if (isMainThread && process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   runCli()
 }

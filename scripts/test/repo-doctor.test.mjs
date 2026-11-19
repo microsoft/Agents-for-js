@@ -3,17 +3,10 @@ import { spawnSync } from 'node:child_process'
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { describe, it } from 'node:test'
 
-import {
-  checkRepository,
-  formatFailure,
-  formatReport,
-  formatRuleGuide,
-  parseArguments,
-  ruleDefinitions,
-  supportsColor
-} from '../repo-doctor.mjs'
+import { checkRepository, checkRepositoryWithLinks, formatFailure, formatReport, formatRuleGuide, parseArguments, ruleDefinitions, supportsColor } from '../repo-doctor.mjs'
 
 function fixture (mutate = () => {}) {
   const root = mkdtempSync(path.join(os.tmpdir(), 'repo-doctor-'))
@@ -812,7 +805,7 @@ describe('repo:doctor', () => {
 
   it('CLI lists the rule guide without checking the repository', () => {
     const cli = path.resolve('scripts/repo-doctor.mjs')
-    const result = spawnSync(process.execPath, [cli, '--rules'], { encoding: 'utf8' })
+    const result = spawnSync(process.execPath, [cli, '--rules'], { encoding: 'utf8', env: { ...process.env, QUALITY_LOG_DIR: '' } })
 
     assert.equal(result.status, 0)
     assert.match(result.stdout, /Repo Doctor rules/)
@@ -826,7 +819,7 @@ describe('repo:doctor', () => {
     const result = spawnSync(
       process.execPath,
       [cli, '--rules', 'scripts/install-hook-disallowed', 'docs/relative-link-missing'],
-      { encoding: 'utf8' }
+      { encoding: 'utf8', env: { ...process.env, QUALITY_LOG_DIR: '' } }
     )
 
     assert.equal(result.status, 0)
@@ -840,7 +833,7 @@ describe('repo:doctor', () => {
       write('tsconfig.build.json', JSON.stringify({ references: [] }))
     )
     const cli = path.resolve('scripts/repo-doctor.mjs')
-    const result = spawnSync(process.execPath, [cli, '--root', root], { encoding: 'utf8' })
+    const result = spawnSync(process.execPath, [cli, '--root', root], { encoding: 'utf8', env: { ...process.env, QUALITY_LOG_DIR: '' } })
 
     assert.equal(result.status, 1)
     assert.match(result.stdout, /^tsconfig\.build\.json/m)
@@ -858,9 +851,9 @@ describe('repo:doctor', () => {
 
     assert.equal(formatReport(report, { color: false }).includes('\u001B['), false)
     assert.equal(formatReport(report, { color: true }).includes('\u001B[32m'), true)
-    const failingReport = checkRepository(
-      fixture(({ write }) => write('tsconfig.build.json', JSON.stringify({ references: [] })))
-    )
+    assert.ok(formatReport(report, { color: true }).includes('\u001B[36mLinks:\u001B[0m'))
+    assert.ok(formatReport(report, { color: true }).includes('external not checked\u001B[0m'))
+    const failingReport = checkRepository(fixture(({ write }) => write('tsconfig.build.json', JSON.stringify({ references: [] }))))
     const coloredFailure = formatReport(failingReport, { color: true })
 
     assert.equal(coloredFailure.includes('\u001B[36mpackages/agents-example\u001B[0m'), true)
@@ -906,7 +899,7 @@ describe('repo:doctor', () => {
   it('CLI formats configuration failures and preserves the parser error', () => {
     const root = fixture(({ write }) => write('package.json', '{ invalid json'))
     const cli = path.resolve('scripts/repo-doctor.mjs')
-    const result = spawnSync(process.execPath, [cli, '--root', root], { encoding: 'utf8' })
+    const result = spawnSync(process.execPath, [cli, '--root', root], { encoding: 'utf8', env: { ...process.env, QUALITY_LOG_DIR: '' } })
 
     assert.equal(result.status, 2)
     assert.match(result.stderr, /^package\.json/m)
@@ -917,5 +910,256 @@ describe('repo:doctor', () => {
       /fix\s+Open package\.json, correct the invalid value or syntax identified above/
     )
     assert.match(result.stderr, /✖ Repo Doctor could not complete/)
+  })
+
+  it('keeps local and quality checks offline and explicitly reports disabled external validation', async () => {
+    const root = fixture(({ write }) => {
+      write('docs/links.md', '[public](https://public.example.org/resource#heading)')
+    })
+    let calls = 0
+    const report = await checkRepositoryWithLinks(root, {
+      externalOptions: {
+        request: async () => {
+          calls += 1
+          return { status: 200 }
+        },
+      },
+    })
+    assert.equal(calls, 0)
+    assert.equal(report.status, 'pass')
+    assert.equal(report.links.external.requests, 0)
+    const output = formatReport(report, { color: false })
+    assert.match(output, /^Links: .*1 external not checked/)
+    assert.doesNotMatch(output, /HTTP requests|Documentation links|Skipped references/)
+    assert.match(output.split('\n').at(-1), /^✓ No repository errors found/)
+  })
+
+  it('preserves structural errors while treating uncertain external results as neutral unless strict', async () => {
+    const root = fixture(({ write }) => {
+      write('docs/links.md', '[restricted](https://public.example.org/restricted)')
+    })
+    const externalOptions = { request: async () => ({ status: 403 }) }
+    const report = await checkRepositoryWithLinks(root, { checkLinks: true, externalOptions })
+    assert.equal(report.status, 'pass')
+    assert.equal(report.summary.errors, 0)
+    assert.equal(report.summary.warnings, 0)
+    const output = formatReport(report, { color: false })
+    assert.doesNotMatch(output, /warning|HTTP 403|verification is incomplete/)
+    assert.match(output.split('\n').at(-1), /^✓ No repository errors found/)
+    assert.match(output, /0 verified · 0 broken · 1 not verified/)
+    assert.match(output, /HTTP requests: 2 attempts/)
+    const unverifiedLine = formatReport(report, { color: true }).split('\n').find(line => line.startsWith('\u001B[36mLinks:'))
+    assert.ok(unverifiedLine.includes('\u001B[2m1 not verified\u001B[0m'))
+
+    const strict = await checkRepositoryWithLinks(root, { checkLinks: true, strictLinks: true, externalOptions })
+    assert.equal(strict.status, 'fail')
+    assert.equal(strict.summary.errors, 1)
+    assert.equal(strict.summary.warnings, 0)
+    assert.match(formatReport(strict, { color: false }).split('\n').at(-1), /^✖ 1 repository error/)
+    const invalidRoot = fixture(({ write }) => {
+      write('tsconfig.build.json', JSON.stringify({ references: [] }))
+      write('docs/links.md', '[restricted](https://public.example.org/restricted)')
+    })
+    const mixed = await checkRepositoryWithLinks(invalidRoot, { checkLinks: true, externalOptions })
+    assert.equal(mixed.status, 'fail')
+    assert.ok(mixed.summary.errors > 0)
+    assert.equal(mixed.summary.warnings, 0)
+  })
+
+  it('sorts async diagnostics by source rather than response order and reconciles unique counts', async () => {
+    const root = fixture(({ write }) => {
+      write('docs/a.md', '[one](https://public.example.org/one#first)\n[two](https://public.example.org/one#second)')
+      write('docs/z.md', '[three](https://other.example.org/three)')
+    })
+    const report = await checkRepositoryWithLinks(root, {
+      checkLinks: true,
+      externalOptions: {
+        request: async url => {
+          if (url.pathname === '/one') {
+            await new Promise(resolve => setImmediate(resolve))
+          }
+          return { status: 404 }
+        },
+      },
+    })
+    assert.deepEqual(report.findings.map(finding => finding.path), ['docs/a.md', 'docs/a.md', 'docs/z.md'])
+    const summary = report.links.external
+    assert.equal(summary.unique, summary.verified + summary.broken + summary.unverified + summary.skipped)
+    assert.equal(summary.unique, 2)
+    assert.equal(summary.references, 3)
+  })
+
+  it('validates flag combinations, configuration failures, expiry, and async internal errors', async () => {
+    assert.equal(parseArguments(['--check-links']).checkLinks, true)
+    assert.equal(parseArguments(['--check-links', '--strict-links']).strictLinks, true)
+    assert.throws(() => parseArguments(['--strict-links']), /requires --check-links/)
+    await assert.rejects(checkRepositoryWithLinks(fixture(), { strictLinks: true }), /requires --check-links/)
+
+    const expiredRoot = fixture(({ write }) => {
+      write('repo-doctor.links.json', JSON.stringify({
+        exceptions: [{ url: 'https://public.example.org/', reason: 'Old maintenance', expires: '2000-01-01' }],
+      }))
+    })
+    const expired = checkRepository(expiredRoot)
+    assert.equal(expired.status, 'fail')
+    assert.equal(expired.findings[0].ruleId, 'docs/link-exception-expired')
+
+    const root = fixture(({ write }) => {
+      write('docs/links.md', '[public](https://public.example.org/)')
+    })
+    await assert.rejects(checkRepositoryWithLinks(root, {
+      checkLinks: true,
+      externalOptions: {
+        request: async () => {
+          throw new Error('Unexpected async invariant')
+        },
+      },
+    }), /Unexpected async invariant/)
+  })
+
+  it('CLI keeps help, rule guides, and default runs offline and catches async failures', () => {
+    const root = fixture(({ write }) => {
+      write('docs/links.md', '[public](https://public.example.org/)')
+      write('request-stub.mjs', [
+        "import http from 'node:http'",
+        "import https from 'node:https'",
+        "import { EventEmitter } from 'node:events'",
+        'const request = () => {',
+        '  const emitter = new EventEmitter()',
+        '  emitter.end = () => {',
+        "    queueMicrotask(() => emitter.emit('error', new Error('Unexpected async transport failure')))",
+        '  }',
+        '  return emitter',
+        '}',
+        'http.request = request',
+        'https.request = request',
+      ].join('\n'))
+    })
+    const cli = path.resolve('scripts/repo-doctor.mjs')
+    const preload = pathToFileURL(path.join(root, 'request-stub.mjs')).href
+    for (const args of [[], ['--check-links', '--help'], ['--check-links', '--rules']]) {
+      const result = spawnSync(process.execPath, ['--import', preload, cli, '--root', root, ...args], {
+        encoding: 'utf8',
+        env: { ...process.env, QUALITY_LOG_DIR: '' },
+      })
+      assert.equal(result.status, 0, result.stderr)
+      if (args.length === 0) {
+        assert.match(result.stdout, /^External links: OFF · Enable: npm run repo:doctor -- --check-links\r?\n/)
+        assert.match(result.stdout, /1 external not checked/)
+        const logPath = /↳ Details: (.+)/.exec(result.stdout)[1].trim()
+        assert.ok(logPath.startsWith(path.join(root, 'scripts', 'logs', 'repo-doctor') + path.sep))
+        assert.match(readFileSync(logPath, 'utf8'), /External checks: disabled/)
+      } else {
+        assert.doesNotMatch(result.stdout, /External links: (ON|OFF)/)
+      }
+    }
+    const failure = spawnSync(process.execPath, ['--import', preload, cli, '--root', root, '--check-links'], { encoding: 'utf8', env: { ...process.env, QUALITY_LOG_DIR: '' } })
+    assert.equal(failure.status, 2)
+    assert.match(failure.stderr, /Unexpected async transport failure/)
+    assert.match(failure.stderr, /repo-doctor\/internal/)
+    assert.doesNotMatch(failure.stderr, /UnhandledPromiseRejection/)
+  })
+
+  it('keeps the interactive spinner moving during synchronous checks and clears it on success or failure', () => {
+    const root = fixture()
+    const preloadFile = path.join(root, 'slow-check.mjs')
+    writeFileSync(preloadFile, [
+      "import fs from 'node:fs'",
+      'process.stdout.isTTY = true',
+      'process.stdout.columns = 100',
+      'const readFile = fs.readFileSync',
+      'let delayed = false',
+      'fs.readFileSync = function (file, ...args) {',
+      `  if (!delayed && String(file) === ${JSON.stringify(path.join(root, 'package.json'))}) {`,
+      '    delayed = true',
+      '    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 700)',
+      '  }',
+      '  return readFile.call(this, file, ...args)',
+      '}',
+    ].join('\n'))
+    const args = ['--import', pathToFileURL(preloadFile).href, path.resolve('scripts/repo-doctor.mjs'), '--root', root]
+    const options = {
+      encoding: 'utf8',
+      env: { ...process.env, CI: '', TERM: 'xterm', NO_COLOR: '1', QUALITY_LOG_DIR: '' },
+      timeout: 15000,
+    }
+    const success = spawnSync(process.execPath, args, options)
+    assert.equal(success.status, 0, success.stderr)
+    assert.ok(success.stdout.split('Checking repository...').length > 3, success.stdout)
+    assert.ok(success.stdout.includes('\r\u001B[2KLinks:'))
+
+    writeFileSync(path.join(root, 'package.json'), '{ invalid JSON')
+    const failure = spawnSync(process.execPath, args, options)
+    assert.equal(failure.status, 2, failure.stderr)
+    assert.ok(failure.stdout.split('Checking repository...').length > 3, failure.stdout)
+    assert.ok(failure.stdout.endsWith('\r\u001B[2K'))
+    assert.match(failure.stderr, /repo-doctor\/configuration/)
+  })
+
+  it('CLI retains detailed logs for neutral and skipped links and fails strict or invalid runs', () => {
+    const root = fixture(({ write }) => {
+      write('docs/links.md', '[public](https://public.example.org/restricted)\n[mail](mailto:help@example.org)\n[local](http://localhost:3000/)')
+      write('restricted-response.mjs', [
+        "import http from 'node:http'",
+        "import https from 'node:https'",
+        "import { EventEmitter } from 'node:events'",
+        'const request = (url, options, callback) => {',
+        '  const emitter = new EventEmitter()',
+        '  emitter.end = () => {',
+        '    queueMicrotask(() => callback({',
+        '      statusCode: 403,',
+        '      headers: {},',
+        '      destroy () {},',
+        '    }))',
+        '  }',
+        '  return emitter',
+        '}',
+        'http.request = request',
+        'https.request = request',
+      ].join('\n'))
+    })
+    const cli = path.resolve('scripts/repo-doctor.mjs')
+    const preload = pathToFileURL(path.join(root, 'restricted-response.mjs')).href
+    const args = ['--import', preload, cli, '--root', root, '--check-links']
+    const env = { ...process.env, QUALITY_LOG_DIR: path.join(root, 'quality-logs') }
+    const neutral = spawnSync(process.execPath, args, { encoding: 'utf8', env })
+    assert.equal(neutral.status, 0, neutral.stderr)
+    assert.match(neutral.stdout, /^External links: ON/)
+    assert.doesNotMatch(neutral.stdout, /Enable:|DISABLED/)
+    assert.doesNotMatch(neutral.stdout, /warning|HTTP 403|verification is incomplete/)
+    assert.match(neutral.stdout, /1 not verified/)
+    assert.match(neutral.stdout, /\n {2}↳ HTTP requests: 2 attempts\r?\n {2}↳ Details:/)
+    const logPath = /↳ Details: (.+)/.exec(neutral.stdout)[1].trim()
+    assert.ok(logPath.startsWith(env.QUALITY_LOG_DIR + path.sep))
+    const details = readFileSync(logPath, 'utf8')
+    assert.match(details, /UNVERIFIED: https:\/\/public.example.org\/restricted/)
+    assert.match(details, /HTTP status: 403/)
+    assert.match(details, /Request attempts: 2/)
+    assert.match(details, /Source: docs\/links.md:1:/)
+    assert.match(details, /SKIPPED: http:\/\/localhost:3000\//)
+    assert.match(details, /Local development or private infrastructure/)
+    assert.match(details, /SKIPPED: mailto:help@example.org/)
+    assert.match(details, /Source: docs\/links.md:2:/)
+    assert.match(neutral.stdout, /HTTP requests: 2 attempts/)
+    const strict = spawnSync(process.execPath, [...args, '--strict-links'], { encoding: 'utf8', env })
+    assert.equal(strict.status, 1, strict.stderr)
+    assert.match(strict.stdout, /Strict mode: unverified URLs fail the command/)
+    assert.match(strict.stdout, /docs\/external-link-unverified/)
+    const strictLogPath = /↳ Details: (.+)/.exec(strict.stdout)[1].trim()
+    assert.equal(strictLogPath, logPath)
+    assert.notEqual(readFileSync(logPath, 'utf8'), details)
+    assert.match(readFileSync(strictLogPath, 'utf8'), /docs\/external-link-unverified/)
+
+    const blockedDirectory = path.join(root, 'blocked-log-directory')
+    writeFileSync(blockedDirectory, 'not a directory')
+    const logFailure = spawnSync(process.execPath, args, { encoding: 'utf8', env: { ...env, QUALITY_LOG_DIR: blockedDirectory } })
+    assert.equal(logFailure.status, 2)
+    assert.doesNotMatch(logFailure.stdout, /↳ Details:|✓ No repository errors found/)
+
+    writeFileSync(path.join(root, 'repo-doctor.links.json'), '{ invalid JSON')
+    const invalid = spawnSync(process.execPath, [cli, '--root', root], { encoding: 'utf8', env: { ...process.env, QUALITY_LOG_DIR: '' } })
+    assert.equal(invalid.status, 2)
+    assert.match(invalid.stderr, /repo-doctor\.links\.json/)
+    assert.match(invalid.stderr, /Unable to read link exceptions/)
   })
 })

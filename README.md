@@ -137,7 +137,11 @@ Before submitting a change, run:
 npm run quality
 ```
 
-`quality` runs the repository doctor, ESLint, dependency lint, build, tests, API compatibility checks, and sample build. It reports each check's status and duration, while printing command output only when that check fails. Successful compatibility checks still show a compact notice for packages needing review or outdated baselines.
+`quality` runs the repository doctor, ESLint, dependency lint, build, tests, API compatibility checks, and sample build. It reports each check's status and duration, while printing command output when a check fails. Successful compatibility checks still show a compact notice for packages needing review or outdated baselines. When external link validation is enabled, its diagnostics are also shown after success so result counts and the detailed-log path remain visible.
+
+Use `npm run quality -- --check-links` to add external documentation link validation alongside these checks. Build still depends only on the offline doctor. Add `--strict-links` to fail on unverified external URLs as well as confirmed broken links.
+
+`quality` shows a dimmed external-link note beside the Repository doctor row. When disabled, the note shows `external links: off (enable: --check-links)`; when enabled, Documentation links appears directly below Repository doctor as an indented child row. Strict mode is noted beside that link check. `repo:doctor` combines its ON/OFF status and opt-in command on one line. Its compact link totals precede the final success or failure result. Local documentation paths and Markdown anchors are still checked by default.
 
 `npm run compat` checks public TypeScript compatibility, builds declarations first, and analyzes packages in parallel. Run `npm run compat -- agents-hosting` for one package or `npm run compat -- --base origin/main` to retain a Git-reference comparison in the JSON report. Terminal findings compare against the working baseline; previously adopted changes are excluded from pending review. The compact output links directly to saved baseline/generated source lines, counts possible breaks, and marks harmless baseline drift as outdated. Detailed findings and finding IDs are in `compat/generated/report.json`. Possible breaks are warnings; outdated baselines and analysis errors fail the check. Use `--update` to adopt the current API, including possible breaks, and review the baseline diff before committing. See [API compatibility](docs/API-COMPATIBILITY.md) for the workflow and limitations.
 
@@ -154,6 +158,38 @@ npm run repo:doctor
 The repository doctor reports file-oriented diagnostics with stable rule IDs and concrete fix instructions. It validates workspace discovery, build references, package metadata and exports, internal dependencies, catalogs and relative documentation links, API baselines, test-agent configuration and Docker lifecycles, supported Node runtimes, and disallowed npm lifecycle hooks.
 
 Run `npm run repo:doctor -- --rules` to list every rule's check, rationale, and typical resolution in the terminal. Add one or more rule IDs after `--rules` to inspect selected rules.
+
+The default doctor and quality suite never contact websites. Documentation checks cover local files, directories, exact filename casing, and Markdown heading or explicit HTML anchors. Links, images, reference links, GitHub-style autolinks, and literal HTML `a[href]`/`img[src]` attributes are parsed; code examples and comments are ignored. Generated, vendored, and test-folder documents retain the doctor's existing exclusions.
+
+To additionally verify external HTTP/HTTPS destinations, run:
+
+```bash
+npm run repo:doctor -- --check-links
+```
+
+CI runs `npm run quality -- --check-links`, which schedules a separate documentation-link check alongside the existing quality checks. It shares the same dependency installation, progress report, and seven-day `quality-logs` artifact (`documentation-links.log`), and does not become a prerequisite for compilation. Confirmed HTTP and redirect failures are errors. Restricted access, rate limits, persistent server errors, DNS/TLS failures, and timeouts remain neutral `not verified` results after bounded retries. They do not produce per-link warnings or fail the command by default; use `--check-links --strict-links` to make them errors. A passing command means no validation errors, not that every external URL was verified. Routine skipped references are summarized as counts; skipped URLs and reasons remain available in the structured report. Errors retain source locations. HTTP request attempts appear only when external checks run, nested beneath `Links`. A dimmed `Details` line points to the detailed log.
+
+External checks deduplicate URLs while preserving queries, limit concurrency to six requests and two per host, and enforce ten-second request, thirty-second URL, and three-minute overall budgets. They follow at most five redirects, confirm HEAD client failures using GET, and retry transient failures once. Local development, private infrastructure, unsupported schemes, and obvious template URLs are skipped. Successful HTTP responses do not validate remote headings, page content, or login flows; fragments in non-Markdown local files are counted as unsupported.
+
+Enabled reports show the total HTTP request attempts, including redirect hops, GET fallbacks, and retries. Failed DNS lookups and connections count as attempts; duplicate references, skipped destinations, and URLs that never leave the queue do not add requests. This count is separate from the number of unique URLs and remains visible in the quality command's link diagnostics.
+
+Each doctor CLI run overwrites `scripts/logs/repo-doctor/links.log` in the checked repository. The log survives command exit and quality cleanup; generated files under `scripts/logs/` are ignored by Git. When `QUALITY_LOG_DIR` is set, `links.log` is written directly inside that artifact directory instead. The log includes URL outcomes, reasons, HTTP statuses, final destinations, attempt counts, source locations, non-web skips, and local documentation findings. Offline runs log discovered URLs as not checked without making requests. Help and rule guides create no logs. A log-write failure exits with code 2 instead of displaying a nonexistent path.
+
+If a specific external destination must be excluded, add an exact normalized URL to an optional root `repo-doctor.links.json` file:
+
+```json
+{
+  "exceptions": [
+    {
+      "url": "https://portal.example.org/restricted",
+      "reason": "This resource requires an organizational login.",
+      "permanent": true
+    }
+  ]
+}
+```
+
+Temporary entries must use `"expires": "YYYY-MM-DD"` instead of `"permanent": true`. Expiry dates use UTC and remain valid through the specified day. Expired entries fail local validation until removed or deliberately renewed. Broad host exceptions, fragments, credentials, duplicate URLs, and unexplained entries are rejected. No configuration file is needed when there are no exceptions. Exit codes are 0 for no errors (not-verified URLs may remain), 1 for validation errors, and 2 for configuration or internal failures.
 
 Repository scripts must be explicit: do not add `pre*` or `post*` npm lifecycle wrappers. `npm --ignore-scripts` skips those hooks, so required work must be chained directly in the invoked command. Install-time hooks (`preinstall`, `install`, `postinstall`, and `prepare`) are also disallowed.
 
