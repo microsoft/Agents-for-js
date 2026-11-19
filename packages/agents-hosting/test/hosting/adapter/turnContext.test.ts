@@ -1,5 +1,6 @@
 import { strict as assert } from 'assert'
 import { describe, it } from 'node:test'
+import { ZodError } from 'zod'
 import { AttachmentData, AttachmentInfo, AuthConfiguration, MessageFactory, ResourceResponse, TurnContext } from '../../../src'
 import { Activity, ActivityTypes, ConversationReference, DeliveryModes } from '@microsoft/agents-activity'
 import { BaseAdapter } from '../../../src/baseAdapter'
@@ -359,7 +360,7 @@ describe('TurnContext', { timeout: 5000 }, function () {
     const context = new TurnContext(new SimpleAdapter(), testMessage)
     await assert.rejects(
       async () => await context.sendActivities([{ type: '' } as Activity]),
-      /String must contain at least 1 character/
+      (error: unknown) => error instanceof ZodError && error.issues.some(issue => issue.path[0] === 'type')
     )
   })
 
@@ -367,7 +368,7 @@ describe('TurnContext', { timeout: 5000 }, function () {
     const context = new TurnContext(new SimpleAdapter(), testMessage)
     await assert.rejects(
       async () => await context.updateActivity({ type: '' } as Activity),
-      /String must contain at least 1 character/
+      (error: unknown) => error instanceof ZodError && error.issues.some(issue => issue.path[0] === 'type')
     )
   })
 
