@@ -144,7 +144,8 @@ export class Activity {
   recipient?: ChannelAccount
 
   /**
-   * The text format of the activity.
+   * The text format of the activity. Use documented formats supported by the receiving
+   * client, including extendedmarkdown on supported Teams clients.
    */
   textFormat?: TextFormatTypes | string
 

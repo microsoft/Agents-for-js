@@ -226,6 +226,7 @@ export const activityZodSchema: z.ZodObject<{
         properties: z.ZodOptional<z.ZodUnknown>;
     }, z.core.$loose>>;
     textFormat: z.ZodOptional<z.ZodUnion<readonly [z.ZodEnum<{
+        extendedmarkdown: "extendedmarkdown";
         markdown: "markdown";
         plain: "plain";
         xml: "xml";
@@ -750,6 +751,7 @@ export enum SemanticActionStateTypes {
 
 // @public
 export interface SensitivityUsageInfo {
+    '@id'?: string;
     '@type': 'CreativeWork';
     description?: string;
     name: string;
@@ -792,6 +794,7 @@ export function supportsVideoCard(channelId: string): boolean;
 
 // @public
 export enum TextFormatTypes {
+    ExtendedMarkdown = "extendedmarkdown",
     Markdown = "markdown",
     Plain = "plain",
     Xml = "xml"

@@ -11,7 +11,8 @@ import {
   type FileConsentCardResponse,
   type IMeetingParticipantJoinEventActivity,
   type IMeetingParticipantLeaveEventActivity,
-  type MeetingDetails,
+  type IMeetingStartEventActivity,
+  type IMeetingEndEventActivity,
   type MessagingExtensionAction,
   type MessagingExtensionActionResponse,
   type MessagingExtensionQuery,
@@ -38,6 +39,7 @@ import {
   teamsNotifyUser
 } from '../../src/teamsActivityExtensions'
 import { teamsGetDataAs } from '../../src/teamsModelExtensions'
+import type { MeetingStartValue, MeetingEndValue } from '../../src/meetings/meeting'
 
 declare const activity: Activity
 declare const appBasedLinkQuery: AppBasedLinkQuery
@@ -45,7 +47,8 @@ declare const channelData: ChannelData
 declare const channelInfo: ChannelInfo
 declare const configResponse: ConfigResponse
 declare const fileConsentResponse: FileConsentCardResponse
-declare const meetingDetails: MeetingDetails
+declare const meetingStart: IMeetingStartEventActivity
+declare const meetingEnd: IMeetingEndEventActivity
 declare const meetingParticipantJoin: IMeetingParticipantJoinEventActivity
 declare const meetingParticipantLeave: IMeetingParticipantLeaveEventActivity
 declare const messageExtensionAction: MessagingExtensionAction
@@ -111,7 +114,8 @@ consume(
   channelInfo,
   configResponse,
   fileConsentResponse,
-  meetingDetails,
+  meetingStart.value,
+  meetingEnd.value,
   meetingParticipantJoin.value,
   meetingParticipantLeave.value,
   messageExtensionActionResponse,
@@ -130,3 +134,14 @@ consume(
   recipientIsTargeted,
   data
 )
+
+// Meeting events use the wire payload, not REST meeting details. JoinUrl may be absent or null.
+const startWithoutUrl: MeetingStartValue = {
+  Id: 'meeting', MeetingType: 'Scheduled', Title: 'Standup', StartTime: new Date()
+}
+const endWithNullUrl: MeetingEndValue = {
+  Id: 'meeting', MeetingType: 'Scheduled', Title: 'Standup', EndTime: new Date(), JoinUrl: null
+}
+const startUrl: string | null | undefined = meetingStart.value.JoinUrl
+const endUrl: string | null | undefined = meetingEnd.value.JoinUrl
+consume(startWithoutUrl, endWithNullUrl, startUrl, endUrl)

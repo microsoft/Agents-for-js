@@ -1,7 +1,29 @@
 {
   "dependency": "@microsoft/teams.api",
-  "declaredVersion": "2.1.0",
+  "declaredVersion": "2.2.0",
   "sourceRoot": "src",
+  "compatibilityReviews": [
+    {
+      "fromVersion": "2.1.0",
+      "toVersion": "2.2.0",
+      "upstreamSymbol": "IMeetingEndEventActivity",
+      "member": "value",
+      "kind": "property-type-changed",
+      "before": "{ Id: string; MeetingType: string; JoinUrl: string; Title: string; EndTime: Date; }",
+      "after": "{ Id: string; MeetingType: string; JoinUrl?: string | null; Title: string; EndTime: Date; }",
+      "reason": "Reviewed and accepted the public contract correction from REST MeetingDetails to MeetingEndValue. Meeting.onEnd passes the event payload through without reading JoinUrl, so missing or null URLs need no runtime adaptation. test/meeting.test.ts covers an end event with a null JoinUrl; test/contracts/teamsApi.contract.ts verifies the nullable/optional event type. The public type change is documented in README.md and the updated API baseline."
+    },
+    {
+      "fromVersion": "2.1.0",
+      "toVersion": "2.2.0",
+      "upstreamSymbol": "IMeetingStartEventActivity",
+      "member": "value",
+      "kind": "property-type-changed",
+      "before": "{ Id: string; MeetingType: string; JoinUrl: string; Title: string; StartTime: Date; }",
+      "after": "{ Id: string; MeetingType: string; JoinUrl?: string | null; Title: string; StartTime: Date; }",
+      "reason": "Reviewed and accepted the public contract correction from REST MeetingDetails to MeetingStartValue. Meeting.onStart passes the event payload through without reading JoinUrl, so missing or null URLs need no runtime adaptation. test/meeting.test.ts covers a start event without JoinUrl; test/contracts/teamsApi.contract.ts verifies the nullable/optional event type. The public type change is documented in README.md and the updated API baseline."
+    }
+  ],
   "usages": [
     {
       "upstreamSymbol": "Client",
@@ -80,9 +102,23 @@
       ]
     },
     {
-      "upstreamSymbol": "MeetingDetails",
+      "upstreamSymbol": "IMeetingStartEventActivity",
       "usage": "event-model",
       "exposure": "publicly-exposed",
+      "propertiesRead": [
+        "value"
+      ],
+      "files": [
+        "src/meetings/meeting.ts"
+      ]
+    },
+    {
+      "upstreamSymbol": "IMeetingEndEventActivity",
+      "usage": "event-model",
+      "exposure": "publicly-exposed",
+      "propertiesRead": [
+        "value"
+      ],
       "files": [
         "src/meetings/meeting.ts"
       ]

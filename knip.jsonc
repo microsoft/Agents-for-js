@@ -25,8 +25,10 @@
       "entry": ["scripts/compat/worker.mjs"],
       "project": ["*.{js,mjs,ts}", "scripts/**/*.{mjs,ts}"],
       "ignoreDependencies": [
+        // Root-level samples compile against these packages via tsconfig.samples.json.
         "@microsoft/microsoft-graph-client",
-        "@microsoft/microsoft-graph-types"
+        "@microsoft/microsoft-graph-types",
+        "@microsoft/teams.api"
       ]
     },
 

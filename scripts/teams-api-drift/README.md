@@ -92,6 +92,53 @@ Prefer updating the substantive metadata whenever the change can be described
 accurately. The acknowledgment is for a reviewed non-impact conclusion, not a
 general waiver.
 
+## Reviewed compatibility changes
+
+Record an accepted blocking or required upstream change in the usage manifest's
+optional `compatibilityReviews` array. This follows the .NET counterpart's review
+format, without its .NET-specific `targetFrameworks` field:
+
+```json
+{
+  "compatibilityReviews": [
+    {
+      "fromVersion": "2.1.0",
+      "toVersion": "2.2.0",
+      "upstreamSymbol": "IMeetingStartEventActivity",
+      "member": "value",
+      "kind": "property-type-changed",
+      "before": "{ Id: string; MeetingType: string; JoinUrl: string; Title: string; StartTime: Date; }",
+      "after": "{ Id: string; MeetingType: string; JoinUrl?: string | null; Title: string; StartTime: Date; }",
+      "reason": "Reviewed the public event-type correction. Meeting.onStart passes the payload through; meeting.test.ts covers an omitted JoinUrl and teamsApi.contract.ts checks the optional/nullable type. The migration is documented and the public API baseline updated."
+    }
+  ]
+}
+```
+
+Keep the manifest's other fields and existing usages. Copy the exact symbol,
+member, kind, and signatures from `raw-api-diff.json`. Set `member`, `before`, or
+`after` to `null` when the corresponding raw field is absent. All review fields
+are required; versions, symbol, kind, and reason must be non-empty strings.
+Malformed reviews fail classification.
+
+A review applies only when the version pair and every change field match
+exactly. Finding IDs are deliberately excluded because they can change when
+unrelated upstream changes are added. Historical reviews may remain in the
+manifest; they do not approve different versions or signatures.
+
+A match changes a blocking or required finding to `no-action` with category
+`reviewed-compatible`, adds `compatibility-review` evidence, and includes the
+reason in the deterministic report's **Reviewed compatibility changes** section.
+The raw API diff and reviewed finding remain available for auditing. The
+`--fail-on-drift` gate still fails for any unmatched blocking or required finding.
+Reviews do not suppress advisory feature reviews or public API report findings.
+
+Use the reason to identify the reviewed behavior, supporting tests, and any
+intentional public contract change and migration guidance. This is separate from
+`sourceReview`, which only acknowledges metadata maintenance. Compatibility
+reviews do not bypass metadata validation, builds, contract tests, runtime tests,
+or the normal review of public API baselines.
+
 ## Run the checks
 
 From the repository root, run:

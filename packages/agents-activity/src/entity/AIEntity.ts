@@ -176,6 +176,11 @@ export interface SensitivityUsageInfo {
   '@type': 'CreativeWork';
 
   /**
+   * Optional sensitivity metadata identifier. For Teams Purview labels, use the label GUID.
+   */
+  '@id'?: string;
+
+  /**
    * Sensitivity description of the content
    */
   description?: string;
@@ -186,7 +191,8 @@ export interface SensitivityUsageInfo {
   name: string;
 
   /**
-   * Optional; ignored in Teams.
+   * Optional priority interpreted by the receiving client. Teams uses this with the
+   * label identifier to select the most restrictive sensitivity label.
    */
   position?: number;
 

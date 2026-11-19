@@ -17,9 +17,10 @@ import { Client as Client_2 } from '@microsoft/microsoft-graph-client';
 import type { ConfigResponse } from '@microsoft/teams.api';
 import { ConversationUpdateEvents } from '@microsoft/agents-hosting';
 import type { FileConsentCardResponse } from '@microsoft/teams.api';
+import type { IMeetingEndEventActivity } from '@microsoft/teams.api';
 import type { IMeetingParticipantJoinEventActivity } from '@microsoft/teams.api';
 import type { IMeetingParticipantLeaveEventActivity } from '@microsoft/teams.api';
-import type { MeetingDetails } from '@microsoft/teams.api';
+import type { IMeetingStartEventActivity } from '@microsoft/teams.api';
 import type { MessagingExtensionAction } from '@microsoft/teams.api';
 import type { MessagingExtensionActionResponse } from '@microsoft/teams.api';
 import type { MessagingExtensionQuery } from '@microsoft/teams.api';
@@ -103,7 +104,10 @@ export class Meeting<TState extends TurnState> {
 }
 
 // @public
-export type MeetingEndHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, details: MeetingDetails) => Promise<void>;
+export type MeetingEndHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, details: MeetingEndValue) => Promise<void>;
+
+// @public
+export type MeetingEndValue = IMeetingEndEventActivity['value'];
 
 // @public
 export type MeetingParticipantJoinValue = IMeetingParticipantJoinEventActivity['value'];
@@ -118,7 +122,10 @@ export type MeetingParticipantsJoinHandler<TState extends TurnState> = (context:
 export type MeetingParticipantsLeaveHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, details: MeetingParticipantLeaveValue) => Promise<void>;
 
 // @public
-export type MeetingStartHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, details: MeetingDetails) => Promise<void>;
+export type MeetingStartHandler<TState extends TurnState> = (context: TeamsTurnContext, state: TState, details: MeetingStartValue) => Promise<void>;
+
+// @public
+export type MeetingStartValue = IMeetingStartEventActivity['value'];
 
 // @public
 export class Message<TState extends TurnState = TurnState> {

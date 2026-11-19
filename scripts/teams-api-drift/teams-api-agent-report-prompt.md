@@ -47,6 +47,9 @@ Follow these rules:
 - Do not create finding IDs. Only use IDs present in the findings artifact.
 - Tie every bullet in an action-oriented section to a finding ID. If a section
   has no supported items, write a bullet beginning with `- No `.
+- Use a flat list in these sections: every bullet must contain its own exact
+  finding ID, or begin with `- No `. Do not use a bullet as a grouping heading.
+  Put general interpretation or capability-policy notes in ordinary paragraphs.
 - Use `Feature-review candidates` for review findings whose capability policy
   identifies a potentially useful new public capability.
 - Use `Internal implementation opportunities` for review findings whose
@@ -55,6 +58,11 @@ Follow these rules:
 - Use `Maintainer decisions` for other review findings that require a human
   decision, including deprecations or ambiguous migrations.
 - Use `No action` for no-action findings.
+- For findings categorized as `reviewed-compatible`, retain their review reason
+  and evidence in `No action`. These are explicitly reviewed changes, not proof
+  that the upstream API is unchanged; do not request the same adaptation again.
+  Write a separate top-level bullet for each reviewed finding, starting with its
+  ID. Do not introduce them with a `- Reviewed-compatible:` grouping bullet.
 - Start the `Summary` section with this exact sentence: `This is an advisory report; it does not make or authorize implementation decisions.`
 - Label every recommendation with `Advisory:`. Do not claim that code was
   changed, tests were run, or behavior was verified beyond what the supplied
