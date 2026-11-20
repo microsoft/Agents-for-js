@@ -16,6 +16,7 @@ import { TurnEvents } from './turnEvents'
 import { TurnState } from './turnState'
 import { RouteRank } from './routeRank'
 import { RouteList } from './routeList'
+import { AppRoute } from './appRoute'
 import { TranscriptLoggerMiddleware } from '../transcript'
 import { CloudAdapter } from '../cloudAdapter'
 import { Authorization, UserAuthorization, AuthorizationManager } from './auth'
@@ -661,15 +662,14 @@ export class AgentApplication<TState extends TurnState> {
    * While this method is public, it's typically called internally by the `run` method.
    *
    * The method performs the following operations:
-   * 1. Handles authentication flows for routes that have auth handlers configured. If NOT authorized, it will not continue with the 2nd step, returning false.
+   * 1. Normalizes the activity for routing and checks the selected route's authorization requirements.
    * 2. Starts typing timer if configured
-   * 3. Processes mentions if configured
-   * 4. Loads turn state
-   * 5. Downloads files if file downloaders are configured
-   * 6. Executes before-turn event handlers
-   * 7. Routes to appropriate handlers
-   * 8. Executes after-turn event handlers
-   * 9. Saves turn state
+   * 3. Loads turn state
+   * 4. Downloads files if file downloaders are configured
+   * 5. Executes before-turn event handlers
+   * 6. Runs the selected route
+   * 7. Executes after-turn event handlers
+   * 8. Saves turn state
    *
    * @example
    * ```typescript
@@ -688,7 +688,7 @@ export class AgentApplication<TState extends TurnState> {
       }
     }
 
-    const { authorized, context } = await this.handleAuthorization(turnContext)
+    const { authorized, context, selection } = await this.handleAuthorization(turnContext)
 
     if (!authorized) {
       const managed = trace(AgentApplicationTraceDefinitions.run)
@@ -704,12 +704,12 @@ export class AgentApplication<TState extends TurnState> {
 
     if (isLongRunning) {
       logger.debug('Starting long-running messages for activity:', context.activity.id!)
-      this.startLongRunningCall(context, ctx => this.runTurn(ctx))
+      this.startLongRunningCall(context, ctx => this.runTurn(ctx, selection))
       return true
     }
 
     logger.info('Running application with activity:', context.activity.id!)
-    return this.runTurn(context)
+    return this.runTurn(context, selection)
   }
 
   /**
@@ -717,57 +717,89 @@ export class AgentApplication<TState extends TurnState> {
    * @returns An object containing the authorization status and the context (could have the continuation activity) to be used for further processing.
    */
   private async handleAuthorization (context: TurnContext) {
-    if (context.activity.type === ActivityTypes.Typing) {
-      return { authorized: true, context }
+    if (context.activity.type === ActivityTypes.Typing || this._authorizationManager.handlers.length === 0) {
+      return { authorized: true, context, selection: undefined }
     }
 
-    return this._authorizationManager?.process(context, async activity => {
-      // The incoming activity may come from the storage, so we need to restore the auth handlers.
-      // Since the current route may not have auth handlers.
-      const route = await this.getRoute(new TurnContext(context.adapter, activity, context.identity))
+    let routeContext = context
+    let route: AppRoute<TState> | undefined
+    const result = await this._authorizationManager.process(context, async activity => {
+      // Sign-in needs the original input (including verification responses). Route a
+      // separate copy so sign-in can persist and resume the unmodified activity.
+      routeContext = new TurnContext(context, Activity.fromObject(activity))
+      this.setTurnServices(routeContext)
+      this.normalizeMessage(routeContext.activity)
+      route = await this.getRoute(routeContext)
       return route?.authHandlers ?? []
-    }) ?? { authorized: true, context } // If no authorization manager is configured, we assume the activity is authorized.
+    })
+    return {
+      authorized: result.authorized,
+      context: result.authorized ? routeContext : result.context,
+      selection: { route }
+    }
+  }
+
+  private setTurnServices (context: TurnContext): void {
+    if (this._authorizationManager.handlers.length > 0) {
+      context.turnState.set(AgentApplication.UserAuthorizationKey, this._authorization)
+    }
+    const connections = this._options.connections ?? this._adapter?.connectionManager
+    if (connections) {
+      context.turnState.set(AgentApplication.ConnectionsKey, connections)
+    }
+  }
+
+  /**
+   * Normalizes the message activity by removing recipient mentions and normalizing mentions if configured.
+   *
+   * @param activity The activity to normalize.
+   */
+  private normalizeMessage (activity: Activity): void {
+    if (activity.type === ActivityTypes.Message) {
+      if (this._options.removeRecipientMention) {
+        activity.removeRecipientMention()
+      }
+      if (this._options.normalizeMentions) {
+        activity.normalizeMentions()
+      }
+    }
   }
 
   /**
    * Executes the turn processing logic for the given context, including routing and handler execution.
    */
-  private async runTurn (context: TurnContext): Promise<boolean> {
+  private async runTurn (
+    context: TurnContext,
+    selection?: { route?: AppRoute<TState> }
+  ): Promise<boolean> {
     const managed = trace(AgentApplicationTraceDefinitions.run)
     managed.record({ authorized: true, activity: Activity.fromObject(context.activity) })
 
     try {
-      if (this._authorizationManager.handlers.length > 0) {
-        context.turnState.set(AgentApplication.UserAuthorizationKey, this._authorization)
-      }
-
-      const connections = this._options.connections ?? this._adapter?.connectionManager
-      if (connections) {
-        context.turnState.set(AgentApplication.ConnectionsKey, connections)
-      }
+      this.setTurnServices(context)
 
       if (this._options.startTypingTimer) {
         this.startTypingTimer(context)
       }
 
-      if (this._options.removeRecipientMention && context.activity.type === ActivityTypes.Message) {
-        context.activity.removeRecipientMention()
-      }
-
-      if (this._options.normalizeMentions && context.activity.type === ActivityTypes.Message) {
-        context.activity.normalizeMentions()
+      if (!selection) {
+        this.normalizeMessage(context.activity)
       }
 
       const { storage, turnStateFactory } = this._options
       const state = turnStateFactory()
       await state.load(context, storage)
 
-      const route = await this.getRoute(context)
+      const route = selection ? selection.route : await this.getRoute(context)
 
       managed.record({ routeMatched: route !== undefined })
 
       if (!route) {
         logger.debug('No matching route found for activity:', context.activity)
+        return false
+      }
+      if (!selection && route.authHandlers?.length) {
+        logger.warn('Skipping a route that requires user authorization on an unchecked turn')
         return false
       }
 

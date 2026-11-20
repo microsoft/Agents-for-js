@@ -58,14 +58,6 @@ function summarizeAuthorizationConfiguration (options: AuthorizationOptions[stri
 }
 
 /**
- * Active handler information used by the AuthorizationManager.
- */
-interface ManagerActiveHandler {
-  data: ActiveAuthorizationHandler;
-  handlers: AuthorizationHandler[];
-}
-
-/**
  * Result of the authorization manager process.
  */
 interface AuthorizationManagerProcessResult {
@@ -130,7 +122,12 @@ export class AuthorizationManager {
 
     const storage = new HandlerStorage(this.app.options.storage!, context)
 
-    let active = await this.active(storage, getHandlerIds)
+    let active = await storage.read()
+    if (active && active.activity.conversation?.id !== activity.conversation?.id) {
+      logger.warn('Discarding the active session due to the conversation has changed during an active sign-in process', active.activity)
+      await storage.delete()
+      active = undefined
+    }
 
     if (!active && activity.name?.startsWith('signin/')) {
       const reason = `Received '${activity.name}' but no active sign-in flow exists for user '${activity.from?.id}'.`
@@ -142,16 +139,16 @@ export class AuthorizationManager {
       return { authorized: false, context }
     }
 
-    if (active !== undefined && active?.data.activity.conversation?.id !== activity.conversation?.id) {
-      logger.warn('Discarding the active session due to the conversation has changed during an active sign-in process', active?.data.activity)
-      await storage.delete()
-      return { authorized: true, context }
+    const routeActivity = active ? Activity.fromObject(active.activity) : activity
+    const handlers = this.mapHandlers(await getHandlerIds(routeActivity) ?? [])
+    if (active) {
+      const activeId = active.id
+      handlers.sort((a, b) => Number(b.id === activeId) - Number(a.id === activeId))
     }
 
-    const handlers = active?.handlers ?? this.mapHandlers(await getHandlerIds(activity) ?? []) ?? []
-
-    // Create a shallow copy to modify the activity, since the signin process depends on it and we want to ensure the next handler depends on the initial activity, not the modified one.
-    const sharedContext = new TurnContext(context)
+    // The active sign-in handler receives the callback. Subsequent handlers
+    // receive the original command after the callback has been approved.
+    let sharedContext = new TurnContext(context)
 
     for (const handler of handlers) {
       if (handler.scopes?.length) {
@@ -159,7 +156,7 @@ export class AuthorizationManager {
       } else {
         logger.debug('invoking auth handler "%s"', handler.id)
       }
-      const status = await this.signin(storage, handler, sharedContext, active?.data)
+      const status = await this.signin(storage, handler, sharedContext, active)
       logger.debug('auth handler "%s" sign-in status=%s', handler.id, status)
 
       if (status === AuthorizationHandlerStatus.IGNORED) {
@@ -188,37 +185,20 @@ export class AuthorizationManager {
       await storage.delete()
 
       if (active) {
-        (sharedContext as any)._activity = Activity.fromObject(active.data.activity)
+        sharedContext = new TurnContext(sharedContext, routeActivity)
         active = undefined
       }
     }
 
-    return { authorized: true, context: sharedContext }
-  }
-
-  /**
-   * Gets the active handler session from storage.
-   */
-  private async active (storage: HandlerStorage, getHandlerIds: GetHandlerIds): Promise<ManagerActiveHandler | undefined> {
-    const data = await storage.read()
-    if (!data) {
-      return
+    // Only an approved continuation can resume the stored activity. If the
+    // stored route disappeared or all handlers ignored it, evaluate the incoming turn.
+    if (active) {
+      if (handlers.length === 0) {
+        await storage.delete()
+      }
+      return this.process(sharedContext, getHandlerIds)
     }
-
-    const handlerIds = await getHandlerIds(Activity.fromObject(data.activity))
-    let handlers = this.mapHandlers(handlerIds ?? [])
-
-    // Sort handlers to ensure the active handler is processed first, to ensure continuity.
-    handlers = handlers.sort((a, b) => {
-      if (a.id === data.id) {
-        return -1
-      }
-      if (b.id === data.id) {
-        return 1
-      }
-      return 0
-    }) ?? []
-    return { data, handlers }
+    return { authorized: true, context: sharedContext }
   }
 
   /**

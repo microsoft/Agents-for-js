@@ -15,6 +15,9 @@ import { createStubInstance, SinonStub } from 'sinon'
 import { ConsoleTranscriptLogger } from '../../../src/transcript/consoleTranscriptLogger'
 import type { Connections } from '../../../src/auth/connections'
 import { MemoryStorage, MemoryStorageV2 } from '../../../src/storage'
+import { AzureBotAuthorization } from '../../../src/app/auth/handlers'
+import { AuthorizationHandlerStatus } from '../../../src/app/auth/types'
+import { HandlerStorage } from '../../../src/app/auth/handlerStorage'
 
 class RecordingTestAdapter extends TestAdapter {
   public readonly sentActivities: Activity[] = []
@@ -59,6 +62,75 @@ describe('Application', () => {
     assert.equal(app.options.authorization, undefined)
     assert.equal(app.options.startTypingTimer, false)
     assert.equal(app.options.transcriptLogger, undefined)
+  })
+
+  describe('route selection during user sign-in', () => {
+    let storage: MemoryStorage
+    beforeEach(() => {
+      storage = new MemoryStorage()
+      app = new AgentApplication({
+        storage,
+        normalizeMentions: true,
+        authorization: { graph: { azureBotOAuthConnectionName: 'GraphConnection' } }
+      })
+    })
+    afterEach(() => sinon.restore())
+
+    it('dispatches the approved selection with normalized text and middleware state', async () => {
+      const context = new TurnContext(testAdapter, testActivity)
+      context.activity.text = 'Hello <at>Sam</at>'
+      context.turnState.set('locale', 'en')
+      const selector = sinon.spy(async (ctx: TurnContext) => {
+        assert.equal(ctx.activity.text, 'Hello Sam')
+        assert.equal(ctx.turnState.get('locale'), 'en')
+        return true
+      })
+      const handler = sinon.stub().resolves()
+      app.onMessage(selector, handler, ['graph'])
+      const signin = sinon.stub(AzureBotAuthorization.prototype, 'signin').resolves(AuthorizationHandlerStatus.APPROVED)
+
+      assert.equal(await app.runInternal(context), true)
+      sinon.assert.callOrder(selector, signin, handler)
+      sinon.assert.calledOnce(selector)
+      assert.equal(handler.firstCall.args[0], selector.firstCall.args[0])
+      assert.equal(signin.firstCall.args[0].activity.text, 'Hello <at>Sam</at>')
+    })
+
+    it('resumes the stored command only after sign-in approves the callback', async () => {
+      const callback = createTestActivity()
+      callback.text = 'verification response'
+      const context = new TurnContext(testAdapter, callback)
+      await new HandlerStorage(storage, context).write({ id: 'graph', activity: testActivity })
+      const handler = sinon.stub().resolves()
+      app.onMessage('/yo', handler, ['graph'])
+      const signin = sinon.stub(AzureBotAuthorization.prototype, 'signin')
+      signin.onFirstCall().resolves(AuthorizationHandlerStatus.PENDING)
+      signin.onSecondCall().resolves(AuthorizationHandlerStatus.APPROVED)
+
+      assert.equal(await app.runInternal(context), false)
+      sinon.assert.notCalled(handler)
+      assert.equal(await app.runInternal(new TurnContext(testAdapter, callback)), true)
+      sinon.assert.calledOnce(handler)
+      assert.equal(signin.secondCall.args[0].activity.text, 'verification response')
+      assert.equal(handler.firstCall.args[0].activity.text, '/yo')
+    })
+
+    it('retains an unmatched selection through dispatch', async () => {
+      const selector = sinon.spy(async () => false)
+      const handler = sinon.stub().resolves()
+      app.onMessage(selector, handler)
+      assert.equal(await app.runInternal(new TurnContext(testAdapter, testActivity)), false)
+      sinon.assert.calledOnce(selector)
+      sinon.assert.notCalled(handler)
+    })
+
+    it('withholds a route when its authorization handler is unconfigured', async () => {
+      const localApp = new AgentApplication()
+      const handler = sinon.stub().resolves()
+      localApp.onMessage('/yo', handler, ['graph'])
+      assert.equal(await localApp.runInternal(new TurnContext(testAdapter, testActivity)), false)
+      sinon.assert.notCalled(handler)
+    })
   })
 
   it('should preserve configured agent name on options', () => {
@@ -767,6 +839,30 @@ describe('Application', () => {
       }
       assert.equal(handlerCalled, true, 'invoke handler should be called in the continuation')
       assert.equal(handlerActivityType, ActivityTypes.Invoke, 'handler should receive the original invoke activity type')
+    })
+
+    it('carries the approved message route into a detached continuation', async (t) => {
+      const adapter = Object.assign(new TrackingAdapter(), { connectionManager: new CloudAdapter().connectionManager })
+      const localApp = new AgentApplication({
+        adapter: adapter as any,
+        longRunningMessages: true,
+        storage: new MemoryStorage(),
+        authorization: { graph: { azureBotOAuthConnectionName: 'GraphConnection' } }
+      })
+      const signin = sinon.stub(AzureBotAuthorization.prototype, 'signin').resolves(AuthorizationHandlerStatus.APPROVED)
+      t.after(() => signin.restore())
+      const selector = sinon.spy(async () => true)
+      const handler = sinon.stub().resolves()
+      localApp.onMessage(selector, handler, ['graph'])
+
+      await localApp.run(new TurnContext(adapter, createTestActivity()))
+      sinon.assert.calledOnce(signin)
+      sinon.assert.notCalled(handler)
+      assert.ok(adapter.continueConversationCallback)
+      await adapter.continueConversationCallback(adapter.createContinuationContext())
+      sinon.assert.callOrder(selector, signin, handler)
+      sinon.assert.calledOnce(selector)
+      assert.equal(handler.firstCall.args[0].activity.text, '/yo')
     })
 
     it('should not detach regular message activities', async () => {
