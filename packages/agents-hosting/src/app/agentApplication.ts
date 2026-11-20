@@ -35,6 +35,10 @@ const DEFAULT_TYPING_INITIAL_DELAY = 0
 const DEFAULT_TYPING_INTERVAL = 4000
 const TYPING_TIMER_STATE_KEY = Symbol('typingTimerState')
 
+function createDefaultTurnState<TState extends TurnState> (): TState {
+  return new TurnState() as TState
+}
+
 type TypingTimerState = {
   timer?: NodeJS.Timeout
   lastSend: Promise<unknown>
@@ -138,7 +142,7 @@ export class AgentApplication<TState extends TurnState> {
   public constructor (options?: Partial<AgentApplicationOptions<TState>>) {
     this._options = {
       ...options,
-      turnStateFactory: options?.turnStateFactory || (() => new TurnState() as TState),
+      turnStateFactory: options?.turnStateFactory || createDefaultTurnState,
       startTypingTimer: options?.startTypingTimer !== undefined ? options.startTypingTimer : false,
       typing: options?.typing || undefined,
       longRunningMessages: options?.longRunningMessages !== undefined ? options.longRunningMessages : false,
@@ -662,9 +666,9 @@ export class AgentApplication<TState extends TurnState> {
    * While this method is public, it's typically called internally by the `run` method.
    *
    * The method performs the following operations:
-   * 1. Normalizes the activity for routing and checks the selected route's authorization requirements.
+   * 1. Normalizes the activity and loads custom state before selecting a route for authorization.
    * 2. Starts typing timer if configured
-   * 3. Loads turn state
+   * 3. Loads turn state if needed for the dispatch context
    * 4. Downloads files if file downloaders are configured
    * 5. Executes before-turn event handlers
    * 6. Runs the selected route
@@ -688,7 +692,7 @@ export class AgentApplication<TState extends TurnState> {
       }
     }
 
-    const { authorized, context, selection } = await this.handleAuthorization(turnContext)
+    const { authorized, context, selection, loadedState } = await this.handleAuthorization(turnContext)
 
     if (!authorized) {
       const managed = trace(AgentApplicationTraceDefinitions.run)
@@ -704,12 +708,13 @@ export class AgentApplication<TState extends TurnState> {
 
     if (isLongRunning) {
       logger.debug('Starting long-running messages for activity:', context.activity.id!)
+      // The continuation has its own context. Load its state there, retaining the authorized route.
       this.startLongRunningCall(context, ctx => this.runTurn(ctx, selection))
       return true
     }
 
     logger.info('Running application with activity:', context.activity.id!)
-    return this.runTurn(context, selection)
+    return this.runTurn(context, selection, loadedState)
   }
 
   /**
@@ -723,19 +728,25 @@ export class AgentApplication<TState extends TurnState> {
 
     let routeContext = context
     let route: AppRoute<TState> | undefined
+    let loadedState: TState | undefined
     const result = await this._authorizationManager.process(context, async activity => {
       // Sign-in needs the original input (including verification responses). Route a
       // separate copy so sign-in can persist and resume the unmodified activity.
       routeContext = new TurnContext(context, Activity.fromObject(activity))
       this.setTurnServices(routeContext)
       this.normalizeMessage(routeContext.activity)
+      // Custom loaders can install values in context.turnState that selectors depend on.
+      if (this._options.turnStateFactory !== createDefaultTurnState) {
+        loadedState = await this.loadTurnState(routeContext)
+      }
       route = await this.getRoute(routeContext)
       return route?.authHandlers ?? []
     })
     return {
       authorized: result.authorized,
       context: result.authorized ? routeContext : result.context,
-      selection: { route }
+      selection: { route },
+      loadedState
     }
   }
 
@@ -747,6 +758,13 @@ export class AgentApplication<TState extends TurnState> {
     if (connections) {
       context.turnState.set(AgentApplication.ConnectionsKey, connections)
     }
+  }
+
+  private async loadTurnState (context: TurnContext): Promise<TState> {
+    const { turnStateFactory, storage } = this._options
+    const state = turnStateFactory()
+    await state.load(context, storage)
+    return state
   }
 
   /**
@@ -770,7 +788,8 @@ export class AgentApplication<TState extends TurnState> {
    */
   private async runTurn (
     context: TurnContext,
-    selection?: { route?: AppRoute<TState> }
+    selection?: { route?: AppRoute<TState> },
+    loadedState?: TState
   ): Promise<boolean> {
     const managed = trace(AgentApplicationTraceDefinitions.run)
     managed.record({ authorized: true, activity: Activity.fromObject(context.activity) })
@@ -786,9 +805,8 @@ export class AgentApplication<TState extends TurnState> {
         this.normalizeMessage(context.activity)
       }
 
-      const { storage, turnStateFactory } = this._options
-      const state = turnStateFactory()
-      await state.load(context, storage)
+      const { storage } = this._options
+      const state = loadedState ?? await this.loadTurnState(context)
 
       const route = selection ? selection.route : await this.getRoute(context)
 
