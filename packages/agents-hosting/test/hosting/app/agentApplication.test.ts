@@ -71,10 +71,99 @@ describe('Application', () => {
       app = new AgentApplication({
         storage,
         normalizeMentions: true,
-        authorization: { graph: { azureBotOAuthConnectionName: 'GraphConnection' } }
+        authorization: {
+          graph: { azureBotOAuthConnectionName: 'GraphConnection' },
+          files: { azureBotOAuthConnectionName: 'FilesConnection' }
+        }
       })
     })
     afterEach(() => sinon.restore())
+
+    function commandContext (text: string, getTokenOrSignInResource: SinonStub, channel = 'test') {
+      const activity = createTestActivity(channel)
+      activity.text = text
+      const context = new TurnContext(testAdapter, activity)
+      context.turnState.set(testAdapter.UserTokenClientKey, { getTokenOrSignInResource })
+      return context
+    }
+
+    it('keeps route selection and user tokens local to overlapping turns in one conversation', async () => {
+      const started = Promise.withResolvers<void>()
+      const release = Promise.withResolvers<void>()
+      const slowLookup = sinon.stub().callsFake(async () => {
+        started.resolve()
+        await release.promise
+        return { tokenResponse: { token: 'slow-token' } }
+      })
+      const fastLookup = sinon.stub().resolves({ tokenResponse: { token: 'fast-token' } })
+      const dispatched: string[] = []
+      app.onMessage('/slow', async ctx => {
+        assert.equal(ctx.activity.text, '/slow')
+        assert.equal((await app.authorization.getToken(ctx, 'graph')).token, 'slow-token')
+        dispatched.push('slow')
+      }, ['graph'])
+      app.onMessage('/fast', async ctx => {
+        assert.equal(ctx.activity.text, '/fast')
+        assert.equal((await app.authorization.getToken(ctx, 'files')).token, 'fast-token')
+        dispatched.push('fast')
+      }, ['files'])
+
+      const slowTurn = app.runInternal(commandContext('/slow', slowLookup))
+      try {
+        await Promise.race([started.promise, slowTurn.then(() => assert.fail('Slow turn skipped token lookup'))])
+        assert.equal(await app.runInternal(commandContext('/fast', fastLookup)), true)
+        assert.deepEqual(dispatched, ['fast'])
+      } finally {
+        release.resolve()
+        await slowTurn
+      }
+      assert.deepEqual(dispatched, ['fast', 'slow'])
+      sinon.assert.calledOnceWithMatch(slowLookup, 'test', 'GraphConnection')
+      sinon.assert.calledOnceWithMatch(fastLookup, 'test', 'FilesConnection')
+    })
+
+    it('requires fresh approvals on retry after the second token lookup fails', async () => {
+      const handler = sinon.stub().resolves()
+      const fallback = sinon.stub().resolves()
+      app.onMessage('/both', handler, ['graph', 'files'])
+      app.onActivity(ActivityTypes.Message, fallback)
+      const lookup = sinon.stub()
+      lookup.withArgs('test', 'GraphConnection').resolves({ tokenResponse: { token: 'graph-token' } })
+      const files = lookup.withArgs('test', 'FilesConnection')
+      files.onFirstCall().rejects(new Error('Token service unavailable'))
+      files.onSecondCall().resolves({ tokenResponse: { token: 'files-token' } })
+
+      await assert.rejects(app.runInternal(commandContext('/both', lookup)), /Failed to sign in/)
+      sinon.assert.notCalled(handler)
+      sinon.assert.notCalled(fallback)
+      assert.equal(await app.runInternal(commandContext('/both', lookup)), true)
+      assert.deepEqual(lookup.getCalls().map(call => call.args[1]), [
+        'GraphConnection', 'FilesConnection', 'GraphConnection', 'FilesConnection'
+      ])
+      sinon.assert.calledOnce(handler)
+      sinon.assert.notCalled(fallback)
+    })
+
+    it('revalidates the incoming Teams command when a pending sign-in is interrupted', async () => {
+      const lookup = sinon.stub().resolves({ tokenResponse: { token: 'files-token' } })
+      const context = commandContext('/files', lookup, Channels.Msteams)
+      const original = createTestActivity(Channels.Msteams)
+      original.text = '/graph'
+      const session = { id: 'graph', activity: original, category: 'signin', attemptsLeft: 2 }
+      const sessions = new HandlerStorage(storage, context)
+      await sessions.write(session)
+      const previousHandler = sinon.stub().resolves()
+      const currentHandler = sinon.stub().resolves()
+      app.onMessage('/graph', previousHandler, ['graph'])
+      app.onMessage('/files', currentHandler, ['files'])
+
+      assert.equal(await app.runInternal(context), true)
+      sinon.assert.calledOnceWithMatch(lookup, 'test', 'FilesConnection')
+      sinon.assert.notCalled(previousHandler)
+      sinon.assert.calledOnce(currentHandler)
+      assert.equal(currentHandler.firstCall.args[0].activity.text, '/files')
+      assert.equal(await sessions.read(), undefined)
+    })
 
     it('dispatches the approved selection with normalized text and middleware state', async () => {
       const context = new TurnContext(testAdapter, testActivity)
