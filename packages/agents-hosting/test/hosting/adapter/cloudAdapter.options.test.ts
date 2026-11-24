@@ -697,13 +697,62 @@ describe('CloudAdapter options (PR #838 parity)', () => {
       await adapter.onTurnError(context, err)
     }
 
-    it('omits stack from log line by default', async () => {
+    it('omits outbound stacks when emitStackTrace is disabled', async () => {
+      const adapter = buildAdapter({ emitStackTrace: false })
+      const error = new Error('private failure')
+      error.stack = 'STACK-ONLY-MARKER'
+      const sendTraceActivity = sinon.stub().resolves(undefined)
+      const sendActivity = sinon.stub().resolves(undefined)
+      const context = { sendTraceActivity, sendActivity } as unknown as TurnContext
+
+      await adapter.onTurnError(context, error)
+
+      assert.equal(sendTraceActivity.firstCall.args[1].includes('STACK-ONLY-MARKER'), false)
+      assert.deepEqual(sendActivity.args, [
+        ['The agent encountered an error or bug.'],
+        ['To continue to run this agent, please fix the source code.']
+      ])
+    })
+
+    it('includes outbound stacks when emitStackTrace is enabled', async () => {
+      const adapter = buildAdapter({ emitStackTrace: true })
+      const error = new Error('private failure')
+      error.stack = 'STACK-ONLY-MARKER'
+      const sendTraceActivity = sinon.stub().resolves(undefined)
+      const sendActivity = sinon.stub().resolves(undefined)
+      const context = { sendTraceActivity, sendActivity } as unknown as TurnContext
+
+      await adapter.onTurnError(context, error)
+
+      assert.equal(sendTraceActivity.firstCall.args[1].includes('STACK-ONLY-MARKER'), true)
+      assert.deepEqual(sendActivity.args, [
+        ['The agent encountered an error or bug.'],
+        ['To continue to run this agent, please fix the source code.']
+      ])
+    })
+
+    it('falls back to the error message when the stack is missing', async () => {
+      const adapter = buildAdapter({ emitStackTrace: true })
+      const error = new Error('missing stack')
+      error.stack = undefined
+      const sendTraceActivity = sinon.stub().resolves(undefined)
+      const context = {
+        sendTraceActivity,
+        sendActivity: sinon.stub().resolves(undefined)
+      } as unknown as TurnContext
+
+      await adapter.onTurnError(context, error)
+
+      assert.equal(sendTraceActivity.firstCall.args[1], 'Error: missing stack')
+    })
+
+    it('retains stack in server logs by default', async () => {
       const adapter = buildAdapter()
       const err = new Error('boom')
       err.stack = 'STACK-MARKER\n  at fake'
       const out = await captureDebugLog(() => invokeDefaultOnTurnError(adapter, err))
       assert.ok(out.includes('boom'), `should log error message, got: ${out}`)
-      assert.ok(!out.includes('STACK-MARKER'), 'should NOT include stack by default')
+      assert.ok(out.includes('STACK-MARKER'), 'server logs should retain stack by default')
     })
 
     it('includes stack in log line when enabled', async () => {

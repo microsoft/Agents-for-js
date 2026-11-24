@@ -33,6 +33,7 @@ agent.onActivity('message', async (context: TurnContext) => {
   await context.sendActivity(`You said: ${context.activity.text}`)
 })
 
+// This custom trace exposes stacks for development; emitStackTrace does not govern it.
 // This handler will replace the adapter's default onTurnError function.
 agent.onError(async (context: TurnContext, error: Error) => {
   console.error(`An error occurred: ${error}`)

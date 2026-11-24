@@ -74,7 +74,8 @@ export interface CloudAdapterOptions {
 
   /**
    * When `true`, the default `onTurnError` handler includes `error.stack` in
-   * its log output. Defaults to `false`.
+   * outbound diagnostic traces. Defaults to `false`. Enabled server logs retain
+   * stacks independently. Custom handlers own their diagnostic policy.
    *
    * Env var: `CloudAdapterOptions__emitStackTrace`.
    */
@@ -199,22 +200,25 @@ export class CloudAdapter extends BaseAdapter {
     this._hostValidator = outboundHostValidator ??
       createOutboundHostValidator({ configurationContext: options?.configurationContext })
 
-    // Install a CloudAdapter-aware default `onTurnError` that honors
-    // `emitStackTrace`. The base class default only logs the message; we
-    // preserve that user-facing behavior (trace + messages) but add an
-    // optional stack trace for operators when explicitly opted in.
-    this.onTurnError = async (context: TurnContext, error: Error) => {
-      const detail = this._options.emitStackTrace && error?.stack ? error.stack : `${error}`
-      logger.error(`\n [onTurnError] unhandled error: ${detail}`)
-      await context.sendTraceActivity(
-        'OnTurnError Trace',
-        `${error}`,
-        'https://www.botframework.com/schemas/error',
-        'TurnError'
-      )
-      await context.sendActivity('The agent encountered an error or bug.')
-      await context.sendActivity('To continue to run this agent, please fix the source code.')
-    }
+    this.onTurnError = this.handleTurnError.bind(this)
+  }
+
+  private async handleTurnError (context: TurnContext, error: Error): Promise<void> {
+    const message = `${error}`
+    const serverDetails = error.stack ? `${message}\n${error.stack}` : message
+    const traceDetails = this._options.emitStackTrace && error.stack ? error.stack : message
+
+    // Pass text so telemetry sinks retain the stack rather than serializing only Error.message.
+    logger.error(`\n [onTurnError] unhandled error: ${serverDetails}`)
+
+    await context.sendTraceActivity(
+      'OnTurnError Trace',
+      traceDetails,
+      'https://www.botframework.com/schemas/error',
+      'TurnError'
+    )
+    await context.sendActivity('The agent encountered an error or bug.')
+    await context.sendActivity('To continue to run this agent, please fix the source code.')
   }
 
   /**
