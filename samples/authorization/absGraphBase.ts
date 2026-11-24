@@ -25,6 +25,10 @@ export class AbsGraphBase extends AgentApplication<TurnState> {
   constructor (private readonly label: string, options: Partial<AgentApplicationOptions<TurnState>>) {
     super(options)
 
+    this.onError(async context => {
+      await context.sendActivity('The request could not complete. If sign-in failed, check the Azure Bot OAuth connection name, OAuth/OBO app credentials, exposed API scope, and consent. See the README troubleshooting steps.')
+    })
+
     this.onConversationUpdate('membersAdded', this._welcome)
 
     // --- Authorization commands ---
@@ -129,7 +133,7 @@ export class AbsGraphBase extends AgentApplication<TurnState> {
   }
 
   private _isSignedInResult (userInfo: string): boolean {
-    return /signed in/i.test(userInfo)
+    return /^signed in(?:\s|,)/i.test(userInfo)
   }
 
   private _getLoginEventMap = async (
@@ -176,11 +180,11 @@ ${this._detailLine('status', results[0].status)}`))
 ${results.map((result) => `**${result.handlerId.toUpperCase()}**  \n${this._detailLine('status', result.status)}`).join('\n<br>\n')}`))
   }
 
-  private _sendSignInFailureResult = async (context: TurnContext, handlerId: string, error?: string): Promise<void> => {
+  private _sendSignInFailureResult = async (context: TurnContext, handlerId: string): Promise<void> => {
     await context.sendActivity(this._markdownActivity(`
 **LOGIN**  
 ${this._detailLine('status', 'sign-in failed')}
-${this._detailLine('event', `onSignInFailure${error ? ` (${error})` : ''}`)}
+${this._detailLine('event', 'onSignInFailure')}
 ${this._detailLine('handler', handlerId)}`))
   }
 
@@ -191,7 +195,9 @@ ${this.label}
 Send one of the following commands to get started:
 - Send a message (e.g. 'hi') to see this intro again.
 - Send ? or --help to see all available commands.
-- Send + or --login to start the sign-in flow for all handlers.
+- For the OBO walkthrough, use +obo_auto or +obo_manual to sign in.
+- If a sign-in is waiting for a code, send CancelledByUser to cancel it before trying another command.
+- Send + or --login to sign in to all handlers only after configuring all four Azure connections.
 - Send - or --logout to sign out of all handlers.
 - Send = or --status to check current sign-in status for all handlers.
 - Send +handler, -handler, =handler, or ?handler (e.g. +auth) to target a specific handler with the same commands.
@@ -255,9 +261,9 @@ ${space}${routeName}
     this._recordAuthEvent(context, { handlerId: handlerId ?? 'unknown', name: 'onSignInSuccess' })
   }
 
-  private _signInFailure = async (context: TurnContext, _state: TurnState, handlerId?: string, error?: string): Promise<void> => {
+  private _signInFailure = async (context: TurnContext, _state: TurnState, handlerId?: string): Promise<void> => {
     const resolvedHandlerId = handlerId ?? 'unknown'
-    await this._sendSignInFailureResult(context, resolvedHandlerId, error)
+    await this._sendSignInFailureResult(context, resolvedHandlerId)
   }
 
   private _statusAll = async (context: TurnContext, _state: TurnState): Promise<void> => {
@@ -338,12 +344,11 @@ ${configLines.join('\n')}`))
     const results: Array<{ handlerId: string, status: string }> = []
 
     for (const handlerId of handlerIds) {
-      const token = await this.authorization.getToken(context, handlerId)
-      if (token?.token) {
+      try {
         await this.authorization.signOut(context, state, handlerId)
-        results.push({ handlerId, status: 'signed out' })
-      } else {
-        results.push({ handlerId, status: 'skipped (already signed out)' })
+        results.push({ handlerId, status: `${handlerId}: signed out (or already signed out)` })
+      } catch {
+        results.push({ handlerId, status: `${handlerId}: sign-out failed; check its Azure Bot OAuth connection` })
       }
     }
 
@@ -389,7 +394,11 @@ ${this._detailLine('event', eventMap[handlerId] ?? 'none')}`))
   }
 
   private _getStatusEntry = async (handlerId: string, userInfoPromise: Promise<string>): Promise<{ handlerId: string, userInfo: string }> => {
-    return { handlerId, userInfo: await userInfoPromise }
+    try {
+      return { handlerId, userInfo: await userInfoPromise }
+    } catch {
+      return { handlerId, userInfo: 'token acquisition failed; check the Azure OAuth connection, OBO credentials, exposed API scope, and consent' }
+    }
   }
 
   private _getOboAutoUserInfo = async (context: TurnContext): Promise<string> => {
@@ -431,8 +440,8 @@ ${this._detailLine('event', eventMap[handlerId] ?? 'none')}`))
       const userInfo = await getUserInfo(token)
       const displayName = userInfo?.$root?.displayName as string | undefined
       return displayName ? `signed in as _${displayName}_` : 'signed in, but no display name was returned'
-    } catch (error) {
-      return `${handlerId} is signed in, but user info is unavailable`
+    } catch {
+      return `${handlerId}: Graph profile request failed; check delegated User.Read permission, consent, and connectivity`
     }
   }
 }
