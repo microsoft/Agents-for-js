@@ -14,7 +14,10 @@ import { CloudAdapter } from '../../../src/cloudAdapter'
 import { createStubInstance, SinonStub } from 'sinon'
 import { ConsoleTranscriptLogger } from '../../../src/transcript/consoleTranscriptLogger'
 import type { Connections } from '../../../src/auth/connections'
-import { MemoryStorage, MemoryStorageV2 } from '../../../src/storage'
+import { MemoryStorage, MemoryStorageV2, type StorageProvider } from '../../../src/storage'
+import { AzureBotAuthorization } from '../../../src/app/auth/handlers'
+import { AuthorizationHandlerStatus } from '../../../src/app/auth/types'
+import { HandlerStorage } from '../../../src/app/auth/handlerStorage'
 
 class RecordingTestAdapter extends TestAdapter {
   public readonly sentActivities: Activity[] = []
@@ -22,6 +25,14 @@ class RecordingTestAdapter extends TestAdapter {
   async sendActivities (context: TurnContext, activities: Activity[]): Promise<any[]> {
     this.sentActivities.push(...activities.map(activity => Activity.fromObject(activity)))
     return await super.sendActivities(context, activities)
+  }
+}
+
+class RoutingState extends TurnState {
+  override async load (context: TurnContext, storage?: StorageProvider): Promise<boolean> {
+    const loaded = await super.load(context, storage)
+    context.turnState.set('destination', this.getValue('conversation.destination'))
+    return loaded
   }
 }
 
@@ -59,6 +70,192 @@ describe('Application', () => {
     assert.equal(app.options.authorization, undefined)
     assert.equal(app.options.startTypingTimer, false)
     assert.equal(app.options.transcriptLogger, undefined)
+  })
+
+  describe('route selection during user sign-in', () => {
+    let storage: MemoryStorage
+    beforeEach(() => {
+      storage = new MemoryStorage()
+      app = new AgentApplication({
+        storage,
+        normalizeMentions: true,
+        authorization: {
+          graph: { azureBotOAuthConnectionName: 'GraphConnection' },
+          files: { azureBotOAuthConnectionName: 'FilesConnection' }
+        }
+      })
+    })
+    afterEach(() => sinon.restore())
+
+    function commandContext (text: string, getTokenOrSignInResource: SinonStub, channel = 'test') {
+      const activity = createTestActivity(channel)
+      activity.text = text
+      const context = new TurnContext(testAdapter, activity)
+      context.turnState.set(testAdapter.UserTokenClientKey, { getTokenOrSignInResource })
+      return context
+    }
+
+    it('keeps route selection and user tokens local to overlapping turns in one conversation', async () => {
+      const started = Promise.withResolvers<void>()
+      const release = Promise.withResolvers<void>()
+      const slowLookup = sinon.stub().callsFake(async () => {
+        started.resolve()
+        await release.promise
+        return { tokenResponse: { token: 'slow-token' } }
+      })
+      const fastLookup = sinon.stub().resolves({ tokenResponse: { token: 'fast-token' } })
+      const dispatched: string[] = []
+      app.onMessage('/slow', async ctx => {
+        assert.equal(ctx.activity.text, '/slow')
+        assert.equal((await app.authorization.getToken(ctx, 'graph')).token, 'slow-token')
+        dispatched.push('slow')
+      }, ['graph'])
+      app.onMessage('/fast', async ctx => {
+        assert.equal(ctx.activity.text, '/fast')
+        assert.equal((await app.authorization.getToken(ctx, 'files')).token, 'fast-token')
+        dispatched.push('fast')
+      }, ['files'])
+
+      const slowTurn = app.runInternal(commandContext('/slow', slowLookup))
+      try {
+        await Promise.race([started.promise, slowTurn.then(() => assert.fail('Slow turn skipped token lookup'))])
+        assert.equal(await app.runInternal(commandContext('/fast', fastLookup)), true)
+        assert.deepEqual(dispatched, ['fast'])
+      } finally {
+        release.resolve()
+        await slowTurn
+      }
+      assert.deepEqual(dispatched, ['fast', 'slow'])
+      sinon.assert.calledOnceWithMatch(slowLookup, 'test', 'GraphConnection')
+      sinon.assert.calledOnceWithMatch(fastLookup, 'test', 'FilesConnection')
+    })
+
+    it('requires fresh approvals on retry after the second token lookup fails', async () => {
+      const handler = sinon.stub().resolves()
+      const fallback = sinon.stub().resolves()
+      app.onMessage('/both', handler, ['graph', 'files'])
+      app.onActivity(ActivityTypes.Message, fallback)
+      const lookup = sinon.stub()
+      lookup.withArgs('test', 'GraphConnection').resolves({ tokenResponse: { token: 'graph-token' } })
+      const files = lookup.withArgs('test', 'FilesConnection')
+      files.onFirstCall().rejects(new Error('Token service unavailable'))
+      files.onSecondCall().resolves({ tokenResponse: { token: 'files-token' } })
+
+      await assert.rejects(app.runInternal(commandContext('/both', lookup)), /Failed to sign in/)
+      sinon.assert.notCalled(handler)
+      sinon.assert.notCalled(fallback)
+      assert.equal(await app.runInternal(commandContext('/both', lookup)), true)
+      assert.deepEqual(lookup.getCalls().map(call => call.args[1]), [
+        'GraphConnection', 'FilesConnection', 'GraphConnection', 'FilesConnection'
+      ])
+      sinon.assert.calledOnce(handler)
+      sinon.assert.notCalled(fallback)
+    })
+
+    it('revalidates the incoming Teams command when a pending sign-in is interrupted', async () => {
+      const lookup = sinon.stub().resolves({ tokenResponse: { token: 'files-token' } })
+      const context = commandContext('/files', lookup, Channels.Msteams)
+      const original = createTestActivity(Channels.Msteams)
+      original.text = '/graph'
+      const session = { id: 'graph', activity: original, category: 'signin', attemptsLeft: 2 }
+      const sessions = new HandlerStorage(storage, context)
+      await sessions.write(session)
+      const previousHandler = sinon.stub().resolves()
+      const currentHandler = sinon.stub().resolves()
+      app.onMessage('/graph', previousHandler, ['graph'])
+      app.onMessage('/files', currentHandler, ['files'])
+
+      assert.equal(await app.runInternal(context), true)
+      sinon.assert.calledOnceWithMatch(lookup, 'test', 'FilesConnection')
+      sinon.assert.notCalled(previousHandler)
+      sinon.assert.calledOnce(currentHandler)
+      assert.equal(currentHandler.firstCall.args[0].activity.text, '/files')
+      assert.equal(await sessions.read(), undefined)
+    })
+
+    it('dispatches the approved selection with normalized text and middleware state', async () => {
+      const context = new TurnContext(testAdapter, testActivity)
+      context.activity.text = 'Hello <at>Sam</at>'
+      context.turnState.set('locale', 'en')
+      const selector = sinon.spy(async (ctx: TurnContext) => {
+        assert.equal(ctx.activity.text, 'Hello Sam')
+        assert.equal(ctx.turnState.get('locale'), 'en')
+        return true
+      })
+      const handler = sinon.stub().resolves()
+      app.onMessage(selector, handler, ['graph'])
+      const signin = sinon.stub(AzureBotAuthorization.prototype, 'signin').resolves(AuthorizationHandlerStatus.APPROVED)
+
+      assert.equal(await app.runInternal(context), true)
+      sinon.assert.callOrder(selector, signin, handler)
+      sinon.assert.calledOnce(selector)
+      assert.equal(handler.firstCall.args[0], selector.firstCall.args[0])
+      assert.equal(signin.firstCall.args[0].activity.text, 'Hello <at>Sam</at>')
+    })
+
+    it('authorizes a route selected by loaded state and reuses that state for dispatch', async () => {
+      await storage.write({ 'test/test/conversations/test': { destination: 'reports' } })
+      const factory = sinon.spy(() => new RoutingState())
+      const localApp = new AgentApplication({
+        storage,
+        turnStateFactory: factory,
+        authorization: { graph: { azureBotOAuthConnectionName: 'GraphConnection' } }
+      })
+      const selector = sinon.spy(async (ctx: TurnContext) => ctx.turnState.get('destination') === 'reports')
+      const handler = sinon.stub().resolves()
+      const fallback = sinon.stub().resolves()
+      localApp.onMessage(selector, handler, ['graph'])
+      localApp.onActivity(ActivityTypes.Message, fallback)
+      const signin = sinon.stub(AzureBotAuthorization.prototype, 'signin')
+      signin.onFirstCall().resolves(AuthorizationHandlerStatus.PENDING)
+      signin.onSecondCall().resolves(AuthorizationHandlerStatus.APPROVED)
+
+      assert.equal(await localApp.runInternal(new TurnContext(testAdapter, testActivity)), false)
+      sinon.assert.notCalled(handler)
+      sinon.assert.notCalled(fallback)
+      assert.equal(await localApp.runInternal(new TurnContext(testAdapter, testActivity)), true)
+      sinon.assert.calledTwice(selector)
+      sinon.assert.calledTwice(factory)
+      sinon.assert.calledTwice(signin)
+      sinon.assert.calledOnceWithExactly(handler, selector.secondCall.args[0], factory.secondCall.returnValue)
+      sinon.assert.notCalled(fallback)
+    })
+
+    it('resumes the stored command only after sign-in approves the callback', async () => {
+      const callback = createTestActivity()
+      callback.text = 'verification response'
+      const context = new TurnContext(testAdapter, callback)
+      await new HandlerStorage(storage, context).write({ id: 'graph', activity: testActivity })
+      const handler = sinon.stub().resolves()
+      app.onMessage('/yo', handler, ['graph'])
+      const signin = sinon.stub(AzureBotAuthorization.prototype, 'signin')
+      signin.onFirstCall().resolves(AuthorizationHandlerStatus.PENDING)
+      signin.onSecondCall().resolves(AuthorizationHandlerStatus.APPROVED)
+
+      assert.equal(await app.runInternal(context), false)
+      sinon.assert.notCalled(handler)
+      assert.equal(await app.runInternal(new TurnContext(testAdapter, callback)), true)
+      sinon.assert.calledOnce(handler)
+      assert.equal(signin.secondCall.args[0].activity.text, 'verification response')
+      assert.equal(handler.firstCall.args[0].activity.text, '/yo')
+    })
+
+    it('retains an unmatched selection through dispatch', async () => {
+      const selector = sinon.spy(async () => false)
+      const handler = sinon.stub().resolves()
+      app.onMessage(selector, handler)
+      assert.equal(await app.runInternal(new TurnContext(testAdapter, testActivity)), false)
+      sinon.assert.calledOnce(selector)
+      sinon.assert.notCalled(handler)
+    })
+
+    it('withholds a route when its authorization handler is unconfigured', async () => {
+      const localApp = new AgentApplication()
+      const handler = sinon.stub().resolves()
+      localApp.onMessage('/yo', handler, ['graph'])
+      assert.equal(await localApp.runInternal(new TurnContext(testAdapter, testActivity)), false)
+      sinon.assert.notCalled(handler)
+    })
   })
 
   it('should preserve configured agent name on options', () => {
@@ -767,6 +964,39 @@ describe('Application', () => {
       }
       assert.equal(handlerCalled, true, 'invoke handler should be called in the continuation')
       assert.equal(handlerActivityType, ActivityTypes.Invoke, 'handler should receive the original invoke activity type')
+    })
+
+    it('carries the approved message route into a detached continuation', async (t) => {
+      const adapter = Object.assign(new TrackingAdapter(), { connectionManager: new CloudAdapter().connectionManager })
+      const storage = new MemoryStorage()
+      const key = 'test/test/conversations/test'
+      await storage.write({ [key]: { destination: 'reports' } })
+      const localApp = new AgentApplication({
+        adapter: adapter as any,
+        longRunningMessages: true,
+        storage,
+        turnStateFactory: () => new RoutingState(),
+        authorization: { graph: { azureBotOAuthConnectionName: 'GraphConnection' } }
+      })
+      const signin = sinon.stub(AzureBotAuthorization.prototype, 'signin').resolves(AuthorizationHandlerStatus.APPROVED)
+      t.after(() => signin.restore())
+      const selector = sinon.spy(async (ctx: TurnContext) => ctx.turnState.get('destination') === 'reports')
+      const handler = sinon.stub().resolves()
+      localApp.onMessage(selector, handler, ['graph'])
+
+      await localApp.run(new TurnContext(adapter, createTestActivity()))
+      sinon.assert.calledOnce(signin)
+      sinon.assert.notCalled(handler)
+      assert.ok(adapter.continueConversationCallback)
+      await storage.write({ [key]: { destination: 'updated' } })
+      const continuation = adapter.createContinuationContext()
+      await adapter.continueConversationCallback(continuation)
+      sinon.assert.callOrder(selector, signin, handler)
+      sinon.assert.calledOnce(selector)
+      assert.equal(handler.firstCall.args[0].activity.text, '/yo')
+      assert.equal(handler.firstCall.args[0], continuation)
+      assert.equal(continuation.turnState.get('destination'), 'updated')
+      assert.equal(handler.firstCall.args[1].getValue('conversation.destination'), 'updated')
     })
 
     it('should not detach regular message activities', async () => {

@@ -1712,7 +1712,7 @@ export interface TranscriptStore extends TranscriptLogger {
 // @public
 export class TurnContext {
     constructor(adapterOrContext: BaseAdapter, request: Activity, identity?: JwtPayload);
-    constructor(adapterOrContext: TurnContext);
+    constructor(adapterOrContext: TurnContext, request?: Activity);
     get activity(): Activity;
     get adapter(): BaseAdapter;
     readonly bufferedReplyActivities: Activity[];

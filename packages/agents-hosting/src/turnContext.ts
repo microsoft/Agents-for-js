@@ -89,12 +89,16 @@ export class TurnContext {
    * Creates a context by copying another turn context.
    *
    * @param adapterOrContext The turn context to copy.
+   * @param request Optional activity to use with the copied turn state and middleware.
    */
-  constructor (adapterOrContext: TurnContext)
+  constructor (adapterOrContext: TurnContext, request?: Activity)
   /** Implements the adapter and copy constructor overloads. */
   constructor (adapterOrContext: BaseAdapter | TurnContext, request?: Activity, identity?: JwtPayload) {
     if (adapterOrContext instanceof TurnContext) {
       adapterOrContext.copyTo(this)
+      if (request !== undefined) {
+        this._activity = request
+      }
     } else {
       this._adapter = adapterOrContext
       this._activity = request as Activity

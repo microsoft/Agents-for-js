@@ -1204,14 +1204,17 @@ describe('AuthorizationManager - Processing', () => {
     assert.notEqual(handlers.find(handler => handler.id === 'handler3'), undefined)
   })
 
-  it('should return authorized:true when conversation changes', async () => {
+  it('should check the current activity after discarding a session from another conversation', async () => {
     const handlerStorage = new HandlerStorage(storage, context)
     await handlerStorage.write({ id: 'handler1', activity: { ...testActivity, conversation: { id: 'changed' } } as any, eTag: '*' })
+    const handler = manager.handlers.find(handler => handler.id === 'handler1')!
+    sinon.stub(handler, 'signin').resolves(AuthorizationHandlerStatus.PENDING)
 
     const result = await manager.process(context, getHandlerIds)
 
     const storageResult = await handlerStorage.read()
-    assert.equal(result.authorized, true)
+    assert.equal(result.authorized, false)
+    sinon.assert.calledOnceWithExactly(getHandlerIds, testActivity)
     assert.equal(storageResult, undefined)
   })
 
