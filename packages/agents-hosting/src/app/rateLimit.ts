@@ -8,16 +8,19 @@ import { debug } from '@microsoft/agents-telemetry'
 import { INVOKE_RESPONSE_KEY } from '../activityHandler'
 import { InvokeResponse } from '../invoke'
 import {
-  MemoryStorage,
+  MemoryStorageV2,
   Storage,
   StorageProvider,
   StorageV2,
+  StorageWriteMode,
+  StorageWriteOptions,
   StoreItem,
 } from '../storage'
 import {
   asStorageV2,
   assertStorageWriteSucceeded,
   getStorageReadValue,
+  isStorageV2,
 } from '../storage/storageCompatibility'
 import { StatusCodes } from '../statusCodes'
 import { TurnContext } from '../turnContext'
@@ -249,9 +252,9 @@ export interface RateLimitRule {
    *
    * When omitted, the rule uses the `AgentApplication` storage. If the
    * application does not have storage configured, the limiter falls back to
-   * app-local memory storage. Provide rule-specific durable or shared storage
-   * when this rule should use a different store than the application state, or
-   * when limits must survive restarts or apply across multiple app instances.
+   * app-local memory storage. Use durable storage when limits must survive
+   * restarts. Limits shared across application instances require a shared
+   * {@link StorageV2} provider with conditional writes.
    */
   storage?: StorageProvider
 
@@ -293,16 +296,18 @@ interface PendingRuleEvaluation {
   rule: RateLimitRule
   ruleIndex: number
   storage: StorageV2
+  supportsCreateOnly: boolean
   storageKey: string
   key: string
 }
 
 interface WindowWrite extends PendingRuleEvaluation {
   window: WindowState
+  options?: StorageWriteOptions
 }
 
 export class AgentApplicationRateLimiter {
-  private readonly fallbackStorage = asStorageV2(new MemoryStorage())
+  private readonly fallbackStorage = new MemoryStorageV2()
   private readonly storageAdapters = new WeakMap<Storage, StorageV2>()
   private readonly storageIds = new WeakMap<StorageV2, number>()
   private readonly locks = new Map<string, Promise<void>>()
@@ -363,8 +368,8 @@ export class AgentApplicationRateLimiter {
   /**
    * Reads and persists fixed-window state updates while holding key locks.
    *
-   * The evaluation happens here so reads and writes use fresh eTags, and so
-   * concurrent first requests cannot all write wildcard-created counters.
+   * Reads and writes within an instance are serialized by key. Conditional
+   * writes on shared StorageV2 providers detect conflicts across instances.
    */
   private async commitPendingEvaluations (pendingEvaluations: PendingRuleEvaluation[]): Promise<RateLimitDecision | undefined> {
     let attempt = 0
@@ -415,7 +420,7 @@ export class AgentApplicationRateLimiter {
         try {
           const results = await pending.storage.write(
             { [pending.storageKey]: pending.window },
-            pending.window.eTag === undefined ? undefined : { expectedVersion: pending.window.eTag }
+            pending.options
           )
           assertStorageWriteSucceeded(results, [pending.storageKey])
           committed.add(this.getLockKey(pending.storage, pending.storageKey))
@@ -543,22 +548,28 @@ export class AgentApplicationRateLimiter {
     }
 
     window.count++
+    const expectedVersion = window.eTag
+    const options = expectedVersion !== undefined
+      ? { expectedVersion }
+      : current === undefined && pending.supportsCreateOnly
+        ? { mode: StorageWriteMode.CreateOnly }
+        : undefined
+
     return {
-      write: { ...pending, window }
+      write: { ...pending, window, options }
     }
   }
 
   private createPendingEvaluation (rule: RateLimitRule, ruleIndex: number, key: string): PendingRuleEvaluation {
-    const storage = this.getStorageV2(rule.storage ?? this.storage ?? this.fallbackStorage)
+    const provider = rule.storage ?? this.storage ?? this.fallbackStorage
+    const supportsCreateOnly = isStorageV2(provider)
+    const storage = supportsCreateOnly ? provider : this.getStorageAdapter(provider)
     const storageKey = `rateLimit:${ruleIndex}:${key}`
-    return { rule, ruleIndex, storage, storageKey, key }
+
+    return { rule, ruleIndex, storage, supportsCreateOnly, storageKey, key }
   }
 
-  private getStorageV2 (storage: StorageProvider): StorageV2 {
-    if (storage instanceof StorageV2) {
-      return storage
-    }
-
+  private getStorageAdapter (storage: Storage): StorageV2 {
     const existing = this.storageAdapters.get(storage)
     if (existing) {
       return existing
@@ -628,10 +639,6 @@ export class AgentApplicationRateLimiter {
       return {
         count: 0,
         resetAt: now + rule.windowMs,
-        // TODO: Once microsoft/Agents-for-net#883 lands in this SDK's storage
-        // contract, use a create-if-absent write for new rate limit counters.
-        // Unconditional writes are not protected by process-local locks in
-        // scaled-out deployments.
         eTag: current?.eTag
       }
     }

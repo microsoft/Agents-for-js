@@ -3,7 +3,18 @@ import { describe, it } from 'node:test'
 import * as sinon from 'sinon'
 
 import { Activity, ActivityTypes } from '@microsoft/agents-activity'
-import { AgentApplication, INVOKE_RESPONSE_KEY, MemoryStorage, MemoryStorageV2, StatusCodes, Storage, StoreItem, TurnContext } from '../../../src'
+import {
+  AgentApplication,
+  INVOKE_RESPONSE_KEY,
+  MemoryStorage,
+  MemoryStorageV2,
+  StatusCodes,
+  Storage,
+  StorageWriteMode,
+  StorageWriteOptions,
+  StoreItem,
+  TurnContext
+} from '../../../src'
 import { TestAdapter } from '../testStubs'
 
 class RecordingTestAdapter extends TestAdapter {
@@ -206,6 +217,54 @@ describe('AgentApplication rate limiting', () => {
 
     assert.equal(results.filter(Boolean).length, 1)
     assert.equal(called, 1)
+  })
+
+  it('should admit one concurrent first turn across two applications sharing a counter', async () => {
+    const storage = new class extends MemoryStorageV2 {
+      override async write<T extends object> (
+        changes: Record<string, T>,
+        options?: StorageWriteOptions
+      ) {
+        assert.equal(
+          options?.mode,
+          StorageWriteMode.CreateOnly,
+          'A new counter requires a create-only write'
+        )
+
+        return await super.write(changes, options)
+      }
+    }()
+
+    let called = 0
+    const createApp = () => {
+      const app = new AgentApplication({
+        rateLimit: [{
+          scope: context => context.activity.from?.id,
+          limit: 1,
+          windowMs: 60_000,
+          storage,
+          storageErrorBehavior: 'throw'
+        }]
+      })
+      app.onActivity(ActivityTypes.Message, async () => {
+        called++
+      })
+
+      return app
+    }
+    const firstApp = createApp()
+    const secondApp = createApp()
+
+    const results = await Promise.all([
+      firstApp.runInternal(new TurnContext(new TestAdapter(), createTestActivity())),
+      secondApp.runInternal(new TurnContext(new TestAdapter(), createTestActivity()))
+    ])
+    assert.equal(results.filter(Boolean).length, 1)
+    assert.equal(called, 1)
+
+    const key = 'rateLimit:0:user-1'
+    const counters = await storage.read<{ count: number }>([key])
+    assert.equal(counters[key].value?.count, 1)
   })
 
   it('should reset fixed windows over time', async () => {
