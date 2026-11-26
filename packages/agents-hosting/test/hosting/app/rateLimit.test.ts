@@ -374,6 +374,56 @@ describe('AgentApplication rate limiting', () => {
     assert.equal(storage.getItem<{ count: number }>('rateLimit:0:user-1')?.count, 1)
   })
 
+  it('should release earlier quota when a later counter conflicts and throttles the turn', async () => {
+    const conversationKey = 'rateLimit:1:conversation-1'
+    const storage = new class extends MemoryStorageV2 {
+      override async write<T extends object> (
+        changes: Record<string, T>,
+        options?: StorageWriteOptions
+      ) {
+        if (Object.hasOwn(changes, conversationKey) && options?.mode === StorageWriteMode.CreateOnly) {
+          // Simulate a backend that created the conversation counter after the read.
+          await super.write({ [conversationKey]: changes[conversationKey] }, options)
+        }
+
+        return await super.write(changes, options)
+      }
+    }()
+    const app = new AgentApplication({
+      storage,
+      rateLimit: [
+        {
+          scope: context => context.activity.from?.id,
+          limit: 1,
+          windowMs: 60_000
+        },
+        {
+          scope: context => context.activity.conversation?.id,
+          limit: 1,
+          windowMs: 60_000
+        }
+      ]
+    })
+    let called = 0
+    app.onActivity(ActivityTypes.Message, async () => {
+      called++
+    })
+
+    const adapter = new TestAdapter()
+    assert.equal(await app.runInternal(new TurnContext(adapter, createTestActivity())), false)
+    assert.equal(called, 0)
+
+    const userKey = 'rateLimit:0:user-1'
+    const counters = await storage.read<{ count: number }>([userKey, conversationKey])
+    assert.equal(counters[userKey].value?.count, 0)
+    assert.equal(counters[conversationKey].value?.count, 1)
+
+    const nextActivity = createTestActivity()
+    nextActivity.conversation = { id: 'conversation-2' }
+    assert.equal(await app.runInternal(new TurnContext(adapter, nextActivity)), true)
+    assert.equal(called, 1)
+  })
+
   it('should not retry counter writes that already committed for the same turn', async () => {
     const storage = new FailsOnceForKeyStorage('rateLimit:1:conversation-1')
     const app = new AgentApplication({
