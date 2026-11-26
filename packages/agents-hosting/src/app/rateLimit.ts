@@ -86,8 +86,8 @@ export interface RateLimitResult {
   /**
    * Approximate delay before another activity would be accepted.
    *
-   * For fixed-window limits, this is the time remaining until the current window
-   * for the scope key resets.
+   * When the counter is full, this is the time remaining until the window
+   * resets. A write conflict with quota still available reports zero.
    */
   retryAfterMs: number
 }
@@ -268,17 +268,17 @@ export interface RateLimitRule {
    * lets the turn continue, and `throw` surfaces the storage error.
    *
    * When omitted, storage failures use `throttle`.
-   */
+      */
   storageErrorBehavior?: RateLimitStorageErrorBehavior
 
   /**
    * Number of times to retry storage operations. Defaults to 3.
    *
-   * When provided, failed window evaluations and writes are retried up to this many times before
-   * applying `storageErrorBehavior`.
-   *
-   * When omitted, failed window evaluations and writes are retried up to 3 times.
-   * Retries help when shared storage reports transient read or write failures.
+   * Read and write failures are retried up to this many times before applying
+   * `storageErrorBehavior`. Conditional-write conflicts have a separate retry
+   * budget for each rule. The limiter rereads the counter after a conflict,
+   * even with zero retries, and throttles if it cannot record the turn within
+   * the budget.
    */
   maxStorageRetries?: number
 }
@@ -388,7 +388,8 @@ export class AgentApplicationRateLimiter {
     pendingEvaluations: PendingRuleEvaluation[],
     committed: Map<string, WindowWrite>
   ): Promise<RateLimitDecision | undefined> {
-    let attempt = 0
+    let storageRetries = 0
+    const writeConflicts = new Map<number, number>()
 
     while (true) {
       const writes: WindowWrite[] = []
@@ -399,8 +400,11 @@ export class AgentApplicationRateLimiter {
           continue
         }
 
+        const conflicts = writeConflicts.get(pending.ruleIndex)
+        const maxRetries = pending.rule.maxStorageRetries ?? DEFAULT_MAX_STORAGE_RETRIES
+        const canWrite = conflicts === undefined || conflicts <= maxRetries
         try {
-          const { result, write } = await this.evaluateRule(pending)
+          const { result, write } = await this.evaluateRule(pending, canWrite)
           if (result) {
             return { allowed: false, rule: pending.rule, result }
           }
@@ -409,7 +413,7 @@ export class AgentApplicationRateLimiter {
             writes.push(write)
           }
         } catch (err) {
-          if (attempt >= (pending.rule.maxStorageRetries ?? DEFAULT_MAX_STORAGE_RETRIES)) {
+          if (storageRetries >= maxRetries) {
             const decision = this.handleStorageError(pending.rule, {
               ruleIndex: pending.ruleIndex,
               key: pending.key,
@@ -421,13 +425,13 @@ export class AgentApplicationRateLimiter {
             continue
           }
 
+          storageRetries++
           retry = true
           break
         }
       }
 
       if (retry) {
-        attempt++
         continue
       }
 
@@ -437,10 +441,22 @@ export class AgentApplicationRateLimiter {
             { [pending.storageKey]: pending.window },
             pending.options
           )
+          const status = results?.[pending.storageKey]?.status
+          if (
+            status === StorageOperationStatus.Conflict ||
+            status === StorageOperationStatus.ConditionNotMet ||
+            (status === StorageOperationStatus.NotFound && pending.options?.expectedVersion !== undefined)
+          ) {
+            const conflicts = writeConflicts.get(pending.ruleIndex) ?? 0
+            writeConflicts.set(pending.ruleIndex, conflicts + 1)
+            retry = true
+            break
+          }
+
           assertStorageWriteSucceeded(results, [pending.storageKey])
           committed.set(this.getLockKey(pending.storage, pending.storageKey), pending)
         } catch (err) {
-          if (attempt >= (pending.rule.maxStorageRetries ?? DEFAULT_MAX_STORAGE_RETRIES)) {
+          if (storageRetries >= (pending.rule.maxStorageRetries ?? DEFAULT_MAX_STORAGE_RETRIES)) {
             const decision = this.handleStorageError(pending.rule, {
               ruleIndex: pending.ruleIndex,
               key: pending.key,
@@ -452,6 +468,7 @@ export class AgentApplicationRateLimiter {
             continue
           }
 
+          storageRetries++
           retry = true
           break
         }
@@ -460,8 +477,6 @@ export class AgentApplicationRateLimiter {
       if (!retry) {
         return undefined
       }
-
-      attempt++
     }
   }
 
@@ -582,18 +597,22 @@ export class AgentApplicationRateLimiter {
    * Reads the current window, decides whether the turn is over limit, and
    * prepares the next window state when the turn should be counted.
    */
-  private async evaluateRule (pending: PendingRuleEvaluation): Promise<{ result?: RateLimitResult, write?: WindowWrite }> {
+  private async evaluateRule (
+    pending: PendingRuleEvaluation,
+    canWrite: boolean
+  ): Promise<{ result?: RateLimitResult, write?: WindowWrite }> {
     const { rule, ruleIndex, key } = pending
     const current = await this.readWindow(pending)
     const now = Date.now()
     const window = this.getFixedWindow(rule, current, now)
+    const atLimit = window.count >= rule.limit
 
-    if (window.count >= rule.limit) {
+    if (atLimit || !canWrite) {
       return {
         result: {
           ruleIndex,
           key,
-          retryAfterMs: Math.max(0, window.resetAt - now)
+          retryAfterMs: atLimit ? Math.max(0, window.resetAt - now) : 0
         }
       }
     }

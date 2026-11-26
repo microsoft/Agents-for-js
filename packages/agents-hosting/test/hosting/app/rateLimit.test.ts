@@ -10,6 +10,7 @@ import {
   MemoryStorageV2,
   StatusCodes,
   Storage,
+  StorageOperationStatus,
   StorageWriteMode,
   StorageWriteOptions,
   StoreItem,
@@ -400,7 +401,9 @@ describe('AgentApplication rate limiting', () => {
         {
           scope: context => context.activity.conversation?.id,
           limit: 1,
-          windowMs: 60_000
+          windowMs: 60_000,
+          storageErrorBehavior: 'allow',
+          maxStorageRetries: 0
         }
       ]
     })
@@ -409,9 +412,11 @@ describe('AgentApplication rate limiting', () => {
       called++
     })
 
+    const reads = sinon.spy(storage, 'read')
     const adapter = new TestAdapter()
     assert.equal(await app.runInternal(new TurnContext(adapter, createTestActivity())), false)
     assert.equal(called, 0)
+    assert.equal(reads.getCalls().filter(call => call.args[0].includes(conversationKey)).length, 2)
 
     const userKey = 'rateLimit:0:user-1'
     const counters = await storage.read<{ count: number }>([userKey, conversationKey])
@@ -422,6 +427,63 @@ describe('AgentApplication rate limiting', () => {
     nextActivity.conversation = { id: 'conversation-2' }
     assert.equal(await app.runInternal(new TurnContext(adapter, nextActivity)), true)
     assert.equal(called, 1)
+  })
+
+  it('should reread version conflicts and admit a turn only if its counter write succeeds', async () => {
+    const key = 'rateLimit:0:user-1'
+    const cases = [
+      { maxStorageRetries: 0, conflicts: 1, allowed: false },
+      { maxStorageRetries: 1, conflicts: 1, allowed: true },
+      { maxStorageRetries: 1, conflicts: 2, allowed: false }
+    ]
+
+    for (const { maxStorageRetries, conflicts, allowed } of cases) {
+      let writes = 0
+      const storage = new class extends MemoryStorageV2 {
+        override async write<T extends object> (
+          changes: Record<string, T>,
+          options?: StorageWriteOptions
+        ) {
+          if (options?.expectedVersion !== undefined) {
+            writes++
+            if (writes <= conflicts) {
+              return { [key]: { key, status: StorageOperationStatus.ConditionNotMet } }
+            }
+          }
+
+          return await super.write(changes, options)
+        }
+      }()
+      await storage.write({ [key]: { count: 1, resetAt: Date.now() + 60_000 } })
+      const reads = sinon.spy(storage, 'read')
+      let retryAfterMs: number | undefined
+      const app = new AgentApplication({
+        rateLimit: [{
+          scope: context => context.activity.from?.id,
+          limit: 2,
+          windowMs: 60_000,
+          maxStorageRetries,
+          storageErrorBehavior: 'allow',
+          message: (_context, result) => {
+            retryAfterMs = result.retryAfterMs
+            return 'Counter busy.'
+          },
+          storage
+        }]
+      })
+      let called = 0
+      app.onActivity(ActivityTypes.Message, async () => {
+        called++
+      })
+
+      assert.equal(await app.runInternal(new TurnContext(new TestAdapter(), createTestActivity())), allowed)
+      assert.equal(reads.callCount, conflicts + 1)
+      assert.equal(writes, maxStorageRetries + 1)
+      assert.equal(retryAfterMs, allowed ? undefined : 0)
+      assert.equal(called, allowed ? 1 : 0)
+      const counters = await storage.read<{ count: number }>([key])
+      assert.equal(counters[key].value?.count, allowed ? 2 : 1)
+    }
   })
 
   it('should not retry counter writes that already committed for the same turn', async () => {
