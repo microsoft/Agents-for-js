@@ -3,21 +3,26 @@
  * Licensed under the MIT License.
  */
 
-import { Activity, ActivityTypes } from '@microsoft/agents-activity'
+import { Activity, ActivityTypes, ExceptionHelper } from '@microsoft/agents-activity'
 import { debug } from '@microsoft/agents-telemetry'
 import { INVOKE_RESPONSE_KEY } from '../activityHandler'
+import { Errors } from '../errorHelper'
 import { InvokeResponse } from '../invoke'
 import {
-  MemoryStorage,
+  MemoryStorageV2,
   Storage,
+  StorageOperationStatus,
   StorageProvider,
   StorageV2,
+  StorageWriteMode,
+  StorageWriteOptions,
   StoreItem,
 } from '../storage'
 import {
   asStorageV2,
   assertStorageWriteSucceeded,
   getStorageReadValue,
+  isStorageV2,
 } from '../storage/storageCompatibility'
 import { StatusCodes } from '../statusCodes'
 import { TurnContext } from '../turnContext'
@@ -82,8 +87,8 @@ export interface RateLimitResult {
   /**
    * Approximate delay before another activity would be accepted.
    *
-   * For fixed-window limits, this is the time remaining until the current window
-   * for the scope key resets.
+   * When the counter is full, this is the time remaining until the window
+   * resets. A write conflict with quota still available reports zero.
    */
   retryAfterMs: number
 }
@@ -172,7 +177,8 @@ export interface RateLimitRule {
    * This property is required.
    *
    * Each accepted turn that matches the rule increments the counter for its
-   * scope key.
+   * scope key. If a later rule rejects the turn, the limiter attempts to undo
+   * any earlier increments. Storage failures can prevent that cleanup.
    */
   limit: number
 
@@ -249,9 +255,9 @@ export interface RateLimitRule {
    *
    * When omitted, the rule uses the `AgentApplication` storage. If the
    * application does not have storage configured, the limiter falls back to
-   * app-local memory storage. Provide rule-specific durable or shared storage
-   * when this rule should use a different store than the application state, or
-   * when limits must survive restarts or apply across multiple app instances.
+   * app-local memory storage. Use durable storage when limits must survive
+   * restarts. Limits shared across application instances require a shared
+   * {@link StorageV2} provider with conditional writes.
    */
   storage?: StorageProvider
 
@@ -269,11 +275,11 @@ export interface RateLimitRule {
   /**
    * Number of times to retry storage operations. Defaults to 3.
    *
-   * When provided, failed window evaluations and writes are retried up to this many times before
-   * applying `storageErrorBehavior`.
-   *
-   * When omitted, failed window evaluations and writes are retried up to 3 times.
-   * Retries help when shared storage reports transient read or write failures.
+   * Read and write failures are retried up to this many times before applying
+   * `storageErrorBehavior`. Conditional-write conflicts have a separate retry
+   * budget for each rule. The limiter rereads the counter after a conflict,
+   * even with zero retries, and throttles if it cannot record the turn within
+   * the budget.
    */
   maxStorageRetries?: number
 }
@@ -293,16 +299,18 @@ interface PendingRuleEvaluation {
   rule: RateLimitRule
   ruleIndex: number
   storage: StorageV2
+  isNativeV2: boolean
   storageKey: string
   key: string
 }
 
 interface WindowWrite extends PendingRuleEvaluation {
   window: WindowState
+  options?: StorageWriteOptions
 }
 
 export class AgentApplicationRateLimiter {
-  private readonly fallbackStorage = asStorageV2(new MemoryStorage())
+  private readonly fallbackStorage = new MemoryStorageV2()
   private readonly storageAdapters = new WeakMap<Storage, StorageV2>()
   private readonly storageIds = new WeakMap<StorageV2, number>()
   private readonly locks = new Map<string, Promise<void>>()
@@ -351,8 +359,19 @@ export class AgentApplicationRateLimiter {
       return await this.withLocks(
         pendingEvaluations.map(pending => this.getLockKey(pending.storage, pending.storageKey)),
         async () => {
-          const decision = await this.commitPendingEvaluations(pendingEvaluations)
-          return decision ?? { allowed: true }
+          const committed = new Map<string, WindowWrite>()
+          let allowed = false
+          try {
+            const decision = await this.commitPendingEvaluations(pendingEvaluations, committed)
+            allowed = decision === undefined
+            return decision ?? { allowed: true }
+          } finally {
+            if (!allowed) {
+              for (const write of committed.values()) {
+                await this.releaseQuota(write)
+              }
+            }
+          }
         }
       )
     }
@@ -363,12 +382,15 @@ export class AgentApplicationRateLimiter {
   /**
    * Reads and persists fixed-window state updates while holding key locks.
    *
-   * The evaluation happens here so reads and writes use fresh eTags, and so
-   * concurrent first requests cannot all write wildcard-created counters.
+   * Reads and writes within an instance are serialized by key. Conditional
+   * writes on shared StorageV2 providers detect conflicts across instances.
    */
-  private async commitPendingEvaluations (pendingEvaluations: PendingRuleEvaluation[]): Promise<RateLimitDecision | undefined> {
-    let attempt = 0
-    const committed = new Set<string>()
+  private async commitPendingEvaluations (
+    pendingEvaluations: PendingRuleEvaluation[],
+    committed: Map<string, WindowWrite>
+  ): Promise<RateLimitDecision | undefined> {
+    let storageRetries = 0
+    const writeConflicts = new Map<number, number>()
 
     while (true) {
       const writes: WindowWrite[] = []
@@ -379,8 +401,11 @@ export class AgentApplicationRateLimiter {
           continue
         }
 
+        const conflicts = writeConflicts.get(pending.ruleIndex)
+        const maxRetries = pending.rule.maxStorageRetries ?? DEFAULT_MAX_STORAGE_RETRIES
+        const canWrite = conflicts === undefined || conflicts <= maxRetries
         try {
-          const { result, write } = await this.evaluateRule(pending)
+          const { result, write } = await this.evaluateRule(pending, canWrite)
           if (result) {
             return { allowed: false, rule: pending.rule, result }
           }
@@ -389,7 +414,7 @@ export class AgentApplicationRateLimiter {
             writes.push(write)
           }
         } catch (err) {
-          if (attempt >= (pending.rule.maxStorageRetries ?? DEFAULT_MAX_STORAGE_RETRIES)) {
+          if (storageRetries >= maxRetries) {
             const decision = this.handleStorageError(pending.rule, {
               ruleIndex: pending.ruleIndex,
               key: pending.key,
@@ -401,13 +426,13 @@ export class AgentApplicationRateLimiter {
             continue
           }
 
+          storageRetries++
           retry = true
           break
         }
       }
 
       if (retry) {
-        attempt++
         continue
       }
 
@@ -415,12 +440,24 @@ export class AgentApplicationRateLimiter {
         try {
           const results = await pending.storage.write(
             { [pending.storageKey]: pending.window },
-            pending.window.eTag === undefined ? undefined : { expectedVersion: pending.window.eTag }
+            pending.options
           )
+          const status = results?.[pending.storageKey]?.status
+          if (
+            status === StorageOperationStatus.Conflict ||
+            status === StorageOperationStatus.ConditionNotMet ||
+            (status === StorageOperationStatus.NotFound && pending.options?.expectedVersion !== undefined)
+          ) {
+            const conflicts = writeConflicts.get(pending.ruleIndex) ?? 0
+            writeConflicts.set(pending.ruleIndex, conflicts + 1)
+            retry = true
+            break
+          }
+
           assertStorageWriteSucceeded(results, [pending.storageKey])
-          committed.add(this.getLockKey(pending.storage, pending.storageKey))
+          committed.set(this.getLockKey(pending.storage, pending.storageKey), pending)
         } catch (err) {
-          if (attempt >= (pending.rule.maxStorageRetries ?? DEFAULT_MAX_STORAGE_RETRIES)) {
+          if (storageRetries >= (pending.rule.maxStorageRetries ?? DEFAULT_MAX_STORAGE_RETRIES)) {
             const decision = this.handleStorageError(pending.rule, {
               ruleIndex: pending.ruleIndex,
               key: pending.key,
@@ -432,6 +469,7 @@ export class AgentApplicationRateLimiter {
             continue
           }
 
+          storageRetries++
           retry = true
           break
         }
@@ -440,8 +478,46 @@ export class AgentApplicationRateLimiter {
       if (!retry) {
         return undefined
       }
+    }
+  }
 
-      attempt++
+  private async releaseQuota (write: WindowWrite): Promise<void> {
+    const { rule, storage, storageKey, window, isNativeV2 } = write
+    const maxRetries = rule.maxStorageRetries ?? DEFAULT_MAX_STORAGE_RETRIES
+
+    try {
+      for (let attempt = 0; ; attempt++) {
+        const current = await this.readWindow(write)
+        if (
+          !current ||
+          current.resetAt !== window.resetAt ||
+          current.resetAt <= Date.now() ||
+          current.count <= 0
+        ) {
+          return
+        }
+
+        const expectedVersion = current.eTag
+        if (isNativeV2 && expectedVersion === undefined) {
+          logger.warn('Cannot release rate limit quota without a storage version:', storageKey)
+          return
+        }
+
+        const results = await storage.write(
+          { [storageKey]: { ...current, count: current.count - 1 } },
+          expectedVersion === undefined ? undefined : { expectedVersion }
+        )
+        const status = results[storageKey]?.status
+        // Retry only when storage confirms the decrement did not take effect.
+        if (status === StorageOperationStatus.ConditionNotMet && attempt < maxRetries) {
+          continue
+        }
+
+        assertStorageWriteSucceeded(results, [storageKey])
+        return
+      }
+    } catch (err) {
+      logger.warn('Failed to release rate limit quota:', err)
     }
   }
 
@@ -522,43 +598,63 @@ export class AgentApplicationRateLimiter {
    * Reads the current window, decides whether the turn is over limit, and
    * prepares the next window state when the turn should be counted.
    */
-  private async evaluateRule (pending: PendingRuleEvaluation): Promise<{ result?: RateLimitResult, write?: WindowWrite }> {
-    const { rule, ruleIndex, storage, storageKey, key } = pending
-    const items = await storage.read<WindowState>([storageKey])
-    const value = getStorageReadValue(items, storageKey)
-    const current = value === undefined
-      ? undefined
-      : { ...value, eTag: items[storageKey].version }
+  private async evaluateRule (
+    pending: PendingRuleEvaluation,
+    canWrite: boolean
+  ): Promise<{ result?: RateLimitResult, write?: WindowWrite }> {
+    const { rule, ruleIndex, key, storageKey, isNativeV2 } = pending
+    const current = await this.readWindow(pending)
     const now = Date.now()
     const window = this.getFixedWindow(rule, current, now)
+    const atLimit = window.count >= rule.limit
 
-    if (window.count >= rule.limit) {
+    if (atLimit || !canWrite) {
       return {
         result: {
           ruleIndex,
           key,
-          retryAfterMs: Math.max(0, window.resetAt - now)
+          retryAfterMs: atLimit ? Math.max(0, window.resetAt - now) : 0
         }
       }
     }
 
-    window.count++
-    return {
-      write: { ...pending, window }
+    const expectedVersion = window.eTag
+    if (isNativeV2 && current !== undefined && !expectedVersion) {
+      throw ExceptionHelper.generateException(Error, Errors.RateLimitCounterVersionMissing, undefined, {
+        key: storageKey
+      })
     }
+
+    window.count++
+    const options = expectedVersion !== undefined
+      ? { expectedVersion }
+      : current === undefined && isNativeV2
+        ? { mode: StorageWriteMode.CreateOnly }
+        : undefined
+
+    return {
+      write: { ...pending, window, options }
+    }
+  }
+
+  private async readWindow (pending: PendingRuleEvaluation): Promise<WindowState | undefined> {
+    const { storage, storageKey } = pending
+    const items = await storage.read<WindowState>([storageKey])
+    const value = getStorageReadValue(items, storageKey)
+
+    return value === undefined ? undefined : { ...value, eTag: items[storageKey].version }
   }
 
   private createPendingEvaluation (rule: RateLimitRule, ruleIndex: number, key: string): PendingRuleEvaluation {
-    const storage = this.getStorageV2(rule.storage ?? this.storage ?? this.fallbackStorage)
+    const provider = rule.storage ?? this.storage ?? this.fallbackStorage
+    const isNativeV2 = isStorageV2(provider)
+    const storage = isNativeV2 ? provider : this.getStorageAdapter(provider)
     const storageKey = `rateLimit:${ruleIndex}:${key}`
-    return { rule, ruleIndex, storage, storageKey, key }
+
+    return { rule, ruleIndex, storage, isNativeV2, storageKey, key }
   }
 
-  private getStorageV2 (storage: StorageProvider): StorageV2 {
-    if (storage instanceof StorageV2) {
-      return storage
-    }
-
+  private getStorageAdapter (storage: Storage): StorageV2 {
     const existing = this.storageAdapters.get(storage)
     if (existing) {
       return existing
@@ -624,14 +720,10 @@ export class AgentApplicationRateLimiter {
    * Reuses the active window or starts a new one after the reset time.
    */
   private getFixedWindow (rule: RateLimitRule, current: WindowState | undefined, now: number): WindowState {
-    if (!current || !Number.isFinite(current.resetAt) || current.resetAt <= now) {
+    if (!current || current.count === 0 || !Number.isFinite(current.resetAt) || current.resetAt <= now) {
       return {
         count: 0,
         resetAt: now + rule.windowMs,
-        // TODO: Once microsoft/Agents-for-net#883 lands in this SDK's storage
-        // contract, use a create-if-absent write for new rate limit counters.
-        // Unconditional writes are not protected by process-local locks in
-        // scaled-out deployments.
         eTag: current?.eTag
       }
     }
