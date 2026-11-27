@@ -3,9 +3,10 @@
  * Licensed under the MIT License.
  */
 
-import { Activity, ActivityTypes } from '@microsoft/agents-activity'
+import { Activity, ActivityTypes, ExceptionHelper } from '@microsoft/agents-activity'
 import { debug } from '@microsoft/agents-telemetry'
 import { INVOKE_RESPONSE_KEY } from '../activityHandler'
+import { Errors } from '../errorHelper'
 import { InvokeResponse } from '../invoke'
 import {
   MemoryStorageV2,
@@ -268,7 +269,7 @@ export interface RateLimitRule {
    * lets the turn continue, and `throw` surfaces the storage error.
    *
    * When omitted, storage failures use `throttle`.
-      */
+   */
   storageErrorBehavior?: RateLimitStorageErrorBehavior
 
   /**
@@ -601,7 +602,7 @@ export class AgentApplicationRateLimiter {
     pending: PendingRuleEvaluation,
     canWrite: boolean
   ): Promise<{ result?: RateLimitResult, write?: WindowWrite }> {
-    const { rule, ruleIndex, key } = pending
+    const { rule, ruleIndex, key, storageKey, isNativeV2 } = pending
     const current = await this.readWindow(pending)
     const now = Date.now()
     const window = this.getFixedWindow(rule, current, now)
@@ -617,11 +618,17 @@ export class AgentApplicationRateLimiter {
       }
     }
 
-    window.count++
     const expectedVersion = window.eTag
+    if (isNativeV2 && current !== undefined && !expectedVersion) {
+      throw ExceptionHelper.generateException(Error, Errors.RateLimitCounterVersionMissing, undefined, {
+        key: storageKey
+      })
+    }
+
+    window.count++
     const options = expectedVersion !== undefined
       ? { expectedVersion }
-      : current === undefined && pending.isNativeV2
+      : current === undefined && isNativeV2
         ? { mode: StorageWriteMode.CreateOnly }
         : undefined
 

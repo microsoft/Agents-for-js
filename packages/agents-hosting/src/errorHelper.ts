@@ -863,6 +863,12 @@ export const Errors: { [key: string]: AgentErrorDefinition } = {
     description: "AgentState '{name}' could not save key '{key}' because another turn updated the state first (status: {status}). This turn's state changes were not saved."
   },
 
+  /** Error thrown when an existing V2 rate limit counter has no storage version. */
+  RateLimitCounterVersionMissing: {
+    code: -120713,
+    description: 'Storage V2 did not return a version for existing rate limit counter "{key}".'
+  },
+
   /**
      * Error thrown when state is not loaded.
      */

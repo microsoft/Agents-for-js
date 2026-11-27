@@ -596,6 +596,58 @@ describe('AgentApplication rate limiting', () => {
     assert.equal(await app.runInternal(new TurnContext(new TestAdapter(), createTestActivity())), false)
   })
 
+  it('should handle an existing versionless V2 counter without writing it', async () => {
+    const key = 'rateLimit:0:user-1'
+    const counter = { count: 1, resetAt: Date.now() + 60_000 }
+    const cases = [
+      { limit: 2, storageErrorBehavior: undefined, allowed: false },
+      { limit: 2, storageErrorBehavior: 'allow', allowed: true },
+      { limit: 2, storageErrorBehavior: 'throw', allowed: false },
+      { limit: 1, storageErrorBehavior: 'allow', allowed: false }
+    ] as const
+
+    for (const { limit, storageErrorBehavior, allowed } of cases) {
+      const storage = new MemoryStorageV2({ [key]: JSON.stringify(counter) })
+      const writes = sinon.stub(storage, 'write').resolves({})
+      let called = 0
+      const createApp = () => {
+        const app = new AgentApplication({
+          rateLimit: [{
+            scope: context => context.activity.from?.id,
+            limit,
+            windowMs: 60_000,
+            maxStorageRetries: 0,
+            storageErrorBehavior,
+            storage
+          }]
+        })
+        app.onActivity(ActivityTypes.Message, async () => {
+          called++
+        })
+
+        return app
+      }
+      const turns = [createApp(), createApp()].map(async app => {
+        const context = new TurnContext(new TestAdapter(), createTestActivity())
+        return await app.runInternal(context)
+      })
+
+      if (storageErrorBehavior === 'throw') {
+        await Promise.all(turns.map(async turn => {
+          await assert.rejects(turn, /did not return a version for existing rate limit counter/)
+        }))
+      } else {
+        assert.deepEqual(await Promise.all(turns), [allowed, allowed])
+      }
+
+      assert.equal(called, allowed ? 2 : 0)
+      assert.equal(writes.callCount, 0)
+      const stored = await storage.read([key])
+      assert.deepEqual(stored[key].value, counter)
+      assert.equal(stored[key].version, undefined)
+    }
+  })
+
   it('should prefer rule storage over application storage', async () => {
     const appStorage = new RecordingStorage()
     const ruleStorage = new RecordingStorage()
